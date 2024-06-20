@@ -3,7 +3,8 @@ import Navbar from './components/Navbar'
 import Login from './components/Auth/Login'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { addUser } from './store/userSlice'
+import { addUser, removeUser } from './store/userSlice'
+import conf from './config/config'
 
 function App() {
  
@@ -15,14 +16,15 @@ function App() {
   const dispatch = useDispatch()
 
   useEffect(()=>{
-     dispatch(addUser())
+     dispatch(removeUser())
   },[])
   
 
   const navigate = useNavigate()
+
+
   useEffect(()=>{
     if(!user) {
-      console.log('naviagte');
       navigate('/login')
     }
   },[user])

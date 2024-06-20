@@ -1,7 +1,18 @@
 import React from "react";
+import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 
+
 const Login = () => {
+
+ const { register, handleSubmit ,formState : {errors} } = useForm()
+
+  const onSubmit = (data) => {
+    console.log(data);
+  }
+
+
+
   return (
     <div className="bg-gray-100 flex justify-center items-center h-screen">
       <div className="w-1/2 h-screen hidden lg:block">
@@ -14,18 +25,21 @@ const Login = () => {
 
       <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2">
         <h1 className="text-2xl font-semibold mb-4">Login</h1>
-        <form action="#" method="POST">
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
             <label htmlFor="username" className="block text-gray-600">
               Username
             </label>
             <input
               type="text"
+              {...register("username",{required: 'Username is required'})}
               id="username"
               name="username"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
             />
+               {errors.username && <span className="text-red-500 text-sm">{errors.username.message}</span>}
+       
           </div>
 
           <div className="mb-4">
@@ -34,11 +48,14 @@ const Login = () => {
             </label>
             <input
               type="password"
+              {...register("password",{required: 'Password is required'})}
               id="password"
               name="password"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
             />
+            {errors.password && <span className="text-red-500 text-sm">{errors.password.message}</span>}
+       
           </div>
 
           <div className="mb-4 flex items-center">
@@ -59,12 +76,13 @@ const Login = () => {
             </a>
           </div>
 
-          <button
-            type="submit"
+          <button 
+             type="submit"
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full"
           >
             Login
           </button>
+          
         </form>
 
         <div className="mt-6 text-blue-500 text-center">
