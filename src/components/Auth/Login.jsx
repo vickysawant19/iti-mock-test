@@ -1,14 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
-
+import { IoMdEye, IoMdEyeOff } from "react-icons/io"
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import authService from "../../appwrite/auth";
+import { useDispatch } from "react-redux";
+import { addUser } from "../../store/userSlice";
 
 const Login = () => {
+  const [showPassword, setShowPassword] = useState(false)
 
  const { register, handleSubmit ,formState : {errors} } = useForm()
+ const dispatch = useDispatch()
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     console.log(data);
+    try {
+      // Mock API call
+      const user = await authService.login(data)
+      if(user){
+        dispatch(addUser(user))
+        toast.success('Login successful!');
+      }
+    } catch (error) {
+      toast.error(`Login failed: ${error.message}`);
+    }
   }
 
 
@@ -27,33 +44,42 @@ const Login = () => {
         <h1 className="text-2xl font-semibold mb-4">Login</h1>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-600">
-              Username
+            <label htmlFor="email" className="block text-gray-600">
+              Email
             </label>
             <input
-              type="text"
-              {...register("username",{required: 'Username is required'})}
-              id="username"
-              name="username"
+              type="email"
+              {...register("email",{required: 'Email is required'})}
+              id="email"
+              name="email"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
             />
-               {errors.username && <span className="text-red-500 text-sm">{errors.username.message}</span>}
+               {errors.email && <span className="text-red-500 text-sm">{errors.email.message}</span>}
        
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <label htmlFor="password" className="block text-gray-600">
               Password
             </label>
             <input
-              type="password"
-              {...register("password",{required: 'Password is required'})}
+              type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
+              {...register('password', {
+                required: 'Password is required'
+              })}
             />
+                <button
+              type="button"
+              className="absolute right-3 top-11 transform -translate-y-1/2 text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <IoMdEyeOff /> : <IoMdEye />}
+            </button>
             {errors.password && <span className="text-red-500 text-sm">{errors.password.message}</span>}
        
           </div>
@@ -92,6 +118,7 @@ const Login = () => {
          
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

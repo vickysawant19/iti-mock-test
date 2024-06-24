@@ -11,7 +11,7 @@ function App() {
   
 
   const user = useSelector(state => state.user)
-  console.log(user);
+ console.log(user);
   
   const dispatch = useDispatch()
 

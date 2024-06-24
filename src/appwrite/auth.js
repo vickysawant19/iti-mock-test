@@ -1,6 +1,7 @@
-import conf from "../config/conf";
+
 
 import { Client, Account, ID } from "appwrite";
+import conf from "../config/config";
 
 export class AuthService {
   client = new Client();
@@ -21,7 +22,7 @@ export class AuthService {
       );
       if (userAccount) {
         //call another method
-        console.log("here with ", userAccount);
+        await this.logout()
         return await this.login({ email, password });
       }
     } catch (error) {
@@ -31,10 +32,13 @@ export class AuthService {
 
   async login({ email, password }) {
     try {
-      await this.account.createEmailSession(email, password);
+      // await this.account.createEmailSession(email, password);
+      await this.account.createEmailPasswordSession(email, password);
       return await this.getCurrentUser();
     } catch (error) {
+      console.log(error);
       throw new Error(`${error.message.split(".")[0]}`);
+      // throw new Error(`login error`);
     }
   }
 

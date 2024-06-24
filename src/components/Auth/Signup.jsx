@@ -1,9 +1,45 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
+import { IoMdEye, IoMdEyeOff } from "react-icons/io"
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import authService from '../../appwrite/auth'
+import { useDispatch } from 'react-redux'
+import { addUser } from '../../store/userSlice'
+
 
 const Signup = () => {
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch
+  } = useForm()
+
+  const dispatch = useDispatch()
+
+  const onSubmit = async (data) => {
+    console.log(data)
+    try {
+      const user = await authService.createAccount(data)
+      if(user){
+        dispatch(addUser(user))
+      }
+      console.log('success');
+      toast.success('Signup successful!')
+    } catch (error) {
+      toast.error(`Signup failed: ${error.message}`)
+    }
+  }
+
+  const password = watch('password', '')
+
   return (
-    <div className="bg-gray-100 flex justify-center items-center h-screen">
+    <div className="bg-gray-100 flex justify-center items-center min-h-screen">
       <div className="w-1/2 h-screen hidden lg:block">
         <img
           src="https://placehold.co/800x/667fff/ffffff.png?text=Your+Image&font=Montserrat"
@@ -14,49 +50,106 @@ const Signup = () => {
 
       <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2">
         <h1 className="text-2xl font-semibold mb-4">SignUp</h1>
-        <form action="#" method="POST">
+        <form onSubmit={handleSubmit(onSubmit)} method="POST">
           <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-600">
-              Username
+            <label htmlFor="name" className="block text-gray-600">
+              Name
             </label>
             <input
               type="text"
-              id="username"
-              name="username"
+              id="name"
+              name="name"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
+              {...register('name', { required: 'Name is required' })}
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+            )}
           </div>
 
           <div className="mb-4">
+            <label htmlFor="email" className="block text-gray-600">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              autoComplete="off"
+              {...register('email', { required: 'Email is required' })}
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="mb-4 relative">
             <label htmlFor="password" className="block text-gray-600">
               Password
             </label>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               name="password"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
+              {...register('password', {
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters long'
+                },
+                pattern: {
+                  value: /^[A-Za-z0-9]+$/,
+                  message: 'Password must be alphanumeric'
+                }
+              })}
             />
+            <button
+              type="button"
+              className="absolute right-3 top-11 transform -translate-y-1/2 text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <IoMdEyeOff /> : <IoMdEye />}
+            </button>
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            )}
           </div>
-          <div className="mb-4">
+
+          <div className="mb-4 relative">
             <label htmlFor="cpassword" className="block text-gray-600">
               Confirm Password
             </label>
             <input
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               id="cpassword"
               name="cpassword"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
+              {...register('cpassword', {
+                required: 'Please confirm your password',
+                validate: (value) =>
+                  value === password || 'Passwords do not match'
+              })}
             />
+            <button
+              type="button"
+              className="absolute right-3 top-11 transform -translate-y-1/2 text-gray-600"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <IoMdEyeOff /> : <IoMdEye />}
+            </button>
+            {errors.cpassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.cpassword.message}</p>
+            )}
           </div>
-
 
           <div className="mb-6 text-blue-500">
             <a href="#" className="hover:underline">
-          Forgot Password?
+              Forgot Password?
             </a>
           </div>
 
@@ -69,12 +162,13 @@ const Signup = () => {
         </form>
 
         <div className="mt-6 text-blue-500 text-center">
-        Already had an account?
+          Already have an account?
           <Link to={'/Login'} className="hover:underline">
-             <span className='ml-2'>Login Here</span>
+            <span className='ml-2'>Login Here</span>
           </Link>
         </div>
       </div>
+      <ToastContainer />
     </div>
   )
 }
