@@ -5,34 +5,31 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { addUser, removeUser } from './store/userSlice'
 import conf from './config/config'
+import authService from './appwrite/auth'
+import Footer from './components/Footer'
 
 function App() {
- 
-  
 
-  const user = useSelector(state => state.user)
- console.log(user);
-  
   const dispatch = useDispatch()
 
   useEffect(()=>{
-     dispatch(removeUser())
-  },[])
-  
+    const checkLoginStatus = async () => {
+      const user = await authService.getCurrentUser()
+      if (user){
+        dispatch(addUser(user))
 
-  const navigate = useNavigate()
-
-
-  useEffect(()=>{
-    if(!user) {
-      navigate('/login')
+      }
     }
-  },[user])
+    checkLoginStatus()
+
+  },[])
+
 
   return (
    <div className='bg-orange-50 w-full min-h-screen'>
      <Navbar/>
      <Outlet/>
+     <Footer/>
    </div>
    
   )

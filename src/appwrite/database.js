@@ -1,7 +1,8 @@
-import conf from "../config/conf";
-import { Client, Databases, Storage, ID, Query } from "appwrite";
 
-export class dbService {
+import { Client, Databases, Storage, ID, Query } from "appwrite";
+import conf from "../config/config";
+
+export class QuesDbService {
   client = new Client();
   database;
   bucket;
@@ -12,92 +13,93 @@ export class dbService {
     this.bucket = new Storage(this.client);
   }
 
-  async createDocument({
-    title,
-    slug,
-    content,
-    featuredImage,
-    status,
+  async createQuestion({
+    questionText,
+    options,
+    correctAnswer,
+    imageId = null,
     userId,
     userName,
   }) {
     try {
+      const documentData = {
+        questionText,
+        options,
+        correctAnswer,
+        imageId,
+        userId,
+        userName,
+      };
+
       return await this.database.createDocument(
         conf.databaseId,
-        conf.collectionId,
-        slug,
-        {
-          title,
-          content,
-          featuredImage,
-          status,
-          userId,
-          userName,
-        }
+        conf.quesCollectionId,
+        ID.unique(),
+        documentData
       );
     } catch (error) {
-      this.bucket.deleteFile(conf.bucketId, featuredImage);
+      if (imageId) {
+        this.bucket.deleteFile(conf.bucketId, imageId);
+      }
       throw new Error(`${error.message.split(".")[0]}`);
     }
   }
 
-  async updateDocument(slug, { title, content, featuredImage, status }) {
+  async updateQuestion(id, { questionText, options, correctAnswer, image }) {
     try {
+      const documentData = { questionText, options, correctAnswer, image };
       return await this.database.updateDocument(
         conf.databaseId,
-        conf.collectionId,
-        slug,
-        { title, content, featuredImage, status }
+        conf.quesCollectionId,
+        id,
+        documentData
       );
     } catch (error) {
-      console.log("appwrite error: update Document :", error);
+      console.log("Appwrite error: update Question:", error);
       return false;
     }
   }
 
-  async deleteDocument(slug) {
+  async deleteQuestion(id) {
     try {
-      await this.database.deleteDocument(
-        conf.databaseId,
-        conf.collectionId,
-        slug
-      );
+      await this.database.deleteDocument(conf.databaseId, conf.quesCollectionId, id);
       return true;
     } catch (error) {
-      console.log("appwrite error: update Document :", error);
+      console.log("Appwrite error: delete Question:", error);
       return false;
     }
   }
 
-  async getPosts(
-    queries = [Query.equal("status", "active"), Query.orderDesc("$createdAt")]
+  async listQuestions(
+    queries = [Query.orderDesc("$createdAt")]
   ) {
+    console.log(conf.quesCollectionId);
     try {
       return await this.database.listDocuments(
         conf.databaseId,
-        conf.collectionId,
+        conf.quesCollectionId,
         queries
       );
     } catch (error) {
-      console.error("Appwrite error :: fetching posts:", error);
+      console.error("Appwrite error: fetching questions:", error);
       throw new Error(`Error:${error.message.split(".")[0]}`);
     }
   }
 
-  async getPost(slug) {
+  async getQuestion(id) {
     try {
       return await this.database.getDocument(
         conf.databaseId,
-        conf.collectionId,
-        slug
+        conf.quesCollectionId,
+        id
       );
     } catch (error) {
-      console.log("appwrite error: update Document :", error);
+      console.log("Appwrite error: get Question:", error);
       return false;
     }
   }
 
-  async uploadFile(file) {
+  async createFile(file) {
     try {
       return await this.bucket.createFile(conf.bucketId, ID.unique(), file);
     } catch (error) {
@@ -111,7 +113,7 @@ export class dbService {
       await this.bucket.deleteFile(conf.bucketId, fileId);
       return true;
     } catch (error) {
-      console.log("appwrite error :: deleteFile ", error);
+      console.log("Appwrite error: delete File:", error);
       return false;
     }
   }
@@ -120,11 +122,13 @@ export class dbService {
     try {
       return await this.bucket.getFilePreview(conf.bucketId, fileId);
     } catch (error) {
-      console.log("appwrite error :: filepreview", error);
+      console.log("Appwrite error: get File Preview:", error);
     }
   }
 }
 
-const dbservice = new dbService();
+const quesdbservice = new QuesDbService();
 
-export default dbservice;
+export default quesdbservice;
+
+

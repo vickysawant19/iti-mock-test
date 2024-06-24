@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { IoMdEye, IoMdEyeOff } from "react-icons/io"
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import authService from '../../appwrite/auth'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { addUser } from '../../store/userSlice'
 
 
@@ -21,6 +21,13 @@ const Signup = () => {
   } = useForm()
 
   const dispatch = useDispatch()
+  const user = useSelector(state =>  state.user)
+  const navigate = useNavigate()
+ useEffect(()=>{
+  if(user){
+    navigate('/dash')
+  }
+ },[user])
 
   const onSubmit = async (data) => {
     console.log(data)
