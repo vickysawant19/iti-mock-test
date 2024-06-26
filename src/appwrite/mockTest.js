@@ -1,6 +1,6 @@
 import { Client, Databases, ID, Query } from "appwrite";
 import conf from "../config/config";
-import quesdbservice from './QuesDbService';
+import quesdbservice from "./database";
 
 class MockTestService {
   client = new Client();

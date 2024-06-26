@@ -19,6 +19,7 @@ const CreateQuestion = () => {
       return;
     }
     data.userId =  user.$id;
+    data.userName = user.name;
     console.log(data);
     try {
       await quesdbservice.createQuestion(data);

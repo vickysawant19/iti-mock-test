@@ -13,6 +13,7 @@ import Home from './components/private/Home.jsx'
 import CreateQuestion from './components/private/CreateQuestion.jsx'
 import ManageQuestions from './components/private/ManageQuestions.jsx'
 import EditQuestion from './components/private/EditQuestion.jsx'
+import StartMockTest from './components/private/StartMockTest.jsx'
 
 
 
@@ -27,6 +28,7 @@ const router = createBrowserRouter(createRoutesFromElements(
         <Route path='create-question' element={<CreateQuestion/>}/>
         <Route path='manage-questions' element={<ManageQuestions/>}/>
         <Route path='edit/:quesId' element={<EditQuestion/>}/>
+        <Route path='mock-exam' element={<StartMockTest/>}/>
       </Route>
     </Route>
   </Route>
