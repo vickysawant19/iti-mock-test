@@ -12,6 +12,7 @@ import ProtectedRoute from './components/private/ProtectedRoute.jsx'
 import Home from './components/private/Home.jsx'
 import CreateQuestion from './components/private/CreateQuestion.jsx'
 import ManageQuestions from './components/private/ManageQuestions.jsx'
+import EditQuestion from './components/private/EditQuestion.jsx'
 
 
 
@@ -25,6 +26,7 @@ const router = createBrowserRouter(createRoutesFromElements(
         <Route path='dash' element={<Home/>}/>
         <Route path='create-question' element={<CreateQuestion/>}/>
         <Route path='manage-questions' element={<ManageQuestions/>}/>
+        <Route path='edit/:quesId' element={<EditQuestion/>}/>
       </Route>
     </Route>
   </Route>

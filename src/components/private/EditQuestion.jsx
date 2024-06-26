@@ -1,33 +1,51 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import quesdbservice from '../../appwrite/database';
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-const CreateQuestion = () => {
-  const { register, handleSubmit, setValue, getValues } = useForm();
-  const [isLoading, setIsLoading] = useState(false)
+const EditQuestion = () => {
+  const { register, handleSubmit, setValue } = useForm();
+  const { quesId } = useParams();
+  
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const user = useSelector(state => state.user)
+  const user = useSelector(state => state.user);
+
+  useEffect(() => {
+    const fetchQuestion = async () => {
+      try {
+        const question = await quesdbservice.getQuestion(quesId);
+        setValue('question', question.question);
+        question.options.forEach((option, index) => setValue(`options.${index}`, option));
+        setValue('correctAnswer', question.correctAnswer);
+      } catch (error) {
+        toast.error('Error fetching question');
+      }
+    };
+
+    fetchQuestion();
+  }, [quesId, setValue]);
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
-    if (data.correctAnswer === null) {
+    setIsLoading(true);
+    if (!data.correctAnswer) {
       toast.error('Correct answer is required');
+      setIsLoading(false);
       return;
     }
-    data.userId =  user.$id;
-    console.log(data);
+    data.userId = user.$id;
+
     try {
-      await quesdbservice.createQuestion(data);
-      toast.success('Question created');
+      await quesdbservice.updateQuestion(quesId, data);
+      toast.success('Question updated');
       navigate('/manage-questions');
     } catch (error) {
-      toast.error(error.message);
+      toast.error('Error updating question');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   };
 
@@ -36,7 +54,7 @@ const CreateQuestion = () => {
       <div className="container mx-auto px-4 py-8">
         <header className="py-6">
           <h1 className="text-3xl font-bold text-gray-800 text-center">
-            Create New Question
+            Edit Question
           </h1>
         </header>
 
@@ -80,10 +98,10 @@ const CreateQuestion = () => {
 
             <button
               type="submit"
-              className={` hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${isLoading ? "bg-gray-500": "bg-blue-500" }`}
-              disabled = {isLoading}
+              className={`hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${isLoading ? 'bg-gray-500' : 'bg-blue-500'}`}
+              disabled={isLoading}
             >
-              Create Question
+              {isLoading ? 'Updating...' : 'Update Question'}
             </button>
           </form>
         </main>
@@ -93,4 +111,4 @@ const CreateQuestion = () => {
   );
 };
 
-export default CreateQuestion;
+export default EditQuestion;

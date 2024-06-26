@@ -14,7 +14,7 @@ export class QuesDbService {
   }
 
   async createQuestion({
-    questionText,
+    question,
     options,
     correctAnswer,
     imageId = null,
@@ -23,7 +23,7 @@ export class QuesDbService {
   }) {
     try {
       const documentData = {
-        questionText,
+        question,
         options,
         correctAnswer,
         imageId,
@@ -41,13 +41,14 @@ export class QuesDbService {
       if (imageId) {
         this.bucket.deleteFile(conf.bucketId, imageId);
       }
-      throw new Error(`${error.message.split(".")[0]}`);
+      throw new Error(`${error.message}`);
+      
     }
   }
 
-  async updateQuestion(id, { questionText, options, correctAnswer, image }) {
+  async updateQuestion(id, { question, options, correctAnswer, imageId = null }) {
     try {
-      const documentData = { questionText, options, correctAnswer, image };
+      const documentData = { question, options, correctAnswer, imageId };
       return await this.database.updateDocument(
         conf.databaseId,
         conf.quesCollectionId,
