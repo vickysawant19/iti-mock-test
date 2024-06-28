@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useSelector } from 'react-redux';
@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 import mockTestService from '../../appwrite/mockTest';
+import tradeservice from '../../appwrite/tradedetails';
 
 
 
@@ -15,7 +16,19 @@ const StartMockTest = () => {
   const user = useSelector(state => state.user);
   const [isLoading, setIsLoading] = useState(false);
 
-  const trades = ['Trade 1', 'Trade 2', 'Trade 3']; // Add your trade options here
+ const [trades,setTrades] =  useState()
+
+  const fetchTrades = async ( ) => {
+    const resp = await tradeservice.listTrades();
+    if(resp){
+      setTrades(resp.documents)
+    }
+
+  }
+  useEffect(()=>{
+   fetchTrades()
+   console.log(trades);
+  },[])
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -46,9 +59,26 @@ const StartMockTest = () => {
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
             >
               <option value="">Select Trade</option>
-              {trades.map((trade, index) => (
-                <option key={index} value={trade}>{trade}</option>
-              ))}
+              {trades?.map((trade) => (
+                    <option key={trade.$id} value={trade.$id}>
+                      {`${trade.tradeName}`}
+                    </option>
+                  ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="trade" className="block text-gray-700 font-bold mb-2">Trade</label>
+            <select
+              id="year"
+              {...register('year', { required: 'year is required' })}
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Select Year</option>
+              {trades?.map((trade) => (
+                    <option key={trade.$id} value={trade.year}>
+                      {`${trade.year}`}
+                    </option>
+                  ))}
             </select>
           </div>
 

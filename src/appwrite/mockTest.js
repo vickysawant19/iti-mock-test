@@ -1,20 +1,21 @@
+import { Query } from "appwrite";
 import quesdbservice from "./database";
+import authService from "./auth";
+import { appwriteService } from "./appwriteConfig";
 
 
 
 class QuestionPaperService {
     constructor() {
-        this.databaseId = 'YOUR_DATABASE_ID';
-        this.questionsCollectionId = 'YOUR_QUESTIONS_COLLECTION_ID';
-        this.questionPapersCollectionId = 'YOUR_QUESTION_PAPERS_COLLECTION_ID';
+        this.databaseId = appwriteService.getDatabases();
+        this.questionsCollectionId = conf.questionsCollectionId;
+        this.questionPapersCollectionId = conf.questionPapersCollectionId;
     }
 
-    async generateQuestionPaper(tradeId, year) {
+    async generateQuestionPaper(userId, tradeId, year) {
         try {
             // Fetch questions filtered by tradeId and year
-            const questions = await quesdbservice.listDocuments(this.databaseId, this.questionsCollectionId, [], {
-                filters: [`tradeId=${tradeId}`, `year=${year}`]
-            });
+            const questions = await quesdbservice.listDocuments(this.databaseId, this.questionsCollectionId, [Query.equal("tradeId",tradeId),Query.equal("year",year)]);
             
             // Randomly select 50 questions
             const selectedQuestions = this.getRandomQuestions(questions.documents, 50);
@@ -27,13 +28,13 @@ class QuestionPaperService {
 
             // Create a new question paper document
             const questionPaper = {
+                userId,
                 tradeId,
                 year,
                 questions: selectedQuestions,
                 responses,
                 score: null, // Initially null, will be updated upon submission
                 submitted: false, // To indicate if the paper is submitted
-                createdAt: new Date().toISOString()
             };
 
             const response = await quesdbservice.createDocument(this.databaseId, this.questionPapersCollectionId, 'unique()', questionPaper);
