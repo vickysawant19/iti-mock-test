@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import quesdbservice from '../../appwrite/database';
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import tradeservice from '../../appwrite/tradedetails';
 
 const EditQuestion = () => {
   const { register, handleSubmit, setValue } = useForm();
   const { quesId } = useParams();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [trades, setTrades] = useState([]);
   const navigate = useNavigate();
   const user = useSelector(state => state.user);
 
@@ -19,6 +22,7 @@ const EditQuestion = () => {
       try {
         const question = await quesdbservice.getQuestion(quesId);
         setValue('question', question.question);
+        setValue('tradeId', question.tradeId);
         question.options.forEach((option, index) => setValue(`options.${index}`, option));
         setValue('correctAnswer', question.correctAnswer);
       } catch (error) {
@@ -26,7 +30,17 @@ const EditQuestion = () => {
       }
     };
 
+    const fetchTrades = async () => {
+      try {
+        const response = await tradeservice.listTrades();
+        setTrades(response.documents);
+      } catch (error) {
+        toast.error('Failed to fetch trades');
+      }
+    };
+
     fetchQuestion();
+    fetchTrades();
   }, [quesId, setValue]);
 
   const onSubmit = async (data) => {
@@ -70,6 +84,24 @@ const EditQuestion = () => {
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 rows="3"
               ></textarea>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="trade" className="block text-gray-800 font-semibold mb-2">
+                Trade
+              </label>
+              <select
+                id="trade"
+                {...register('tradeId', { required: 'Trade is required' })}
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Select Trade</option>
+                {trades.map((trade) => (
+                  <option key={trade.$id} value={trade.$id}>
+                    {trade.tradeName} ({trade.year})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="mb-6">

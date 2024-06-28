@@ -1,15 +1,10 @@
-
-
-import { Client, Account, ID } from "appwrite";
-import conf from "../config/config";
+import { appwriteService } from './appwriteConfig';
+import { ID } from 'appwrite';
 
 export class AuthService {
-  client = new Client();
-  account;
-
   constructor() {
-    this.client.setEndpoint(conf.appwriteUrl).setProject(conf.projectId);
-    this.account = new Account(this.client);
+    this.client = appwriteService.getClient();
+    this.account = appwriteService.getAccount();
   }
 
   async createAccount({ email, password, name }) {
@@ -30,13 +25,11 @@ export class AuthService {
 
   async login({ email, password }) {
     try {
-      // await this.account.createEmailSession(email, password);
       await this.account.createEmailPasswordSession(email, password);
       return await this.getCurrentUser();
     } catch (error) {
       console.log(error);
       throw new Error(`${error.message.split(".")[0]}`);
-      // throw new Error(`login error`);
     }
   }
 
@@ -51,7 +44,7 @@ export class AuthService {
 
   async logout() {
     try {
-      return await this.account.deleteSession("current");
+      return await this.account.deleteSession('current');
     } catch (error) {
       throw new Error(error);
     }

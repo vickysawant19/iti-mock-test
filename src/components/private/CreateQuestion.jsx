@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import quesdbservice from '../../appwrite/database';
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import tradeservice from '../../appwrite/tradedetails';
 
 const CreateQuestion = () => {
   const { register, handleSubmit, setValue, getValues } = useForm();
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [trades, setTrades] = useState([]);
   const navigate = useNavigate();
-  const user = useSelector(state => state.user)
+  const user = useSelector(state => state.user);
+
+  useEffect(() => {
+    const fetchTrades = async () => {
+      try {
+        const response = await tradeservice.listTrades();
+        setTrades(response.documents);
+      } catch (error) {
+        toast.error('Failed to fetch trades');
+      }
+    };
+
+    fetchTrades();
+  }, []);
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
+    setIsLoading(true);
     if (data.correctAnswer === null) {
       toast.error('Correct answer is required');
       return;
     }
-    data.userId =  user.$id;
+    data.userId = user.$id;
     data.userName = user.name;
     console.log(data);
     try {
@@ -28,7 +43,7 @@ const CreateQuestion = () => {
     } catch (error) {
       toast.error(error.message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   };
 
@@ -53,6 +68,24 @@ const CreateQuestion = () => {
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 rows="3"
               ></textarea>
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="trade" className="block text-gray-800 font-semibold mb-2">
+                Trade
+              </label>
+              <select
+                id="trade"
+                {...register('tradeId', { required: 'Trade is required' })}
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Select Trade</option>
+                {trades.map((trade) => (
+                  <option key={trade.$id} value={trade.$id}>
+                    {trade.tradeName} ({trade.year} YEAR)
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="mb-6">
@@ -81,8 +114,8 @@ const CreateQuestion = () => {
 
             <button
               type="submit"
-              className={` hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${isLoading ? "bg-gray-500": "bg-blue-500" }`}
-              disabled = {isLoading}
+              className={`hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${isLoading ? "bg-gray-500" : "bg-blue-500"}`}
+              disabled={isLoading}
             >
               Create Question
             </button>
