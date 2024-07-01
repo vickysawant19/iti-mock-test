@@ -14,7 +14,7 @@ const Login = () => {
  const { register, handleSubmit ,formState : {errors} } = useForm()
  const dispatch = useDispatch()
  const user = useSelector(state =>  state.user)
-  const navigate = useNavigate()
+const navigate = useNavigate()
  useEffect(()=>{
   if(user){
     navigate('/dash')

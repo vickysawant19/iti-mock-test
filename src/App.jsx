@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { addUser } from './store/userSlice';
@@ -11,16 +11,24 @@ function App() {
   const user = useSelector(state => state.user);
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = React.useState(true);
+  const navigate =  useNavigate()
+
 
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
+        if(!user){
         const res = await authService.getCurrentUser();
         if (res) {
           dispatch(addUser(res));
+          if (window.location.pathname === '/') {
+            navigate('/dash');
+          }
         }
+      }
       } catch (error) {
-        console.log(error.message);
+        // console.log(error.message);
+        navigate('/login')
       } finally {
         setIsLoading(false);
       }

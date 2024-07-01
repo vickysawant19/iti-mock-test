@@ -13,22 +13,26 @@ import Home from './components/private/Home.jsx'
 import CreateQuestion from './components/private/CreateQuestion.jsx'
 import ManageQuestions from './components/private/ManageQuestions.jsx'
 import EditQuestion from './components/private/EditQuestion.jsx'
-import StartMockTest from './components/private/StartMockTest.jsx'
+
+import CreateMockTest from './components/private/CreateMockTest.jsx'
+import MockTestGreet from './components/private/MockTestGreet.jsx'
 
 
 
 const router = createBrowserRouter(createRoutesFromElements(
   <Route>
     <Route path='' element={<App/>}>
-      <Route path='/login' element={<Login/>}/>
+      <Route index path='/login' element={<Login/>}/>
       <Route path='/signup' element={<Signup/>}/>
       <Route path='/about' element={<About/>}/>
       <Route element={<ProtectedRoute/>}>
-        <Route path='dash' element={<Home/>}/>
+        <Route index path='dash' element={<Home/>}/>
         <Route path='create-question' element={<CreateQuestion/>}/>
         <Route path='manage-questions' element={<ManageQuestions/>}/>
         <Route path='edit/:quesId' element={<EditQuestion/>}/>
-        <Route path='mock-exam' element={<StartMockTest/>}/>
+        <Route path='mock-exam' element={<CreateMockTest/>}/>
+        <Route path='mock-exam/:paperId' element={<MockTestGreet/>}/>
+        <Route path='start-exam/:paperId' element={<MockTestGreet/>}/>
       </Route>
     </Route>
   </Route>

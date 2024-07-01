@@ -9,7 +9,7 @@ export class QuesDbService {
     this.bucket = appwriteService.getStorage();
   }
 
-  async createQuestion({ question, options, correctAnswer, imageId = null, userId, userName, tradeId}) {
+  async createQuestion({ question, options, correctAnswer, imageId = null, userId, userName, tradeId,year}) {
     try {
       // Check if the question already exists
       const existingQuestions = await this.database.listDocuments(
@@ -30,6 +30,7 @@ export class QuesDbService {
         userId,
         userName,
         tradeId,
+        year
       };
 
       return await this.database.createDocument(
@@ -46,9 +47,9 @@ export class QuesDbService {
     }
   }
 
-  async updateQuestion(id, { question, options, correctAnswer, imageId = null, tradeId }) {
+  async updateQuestion(id, { question, options, correctAnswer, imageId = null, tradeId,year }) {
     try {
-      const documentData = { question, options, correctAnswer, imageId, tradeId };
+      const documentData = { question, options, correctAnswer, imageId, tradeId,year };
       return await this.database.updateDocument(
         conf.databaseId,
         conf.quesCollectionId,

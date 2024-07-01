@@ -82,7 +82,24 @@ const CreateQuestion = () => {
                 <option value="">Select Trade</option>
                 {trades.map((trade) => (
                   <option key={trade.$id} value={trade.$id}>
-                    {trade.tradeName} ({trade.year} YEAR)
+                    {trade.tradeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-6">
+              <label htmlFor="trade" className="block text-gray-800 font-semibold mb-2">
+                year
+              </label>
+              <select
+                id="trade"
+                {...register('year', { required: 'Year is required' })}
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Select Year</option>
+                {trades.map((trade) => (
+                  <option key={trade.year} value={trade.year}>
+                    {trade.year} YEAR
                   </option>
                 ))}
               </select>
