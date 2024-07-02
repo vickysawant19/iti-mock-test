@@ -41,7 +41,7 @@ const CreateMockTest = () => {
       );
       toast.success("Mock test created successfully!");
       reset();
-      navigate(`/mock-test/${newMockTest.$id}`);
+      navigate(`/start-mock-test/${newMockTest.$id}`);
     } catch (error) {
       toast.error(`Error creating mock test: ${error.message}`);
     } finally {

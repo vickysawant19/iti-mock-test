@@ -61,7 +61,7 @@ class QuestionPaperService {
 
     async getQuestionPaper(paperId) {
         try {
-            const response = await quesdbservice.getDocument(this.databaseId, this.questionPapersCollectionId, paperId);
+            const response = await this.database.getDocument(this.databaseId, this.questionPapersCollectionId, paperId);
             return response;
         } catch (error) {
             console.error('Error getting question paper:', error);
@@ -96,7 +96,7 @@ class QuestionPaperService {
                 throw new Error('Paper has already been submitted');
             }
 
-            const response = await quesdbservice.updateDocument(this.databaseId, this.questionPapersCollectionId, paperId, {
+            const response = await this.database.updateDocument(this.databaseId, this.questionPapersCollectionId, paperId, {
                 score,
                 submitted: true
             });
@@ -120,7 +120,7 @@ class QuestionPaperService {
 
     async getQuestionPaperByUserId(userId) {
         try {
-            const response = await quesdbservice.listDocuments(this.databaseId, this.questionPapersCollectionId, [], {
+            const response = await this.database.listDocuments(this.databaseId, this.questionPapersCollectionId, [], {
                 filters: [`userId=${userId}`]
             });
             return response.documents;

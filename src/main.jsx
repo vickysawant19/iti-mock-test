@@ -16,6 +16,9 @@ import EditQuestion from './components/private/EditQuestion.jsx'
 
 import CreateMockTest from './components/private/CreateMockTest.jsx'
 import MockTestGreet from './components/private/MockTestGreet.jsx'
+import AllMockTests from './components/private/AllMockTests.jsx'
+import Profile from './components/private/Profile.jsx'
+import StartMockTest from './components/private/StartMockTest.jsx'
 
 
 
@@ -31,8 +34,9 @@ const router = createBrowserRouter(createRoutesFromElements(
         <Route path='manage-questions' element={<ManageQuestions/>}/>
         <Route path='edit/:quesId' element={<EditQuestion/>}/>
         <Route path='mock-exam' element={<CreateMockTest/>}/>
-        <Route path='mock-exam/:paperId' element={<MockTestGreet/>}/>
-        <Route path='start-exam/:paperId' element={<MockTestGreet/>}/>
+        <Route path='profile' element={<Profile/>}/>
+        <Route path='all-mock-tests' element={<AllMockTests/>}/>
+        <Route path='start-mock-test/:paperId' element={<StartMockTest/>}/>
       </Route>
     </Route>
   </Route>

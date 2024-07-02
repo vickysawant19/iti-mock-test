@@ -15,7 +15,7 @@ const Home = () => {
         </header>
 
         <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#E6FFFA' }}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Create a New Question
             </h2>
@@ -30,7 +30,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#FFEBE6' }}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Take a Mock Exam
             </h2>
@@ -45,7 +45,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6">
+          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#FFFBE6' }}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Manage Questions
             </h2>
@@ -59,10 +59,38 @@ const Home = () => {
               Manage Questions
             </Link>
           </div>
+
+          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#E6E6FF' }}>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              View All Mock Tests
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Browse through all available mock tests.
+            </p>
+            <Link
+              to="/all-mock-tests"
+              className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+            >
+              View Mock Tests
+            </Link>
+          </div>
+
+          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#E6F7FF' }}>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Your Profile
+            </h2>
+            <p className="text-gray-600 mb-4">
+              View and edit your profile information.
+            </p>
+            <Link
+              to="/profile"
+              className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+            >
+              View Profile
+            </Link>
+          </div>
         </main>
       </div>
-
-   
     </div>
   );
 };
