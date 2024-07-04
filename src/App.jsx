@@ -48,9 +48,11 @@ function App() {
   }
 
   return (
-    <div className='bg-orange-50 w-full min-h-screen'>
+    <div className='bg-orange-50 w-full min-h-screen '>
       <Navbar />
+      <div className='pt-7'>
       <Outlet />
+      </div>
       <Footer />
     </div>
   );

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-
 import questionpaperservice from '../../appwrite/mockTest';
 import MockTestGreet from './MockTestGreet';
 
@@ -10,7 +8,6 @@ const StartMockTest = () => {
   const [mockTest, setMockTest] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  const { register, handleSubmit } = useForm();
 
   useEffect(() => {
     const fetchMockTest = async () => {
@@ -18,8 +15,7 @@ const StartMockTest = () => {
         const response = await questionpaperservice.getQuestionPaper(paperId);
         if (response) {
           const parsedQuestions = response.questions.map((question) => JSON.parse(question));
-          const parsedResponses = response.responses.map((response) => JSON.parse(response));
-          setMockTest({ ...response, questions: parsedQuestions, responses: parsedResponses });
+          setMockTest({ ...response, questions: parsedQuestions });
         }
       } catch (error) {
         console.error('Error fetching mock test:', error);
@@ -33,9 +29,27 @@ const StartMockTest = () => {
     setSubmitted(true);
   };
 
-  const onSubmit = async (data) => {
+  const handleOptionChange = (questionId, selectedAnswer) => {
+    setMockTest((prevMockTest) => {
+      const updatedQuestions = prevMockTest.questions.map((ques) => {
+        if (ques.$id === questionId) {
+          return { ...ques, response: selectedAnswer };
+        }
+        return ques;
+      });
+      return { ...prevMockTest, questions: updatedQuestions };
+    });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     try {
-      await questionpaperservice.submitQuestionPaper(paperId, data);
+      const responseArray = mockTest.questions.map((question) => ({
+        questionId: question.$id,
+        selectedAnswer: question.response,
+      }));
+
+      await questionpaperservice.updateAllResponses(paperId, responseArray);
       alert('Exam submitted successfully!');
     } catch (error) {
       console.error('Error submitting exam:', error);
@@ -47,7 +61,7 @@ const StartMockTest = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4  md:p-8 ">
+    <div className="bg-gray-100 min-h-screen p-4 md:p-8">
       {!submitted ? (
         <div>
           <MockTestGreet />
@@ -59,10 +73,10 @@ const StartMockTest = () => {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-10">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-10">
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Question {currentQuestionIndex + 1} of 50
+              Question {currentQuestionIndex + 1} of {mockTest.questions.length}
             </h2>
             <p className="text-gray-600 mb-4 font-semibold">
               {mockTest.questions[currentQuestionIndex].question}
@@ -73,11 +87,12 @@ const StartMockTest = () => {
                   <input
                     type="radio"
                     name={`question-${currentQuestionIndex}`}
-                    value={option}
-                    {...register(`question-${currentQuestionIndex}`)}
+                    value={String.fromCharCode(65 + index)} // A, B, C, D
+                    onChange={() => handleOptionChange(mockTest.questions[currentQuestionIndex].$id, String.fromCharCode(65 + index))}
                     className="mr-2"
+                    checked={mockTest.questions[currentQuestionIndex].response === String.fromCharCode(65 + index)}
                   />
-                  {option}
+                  {String.fromCharCode(65 + index)}. {option}
                 </label>
               ))}
             </div>

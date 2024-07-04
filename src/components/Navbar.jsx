@@ -1,6 +1,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink } from 'react-router-dom'
+import { FaUserCircle } from 'react-icons/fa'
 import authService from '../appwrite/auth'
 import { removeUser } from '../store/userSlice'
 
@@ -20,16 +21,29 @@ const Navbar = () => {
   }
 
   return (
-    <div className='bg-blue-500 h-10 w-full p-2 flex justify-between fixed z-10'>
-        <div className='font-bold text-white'>
+    <div className='bg-blue-600 h-14 w-full p-3 flex justify-between items-center fixed z-10 shadow-md'>
+        <div className='font-bold text-white text-lg'>
             ITI MOCK TEST
         </div>
-        <div className=' text-black flex gap-4 font-semibold'>
-          <NavLink to={'about'}>About</NavLink>
-          
-         {user ?  <> <NavLink to={'dash'}>Home</NavLink> <button onClick={handleLogout}>Logout</button></> : <><NavLink to={'login'}>Login</NavLink> <NavLink to={'signup'}>SignUp</NavLink></>}
-          
-            
+        <div className='text-white flex gap-6 items-center font-semibold'>
+          <NavLink to='/about' className='hover:text-gray-200'>About</NavLink>
+          {user ? (
+            <>
+              <NavLink to='/dash' className='hover:text-gray-200'>Home</NavLink>
+              <div className='relative group p-2'>
+                <FaUserCircle size={24} className='cursor-pointer' />
+                <div className='absolute right-0 top-8 w-40 bg-white text-black rounded-md shadow-lg p-2 hidden group-hover:block'>
+                  <NavLink to='/profile' className='block px-4 py-2 hover:bg-gray-200 rounded-md'>Profile</NavLink>
+                  <button onClick={handleLogout} className='block w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md'>Logout</button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <NavLink to='/login' className='hover:text-gray-200'>Login</NavLink>
+              <NavLink to='/signup' className='hover:text-gray-200'>SignUp</NavLink>
+            </>
+          )}
         </div>
     </div>
   )

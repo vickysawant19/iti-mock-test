@@ -3,8 +3,6 @@ import quesdbservice from "./database";
 import { appwriteService } from "./appwriteConfig";
 import conf from "../config/config";
 
-
-
 class QuestionPaperService {
     constructor() {
         this.database = appwriteService.getDatabases();
@@ -15,37 +13,36 @@ class QuestionPaperService {
 
     async generateQuestionPaper(userId, tradeId, year) {
         try {
-            // Fetch questions filtered by tradeId and year
-            const questions = await quesdbservice.listQuestions([Query.equal("tradeId",tradeId),Query.equal("year",year)]);
-            console.log(questions);
-            
-            // Randomly select 50 questions
+            const questions = await quesdbservice.listQuestions([
+                Query.equal("tradeId", tradeId),
+                Query.equal("year", year)
+            ]);
+
             const selectedQuestions = this.getRandomQuestions(questions.documents, 50);
-            console.log("quess",selectedQuestions);
 
-            const serializedQuestions = selectedQuestions.map(question => JSON.stringify(question));
-
-
-            // Initialize responses with null for each question
-            const responses = selectedQuestions.map(question => ({
-                questionId: question.$id,
-                selectedAnswer: null
+            const questionsWithResponses = selectedQuestions.map(question => ({
+                ...question,
+                response: null
             }));
 
-            const serializedResponses = responses.map(res => JSON.stringify(res))
+            const serializedQuestions = questionsWithResponses.map(question => JSON.stringify(question));
 
-            // Create a new question paper document
             const questionPaper = {
                 userId,
                 tradeId,
                 year,
                 questions: serializedQuestions,
-                responses: serializedResponses,
-                score: null, // Initially null, will be updated upon submission
-                submitted: false, // To indicate if the paper is submitted
+                score: null,
+                submitted: false
             };
-            const response = await this.database.createDocument(this.databaseId, this.questionPapersCollectionId, 'unique()', questionPaper);
-            console.log(response);
+
+            const response = await this.database.createDocument(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                'unique()',
+                questionPaper
+            );
+
             return response;
         } catch (error) {
             console.error('Error generating question paper:', error);
@@ -57,11 +54,13 @@ class QuestionPaperService {
         return shuffled.slice(0, count);
     }
 
-    
-
     async getQuestionPaper(paperId) {
         try {
-            const response = await this.database.getDocument(this.databaseId, this.questionPapersCollectionId, paperId);
+            const response = await this.database.getDocument(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                paperId
+            );
             return response;
         } catch (error) {
             console.error('Error getting question paper:', error);
@@ -75,13 +74,20 @@ class QuestionPaperService {
                 throw new Error('Cannot update responses for a submitted paper');
             }
 
-            const updatedResponses = paper.responses.map(response => 
-                response.questionId === questionId ? { ...response, selectedAnswer } : response
-            );
-
-            const response = await quesdbservice.updateDocument(this.databaseId, this.questionPapersCollectionId, paperId, {
-                responses: updatedResponses
+            const updatedQuestions = paper.questions.map(question => {
+                const parsedQuestion = JSON.parse(question);
+                if (parsedQuestion.$id === questionId) {
+                    parsedQuestion.response = selectedAnswer;
+                }
+                return JSON.stringify(parsedQuestion);
             });
+
+            const response = await quesdbservice.updateDocument(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                paperId,
+                { questions: updatedQuestions }
+            );
 
             return response;
         } catch (error) {
@@ -89,29 +95,54 @@ class QuestionPaperService {
         }
     }
 
-    async submitQuestionPaper(paperId, score) {
+    async updateAllResponses(paperId, responses) {
         try {
             const paper = await this.getQuestionPaper(paperId);
             if (paper.submitted) {
-                throw new Error('Paper has already been submitted');
+                throw new Error('Cannot update responses for a submitted paper');
             }
 
-            const response = await this.database.updateDocument(this.databaseId, this.questionPapersCollectionId, paperId, {
-                score,
-                submitted: true
+            let score = 0;
+
+            const updatedQuestions = paper.questions.map(question => {
+                const parsedQuestion = JSON.parse(question);
+                const response = responses.find(res => res.questionId === parsedQuestion.$id);
+                if (response) {
+                    parsedQuestion.response = response.selectedAnswer;
+                    const isCorrect = parsedQuestion.response === parsedQuestion.correctAnswer;
+                    if (isCorrect) score += 1;
+                    parsedQuestion.result = isCorrect;
+                }
+                return JSON.stringify(parsedQuestion);
             });
+
+            const response = await this.database.updateDocument(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                paperId,
+                {
+                    questions: updatedQuestions,
+                    score,
+                    submitted: true
+                }
+            );
 
             return response;
         } catch (error) {
-            console.error('Error submitting question paper:', error);
+            console.error('Error updating all responses:', error);
         }
     }
 
     async getUserResults(userId) {
         try {
-            const response = await quesdbservice.listDocuments(this.databaseId, this.questionPapersCollectionId, [], {
-                filters: [`userId=${userId}`, `submitted=true`]
-            });
+            const response = await quesdbservice.listDocuments(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                [],
+                {
+                    filters: [`userId=${userId}`, `submitted=true`]
+                }
+            );
             return response.documents;
         } catch (error) {
             console.error('Error getting user results:', error);
@@ -120,14 +151,17 @@ class QuestionPaperService {
 
     async getQuestionPaperByUserId(userId) {
         try {
-            const response = await this.database.listDocuments(this.databaseId, this.questionPapersCollectionId, [], {
-                filters: [`userId=${userId}`]
-            });
+            const response = await this.database.listDocuments(
+                this.databaseId,
+                this.questionPapersCollectionId,
+                [Query.equal('userId', userId)],
+            );
             return response.documents;
         } catch (error) {
             console.error('Error getting question paper by user ID:', error);
         }
     }
 }
-const questionpaperservice = new QuestionPaperService;
+
+const questionpaperservice = new QuestionPaperService();
 export default questionpaperservice;

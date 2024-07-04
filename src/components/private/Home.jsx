@@ -32,7 +32,7 @@ const Home = () => {
 
           <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#FFEBE6' }}>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Take a Mock Exam
+              Create a Mock Exam
             </h2>
             <p className="text-gray-600 mb-4">
               Simulate exam conditions with our mock tests.
@@ -41,7 +41,7 @@ const Home = () => {
               to="/mock-exam"
               className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
             >
-              Start Mock Exam
+              Create Mock Exam
             </Link>
           </div>
 
@@ -75,20 +75,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6" style={{ backgroundColor: '#E6F7FF' }}>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Your Profile
-            </h2>
-            <p className="text-gray-600 mb-4">
-              View and edit your profile information.
-            </p>
-            <Link
-              to="/profile"
-              className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
-            >
-              View Profile
-            </Link>
-          </div>
+        
         </main>
       </div>
     </div>
