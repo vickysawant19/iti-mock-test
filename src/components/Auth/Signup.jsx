@@ -1,61 +1,61 @@
-import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
-import { IoMdEye, IoMdEyeOff } from "react-icons/io"
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import authService from '../../appwrite/auth'
-import { useDispatch, useSelector } from 'react-redux'
-import { addUser } from '../../store/userSlice'
-
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import authService from "../../appwrite/auth";
+import { useDispatch, useSelector } from "react-redux";
+import { addUser } from "../../store/userSlice";
+import students from "../../assets/students.jpeg";
 
 const Signup = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch
-  } = useForm()
+    watch,
+  } = useForm();
 
-  const dispatch = useDispatch()
-  const user = useSelector(state =>  state.user)
-  const navigate = useNavigate()
- useEffect(()=>{
-  if(user){
-    navigate('/dash')
-  }
- },[user])
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (user) {
+      navigate("/dash");
+    }
+  }, [user]);
 
   const onSubmit = async (data) => {
-    console.log(data)
+    console.log(data);
     try {
-      const user = await authService.createAccount(data)
-      if(user){
-        dispatch(addUser(user))
+      const user = await authService.createAccount(data);
+      if (user) {
+        dispatch(addUser(user));
       }
-      console.log('success');
-      toast.success('Signup successful!')
+      console.log("success");
+      toast.success("Signup successful!");
     } catch (error) {
-      toast.error(`Signup failed: ${error.message}`)
+      toast.error(`Signup failed: ${error.message}`);
     }
-  }
+  };
 
-  const password = watch('password', '')
+  const password = watch("password", "");
 
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen">
       <div className="w-1/2 h-screen hidden lg:block">
         <img
-          src="https://placehold.co/800x/667fff/ffffff.png?text=Your+Image&font=Montserrat"
+          src={students}
           alt="Placeholder Image"
           className="object-cover w-full h-full"
         />
       </div>
 
-      <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2">
+      <div className="lg:p-20 md:p-24 sm:20 p-8 w-full lg:w-2/3">
         <h1 className="text-2xl font-semibold mb-4">SignUp</h1>
         <form onSubmit={handleSubmit(onSubmit)} method="POST">
           <div className="mb-4">
@@ -68,7 +68,7 @@ const Signup = () => {
               name="name"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
-              {...register('name', { required: 'Name is required' })}
+              {...register("name", { required: "Name is required" })}
             />
             {errors.name && (
               <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
@@ -85,10 +85,12 @@ const Signup = () => {
               name="email"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
-              {...register('email', { required: 'Email is required' })}
+              {...register("email", { required: "Email is required" })}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -97,21 +99,21 @@ const Signup = () => {
               Password
             </label>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               id="password"
               name="password"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
-              {...register('password', {
-                required: 'Password is required',
+              {...register("password", {
+                required: "Password is required",
                 minLength: {
                   value: 8,
-                  message: 'Password must be at least 8 characters long'
+                  message: "Password must be at least 8 characters long",
                 },
                 pattern: {
                   value: /^[A-Za-z0-9]+$/,
-                  message: 'Password must be alphanumeric'
-                }
+                  message: "Password must be alphanumeric",
+                },
               })}
             />
             <button
@@ -122,7 +124,9 @@ const Signup = () => {
               {showPassword ? <IoMdEyeOff /> : <IoMdEye />}
             </button>
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
@@ -131,15 +135,15 @@ const Signup = () => {
               Confirm Password
             </label>
             <input
-              type={showConfirmPassword ? 'text' : 'password'}
+              type={showConfirmPassword ? "text" : "password"}
               id="cpassword"
               name="cpassword"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
-              {...register('cpassword', {
-                required: 'Please confirm your password',
+              {...register("cpassword", {
+                required: "Please confirm your password",
                 validate: (value) =>
-                  value === password || 'Passwords do not match'
+                  value === password || "Passwords do not match",
               })}
             />
             <button
@@ -150,7 +154,9 @@ const Signup = () => {
               {showConfirmPassword ? <IoMdEyeOff /> : <IoMdEye />}
             </button>
             {errors.cpassword && (
-              <p className="text-red-500 text-sm mt-1">{errors.cpassword.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.cpassword.message}
+              </p>
             )}
           </div>
 
@@ -170,14 +176,14 @@ const Signup = () => {
 
         <div className="mt-6 text-blue-500 text-center">
           Already have an account?
-          <Link to={'/Login'} className="hover:underline">
-            <span className='ml-2'>Login Here</span>
+          <Link to={"/Login"} className="hover:underline">
+            <span className="ml-2">Login Here</span>
           </Link>
         </div>
       </div>
       <ToastContainer />
     </div>
-  )
-}
+  );
+};
 
-export default Signup
+export default Signup;
