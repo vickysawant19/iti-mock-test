@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import authService from "../appwrite/auth";
 import { removeUser } from "../store/userSlice";
+import logo from "../assets/logo.jpeg";
 
 const Navbar = () => {
   const user = useSelector((state) => state.user);
@@ -23,7 +24,15 @@ const Navbar = () => {
   return (
     <div className="bg-blue-600 h-14 w-full p-3 flex fixed z-10 shadow-md">
       <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto">
-        <div className="font-bold text-white text-lg">ITI MOCK TEST</div>
+        <div className="font-bold text-white text-lg flex items-center gap-2">
+          <img
+            className="w-10 h-10 rounded-full shadow-xl mix-blend-screen"
+            src={logo}
+            alt="ITI"
+            srcset=""
+          />
+          ITI MOCK TEST
+        </div>
         <div className="text-white flex gap-6 items-center font-semibold">
           <NavLink to="/about" className="hover:text-gray-200">
             About
