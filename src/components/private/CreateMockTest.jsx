@@ -32,16 +32,18 @@ const CreateMockTest = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    const trade = trades.find((trade) => trade.$id === data.tradeId);
+    data.tradeName = trade.tradeName;
+    data.userName = user.name;
+    data.userId = user.$id;
+    console.log(data);
     try {
-      data.userId = user.$id;
       const newMockTest = await questionpaperservice.generateQuestionPaper(
-        data.userId,
-        data.trade,
-        data.year
+        data
       );
       toast.success("Mock test created successfully!");
       reset();
-      navigate(`/start-mock-test/${newMockTest.$id}`);
+      // navigate(`/start-mock-test/${newMockTest.$id}`);
     } catch (error) {
       toast.error(`Error creating mock test: ${error.message}`);
     } finally {
@@ -63,7 +65,7 @@ const CreateMockTest = () => {
             </label>
             <select
               id="trade"
-              {...register("trade", { required: "Trade is required" })}
+              {...register("tradeId", { required: "Trade is required" })}
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
             >
               <option value="">Select Trade</option>

@@ -1,29 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import questionpaperservice from '../../appwrite/mockTest';
-import MockTestGreet from './MockTestGreet';
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import questionpaperservice from "../../appwrite/mockTest";
+import MockTestGreet from "./MockTestGreet";
+import { ClipLoader } from "react-spinners";
 
 const StartMockTest = () => {
   const { paperId } = useParams();
   const [mockTest, setMockTest] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   useEffect(() => {
     const fetchMockTest = async () => {
       try {
         const response = await questionpaperservice.getQuestionPaper(paperId);
         if (response) {
-          const parsedQuestions = response.questions.map((question) => JSON.parse(question));
+          const parsedQuestions = response.questions.map((question) =>
+            JSON.parse(question)
+          );
           setMockTest({ ...response, questions: parsedQuestions });
         }
       } catch (error) {
-        console.error('Error fetching mock test:', error);
+        console.error("Error fetching mock test:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchMockTest();
-  }, [paperId]);
+  }, [paperId, submitted]);
+
+  console.log(mockTest);
 
   const handleStartExam = () => {
     setSubmitted(true);
@@ -42,6 +51,7 @@ const StartMockTest = () => {
   };
 
   const handleSubmit = async (event) => {
+    setIsSubmitLoading(true);
     event.preventDefault();
     try {
       const responseArray = mockTest.questions.map((question) => ({
@@ -50,14 +60,21 @@ const StartMockTest = () => {
       }));
 
       await questionpaperservice.updateAllResponses(paperId, responseArray);
-      alert('Exam submitted successfully!');
+      alert("Exam submitted successfully!");
+      setSubmitted(true);
     } catch (error) {
-      console.error('Error submitting exam:', error);
+      console.error("Error submitting exam:", error);
+    } finally {
+      setIsSubmitLoading(false);
     }
   };
 
-  if (!mockTest) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <ClipLoader size={150} color={"#123abc"} loading={isLoading} />
+      </div>
+    );
   }
 
   return (
@@ -82,50 +99,86 @@ const StartMockTest = () => {
               {mockTest.questions[currentQuestionIndex].question}
             </p>
             <div className="space-y-2">
-              {mockTest.questions[currentQuestionIndex].options.map((option, index) => (
-                <label key={index} className="block text-gray-700">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestionIndex}`}
-                    value={String.fromCharCode(65 + index)} // A, B, C, D
-                    onChange={() => handleOptionChange(mockTest.questions[currentQuestionIndex].$id, String.fromCharCode(65 + index))}
-                    className="mr-2"
-                    checked={mockTest.questions[currentQuestionIndex].response === String.fromCharCode(65 + index)}
-                  />
-                  {String.fromCharCode(65 + index)}. {option}
-                </label>
-              ))}
+              {mockTest.questions[currentQuestionIndex].options.map(
+                (option, index) => (
+                  <label key={index} className="block text-gray-700">
+                    <input
+                      type="radio"
+                      name={`question-${currentQuestionIndex}`}
+                      value={String.fromCharCode(65 + index)} // A, B, C, D
+                      onChange={() =>
+                        handleOptionChange(
+                          mockTest.questions[currentQuestionIndex].$id,
+                          String.fromCharCode(65 + index)
+                        )
+                      }
+                      className="mr-2"
+                      checked={
+                        mockTest.questions[currentQuestionIndex].response ===
+                        String.fromCharCode(65 + index)
+                      }
+                    />
+                    {String.fromCharCode(65 + index)}. {option}
+                  </label>
+                )
+              )}
             </div>
           </div>
           <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
-              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentQuestionIndex((prev) => Math.min(prev + 1, mockTest.questions.length - 1))}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
-            >
-              Next
-            </button>
+            {currentQuestionIndex > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
+                }
+                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md"
+              >
+                Previous
+              </button>
+            )}
+            {currentQuestionIndex < mockTest.questions.length - 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentQuestionIndex((prev) =>
+                    Math.min(prev + 1, mockTest.questions.length - 1)
+                  )
+                }
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+              >
+                Next
+              </button>
+            )}
           </div>
-          <button
-            type="submit"
-            className="block w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md"
-          >
-            Submit Exam
-          </button>
+          <div className="mt-4">
+            {mockTest?.submitted ? (
+              <Link
+                to={`/show-mock-test/${paperId}`}
+                className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-center"
+              >
+                View Result
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitLoading}
+                className="block w-full bg-green-500 disabled:bg-gray-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md"
+              >
+                Submit Exam
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap mt-4">
             {mockTest.questions.map((_, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => setCurrentQuestionIndex(index)}
-                className={`m-1 p-2 border rounded-md ${currentQuestionIndex === index ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                className={`m-1 p-2 border rounded-md ${
+                  currentQuestionIndex === index
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-800"
+                }`}
               >
                 {index + 1}
               </button>

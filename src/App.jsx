@@ -48,9 +48,9 @@ function App() {
   }
 
   return (
-    <div className="bg-orange-50 w-full min-h-screen ">
+    <div className="bg-gray-100 w-full min-h-screen ">
       <Navbar />
-      <div className="pt-7">
+      <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
         <Outlet />
       </div>
       <Footer />
