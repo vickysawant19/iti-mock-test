@@ -162,7 +162,7 @@ const StartMockTest = () => {
               <button
                 type="submit"
                 disabled={isSubmitLoading}
-                className="block w-full bg-green-500 disabled:bg-gray-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md"
+                className="block w-full bg-red-500 disabled:bg-gray-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md"
               >
                 Submit Exam
               </button>
