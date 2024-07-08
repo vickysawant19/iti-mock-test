@@ -29,7 +29,6 @@ const Navbar = () => {
             className="w-10 h-10 rounded-full shadow-xl mix-blend-screen"
             src={logo}
             alt="ITI"
-            srcset=""
           />
           ITI MOCK TEST
         </div>

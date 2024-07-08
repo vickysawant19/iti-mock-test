@@ -8,11 +8,12 @@ import { useSelector } from "react-redux";
 import tradeservice from "../../appwrite/tradedetails";
 
 const EditQuestion = () => {
-  const { register, handleSubmit, setValue } = useForm();
+  const { register, handleSubmit, setValue, reset, watch } = useForm();
   const { quesId } = useParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
+  const [selectedTrade, setSelectedTrade] = useState(null);
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
@@ -21,7 +22,8 @@ const EditQuestion = () => {
       try {
         const question = await quesdbservice.getQuestion(quesId);
         setValue("question", question.question);
-        setValue("tradeId", question.tradeId);
+        setValue("tradeName", question.tradeName);
+        setSelectedTrade(question.tradeName);
         question.options.forEach((option, index) =>
           setValue(`options.${index}`, option)
         );
@@ -45,6 +47,12 @@ const EditQuestion = () => {
     fetchTrades();
   }, [quesId, setValue]);
 
+  const onTradeChange = (e) => {
+    const selectedTradeName = e.target.value;
+    setSelectedTrade(selectedTradeName);
+    setValue("tradeId", ""); // Reset tradeId when tradeName changes
+  };
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     if (!data.correctAnswer) {
@@ -52,7 +60,19 @@ const EditQuestion = () => {
       setIsLoading(false);
       return;
     }
+
+    const trade = trades.find(
+      (trade) => trade.tradeName === data.tradeName && trade.year === data.year
+    );
+
+    if (!trade) {
+      toast.error("Invalid trade selected");
+      setIsLoading(false);
+      return;
+    }
+
     data.userId = user.$id;
+    data.tradeId = trade.$id; // Set the correct tradeId
 
     try {
       await quesdbservice.updateQuestion(quesId, data);
@@ -64,6 +84,8 @@ const EditQuestion = () => {
       setIsLoading(false);
     }
   };
+
+  const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -78,44 +100,51 @@ const EditQuestion = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-6">
               <label
-                htmlFor="trade"
+                htmlFor="tradeName"
                 className="block text-gray-800 font-semibold mb-2"
               >
                 Trade
               </label>
               <select
-                id="trade"
-                {...register("tradeId", { required: "Trade is required" })}
+                id="tradeName"
+                {...register("tradeName", { required: "Trade is required" })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                onChange={onTradeChange}
               >
                 <option value="">Select Trade</option>
-                {trades.map((trade) => (
-                  <option key={trade.$id} value={trade.$id}>
-                    {trade.tradeName}
+                {uniqueTradeNames.map((tradeName) => (
+                  <option key={tradeName} value={tradeName}>
+                    {tradeName}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="mb-6">
-              <label
-                htmlFor="trade"
-                className="block text-gray-800 font-semibold mb-2"
-              >
-                Year
-              </label>
-              <select
-                id="Year"
-                {...register("year", { required: "Year is required" })}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-              >
-                <option value="">Select Year</option>
-                {trades.map((trade) => (
-                  <option key={trade.$id} value={trade.year}>
-                    {trade.year} YEAR
-                  </option>
-                ))}
-              </select>
-            </div>
+
+            {selectedTrade && (
+              <div className="mb-6">
+                <label
+                  htmlFor="year"
+                  className="block text-gray-800 font-semibold mb-2"
+                >
+                  Year
+                </label>
+                <select
+                  id="year"
+                  {...register("year", { required: "Year is required" })}
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Select Year</option>
+                  {trades
+                    .filter((trade) => trade.tradeName === selectedTrade)
+                    .map((trade) => (
+                      <option key={trade.$id} value={trade.year}>
+                        {trade.year} YEAR
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
             <div className="mb-6">
               <label
                 htmlFor="question"

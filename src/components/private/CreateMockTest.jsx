@@ -1,46 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-
 import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 
 import tradeservice from "../../appwrite/tradedetails";
-import QuestionPaperService from "../../appwrite/mockTest";
 import questionpaperservice from "../../appwrite/mockTest";
 
 const CreateMockTest = () => {
   const { register, handleSubmit, reset, setValue } = useForm();
-  const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const [trades, setTrades] = useState();
+  const user = useSelector((state) => state.user);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [trades, setTrades] = useState([]);
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const navigate = useNavigate();
   const subjects = ["TRADE THEORY"];
 
-  const fetchTrades = async () => {
-    const resp = await tradeservice.listTrades();
-    if (resp) {
-      setTrades(resp.documents);
-    }
-  };
   useEffect(() => {
+    const fetchTrades = async () => {
+      const resp = await tradeservice.listTrades();
+      if (resp) {
+        setTrades(resp.documents);
+      }
+    };
+
     fetchTrades();
-    console.log(trades);
   }, []);
+
+  const onTradeChange = (e) => {
+    const selectedTradeName = e.target.value;
+    setSelectedTrade(selectedTradeName);
+    setValue("tradeId", ""); // Reset tradeId when tradeName changes
+  };
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    const trade = trades.find((trade) => trade.$id === data.tradeId);
+
+    const trade = trades.find(
+      (trade) => trade.tradeName === data.tradeName && trade.year === data.year
+    );
+
+    if (!trade) {
+      toast.error("Invalid trade selected");
+      setIsLoading(false);
+      return;
+    }
+
     data.tradeName = trade.tradeName;
     data.userName = user.name;
     data.userId = user.$id;
-    console.log(data);
+    data.tradeId = trade.$id; // Set the correct tradeId
+
     try {
       const newMockTest = await questionpaperservice.generateQuestionPaper(
         data
       );
+
       toast.success("Mock test created successfully!");
       reset();
       // navigate(`/start-mock-test/${newMockTest.$id}`);
@@ -51,6 +69,10 @@ const CreateMockTest = () => {
     }
   };
 
+  const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
+
+  console.log(uniqueTradeNames);
+
   return (
     <div className="bg-gray-100 min-h-screen flex items-center justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
@@ -58,48 +80,54 @@ const CreateMockTest = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
             <label
-              htmlFor="trade"
+              htmlFor="tradeName"
               className="block text-gray-700 font-bold mb-2"
             >
               Trade
             </label>
             <select
-              id="trade"
-              {...register("tradeId", { required: "Trade is required" })}
+              id="tradeName"
+              {...register("tradeName", { required: "Trade is required" })}
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              onChange={onTradeChange}
             >
               <option value="">Select Trade</option>
-              {trades?.map((trade) => (
-                <option key={trade.$id} value={trade.$id}>
-                  {`${trade.tradeName}`}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="mb-4">
-            <label
-              htmlFor="trade"
-              className="block text-gray-700 font-bold mb-2"
-            >
-              Year
-            </label>
-            <select
-              id="year"
-              {...register("year", { required: "year is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-            >
-              <option value="">Select Year</option>
-              {trades?.map((trade) => (
-                <option key={trade.$id} value={trade.year}>
-                  {`${trade.year}`}
+              {uniqueTradeNames.map((tradeName) => (
+                <option key={tradeName} value={tradeName}>
+                  {tradeName}
                 </option>
               ))}
             </select>
           </div>
 
+          {selectedTrade && (
+            <div className="mb-4">
+              <label
+                htmlFor="year"
+                className="block text-gray-700 font-bold mb-2"
+              >
+                Year
+              </label>
+              <select
+                id="year"
+                {...register("year", { required: "Year is required" })}
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Select Year</option>
+                {trades
+                  .filter((trade) => trade.tradeName === selectedTrade)
+                  .map((trade) => (
+                    <option key={trade.$id} value={trade.year}>
+                      {trade.year}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
           <div className="mb-4">
             <label
-              htmlFor="trade"
+              htmlFor="subject"
               className="block text-gray-700 font-bold mb-2"
             >
               Subject
@@ -110,9 +138,9 @@ const CreateMockTest = () => {
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
             >
               <option value="">Select Subject</option>
-              {subjects?.map((subject) => (
+              {subjects.map((subject) => (
                 <option key={subject} value={subject}>
-                  {`${subject}`}
+                  {subject}
                 </option>
               ))}
             </select>

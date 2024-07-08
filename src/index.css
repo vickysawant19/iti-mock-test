@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom toast container for mobile */
+@media (max-width: 768px) {
+    .custom-toast-container {
+      width: 50% !important; /* Set the width to 50% on mobile devices */
+      left: 5% !important; /* Center the toast horizontally */
+    }
+  }
+  

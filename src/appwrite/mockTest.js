@@ -3,7 +3,6 @@ import quesdbservice from "./database";
 import { appwriteService } from "./appwriteConfig";
 import conf from "../config/config";
 import { format } from "date-fns";
-import { v4 as uuidv4 } from "uuid";
 
 class QuestionPaperService {
   constructor() {
@@ -20,6 +19,10 @@ class QuestionPaperService {
         Query.equal("tradeId", tradeId),
         Query.equal("year", year),
       ]);
+
+      if (questions.total <= 0) {
+        throw new Error("No Questions available");
+      }
 
       // Selecting random 50 questions
       const selectedQuestions = this.getRandomQuestions(
@@ -73,7 +76,7 @@ class QuestionPaperService {
       );
       return response;
     } catch (error) {
-      console.error("Error generating question paper:", error);
+      throw error;
     }
   }
 
@@ -99,6 +102,9 @@ class QuestionPaperService {
   async createNewPaperDocument(paperId, userId) {
     try {
       const paper = await this.fetchPaperById(paperId);
+      if (!paper) {
+        throw new Error("No paper available for selected ID");
+      }
 
       const { tradeId, tradeName, year, questions } = paper;
 
@@ -178,6 +184,7 @@ class QuestionPaperService {
       return response;
     } catch (error) {
       console.error("Error updating response:", error);
+      throw error;
     }
   }
 
@@ -219,6 +226,7 @@ class QuestionPaperService {
       return response;
     } catch (error) {
       console.error("Error updating all responses:", error);
+      throw error;
     }
   }
 
@@ -248,6 +256,7 @@ class QuestionPaperService {
       return response.documents;
     } catch (error) {
       console.error("Error getting question paper by user ID:", error);
+      throw error;
     }
   }
 }
