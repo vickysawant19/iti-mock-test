@@ -27,6 +27,8 @@ import StartMockTest from "./components/private/StartMockTest.jsx";
 import ShowMockTest from "./components/private/ShowMockTest.jsx";
 import AttainTest from "./components/private/AttainTest.jsx";
 
+import Dash from "./components/private/Dash.jsx";
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route>
@@ -35,7 +37,8 @@ const router = createBrowserRouter(
         <Route path="/signup" element={<Signup />} />
         <Route path="/about" element={<About />} />
         <Route element={<ProtectedRoute />}>
-          <Route index path="dash" element={<Home />} />
+          <Route index path="home" element={<Home />} />
+          <Route path="dash" element={<Dash />} />
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />
           <Route path="edit/:quesId" element={<EditQuestion />} />

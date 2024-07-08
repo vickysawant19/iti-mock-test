@@ -1,6 +1,6 @@
-import { ID, Query } from 'appwrite';
-import conf from '../config/config';
-import { appwriteService } from './appwriteConfig';
+import { ID, Query } from "appwrite";
+import conf from "../config/config";
+import { appwriteService } from "./appwriteConfig";
 
 export class QuesDbService {
   constructor() {
@@ -9,17 +9,26 @@ export class QuesDbService {
     this.bucket = appwriteService.getStorage();
   }
 
-  async createQuestion({ question, options, correctAnswer, imageId = null, userId, userName, tradeId,year}) {
+  async createQuestion({
+    question,
+    options,
+    correctAnswer,
+    imageId = null,
+    userId,
+    userName,
+    tradeId,
+    year,
+  }) {
     try {
       // Check if the question already exists
       const existingQuestions = await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        [Query.equal('question', question)]
+        [Query.equal("question", question)]
       );
 
       if (existingQuestions.total > 0) {
-        throw new Error('The question already exists in the database.');
+        throw new Error("The question already exists in the database.");
       }
 
       const documentData = {
@@ -30,7 +39,7 @@ export class QuesDbService {
         userId,
         userName,
         tradeId,
-        year
+        year,
       };
 
       return await this.database.createDocument(
@@ -47,9 +56,19 @@ export class QuesDbService {
     }
   }
 
-  async updateQuestion(id, { question, options, correctAnswer, imageId = null, tradeId,year }) {
+  async updateQuestion(
+    id,
+    { question, options, correctAnswer, imageId = null, tradeId, year }
+  ) {
     try {
-      const documentData = { question, options, correctAnswer, imageId, tradeId,year };
+      const documentData = {
+        question,
+        options,
+        correctAnswer,
+        imageId,
+        tradeId,
+        year,
+      };
       return await this.database.updateDocument(
         conf.databaseId,
         conf.quesCollectionId,
@@ -57,22 +76,26 @@ export class QuesDbService {
         documentData
       );
     } catch (error) {
-      console.log('Appwrite error: update Question:', error);
+      console.log("Appwrite error: update Question:", error);
       return false;
     }
   }
 
   async deleteQuestion(id) {
     try {
-      await this.database.deleteDocument(conf.databaseId, conf.quesCollectionId, id);
+      await this.database.deleteDocument(
+        conf.databaseId,
+        conf.quesCollectionId,
+        id
+      );
       return true;
     } catch (error) {
-      console.log('Appwrite error: delete Question:', error);
+      console.log("Appwrite error: delete Question:", error);
       return false;
     }
   }
 
-  async listQuestions(queries = [Query.orderDesc('$createdAt')]) {
+  async listQuestions(queries = [Query.orderDesc("$createdAt")]) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,
@@ -80,8 +103,20 @@ export class QuesDbService {
         queries
       );
     } catch (error) {
-      console.error('Appwrite error: fetching questions:', error);
-      throw new Error(`Error:${error.message.split('.')[0]}`);
+      console.error("Appwrite error: fetching questions:", error);
+      throw new Error(`Error:${error.message.split(".")[0]}`);
+    }
+  }
+  async getQuestionsByUser(userId) {
+    try {
+      return await this.database.listDocuments(
+        conf.databaseId,
+        conf.quesCollectionId,
+        [Query.equal("userId", userId)]
+      );
+    } catch (error) {
+      console.log("Appwrite error: get user Question:", error);
+      return false;
     }
   }
 
@@ -93,7 +128,7 @@ export class QuesDbService {
         id
       );
     } catch (error) {
-      console.log('Appwrite error: get Question:', error);
+      console.log("Appwrite error: get Question:", error);
       return false;
     }
   }
@@ -112,7 +147,7 @@ export class QuesDbService {
       await this.bucket.deleteFile(conf.bucketId, fileId);
       return true;
     } catch (error) {
-      console.log('Appwrite error: delete File:', error);
+      console.log("Appwrite error: delete File:", error);
       return false;
     }
   }
@@ -121,7 +156,7 @@ export class QuesDbService {
     try {
       return await this.bucket.getFilePreview(conf.bucketId, fileId);
     } catch (error) {
-      console.log('Appwrite error: get File Preview:', error);
+      console.log("Appwrite error: get File Preview:", error);
     }
   }
 }

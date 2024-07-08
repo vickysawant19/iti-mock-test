@@ -232,7 +232,7 @@ class QuestionPaperService {
 
   async getUserResults(userId) {
     try {
-      const response = await quesdbservice.listDocuments(
+      const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
         [],

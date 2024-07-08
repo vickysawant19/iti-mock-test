@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-600 text-white pb-2">
+    <footer className="bg-gray-600 text-white pb-9">
       <div className="container px-2 py-8 mx-auto flex justify-center">
         <div className="grid grid-cols-1  gap-6 gap-y-5 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-6 ">
           <div className="sm:col-span-3">
@@ -11,7 +11,6 @@ const Footer = () => {
             </h1>
             <div className="flex flex-col items-center mt-6 space-y-3 md:flex-row md:space-y-0 justify-center">
               <input
-              
                 type="text"
                 className="px-4 py-2 text-gray-200 bg-white border rounded-md focus:border-blue-400 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-opacity-40 focus:ring-blue-300"
                 placeholder="Your Email Address"

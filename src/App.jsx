@@ -21,7 +21,7 @@ function App() {
           if (res) {
             dispatch(addUser(res));
             if (window.location.pathname === "/") {
-              navigate("/dash");
+              navigate("/home");
             }
           }
         }

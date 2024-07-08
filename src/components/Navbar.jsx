@@ -47,7 +47,7 @@ const Navbar = () => {
               <FaBars />
             </button>
             <img
-              className="w-10 h-10 rounded-full shadow-xl mix-blend-screen"
+              className="w-7 rounded-full shadow-xl mix-blend-screen"
               src={logo}
               alt="ITI"
             />
@@ -55,15 +55,23 @@ const Navbar = () => {
           </div>
           <div className="hidden md:flex text-white gap-6 items-center font-semibold">
             <NavLink
-              to="/dash"
-              className="flex items-center gap-2 hover:text-gray-200"
+              to="/home"
+              className={({ isActive }) =>
+                `flex items-center gap-2 hover:text-gray-200 ${
+                  isActive ? "text-gray-300" : ""
+                }`
+              }
             >
               <FaHome />
               <span>Home</span>
             </NavLink>
             <NavLink
               to="/about"
-              className="flex items-center gap-2 hover:text-gray-200"
+              className={({ isActive }) =>
+                `flex items-center gap-2 hover:text-gray-200 ${
+                  isActive ? "text-gray-300" : ""
+                }`
+              }
             >
               <FaInfoCircle />
               <span>About</span>
@@ -103,32 +111,65 @@ const Navbar = () => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full z-20 transition-transform duration-300 transform bg-blue-600 text-white p-4  ${
+        className={`fixed top-0 left-0 h-full z-20 transition-transform duration-300 transform bg-slate-300 text-blue-800 p-6 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } w-1/2 md:w-1/4`}
+        } w-fit md:w-1/4`}
       >
-        <button className="text-white text-2xl mb-4" onClick={toggleMenu}>
-          <FaTimes />
-        </button>
+        <div className=" flex items-center justify-between rounded-xl">
+          <img className="w-10 mix-blend-normal" src={logo} alt="logo" />
+          <button
+            className="text-blue-950 text-2xl  p-2 rounded "
+            onClick={toggleMenu}
+          >
+            <FaBars />
+          </button>
+        </div>
+        {user && (
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
+                isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              }`
+            }
+            onClick={toggleMenu}
+          >
+            <FaUserCircle />
+            <span>Profile</span>
+          </NavLink>
+        )}
         <NavLink
-          to="/dash"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          to="/home"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaHome />
           <span>Home</span>
         </NavLink>
         <NavLink
-          to="/about"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          to="/dash"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
-          <FaInfoCircle />
-          <span>About</span>
+          <FaHome />
+          <span>Dashboard</span>
         </NavLink>
+
         <NavLink
           to="/create-question"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaQuestionCircle />
@@ -136,7 +177,11 @@ const Navbar = () => {
         </NavLink>
         <NavLink
           to="/manage-questions"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaList />
@@ -144,7 +189,11 @@ const Navbar = () => {
         </NavLink>
         <NavLink
           to="/mock-exam"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaBook />
@@ -152,7 +201,11 @@ const Navbar = () => {
         </NavLink>
         <NavLink
           to="/all-mock-tests"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaFileAlt />
@@ -160,28 +213,36 @@ const Navbar = () => {
         </NavLink>
         <NavLink
           to="/attain-test"
-          className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
           onClick={toggleMenu}
         >
           <FaKey />
           <span>Attain Test</span>
         </NavLink>
+        <NavLink
+          to="/about"
+          className={({ isActive }) =>
+            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
+              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+            }`
+          }
+          onClick={toggleMenu}
+        >
+          <FaInfoCircle />
+          <span>About</span>
+        </NavLink>
         {user ? (
           <>
-            <NavLink
-              to="/profile"
-              className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
-              onClick={toggleMenu}
-            >
-              <FaUserCircle />
-              <span>Profile</span>
-            </NavLink>
             <button
               onClick={() => {
                 handleLogout();
                 toggleMenu();
               }}
-              className="block w-full text-left py-2 hover:bg-blue-300 p-2 rounded-xl flex items-center gap-2"
+              className=" text-xl mt-3 text-left py-2 hover:bg-blue-300 p-2 absolute bottom-4 rounded-xl flex items-center gap-2"
             >
               <FaUserCircle />
               <span>Logout</span>
@@ -191,7 +252,11 @@ const Navbar = () => {
           <>
             <NavLink
               to="/login"
-              className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+              className={({ isActive }) =>
+                `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
+                  isActive ? "bg-blue-500" : ""
+                }`
+              }
               onClick={toggleMenu}
             >
               <FaUserCircle />
@@ -199,7 +264,11 @@ const Navbar = () => {
             </NavLink>
             <NavLink
               to="/signup"
-              className="flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl"
+              className={({ isActive }) =>
+                `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
+                  isActive ? "bg-blue-500" : ""
+                }`
+              }
               onClick={toggleMenu}
             >
               <FaUserCircle />
