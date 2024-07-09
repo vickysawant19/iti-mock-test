@@ -13,6 +13,7 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const res = await functions.createExecution("668d60ac00136c510e08");
+
         console.log(JSON.parse(res.responseBody));
       } catch (error) {
         console.log(error);
