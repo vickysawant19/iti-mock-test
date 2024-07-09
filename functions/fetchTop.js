@@ -13,9 +13,10 @@ export default async ({ req, res, log, error }) => {
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID
     );
-    return res.send(JSON.stringify(res));
+
+    return res.json(res);
   } catch (err) {
     error(error);
-    res.json({ error: error.message });
+    return res.json({ error: error.message });
   }
 };
