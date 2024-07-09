@@ -1,6 +1,6 @@
-const sdk = require("node-appwrite");
+import { Client, Account, Databases } from "node-appwrite";
 
-module.exports = async function ({ req, res, log, error }) {
+export default async ({ req, res, log, error }) => {
   try {
     // Ensure req is defined
     if (!req || !req.headers) {
