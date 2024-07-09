@@ -9,11 +9,11 @@ export default async ({ req, res, log, error }) => {
   const database = new Databases(client);
 
   try {
-    const res = await database.listDocuments(
+    const response = await database.listDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID
     );
-    log(JSON.stringify(res));
+    log(JSON.stringify(response));
     return res.send(res);
   } catch (err) {
     error(err);
