@@ -1,34 +1,38 @@
-import { Account, Client, Databases, Storage } from 'appwrite';
-import conf from '../config/config';
+import { Account, Client, Databases, Functions, Storage } from "appwrite";
+import conf from "../config/config";
 
 class AppwriteService {
-    constructor() {
-        this.client = new Client();
+  constructor() {
+    this.client = new Client();
 
-        this.client
-            .setEndpoint(conf.appwriteUrl) // Your Appwrite Endpoint
-            .setProject(conf.projectId); // Your project ID
+    this.client
+      .setEndpoint(conf.appwriteUrl) // Your Appwrite Endpoint
+      .setProject(conf.projectId); // Your project ID
 
-        this.databases = new Databases(this.client);
-        this.account = new Account(this.client);
-        this.bucket = new Storage(this.client);
-    }
+    this.databases = new Databases(this.client);
+    this.account = new Account(this.client);
+    this.bucket = new Storage(this.client);
+    this.functions = new Functions(this.client);
+  }
 
-    getClient() {
-        return this.client;
-    }
+  getClient() {
+    return this.client;
+  }
 
-    getDatabases() {
-        return this.databases;
-    }
+  getDatabases() {
+    return this.databases;
+  }
 
-    getAccount() {
-        return this.account;
-    }
+  getAccount() {
+    return this.account;
+  }
 
-    getStorage() {
-        return this.bucket;
-    }
+  getStorage() {
+    return this.bucket;
+  }
+  getFunctions() {
+    return this.functions;
+  }
 }
 
 const appwriteService = new AppwriteService();
