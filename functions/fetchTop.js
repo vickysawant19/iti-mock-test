@@ -30,7 +30,7 @@ export default async ({ req, res, log, error }) => {
         ),
         database.listDocuments(
           process.env.APPWRITE_DATABASE_ID,
-          process.env.APPWRITE_TEST_COLLECTION_ID,
+          process.env.QUESTIONPAPER_COLLECTION_ID,
           [Query.greaterThanEqual("$createdAt", startDate)]
         ),
       ]);

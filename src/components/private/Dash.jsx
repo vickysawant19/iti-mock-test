@@ -36,8 +36,9 @@ const Dashboard = () => {
       try {
         const res = await functions.createExecution("668d60ac00136c510e08");
         const parsedRes = await JSON.parse(res.responseBody);
-        setTopContributors(parsedRes.topContributors);
-        setTopScorers(parsedRes.topScorers);
+        console.log(parsedRes);
+        setTopContributors(parsedRes.topContributors.contributors);
+        setTopScorers(parsedRes.topContributors.scorers);
       } catch (error) {
         console.log(error);
       }
