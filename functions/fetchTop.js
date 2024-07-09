@@ -57,7 +57,7 @@ export default async ({ req, res, log, error }) => {
 
       const userScores = testResults.documents.reduce((acc, doc) => {
         if (acc[doc.userId]) {
-          acc[doc.userId].score += doc.score;
+          acc[doc.userId].score = Math.max(doc.score, acc[doc.userId].score);
         } else {
           acc[doc.userId] = {
             userName: doc.userName,
