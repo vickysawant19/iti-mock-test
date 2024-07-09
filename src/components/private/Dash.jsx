@@ -26,7 +26,7 @@ const Dashboard = () => {
   const [mockTests, setMockTests] = useState([]);
   const [scoreData, setScoreData] = useState([]);
   const [topContributors, setTopContributors] = useState({});
-  const [topScorers, setTopScorers] = useState({});
+
   const [timePeriod, setTimePeriod] = useState("month");
 
   useEffect(() => {
@@ -36,9 +36,7 @@ const Dashboard = () => {
       try {
         const res = await functions.createExecution("668d60ac00136c510e08");
         const parsedRes = await JSON.parse(res.responseBody);
-        console.log(parsedRes);
-        setTopContributors(parsedRes.topContributors.contributors);
-        setTopScorers(parsedRes.topContributors.scorers);
+        setTopContributors(parsedRes.topContributors);
       } catch (error) {
         console.log(error);
       }
@@ -203,7 +201,7 @@ const Dashboard = () => {
             <option value="month">Month</option>
           </select>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topContributors[timePeriod]}>
+            <BarChart data={topContributors[timePeriod]?.contributors}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="userName" />
               <YAxis />
@@ -227,7 +225,7 @@ const Dashboard = () => {
             <option value="month">Month</option>
           </select>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topScorers[timePeriod]}>
+            <BarChart data={topContributors[timePeriod]?.scorers}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="userName" />
               <YAxis />

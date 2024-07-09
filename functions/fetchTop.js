@@ -52,7 +52,8 @@ export default async ({ req, res, log, error }) => {
       // Calculate the top scorers
       const userScores = mockTests.documents.reduce((acc, doc) => {
         if (acc[doc.userId]) {
-          acc[doc.userId].score += doc.score || 0;
+          acc[doc.userId].score =
+            Math.max(doc.score, acc[doc.userId].score) || 0;
         } else {
           acc[doc.userId] = {
             userName: doc.userName,
