@@ -1,17 +1,19 @@
 import { Client, Account, Databases } from "node-appwrite";
 
 export default async ({ req, res, log, error }) => {
-  try {
-    // Ensure req is defined
-    if (!req || !req.headers) {
-      throw new Error("Request object is not defined or missing headers");
-    }
-    return res.json({
-      appwrite_url: process.env.APPWRITE_URL,
-    });
+  const client = new Client();
+  client
+    .setEndpoint(process.env.APPWRITE_URL)
+    .setProject(process.env.APPWRITE_PROJECT_ID);
 
-    log(req.headers);
-    return res.json({ message: "Got the function data" });
+  const database = new Databases(client);
+
+  try {
+    const res = await database.listDocuments(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.APPWRITE_QUES_COLLECTION_ID
+    );
+    return res.send(res);
   } catch (err) {
     error(error);
     res.status(500).json({ error: error.message });
