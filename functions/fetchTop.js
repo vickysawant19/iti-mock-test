@@ -8,7 +8,7 @@ module.exports = async function ({ req, res, log, error }) {
     }
 
     log(req.headers);
-    res.json({ message: "Got the function data" });
+    return res.json({ message: "Got the function data" });
   } catch (error) {
     error(error);
     res.status(500).json({ error: error.message });
