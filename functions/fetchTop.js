@@ -1,4 +1,4 @@
-// const sdk = require("node-appwrite");
+const sdk = require("node-appwrite");
 
 module.exports = async function (req, res) {
   try {
