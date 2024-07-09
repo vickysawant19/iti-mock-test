@@ -50,15 +50,15 @@ export default async ({ req, res, log, error }) => {
       return sortedUsers;
     };
 
-    const dayContributers = getContributers(startOfDay);
-    const weeekContributers = getContributers(startOfWeek);
-    const monthContributers = getContributers(startOfMonth);
+    const topContributors = {
+      day: await getContributers(startOfDay),
+      week: await getContributers(startOfWeek),
+      month: await getContributers(startOfMonth),
+    };
 
-    log(
-      JSON.stringify({ dayContributers, monthContributers, weeekContributers })
-    );
+    log(JSON.stringify({ topContributors }));
 
-    return res.send({ dayContributers, monthContributers, weeekContributers });
+    return res.json({ topContributors });
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
