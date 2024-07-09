@@ -7,10 +7,10 @@ module.exports = async function ({ req, res, log, error }) {
       throw new Error("Request object is not defined or missing headers");
     }
 
-    context.log(req.headers);
+    log(req.headers);
     res.json({ message: "Got the function data" });
   } catch (error) {
-    context.error(error);
+    error(error);
     res.status(500).json({ error: error.message });
   }
 };
