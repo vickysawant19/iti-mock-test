@@ -12,7 +12,7 @@ const Home = () => {
 
     const fetchData = async () => {
       try {
-        const res = await functions.createExecution("668d60c20b2abbc51f56");
+        const res = await functions.createExecution("668d60ac00136c510e08");
         console.log(res);
       } catch (error) {
         console.log(error);
