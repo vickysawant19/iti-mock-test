@@ -12,7 +12,7 @@ export default async ({ req, res, log, error }) => {
 
     log(req.headers);
     return res.json({ message: "Got the function data" });
-  } catch (error) {
+  } catch (err) {
     error(error);
     res.status(500).json({ error: error.message });
   }
