@@ -6,7 +6,7 @@ export default async ({ req, res, log, error }) => {
     if (!req || !req.headers) {
       throw new Error("Request object is not defined or missing headers");
     }
-    return req.json({
+    return res.json({
       appwrite_url: process.env.APPWRITE_URL,
     });
 
