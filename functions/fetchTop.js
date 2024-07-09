@@ -1,6 +1,6 @@
 const sdk = require("node-appwrite");
 
-module.exports = async function (req, res) {
+module.exports = async function ({ req, res, log, error }) {
   try {
     // Ensure req is defined
     if (!req || !req.headers) {
