@@ -18,24 +18,41 @@ import {
 import { format } from "date-fns";
 import questionpaperservice from "../../appwrite/mockTest";
 import quesdbservice from "../../appwrite/database";
+import { appwriteService } from "../../appwrite/appwriteConfig";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
   const [questionsCreated, setQuestionsCreated] = useState([]);
   const [mockTests, setMockTests] = useState([]);
   const [scoreData, setScoreData] = useState([]);
+  const [topContributors, setTopContributors] = useState({});
+  const [topScorers, setTopScorers] = useState({});
+  const [timePeriod, setTimePeriod] = useState("month");
+
+  useEffect(() => {
+    const functions = appwriteService.getFunctions();
+
+    const fetchData = async () => {
+      try {
+        const res = await functions.createExecution("668d60ac00136c510e08");
+        const parsedRes = await JSON.parse(res.responseBody);
+        setTopContributors(parsedRes.topContributors);
+        setTopScorers(parsedRes.topScorers);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Fetch user's mock tests
         const mockTestsData =
           await questionpaperservice.getQuestionPaperByUserId(user.$id);
 
-        // Group questions by Month
         const groupedTests = groupByMonth(mockTestsData);
 
-        // Convert grouped questions to the format required by the chart
         const formattedTests = Object.entries(groupedTests).map(
           ([date, count]) => ({
             month: date,
@@ -44,7 +61,6 @@ const Dashboard = () => {
         );
         setMockTests(formattedTests);
 
-        // Process data for graphs
         const formattedMockTests = mockTestsData.map((test) => ({
           name: format(new Date(test.$createdAt), "MMM dd, yyyy"),
           score: test.score || 0,
@@ -52,15 +68,12 @@ const Dashboard = () => {
 
         setScoreData(formattedMockTests);
 
-        // Fetch questions created by user
         const questionsCreatedData = await quesdbservice.getQuestionsByUser(
           user.$id
         );
 
-        // Group questions by date
         const groupedQuestions = groupByDate(questionsCreatedData.documents);
 
-        // Convert grouped questions to the format required by the chart
         const formattedQuestions = Object.entries(groupedQuestions).map(
           ([date, count]) => ({
             name: date,
@@ -79,7 +92,6 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  // Function to group questions by date
   const groupByDate = (questions) => {
     const grouped = {};
 
@@ -112,12 +124,15 @@ const Dashboard = () => {
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+  const handleTimePeriodChange = (e) => {
+    setTimePeriod(e.target.value);
+  };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Questions Created */}
         <div className="bg-white shadow-md rounded-lg p-4">
           <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -132,11 +147,8 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Mock Tests Taken */}
-
-        {/* Score Progress */}
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-          <h2 className="text-xl font-semibold mb-4">Score Progress</h2>
+          <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={scoreData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -149,7 +161,6 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Mock Tests Distribution */}
         <div className="bg-white shadow-md rounded-lg p-4">
           <h2 className="text-xl font-semibold mb-4">
             Mock Tests Distribution
@@ -175,6 +186,54 @@ const Dashboard = () => {
               <Tooltip />
               <Legend />
             </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Contributors */}
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-4">Top Contributors</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={topContributors[timePeriod]}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="userName" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="questionsCount" fill="#82ca9d" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Scorers */}
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-4">Top Scorers</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={topScorers[timePeriod]}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="userName" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="score" fill="#ffc658" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>

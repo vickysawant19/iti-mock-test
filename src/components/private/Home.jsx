@@ -7,23 +7,6 @@ import { appwriteService } from "../../appwrite/appwriteConfig";
 const Home = () => {
   const user = useSelector((state) => state.user);
 
-  useEffect(() => {
-    const functions = appwriteService.getFunctions();
-
-    const fetchData = async () => {
-      try {
-        const res = await functions.createExecution("668d60ac00136c510e08");
-
-        console.log(JSON.parse(res.responseBody));
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchData();
-
-    console.log("data");
-  }, []);
-
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">

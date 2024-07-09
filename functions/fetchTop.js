@@ -5,7 +5,6 @@ export default async ({ req, res, log, error }) => {
   client
     .setEndpoint(process.env.APPWRITE_URL)
     .setProject(process.env.APPWRITE_PROJECT_ID);
-  // .setKey(process.env.APPWRITE_API_KEY); // Ensure to set API key if necessary
 
   const database = new Databases(client);
 
@@ -21,13 +20,22 @@ export default async ({ req, res, log, error }) => {
       1
     ).toISOString();
 
-    const getContributors = async (startDate) => {
-      const questions = await database.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        process.env.APPWRITE_QUES_COLLECTION_ID,
-        [Query.greaterThanEqual("$createdAt", startDate)]
-      );
+    const getContributorsAndScorers = async (startDate) => {
+      // Fetch all necessary data in one call
+      const [questions, mockTests] = await Promise.all([
+        database.listDocuments(
+          process.env.APPWRITE_DATABASE_ID,
+          process.env.APPWRITE_QUES_COLLECTION_ID,
+          [Query.greaterThanEqual("$createdAt", startDate)]
+        ),
+        database.listDocuments(
+          process.env.APPWRITE_DATABASE_ID,
+          process.env.APPWRITE_TEST_COLLECTION_ID,
+          [Query.greaterThanEqual("$createdAt", startDate)]
+        ),
+      ]);
 
+      // Calculate the number of questions created by each user
       const userQuestionsCount = questions.documents.reduce((acc, doc) => {
         if (acc[doc.userId]) {
           acc[doc.userId].questionsCount += 1;
@@ -41,55 +49,41 @@ export default async ({ req, res, log, error }) => {
         return acc;
       }, {});
 
-      const sortedUsers = Object.values(userQuestionsCount)
-        .sort((a, b) => b.questionsCount - a.questionsCount)
-        .slice(0, 5);
-
-      return sortedUsers;
-    };
-
-    const getTopScorers = async (startDate) => {
-      const testResults = await database.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        process.env.QUESTIONPAPER_COLLECTION_ID,
-        [Query.greaterThanEqual("$createdAt", startDate)]
-      );
-
-      const userScores = testResults.documents.reduce((acc, doc) => {
+      // Calculate the top scorers
+      const userScores = mockTests.documents.reduce((acc, doc) => {
         if (acc[doc.userId]) {
-          acc[doc.userId].score = Math.max(doc.score, acc[doc.userId].score);
+          acc[doc.userId].score += doc.score || 0;
         } else {
           acc[doc.userId] = {
             userName: doc.userName,
             userId: doc.userId,
-            score: doc.score,
+            score: doc.score || 0,
           };
         }
         return acc;
       }, {});
 
-      const sortedUsers = Object.values(userScores)
+      // Convert to arrays and sort
+      const sortedContributors = Object.values(userQuestionsCount)
+        .sort((a, b) => b.questionsCount - a.questionsCount)
+        .slice(0, 5);
+
+      const sortedScorers = Object.values(userScores)
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
-      return sortedUsers;
+      return { contributors: sortedContributors, scorers: sortedScorers };
     };
 
     const topContributors = {
-      day: await getContributors(startOfDay),
-      week: await getContributors(startOfWeek),
-      month: await getContributors(startOfMonth),
+      day: await getContributorsAndScorers(startOfDay),
+      week: await getContributorsAndScorers(startOfWeek),
+      month: await getContributorsAndScorers(startOfMonth),
     };
 
-    const topScorers = {
-      day: await getTopScorers(startOfDay),
-      week: await getTopScorers(startOfWeek),
-      month: await getTopScorers(startOfMonth),
-    };
+    log(JSON.stringify({ topContributors }));
 
-    log(JSON.stringify({ topContributors, topScorers }));
-
-    return res.json({ topContributors, topScorers });
+    return res.json({ topContributors });
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
