@@ -24,7 +24,11 @@ export default async ({ req, res, log, error }) => {
       if (acc[doc.userId]) {
         acc[doc.userId].questionsCount += 1;
       } else {
-        acc[doc.userId] = { userId: doc.userId, questionsCount: 1 };
+        acc[doc.userId] = {
+          userName: doc.userName,
+          userId: doc.userId,
+          questionsCount: 1,
+        };
       }
       return acc;
     }, {});
@@ -34,24 +38,8 @@ export default async ({ req, res, log, error }) => {
       .sort((a, b) => b.questionsCount - a.questionsCount)
       .slice(0, 5);
 
-    // Fetch user details (assuming you have a user collection or can fetch from user API)
-    const topUsers = await Promise.all(
-      sortedUsers.map(async (user) => {
-        const userDetails = await database.getDocument(
-          process.env.APPWRITE_DATABASE_ID,
-          process.env.APPWRITE_USERS_COLLECTION_ID,
-          user.userId
-        );
-        return {
-          userId: user.userId,
-          userName: userDetails.name, // Assuming 'name' field contains the username
-          questionsCount: user.questionsCount,
-        };
-      })
-    );
-
-    log(JSON.stringify(topUsers));
-    return res.send(topUsers);
+    log(JSON.stringify(sortedUsers));
+    return res.send(sortedUsers);
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
