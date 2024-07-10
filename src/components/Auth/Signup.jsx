@@ -25,7 +25,7 @@ const Signup = () => {
   const navigate = useNavigate();
   useEffect(() => {
     if (user) {
-      navigate("/dash");
+      navigate("/home");
     }
   }, [user]);
 

@@ -15,9 +15,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { format } from "date-fns";
-import questionpaperservice from "../../appwrite/mockTest";
-import quesdbservice from "../../appwrite/database";
+
 import { appwriteService } from "../../appwrite/appwriteConfig";
 
 const Dashboard = () => {

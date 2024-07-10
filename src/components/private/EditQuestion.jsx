@@ -8,43 +8,41 @@ import { useSelector } from "react-redux";
 import tradeservice from "../../appwrite/tradedetails";
 
 const EditQuestion = () => {
-  const { register, handleSubmit, setValue, reset, watch } = useForm();
+  const { register, handleSubmit, setValue, watch } = useForm();
   const { quesId } = useParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
+
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
   useEffect(() => {
-    const fetchQuestion = async () => {
+    const fetchTradesAndQuestion = async () => {
       try {
+        const response = await tradeservice.listTrades();
+        setTrades(response.documents);
+
         const question = await quesdbservice.getQuestion(quesId);
         setValue("question", question.question);
-        setValue("tradeName", question.tradeName);
-        setSelectedTrade(question.tradeName);
+
+        const trade = response.documents.find(
+          (tr) => tr.$id === question.tradeId
+        );
+        setValue("tradeName", trade?.tradeName);
+        setValue("year", question.year);
+        setSelectedTrade(trade?.tradeName);
         question.options.forEach((option, index) =>
           setValue(`options.${index}`, option)
         );
         setValue("correctAnswer", question.correctAnswer);
-        setValue("year", question.year);
       } catch (error) {
-        toast.error("Error fetching question");
+        toast.error("Error fetching data");
       }
     };
 
-    const fetchTrades = async () => {
-      try {
-        const response = await tradeservice.listTrades();
-        setTrades(response.documents);
-      } catch (error) {
-        toast.error("Failed to fetch trades");
-      }
-    };
-
-    fetchQuestion();
-    fetchTrades();
+    fetchTradesAndQuestion();
   }, [quesId, setValue]);
 
   const onTradeChange = (e) => {
@@ -110,6 +108,7 @@ const EditQuestion = () => {
                 {...register("tradeName", { required: "Trade is required" })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 onChange={onTradeChange}
+                value={selectedTrade || ""}
               >
                 <option value="">Select Trade</option>
                 {uniqueTradeNames.map((tradeName) => (
@@ -132,6 +131,7 @@ const EditQuestion = () => {
                   id="year"
                   {...register("year", { required: "Year is required" })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                  value={watch("year") || ""}
                 >
                   <option value="">Select Year</option>
                   {trades
