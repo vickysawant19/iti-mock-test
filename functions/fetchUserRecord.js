@@ -9,7 +9,7 @@ export default async ({ req, res, log, error }) => {
 
   const database = new Databases(client);
 
-  const userId = req.body;
+  const userId = req.body.userId; // Assuming req.body is an object containing userId
 
   try {
     const today = new Date();
@@ -28,25 +28,25 @@ export default async ({ req, res, log, error }) => {
       database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID,
-        [Query.greaterThanEqual("$createdAt", startOfMonth)]
+        [
+          Query.greaterThanEqual("$createdAt", startOfMonth),
+          Query.equal("userId", userId),
+        ]
       ),
       database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.QUESTIONPAPER_COLLECTION_ID,
-        [Query.greaterThanEqual("$createdAt", startOfMonth)]
+        [
+          Query.greaterThanEqual("$createdAt", startOfMonth),
+          Query.equal("userId", userId),
+        ]
       ),
     ]);
 
     const filterAndFormatData = (data, startDate, formatFn) => {
-      const filteredData = data.filter((doc) => {
-        const isUserMatch = doc.userId === userId;
-        const isDateMatch = new Date(doc.$createdAt) >= new Date(startDate);
-        return isUserMatch && isDateMatch;
-      });
-
-      const formattedData = filteredData.reduce((acc, doc) => {
-        return formatFn(acc, doc);
-      }, {});
+      const formattedData = data
+        .filter((doc) => new Date(doc.$createdAt) >= new Date(startDate))
+        .reduce((acc, doc) => formatFn(acc, doc), {});
       return formattedData;
     };
 
@@ -56,7 +56,6 @@ export default async ({ req, res, log, error }) => {
         acc[date] = { date, count: 0 };
       }
       acc[date].count += 1;
-      log(`Formatted question for date ${date}: count=${acc[date].count}`);
       return acc;
     };
 
@@ -66,7 +65,6 @@ export default async ({ req, res, log, error }) => {
         score: doc.score || 0,
       };
       acc.push(scoreEntry);
-      log(`Formatted score for paper ${doc.$id}: score=${scoreEntry.score}`);
       return acc;
     };
 
