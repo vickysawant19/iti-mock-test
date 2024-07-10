@@ -74,7 +74,7 @@ const CreateMockTest = () => {
   console.log(uniqueTradeNames);
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div className="bg-gray-100 min-h-screen flex items-start mt-32 justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6">Create Mock Test</h1>
         <form onSubmit={handleSubmit(onSubmit)}>

@@ -31,6 +31,7 @@ export default async ({ req, res, log, error }) => {
         [
           Query.greaterThanEqual("$createdAt", startOfMonth),
           Query.equal("userId", userId),
+          Query.limit(100),
         ]
       ),
       database.listDocuments(
@@ -39,6 +40,7 @@ export default async ({ req, res, log, error }) => {
         [
           Query.greaterThanEqual("$createdAt", startOfMonth),
           Query.equal("userId", userId),
+          Query.limit(100),
         ]
       ),
     ]);

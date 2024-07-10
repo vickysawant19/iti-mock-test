@@ -23,7 +23,7 @@ const AttainTest = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div className="bg-gray-100 min-h-screen flex items-start mt-32 justify-center">
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">
           Enter Paper ID
