@@ -99,7 +99,7 @@ class QuestionPaperService {
     }
   }
 
-  async createNewPaperDocument(paperId, userId) {
+  async createNewPaperDocument(paperId, userId, userName = null) {
     try {
       const paper = await this.fetchPaperById(paperId);
       if (!paper) {
@@ -122,6 +122,7 @@ class QuestionPaperService {
         paperId,
         questions: processedQuestions,
         userId,
+        userName,
         score: null,
         submitted: false,
       };

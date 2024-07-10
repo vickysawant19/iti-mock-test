@@ -12,6 +12,7 @@ import {
   FaList,
   FaBook,
   FaKey,
+  FaDashcube,
 } from "react-icons/fa";
 import authService from "../appwrite/auth";
 import { removeUser } from "../store/userSlice";
@@ -129,7 +130,9 @@ const Navbar = () => {
             to="/profile"
             className={({ isActive }) =>
               `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-                isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+                isActive
+                  ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                  : "bg-blue-400"
               }`
             }
             onClick={toggleMenu}
@@ -142,7 +145,9 @@ const Navbar = () => {
           to="/home"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -154,12 +159,14 @@ const Navbar = () => {
           to="/dash"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
         >
-          <FaHome />
+          <FaDashcube />
           <span>Dashboard</span>
         </NavLink>
 
@@ -167,7 +174,9 @@ const Navbar = () => {
           to="/create-question"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -179,7 +188,9 @@ const Navbar = () => {
           to="/manage-questions"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -191,7 +202,9 @@ const Navbar = () => {
           to="/mock-exam"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -203,7 +216,9 @@ const Navbar = () => {
           to="/all-mock-tests"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -215,7 +230,9 @@ const Navbar = () => {
           to="/attain-test"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -227,7 +244,9 @@ const Navbar = () => {
           to="/about"
           className={({ isActive }) =>
             `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive ? "bg-blue-500 text-blue-50" : "bg-blue-400"
+              isActive
+                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
+                : "bg-blue-400"
             }`
           }
           onClick={toggleMenu}
@@ -254,7 +273,7 @@ const Navbar = () => {
               to="/login"
               className={({ isActive }) =>
                 `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
-                  isActive ? "bg-blue-500" : ""
+                  isActive ? "bg-blue-800 hover:bg-blue-600" : ""
                 }`
               }
               onClick={toggleMenu}
@@ -266,7 +285,7 @@ const Navbar = () => {
               to="/signup"
               className={({ isActive }) =>
                 `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
-                  isActive ? "bg-blue-500" : ""
+                  isActive ? "bg-blue-800" : ""
                 }`
               }
               onClick={toggleMenu}

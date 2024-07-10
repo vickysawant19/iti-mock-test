@@ -30,6 +30,8 @@ const CreateMockTest = () => {
     fetchTrades();
   }, []);
 
+  console.log(user.labels.includes("admin"));
+
   const onTradeChange = (e) => {
     const selectedTradeName = e.target.value;
     setSelectedTrade(selectedTradeName);
@@ -37,6 +39,10 @@ const CreateMockTest = () => {
   };
 
   const onSubmit = async (data) => {
+    if (!user.labels.includes("admin")) {
+      toast.error("Server Busy! Contact Administration");
+      return;
+    }
     setIsLoading(true);
 
     const trade = trades.find(
@@ -70,8 +76,6 @@ const CreateMockTest = () => {
   };
 
   const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
-
-  console.log(uniqueTradeNames);
 
   return (
     <div className="bg-gray-100 min-h-screen flex items-start mt-32 justify-center">

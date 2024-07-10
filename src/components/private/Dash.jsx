@@ -67,52 +67,6 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={userRecord[timePeriod]?.questionsCreated}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-          <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={userRecord[timePeriod]?.scoresByPaper}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="paperId" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="score" stroke="#ff7300" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Top Contributors */}
         <div className="bg-white shadow-md rounded-lg p-4">
           <h2 className="text-xl font-semibold mb-4">Top Contributors</h2>
@@ -158,6 +112,52 @@ const Dashboard = () => {
               <Legend />
               <Bar dataKey="score" fill="#ffc658" />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={userRecord[timePeriod]?.questionsCreated}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={userRecord[timePeriod]?.scoresByPaper}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="paperId" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="score" stroke="#ff7300" />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </div>

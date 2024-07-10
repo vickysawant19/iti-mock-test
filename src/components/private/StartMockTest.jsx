@@ -53,6 +53,11 @@ const StartMockTest = () => {
   };
 
   const handleSubmit = async (event) => {
+    event.preventDefault();
+    const confirmation = confirm("Do you want to submit the exam?");
+    if (!confirmation) {
+      return;
+    }
     setIsSubmitLoading(true);
     event.preventDefault();
     try {

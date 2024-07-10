@@ -14,7 +14,8 @@ const AttainTest = () => {
     try {
       const newPaper = await questionpaperservice.createNewPaperDocument(
         paperId,
-        user.$id
+        user.$id,
+        user.name
       );
       navigate(`/start-mock-test/${newPaper.$id}`);
     } catch (error) {
