@@ -26,13 +26,14 @@ const Dashboard = () => {
   const [mockTests, setMockTests] = useState([]);
   const [scoreData, setScoreData] = useState([]);
   const [topContributors, setTopContributors] = useState({});
+  const [userRecord, setUserRecord] = useState([]);
 
   const [timePeriod, setTimePeriod] = useState("month");
 
   useEffect(() => {
     const functions = appwriteService.getFunctions();
 
-    const fetchData = async () => {
+    const fetchContributionData = async () => {
       try {
         const res = await functions.createExecution("668d60ac00136c510e08");
         const parsedRes = await JSON.parse(res.responseBody);
@@ -41,8 +42,24 @@ const Dashboard = () => {
         console.log(error);
       }
     };
-    fetchData();
+    fetchContributionData();
+
+    const userPerformance = async () => {
+      try {
+        const res = await functions.createExecution(
+          "668e0d720029625b80c5",
+          user.$id
+        );
+        const parsedRes = await JSON.parse(res.responseBody);
+        setUserRecord(parsedRes.userData);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    userPerformance();
   }, []);
+
+  console.log(userRecord);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -134,6 +151,15 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <div className="bg-white shadow-md rounded-lg p-4">
           <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={questionsCreated}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -148,6 +174,15 @@ const Dashboard = () => {
 
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={scoreData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -164,6 +199,15 @@ const Dashboard = () => {
           <h2 className="text-xl font-semibold mb-4">
             Mock Tests Distribution
           </h2>
+          <select
+            value={timePeriod}
+            onChange={handleTimePeriodChange}
+            className="mb-4 p-2 border rounded"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
