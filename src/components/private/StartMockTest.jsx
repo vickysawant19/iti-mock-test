@@ -34,7 +34,8 @@ const StartMockTest = () => {
     };
 
     fetchMockTest();
-  }, [paperId, submitted]);
+  }, [paperId]);
+  console.log(mockTest);
 
   const handleStartExam = () => {
     setIsGreetShown(true);
@@ -100,9 +101,18 @@ const StartMockTest = () => {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6 mt-10">
           <div className="bg-white p-4 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Question {currentQuestionIndex + 1} of {mockTest.questions.length}
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 ">
+                Question {currentQuestionIndex + 1} of{" "}
+                {mockTest.questions.length}
+              </h2>
+              {mockTest.questions[currentQuestionIndex].userName && (
+                <h6 className="text-xs font-thin text-slate-400">
+                  Created By:{" "}
+                  {mockTest.questions[currentQuestionIndex].userName}
+                </h6>
+              )}
+            </div>
             <p className="text-gray-600 mb-4 font-semibold">
               {mockTest.questions[currentQuestionIndex].question}
             </p>
@@ -176,17 +186,20 @@ const StartMockTest = () => {
               </button>
             )}
           </div>
-          <div className="flex flex-wrap mt-4">
-            {mockTest.questions.map((_, index) => (
+          <div className="flex flex-wrap mt-4 border justify-center">
+            {mockTest.questions.map((ques, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => setCurrentQuestionIndex(index)}
-                className={`m-1 p-2 border rounded-md ${
+                className={`m-1 size-10 p-2 border rounded-md ${
                   currentQuestionIndex === index
                     ? "bg-blue-500 text-white"
                     : "bg-gray-200 text-gray-800"
-                }`}
+                }
+                ${ques.response ? "bg-green-400 " : ""}
+                
+                `}
               >
                 {index + 1}
               </button>

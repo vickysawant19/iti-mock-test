@@ -39,6 +39,7 @@ class QuestionPaperService {
         question: question.question,
         options: question.options,
         userId: question.userId,
+        userName: question.userName,
         correctAnswer: question.correctAnswer,
         tradeId: question.tradeId,
         year: question.year,
@@ -255,7 +256,7 @@ class QuestionPaperService {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
       );
       return response.documents;
     } catch (error) {

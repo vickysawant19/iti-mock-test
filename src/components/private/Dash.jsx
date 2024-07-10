@@ -69,21 +69,23 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Top Contributors */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Top Contributors</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold mb-4">Top Contributors</h2>
+            <select
+              value={timePeriod}
+              onChange={handleTimePeriodChange}
+              className="mb-4 p-2 border rounded"
+            >
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topContributors[timePeriod]?.contributors}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="userName" />
-              <YAxis />
+              <XAxis fontSize={14} dataKey="userName" />
+              <YAxis fontSize={14} />
               <Tooltip />
               <Legend />
               <Bar dataKey="questionsCount" fill="#82ca9d" />
@@ -93,16 +95,18 @@ const Dashboard = () => {
 
         {/* Top Scorers */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Top Scorers</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold mb-4">Top Scorers</h2>
+            <select
+              value={timePeriod}
+              onChange={handleTimePeriodChange}
+              className="mb-4 p-2 border rounded"
+            >
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topContributors[timePeriod]?.scorers}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -116,16 +120,18 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
+            <select
+              value={timePeriod}
+              onChange={handleTimePeriodChange}
+              className="mb-4 p-2 border rounded"
+            >
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={userRecord[timePeriod]?.questionsCreated}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -139,16 +145,18 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-          <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
+            <select
+              value={timePeriod}
+              onChange={handleTimePeriodChange}
+              className="mb-4 p-2 border rounded"
+            >
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={userRecord[timePeriod]?.scoresByPaper}>
               <CartesianGrid strokeDasharray="3 3" />
