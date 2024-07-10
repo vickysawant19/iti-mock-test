@@ -18,7 +18,10 @@ class QuestionPaperService {
       const questions = await quesdbservice.listQuestions([
         Query.equal("tradeId", tradeId),
         Query.equal("year", year),
+        Query.limit(100),
       ]);
+
+      console.log(questions.total);
 
       if (questions.total <= 0) {
         throw new Error("No Questions available");
