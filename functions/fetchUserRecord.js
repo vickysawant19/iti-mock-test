@@ -75,7 +75,7 @@ export default async ({ req, res, log, error }) => {
         startDate,
         formatScores
       );
-      log(groupedQuestions);
+      log("here", groupedQuestions);
       return {
         questionsCreated: Object.values(groupedQuestions),
         scoresByPaper,
