@@ -36,6 +36,7 @@ export default async ({ req, res, log, error }) => {
         [Query.greaterThanEqual("$createdAt", startOfMonth)]
       ),
     ]);
+    log(JSON.stringify(questions));
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -75,7 +76,8 @@ export default async ({ req, res, log, error }) => {
         startDate,
         formatScores
       );
-      log("here", groupedQuestions);
+      log(JSON.stringify(groupedQuestions));
+
       return {
         questionsCreated: Object.values(groupedQuestions),
         scoresByPaper,

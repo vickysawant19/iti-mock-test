@@ -60,6 +60,7 @@ const Dashboard = () => {
   }, []);
 
   console.log(userRecord);
+  console.log(user.$id);
 
   useEffect(() => {
     const fetchUserData = async () => {
