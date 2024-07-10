@@ -44,6 +44,7 @@ export default async ({ req, res, log, error }) => {
     const usersQuestionsCount = (acc, doc) => {
       if (acc[doc.userId]) {
         acc[doc.userId].questionsCount += 1;
+        acc[doc.userId].userName = doc.userName;
       } else {
         acc[doc.userId] = {
           userName: doc.userName,
@@ -56,6 +57,7 @@ export default async ({ req, res, log, error }) => {
 
     const usersScores = (acc, doc) => {
       if (acc[doc.userId]) {
+        acc[doc.userId].userName = doc.userName;
         acc[doc.userId].score = Math.max(doc.score, acc[doc.userId].score) || 0;
       } else {
         acc[doc.userId] = {

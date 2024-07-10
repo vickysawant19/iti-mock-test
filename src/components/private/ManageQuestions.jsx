@@ -18,6 +18,7 @@ const ManageQuestions = () => {
       try {
         const response = await quesdbservice.listQuestions([
           Query.equal("userId", user.$id),
+          Query.orderDesc("$createdAt"),
         ]);
         setQuestions(response.documents);
       } catch (error) {

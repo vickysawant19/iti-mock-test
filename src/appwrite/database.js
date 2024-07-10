@@ -107,12 +107,13 @@ export class QuesDbService {
       throw new Error(`Error:${error.message.split(".")[0]}`);
     }
   }
+
   async getQuestionsByUser(userId) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
       );
     } catch (error) {
       console.log("Appwrite error: get user Question:", error);

@@ -53,6 +53,13 @@ const AllMockTests = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           All Mock Tests
         </h1>
+        {mockTests.length <= 0 ? (
+          <div className="text-center w-full text-white p-2 bg-red-300">
+            No mock test generated!
+          </div>
+        ) : (
+          ""
+        )}
         {loading ? (
           <div className="flex justify-center items-center min-h-screen">
             <ClipLoader size={50} color={"#123abc"} loading={loading} />
