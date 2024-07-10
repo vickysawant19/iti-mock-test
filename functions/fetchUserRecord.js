@@ -91,11 +91,12 @@ export default async ({ req, res, log, error }) => {
       week: getUserData(startOfWeek),
       month: getUserData(startOfMonth),
     };
+
     log("here");
 
     log(JSON.stringify({ userData }));
 
-    return res.json({ userData });
+    return res.json({ messsage: "hello" });
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
