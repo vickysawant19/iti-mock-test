@@ -20,67 +20,144 @@ export default async ({ req, res, log, error }) => {
       1
     ).toISOString();
 
-    const getContributorsAndScorers = async (startDate) => {
-      // Fetch all necessary data in one call
-      const [questions, mockTests] = await Promise.all([
-        database.listDocuments(
-          process.env.APPWRITE_DATABASE_ID,
-          process.env.APPWRITE_QUES_COLLECTION_ID,
-          [Query.greaterThanEqual("$createdAt", startDate)]
-        ),
-        database.listDocuments(
-          process.env.APPWRITE_DATABASE_ID,
-          process.env.QUESTIONPAPER_COLLECTION_ID,
-          [Query.greaterThanEqual("$createdAt", startDate)]
-        ),
-      ]);
+    const [questions, mockTests] = await Promise.all([
+      database.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.APPWRITE_QUES_COLLECTION_ID,
+        [Query.greaterThanEqual("$createdAt", startOfMonth)]
+      ),
+      database.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.QUESTIONPAPER_COLLECTION_ID,
+        [Query.greaterThanEqual("$createdAt", startOfMonth)]
+      ),
+    ]);
 
-      // Calculate the number of questions created by each user
-      const userQuestionsCount = questions.documents.reduce((acc, doc) => {
-        if (acc[doc.userId]) {
-          acc[doc.userId].questionsCount += 1;
-        } else {
-          acc[doc.userId] = {
-            userName: doc.userName,
-            userId: doc.userId,
-            questionsCount: 1,
-          };
-        }
-        return acc;
-      }, {});
+    const filterAndFormatData = (data, startDate, formatFn) => {
+      return data
+        .filter((doc) => new Date(doc.$createdAt) >= new Date(startDate))
+        .reduce((acc, doc) => formatFn(acc, doc), {});
+    };
 
-      // Calculate the top scorers
-      const userScores = mockTests.documents.reduce((acc, doc) => {
-        if (acc[doc.userId]) {
-          acc[doc.userId].score =
-            Math.max(doc.score, acc[doc.userId].score) || 0;
-        } else {
-          acc[doc.userId] = {
-            userName: doc.userName,
-            userId: doc.userId,
-            score: doc.score || 0,
-          };
-        }
-        return acc;
-      }, {});
+    const usersQuestionsCount = (acc, doc) => {
+      if (acc[doc.userId]) {
+        acc[doc.userId].questionsCount += 1;
+      } else {
+        acc[doc.userId] = {
+          userName: doc.userName,
+          userId: doc.userId,
+          questionsCount: 1,
+        };
+      }
+      return acc;
+    };
 
-      // Convert to arrays and sort
-      const sortedContributors = Object.values(userQuestionsCount)
+    const usersScores = (acc, doc) => {
+      if (acc[doc.userId]) {
+        acc[doc.userId].score = Math.max(doc.score, acc[doc.userId].score) || 0;
+      } else {
+        acc[doc.userId] = {
+          userName: doc.userName,
+          userId: doc.userId,
+          score: doc.score || 0,
+        };
+      }
+      return acc;
+    };
+
+    const getContributionData = (startDate) => {
+      const groupedUsersQuestionsCount = filterAndFormatData(
+        questions.documents,
+        startDate,
+        usersQuestionsCount
+      );
+      const gropedUsersScores = filterAndFormatData(
+        mockTests.documents,
+        startDate,
+        usersScores
+      );
+
+      const sortedUsersQuestions = Object.values(groupedUsersQuestionsCount)
         .sort((a, b) => b.questionsCount - a.questionsCount)
         .slice(0, 5);
 
-      const sortedScorers = Object.values(userScores)
+      const sortedUsersScorers = Object.values(gropedUsersScores)
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
-      return { contributors: sortedContributors, scorers: sortedScorers };
+      return {
+        contributors: sortedUsersQuestions,
+        scorers: sortedUsersScorers,
+      };
     };
 
     const topContributors = {
-      day: await getContributorsAndScorers(startOfDay),
-      week: await getContributorsAndScorers(startOfWeek),
-      month: await getContributorsAndScorers(startOfMonth),
+      day: getContributionData(startOfDay),
+      week: getContributionData(startOfWeek),
+      month: getContributionData(startOfMonth),
     };
+
+    // const getContributorsAndScorers = async (startDate) => {
+    //   // Fetch all necessary data in one call
+
+    //   const [questions, mockTests] = await Promise.all([
+    //     database.listDocuments(
+    //       process.env.APPWRITE_DATABASE_ID,
+    //       process.env.APPWRITE_QUES_COLLECTION_ID,
+    //       [Query.greaterThanEqual("$createdAt", startDate)]
+    //     ),
+    //     database.listDocuments(
+    //       process.env.APPWRITE_DATABASE_ID,
+    //       process.env.QUESTIONPAPER_COLLECTION_ID,
+    //       [Query.greaterThanEqual("$createdAt", startDate)]
+    //     ),
+    //   ]);
+    // Calculate the number of questions created by each user
+    //   const userQuestionsCount = questions.documents.reduce((acc, doc) => {
+    //     if (acc[doc.userId]) {
+    //       acc[doc.userId].questionsCount += 1;
+    //     } else {
+    //       acc[doc.userId] = {
+    //         userName: doc.userName,
+    //         userId: doc.userId,
+    //         questionsCount: 1,
+    //       };
+    //     }
+    //     return acc;
+    //   }, {});
+
+    // Calculate the top scorers
+    //   const userScores = mockTests.documents.reduce((acc, doc) => {
+    //     if (acc[doc.userId]) {
+    //       acc[doc.userId].score =
+    //         Math.max(doc.score, acc[doc.userId].score) || 0;
+    //     } else {
+    //       acc[doc.userId] = {
+    //         userName: doc.userName,
+    //         userId: doc.userId,
+    //         score: doc.score || 0,
+    //       };
+    //     }
+    //     return acc;
+    //   }, {});
+
+    // Convert to arrays and sort
+    //   const sortedContributors = Object.values(userQuestionsCount)
+    //     .sort((a, b) => b.questionsCount - a.questionsCount)
+    //     .slice(0, 5);
+
+    //   const sortedScorers = Object.values(userScores)
+    //     .sort((a, b) => b.score - a.score)
+    //     .slice(0, 5);
+
+    //   return { contributors: sortedContributors, scorers: sortedScorers };
+    // };
+
+    // const topContributors = {
+    //   day: await getContributorsAndScorers(startOfDay),
+    //   week: await getContributorsAndScorers(startOfWeek),
+    //   month: await getContributorsAndScorers(startOfMonth),
+    // };
 
     log(JSON.stringify({ topContributors }));
 
