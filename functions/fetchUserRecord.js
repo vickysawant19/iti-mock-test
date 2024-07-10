@@ -37,27 +37,16 @@ export default async ({ req, res, log, error }) => {
       ),
     ]);
 
-    log("Questions fetched: ", JSON.stringify(questions));
-    log("Mock tests fetched: ", JSON.stringify(mockTests));
-
     const filterAndFormatData = (data, startDate, formatFn) => {
       const filteredData = data.filter((doc) => {
         const isUserMatch = doc.userId === userId;
         const isDateMatch = new Date(doc.$createdAt) >= new Date(startDate);
-        log(
-          `Filtering ${doc.$id}: userId match=${isUserMatch}, date match=${isDateMatch}`
-        );
         return isUserMatch && isDateMatch;
       });
 
-      log("Filtered Data: ", JSON.stringify(filteredData));
-
       const formattedData = filteredData.reduce((acc, doc) => {
-        log(`Formatting ${doc.$id}`);
         return formatFn(acc, doc);
       }, {});
-
-      log("Formatted Data: ", JSON.stringify(formattedData));
       return formattedData;
     };
 
@@ -82,7 +71,6 @@ export default async ({ req, res, log, error }) => {
     };
 
     const getUserData = (startDate) => {
-      log(`Getting user data from ${startDate}`);
       const groupedQuestions = filterAndFormatData(
         questions.documents,
         startDate,
