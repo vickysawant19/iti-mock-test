@@ -10,9 +10,12 @@ const StartMockTest = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+  const [isGreetShown, setIsGreetShown] = useState(false);
 
   useEffect(() => {
+    setIsLoading(true);
     const fetchMockTest = async () => {
       try {
         const response = await questionpaperservice.getQuestionPaper(paperId);
@@ -20,6 +23,7 @@ const StartMockTest = () => {
           const parsedQuestions = response.questions.map((question) =>
             JSON.parse(question)
           );
+          setSubmitted(response.submitted);
           setMockTest({ ...response, questions: parsedQuestions });
         }
       } catch (error) {
@@ -32,10 +36,8 @@ const StartMockTest = () => {
     fetchMockTest();
   }, [paperId, submitted]);
 
-  console.log(mockTest);
-
   const handleStartExam = () => {
-    setSubmitted(true);
+    setIsGreetShown(true);
   };
 
   const handleOptionChange = (questionId, selectedAnswer) => {
@@ -80,7 +82,7 @@ const StartMockTest = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 md:p-8">
-      {!submitted ? (
+      {!isGreetShown ? (
         <div>
           <MockTestGreet />
           <button
@@ -152,7 +154,7 @@ const StartMockTest = () => {
             )}
           </div>
           <div className="mt-4">
-            {mockTest?.submitted ? (
+            {submitted ? (
               <Link
                 to={`/show-mock-test/${paperId}`}
                 className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-center"
