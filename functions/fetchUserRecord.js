@@ -10,6 +10,7 @@ export default async ({ req, res, log, error }) => {
   const database = new Databases(client);
 
   const { userId } = req.body;
+  log(req.body);
 
   try {
     const today = new Date();
