@@ -24,7 +24,7 @@ export default async ({ req, res, log, error }) => {
       database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID,
-        [Query.greaterThanEqual("$createdAt", startOfMonth), Query.limit()]
+        [Query.greaterThanEqual("$createdAt", startOfMonth), Query.limit(100)]
       ),
       database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
@@ -32,6 +32,7 @@ export default async ({ req, res, log, error }) => {
         [Query.greaterThanEqual("$createdAt", startOfMonth)]
       ),
     ]);
+
     log(questions.total);
 
     const filterAndFormatData = (data, startDate, formatFn) => {
