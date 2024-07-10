@@ -63,6 +63,7 @@ const StartMockTest = () => {
       alert("Exam submitted successfully!");
       setSubmitted(true);
     } catch (error) {
+      alert("Paper already submitted!", error);
       console.error("Error submitting exam:", error);
     } finally {
       setIsSubmitLoading(false);
