@@ -10,8 +10,6 @@ export default async ({ req, res, log, error }) => {
   const database = new Databases(client);
 
   const userId = req.body;
-  log(JSON.stringify(database));
-  log(userId);
 
   try {
     const today = new Date();
@@ -38,8 +36,6 @@ export default async ({ req, res, log, error }) => {
         [Query.greaterThanEqual("$createdAt", startOfMonth)]
       ),
     ]);
-
-    log(JSON.stringify(questions));
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -79,6 +75,7 @@ export default async ({ req, res, log, error }) => {
         startDate,
         formatScores
       );
+      log(groupedQuestions);
       return {
         questionsCreated: Object.values(groupedQuestions),
         scoresByPaper,
