@@ -60,7 +60,7 @@ export default async ({ req, res, log, error }) => {
     };
 
     const formatScores = (acc, doc) => {
-      const paperId = doc.$id;
+      const paperId = doc.paperId;
       if (!acc[paperId]) {
         acc[paperId] = { paperId, score: doc.score || 0 };
       }

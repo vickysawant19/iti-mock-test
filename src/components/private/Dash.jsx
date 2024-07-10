@@ -22,9 +22,6 @@ import { appwriteService } from "../../appwrite/appwriteConfig";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
-  const [questionsCreated, setQuestionsCreated] = useState([]);
-  const [mockTests, setMockTests] = useState([]);
-  const [scoreData, setScoreData] = useState([]);
   const [topContributors, setTopContributors] = useState({});
   const [userRecord, setUserRecord] = useState([]);
 
@@ -51,8 +48,7 @@ const Dashboard = () => {
           user.$id
         );
         const parsedRes = await JSON.parse(res.responseBody);
-        console.log("parserd data ", parsedRes);
-        setUserRecord(parsedRes);
+        setUserRecord(parsedRes.userData);
       } catch (error) {
         console.log(error);
       }
@@ -61,84 +57,6 @@ const Dashboard = () => {
   }, []);
 
   console.log(userRecord);
-  console.log(user.$id);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const mockTestsData =
-          await questionpaperservice.getQuestionPaperByUserId(user.$id);
-
-        const groupedTests = groupByMonth(mockTestsData);
-
-        const formattedTests = Object.entries(groupedTests).map(
-          ([date, count]) => ({
-            month: date,
-            tests: count,
-          })
-        );
-        setMockTests(formattedTests);
-
-        const formattedMockTests = mockTestsData.map((test) => ({
-          name: format(new Date(test.$createdAt), "MMM dd, yyyy"),
-          score: test.score || 0,
-        }));
-
-        setScoreData(formattedMockTests);
-
-        const questionsCreatedData = await quesdbservice.getQuestionsByUser(
-          user.$id
-        );
-
-        const groupedQuestions = groupByDate(questionsCreatedData.documents);
-
-        const formattedQuestions = Object.entries(groupedQuestions).map(
-          ([date, count]) => ({
-            name: date,
-            questions: count,
-          })
-        );
-
-        setQuestionsCreated(formattedQuestions);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    if (user) {
-      fetchUserData();
-    }
-  }, [user]);
-
-  const groupByDate = (questions) => {
-    const grouped = {};
-
-    questions.map((ques) => {
-      const date = format(new Date(ques.$createdAt), "MMM dd, yyyy");
-      if (grouped[date]) {
-        grouped[date] += 1;
-      } else {
-        grouped[date] = 1;
-      }
-    });
-
-    return grouped;
-  };
-
-  const groupByMonth = (tests) => {
-    const grouped = {};
-
-    tests.map((test) => {
-      const date = format(new Date(test.$createdAt), "MMM , yyyy");
-      if (grouped[date]) {
-        grouped[date] += 1;
-      } else {
-        grouped[date] = 1;
-      }
-    });
-
-    return grouped;
-  };
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -163,13 +81,13 @@ const Dashboard = () => {
             <option value="month">Month</option>
           </select>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={questionsCreated}>
+            <BarChart data={userRecord[timePeriod]?.questionsCreated}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="questions" fill="#8884d8" />
+              <Bar dataKey="count" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -186,51 +104,14 @@ const Dashboard = () => {
             <option value="month">Month</option>
           </select>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={scoreData}>
+            <LineChart data={userRecord[timePeriod]?.scoresByPaper}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="paperId" />
               <YAxis />
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="score" stroke="#ff7300" />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-4">
-            Mock Tests Distribution
-          </h2>
-          <select
-            value={timePeriod}
-            onChange={handleTimePeriodChange}
-            className="mb-4 p-2 border rounded"
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={mockTests}
-                dataKey="tests"
-                nameKey="month"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                fill="#8884d8"
-              >
-                {mockTests.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
           </ResponsiveContainer>
         </div>
 
