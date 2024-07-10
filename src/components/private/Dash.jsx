@@ -51,7 +51,8 @@ const Dashboard = () => {
           user.$id
         );
         const parsedRes = await JSON.parse(res.responseBody);
-        setUserRecord(parsedRes.userData);
+        console.log("parserd data ", parsedRes);
+        setUserRecord(parsedRes);
       } catch (error) {
         console.log(error);
       }

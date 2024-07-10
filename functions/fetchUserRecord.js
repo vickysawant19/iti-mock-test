@@ -60,11 +60,10 @@ export default async ({ req, res, log, error }) => {
     };
 
     const formatScores = (acc, doc) => {
-      const scoreEntry = {
-        paperId: doc.$id,
-        score: doc.score || 0,
-      };
-      acc.push(scoreEntry);
+      const paperId = doc.$id;
+      if (!acc[paperId]) {
+        acc[paperId] = { paperId, score: doc.score || 0 };
+      }
       return acc;
     };
 
@@ -82,7 +81,7 @@ export default async ({ req, res, log, error }) => {
 
       return {
         questionsCreated: Object.values(groupedQuestions),
-        scoresByPaper,
+        scoresByPaper: Object.values(scoresByPaper),
       };
     };
 
@@ -92,11 +91,9 @@ export default async ({ req, res, log, error }) => {
       month: getUserData(startOfMonth),
     };
 
-    log("here");
-
     log(JSON.stringify({ userData }));
 
-    return res.json({ messsage: "hello" });
+    return res.json({ userData });
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
