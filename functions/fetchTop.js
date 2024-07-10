@@ -97,7 +97,7 @@ export default async ({ req, res, log, error }) => {
       month: getContributionData(startOfMonth),
     };
 
-    log(JSON.stringify({ topContributors }));
+    // log(JSON.stringify({ topContributors }));
 
     return res.json({ topContributors });
   } catch (err) {

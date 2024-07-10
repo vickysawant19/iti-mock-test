@@ -91,7 +91,7 @@ export default async ({ req, res, log, error }) => {
       month: getUserData(startOfMonth),
     };
 
-    log(JSON.stringify({ userData }));
+    // log(JSON.stringify({ userData }));
 
     return res.json({ userData });
   } catch (err) {
