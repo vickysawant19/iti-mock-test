@@ -32,6 +32,10 @@ const ManageQuestions = () => {
   }, [user.$id]);
 
   const handleDelete = async (slug) => {
+    const confirmation = confirm("Are you want to delete this question?");
+    if (!confirmation) {
+      return;
+    }
     try {
       const deleted = await quesdbservice.deleteQuestion(slug);
       if (deleted) {
@@ -98,16 +102,16 @@ const ManageQuestions = () => {
                         </li>
                       ))}
                     </ul>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4 ">
                       <Link
                         to={`/edit/${question.$id}`}
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-blue-500 border py-2 px-1 hover:bg-blue-500 rounded w-16 text-center hover:text-blue-100 transition-colors duration-300"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => handleDelete(question.$id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-500 border py-2 px-1 hover:bg-red-500 rounded w-16 text-center hover:text-red-100 transition-colors duration-300"
                       >
                         Delete
                       </button>

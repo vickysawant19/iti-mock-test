@@ -89,7 +89,7 @@ class QuestionPaperService {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [Query.equal("paperId", paperId)]
+        [Query.equal("paperId", paperId), Query.limit(1)]
       );
 
       if (response.documents.length > 0) {
@@ -98,7 +98,6 @@ class QuestionPaperService {
         throw new Error("Paper not found");
       }
     } catch (error) {
-      console.error("Error fetching paper by ID:", error);
       throw error;
     }
   }
@@ -107,7 +106,7 @@ class QuestionPaperService {
     try {
       const paper = await this.fetchPaperById(paperId);
       if (!paper) {
-        throw new Error("No paper available for selected ID");
+        throw new Error("No paper available for selected ID or Test is ended");
       }
 
       const { tradeId, tradeName, year, questions } = paper;
@@ -141,7 +140,6 @@ class QuestionPaperService {
 
       return response;
     } catch (error) {
-      console.error("Error creating new paper document:", error);
       throw error;
     }
   }
@@ -261,6 +259,19 @@ class QuestionPaperService {
       return response.documents;
     } catch (error) {
       console.error("Error getting question paper by user ID:", error);
+      throw error;
+    }
+  }
+
+  async deleteQuestionPaper(paperId) {
+    try {
+      const res = await this.database.deleteDocument(
+        this.databaseId,
+        this.questionPapersCollectionId,
+        paperId
+      );
+      return res;
+    } catch (error) {
       throw error;
     }
   }

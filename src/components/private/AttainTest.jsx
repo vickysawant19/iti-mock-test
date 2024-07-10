@@ -1,25 +1,32 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import questionpaperservice from "../../appwrite/mockTest";
 import { useSelector } from "react-redux";
+import questionpaperservice from "../../appwrite/mockTest";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ClipLoader } from "react-spinners";
 
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const newPaper = await questionpaperservice.createNewPaperDocument(
         paperId,
         user.$id,
         user.name
       );
+      toast.success("Paper generated successfully!");
       navigate(`/start-mock-test/${newPaper.$id}`);
     } catch (error) {
-      console.error("Error generating new paper:", error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,11 +56,20 @@ const AttainTest = () => {
           <button
             type="submit"
             className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+            disabled={loading}
           >
-            Generate Paper
+            {loading ? (
+              <div className="flex justify-center items-center">
+                <ClipLoader size={20} color={"#fff"} loading={loading} />
+                <span className="ml-2">Generating...</span>
+              </div>
+            ) : (
+              "Generate Paper"
+            )}
           </button>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };
