@@ -9,7 +9,7 @@ export default async ({ req, res, log, error }) => {
 
   const database = new Databases(client);
 
-  const userId = req.body;
+  const { userId } = req.body;
 
   try {
     const today = new Date();
@@ -36,16 +36,29 @@ export default async ({ req, res, log, error }) => {
         [Query.greaterThanEqual("$createdAt", startOfMonth)]
       ),
     ]);
-    log(JSON.stringify(questions));
+
+    log("Questions fetched: ", JSON.stringify(questions));
+    log("Mock tests fetched: ", JSON.stringify(mockTests));
 
     const filterAndFormatData = (data, startDate, formatFn) => {
-      return data
-        .filter(
-          (doc) =>
-            doc.userId === userId &&
-            new Date(doc.$createdAt) >= new Date(startDate)
-        )
-        .reduce((acc, doc) => formatFn(acc, doc), {});
+      const filteredData = data.filter((doc) => {
+        const isUserMatch = doc.userId === userId;
+        const isDateMatch = new Date(doc.$createdAt) >= new Date(startDate);
+        log(
+          `Filtering ${doc.$id}: userId match=${isUserMatch}, date match=${isDateMatch}`
+        );
+        return isUserMatch && isDateMatch;
+      });
+
+      log("Filtered Data: ", JSON.stringify(filteredData));
+
+      const formattedData = filteredData.reduce((acc, doc) => {
+        log(`Formatting ${doc.$id}`);
+        return formatFn(acc, doc);
+      }, {});
+
+      log("Formatted Data: ", JSON.stringify(formattedData));
+      return formattedData;
     };
 
     const formatQuestions = (acc, doc) => {
@@ -54,18 +67,22 @@ export default async ({ req, res, log, error }) => {
         acc[date] = { date, count: 0 };
       }
       acc[date].count += 1;
+      log(`Formatted question for date ${date}: count=${acc[date].count}`);
       return acc;
     };
 
     const formatScores = (acc, doc) => {
-      acc.push({
+      const scoreEntry = {
         paperId: doc.$id,
         score: doc.score || 0,
-      });
+      };
+      acc.push(scoreEntry);
+      log(`Formatted score for paper ${doc.$id}: score=${scoreEntry.score}`);
       return acc;
     };
 
     const getUserData = (startDate) => {
+      log(`Getting user data from ${startDate}`);
       const groupedQuestions = filterAndFormatData(
         questions.documents,
         startDate,
@@ -76,7 +93,9 @@ export default async ({ req, res, log, error }) => {
         startDate,
         formatScores
       );
-      log(JSON.stringify(groupedQuestions));
+
+      log("Grouped Questions: ", JSON.stringify(groupedQuestions));
+      log("Scores By Paper: ", JSON.stringify(scoresByPaper));
 
       return {
         questionsCreated: Object.values(groupedQuestions),
@@ -90,7 +109,7 @@ export default async ({ req, res, log, error }) => {
       month: getUserData(startOfMonth),
     };
 
-    log(JSON.stringify({ userData }));
+    log("User Data: ", JSON.stringify({ userData }));
 
     return res.json({ userData });
   } catch (err) {
