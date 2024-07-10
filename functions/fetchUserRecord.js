@@ -9,7 +9,7 @@ export default async ({ req, res, log, error }) => {
 
   const database = new Databases(client);
 
-  const userId = req.body.userId; // Assuming req.body is an object containing userId
+  const userId = req.body;
 
   try {
     const today = new Date();
