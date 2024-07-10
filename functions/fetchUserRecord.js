@@ -80,9 +80,6 @@ export default async ({ req, res, log, error }) => {
         formatScores
       );
 
-      log(JSON.stringify(groupedQuestions));
-      log(JSON.stringify(scoresByPaper));
-
       return {
         questionsCreated: Object.values(groupedQuestions),
         scoresByPaper,
@@ -94,6 +91,7 @@ export default async ({ req, res, log, error }) => {
       week: getUserData(startOfWeek),
       month: getUserData(startOfMonth),
     };
+    log("here");
 
     log(JSON.stringify({ userData }));
 
