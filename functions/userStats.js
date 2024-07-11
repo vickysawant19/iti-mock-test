@@ -130,20 +130,38 @@ export default async ({ req, res, log, error }) => {
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
 
+      const updatedData = {
+        allTime_maxScore: userData.allTime_maxScore ?? 0,
+        allTime_questionsCount: userData.allTime_questionsCount ?? 0,
+        allTime_testsCount: userData.allTime_testsCount ?? 0,
+        day_maxScore: userData.day_maxScore ?? 0,
+        day_questionsCount: userData.day_questionsCount ?? 0,
+        day_testsCount: userData.day_testsCount ?? 0,
+        month_maxScore: userData.month_maxScore ?? 0,
+        month_questionsCount: userData.month_questionsCount ?? 0,
+        month_testsCount: userData.month_testsCount ?? 0,
+        week_maxScore: userData.week_maxScore ?? 0,
+        week_questionsCount: userData.week_questionsCount ?? 0,
+        week_testsCount: userData.week_testsCount ?? 0,
+        year_maxScore: userData.year_maxScore ?? 0,
+        year_questionsCount: userData.year_questionsCount ?? 0,
+        year_testsCount: userData.year_testsCount ?? 0,
+      };
+
       try {
         if (documentId) {
           await database.updateDocument(
             process.env.APPWRITE_DATABASE_ID,
             process.env.USER_STATS_COLLECTION_ID,
             documentId,
-            userData
+            updatedData
           );
         } else {
           await database.createDocument(
             process.env.APPWRITE_DATABASE_ID,
             process.env.USER_STATS_COLLECTION_ID,
             "unique()", // assuming Appwrite generates unique ID if not provided
-            userData
+            updatedData
           );
         }
       } catch (err) {
@@ -194,8 +212,6 @@ export default async ({ req, res, log, error }) => {
             stats.testsStats[userId]?.maxScore || 0;
         });
       });
-
-      log(`Consolidated Stats: ${JSON.stringify(consolidatedStats)}`);
 
       const promises = Object.keys(consolidatedStats).map(async (userId) => {
         await updateUserStats(userId, consolidatedStats[userId]);

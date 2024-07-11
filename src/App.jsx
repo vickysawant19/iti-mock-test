@@ -6,6 +6,7 @@ import Footer from "./components/Footer";
 import { addUser } from "./store/userSlice";
 import authService from "./appwrite/auth";
 import { ClipLoader } from "react-spinners";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const user = useSelector((state) => state.user);
@@ -50,6 +51,7 @@ function App() {
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
       <Navbar />
+      <Analytics />
       <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
         <Outlet />
       </div>

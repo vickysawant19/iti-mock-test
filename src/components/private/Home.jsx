@@ -5,11 +5,18 @@ import { useSelector } from "react-redux";
 import { appwriteService } from "../../appwrite/appwriteConfig";
 import quesdbservice from "../../appwrite/database";
 import { Query } from "appwrite";
+import userStatsService from "../../appwrite/userStats";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      const res = await userStatsService.getAllStats();
+      console.log(res);
+    };
+    fetchUserStats();
+  }, []);
 
   return (
     <div className="bg-gray-100 min-h-screen">

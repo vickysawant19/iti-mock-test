@@ -5,9 +5,6 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   Legend,
   XAxis,
@@ -15,14 +12,14 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-
 import { appwriteService } from "../../appwrite/appwriteConfig";
+import userStatsService from "../../appwrite/userStats";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
   const [topContributors, setTopContributors] = useState({});
   const [userRecord, setUserRecord] = useState([]);
-
+  const [userStats, setUserStats] = useState({});
   const [timePeriod, setTimePeriod] = useState("day");
 
   useEffect(() => {
@@ -52,9 +49,21 @@ const Dashboard = () => {
       }
     };
     userPerformance();
-  }, []);
+
+    const fetchUserStats = async () => {
+      try {
+        const stats = await userStatsService.getUserStats(user.$id);
+        console.log("stats", stats);
+        setUserStats(stats);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchUserStats();
+  }, [user.$id]);
 
   console.log(userRecord);
+  console.log(userStats); // Check the structure of userStats
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -119,6 +128,7 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* Questions Created */}
         <div className="bg-white shadow-md rounded-lg p-4">
           <div className="flex justify-between">
             <h2 className="text-xl font-semibold mb-4">Questions Created</h2>
@@ -144,6 +154,7 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* Your Score Progress */}
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex justify-between">
             <h2 className="text-xl font-semibold mb-4">Your Score Progress</h2>
@@ -165,6 +176,50 @@ const Dashboard = () => {
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="score" stroke="#ff7300" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* User Stats */}
+        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-xl font-semibold mb-4">User Stats</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={userStats ? [userStats] : []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="userName" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="day_questionsCount"
+                stroke="#0088FE"
+                name="Day Max Score"
+              />
+              <Line
+                type="monotone"
+                dataKey="week_questionsCount"
+                stroke="#00C49F"
+                name="Week Max Score"
+              />
+              <Line
+                type="monotone"
+                dataKey="month_questionsCount"
+                stroke="#FFBB28"
+                name="Month Max Score"
+              />
+              <Line
+                type="monotone"
+                dataKey="year_questionsCount"
+                stroke="#FF8042"
+                name="Year Max Score"
+              />
+              <Line
+                type="monotone"
+                dataKey="allTime_questionsCount"
+                stroke="#FF0000"
+                name="All Time Max Score"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>

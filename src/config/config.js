@@ -1,12 +1,14 @@
 const conf = {
-    appwriteUrl: String(import.meta.env.VITE_APPWRITE_URL),
-    projectId: String(import.meta.env.VITE_APPWRITE_PROJECT_ID),
-    databaseId: String(import.meta.env.VITE_APPWRITE_DATABASE_ID),
-    quesCollectionId: String(import.meta.env.VITE_APPWRITE_QUES_COLLECTION_ID),
-    questionPapersCollectionId:String(import.meta.env.VITE_QUESTIONPAPER_COLLECTION_ID),
-    tradeCollectionId:String(import.meta.env.VITE_TRADE_COLLECTION_ID),
-    bucketId: String(import.meta.env.VITE_APPWRITE_BUCKET_ID),
-  };
+  appwriteUrl: String(import.meta.env.VITE_APPWRITE_URL),
+  projectId: String(import.meta.env.VITE_APPWRITE_PROJECT_ID),
+  databaseId: String(import.meta.env.VITE_APPWRITE_DATABASE_ID),
+  quesCollectionId: String(import.meta.env.VITE_APPWRITE_QUES_COLLECTION_ID),
+  questionPapersCollectionId: String(
+    import.meta.env.VITE_QUESTIONPAPER_COLLECTION_ID
+  ),
+  tradeCollectionId: String(import.meta.env.VITE_TRADE_COLLECTION_ID),
+  bucketId: String(import.meta.env.VITE_APPWRITE_BUCKET_ID),
+  userStatsCollectionId: String(import.meta.env.VITE_USER_STATS_COLLECTION_ID),
+};
 
-  
-  export default conf;
+export default conf;
