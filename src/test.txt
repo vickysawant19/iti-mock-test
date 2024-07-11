@@ -50,12 +50,7 @@ export default async ({ req, res, log, error }) => {
       process.env.QUESTIONPAPER_COLLECTION_ID
     );
 
-    const userStats = await fetchAllDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.USER_STATS_COLLECTION_ID
-    );
-
-    log("Done fetching");
+    log("questions fetch");
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -120,25 +115,24 @@ export default async ({ req, res, log, error }) => {
     const yearStats = getStats(startOfYear);
     const allTimeStats = getStats(new Date(0).toISOString()); // Unix epoch time for all-time stats
 
-    const existingUserStatsMap = userStats.reduce((acc, doc) => {
-      acc[doc.userId] = doc.$id;
-      return acc;
-    }, {});
-
     const updateUserStats = async (userId, userData) => {
-      const documentId = existingUserStatsMap[userId];
+      const existingDocument = await database.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.USER_STATS_COLLECTION,
+        [Query.equal("userId", userId)]
+      );
 
-      if (documentId) {
+      if (existingDocument.total > 0) {
         await database.updateDocument(
           process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
-          documentId,
+          process.env.USER_STATS_COLLECTION,
+          existingDocument.documents[0].$id,
           userData
         );
       } else {
         await database.createDocument(
           process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
+          process.env.USER_STATS_COLLECTION,
           "unique()", // assuming Appwrite generates unique ID if not provided
           userData
         );
@@ -146,7 +140,7 @@ export default async ({ req, res, log, error }) => {
     };
 
     const consolidateAndUpdateStats = async (stats, period) => {
-      const promises = Object.keys(stats.questionsStats).map(async (userId) => {
+      for (const userId in stats.questionsStats) {
         const userData = {
           userId,
           userName: stats.questionsStats[userId].userName,
@@ -158,9 +152,7 @@ export default async ({ req, res, log, error }) => {
         };
 
         await updateUserStats(userId, userData);
-      });
-
-      await Promise.all(promises);
+      }
     };
 
     await consolidateAndUpdateStats(dayStats, "day");
