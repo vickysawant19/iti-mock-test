@@ -151,13 +151,14 @@ export default async ({ req, res, log, error }) => {
     const consolidateAndUpdateStats = async () => {
       const consolidatedStats = {};
 
-      const periods = ["day", "week", "month", "year", "allTime"];
+      const periods = ["day", "week"];
+      // const periods = ["day", "week", "month", "year", "allTime"];
       const statsArray = [
         dayStats,
         weekStats,
-        monthStats,
-        yearStats,
-        allTimeStats,
+        // monthStats,
+        // yearStats,
+        // allTimeStats,
       ];
 
       statsArray.forEach((stats, index) => {
