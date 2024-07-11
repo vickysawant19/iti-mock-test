@@ -131,11 +131,6 @@ export default async ({ req, res, log, error }) => {
 
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
-      log(
-        `Updating stats for user: ${userId} with data: ${JSON.stringify(
-          userData
-        )}`
-      );
 
       try {
         if (documentId) {
@@ -145,7 +140,6 @@ export default async ({ req, res, log, error }) => {
             documentId,
             userData
           );
-          log(`Updated document for user: ${userId}`);
         } else {
           await database.createDocument(
             process.env.APPWRITE_DATABASE_ID,
@@ -153,7 +147,6 @@ export default async ({ req, res, log, error }) => {
             "unique()", // assuming Appwrite generates unique ID if not provided
             userData
           );
-          log(`Created new document for user: ${userId}`);
         }
       } catch (err) {
         error(
@@ -184,7 +177,6 @@ export default async ({ req, res, log, error }) => {
               userName: stats.questionsStats[userId].userName,
             };
           }
-
           consolidatedStats[userId][`${period}_questionsCount`] =
             stats.questionsStats[userId].questionsCount || 0;
           consolidatedStats[userId][`${period}_testsCount`] =
@@ -193,6 +185,8 @@ export default async ({ req, res, log, error }) => {
             stats.testsStats[userId]?.maxScore || 0;
         });
       });
+
+      log(`Consolidated Stats: ${JSON.stringify(consolidatedStats)}`);
 
       const promises = Object.keys(consolidatedStats).map(async (userId) => {
         await updateUserStats(userId, consolidatedStats[userId]);
