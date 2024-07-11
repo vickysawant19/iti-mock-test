@@ -40,6 +40,7 @@ export default async ({ req, res, log, error }) => {
     ).toISOString();
     const startOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
 
+    log(today);
     const questions = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID
@@ -119,6 +120,8 @@ export default async ({ req, res, log, error }) => {
     const monthStats = getStats(startOfMonth);
     const yearStats = getStats(startOfYear);
     const allTimeStats = getStats(new Date(0).toISOString()); // Unix epoch time for all-time stats
+
+    log(JSON.stringify(dayStats));
 
     const existingUserStatsMap = userStats.reduce((acc, doc) => {
       acc[doc.userId] = doc.$id;
