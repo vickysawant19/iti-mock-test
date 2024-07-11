@@ -161,7 +161,7 @@ export default async ({ req, res, log, error }) => {
 
     return res.json({ message: "User statistics updated successfully." });
   } catch (err) {
-    error(err);
+    error(err.message);
     return res.json({ error: err.message });
   }
 };
