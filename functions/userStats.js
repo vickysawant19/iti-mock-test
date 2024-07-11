@@ -56,7 +56,6 @@ export default async ({ req, res, log, error }) => {
     );
 
     log("userstats");
-    log(process.env.USER_STATS_COLLECTION_ID);
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -146,29 +145,46 @@ export default async ({ req, res, log, error }) => {
       }
     };
 
-    const consolidateAndUpdateStats = async (stats, period) => {
-      const promises = Object.keys(stats.questionsStats).map(async (userId) => {
-        const userData = {
-          userId,
-          userName: stats.questionsStats[userId].userName,
-          [`${period}_questionsCount`]:
-            stats.questionsStats[userId].questionsCount,
-          [`${period}_testsCount`]:
-            stats.testsStats[userId]?.userTestsCount || 0,
-          [`${period}_maxScore`]: stats.testsStats[userId]?.maxScore || 0,
-        };
+    const consolidateAndUpdateStats = async () => {
+      const consolidatedStats = {};
 
-        await updateUserStats(userId, userData);
+      const periods = ["day", "week", "month", "year", "allTime"];
+      const statsArray = [
+        dayStats,
+        weekStats,
+        monthStats,
+        yearStats,
+        allTimeStats,
+      ];
+
+      statsArray.forEach((stats, index) => {
+        const period = periods[index];
+
+        Object.keys(stats.questionsStats).forEach((userId) => {
+          if (!consolidatedStats[userId]) {
+            consolidatedStats[userId] = {
+              userId,
+              userName: stats.questionsStats[userId].userName,
+            };
+          }
+
+          consolidatedStats[userId][`${period}_questionsCount`] =
+            stats.questionsStats[userId].questionsCount;
+          consolidatedStats[userId][`${period}_testsCount`] =
+            stats.testsStats[userId]?.userTestsCount || 0;
+          consolidatedStats[userId][`${period}_maxScore`] =
+            stats.testsStats[userId]?.maxScore || 0;
+        });
+      });
+
+      const promises = Object.keys(consolidatedStats).map(async (userId) => {
+        await updateUserStats(userId, consolidatedStats[userId]);
       });
 
       await Promise.all(promises);
     };
 
-    await consolidateAndUpdateStats(dayStats, "day");
-    await consolidateAndUpdateStats(weekStats, "week");
-    await consolidateAndUpdateStats(monthStats, "month");
-    await consolidateAndUpdateStats(yearStats, "year");
-    await consolidateAndUpdateStats(allTimeStats, "allTime");
+    await consolidateAndUpdateStats();
 
     return res.json({ message: "User statistics updated successfully." });
   } catch (err) {
