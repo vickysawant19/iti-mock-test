@@ -38,20 +38,16 @@ export default async ({ req, res, log, error }) => {
       today.getMonth(),
       1
     ).toISOString();
-
-    const startOfYear = new Date(today.getFullYear(), 0, 1) / toISOString();
-
-    const AllTime = new Date().toDateString();
+    const startOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
 
     const questions = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID
-      // [Query.greaterThanEqual("$createdAt", startOfMonth)]
     );
+
     const mockTests = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.QUESTIONPAPER_COLLECTION_ID
-      // [Query.greaterThanEqual("$createdAt", startOfMonth)]
     );
 
     const filterAndFormatData = (data, startDate, formatFn) => {
@@ -60,7 +56,7 @@ export default async ({ req, res, log, error }) => {
         .reduce((acc, doc) => formatFn(acc, doc), {});
     };
 
-    const usersQuestionsCount = (acc, doc) => {
+    const usersQuestionsStats = (acc, doc) => {
       if (acc[doc.userId]) {
         acc[doc.userId].questionsCount += 1;
         acc[doc.userId].userName = doc.userName;
@@ -74,51 +70,48 @@ export default async ({ req, res, log, error }) => {
       return acc;
     };
 
-    const usersScores = (acc, doc) => {
+    const usersTestsStats = (acc, doc) => {
       if (acc[doc.userId]) {
         acc[doc.userId].userName = doc.userName;
-        acc[doc.userId].score = Math.max(doc.score, acc[doc.userId].score) || 0;
+        acc[doc.userId].userTestsCount += 1;
+        acc[doc.userId].maxScore = Math.max(
+          doc.score,
+          acc[doc.userId].maxScore || 0
+        );
       } else {
         acc[doc.userId] = {
           userName: doc.userName,
           userId: doc.userId,
-          score: doc.score || 0,
+          userTestsCount: 1,
+          maxScore: doc.score || 0,
         };
       }
       return acc;
     };
 
-    const getContributionData = (startDate) => {
-      const groupedUsersQuestionsCount = filterAndFormatData(
+    const getStats = (startDate) => {
+      const groupedUsersQuestionsStats = filterAndFormatData(
         questions,
         startDate,
-        usersQuestionsCount
+        usersQuestionsStats
       );
-      const groupedUsersScores = filterAndFormatData(
+      const groupedUsersTestsStats = filterAndFormatData(
         mockTests,
         startDate,
-        usersScores
+        usersTestsStats
       );
 
-      const sortedUsersQuestions = Object.values(groupedUsersQuestionsCount)
-        .sort((a, b) => b.questionsCount - a.questionsCount)
-        .slice(0, 5);
-
-      const sortedUsersScorers = Object.values(groupedUsersScores)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
-
       return {
-        contributors: sortedUsersQuestions,
-        scorers: sortedUsersScorers,
+        questionsStats: groupedUsersQuestionsStats,
+        testsStats: groupedUsersTestsStats,
       };
     };
 
-    const topContributors = {
-      day: getContributionData(startOfDay),
-      week: getContributionData(startOfWeek),
-      month: getContributionData(startOfMonth),
-    };
+    const dayStats = getStats(startOfDay);
+    const weekStats = getStats(startOfWeek);
+    const monthStats = getStats(startOfMonth);
+    const yearStats = getStats(startOfYear);
+    const allTimeStats = getStats(new Date(0).toISOString()); // Unix epoch time for all-time stats
 
     const updateUserStats = async (userId, userData) => {
       const existingDocument = await database.listDocuments(
@@ -130,49 +123,43 @@ export default async ({ req, res, log, error }) => {
       if (existingDocument.total > 0) {
         await database.updateDocument(
           process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
+          process.env.USER_STATS_COLLECTION,
           existingDocument.documents[0].$id,
-          { data: JSON.stringify(userData) }
+          userData
         );
       } else {
         await database.createDocument(
           process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
+          process.env.USER_STATS_COLLECTION,
           "unique()", // assuming Appwrite generates unique ID if not provided
-          { userId, data: JSON.stringify(userData) }
+          userData
         );
       }
     };
 
-    const promises = [];
+    const consolidateAndUpdateStats = async (stats, period) => {
+      for (const userId in stats.questionsStats) {
+        const userData = {
+          userId,
+          userName: stats.questionsStats[userId].userName,
+          [`${period}_questionsCount`]:
+            stats.questionsStats[userId].questionsCount,
+          [`${period}_testsCount`]:
+            stats.testsStats[userId]?.userTestsCount || 0,
+          [`${period}_maxScore`]: stats.testsStats[userId]?.maxScore || 0,
+        };
 
-    Object.keys(topContributors.day.contributors).forEach((userId) => {
-      const userData = {
-        ...topContributors.day.contributors[userId],
-        score: topContributors.day.scorers[userId]?.score || 0,
-      };
-      promises.push(updateUserStats(userId, userData));
-    });
+        await updateUserStats(userId, userData);
+      }
+    };
 
-    Object.keys(topContributors.week.contributors).forEach((userId) => {
-      const userData = {
-        ...topContributors.week.contributors[userId],
-        score: topContributors.week.scorers[userId]?.score || 0,
-      };
-      promises.push(updateUserStats(userId, userData));
-    });
+    await consolidateAndUpdateStats(dayStats, "day");
+    await consolidateAndUpdateStats(weekStats, "week");
+    await consolidateAndUpdateStats(monthStats, "month");
+    await consolidateAndUpdateStats(yearStats, "year");
+    await consolidateAndUpdateStats(allTimeStats, "allTime");
 
-    Object.keys(topContributors.month.contributors).forEach((userId) => {
-      const userData = {
-        ...topContributors.month.contributors[userId],
-        score: topContributors.month.scorers[userId]?.score || 0,
-      };
-      promises.push(updateUserStats(userId, userData));
-    });
-
-    await Promise.all(promises);
-
-    return res.json({ topContributors });
+    return res.json({ message: "User statistics updated successfully." });
   } catch (err) {
     error(err);
     return res.json({ error: err.message });
