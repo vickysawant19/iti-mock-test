@@ -44,18 +44,19 @@ export default async ({ req, res, log, error }) => {
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID
     );
-
+    log("ques");
     const mockTests = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.QUESTIONPAPER_COLLECTION_ID
     );
-
+    log("mock");
     const userStats = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.USER_STATS_COLLECTION_ID
     );
 
-    log("Done fetching");
+    log("userstats");
+    log(process.env.USER_STATS_COLLECTION_ID);
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
