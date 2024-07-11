@@ -39,15 +39,19 @@ export default async ({ req, res, log, error }) => {
       1
     ).toISOString();
 
+    const startOfYear = new Date(today.getFullYear(), 0, 1) / toISOString();
+
+    const AllTime = new Date().toDateString();
+
     const questions = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
-      process.env.APPWRITE_QUES_COLLECTION_ID,
-      [Query.greaterThanEqual("$createdAt", startOfMonth)]
+      process.env.APPWRITE_QUES_COLLECTION_ID
+      // [Query.greaterThanEqual("$createdAt", startOfMonth)]
     );
     const mockTests = await fetchAllDocuments(
       process.env.APPWRITE_DATABASE_ID,
-      process.env.QUESTIONPAPER_COLLECTION_ID,
-      [Query.greaterThanEqual("$createdAt", startOfMonth)]
+      process.env.QUESTIONPAPER_COLLECTION_ID
+      // [Query.greaterThanEqual("$createdAt", startOfMonth)]
     );
 
     const filterAndFormatData = (data, startDate, formatFn) => {

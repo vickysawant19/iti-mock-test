@@ -3,9 +3,13 @@ import { Link } from "react-router-dom";
 import Footer from "../Footer";
 import { useSelector } from "react-redux";
 import { appwriteService } from "../../appwrite/appwriteConfig";
+import quesdbservice from "../../appwrite/database";
+import { Query } from "appwrite";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
+
+  useEffect(() => {}, []);
 
   return (
     <div className="bg-gray-100 min-h-screen">

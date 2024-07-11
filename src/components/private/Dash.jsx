@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [topContributors, setTopContributors] = useState({});
   const [userRecord, setUserRecord] = useState([]);
 
-  const [timePeriod, setTimePeriod] = useState("month");
+  const [timePeriod, setTimePeriod] = useState("day");
 
   useEffect(() => {
     const functions = appwriteService.getFunctions();
