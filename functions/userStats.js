@@ -1,3 +1,4 @@
+import { arMA } from "date-fns/locale";
 import { Client, Databases, Query } from "node-appwrite";
 
 export default async ({ req, res, log, error }) => {
@@ -151,14 +152,13 @@ export default async ({ req, res, log, error }) => {
     const consolidateAndUpdateStats = async () => {
       const consolidatedStats = {};
 
-      const periods = ["day", "week"];
-      // const periods = ["day", "week", "month", "year", "allTime"];
+      const periods = ["day", "week", "month", "year", "allTime"];
       const statsArray = [
         dayStats,
         weekStats,
-        // monthStats,
-        // yearStats,
-        // allTimeStats,
+        monthStats,
+        yearStats,
+        allTimeStats,
       ];
 
       statsArray.forEach((stats, index) => {
@@ -190,7 +190,13 @@ export default async ({ req, res, log, error }) => {
 
     await consolidateAndUpdateStats();
 
-    return res.json({ message: "User statistics updated successfully." });
+    return res.json({
+      dayStats,
+      weekStats,
+      mockTests,
+      yearStats,
+      allTimeStats,
+    });
   } catch (err) {
     error(err.message);
     return res.json({ error: err.message });
