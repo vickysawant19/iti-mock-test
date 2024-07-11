@@ -50,6 +50,8 @@ export default async ({ req, res, log, error }) => {
       process.env.QUESTIONPAPER_COLLECTION_ID
     );
 
+    log("questions fetch");
+
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
         .filter((doc) => new Date(doc.$createdAt) >= new Date(startDate))
