@@ -154,11 +154,11 @@ export default async ({ req, res, log, error }) => {
 
       const periods = ["day", "week", "month", "year", "allTime"];
       const statsArray = [
-        dayStats,
-        weekStats,
-        monthStats,
-        yearStats,
         allTimeStats,
+        yearStats,
+        monthStats,
+        weekStats,
+        dayStats,
       ];
 
       statsArray.forEach((stats, index) => {
@@ -193,7 +193,7 @@ export default async ({ req, res, log, error }) => {
     return res.json({
       dayStats,
       weekStats,
-      mockTests,
+      monthStats,
       yearStats,
       allTimeStats,
     });
