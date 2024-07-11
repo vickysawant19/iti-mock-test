@@ -122,8 +122,6 @@ export default async ({ req, res, log, error }) => {
     const yearStats = getStats(startOfYear);
     const allTimeStats = getStats(new Date(0).toISOString()); // Unix epoch time for all-time stats
 
-    log(JSON.stringify(dayStats));
-
     const existingUserStatsMap = userStats.reduce((acc, doc) => {
       acc[doc.userId] = doc.$id;
       return acc;
@@ -177,8 +175,19 @@ export default async ({ req, res, log, error }) => {
               userName: stats.questionsStats[userId].userName,
             };
           }
+
           consolidatedStats[userId][`${period}_questionsCount`] =
             stats.questionsStats[userId].questionsCount || 0;
+        });
+
+        Object.keys(stats.testsStats).forEach((userId) => {
+          if (!consolidatedStats[userId]) {
+            consolidatedStats[userId] = {
+              userId,
+              userName: stats.testsStats[userId].userName,
+            };
+          }
+
           consolidatedStats[userId][`${period}_testsCount`] =
             stats.testsStats[userId]?.userTestsCount || 0;
           consolidatedStats[userId][`${period}_maxScore`] =
