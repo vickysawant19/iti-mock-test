@@ -118,7 +118,7 @@ export default async ({ req, res, log, error }) => {
     const updateUserStats = async (userId, userData) => {
       const existingDocument = await database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
-        process.env.USER_STATS_COLLECTION_ID,
+        process.env.USER_STATS_COLLECTION,
         [Query.equal("userId", userId)]
       );
 
