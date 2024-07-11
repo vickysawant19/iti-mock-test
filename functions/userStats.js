@@ -131,20 +131,33 @@ export default async ({ req, res, log, error }) => {
 
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
+      log(
+        `Updating stats for user: ${userId} with data: ${JSON.stringify(
+          userData
+        )}`
+      );
 
-      if (documentId) {
-        await database.updateDocument(
-          process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
-          documentId,
-          userData
-        );
-      } else {
-        await database.createDocument(
-          process.env.APPWRITE_DATABASE_ID,
-          process.env.USER_STATS_COLLECTION_ID,
-          "unique()", // assuming Appwrite generates unique ID if not provided
-          userData
+      try {
+        if (documentId) {
+          await database.updateDocument(
+            process.env.APPWRITE_DATABASE_ID,
+            process.env.USER_STATS_COLLECTION_ID,
+            documentId,
+            userData
+          );
+          log(`Updated document for user: ${userId}`);
+        } else {
+          await database.createDocument(
+            process.env.APPWRITE_DATABASE_ID,
+            process.env.USER_STATS_COLLECTION_ID,
+            "unique()", // assuming Appwrite generates unique ID if not provided
+            userData
+          );
+          log(`Created new document for user: ${userId}`);
+        }
+      } catch (err) {
+        error(
+          `Error updating/creating document for user: ${userId} - ${err.message}`
         );
       }
     };
@@ -154,11 +167,11 @@ export default async ({ req, res, log, error }) => {
 
       const periods = ["day", "week", "month", "year", "allTime"];
       const statsArray = [
-        allTimeStats,
-        yearStats,
-        monthStats,
-        weekStats,
         dayStats,
+        weekStats,
+        monthStats,
+        yearStats,
+        allTimeStats,
       ];
 
       statsArray.forEach((stats, index) => {
@@ -173,7 +186,7 @@ export default async ({ req, res, log, error }) => {
           }
 
           consolidatedStats[userId][`${period}_questionsCount`] =
-            stats.questionsStats[userId].questionsCount;
+            stats.questionsStats[userId].questionsCount || 0;
           consolidatedStats[userId][`${period}_testsCount`] =
             stats.testsStats[userId]?.userTestsCount || 0;
           consolidatedStats[userId][`${period}_maxScore`] =
