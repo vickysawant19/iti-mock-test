@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { appwriteService } from "../../appwrite/appwriteConfig";
 import userStatsService from "../../appwrite/userStats";
+import userStats from "../../../functions/userStats";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
@@ -21,27 +22,56 @@ const Dashboard = () => {
   const [topScorers, setTopScorers] = useState([]);
   const [userRecord, setUserRecord] = useState([]);
   const [allUsersStats, setAllUserStats] = useState([]);
+  const [currUserRecord, setCurrUserRecord] = useState({
+    questions: [],
+    tests: [],
+  });
   const [timePeriod, setTimePeriod] = useState("day");
 
   useEffect(() => {
-    const functions = appwriteService.getFunctions();
-
-    const userPerformance = async () => {
-      try {
-        const res = await functions.createExecution(
-          "668e0d720029625b80c5",
-          user.$id
-        );
-        const parsedRes = await JSON.parse(res.responseBody);
-        setUserRecord(parsedRes.userData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     const fetchAllUsersStats = async () => {
       try {
         const stats = await userStatsService.getAllStats();
+
+        const currentUserStats = stats.documents.find(
+          (stats) => stats.userId === user.$id
+        );
+
+        const questions = currentUserStats.questions.map((ques) =>
+          JSON.parse(ques)
+        );
+
+        const tests = currentUserStats.tests.map((tests) => JSON.parse(tests));
+
+        const groupedQues = questions.reduce((acc, curr) => {
+          let date = curr.createdAt.split("T")[0];
+
+          if (!acc[date]) {
+            acc[date] = { date, count: 0 };
+          }
+          acc[date].count += 1;
+          return acc;
+        }, {});
+
+        const groupedTests = tests.reduce((acc, curr) => {
+          let date = curr.createdAt.split("T")[0];
+
+          if (!acc[date]) {
+            acc[date] = { date, count: 0 };
+          }
+          acc[date].count += 1;
+          return acc;
+        }, {});
+
+        const quesArray = Object.values(groupedQues);
+        const testsArray = Object.values(groupedTests);
+
+        setCurrUserRecord((prev) => ({
+          ...prev,
+          tests: testsArray,
+          questions: quesArray,
+        }));
+
         const filteredStats1 = stats.documents.filter(
           (stat) => stat.allTime_questionsCount > 0
         );
@@ -71,9 +101,10 @@ const Dashboard = () => {
       }
     };
 
-    userPerformance();
     fetchAllUsersStats();
   }, [user.$id]);
+
+  console.log(currUserRecord);
 
   const handleTimePeriodChange = (e) => {
     setTimePeriod(e.target.value);
@@ -229,11 +260,40 @@ const Dashboard = () => {
 
         {/* Questions Created */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="flex justify-between">
-            <h2 className="text-xl font-semibold mb-4">My Questions Created</h2>
+          <div className="">
+            <h2 className="text-base font-semibold ">My Questions Created</h2>
+            <h1 className="text-2xl m-2 font-semibold">
+              {currUserRecord.questions.reduce(
+                (total, curr) => total + curr.count,
+                0
+              )}
+            </h1>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={userRecord[timePeriod]?.questionsCreated}>
+            <BarChart data={currUserRecord.questions}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* My Test Created */}
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <div className="">
+            <h2 className="text-xl font-semibold mb-4">My Test Created</h2>
+            <h1 className="text-2xl m-2 font-semibold">
+              {currUserRecord.tests.reduce(
+                (total, curr) => total + curr.count,
+                0
+              )}
+            </h1>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={currUserRecord.tests}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
