@@ -101,7 +101,7 @@ export default async ({ req, res, log, error }) => {
         );
         acc[doc.userId].tests.push(
           JSON.stringify({
-            paperId: doc.$id,
+            paperId: doc.paperId,
             score: doc.score,
             createdAt: doc.$createdAt,
           })
