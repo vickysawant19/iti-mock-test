@@ -104,8 +104,6 @@ const Dashboard = () => {
     fetchAllUsersStats();
   }, [user.$id]);
 
-  console.log(currUserRecord);
-
   const handleTimePeriodChange = (e) => {
     setTimePeriod(e.target.value);
   };
