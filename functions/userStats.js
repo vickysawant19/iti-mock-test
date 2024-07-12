@@ -68,12 +68,22 @@ export default async ({ req, res, log, error }) => {
     const usersQuestionsStats = (acc, doc) => {
       if (acc[doc.userId]) {
         acc[doc.userId].questionsCount += 1;
+        acc[doc.userId].questions.push({
+          questionId: doc.$id,
+          createdAt: doc.$createdAt,
+        });
         acc[doc.userId].userName = doc.userName;
       } else {
         acc[doc.userId] = {
           userName: doc.userName,
           userId: doc.userId,
           questionsCount: 1,
+          questions: [
+            {
+              questionId: doc.$id,
+              createdAt: doc.$createdAt,
+            },
+          ],
         };
       }
       return acc;
@@ -87,12 +97,22 @@ export default async ({ req, res, log, error }) => {
           doc.score,
           acc[doc.userId].maxScore || 0
         );
+        acc[doc.userId].tests.push({
+          paperId: doc.$id,
+          createdAt: doc.$createdAt,
+        });
       } else {
         acc[doc.userId] = {
           userName: doc.userName,
           userId: doc.userId,
           userTestsCount: 1,
           maxScore: doc.score || 0,
+          tests: [
+            {
+              paperId: doc.$id,
+              createdAt: doc.$createdAt,
+            },
+          ],
         };
       }
       return acc;
@@ -146,6 +166,8 @@ export default async ({ req, res, log, error }) => {
         year_maxScore: userData.year_maxScore ?? 0,
         year_questionsCount: userData.year_questionsCount ?? 0,
         year_testsCount: userData.year_testsCount ?? 0,
+        questions: JSON.stringify(userData.questions),
+        tests: JSON.stringify(userData.tests),
       };
 
       try {
@@ -196,6 +218,8 @@ export default async ({ req, res, log, error }) => {
 
           consolidatedStats[userId][`${period}_questionsCount`] =
             stats.questionsStats[userId].questionsCount || 0;
+          consolidatedStats[userId].questions =
+            stats.questionsStats[userId].questions || [];
         });
 
         Object.keys(stats.testsStats).forEach((userId) => {
@@ -210,6 +234,8 @@ export default async ({ req, res, log, error }) => {
             stats.testsStats[userId]?.userTestsCount || 0;
           consolidatedStats[userId][`${period}_maxScore`] =
             stats.testsStats[userId]?.maxScore || 0;
+          consolidatedStats[userId].tests =
+            stats.testsStats[userId].tests || [];
         });
       });
 

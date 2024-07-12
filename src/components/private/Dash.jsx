@@ -102,15 +102,11 @@ const Dashboard = () => {
     },
     { maxScore: 0, userName: "" }
   );
-  // const error = console.error;
-  // console.error = (...args) => {
-  //   if (/defaultProps/.test(args[0])) return;
-  //   error(...args);
-  // };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen mt-5">
       <div className="flex justify-between">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6 text-slate-800">Dashboard</h1>
         <select
           value={timePeriod}
           onChange={handleTimePeriodChange}
@@ -127,7 +123,9 @@ const Dashboard = () => {
       {/* Summary Statistics */}
       <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-base font-semibold ">My Total Questions</h2>
+          <h2 className="text-base font-semibold text-slate-500 ">
+            My Total Questions
+          </h2>
           <p className="text-2xl font-semibold">{totalQuestions}</p>
           <p className="text-xs text-nowrap text-gray-600">
             {new Date(updatedAt).toLocaleString("en-IN", {
@@ -136,7 +134,9 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-base font-semibold">My Total Tests</h2>
+          <h2 className="text-base font-semibold text-slate-500">
+            My Total Tests
+          </h2>
           <p className="text-2xl font-semibold">{totalTests}</p>
           <p className="text-xs text-nowrap text-gray-600">
             {new Date(updatedAt).toLocaleString("en-IN", {
@@ -150,7 +150,7 @@ const Dashboard = () => {
         {/* Top Contributors */}
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex justify-between">
-            <h2 className="text-base font-semibold mb-4">
+            <h2 className="text-base font-semibold mb-4 ">
               Top Questions Contributors
               <p className="text-2xl m-2">
                 {allUsersStats.reduce(
