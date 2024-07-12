@@ -114,7 +114,7 @@ export default async ({ req, res, log, error }) => {
           maxScore: doc.score || 0,
           tests: [
             JSON.stringify({
-              paperId: doc.$id,
+              paperId: doc.paperId,
               score: doc.score,
               createdAt: doc.$createdAt,
             }),
