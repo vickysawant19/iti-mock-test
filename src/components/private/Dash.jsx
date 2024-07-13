@@ -15,6 +15,7 @@ import {
 import { appwriteService } from "../../appwrite/appwriteConfig";
 import userStatsService from "../../appwrite/userStats";
 import userStats from "../../../functions/userStats";
+import CustomSelect from "../components/CustomSelect";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
@@ -28,10 +29,12 @@ const Dashboard = () => {
   });
   const [timePeriod, setTimePeriod] = useState("day");
 
+  // Effect to fetch user stats
   useEffect(() => {
     const fetchAllUsersStats = async () => {
       try {
         const stats = await userStatsService.getAllStats();
+        setAllUserStats(stats.documents);
 
         const currentUserStats = stats.documents.find(
           (stats) => stats.userId === user.$id
@@ -63,39 +66,32 @@ const Dashboard = () => {
           return acc;
         }, {});
 
+        const groupedScores = tests.reduce((acc, curr) => {
+          let date = curr.createdAt.split("T")[0];
+
+          if (!acc[curr.paperId]) {
+            acc[curr.paperId] = {
+              date,
+              paperId: curr.paperId,
+              score: curr.score || 0,
+            };
+          }
+          acc[curr.paperId].paperId = curr.paperId;
+          acc[curr.paperId].score = curr.score || 0;
+          acc[curr.paperId].date = date;
+          return acc;
+        }, {});
+
         const quesArray = Object.values(groupedQues);
         const testsArray = Object.values(groupedTests);
+        const scoresArray = Object.values(groupedScores);
 
         setCurrUserRecord((prev) => ({
           ...prev,
           tests: testsArray,
           questions: quesArray,
+          scores: scoresArray,
         }));
-
-        const filteredStats1 = stats.documents.filter(
-          (stat) => stat.allTime_questionsCount > 0
-        );
-
-        const filteredStats2 = stats.documents.filter(
-          (stat) => stat.allTime_maxScore > 0
-        );
-
-        const sortedQuestionStats = [...filteredStats1].sort((a, b) => {
-          const questionsDiff =
-            b.allTime_questionsCount - a.allTime_questionsCount;
-          if (questionsDiff !== 0) return questionsDiff;
-          return b.allTime_maxScore - a.allTime_maxScore;
-        });
-
-        const sortedScorersStats = [...filteredStats2].sort((a, b) => {
-          const scoreDiff = b.allTime_maxScore - a.allTime_maxScore;
-          if (scoreDiff !== 0) return scoreDiff;
-          return b.allTime_questionsCount - a.allTime_questionsCount;
-        });
-
-        setAllUserStats(stats.documents);
-        setTopContributors(sortedQuestionStats.slice(0, 10)); // Get top 10 contributors
-        setTopScorers(sortedScorersStats.slice(0, 10)); // Get top 10 scorers
       } catch (error) {
         console.log(error);
       }
@@ -104,8 +100,45 @@ const Dashboard = () => {
     fetchAllUsersStats();
   }, [user.$id]);
 
-  const handleTimePeriodChange = (e) => {
-    setTimePeriod(e.target.value);
+  // Effect to handle other logic that depends on user stats and time period
+  useEffect(() => {
+    if (allUsersStats.length === 0) return;
+
+    const filteredStats1 = allUsersStats.filter(
+      (stat) => stat[`${timePeriod}_questionsCount`] > 0
+    );
+
+    const filteredStats2 = allUsersStats.filter(
+      (stat) => stat[`${timePeriod}_maxScore`] > 0
+    );
+
+    const sortedQuestionStats = [...filteredStats1].sort((a, b) => {
+      const questionsDiff =
+        b[`${timePeriod}_questionsCount`] - a[`${timePeriod}_questionsCount`];
+      if (questionsDiff !== 0) return questionsDiff;
+      return b[`${timePeriod}_maxScore`] - a[`${timePeriod}_maxScore`];
+    });
+
+    const sortedScorersStats = [...filteredStats2].sort((a, b) => {
+      const scoreDiff =
+        b[`${timePeriod}_maxScore`] - a[`${timePeriod}_maxScore`];
+      if (scoreDiff !== 0) return scoreDiff;
+      return (
+        b[`${timePeriod}_questionsCount`] - a[`${timePeriod}_questionsCount`]
+      );
+    });
+
+    setTopContributors(sortedQuestionStats.slice(0, 20)); // Get top 10 contributors
+    setTopScorers(sortedScorersStats.slice(0, 20)); // Get top 10 scorers
+  }, [allUsersStats, timePeriod]);
+
+  // console.log(currUserRecord);
+
+  // const handleTimePeriodChange = (e) => {
+  //   setTimePeriod(e.target.value);
+  // };
+  const handleTimePeriodChange = (value) => {
+    setTimePeriod(value);
   };
 
   // Calculate total questions and tests
@@ -132,21 +165,24 @@ const Dashboard = () => {
     { maxScore: 0, userName: "" }
   );
 
+  // const maxScore = currUserRecord.scores.reduce(
+  //   (acc, curr) => (curr.score > acc ? curr.score : acc),
+  //   0
+  // );
+
+  if (!currUserRecord || !Array.isArray(currUserRecord.scores)) {
+    return <div>Loading...</div>;
+  }
+
+  const maxScore = Math.max(
+    ...currUserRecord.scores.map((score) => score.score)
+  );
+  console.log("timeperiod", timePeriod);
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen mt-5">
       <div className="flex justify-between">
         <h1 className="text-3xl font-bold mb-6 text-slate-800">Dashboard</h1>
-        <select
-          value={timePeriod}
-          onChange={handleTimePeriodChange}
-          className="mb-4 p-2 border rounded"
-        >
-          <option value="day">Day</option>
-          <option value="week">Week</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
-          <option value="allTime">All Time</option>
-        </select>
       </div>
 
       {/* Summary Statistics */}
@@ -173,6 +209,13 @@ const Dashboard = () => {
             })}
           </p>
         </div>
+      </div>
+      <div className="w-full flex items-end justify-end">
+        <CustomSelect
+          options={["day", "week", "month", "year", "allTime"]}
+          value={timePeriod}
+          onChangeFunc={handleTimePeriodChange}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -308,13 +351,24 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold mb-4">My Score Progress</h2>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={userRecord[timePeriod]?.scoresByPaper}>
+            <LineChart data={currUserRecord.scores}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="paperId" />
-              <YAxis />
-              <Tooltip />
+              <XAxis dataKey="date" />
+              <YAxis domain={[0, 50]} />
+              <Tooltip
+                formatter={(value, name, props) => [
+                  `Score: ${value}`,
+                  `Paper ID: ${props.payload.paperId}`,
+                ]}
+                labelFormatter={(label) => `Date: ${label}`}
+              />
               <Legend />
-              <Line type="monotone" dataKey="score" stroke="#ff7300" />
+              <Line
+                type="monotone"
+                dataKey="score"
+                name="Score"
+                stroke="#ff7300"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
