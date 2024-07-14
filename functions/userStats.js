@@ -155,8 +155,10 @@ export default async ({ req, res, log, error }) => {
     }, {});
 
     const userProfileData = userProfile.reduce((acc, doc) => {
-      acc[doc.userId] = doc.tradeId;
-      acc[doc.userId] = doc.batchId;
+      acc[doc.userId] = {
+        tradeId: doc.tradeId,
+        batchId: doc.batchId,
+      };
       return acc;
     }, {});
 
@@ -181,8 +183,8 @@ export default async ({ req, res, log, error }) => {
         year_testsCount: userData.year_testsCount ?? 0,
         questions: userData.questions,
         tests: userData.tests,
-        tradeId: userProfileData[userId],
-        batchId: userProfileData[userId],
+        tradeId: userProfileData[userId].tradeId,
+        batchId: userProfileData[userId].batchId,
       };
 
       try {
