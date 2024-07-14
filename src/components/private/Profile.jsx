@@ -15,6 +15,7 @@ const Profile = () => {
   const [batches, setBatches] = useState([]);
   const [availableYears, setAvailableYears] = useState([]);
   const { register, handleSubmit, watch, setValue } = useForm();
+
   const selectedTradeName = watch("tradeName");
   const selectedYear = watch("year");
   const selectedBatchId = watch("batchId");
@@ -103,7 +104,7 @@ const Profile = () => {
   return (
     <div className="bg-gray-100 min-h-screen flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        {batches && profile && trades ? (
+        {profile ? (
           <>
             <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
               Your Profile
