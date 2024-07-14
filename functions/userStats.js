@@ -41,21 +41,23 @@ export default async ({ req, res, log, error }) => {
     ).toISOString();
     const startOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
 
-    log(today);
-    const questions = await fetchAllDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.APPWRITE_QUES_COLLECTION_ID
-    );
-    log("ques");
-    const mockTests = await fetchAllDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.QUESTIONPAPER_COLLECTION_ID
-    );
-    log("mock");
-    const userStats = await fetchAllDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.USER_STATS_COLLECTION_ID
-    );
+    const [questions, mockTests, userStats] = await Promise.all([
+      fetchAllDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.APPWRITE_QUES_COLLECTION_ID
+      ),
+      fetchAllDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.QUESTIONPAPER_COLLECTION_ID
+      ),
+      fetchAllDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.USER_STATS_COLLECTION_ID
+      ),
+    ]);
+
+    const tradeId = "667e843500333017b716";
+    const batchId = "6693a343001c12fb4a85";
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -174,6 +176,8 @@ export default async ({ req, res, log, error }) => {
         year_testsCount: userData.year_testsCount ?? 0,
         questions: userData.questions,
         tests: userData.tests,
+        tradeId: "667e843500333017b716",
+        batchId: "6693a343001c12fb4a85",
       };
 
       try {
