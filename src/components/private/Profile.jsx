@@ -33,6 +33,7 @@ const Profile = () => {
         setIsLoading(false);
       }
     };
+    console.log("done");
 
     const fetchTrades = async () => {
       try {
