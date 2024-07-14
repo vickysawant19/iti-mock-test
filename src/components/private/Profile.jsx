@@ -22,6 +22,7 @@ const Profile = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setIsLoading(true);
     const fetchProfile = async () => {
       try {
         const profile = await userProfileService.getUserProfile(user.$id);
@@ -101,7 +102,7 @@ const Profile = () => {
   return (
     <div className="bg-gray-100 min-h-screen flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        {profile ? (
+        {batches && profile && trades ? (
           <>
             <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
               Your Profile
@@ -122,19 +123,17 @@ const Profile = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-600">Trade</h2>
                 <p className="text-gray-800">
-                  {
+                  {tradedata &&
                     tradedata.find((trade) => trade.$id === profile.tradeId)
-                      .tradeName
-                  }
+                      ?.tradeName}
                 </p>
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-600">Batch</h2>
                 <p className="text-gray-800">
-                  {
+                  {batches &&
                     batches.find((batch) => batch.$id === profile.batchId)
-                      .BatchName
-                  }
+                      ?.BatchName}
                 </p>
               </div>
               <div>
