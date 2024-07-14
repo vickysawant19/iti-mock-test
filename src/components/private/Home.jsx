@@ -6,11 +6,23 @@ import { appwriteService } from "../../appwrite/appwriteConfig";
 import quesdbservice from "../../appwrite/database";
 import { Query } from "appwrite";
 import userStatsService from "../../appwrite/userStats";
+import conf from "../../config/config";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const fetchdata = async () => {
+      const database = appwriteService.getDatabases();
+
+      const res = await database.listDocuments(
+        conf.databaseId,
+        "66936df000108d8e2364"
+      );
+      console.log("res", res.documents);
+    };
+    fetchdata();
+  }, []);
 
   return (
     <div className="bg-gray-100 min-h-screen">

@@ -9,6 +9,10 @@ const conf = {
   tradeCollectionId: String(import.meta.env.VITE_TRADE_COLLECTION_ID),
   bucketId: String(import.meta.env.VITE_APPWRITE_BUCKET_ID),
   userStatsCollectionId: String(import.meta.env.VITE_USER_STATS_COLLECTION_ID),
+  userProfilesCollectionId: String(
+    import.meta.env.VITE_USER_PROFILE_COLLECTION_ID
+  ),
+  batchesCollectionId: String(import.meta.env.VITE_BATCH_COLLECTION_ID),
 };
 
 export default conf;

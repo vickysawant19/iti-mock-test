@@ -12,9 +12,9 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { appwriteService } from "../../appwrite/appwriteConfig";
+
 import userStatsService from "../../appwrite/userStats";
-import userStats from "../../../functions/userStats";
+
 import CustomSelect from "../components/CustomSelect";
 import { ClipLoader } from "react-spinners";
 

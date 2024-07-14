@@ -1,6 +1,6 @@
-import { ID, Query } from 'appwrite';
-import conf from '../config/config';
-import { appwriteService } from './appwriteConfig';
+import { ID, Query } from "appwrite";
+import conf from "../config/config";
+import { appwriteService } from "./appwriteConfig";
 
 export class TradeService {
   constructor() {
@@ -14,11 +14,13 @@ export class TradeService {
       const existingTrades = await this.database.listDocuments(
         conf.databaseId,
         conf.tradeCollectionId,
-        [Query.equal('tradeName', tradeName), Query.equal('year', year)]
+        [Query.equal("tradeName", tradeName), Query.equal("year", year)]
       );
 
       if (existingTrades.total > 0) {
-        throw new Error('The trade with the specified name and year already exists.');
+        throw new Error(
+          "The trade with the specified name and year already exists."
+        );
       }
 
       const documentData = {
@@ -47,22 +49,26 @@ export class TradeService {
         documentData
       );
     } catch (error) {
-      console.log('Appwrite error: update Trade:', error);
+      console.log("Appwrite error: update Trade:", error);
       return false;
     }
   }
 
   async deleteTrade(id) {
     try {
-      await this.database.deleteDocument(conf.databaseId, conf.tradeCollectionId, id);
+      await this.database.deleteDocument(
+        conf.databaseId,
+        conf.tradeCollectionId,
+        id
+      );
       return true;
     } catch (error) {
-      console.log('Appwrite error: delete Trade:', error);
+      console.log("Appwrite error: delete Trade:", error);
       return false;
     }
   }
 
-  async listTrades(queries = [Query.orderDesc('$createdAt')]) {
+  async listTrades(queries = [Query.orderDesc("$createdAt")]) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,
@@ -70,8 +76,8 @@ export class TradeService {
         queries
       );
     } catch (error) {
-      console.error('Appwrite error: fetching trades:', error);
-      throw new Error(`Error:${error.message.split('.')[0]}`);
+      console.error("Appwrite error: fetching trades:", error);
+      throw new Error(`Error:${error.message.split(".")[0]}`);
     }
   }
 
@@ -83,7 +89,7 @@ export class TradeService {
         id
       );
     } catch (error) {
-      console.log('Appwrite error: get Trade:', error);
+      console.log("Appwrite error: get Trade:", error);
       return false;
     }
   }

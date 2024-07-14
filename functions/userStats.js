@@ -74,6 +74,8 @@ export default async ({ req, res, log, error }) => {
             createdAt: doc.$createdAt,
           })
         );
+        // {667e843500333017b716}
+        // 668b7ed800283d8b464f   eltn one year
         acc[doc.userId].userName = doc.userName;
       } else {
         acc[doc.userId] = {
