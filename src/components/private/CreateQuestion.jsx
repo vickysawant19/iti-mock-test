@@ -135,6 +135,7 @@ const CreateQuestion = () => {
                 Question
               </label>
               <textarea
+                spellCheck={true}
                 id="question"
                 {...register("question", { required: "Question is required" })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"

@@ -16,12 +16,12 @@ import { appwriteService } from "../../appwrite/appwriteConfig";
 import userStatsService from "../../appwrite/userStats";
 import userStats from "../../../functions/userStats";
 import CustomSelect from "../components/CustomSelect";
+import { ClipLoader } from "react-spinners";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
   const [topContributors, setTopContributors] = useState([]);
   const [topScorers, setTopScorers] = useState([]);
-  const [userRecord, setUserRecord] = useState([]);
   const [allUsersStats, setAllUserStats] = useState([]);
   const [currUserRecord, setCurrUserRecord] = useState({
     questions: [],
@@ -132,11 +132,6 @@ const Dashboard = () => {
     setTopScorers(sortedScorersStats.slice(0, 20)); // Get top 10 scorers
   }, [allUsersStats, timePeriod]);
 
-  // console.log(currUserRecord);
-
-  // const handleTimePeriodChange = (e) => {
-  //   setTimePeriod(e.target.value);
-  // };
   const handleTimePeriodChange = (value) => {
     setTimePeriod(value);
   };
@@ -165,19 +160,20 @@ const Dashboard = () => {
     { maxScore: 0, userName: "" }
   );
 
-  // const maxScore = currUserRecord.scores.reduce(
-  //   (acc, curr) => (curr.score > acc ? curr.score : acc),
-  //   0
-  // );
-
   if (!currUserRecord || !Array.isArray(currUserRecord.scores)) {
-    return <div>Loading...</div>;
+    return (
+      <div
+        className="w-full min-h-screen flex items-center justify-center"
+        style={{ minHeight: `calc(100vh - 16px)` }}
+      >
+        <ClipLoader color="#123abc" size={50} />
+      </div>
+    );
   }
 
   const maxScore = Math.max(
     ...currUserRecord.scores.map((score) => score.score)
   );
-  console.log("timeperiod", timePeriod);
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen mt-5">
