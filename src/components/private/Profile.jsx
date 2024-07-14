@@ -47,7 +47,7 @@ const Profile = () => {
         }, {});
         setTrades(groupedTrades);
       } catch (error) {
-        console.log(error);
+        console.log(error); //
       }
     };
 
