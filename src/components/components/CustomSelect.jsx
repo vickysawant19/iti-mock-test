@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FaArrowDown, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const CustomSelect = ({ options, value, onChangeFunc }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,10 +16,17 @@ const CustomSelect = ({ options, value, onChangeFunc }) => {
     <div className="relative w-24 rounded-xl mr-2">
       <button
         type="button"
-        className="mb-4 p-2 border rounded bg-white w-full text-left capitalize"
+        className="mb-4 p-2 border rounded bg-white flex items-center justify-between w-full text-left capitalize px-4"
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedValue}
+        <span
+          className={`transition-transform duration-300 transform ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          {isOpen ? <FaChevronDown /> : <FaChevronDown />}
+        </span>
       </button>
       {isOpen && (
         <ul className="absolute bg-white border rounded w-full mt-1 z-10 capitalize">
