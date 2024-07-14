@@ -41,7 +41,7 @@ export default async ({ req, res, log, error }) => {
     ).toISOString();
     const startOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
 
-    const [questions, mockTests, userStats] = await Promise.all([
+    const [questions, mockTests, userProfile, userStats] = await Promise.all([
       fetchAllDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID
@@ -52,12 +52,13 @@ export default async ({ req, res, log, error }) => {
       ),
       fetchAllDocuments(
         process.env.APPWRITE_DATABASE_ID,
+        process.env.USER_PROFILE_COLLECTION_ID
+      ),
+      fetchAllDocuments(
+        process.env.APPWRITE_DATABASE_ID,
         process.env.USER_STATS_COLLECTION_ID
       ),
     ]);
-
-    const tradeId = "667e843500333017b716";
-    const batchId = "6693a343001c12fb4a85";
 
     const filterAndFormatData = (data, startDate, formatFn) => {
       return data
@@ -74,8 +75,6 @@ export default async ({ req, res, log, error }) => {
             createdAt: doc.$createdAt,
           })
         );
-        // {667e843500333017b716}
-        // 668b7ed800283d8b464f   eltn one year
         acc[doc.userId].userName = doc.userName;
       } else {
         acc[doc.userId] = {
@@ -155,6 +154,12 @@ export default async ({ req, res, log, error }) => {
       return acc;
     }, {});
 
+    const userProfileData = userProfile.reduce((acc, doc) => {
+      acc[doc.userId] = doc.tradeId;
+      acc[doc.userId] = doc.batchId;
+      return acc;
+    }, {});
+
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
 
@@ -176,8 +181,8 @@ export default async ({ req, res, log, error }) => {
         year_testsCount: userData.year_testsCount ?? 0,
         questions: userData.questions,
         tests: userData.tests,
-        tradeId: "667e843500333017b716",
-        batchId: "6693a343001c12fb4a85",
+        tradeId: userProfileData[userId],
+        batchId: userProfileData[userId],
       };
 
       try {
