@@ -29,7 +29,32 @@ export default async ({ req, res, log, error }) => {
   };
 
   try {
-    const today = new Date();
+    const getDateInIST = () => {
+      const date = new Date();
+      const options = { timeZone: "Asia/Kolkata", hour12: false };
+      const formatter = new Intl.DateTimeFormat("en-US", options);
+
+      // Extract the parts of the date in IST
+      const [
+        { value: month },
+        ,
+        { value: day },
+        ,
+        { value: year },
+        ,
+        { value: hour },
+        ,
+        { value: minute },
+        ,
+        { value: second },
+      ] = formatter.formatToParts(date);
+
+      return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+    };
+
+    log(new Date());
+    const today = getDateInIST();
+    log(today);
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const startOfWeek = new Date(
       today.setDate(today.getDate() - today.getDay())
