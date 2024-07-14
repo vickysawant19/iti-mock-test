@@ -29,31 +29,15 @@ export default async ({ req, res, log, error }) => {
   };
 
   try {
-    const getDateInIST = () => {
-      const date = new Date();
-      const options = { timeZone: "Asia/Kolkata", hour12: false };
-      const formatter = new Intl.DateTimeFormat("en-US", options);
-
-      // Extract the parts of the date in IST
-      const [
-        { value: month },
-        ,
-        { value: day },
-        ,
-        { value: year },
-        ,
-        { value: hour },
-        ,
-        { value: minute },
-        ,
-        { value: second },
-      ] = formatter.formatToParts(date);
-
-      return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+    const getISTDate = () => {
+      const now = new Date();
+      const utcOffset = now.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+      const istOffset = 5.5 * 3600000; // IST is UTC+5:30
+      return new Date(now.getTime() + utcOffset + istOffset);
     };
 
     log(new Date());
-    const today = getDateInIST();
+    const today = getISTDate();
     log(today);
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const startOfWeek = new Date(
