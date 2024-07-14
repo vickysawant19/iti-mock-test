@@ -54,8 +54,6 @@ export default async ({ req, res, log, error }) => {
       const updatedData = {
         userId: userId,
         userName: userStat.userName || "",
-        year_questionsCount: userStat.year_questionsCount || 0,
-        year_testsCount: userStat.year_testsCount || 0,
         tradeId: tradeId,
         batchId: batchId,
         enrolledAt: enrolledAt,
