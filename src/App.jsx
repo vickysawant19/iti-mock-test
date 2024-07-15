@@ -7,6 +7,8 @@ import { addUser } from "./store/userSlice";
 import authService from "./appwrite/auth";
 import { ClipLoader } from "react-spinners";
 import { Analytics } from "@vercel/analytics/react";
+import userProfileService from "./appwrite/userProfileService";
+import { addProfile } from "./store/profileSlice";
 
 function App() {
   const user = useSelector((state) => state.user);
@@ -21,8 +23,14 @@ function App() {
           const res = await authService.getCurrentUser();
           if (res) {
             dispatch(addUser(res));
-            if (window.location.pathname === "/") {
-              navigate("/home");
+            const profile = await userProfileService.getUserProfile(res.$id);
+            if (profile) {
+              dispatch(addProfile(profile));
+              if (window.location.pathname === "/") {
+                navigate("/dash");
+              }
+            } else {
+              navigate("/profile");
             }
           }
         }
@@ -55,7 +63,6 @@ function App() {
       <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
         <Outlet />
       </div>
-      <Footer />
     </div>
   );
 }

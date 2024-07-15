@@ -1,28 +1,12 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import Footer from "../Footer";
 import { useSelector } from "react-redux";
-import { appwriteService } from "../../appwrite/appwriteConfig";
-import quesdbservice from "../../appwrite/database";
-import { Query } from "appwrite";
-import userStatsService from "../../appwrite/userStats";
-import conf from "../../config/config";
+import Footer from "../Footer";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
 
-  useEffect(() => {
-    const fetchdata = async () => {
-      const database = appwriteService.getDatabases();
-
-      const res = await database.listDocuments(
-        conf.databaseId,
-        "66936df000108d8e2364"
-      );
-      console.log("res", res.documents);
-    };
-    fetchdata();
-  }, []);
+  useEffect(() => {}, []);
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -38,12 +22,9 @@ const Home = () => {
           </p>
         </header>
 
-        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          <div
-            className="bg-white shadow-md rounded-lg p-6"
-            style={{ backgroundColor: "#E6FFFA" }}
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <main className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
+            <h2 className="text-xl  font-semibold text-gray-800 mb-4">
               Create a New Question
             </h2>
             <p className="text-gray-600 mb-4">
@@ -57,10 +38,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div
-            className="bg-white shadow-md rounded-lg p-6"
-            style={{ backgroundColor: "#FFFBE6" }}
-          >
+          <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               View all Questions
             </h2>
@@ -75,10 +53,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div
-            className="bg-white shadow-md rounded-lg p-6"
-            style={{ backgroundColor: "#FFEBE6" }}
-          >
+          <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Create a Mock Exam
             </h2>
@@ -93,10 +68,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div
-            className="bg-white shadow-md rounded-lg p-6"
-            style={{ backgroundColor: "#E6E6FF" }}
-          >
+          <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               View All Mock Tests
             </h2>
@@ -111,10 +83,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div
-            className="bg-white shadow-md rounded-lg p-6"
-            style={{ backgroundColor: "#5bd3e7" }}
-          >
+          <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Attain Test by Paper ID
             </h2>
@@ -130,6 +99,7 @@ const Home = () => {
           </div>
         </main>
       </div>
+      <Footer />
     </div>
   );
 };

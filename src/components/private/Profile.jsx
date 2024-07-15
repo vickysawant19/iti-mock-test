@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import tradeService from "../../appwrite/tradedetails";
 import batchService from "../../appwrite/batchService";
 import userProfileService from "../../appwrite/userProfileService";
 import { ClipLoader } from "react-spinners";
 import { format } from "date-fns";
+import { addProfile, selectProfile } from "../../store/profileSlice";
 
 const Profile = () => {
   const user = useSelector((state) => state.user);
-  const [profile, setProfile] = useState(null);
+
+  const profile = useSelector(selectProfile);
+
+  // const [profile, setProfile] = useState(null);
   const [tradedata, setTradeData] = useState([]);
   const [trades, setTrades] = useState({});
   const [batches, setBatches] = useState([]);
@@ -24,17 +28,6 @@ const Profile = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    const fetchProfile = async () => {
-      try {
-        const profile = await userProfileService.getUserProfile(user.$id);
-        setProfile(profile);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    console.log("done");
 
     const fetchTrades = async () => {
       try {
@@ -50,6 +43,8 @@ const Profile = () => {
         setTrades(groupedTrades);
       } catch (error) {
         console.log(error); //
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -57,13 +52,11 @@ const Profile = () => {
       try {
         const batchData = await batchService.listBatches();
         setBatches(batchData.documents);
-        console.log(batchData);
       } catch (error) {
         console.log(error);
       }
     };
 
-    fetchProfile();
     fetchTrades();
     fetchBatches();
   }, [user.$id]);
@@ -77,16 +70,19 @@ const Profile = () => {
   }, [selectedTradeName, trades, setValue]);
 
   const handleCreateProfile = async (data) => {
+    const dispatch = useDispatch();
+
     const selectedTrade = tradedata.find(
       (trade) => trade.tradeName === data.tradeName && trade.year === data.year
     );
+
     try {
       const newProfile = await userProfileService.createUserProfile(
         user.$id,
         selectedTrade.$id,
         data.batchId
       );
-      setProfile(newProfile);
+      dispatch(addProfile(newProfile));
     } catch (error) {
       setError("Failed to create profile. Please try again.");
       console.log(error);
@@ -102,7 +98,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center pb-20">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         {profile ? (
           <>

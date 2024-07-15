@@ -17,6 +17,7 @@ import {
 import authService from "../appwrite/auth";
 import { removeUser } from "../store/userSlice";
 import logo from "../assets/logo.jpeg";
+import { removeProfile } from "../store/profileSlice";
 
 const Navbar = () => {
   const user = useSelector((state) => state.user);
@@ -28,6 +29,7 @@ const Navbar = () => {
       if (user) {
         await authService.logout();
         dispatch(removeUser());
+        dispatch(removeProfile());
       }
     } catch (error) {
       console.log(error);
@@ -41,7 +43,7 @@ const Navbar = () => {
   return (
     <>
       {/* Navbar */}
-      <div className="bg-blue-600 h-14 w-full p-3 flex fixed z-10 shadow-md">
+      <div className="bg-blue-900 h-14 w-full p-3 flex fixed z-10 shadow-md">
         <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto">
           <div className="flex items-center gap-2">
             <button className="text-white text-2xl " onClick={toggleMenu}>
@@ -52,7 +54,9 @@ const Navbar = () => {
               src={logo}
               alt="ITI"
             />
-            <span className="font-bold text-white text-lg">ITI MOCK TEST</span>
+            <span className="font-bold text-white text-lg  ">
+              ITI MOCK TEST
+            </span>
           </div>
           <div className="hidden md:flex text-white gap-6 items-center font-semibold">
             <NavLink
