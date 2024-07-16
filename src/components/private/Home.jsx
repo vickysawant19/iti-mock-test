@@ -19,7 +19,7 @@ const Home = () => {
           <h1 className="text-3xl font-bold text-gray-800 text-center">
             Welcome {""}
             <span className="text-orange-600">{user.name},</span>
-            <br /> to Mock Test Center
+            <br /> to ITI Mock Test
           </h1>
           <p className="text-lg text-gray-600 text-center mt-2">
             Prepare yourself with our mock tests and practice questions

@@ -45,18 +45,21 @@ const Navbar = () => {
   return (
     <>
       {/* Navbar */}
-      <div className="bg-blue-900 h-14 w-full p-3 flex fixed z-10 shadow-md">
-        <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto">
-          <div className="flex items-center gap-2">
-            <button className="text-white text-2xl" onClick={toggleMenu}>
+      <div className="bg-blue-900 h-14 w-full flex fixed z-10 shadow-md">
+        <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto p-4 ">
+          <div className="flex items-center gap-4 w-full">
+            <button
+              className="text-white text-2xl hover:scale-105 transition-transform duration-300 "
+              onClick={toggleMenu}
+            >
               <FaBars />
             </button>
             <img
-              className="w-7 rounded-full shadow-xl mix-blend-screen"
+              className="w-7 rounded-full shadow-xl mix-blend-screen "
               src={logo}
               alt="ITI"
             />
-            <span className="font-bold text-white text-lg">ITI MOCK TEST</span>
+            <span className="font-bold text-white text-lg ">ITI MOCK TEST</span>
           </div>
           <div className="hidden md:flex text-white gap-6 items-center font-semibold">
             <NavLink
