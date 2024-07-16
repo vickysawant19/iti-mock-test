@@ -10,8 +10,13 @@ import { addUser } from "../../store/userSlice";
 
 import students from "../../assets/students.jpeg";
 
+import { ClipLoader } from "react-spinners";
+import userProfileService from "../../appwrite/userProfileService";
+import { addProfile } from "../../store/profileSlice";
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -20,7 +25,9 @@ const Login = () => {
   } = useForm();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user);
+  const profile = useSelector((state) => state.profile);
   const navigate = useNavigate();
+
   useEffect(() => {
     if (user) {
       navigate("/home");
@@ -28,16 +35,26 @@ const Login = () => {
   }, [user]);
 
   const onSubmit = async (data) => {
-    console.log(data);
+    setIsLoading(true);
+
     try {
       // Mock API call
       const user = await authService.login(data);
       if (user) {
         dispatch(addUser(user));
-        toast.success("Login successful!");
+        const res = await userProfileService.getUserProfile(user.$id);
+        console.log(res);
+        if (res) {
+          dispatch(addProfile(res));
+          toast.success("Login successful!");
+        } else {
+          navigate("/profile");
+        }
       }
     } catch (error) {
       toast.error(`Login failed: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,10 +137,11 @@ const Login = () => {
           </div>
 
           <button
+            disabled={isLoading}
             type="submit"
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full"
           >
-            Login
+            {isLoading ? <ClipLoader size={20} color="white" /> : "Login"}
           </button>
         </form>
 

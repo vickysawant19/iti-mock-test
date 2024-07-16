@@ -1,12 +1,16 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Footer from "../Footer";
+import userProfileService from "../../appwrite/userProfileService";
+import { addProfile } from "../../store/profileSlice";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
+  const profile = useSelector((state) => state.profile);
+  const dispatch = useDispatch();
 
-  useEffect(() => {}, []);
+  useEffect(() => {}, [dispatch]);
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -22,7 +26,7 @@ const Home = () => {
           </p>
         </header>
 
-        <main className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
           <div className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between">
             <h2 className="text-xl  font-semibold text-gray-800 mb-4">
               Create a New Question

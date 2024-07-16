@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Noto Sans Devanagari", "sans-serif"], // Default sans-serif font
+        sans: ["sans", "sans-serif"], // Default sans-serif font
         marathi: ["Noto Sans Devanagari", "sans-serif"], // Marathi font
         hindi: ["Noto Sans Devanagari", "sans-serif"], // Hindi font
       },

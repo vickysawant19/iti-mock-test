@@ -10,10 +10,8 @@ import { addProfile, selectProfile } from "../../store/profileSlice";
 
 const Profile = () => {
   const user = useSelector((state) => state.user);
-
   const profile = useSelector(selectProfile);
 
-  // const [profile, setProfile] = useState(null);
   const [tradedata, setTradeData] = useState([]);
   const [trades, setTrades] = useState({});
   const [batches, setBatches] = useState([]);
@@ -25,10 +23,10 @@ const Profile = () => {
   const selectedBatchId = watch("batchId");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const dispatch = useDispatch();
 
   useEffect(() => {
     setIsLoading(true);
-
     const fetchTrades = async () => {
       try {
         const tradesData = await tradeService.listTrades();
@@ -70,8 +68,6 @@ const Profile = () => {
   }, [selectedTradeName, trades, setValue]);
 
   const handleCreateProfile = async (data) => {
-    const dispatch = useDispatch();
-
     const selectedTrade = tradedata.find(
       (trade) => trade.tradeName === data.tradeName && trade.year === data.year
     );
@@ -79,6 +75,7 @@ const Profile = () => {
     try {
       const newProfile = await userProfileService.createUserProfile(
         user.$id,
+        user.name,
         selectedTrade.$id,
         data.batchId
       );

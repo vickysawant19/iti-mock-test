@@ -10,6 +10,7 @@ export class UserProfileService {
 
   async createUserProfile(
     userId,
+    userName,
     tradeId,
     batchId,
     enrolledAt = new Date().toISOString()
@@ -17,6 +18,7 @@ export class UserProfileService {
     try {
       const userProfile = {
         userId,
+        userName,
         tradeId,
         batchId,
         enrolledAt,

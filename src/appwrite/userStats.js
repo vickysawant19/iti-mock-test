@@ -8,7 +8,7 @@ export class UserStatsService {
     this.database = appwriteService.getDatabases();
   }
 
-  async getAllStats(queries = [Query.orderDesc("$createdAt")]) {
+  async getAllStats(queries = [Query.orderDesc("$updatedAt")]) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,

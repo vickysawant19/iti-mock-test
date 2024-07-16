@@ -1,14 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
-import authService from '../../appwrite/auth';
-import { addUser } from '../../store/userSlice';
-import { ClipLoader } from 'react-spinners';
+import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Navigate, useNavigate, Outlet } from "react-router-dom";
 
 const ProtectedRoute = () => {
-  const user = useSelector(state => state.user);
+  const user = useSelector((state) => state.user);
+  const profile = useSelector((state) => state.profile);
+  const navigate = useNavigate();
 
-  return user ? <Outlet /> : <Navigate to="/login" />;
+  useEffect(() => {
+    if (user && !profile) {
+      navigate("/profile");
+    }
+  }, [user, profile, navigate]);
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

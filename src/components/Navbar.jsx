@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import {
@@ -17,10 +17,12 @@ import {
 import authService from "../appwrite/auth";
 import { removeUser } from "../store/userSlice";
 import logo from "../assets/logo.jpeg";
-import { removeProfile } from "../store/profileSlice";
+import { removeProfile, selectProfile } from "../store/profileSlice";
 
 const Navbar = () => {
   const user = useSelector((state) => state.user);
+  const profile = useSelector(selectProfile);
+
   const dispatch = useDispatch();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -46,7 +48,7 @@ const Navbar = () => {
       <div className="bg-blue-900 h-14 w-full p-3 flex fixed z-10 shadow-md">
         <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto">
           <div className="flex items-center gap-2">
-            <button className="text-white text-2xl " onClick={toggleMenu}>
+            <button className="text-white text-2xl" onClick={toggleMenu}>
               <FaBars />
             </button>
             <img
@@ -54,9 +56,7 @@ const Navbar = () => {
               src={logo}
               alt="ITI"
             />
-            <span className="font-bold text-white text-lg  ">
-              ITI MOCK TEST
-            </span>
+            <span className="font-bold text-white text-lg">ITI MOCK TEST</span>
           </div>
           <div className="hidden md:flex text-white gap-6 items-center font-semibold">
             <NavLink
@@ -116,42 +116,42 @@ const Navbar = () => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full z-20 transition-transform duration-300 transform bg-slate-300 text-blue-800 p-6 ${
+        className={`fixed top-0 left-0 h-full min-w-60 z-20 transition-transform duration-300 transform bg-white text-gray-800 p-6 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } w-fit md:w-1/4`}
+        } w-fit md:w-1/4 overflow-y-auto`}
       >
-        <div className=" flex items-center justify-between rounded-xl">
-          <img className="w-10 mix-blend-normal" src={logo} alt="logo" />
-          <button
-            className="text-blue-950 text-2xl  p-2 rounded "
-            onClick={toggleMenu}
-          >
-            <FaBars />
+        <div className="flex items-center justify-between mb-6">
+          <img className="w-10" src={logo} alt="logo" />
+          <button className="text-gray-800 text-2xl" onClick={toggleMenu}>
+            <FaTimes />
           </button>
         </div>
         {user && (
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-                isActive
-                  ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                  : "bg-blue-400"
-              }`
-            }
-            onClick={toggleMenu}
-          >
-            <FaUserCircle />
-            <span>Profile</span>
-          </NavLink>
+          <div className="flex items-center mb-4 border justify-center rounded-xl py-2">
+            <FaUserCircle className="text-4xl text-gray-500 mb-2 mr-2" />
+            <div className=" ml-2">
+              <span className="text-lg font-semibold px-2">
+                {profile?.userName}
+              </span>
+              <NavLink
+                to="/profile"
+                className={({ isActive }) =>
+                  `flex items-center px-2 text-base text-blue-800 hover:bg-gray-100 rounded-xl ${
+                    isActive ? "bg-gray-100" : ""
+                  }`
+                }
+                onClick={toggleMenu}
+              >
+                <span>View Profile</span>
+              </NavLink>
+            </div>
+          </div>
         )}
         <NavLink
           to="/home"
           className={({ isActive }) =>
-            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
+            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+              isActive ? "bg-gray-100" : ""
             }`
           }
           onClick={toggleMenu}
@@ -159,98 +159,88 @@ const Navbar = () => {
           <FaHome />
           <span>Home</span>
         </NavLink>
-        <NavLink
-          to="/dash"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-blue-300 p-2 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaDashcube />
-          <span>Dashboard</span>
-        </NavLink>
 
-        <NavLink
-          to="/create-question"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaQuestionCircle />
-          <span>Create Question</span>
-        </NavLink>
-        <NavLink
-          to="/manage-questions"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaList />
-          <span>Manage Questions</span>
-        </NavLink>
-        <NavLink
-          to="/mock-exam"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaBook />
-          <span>Create Mock Exam</span>
-        </NavLink>
-        <NavLink
-          to="/all-mock-tests"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaFileAlt />
-          <span>View Mock Tests</span>
-        </NavLink>
-        <NavLink
-          to="/attain-test"
-          className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
-            }`
-          }
-          onClick={toggleMenu}
-        >
-          <FaKey />
-          <span>Attain Test</span>
-        </NavLink>
+        {user && (
+          <>
+            <NavLink
+              to="/dash"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaDashcube />
+              <span>Dashboard</span>
+            </NavLink>
+            <NavLink
+              to="/create-question"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaQuestionCircle />
+              <span>Create Question</span>
+            </NavLink>
+            <NavLink
+              to="/manage-questions"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaList />
+              <span>Manage Questions</span>
+            </NavLink>
+            <NavLink
+              to="/mock-exam"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaBook />
+              <span>Create Mock Exam</span>
+            </NavLink>
+            <NavLink
+              to="/all-mock-tests"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaFileAlt />
+              <span>View Mock Tests</span>
+            </NavLink>
+            <NavLink
+              to="/attain-test"
+              className={({ isActive }) =>
+                `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              <FaKey />
+              <span>Attain Test</span>
+            </NavLink>
+          </>
+        )}
         <NavLink
           to="/about"
           className={({ isActive }) =>
-            `flex items-center gap-4 py-2 text-xl hover:bg-blue-300 p-2 mt-3 rounded-xl ${
-              isActive
-                ? "bg-blue-800 hover:bg-blue-800 text-blue-50"
-                : "bg-blue-400"
+            `flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl ${
+              isActive ? "bg-gray-100" : ""
             }`
           }
           onClick={toggleMenu}
@@ -258,26 +248,25 @@ const Navbar = () => {
           <FaInfoCircle />
           <span>About</span>
         </NavLink>
+
         {user ? (
-          <>
-            <button
-              onClick={() => {
-                handleLogout();
-                toggleMenu();
-              }}
-              className=" text-xl mt-3 text-left py-2 hover:bg-blue-300 p-2 absolute bottom-4 rounded-xl flex items-center gap-2"
-            >
-              <FaUserCircle />
-              <span>Logout</span>
-            </button>
-          </>
+          <button
+            onClick={() => {
+              handleLogout();
+              toggleMenu();
+            }}
+            className="flex items-center gap-2 text-xl mt-4 text-left py-2 hover:bg-gray-100 p-2 rounded-xl w-full"
+          >
+            <FaUserCircle />
+            <span>Logout</span>
+          </button>
         ) : (
           <>
             <NavLink
               to="/login"
               className={({ isActive }) =>
-                `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
-                  isActive ? "bg-blue-800 hover:bg-blue-600" : ""
+                `flex items-center gap-2 py-2 mt-4 hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
                 }`
               }
               onClick={toggleMenu}
@@ -288,8 +277,8 @@ const Navbar = () => {
             <NavLink
               to="/signup"
               className={({ isActive }) =>
-                `flex items-center gap-2 py-2 hover:bg-blue-300 p-2 rounded-xl ${
-                  isActive ? "bg-blue-800" : ""
+                `flex items-center gap-2 py-2 mt-4 hover:bg-gray-100 p-2 rounded-xl ${
+                  isActive ? "bg-gray-100" : ""
                 }`
               }
               onClick={toggleMenu}

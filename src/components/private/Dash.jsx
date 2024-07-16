@@ -17,6 +17,9 @@ import userStatsService from "../../appwrite/userStats";
 
 import CustomSelect from "../components/CustomSelect";
 import { ClipLoader } from "react-spinners";
+import { Query } from "appwrite";
+import { selectProfile } from "../../store/profileSlice";
+import { format } from "date-fns";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
@@ -29,11 +32,17 @@ const Dashboard = () => {
   });
   const [timePeriod, setTimePeriod] = useState("day");
 
+  const profile = useSelector(selectProfile);
+
   // Effect to fetch user stats
   useEffect(() => {
     const fetchAllUsersStats = async () => {
       try {
-        const stats = await userStatsService.getAllStats();
+        const stats = await userStatsService.getAllStats([
+          Query.equal("tradeId", profile.tradeId),
+          Query.equal("batchId", profile.batchId),
+        ]);
+
         setAllUserStats(stats.documents);
 
         const currentUserStats = stats.documents.find(
@@ -171,38 +180,32 @@ const Dashboard = () => {
     );
   }
 
-  const maxScore = Math.max(
-    ...currUserRecord.scores.map((score) => score.score)
-  );
-
   return (
-    <div className="p-6 bg-gray-100 min-h-screen mt-5">
-      <div className="flex justify-between">
-        <h1 className="text-3xl font-bold mb-6 text-slate-800">Dashboard</h1>
+    <div className="p-6 bg-gray-100 min-h-screen mt-5 overflow-hidden">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800 ">Dashboard</h1>
+        <h6 className="text-sm text-slate-500">
+          Updated At :{format(updatedAt, "dd/MM/yyyy hh:mm a")}
+        </h6>
       </div>
 
       {/* Summary Statistics */}
       <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-base font-semibold text-slate-500 ">
+          <h2 className="text-sm font-semibold text-slate-500 flex ">
             My Total Questions
           </h2>
-          <p className="text-2xl font-semibold">{totalQuestions}</p>
-          <p className="text-xs text-nowrap text-gray-600">
-            {new Date(updatedAt).toLocaleString("en-IN", {
-              timeZone: "Asia/Kolkata",
-            })}
+          <p className="text-4xl py-2 font-semibold">
+            {totalQuestions}{" "}
+            <span className="text-sm text-slate-600">Nos.</span>
           </p>
         </div>
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-base font-semibold text-slate-500">
+          <h2 className="text-sm font-semibold text-slate-500">
             My Total Tests
           </h2>
-          <p className="text-2xl font-semibold">{totalTests}</p>
-          <p className="text-xs text-nowrap text-gray-600">
-            {new Date(updatedAt).toLocaleString("en-IN", {
-              timeZone: "Asia/Kolkata",
-            })}
+          <p className="text-4xl py-2 font-semibold">
+            {totalTests} <span className="text-sm text-slate-600">Nos.</span>
           </p>
         </div>
       </div>

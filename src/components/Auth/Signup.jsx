@@ -30,14 +30,13 @@ const Signup = () => {
   }, [user]);
 
   const onSubmit = async (data) => {
-    console.log(data);
     try {
       const user = await authService.createAccount(data);
       if (user) {
         dispatch(addUser(user));
+        toast.success("Signup successful!");
+        navigate("/profile");
       }
-      console.log("success");
-      toast.success("Signup successful!");
     } catch (error) {
       toast.error(`Signup failed: ${error.message}`);
     }
