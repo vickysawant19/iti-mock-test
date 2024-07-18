@@ -38,9 +38,16 @@ const Dashboard = () => {
   const profile = useSelector(selectProfile);
 
   const fetchTrades = async () => {
-    const res = await tradeservice.getTrade(profile.tradeId);
-    if (res) {
-      setTrades(res);
+    setIsLoading(true);
+    try {
+      const res = await tradeservice.getTrade(profile.tradeId);
+      if (res) {
+        setTrades(res);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

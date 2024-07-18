@@ -13,11 +13,11 @@ const CreateMockTest = () => {
 
   const user = useSelector((state) => state.user);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const navigate = useNavigate();
   const subjects = ["TRADE THEORY"];
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -33,9 +33,9 @@ const CreateMockTest = () => {
   console.log(user.labels.includes("admin"));
 
   const onTradeChange = (e) => {
-    const selectedTradeName = e.target.value;
-    setSelectedTrade(selectedTradeName);
-    setValue("tradeId", ""); // Reset tradeId when tradeName changes
+    const selectedTradeid = e.target.value;
+    const trade = trades.find((tr) => tr.$id === selectedTradeid);
+    setSelectedTrade(trade);
   };
 
   const onSubmit = async (data) => {
@@ -45,20 +45,10 @@ const CreateMockTest = () => {
     }
     setIsLoading(true);
 
-    const trade = trades.find(
-      (trade) => trade.tradeName === data.tradeName && trade.year === data.year
-    );
-
-    if (!trade) {
-      toast.error("Invalid trade selected");
-      setIsLoading(false);
-      return;
-    }
-
-    data.tradeName = trade.tradeName;
     data.userName = user.name;
     data.userId = user.$id;
-    data.tradeId = trade.$id; // Set the correct tradeId
+    data.tradeName = selectedTrade.tradeName;
+    console.log(data);
 
     try {
       const newMockTest = await questionpaperservice.generateQuestionPaper(
@@ -69,13 +59,12 @@ const CreateMockTest = () => {
       reset();
       navigate(`/start-mock-test/${newMockTest.$id}`);
     } catch (error) {
+      console.log(error);
       toast.error(`Error creating mock test: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
 
   return (
     <div className="bg-gray-100 min-h-screen flex items-start mt-32 justify-center">
@@ -84,21 +73,21 @@ const CreateMockTest = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
             <label
-              htmlFor="tradeName"
+              htmlFor="tradeId"
               className="block text-gray-700 font-bold mb-2"
             >
               Trade
             </label>
             <select
-              id="tradeName"
-              {...register("tradeName", { required: "Trade is required" })}
+              id="tradeId"
+              {...register("tradeId", { required: "Trade is required" })}
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               onChange={onTradeChange}
             >
               <option value="">Select Trade</option>
-              {uniqueTradeNames.map((tradeName) => (
-                <option key={tradeName} value={tradeName}>
-                  {tradeName}
+              {trades.map((trade) => (
+                <option key={trade.$id} value={trade.$id}>
+                  {trade.tradeName}
                 </option>
               ))}
             </select>
@@ -118,11 +107,14 @@ const CreateMockTest = () => {
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               >
                 <option value="">Select Year</option>
-                {trades
-                  .filter((trade) => trade.tradeName === selectedTrade)
-                  .map((trade) => (
-                    <option key={trade.$id} value={trade.year}>
-                      {trade.year}
+                {new Array(selectedTrade.duration)
+                  .fill(null)
+                  .map((_, index) => (
+                    <option
+                      key={index}
+                      value={index === 0 ? "FIRST" : "SECOND"}
+                    >
+                      {index === 0 ? "FIRST" : "SECOND"}
                     </option>
                   ))}
               </select>

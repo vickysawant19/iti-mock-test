@@ -19,7 +19,7 @@ const EditProfileForm = () => {
   const [tradesData, setTradesData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
 
-  const { register, handleSubmit, watch, setValue } = useForm();
+  const { register, handleSubmit, watch, setValue, getValues } = useForm();
 
   const selectedCollegeId = watch("collegeId");
   const selectedTradeId = watch("tradeId");
@@ -31,6 +31,7 @@ const EditProfileForm = () => {
   const [error, setError] = useState("");
 
   const dispatch = useDispatch();
+  console.log(getValues());
 
   useEffect(() => {
     setIsLoading(true);
@@ -69,12 +70,12 @@ const EditProfileForm = () => {
   }, [user.$id]);
 
   useEffect(() => {
-    if (profile) {
+    if (tradesData.length > 0 && profile) {
       setValue("collegeId", profile.collegeId);
       setValue("tradeId", profile.tradeId);
       setValue("batchId", profile.batchId);
     }
-  }, [profile, setValue]);
+  }, [profile, setValue, tradesData]);
 
   const handleUpdateProfile = async (data) => {
     setIsUpdating(true);
@@ -100,7 +101,7 @@ const EditProfileForm = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !profile) {
     return (
       <>
         <div className="w-full min-h-screen flex items-center justify-center">
@@ -129,11 +130,12 @@ const EditProfileForm = () => {
             <option value="" disabled>
               Select a college
             </option>
-            {collegesData.map((college) => (
-              <option key={college.$id} value={college.$id}>
-                {college.collageName}
-              </option>
-            ))}
+            {collegesData &&
+              collegesData.map((college) => (
+                <option key={college.$id} value={college.$id}>
+                  {college.collageName}
+                </option>
+              ))}
           </select>
         </div>
         <div>
@@ -145,11 +147,12 @@ const EditProfileForm = () => {
             <option value="" disabled>
               Select a trade
             </option>
-            {tradesData.map((trade) => (
-              <option key={trade.$id} value={trade.$id}>
-                {trade.tradeName}
-              </option>
-            ))}
+            {tradesData &&
+              tradesData.map((trade) => (
+                <option key={trade.$id} value={trade.$id}>
+                  {trade.tradeName}
+                </option>
+              ))}
           </select>
         </div>
 
@@ -162,11 +165,12 @@ const EditProfileForm = () => {
             <option value="" disabled>
               Select a batch
             </option>
-            {batchesData.map((batch) => (
-              <option key={batch.$id} value={batch.$id}>
-                {batch.BatchName}
-              </option>
-            ))}
+            {batchesData &&
+              batchesData.map((batch) => (
+                <option key={batch.$id} value={batch.$id}>
+                  {batch.BatchName}
+                </option>
+              ))}
           </select>
         </div>
         <button
