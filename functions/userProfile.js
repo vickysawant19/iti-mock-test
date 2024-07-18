@@ -47,6 +47,8 @@ export default async ({ req, res, log, error }) => {
 
     const tradeId = "667e843500333017b716";
     const batchId = "6693a343001c12fb4a85";
+    const collegeId = "66964e930035f9c415ba";
+
     const enrolledAt = new Date().toISOString();
 
     const updatePromises = userStats.map(async (userStat) => {
@@ -57,6 +59,7 @@ export default async ({ req, res, log, error }) => {
         tradeId: tradeId,
         batchId: batchId,
         enrolledAt: enrolledAt,
+        collegeId,
       };
 
       try {
