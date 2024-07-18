@@ -6,16 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* toastStyles.css */
-@media (max-width: 768px) {
-  .Toastify__toast-container {
-    width: 60% !important; /* Adjust the width as needed */
-  }
 
-  .Toastify__toast {
-    font-size: 14px !important; /* Adjust the font size as needed */
-  }
-}
 
 /* General styles for toast notifications */
 .Toastify__toast {
@@ -23,6 +14,7 @@
 }
 
 .Toastify__toast-container {
-  width: 60% !important; /* Adjust the width as needed */
+  width: 90% !important; /* Adjust the width as needed */
   top: 30px !important;
+  right: 10px;
 }
