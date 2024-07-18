@@ -24,6 +24,6 @@
 
 .Toastify__toast-container {
   width: 60% !important; /* Adjust the width as needed */
-  right: 0;
-  top: 20px;
+  right: 10px !important;
+  top: 30px !important;
 }
