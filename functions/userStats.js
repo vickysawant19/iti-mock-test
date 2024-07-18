@@ -166,6 +166,7 @@ export default async ({ req, res, log, error }) => {
       acc[doc.userId] = {
         tradeId: doc.tradeId,
         batchId: doc.batchId,
+        collegeId: doc.collegeId,
       };
       return acc;
     }, {});
@@ -193,6 +194,7 @@ export default async ({ req, res, log, error }) => {
         tests: userData.tests,
         tradeId: userProfileData[userId].tradeId,
         batchId: userProfileData[userId].batchId,
+        collegeId: userProfileData[userId].collegeId,
       };
 
       try {
