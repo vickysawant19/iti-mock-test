@@ -175,22 +175,21 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (allUsersStats) {
-      const updatedAt = allUsersStats?.find(
-        (stat) => stat.userId === user.$id
-      )?.$updatedAt;
-      setUpdatedAt(updatedAt);
+    if (allUsersStats.length === 0) return;
+    const updatedAt = allUsersStats?.find(
+      (stat) => stat.userId === user.$id
+    )?.$updatedAt;
+    setUpdatedAt(updatedAt);
 
-      const totalQuestions = allUsersStats
-        ?.filter((stat) => stat.userId === user.$id)
-        .reduce((acc, stat) => acc + stat.allTime_questionsCount, 0);
-      setTotalQuestions(totalQuestions);
+    const totalQuestions = allUsersStats
+      ?.filter((stat) => stat.userId === user.$id)
+      .reduce((acc, stat) => acc + stat.allTime_questionsCount, 0);
+    setTotalQuestions(totalQuestions);
 
-      const totalTests = allUsersStats
-        ?.filter((stat) => stat.userId === user.$id)
-        .reduce((acc, stat) => acc + stat.allTime_testsCount, 0);
-      setTotalTests(totalTests);
-    }
+    const totalTests = allUsersStats
+      ?.filter((stat) => stat.userId === user.$id)
+      .reduce((acc, stat) => acc + stat.allTime_testsCount, 0);
+    setTotalTests(totalTests);
   }, [allUsersStats]);
 
   // const topScorer = allUsersStats?.reduce(
