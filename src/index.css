@@ -6,11 +6,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom toast container for mobile */
+/* toastStyles.css */
 @media (max-width: 768px) {
-    .custom-toast-container {
-      width: 50% !important; /* Set the width to 50% on mobile devices */
-      left: 5% !important; /* Center the toast horizontally */
-    }
+  .Toastify__toast-container {
+    width: 60% !important; /* Adjust the width as needed */
   }
-  
+
+  .Toastify__toast {
+    font-size: 14px !important; /* Adjust the font size as needed */
+  }
+}
+
+/* General styles for toast notifications */
+.Toastify__toast {
+  font-size: 16px; /* Adjust the font size for desktop views */
+}
