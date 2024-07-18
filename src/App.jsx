@@ -67,7 +67,7 @@ function App() {
       <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
         <Outlet />
       </div>
-      <ToastContainer position="top-center" />
+      <ToastContainer />
     </div>
   );
 }
