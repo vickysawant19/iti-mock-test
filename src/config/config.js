@@ -13,6 +13,10 @@ const conf = {
     import.meta.env.VITE_USER_PROFILE_COLLECTION_ID
   ),
   batchesCollectionId: String(import.meta.env.VITE_BATCH_COLLECTION_ID),
+  collegeTradeCollectionId: String(
+    import.meta.env.VITE_COLLEGE_TRADE_COLLECTION_ID
+  ),
+  collegesCollectionId: String(import.meta.env.VITE_COLLEGE_COLLECTION_ID),
 };
 
 export default conf;

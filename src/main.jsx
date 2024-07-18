@@ -26,6 +26,7 @@ import StartMockTest from "./components/private/StartMockTest.jsx";
 import ShowMockTest from "./components/private/ShowMockTest.jsx";
 import AttainTest from "./components/private/AttainTest.jsx";
 import Dash from "./components/private/Dash.jsx";
+import EditProfileForm from "./components/private/ProfileEdit.jsx";
 
 const router = (
   <Router>
@@ -40,6 +41,7 @@ const router = (
         <Route element={<ProtectedRoute />}>
           <Route path="home" element={<Home />} />
           <Route path="dash" element={<Dash />} />
+          <Route path="profile/edit" element={<EditProfileForm />} />
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />
           <Route path="edit/:quesId" element={<EditQuestion />} />

@@ -20,9 +20,11 @@ import { ClipLoader } from "react-spinners";
 import { Query } from "appwrite";
 import { selectProfile } from "../../store/profileSlice";
 import { format } from "date-fns";
+import tradeservice from "../../appwrite/tradedetails";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
+  const [trades, setTrades] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
   const [topScorers, setTopScorers] = useState([]);
   const [allUsersStats, setAllUserStats] = useState([]);
@@ -34,77 +36,86 @@ const Dashboard = () => {
 
   const profile = useSelector(selectProfile);
 
+  const fetchTrades = async () => {
+    const res = await tradeservice.getTrade(profile.tradeId);
+    if (res) {
+      setTrades(res);
+    }
+  };
+
+  const fetchAllUsersStats = async () => {
+    try {
+      const stats = await userStatsService.getAllStats([
+        Query.equal("tradeId", profile.tradeId),
+        Query.equal("batchId", profile.batchId),
+      ]);
+
+      setAllUserStats(stats.documents);
+
+      const currentUserStats = stats.documents.find(
+        (stats) => stats.userId === user.$id
+      );
+
+      const questions = currentUserStats.questions.map((ques) =>
+        JSON.parse(ques)
+      );
+
+      const tests = currentUserStats.tests.map((tests) => JSON.parse(tests));
+
+      const groupedQues = questions.reduce((acc, curr) => {
+        let date = curr.createdAt.split("T")[0];
+
+        if (!acc[date]) {
+          acc[date] = { date, count: 0 };
+        }
+        acc[date].count += 1;
+        return acc;
+      }, {});
+
+      const groupedTests = tests.reduce((acc, curr) => {
+        let date = curr.createdAt.split("T")[0];
+
+        if (!acc[date]) {
+          acc[date] = { date, count: 0 };
+        }
+        acc[date].count += 1;
+        return acc;
+      }, {});
+
+      const groupedScores = tests.reduce((acc, curr) => {
+        let date = curr.createdAt.split("T")[0];
+
+        if (!acc[curr.paperId]) {
+          acc[curr.paperId] = {
+            date,
+            paperId: curr.paperId,
+            score: curr.score || 0,
+          };
+        }
+        acc[curr.paperId].paperId = curr.paperId;
+        acc[curr.paperId].score = curr.score || 0;
+        acc[curr.paperId].date = date;
+        return acc;
+      }, {});
+
+      const quesArray = Object.values(groupedQues);
+      const testsArray = Object.values(groupedTests);
+      const scoresArray = Object.values(groupedScores);
+
+      setCurrUserRecord((prev) => ({
+        ...prev,
+        tests: testsArray,
+        questions: quesArray,
+        scores: scoresArray,
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // Effect to fetch user stats
   useEffect(() => {
-    const fetchAllUsersStats = async () => {
-      try {
-        const stats = await userStatsService.getAllStats([
-          Query.equal("tradeId", profile.tradeId),
-          Query.equal("batchId", profile.batchId),
-        ]);
-
-        setAllUserStats(stats.documents);
-
-        const currentUserStats = stats.documents.find(
-          (stats) => stats.userId === user.$id
-        );
-
-        const questions = currentUserStats.questions.map((ques) =>
-          JSON.parse(ques)
-        );
-
-        const tests = currentUserStats.tests.map((tests) => JSON.parse(tests));
-
-        const groupedQues = questions.reduce((acc, curr) => {
-          let date = curr.createdAt.split("T")[0];
-
-          if (!acc[date]) {
-            acc[date] = { date, count: 0 };
-          }
-          acc[date].count += 1;
-          return acc;
-        }, {});
-
-        const groupedTests = tests.reduce((acc, curr) => {
-          let date = curr.createdAt.split("T")[0];
-
-          if (!acc[date]) {
-            acc[date] = { date, count: 0 };
-          }
-          acc[date].count += 1;
-          return acc;
-        }, {});
-
-        const groupedScores = tests.reduce((acc, curr) => {
-          let date = curr.createdAt.split("T")[0];
-
-          if (!acc[curr.paperId]) {
-            acc[curr.paperId] = {
-              date,
-              paperId: curr.paperId,
-              score: curr.score || 0,
-            };
-          }
-          acc[curr.paperId].paperId = curr.paperId;
-          acc[curr.paperId].score = curr.score || 0;
-          acc[curr.paperId].date = date;
-          return acc;
-        }, {});
-
-        const quesArray = Object.values(groupedQues);
-        const testsArray = Object.values(groupedTests);
-        const scoresArray = Object.values(groupedScores);
-
-        setCurrUserRecord((prev) => ({
-          ...prev,
-          tests: testsArray,
-          questions: quesArray,
-          scores: scoresArray,
-        }));
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    fetchTrades();
 
     fetchAllUsersStats();
   }, [user.$id]);
@@ -186,6 +197,9 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-slate-800 ">Dashboard</h1>
         <h6 className="text-sm text-slate-500">
           Updated At :{format(updatedAt, "dd/MM/yyyy hh:mm a")}
+        </h6>
+        <h6 className="text-sm text-slate-500">
+          {trades.tradeName}/<span>{trades.year} YEAR</span>
         </h6>
       </div>
 

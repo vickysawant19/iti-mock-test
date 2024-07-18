@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useForm } from "react-hook-form";
+
+import tradeService from "../../appwrite/tradedetails";
+import batchService from "../../appwrite/batchService";
+import userProfileService from "../../appwrite/userProfileService";
+
+import { addProfile, selectProfile } from "../../store/profileSlice";
+import collegeService from "../../appwrite/collageService";
+import { ClipLoader } from "react-spinners";
+
+const EditProfileForm = () => {
+  const user = useSelector((state) => state.user);
+  const profile = useSelector(selectProfile);
+
+  const [collegesData, setCollegesData] = useState([]);
+  const [tradesData, setTradesData] = useState([]);
+  const [batchesData, setBatchesData] = useState([]);
+
+  const { register, handleSubmit, watch, setValue } = useForm();
+
+  const selectedCollegeId = watch("collegeId");
+  const selectedTradeId = watch("tradeId");
+  const selectedBatchId = watch("batchId");
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    setIsLoading(true);
+    const fetchColleges = async () => {
+      try {
+        const collegeData = await collegeService.listColleges();
+        setCollegesData(collegeData.documents);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const fetchTrades = async () => {
+      try {
+        const tradesData = await tradeService.listTrades();
+        setTradesData(tradesData.documents);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const fetchBatches = async () => {
+      try {
+        const batchData = await batchService.listBatches();
+        setBatchesData(batchData.documents);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchColleges();
+    fetchTrades();
+    fetchBatches();
+  }, [user.$id]);
+
+  useEffect(() => {
+    if (profile) {
+      setValue("collegeId", profile.collegeId);
+      setValue("tradeId", profile.tradeId);
+      setValue("batchId", profile.batchId);
+    }
+  }, [profile, setValue]);
+
+  const handleUpdateProfile = async (data) => {
+    try {
+      const updatedProfile = await userProfileService.updateUserProfile(
+        profile.$id,
+        {
+          collegeId: data.collegeId,
+          tradeId: data.tradeId,
+          batchId: data.batchId,
+        }
+      );
+
+      dispatch(addProfile(updatedProfile));
+    } catch (error) {
+      setError("Failed to update profile. Please try again.");
+      console.log(error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <>
+        <div className="w-full min-h-screen flex items-center justify-center">
+          <ClipLoader color="abc123" size={50} />
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-10">
+        Edit Your Profile
+      </h1>
+      {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+      <form
+        onSubmit={handleSubmit(handleUpdateProfile)}
+        className="space-y-4 px-20"
+      >
+        <div>
+          <label className="block text-gray-600">College</label>
+          <select
+            {...register("collegeId")}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled>
+              Select a college
+            </option>
+            {collegesData.map((college) => (
+              <option key={college.$id} value={college.$id}>
+                {college.collageName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-600">Trade</label>
+          <select
+            {...register("tradeId")}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+            <option value="" disabled>
+              Select a trade
+            </option>
+            {tradesData.map((trade) => (
+              <option key={trade.$id} value={trade.$id}>
+                {trade.tradeName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-gray-600">Batch</label>
+          <select
+            {...register("batchId")}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm "
+          >
+            <option value="" disabled>
+              Select a batch
+            </option>
+            {batchesData.map((batch) => (
+              <option key={batch.$id} value={batch.$id}>
+                {batch.BatchName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+          disabled={!selectedCollegeId || !selectedTradeId || !selectedBatchId}
+        >
+          Update Profile
+        </button>
+      </form>
+    </>
+  );
+};
+
+export default EditProfileForm;
