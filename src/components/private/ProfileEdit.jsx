@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 
 import tradeService from "../../appwrite/tradedetails";
 import batchService from "../../appwrite/batchService";
@@ -25,7 +26,10 @@ const EditProfileForm = () => {
   const selectedBatchId = watch("batchId");
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
+
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -73,6 +77,7 @@ const EditProfileForm = () => {
   }, [profile, setValue]);
 
   const handleUpdateProfile = async (data) => {
+    setIsUpdating(true);
     try {
       const updatedProfile = await userProfileService.updateUserProfile(
         profile.$id,
@@ -82,11 +87,16 @@ const EditProfileForm = () => {
           batchId: data.batchId,
         }
       );
-
-      dispatch(addProfile(updatedProfile));
+      if (updatedProfile) {
+        toast.success("Profile Updated");
+        dispatch(addProfile(updatedProfile));
+      }
     } catch (error) {
+      toast.error(error.message);
       setError("Failed to update profile. Please try again.");
       console.log(error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -114,7 +124,7 @@ const EditProfileForm = () => {
           <label className="block text-gray-600">College</label>
           <select
             {...register("collegeId")}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
           >
             <option value="" disabled>
               Select a college
@@ -130,7 +140,7 @@ const EditProfileForm = () => {
           <label className="block text-gray-600">Trade</label>
           <select
             {...register("tradeId")}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
           >
             <option value="" disabled>
               Select a trade
@@ -147,7 +157,7 @@ const EditProfileForm = () => {
           <label className="block text-gray-600">Batch</label>
           <select
             {...register("batchId")}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm "
+            className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
           >
             <option value="" disabled>
               Select a batch
@@ -161,10 +171,15 @@ const EditProfileForm = () => {
         </div>
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-          disabled={!selectedCollegeId || !selectedTradeId || !selectedBatchId}
+          className="w-full disabled:bg-gray-500 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+          disabled={
+            !selectedCollegeId ||
+            !selectedTradeId ||
+            !selectedBatchId ||
+            isUpdating
+          }
         >
-          Update Profile
+          {isUpdating ? "Updating..." : "Update Profile"}
         </button>
       </form>
     </>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import questionpaperservice from "../../appwrite/mockTest";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
 
@@ -69,7 +69,6 @@ const AttainTest = () => {
           </button>
         </form>
       </div>
-      <ToastContainer />
     </div>
   );
 };

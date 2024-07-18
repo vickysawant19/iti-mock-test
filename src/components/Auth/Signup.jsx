@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import authService from "../../appwrite/auth";
 import { useDispatch, useSelector } from "react-redux";
@@ -180,7 +180,6 @@ const Signup = () => {
           </Link>
         </div>
       </div>
-      <ToastContainer />
     </div>
   );
 };

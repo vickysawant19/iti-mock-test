@@ -33,6 +33,7 @@ const Dashboard = () => {
     tests: [],
   });
   const [timePeriod, setTimePeriod] = useState("day");
+  const [isLoading, setIsLoading] = useState(true);
 
   const profile = useSelector(selectProfile);
 
@@ -47,80 +48,86 @@ const Dashboard = () => {
     try {
       const stats = await userStatsService.getAllStats([
         Query.equal("tradeId", profile.tradeId),
+        Query.equal("collegeId", profile.collegeId),
         Query.equal("batchId", profile.batchId),
       ]);
 
-      setAllUserStats(stats.documents);
+      if (stats.documents.length > 0) {
+        setAllUserStats(stats.documents);
 
-      const currentUserStats = stats.documents.find(
-        (stats) => stats.userId === user.$id
-      );
+        const currentUserStats = stats.documents.find(
+          (stats) => stats.userId === user.$id
+        );
 
-      const questions = currentUserStats.questions.map((ques) =>
-        JSON.parse(ques)
-      );
+        if (currentUserStats) {
+          const questions = currentUserStats.questions.map((ques) =>
+            JSON.parse(ques)
+          );
 
-      const tests = currentUserStats.tests.map((tests) => JSON.parse(tests));
+          const tests = currentUserStats.tests.map((tests) =>
+            JSON.parse(tests)
+          );
 
-      const groupedQues = questions.reduce((acc, curr) => {
-        let date = curr.createdAt.split("T")[0];
+          const groupedQues = questions.reduce((acc, curr) => {
+            let date = curr.createdAt.split("T")[0];
 
-        if (!acc[date]) {
-          acc[date] = { date, count: 0 };
+            if (!acc[date]) {
+              acc[date] = { date, count: 0 };
+            }
+            acc[date].count += 1;
+            return acc;
+          }, {});
+
+          const groupedTests = tests.reduce((acc, curr) => {
+            let date = curr.createdAt.split("T")[0];
+
+            if (!acc[date]) {
+              acc[date] = { date, count: 0 };
+            }
+            acc[date].count += 1;
+            return acc;
+          }, {});
+
+          const groupedScores = tests.reduce((acc, curr) => {
+            let date = curr.createdAt.split("T")[0];
+
+            if (!acc[curr.paperId]) {
+              acc[curr.paperId] = {
+                date,
+                paperId: curr.paperId,
+                score: curr.score || 0,
+              };
+            }
+            acc[curr.paperId].paperId = curr.paperId;
+            acc[curr.paperId].score = curr.score || 0;
+            acc[curr.paperId].date = date;
+            return acc;
+          }, {});
+
+          const quesArray = Object.values(groupedQues);
+          const testsArray = Object.values(groupedTests);
+          const scoresArray = Object.values(groupedScores);
+
+          setCurrUserRecord((prev) => ({
+            ...prev,
+            tests: testsArray,
+            questions: quesArray,
+            scores: scoresArray,
+          }));
         }
-        acc[date].count += 1;
-        return acc;
-      }, {});
-
-      const groupedTests = tests.reduce((acc, curr) => {
-        let date = curr.createdAt.split("T")[0];
-
-        if (!acc[date]) {
-          acc[date] = { date, count: 0 };
-        }
-        acc[date].count += 1;
-        return acc;
-      }, {});
-
-      const groupedScores = tests.reduce((acc, curr) => {
-        let date = curr.createdAt.split("T")[0];
-
-        if (!acc[curr.paperId]) {
-          acc[curr.paperId] = {
-            date,
-            paperId: curr.paperId,
-            score: curr.score || 0,
-          };
-        }
-        acc[curr.paperId].paperId = curr.paperId;
-        acc[curr.paperId].score = curr.score || 0;
-        acc[curr.paperId].date = date;
-        return acc;
-      }, {});
-
-      const quesArray = Object.values(groupedQues);
-      const testsArray = Object.values(groupedTests);
-      const scoresArray = Object.values(groupedScores);
-
-      setCurrUserRecord((prev) => ({
-        ...prev,
-        tests: testsArray,
-        questions: quesArray,
-        scores: scoresArray,
-      }));
+      }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Effect to fetch user stats
   useEffect(() => {
     fetchTrades();
-
     fetchAllUsersStats();
   }, [user.$id]);
 
-  // Effect to handle other logic that depends on user stats and time period
   useEffect(() => {
     if (allUsersStats.length === 0) return;
 
@@ -148,15 +155,14 @@ const Dashboard = () => {
       );
     });
 
-    setTopContributors(sortedQuestionStats.slice(0, 20)); // Get top 10 contributors
-    setTopScorers(sortedScorersStats.slice(0, 20)); // Get top 10 scorers
+    setTopContributors(sortedQuestionStats.slice(0, 20));
+    setTopScorers(sortedScorersStats.slice(0, 20));
   }, [allUsersStats, timePeriod]);
 
   const handleTimePeriodChange = (value) => {
     setTimePeriod(value);
   };
 
-  // Calculate total questions and tests
   const totalQuestions = allUsersStats
     .filter((stat) => stat.userId === user.$id)
     .reduce((acc, stat) => acc + stat.allTime_questionsCount, 0);
@@ -180,7 +186,7 @@ const Dashboard = () => {
     { maxScore: 0, userName: "" }
   );
 
-  if (!currUserRecord || !Array.isArray(currUserRecord.scores)) {
+  if (isLoading) {
     return (
       <div
         className="w-full min-h-screen flex items-center justify-center"
@@ -191,19 +197,31 @@ const Dashboard = () => {
     );
   }
 
+  if (!allUsersStats || !Array.isArray(allUsersStats)) {
+    return (
+      <div
+        className="w-full min-h-screen flex items-center justify-center"
+        style={{ minHeight: `calc(100vh - 16px)` }}
+      >
+        <p>No data available.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen mt-5 overflow-hidden">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800 ">Dashboard</h1>
-        <h6 className="text-sm text-slate-500">
-          Updated At :{format(updatedAt, "dd/MM/yyyy hh:mm a")}
-        </h6>
-        <h6 className="text-sm text-slate-500">
-          {trades.tradeName}/<span>{trades.year} YEAR</span>
+        {updatedAt && (
+          <h6 className="text-sm text-slate-500">
+            Updated At :{format(updatedAt, "dd/MM/yyyy hh:mm a")}
+          </h6>
+        )}
+        <h6 className="text-sm text-slate-500 capitalize">
+          {trades?.tradeName.toLowerCase()}
         </h6>
       </div>
 
-      {/* Summary Statistics */}
       <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className="bg-white shadow-md rounded-lg p-4">
           <h2 className="text-sm font-semibold text-slate-500 flex ">
@@ -232,158 +250,171 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Top Contributors */}
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex justify-between">
             <h2 className="text-base font-semibold mb-4 ">
               Top Questions Contributors
               <p className="text-2xl m-2">
-                {allUsersStats.reduce(
-                  (prev, curr) =>
-                    (prev += curr[`${timePeriod}_questionsCount`]),
-                  0
+                {topContributors.length === 0 && (
+                  <span className="text-red-500">No Top Contributors</span>
                 )}
               </p>
             </h2>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topContributors}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="userName"
-                tick={{ textAnchor: "end", angle: -45 }}
-                height={90}
-                interval={0}
-                tickFormatter={(value) =>
-                  value.length > 10
-                    ? `${value.split(" ")[0]} ${value
-                        .split(" ")[1]
-                        .slice(0, 1)}`
-                    : value
-                }
-              />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey={`${timePeriod}_questionsCount`}
-                fill="#8884d8"
-                name="Questions Count"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {topContributors.length > 0 && (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                width={600}
+                height={300}
+                data={topContributors.map((item) => ({
+                  name: item.userName,
+                  questions: item[`${timePeriod}_questionsCount`],
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="questions" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        {/* Top Scorers */}
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-base font-semibold mb-4">
-            Top Scorers
-            <div className="flex items-center mt-1 rounded-xl">
-              <p className="text-2xl m-2">{topScorer.maxScore || 0}</p>
-              <p className="text-xl m-2">{topScorer.userName}</p>
-            </div>
-          </h2>
-
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topScorers}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="userName"
-                tick={{ textAnchor: "end", angle: -45 }}
-                height={90}
-                interval={0}
-                tickFormatter={(value) =>
-                  value.length > 10
-                    ? `${value.split(" ")[0]} ${value
-                        .split(" ")[1]
-                        .slice(0, 1)}`
-                    : value
-                }
-              />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey={`${timePeriod}_maxScore`}
-                name={`${timePeriod} Score`}
-                fill="#ffc658"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Questions Created */}
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="">
-            <h2 className="text-base font-semibold ">My Questions Created</h2>
-            <h1 className="text-2xl m-2 font-semibold">
-              {currUserRecord.questions.reduce(
-                (total, curr) => total + curr.count,
-                0
-              )}
-            </h1>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={currUserRecord.questions}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* My Test Created */}
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="">
-            <h2 className="text-xl font-semibold mb-4">My Test Created</h2>
-            <h1 className="text-2xl m-2 font-semibold">
-              {currUserRecord.tests.reduce(
-                (total, curr) => total + curr.count,
-                0
-              )}
-            </h1>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={currUserRecord.tests}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Your Score Progress */}
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex justify-between">
-            <h2 className="text-xl font-semibold mb-4">My Score Progress</h2>
+            <h2 className="text-base font-semibold mb-4">
+              Top Scorers of {timePeriod}
+              <p className="text-2xl m-2">
+                {topScorers.length === 0 && (
+                  <span className="text-red-500">No Top Scorers</span>
+                )}
+              </p>
+            </h2>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={currUserRecord.scores}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis domain={[0, 50]} />
-              <Tooltip
-                formatter={(value, name, props) => [
-                  `Score: ${value}`,
-                  `Paper ID: ${props.payload.paperId}`,
-                ]}
-                labelFormatter={(label) => `Date: ${label}`}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="score"
-                name="Score"
-                stroke="#ff7300"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {topScorers.length > 0 && (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                width={600}
+                height={300}
+                data={topScorers.map((item) => ({
+                  name: item.userName,
+                  score: item[`${timePeriod}_maxScore`],
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="score" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-base font-semibold mb-4">
+            Your Test Count Timeline
+          </h2>
+          {currUserRecord && (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                width={500}
+                height={300}
+                data={currUserRecord.tests.map((test) => ({
+                  ...test,
+                  paperId: test.paperId,
+                }))}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-base font-semibold mb-4">
+            Your Questions Count Timeline
+          </h2>
+          {currUserRecord && (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                width={500}
+                height={300}
+                data={currUserRecord.questions}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-base font-semibold mb-4">Your Scores Timeline</h2>
+          {currUserRecord && (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                width={500}
+                height={300}
+                data={currUserRecord.scores}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value, name, props) => [
+                    `Score: ${value}`,
+                    `Paper ID: ${props.payload.paperId}`,
+                  ]}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Legend
+                  formatter={(value) => {
+                    if (value === "score") return "Score";
+                    if (value === "date") return "Date";
+                    if (value === "paperId") return "Paper ID";
+                    return value;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#8884d8"
+                  activeDot={{ r: 8 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import quesdbservice from "../../appwrite/database";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -10,7 +10,6 @@ import tradeservice from "../../appwrite/tradedetails";
 const EditQuestion = () => {
   const { register, handleSubmit, setValue, watch } = useForm();
   const { quesId } = useParams();
-
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -23,22 +22,23 @@ const EditQuestion = () => {
       try {
         const response = await tradeservice.listTrades();
         setTrades(response.documents);
-
         const question = await quesdbservice.getQuestion(quesId);
         setValue("question", question.question);
+        setValue("tradeId", question.tradeId);
+        setValue("year", question.year);
 
         const trade = response.documents.find(
           (tr) => tr.$id === question.tradeId
         );
-        setValue("tradeName", trade?.tradeName);
-        setValue("year", question.year);
-        setSelectedTrade(trade?.tradeName);
+        setSelectedTrade(trade);
+
         question.options.forEach((option, index) =>
           setValue(`options.${index}`, option)
         );
         setValue("correctAnswer", question.correctAnswer);
       } catch (error) {
-        toast.error("Error fetching data");
+        console.log(error.message);
+        toast.error("Error fetching data gg");
       }
     };
 
@@ -46,9 +46,10 @@ const EditQuestion = () => {
   }, [quesId, setValue]);
 
   const onTradeChange = (e) => {
-    const selectedTradeName = e.target.value;
-    setSelectedTrade(selectedTradeName);
-    setValue("tradeId", ""); // Reset tradeId when tradeName changes
+    const selectedTradeId = e.target.value;
+    const trade = trades.find((tr) => tr.$id === selectedTradeId);
+    setSelectedTrade(trade);
+    setValue("tradeId", "");
   };
 
   const onSubmit = async (data) => {
@@ -59,18 +60,7 @@ const EditQuestion = () => {
       return;
     }
 
-    const trade = trades.find(
-      (trade) => trade.tradeName === data.tradeName && trade.year === data.year
-    );
-
-    if (!trade) {
-      toast.error("Invalid trade selected");
-      setIsLoading(false);
-      return;
-    }
-
     data.userId = user.$id;
-    data.tradeId = trade.$id; // Set the correct tradeId
 
     try {
       await quesdbservice.updateQuestion(quesId, data);
@@ -82,8 +72,6 @@ const EditQuestion = () => {
       setIsLoading(false);
     }
   };
-
-  const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -98,22 +86,21 @@ const EditQuestion = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-6">
               <label
-                htmlFor="tradeName"
+                htmlFor="tradeId"
                 className="block text-gray-800 font-semibold mb-2"
               >
                 Trade
               </label>
               <select
-                id="tradeName"
-                {...register("tradeName", { required: "Trade is required" })}
+                id="tradeId"
+                {...register("tradeId", { required: "Trade is required" })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 onChange={onTradeChange}
-                value={selectedTrade || ""}
               >
                 <option value="">Select Trade</option>
-                {uniqueTradeNames.map((tradeName) => (
-                  <option key={tradeName} value={tradeName}>
-                    {tradeName}
+                {trades.map((trade) => (
+                  <option key={trade.$id} value={trade.$id}>
+                    {trade.tradeName}
                   </option>
                 ))}
               </select>
@@ -131,9 +118,21 @@ const EditQuestion = () => {
                   id="year"
                   {...register("year", { required: "Year is required" })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                  value={watch("year") || ""}
                 >
                   <option value="">Select Year</option>
+                  {new Array(selectedTrade.duration)
+                    .fill(null)
+                    .map((_, index) => {
+                      return (
+                        <option
+                          key={index}
+                          value={index === 0 ? "FIRST" : "SECOND"}
+                        >
+                          {index === 0 ? "FIRST" : "SECOND"}
+                        </option>
+                      );
+                    })}
+
                   {trades
                     .filter((trade) => trade.tradeName === selectedTrade)
                     .map((trade) => (
@@ -209,7 +208,6 @@ const EditQuestion = () => {
           </form>
         </main>
       </div>
-      <ToastContainer />
     </div>
   );
 };

@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import quesdbservice from "../../appwrite/database";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import tradeservice from "../../appwrite/tradedetails";
 
 const CreateQuestion = () => {
-  const { register, handleSubmit, setValue, reset, watch } = useForm();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
+
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
@@ -24,38 +31,15 @@ const CreateQuestion = () => {
         toast.error("Failed to fetch trades");
       }
     };
-
     fetchTrades();
   }, []);
 
-  const onTradeChange = (e) => {
-    const selectedTradeName = e.target.value;
-    setSelectedTrade(selectedTradeName);
-    setValue("tradeId", ""); // Reset tradeId when tradeName changes
-  };
-
   const onSubmit = async (data) => {
     setIsLoading(true);
-    if (data.correctAnswer === null) {
-      toast.error("Correct answer is required");
-      return;
-    }
-
-    const trade = trades.find(
-      (trade) => trade.tradeName === data.tradeName && trade.year === data.year
-    );
-
-    if (!trade) {
-      toast.error("Invalid trade selected");
-      setIsLoading(false);
-      return;
-    }
-
-    data.userId = user.$id;
-    data.userName = user.name;
-    data.tradeId = trade.$id; // Set the correct tradeId
 
     try {
+      data.userId = user.$id;
+      data.userName = user.name;
       await quesdbservice.createQuestion(data);
       toast.success("Question created");
       reset();
@@ -67,7 +51,12 @@ const CreateQuestion = () => {
     }
   };
 
-  const uniqueTradeNames = [...new Set(trades.map((trade) => trade.tradeName))];
+  const handleTradeChange = (event) => {
+    const selectedTradeId = event.target.value;
+    const trade = trades.find((t) => t.$id === selectedTradeId);
+    setSelectedTrade(trade);
+    setValue("tradeId", selectedTradeId);
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -88,42 +77,51 @@ const CreateQuestion = () => {
                 Trade
               </label>
               <select
-                id="tradeName"
-                {...register("tradeName", { required: "Trade is required" })}
+                id="tradeId"
+                {...register("tradeId", { required: "Trade is required" })}
+                onChange={handleTradeChange}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                onChange={onTradeChange}
               >
                 <option value="">Select Trade</option>
-                {uniqueTradeNames.map((tradeName) => (
-                  <option key={tradeName} value={tradeName}>
-                    {tradeName}
+                {trades.map((trade) => (
+                  <option key={trade.$id} value={trade.$id}>
+                    {trade.tradeName}
                   </option>
                 ))}
               </select>
+              {errors.tradeId && (
+                <p className="text-red-500">{errors.tradeId.message}</p>
+              )}
             </div>
-
             {selectedTrade && (
               <div className="mb-6">
                 <label
-                  htmlFor="year"
+                  htmlFor="tradeName"
                   className="block text-gray-800 font-semibold mb-2"
                 >
-                  Year
+                  Trade Year
                 </label>
+
                 <select
                   id="year"
                   {...register("year", { required: "Year is required" })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 >
                   <option value="">Select Year</option>
-                  {trades
-                    .filter((trade) => trade.tradeName === selectedTrade)
-                    .map((trade) => (
-                      <option key={trade.$id} value={trade.year}>
-                        {trade.year} YEAR
+                  {new Array(selectedTrade.duration)
+                    .fill(null)
+                    .map((_, index) => (
+                      <option
+                        key={`${selectedTrade.$id}-${index}`}
+                        value={index === 0 ? "FIRST" : "SECOND"}
+                      >
+                        {index === 0 ? "FIRST" : "SECOND"}
                       </option>
                     ))}
                 </select>
+                {errors.year && (
+                  <p className="text-red-500">{errors.year.message}</p>
+                )}
               </div>
             )}
 
@@ -141,6 +139,9 @@ const CreateQuestion = () => {
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 rows="3"
               ></textarea>
+              {errors.question && (
+                <p className="text-red-500">{errors.question.message}</p>
+              )}
             </div>
 
             <div className="mb-6">
@@ -177,6 +178,11 @@ const CreateQuestion = () => {
                   ></textarea>
                 </div>
               ))}
+              {errors.correctAnswer && (
+                <p className="text-red-500 w-full text-center">
+                  {errors.correctAnswer.message}
+                </p>
+              )}
             </div>
 
             <button
@@ -189,7 +195,6 @@ const CreateQuestion = () => {
           </form>
         </main>
       </div>
-      <ToastContainer />
     </div>
   );
 };

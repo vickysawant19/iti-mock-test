@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/react";
 import userProfileService from "./appwrite/userProfileService";
 import { addProfile } from "./store/profileSlice";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const user = useSelector((state) => state.user);
