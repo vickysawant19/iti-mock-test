@@ -24,7 +24,7 @@ import tradeservice from "../../appwrite/tradedetails";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
-  const [trades, setTrades] = useState([]);
+  const [trades, setTrades] = useState({});
   const [topContributors, setTopContributors] = useState([]);
   const [topScorers, setTopScorers] = useState([]);
   const [allUsersStats, setAllUserStats] = useState([]);
@@ -234,8 +234,9 @@ const Dashboard = () => {
             Updated At :{format(updatedAt, "dd/MM/yyyy hh:mm a")}
           </h6>
         )}
+
         <h6 className="text-sm text-slate-500 capitalize">
-          {trades && trades.tradeName.toLowerCase()}
+          {(trades && trades?.tradeName?.toLowerCase()) || ""}
         </h6>
       </div>
 
