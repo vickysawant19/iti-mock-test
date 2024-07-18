@@ -35,6 +35,10 @@ const Dashboard = () => {
   const [timePeriod, setTimePeriod] = useState("day");
   const [isLoading, setIsLoading] = useState(true);
 
+  const [totalQuestions, setTotalQuestions] = useState();
+  const [totalTests, setTotalTests] = useState();
+  const [updatedAt, setUpdatedAt] = useState();
+
   const profile = useSelector(selectProfile);
 
   const fetchTrades = async () => {
@@ -170,28 +174,35 @@ const Dashboard = () => {
     setTimePeriod(value);
   };
 
-  const totalQuestions = allUsersStats
-    .filter((stat) => stat.userId === user.$id)
-    .reduce((acc, stat) => acc + stat.allTime_questionsCount, 0);
+  useEffect(() => {
+    if (allUsersStats) {
+      const updatedAt = allUsersStats?.find(
+        (stat) => stat.userId === user.$id
+      )?.$updatedAt;
+      setUpdatedAt(updatedAt);
 
-  const totalTests = allUsersStats
-    .filter((stat) => stat.userId === user.$id)
-    .reduce((acc, stat) => acc + stat.allTime_testsCount, 0);
+      const totalQuestions = allUsersStats
+        ?.filter((stat) => stat.userId === user.$id)
+        .reduce((acc, stat) => acc + stat.allTime_questionsCount, 0);
+      setTotalQuestions(totalQuestions);
 
-  const updatedAt = allUsersStats.find(
-    (stat) => stat.userId === user.$id
-  )?.$updatedAt;
+      const totalTests = allUsersStats
+        ?.filter((stat) => stat.userId === user.$id)
+        .reduce((acc, stat) => acc + stat.allTime_testsCount, 0);
+      setTotalTests(totalTests);
+    }
+  }, [allUsersStats]);
 
-  const topScorer = allUsersStats.reduce(
-    (prev, curr) => {
-      const currScore = curr[`${timePeriod}_maxScore`];
-      if (currScore > prev.maxScore) {
-        return { maxScore: currScore, userName: curr.userName };
-      }
-      return prev;
-    },
-    { maxScore: 0, userName: "" }
-  );
+  // const topScorer = allUsersStats?.reduce(
+  //   (prev, curr) => {
+  //     const currScore = curr[`${timePeriod}_maxScore`];
+  //     if (currScore > prev.maxScore) {
+  //       return { maxScore: currScore, userName: curr.userName };
+  //     }
+  //     return prev;
+  //   },
+  //   { maxScore: 0, userName: "" }
+  // );
 
   if (isLoading) {
     return (
@@ -225,7 +236,7 @@ const Dashboard = () => {
           </h6>
         )}
         <h6 className="text-sm text-slate-500 capitalize">
-          {trades?.tradeName.toLowerCase()}
+          {trades && trades.tradeName.toLowerCase()}
         </h6>
       </div>
 
