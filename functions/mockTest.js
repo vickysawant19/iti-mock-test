@@ -8,109 +8,99 @@ export default async ({ req, res, log, error }) => {
 
   const database = new Databases(client);
   const body = req.body;
+  const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
+  log(userName);
+  log(userId);
+  const fetchQuestions = async (tradeId, year) => {
+    let documents = [];
+    let offset = 0;
+    let hasMore = true;
 
-  log(body);
-  const task = JSON.stringify({ name: "vithal" });
-  log(task);
-  const { name } = JSON.parse(task);
-  log(name);
-  //   log(JSON.parse('{"userName":"vicky"}'));
-  //   log(JSON.parse(body));
-  //   const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
-  //   log(userName);
+    while (hasMore) {
+      const response = await database.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        process.env.APPWRITE_QUES_COLLECTION_ID,
+        [
+          Query.equal("tradeId", tradeId),
+          Query.equal("year", year),
+          Query.limit(100),
+          Query.offset(offset),
+        ]
+      );
 
-  //   const fetchQuestions = async (tradeId, year) => {
-  //     let documents = [];
-  //     let offset = 0;
-  //     let hasMore = true;
+      documents = documents.concat(response.documents);
+      offset += response.documents.length;
+      hasMore = offset < response.total;
+    }
 
-  //     while (hasMore) {
-  //       const response = await database.listDocuments(
-  //         process.env.APPWRITE_DATABASE_ID,
-  //         process.env.APPWRITE_QUES_COLLECTION_ID,
-  //         [
-  //           Query.equal("tradeId", tradeId),
-  //           Query.equal("year", year),
-  //           Query.limit(100),
-  //           Query.offset(offset),
-  //         ]
-  //       );
+    return documents;
+  };
 
-  //       documents = documents.concat(response.documents);
-  //       offset += response.documents.length;
-  //       hasMore = offset < response.total;
-  //     }
+  const getRandomQuestions = (questions, count) => {
+    const shuffled = questions.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
 
-  //     return documents;
-  //   };
+  const getISTDate = () => {
+    const now = new Date();
+    const utcOffset = now.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+    const istOffset = 5.5 * 3600000; // IST is UTC+5:30
+    return new Date(now.getTime() + utcOffset + istOffset);
+  };
 
-  //   const getRandomQuestions = (questions, count) => {
-  //     const shuffled = questions.sort(() => 0.5 - Math.random());
-  //     return shuffled.slice(0, count);
-  //   };
+  try {
+    const questions = await fetchQuestions(tradeId, year);
 
-  //   const getISTDate = () => {
-  //     const now = new Date();
-  //     const utcOffset = now.getTimezoneOffset() * 60000; // Convert offset to milliseconds
-  //     const istOffset = 5.5 * 3600000; // IST is UTC+5:30
-  //     return new Date(now.getTime() + utcOffset + istOffset);
-  //   };
+    if (questions.length <= 0) {
+      throw new Error("No Questions available");
+    }
 
-  //   try {
-  //     const questions = await fetchQuestions(tradeId, year);
+    const selectedQuestions = getRandomQuestions(questions, 50);
 
-  //     if (questions.length <= 0) {
-  //       throw new Error("No Questions available");
-  //     }
+    const questionsWithResponses = selectedQuestions.map((question) => ({
+      $id: question.$id,
+      question: question.question,
+      options: question.options,
+      userId: question.userId,
+      userName: question.userName,
+      correctAnswer: question.correctAnswer,
+      tradeId: question.tradeId,
+      year: question.year,
+      response: null, // initializing response to null
+    }));
 
-  //     const selectedQuestions = getRandomQuestions(questions, 50);
+    const serializedQuestions = questionsWithResponses.map((question) =>
+      JSON.stringify(question)
+    );
 
-  //     const questionsWithResponses = selectedQuestions.map((question) => ({
-  //       $id: question.$id,
-  //       question: question.question,
-  //       options: question.options,
-  //       userId: question.userId,
-  //       userName: question.userName,
-  //       correctAnswer: question.correctAnswer,
-  //       tradeId: question.tradeId,
-  //       year: question.year,
-  //       response: null, // initializing response to null
-  //     }));
+    const tradePrefix = tradeName.slice(0, 3).toUpperCase();
+    const date = getISTDate();
+    const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
+    const formattedTime = date.toTimeString().split(" ")[0].replace(/:/g, "");
+    const paperId = `${tradePrefix}${formattedDate}${formattedTime}`;
 
-  //     const serializedQuestions = questionsWithResponses.map((question) =>
-  //       JSON.stringify(question)
-  //     );
+    const questionPaper = {
+      userId,
+      userName,
+      tradeId,
+      tradeName,
+      year,
+      paperId,
+      questions: serializedQuestions,
+      score: null,
+      submitted: false,
+    };
 
-  //     const tradePrefix = tradeName.slice(0, 3).toUpperCase();
-  //     const date = getISTDate();
-  //     const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
-  //     const formattedTime = date.toTimeString().split(" ")[0].replace(/:/g, "");
-  //     const paperId = `${tradePrefix}${formattedDate}${formattedTime}`;
+    const response = await database.createDocument(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.QUESTIONPAPER_COLLECTION_ID,
+      "unique()",
+      questionPaper
+    );
 
-  //     const questionPaper = {
-  //       userId,
-  //       userName,
-  //       tradeId,
-  //       tradeName,
-  //       year,
-  //       paperId,
-  //       questions: serializedQuestions,
-  //       score: null,
-  //       submitted: false,
-  //     };
-
-  //     const response = await database.createDocument(
-  //       process.env.APPWRITE_DATABASE_ID,
-  //       process.env.QUESTIONPAPER_COLLECTION_ID,
-  //       "unique()",
-  //       questionPaper
-  //     );
-
-  //     res.send({ paperId: response.$id });
-  //   } catch (err) {
-  //     error(err);
-  //     res.status(500).send({ error: err.message });
-  //   }
-
-  res.send({ message: "here" });
+    return res.send({ paperId: response.$id });
+  } catch (err) {
+    error(err);
+    return res.status(500).send({ error: err.message });
+  }
 };

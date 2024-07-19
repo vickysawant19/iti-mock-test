@@ -7,6 +7,9 @@ import { useNavigate } from "react-router-dom";
 
 import tradeservice from "../../appwrite/tradedetails";
 import questionpaperservice from "../../appwrite/mockTest";
+import { Functions } from "appwrite";
+import conf from "../../config/config";
+import { appwriteService } from "../../appwrite/appwriteConfig";
 
 const CreateMockTest = () => {
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -49,13 +52,18 @@ const CreateMockTest = () => {
     data.tradeName = selectedTrade.tradeName;
 
     try {
-      const newMockTest = await questionpaperservice.generateQuestionPaper(
-        data
+      const functions = new Functions(appwriteService.getClient());
+      const res = await functions.createExecution(
+        "669a154e000aef6c0ba6",
+        JSON.stringify(data)
       );
-
-      toast.success("Mock test created successfully!");
-      reset();
-      navigate(`/start-mock-test/${newMockTest.$id}`);
+      console.log(res);
+      // const newMockTest = await questionpaperservice.generateQuestionPaper(
+      //   data
+      // );
+      // toast.success("Mock test created successfully!");
+      // reset();
+      // navigate(`/start-mock-test/${newMockTest.$id}`);
     } catch (error) {
       console.log(error);
       toast.error(`Error creating mock test: ${error.message}`);
