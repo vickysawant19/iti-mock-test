@@ -9,8 +9,8 @@ export default async ({ req, res, log, error }) => {
   const database = new Databases(client);
   const body = req.body;
   const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
-  log(userName);
-  log(userId);
+
+  log(body);
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
     let offset = 0;
@@ -50,7 +50,6 @@ export default async ({ req, res, log, error }) => {
 
   try {
     const questions = await fetchQuestions(tradeId, year);
-
     if (questions.length <= 0) {
       throw new Error("No Questions available");
     }

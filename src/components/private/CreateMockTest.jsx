@@ -53,17 +53,23 @@ const CreateMockTest = () => {
 
     try {
       const functions = new Functions(appwriteService.getClient());
-      const res = await functions.createExecution(
+      const { responseBody } = await functions.createExecution(
         "669a154e000aef6c0ba6",
         JSON.stringify(data)
       );
-      console.log(res);
+      if (!responseBody) {
+        throw new Error("No response received from the server.");
+      }
+      const parsedRes = JSON.parse(responseBody);
+      if (parsedRes.error) {
+        throw new Error(parsedRes.error);
+      }
       // const newMockTest = await questionpaperservice.generateQuestionPaper(
       //   data
       // );
-      // toast.success("Mock test created successfully!");
-      // reset();
-      // navigate(`/start-mock-test/${newMockTest.$id}`);
+      toast.success("Mock test created successfully!");
+      reset();
+      navigate(`/start-mock-test/${parsedRes.paperId}`);
     } catch (error) {
       console.log(error);
       toast.error(`Error creating mock test: ${error.message}`);
