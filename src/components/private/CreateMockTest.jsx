@@ -42,10 +42,10 @@ const CreateMockTest = () => {
   };
 
   const onSubmit = async (data) => {
-    if (!user.labels.includes("admin")) {
-      toast.error("Server Busy! Contact Administration");
-      return;
-    }
+    // if (!user.labels.includes("admin")) {
+    //   toast.error("Server Busy! Contact Administration");
+    //   return;
+    // }
     setIsLoading(true);
     data.userName = user.name;
     data.userId = user.$id;
@@ -54,7 +54,7 @@ const CreateMockTest = () => {
     try {
       const functions = new Functions(appwriteService.getClient());
       const { responseBody } = await functions.createExecution(
-        "669a154e000aef6c0ba6",
+        conf.mockTestFunctionId,
         JSON.stringify(data)
       );
       if (!responseBody) {
