@@ -101,6 +101,6 @@ export default async ({ req, res, log, error }) => {
     return res.send({ paperId: response.$id });
   } catch (err) {
     error(err);
-    return res.status(500).send({ error: err.message });
+    return res.send({ error: err.message });
   }
 };
