@@ -44,11 +44,9 @@ const CreateMockTest = () => {
       return;
     }
     setIsLoading(true);
-
     data.userName = user.name;
     data.userId = user.$id;
     data.tradeName = selectedTrade.tradeName;
-    console.log(data);
 
     try {
       const newMockTest = await questionpaperservice.generateQuestionPaper(
