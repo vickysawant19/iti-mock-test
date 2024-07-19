@@ -11,8 +11,9 @@ export default async ({ req, res, log, error }) => {
 
   log(body);
   const task = JSON.stringify({ name: "vithal" });
+  log(task);
   const { name } = JSON.parse(task);
-  console.log(name);
+  log(name);
   //   log(JSON.parse('{"userName":"vicky"}'));
   //   log(JSON.parse(body));
   //   const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
@@ -111,5 +112,5 @@ export default async ({ req, res, log, error }) => {
   //     res.status(500).send({ error: err.message });
   //   }
 
-  res.send(body);
+  res.send({ message: "here" });
 };
