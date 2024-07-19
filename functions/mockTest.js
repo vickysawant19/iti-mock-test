@@ -10,10 +10,13 @@ export default async ({ req, res, log, error }) => {
   const body = req.body;
 
   log(body);
-  log(JSON.parse('{"userName":"vicky"}'));
-  log(JSON.parse(body));
-  const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
-  log(userName);
+  const task = JSON.stringify({ name: "vithal" });
+  const { name } = JSON.parse(task);
+  console.log(name);
+  //   log(JSON.parse('{"userName":"vicky"}'));
+  //   log(JSON.parse(body));
+  //   const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
+  //   log(userName);
 
   //   const fetchQuestions = async (tradeId, year) => {
   //     let documents = [];
