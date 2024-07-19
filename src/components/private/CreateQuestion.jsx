@@ -49,6 +49,7 @@ const CreateQuestion = () => {
     } finally {
       setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleTradeChange = (event) => {

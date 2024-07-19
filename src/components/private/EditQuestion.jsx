@@ -49,7 +49,6 @@ const EditQuestion = () => {
     const selectedTradeId = e.target.value;
     const trade = trades.find((tr) => tr.$id === selectedTradeId);
     setSelectedTrade(trade);
-    setValue("tradeId", "");
   };
 
   const onSubmit = async (data) => {
