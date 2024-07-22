@@ -117,13 +117,37 @@ class QuestionPaperService {
         return JSON.stringify(parsedQuestion);
       });
 
+      const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      };
+
+      const shuffledQuestions = shuffleArray(processedQuestions);
+
+      const generateRandomSuffix = (length) => {
+        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let result = "";
+        for (let i = 0; i < length; i++) {
+          result += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+          );
+        }
+        return result;
+      };
+
+      // Generate a new paperId with a different suffix
+      const newPaperId = paperId.slice(0, -2) + generateRandomSuffix(2);
+
       // Prepare the new paper data
       const newPaperData = {
         tradeId,
         tradeName,
         year,
-        paperId,
-        questions: processedQuestions,
+        paperId: newPaperId,
+        questions: shuffledQuestions,
         userId,
         userName,
         score: null,

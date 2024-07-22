@@ -75,11 +75,33 @@ export default async ({ req, res, log, error }) => {
       JSON.stringify(question)
     );
 
-    const tradePrefix = tradeName.slice(0, 3).toUpperCase();
-    const date = getISTDate();
-    const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
-    const formattedTime = date.toTimeString().split(" ")[0].replace(/:/g, "");
-    const paperId = `${tradePrefix}${formattedDate}${formattedTime}`;
+    const generateRandomSuffix = (length) => {
+      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let result = "";
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(
+          Math.floor(Math.random() * characters.length)
+        );
+      }
+      return result;
+    };
+
+    const generateUniquePaperId = (tradeName) => {
+      const tradePrefix = tradeName.slice(0, 3).toUpperCase();
+      const date = getISTDate();
+      const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
+      const formattedTime = date
+        .toTimeString()
+        .split(" ")[0]
+        .replace(/:/g, "")
+        .slice(0, 4);
+      const randomSuffix = generateRandomSuffix(2);
+
+      const paperId = `${tradePrefix}${formattedDate}${formattedTime}${randomSuffix}`;
+      return paperId;
+    };
+
+    const paperId = generateUniquePaperId(tradeName);
 
     const questionPaper = {
       userId,
