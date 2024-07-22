@@ -8,9 +8,12 @@ export default async ({ req, res, log, error }) => {
 
   const database = new Databases(client);
   const body = req.body;
-  const { userId, userName, tradeName, tradeId, year } = JSON.parse(body);
+  const { userId, userName, tradeName, tradeId, year, quesCount } =
+    JSON.parse(body);
 
   log(body);
+  log(quesCount);
+
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
     let offset = 0;
@@ -38,7 +41,7 @@ export default async ({ req, res, log, error }) => {
 
   const getRandomQuestions = (questions, count) => {
     const shuffled = questions.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    return shuffled.slice(0, parseInt(count));
   };
 
   const getISTDate = () => {
@@ -54,7 +57,7 @@ export default async ({ req, res, log, error }) => {
       throw new Error("No Questions available");
     }
 
-    const selectedQuestions = getRandomQuestions(questions, 50);
+    const selectedQuestions = getRandomQuestions(questions, quesCount);
 
     const questionsWithResponses = selectedQuestions.map((question) => ({
       $id: question.$id,
