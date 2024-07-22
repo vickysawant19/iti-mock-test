@@ -104,14 +104,21 @@ export default async ({ req, res, log, error }) => {
       if (acc[doc.userId]) {
         acc[doc.userId].userName = doc.userName;
         acc[doc.userId].userTestsCount += 1;
-        acc[doc.userId].maxScore = Math.max(
-          doc.score,
-          acc[doc.userId].maxScore || 0
-        );
+        if (doc.quesCount === 50) {
+          acc[doc.userId].maxScore = Math.max(
+            doc.score,
+            acc[doc.userId].maxScore || 0
+          );
+        }
+        acc[doc.userId].totalScore += doc.score;
+        acc[doc.userId].avgScore =
+          acc[doc.userId].totalScore / acc[doc.userId].userTestsCount;
+
         acc[doc.userId].tests.push(
           JSON.stringify({
             paperId: doc.paperId,
             score: doc.score,
+            quesCount: doc.quesCount || 50,
             createdAt: doc.$createdAt,
           })
         );
@@ -120,11 +127,14 @@ export default async ({ req, res, log, error }) => {
           userName: doc.userName,
           userId: doc.userId,
           userTestsCount: 1,
-          maxScore: doc.score || 0,
+          maxScore: doc.quesCount === 50 ? doc.score : 0,
+          totalScore: doc.score, //totalScore
+          avgScore: doc.score, //avgScore
           tests: [
             JSON.stringify({
               paperId: doc.paperId,
               score: doc.score,
+              quesCount: doc.quesCount || 50,
               createdAt: doc.$createdAt,
             }),
           ],
@@ -178,18 +188,23 @@ export default async ({ req, res, log, error }) => {
         allTime_maxScore: userData.allTime_maxScore ?? 0,
         allTime_questionsCount: userData.allTime_questionsCount ?? 0,
         allTime_testsCount: userData.allTime_testsCount ?? 0,
+
         day_maxScore: userData.day_maxScore ?? 0,
         day_questionsCount: userData.day_questionsCount ?? 0,
         day_testsCount: userData.day_testsCount ?? 0,
+
         month_maxScore: userData.month_maxScore ?? 0,
         month_questionsCount: userData.month_questionsCount ?? 0,
         month_testsCount: userData.month_testsCount ?? 0,
+
         week_maxScore: userData.week_maxScore ?? 0,
         week_questionsCount: userData.week_questionsCount ?? 0,
         week_testsCount: userData.week_testsCount ?? 0,
+
         year_maxScore: userData.year_maxScore ?? 0,
         year_questionsCount: userData.year_questionsCount ?? 0,
         year_testsCount: userData.year_testsCount ?? 0,
+
         questions: userData.questions,
         tests: userData.tests,
         tradeId: userProfileData[userId].tradeId,
