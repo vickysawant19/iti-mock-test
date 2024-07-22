@@ -54,7 +54,11 @@ const ShowMockTest = () => {
                 {new Date(mockTest.$createdAt).toLocaleString()}
               </p>
               <p>
-                <strong>Score:</strong> {mockTest.score}/50
+                <strong>Score:</strong> {mockTest.score}/
+                {mockTest.quesCount || 50}
+              </p>
+              <p>
+                <strong>Total Questions:</strong> {mockTest.quesCount || 50}
               </p>
               <p>
                 <strong>Trade Name:</strong> {mockTest.tradeName || "N/A"}

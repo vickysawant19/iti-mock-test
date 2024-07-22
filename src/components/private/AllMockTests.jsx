@@ -24,6 +24,10 @@ const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
       <strong>Score:</strong> {test.score !== null ? test.score : "-"}
     </p>
     <p className="text-gray-600">
+      <strong>Total Questions:</strong>{" "}
+      {test.quesCount !== null ? test.quesCount : "50"}
+    </p>
+    <p className="text-gray-600">
       <strong>Submitted:</strong> {test.submitted ? "Yes" : "No"}
     </p>
     <div className="mt-4 flex space-x-4">

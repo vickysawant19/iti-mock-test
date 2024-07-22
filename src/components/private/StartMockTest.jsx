@@ -90,7 +90,7 @@ const StartMockTest = () => {
     <div className="bg-gray-100 min-h-screen  p-4 md:p-8">
       {!isGreetShown ? (
         <div>
-          <MockTestGreet />
+          <MockTestGreet mockTest={mockTest} />
           <button
             onClick={handleStartExam}
             className="block w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"

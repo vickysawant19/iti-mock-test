@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const MockTestGreet = () => {
+const MockTestGreet = ({ mockTest }) => {
   const navigate = useNavigate();
 
   return (
@@ -15,7 +15,7 @@ const MockTestGreet = () => {
         </p>
         <ul className="list-disc list-inside text-gray-600 mb-4">
           <li>Duration: 1 hour</li>
-          <li>Number of Questions: 50</li>
+          <li>Number of Questions: {mockTest.quesCount || 50}</li>
           <li>Each question carries equal marks</li>
           <li>No negative marking</li>
           <li>Ensure you are in a quiet environment</li>
