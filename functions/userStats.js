@@ -101,10 +101,13 @@ export default async ({ req, res, log, error }) => {
     };
 
     const usersTestsStats = (acc, doc) => {
+      const quesCount = doc.quesCount ?? 50; // Treat null as 50
+
       if (acc[doc.userId]) {
         acc[doc.userId].userName = doc.userName;
         acc[doc.userId].userTestsCount += 1;
-        if (doc.quesCount === 50) {
+
+        if (quesCount === 50) {
           acc[doc.userId].maxScore = Math.max(
             doc.score,
             acc[doc.userId].maxScore || 0
