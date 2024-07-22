@@ -33,7 +33,7 @@ const CreateMockTest = () => {
     fetchTrades();
   }, []);
 
-  console.log(user.labels.includes("admin"));
+  // console.log(user.labels.includes("admin"));
 
   const onTradeChange = (e) => {
     const selectedTradeid = e.target.value;
@@ -64,6 +64,8 @@ const CreateMockTest = () => {
       if (parsedRes.error) {
         throw new Error(parsedRes.error);
       }
+      // creating question paper on client side
+      //
       // const newMockTest = await questionpaperservice.generateQuestionPaper(
       //   data
       // );
@@ -104,7 +106,6 @@ const CreateMockTest = () => {
               ))}
             </select>
           </div>
-
           {selectedTrade && (
             <div className="mb-4">
               <label
@@ -132,7 +133,6 @@ const CreateMockTest = () => {
               </select>
             </div>
           )}
-
           <div className="mb-4">
             <label
               htmlFor="subject"
@@ -153,7 +153,31 @@ const CreateMockTest = () => {
               ))}
             </select>
           </div>
-
+          {/* //Number of Questions */}
+          <div className="mb-4">
+            <label
+              htmlFor="subject"
+              className="block text-gray-700 font-bold mb-2"
+            >
+              Questions Count
+            </label>
+            <select
+              id="subject"
+              {...register("quesCount", {
+                required: "Questions count is required",
+              })}
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Select Questions Count</option>
+              {[25, 50].map((count, index) => {
+                return (
+                  <option key={index} value={count}>
+                    {count}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           <button
             type="submit"
             className={`w-full py-2 px-4 text-white font-bold rounded-md ${
