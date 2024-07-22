@@ -89,6 +89,7 @@ export default async ({ req, res, log, error }) => {
       year,
       paperId,
       questions: serializedQuestions,
+      quesCount: parseInt(quesCount),
       score: null,
       submitted: false,
     };
