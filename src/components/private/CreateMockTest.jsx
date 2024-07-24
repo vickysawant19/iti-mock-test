@@ -50,13 +50,17 @@ const CreateMockTest = () => {
     data.userName = user.name;
     data.userId = user.$id;
     data.tradeName = selectedTrade.tradeName;
+    data.action = "generateMockTest";
 
     try {
       const functions = new Functions(appwriteService.getClient());
-      const { responseBody } = await functions.createExecution(
+      const res = await functions.createExecution(
         conf.mockTestFunctionId,
         JSON.stringify(data)
       );
+      console.log(res);
+
+      const { responseBody } = res;
       if (!responseBody) {
         throw new Error("No response received from the server.");
       }

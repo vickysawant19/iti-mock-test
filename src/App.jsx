@@ -63,7 +63,7 @@ function App() {
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
       <Navbar />
-      {/* <Analytics /> */}
+      <Analytics />
       <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
         <Outlet />
       </div>

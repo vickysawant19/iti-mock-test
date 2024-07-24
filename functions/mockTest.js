@@ -1,19 +1,50 @@
 import { Client, Databases, Query } from "node-appwrite";
 
-export default async ({ req, res, log, error }) => {
-  const client = new Client();
-  client
-    .setEndpoint(process.env.APPWRITE_URL)
-    .setProject(process.env.APPWRITE_PROJECT_ID);
+const client = new Client();
+client
+  .setEndpoint(process.env.APPWRITE_URL)
+  .setProject(process.env.APPWRITE_PROJECT_ID);
 
-  const database = new Databases(client);
+const database = new Databases(client);
+
+export default async ({ req, res, log, error }) => {
   const body = req.body;
-  const { userId, userName, tradeName, tradeId, year, quesCount } =
+  const { action, userId, userName, tradeName, tradeId, year, quesCount } =
     JSON.parse(body);
 
   log(body);
-  log(quesCount);
 
+  let result = {};
+
+  switch (action) {
+    case "generateMockTest":
+      result = await generateMockTest({
+        userId,
+        userName,
+        tradeName,
+        tradeId,
+        year,
+        quesCount,
+        error,
+      });
+      break;
+
+    default:
+      result = { error: "Invalid action" };
+      break;
+  }
+  res.send({ result });
+};
+
+const generateMockTest = async ({
+  userId,
+  userName,
+  tradeName,
+  tradeId,
+  year,
+  quesCount,
+  error,
+}) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
     let offset = 0;
@@ -51,10 +82,37 @@ export default async ({ req, res, log, error }) => {
     return new Date(now.getTime() + utcOffset + istOffset);
   };
 
+  const generateRandomSuffix = (length) => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
+    }
+    return result;
+  };
+
+  const generateUniquePaperId = (tradeName) => {
+    const tradePrefix = tradeName.slice(0, 3).toUpperCase();
+    const date = getISTDate();
+    const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
+    const formattedTime = date
+      .toTimeString()
+      .split(" ")[0]
+      .replace(/:/g, "")
+      .slice(0, 4);
+    const randomSuffix = generateRandomSuffix(2);
+
+    return `${tradePrefix}${formattedDate}${formattedTime}${randomSuffix}`;
+  };
+
   try {
     const questions = await fetchQuestions(tradeId, year);
-    if (questions.length <= 0) {
-      throw new Error("No Questions available");
+    if (questions.length === 0) {
+      throw new Error(
+        "No Questions available for the specified trade and year."
+      );
     }
 
     const selectedQuestions = getRandomQuestions(questions, quesCount);
@@ -74,32 +132,6 @@ export default async ({ req, res, log, error }) => {
     const serializedQuestions = questionsWithResponses.map((question) =>
       JSON.stringify(question)
     );
-
-    const generateRandomSuffix = (length) => {
-      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      let result = "";
-      for (let i = 0; i < length; i++) {
-        result += characters.charAt(
-          Math.floor(Math.random() * characters.length)
-        );
-      }
-      return result;
-    };
-
-    const generateUniquePaperId = (tradeName) => {
-      const tradePrefix = tradeName.slice(0, 3).toUpperCase();
-      const date = getISTDate();
-      const formattedDate = date.toISOString().split("T")[0].replace(/-/g, "");
-      const formattedTime = date
-        .toTimeString()
-        .split(" ")[0]
-        .replace(/:/g, "")
-        .slice(0, 4);
-      const randomSuffix = generateRandomSuffix(2);
-
-      const paperId = `${tradePrefix}${formattedDate}${formattedTime}${randomSuffix}`;
-      return paperId;
-    };
 
     const paperId = generateUniquePaperId(tradeName);
 
@@ -123,9 +155,9 @@ export default async ({ req, res, log, error }) => {
       questionPaper
     );
 
-    return res.send({ paperId: response.$id });
+    return { paperId: response.$id };
   } catch (err) {
     error(err);
-    return res.send({ error: err.message });
+    return { error: err.message };
   }
 };
