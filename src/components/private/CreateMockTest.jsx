@@ -65,6 +65,7 @@ const CreateMockTest = () => {
         throw new Error("No response received from the server.");
       }
       const parsedRes = JSON.parse(responseBody);
+      console.log(parsedRes);
       if (parsedRes.error) {
         throw new Error(parsedRes.error);
       }
