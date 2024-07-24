@@ -1,4 +1,4 @@
-import generateMockTest from "./generateMockTest";
+import generateMockTest from "./generateMockTest.js";
 
 export default async ({ req, res, log, error }) => {
   const body = req.body;
