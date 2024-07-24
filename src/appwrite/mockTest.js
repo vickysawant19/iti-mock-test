@@ -85,6 +85,7 @@ class QuestionPaperService {
   }
 
   async fetchPaperById(paperId) {
+    [].sort();
     try {
       const response = await this.database.listDocuments(
         this.databaseId,
@@ -137,6 +138,8 @@ class QuestionPaperService {
         }
         return result;
       };
+
+      [].sort();
 
       // Generate a new paperId with a different suffix
       const newPaperId = paperId.slice(0, -2) + generateRandomSuffix(2);

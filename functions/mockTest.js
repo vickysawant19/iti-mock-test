@@ -33,7 +33,7 @@ export default async ({ req, res, log, error }) => {
       result = { error: "Invalid action" };
       break;
   }
-  res.send({ result });
+  return res.send({ result });
 };
 
 const generateMockTest = async ({

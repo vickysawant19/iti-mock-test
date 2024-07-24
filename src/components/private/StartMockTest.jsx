@@ -60,7 +60,7 @@ const StartMockTest = () => {
       return;
     }
     setIsSubmitLoading(true);
-    event.preventDefault();
+
     try {
       const responseArray = mockTest.questions.map((question) => ({
         questionId: question.$id,
