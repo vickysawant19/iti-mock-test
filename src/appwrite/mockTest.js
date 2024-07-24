@@ -139,8 +139,6 @@ class QuestionPaperService {
         return result;
       };
 
-      [].sort();
-
       // Generate a new paperId with a different suffix
       const newPaperId = paperId.slice(0, -2) + generateRandomSuffix(2);
 
