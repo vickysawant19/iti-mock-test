@@ -31,8 +31,9 @@ const createNewMockTest = async ({
     const duplicate = paperResponse.documents.find(
       (doc) => doc.userId === userId
     );
+
     if (duplicate) {
-      throw new Error("You have already attempted this test.");
+      return { paperId: duplicate.paperId };
     }
 
     const paper = paperResponse.documents[0];
