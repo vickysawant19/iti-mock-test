@@ -37,7 +37,7 @@ const createNewMockTest = async ({
 
     const paper = paperResponse.documents[0];
 
-    const { tradeId, tradeName, year, questions } = paper;
+    const { tradeId, tradeName, year, questions, quesCount } = paper;
 
     const processedQuestions = questions.map((question) => {
       const parsedQuestion = JSON.parse(question);
@@ -74,6 +74,7 @@ const createNewMockTest = async ({
       tradeId,
       tradeName,
       year,
+      quesCount,
       paperId: newPaperId,
       questions: shuffledQuestions,
       userId,
