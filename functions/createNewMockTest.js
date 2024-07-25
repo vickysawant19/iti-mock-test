@@ -33,7 +33,7 @@ const createNewMockTest = async ({
     );
 
     if (duplicate) {
-      return { paperId: duplicate.paperId };
+      return { paperId: duplicate.$id };
     }
 
     const paper = paperResponse.documents[0];
