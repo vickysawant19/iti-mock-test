@@ -21,6 +21,7 @@ import { Query } from "appwrite";
 import { selectProfile } from "../../store/profileSlice";
 import { format } from "date-fns";
 import tradeservice from "../../appwrite/tradedetails";
+import { FaCalendar } from "react-icons/fa";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
@@ -28,16 +29,16 @@ const Dashboard = () => {
   const [topContributors, setTopContributors] = useState([]);
   const [topScorers, setTopScorers] = useState([]);
   const [allUsersStats, setAllUserStats] = useState([]);
-  const [currUserRecord, setCurrUserRecord] = useState({
-    questions: [],
-    tests: [],
-  });
+  const [currUserRecord, setCurrUserRecord] = useState();
   const [timePeriod, setTimePeriod] = useState("day");
   const [isLoading, setIsLoading] = useState(true);
 
   const [totalQuestions, setTotalQuestions] = useState();
   const [totalTests, setTotalTests] = useState();
   const [updatedAt, setUpdatedAt] = useState();
+
+  const [questionsCount, setQuestionsCount] = useState(0);
+  const [testsCount, setTestsCount] = useState(0);
 
   const profile = useSelector(selectProfile);
 
@@ -62,6 +63,7 @@ const Dashboard = () => {
         Query.equal("collegeId", profile.collegeId),
         Query.equal("batchId", profile.batchId),
       ]);
+      console.log(stats);
 
       if (stats.documents.length > 0) {
         setAllUserStats(stats.documents);
@@ -166,8 +168,8 @@ const Dashboard = () => {
       );
     });
 
-    setTopContributors(sortedQuestionStats.slice(0, 20));
-    setTopScorers(sortedScorersStats.slice(0, 20));
+    setTopContributors(sortedQuestionStats.slice(0, 30));
+    setTopScorers(sortedScorersStats.slice(0, 30));
   }, [allUsersStats, timePeriod]);
 
   const handleTimePeriodChange = (value) => {
@@ -176,6 +178,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (allUsersStats.length === 0) return;
+
     const updatedAt = allUsersStats?.find(
       (stat) => stat.userId === user.$id
     )?.$updatedAt;
@@ -191,6 +194,30 @@ const Dashboard = () => {
       .reduce((acc, stat) => acc + stat.allTime_testsCount, 0);
     setTotalTests(totalTests);
   }, [allUsersStats]);
+
+  useEffect(() => {
+    if (!allUsersStats.length === 0) return;
+
+    const questionsCount =
+      allUsersStats &&
+      allUsersStats
+        .map((stat) => stat[`${timePeriod}_questionsCount`])
+        .reduce((acc, doc) => {
+          acc += doc;
+          return acc;
+        }, 0);
+    setQuestionsCount(questionsCount);
+
+    const testsCount =
+      allUsersStats &&
+      allUsersStats
+        .map((stat) => stat[`${timePeriod}_testsCount`])
+        .reduce((acc, doc) => {
+          acc += doc;
+          return acc;
+        }, 0);
+    setTestsCount(testsCount);
+  }, [timePeriod, allUsersStats]);
 
   // const topScorer = allUsersStats?.reduce(
   //   (prev, curr) => {
@@ -261,6 +288,7 @@ const Dashboard = () => {
       </div>
       <div className="w-full flex items-end justify-end">
         <CustomSelect
+          icon={<FaCalendar />}
           options={["day", "week", "month", "year", "allTime"]}
           value={timePeriod}
           onChangeFunc={handleTimePeriodChange}
@@ -269,15 +297,16 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-          <div className="flex justify-between">
-            <h2 className="text-base font-semibold mb-4 ">
+          <div className="flex flex-col justify-between">
+            <h2 className="text-base font-semibold text-gray-600 ">
               Top Questions Contributors
-              <p className="text-2xl m-2">
-                {topContributors.length === 0 && (
-                  <span className="text-red-500">No Top Contributors</span>
-                )}
-              </p>
             </h2>
+            <h1 className="text-2xl text-gray-700 font-semibold py-2">
+              {questionsCount}
+              <span className="text-sm text-gray-600 ml-2">
+                Nos. of Questions
+              </span>
+            </h1>
           </div>
           {topContributors.length > 0 && (
             <ResponsiveContainer width="100%" height={300}>
@@ -301,15 +330,14 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-          <div className="flex justify-between">
-            <h2 className="text-base font-semibold mb-4">
+          <div className="flex flex-col justify-between">
+            <h2 className="text-base font-semibold text-gray-600">
               Top Scorers of {timePeriod}
-              <p className="text-2xl m-2">
-                {topScorers.length === 0 && (
-                  <span className="text-red-500">No Top Scorers</span>
-                )}
-              </p>
             </h2>
+            <h1 className="text-2xl text-gray-700 font-semibold py-2">
+              {testsCount}
+              <span className="text-sm text-gray-600 ml-2">Nos. of Tests</span>
+            </h1>
           </div>
           {topScorers.length > 0 && (
             <ResponsiveContainer width="100%" height={300}>

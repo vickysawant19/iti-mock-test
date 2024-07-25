@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaArrowDown, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
-const CustomSelect = ({ options, value, onChangeFunc }) => {
+const CustomSelect = ({ icon, options, value, onChangeFunc }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(value);
 
@@ -13,12 +13,13 @@ const CustomSelect = ({ options, value, onChangeFunc }) => {
   };
 
   return (
-    <div className="relative w-24 rounded-xl mr-2">
+    <div className="relative rounded-xl mr-2">
       <button
         type="button"
-        className="mb-4 p-2 border rounded bg-white flex items-center justify-between w-full text-left capitalize px-4"
+        className="mb-4 p-2 border rounded bg-white flex gap-2 items-center justify-between w-full text-left capitalize px-4"
         onClick={() => setIsOpen(!isOpen)}
       >
+        <span className="text-gray-500">{icon}</span>
         {selectedValue}
         <span
           className={`transition-transform duration-300 transform ${
