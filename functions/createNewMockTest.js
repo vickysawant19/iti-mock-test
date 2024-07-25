@@ -24,11 +24,11 @@ const createNewMockTest = async ({
       throw new Error("No paper available for selected ID");
     }
 
-    const dublicate = paper.documents.find((paper) => paper.userId === userId);
+    // const dublicate = paper.documents.find((paper) => paper.userId === userId);
 
-    if (dublicate) {
-      throw new Error("Test is Already attained by you");
-    }
+    // if (dublicate) {
+    //   throw new Error("Test is Already attained by you");
+    // }
 
     const { tradeId, tradeName, year, questions } = paper;
 
@@ -83,10 +83,10 @@ const createNewMockTest = async ({
       newPaperData
     );
 
-    return response;
+    return { paperId: response.$id };
   } catch (err) {
     error(err);
-    throw err;
+    return { error: err.message };
   }
 };
 

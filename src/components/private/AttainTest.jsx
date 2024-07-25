@@ -49,6 +49,7 @@ const AttainTest = () => {
       //   user.$id,
       //   user.name
       // );
+      console.log(parsedRes);
       toast.success("Paper generated successfully!");
       // navigate(`/start-mock-test/${newPaper.$id}`);
     } catch (error) {
