@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import questionpaperservice from "../../appwrite/mockTest";
 import MockTestGreet from "./MockTestGreet";
 import { ClipLoader } from "react-spinners";
@@ -14,6 +14,8 @@ const StartMockTest = () => {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isGreetShown, setIsGreetShown] = useState(false);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     setIsLoading(true);
     const fetchMockTest = async () => {
@@ -23,6 +25,9 @@ const StartMockTest = () => {
           const parsedQuestions = response.questions.map((question) =>
             JSON.parse(question)
           );
+          if (response.submitted) {
+            navigate(`/show-mock-test/${paperId}`);
+          }
           setSubmitted(response.submitted);
           setMockTest({ ...response, questions: parsedQuestions });
         }
@@ -35,7 +40,6 @@ const StartMockTest = () => {
 
     fetchMockTest();
   }, [paperId]);
-  console.log(mockTest);
 
   const handleStartExam = () => {
     setIsGreetShown(true);
@@ -70,6 +74,7 @@ const StartMockTest = () => {
       await questionpaperservice.updateAllResponses(paperId, responseArray);
       alert("Exam submitted successfully!");
       setSubmitted(true);
+      navigate(`/show-mock-test/${paperId}`);
     } catch (error) {
       alert("Paper already submitted!", error);
       console.error("Error submitting exam:", error);
