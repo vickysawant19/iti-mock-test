@@ -22,6 +22,9 @@ export default async ({ req, res, log, error }) => {
       });
       break;
 
+    case "createNewMockTest":
+      result = await createNewMockTest({ paperId, userId, userName, error });
+
     default:
       result = { error: "Invalid action" };
       break;

@@ -5,6 +5,8 @@ import questionpaperservice from "../../appwrite/mockTest";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
+import { Functions } from "appwrite";
+import { appwriteService } from "../../appwrite/appwriteConfig";
 
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
@@ -15,14 +17,39 @@ const AttainTest = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const newPaper = await questionpaperservice.createNewPaperDocument(
+      const data = {
+        action: "createNewMockTest",
+        userId: user.$id,
+        userName: user.name,
         paperId,
-        user.$id,
-        user.name
+      };
+
+      const functions = new Functions(appwriteService.getClient());
+      const res = await functions.createExecution(
+        conf.mockTestFunctionId,
+        JSON.stringify(data)
       );
+
+      console.log(res);
+
+      const { responseBody } = res;
+      if (!responseBody) {
+        throw new Error("No response received from the server.");
+      }
+      const parsedRes = JSON.parse(responseBody);
+      console.log(parsedRes);
+      if (parsedRes.error) {
+        throw new Error(parsedRes.error);
+      }
+      // const newPaper = await questionpaperservice.createNewPaperDocument(
+      //   paperId,
+      //   user.$id,
+      //   user.name
+      // );
       toast.success("Paper generated successfully!");
-      navigate(`/start-mock-test/${newPaper.$id}`);
+      // navigate(`/start-mock-test/${newPaper.$id}`);
     } catch (error) {
       toast.error(error.message);
     } finally {
