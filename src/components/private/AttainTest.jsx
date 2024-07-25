@@ -33,14 +33,11 @@ const AttainTest = () => {
         JSON.stringify(data)
       );
 
-      console.log(res);
-
       const { responseBody } = res;
       if (!responseBody) {
         throw new Error("No response received from the server.");
       }
       const parsedRes = JSON.parse(responseBody);
-      console.log(parsedRes);
       if (parsedRes.error) {
         throw new Error(parsedRes.error);
       }
@@ -49,9 +46,9 @@ const AttainTest = () => {
       //   user.$id,
       //   user.name
       // );
-      console.log(parsedRes);
+
       toast.success("Paper generated successfully!");
-      // navigate(`/start-mock-test/${newPaper.$id}`);
+      navigate(`/start-mock-test/${parsedRes.paperId}`);
     } catch (error) {
       toast.error(error.message);
     } finally {

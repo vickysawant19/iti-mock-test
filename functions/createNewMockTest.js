@@ -14,23 +14,30 @@ const createNewMockTest = async ({
   error,
 }) => {
   try {
-    const paper = await database.listDocuments(
+    const paperResponse = await database.listDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.QUESTIONPAPER_COLLECTION_ID,
       [Query.equal("paperId", paperId)]
     );
 
-    if (!paper) {
-      throw new Error("No paper available for selected ID");
+    // Check if the paper exists
+    if (paperResponse.total === 0) {
+      throw new Error(
+        "No paper available for the selected ID. Please check the paperId."
+      );
     }
 
-    // const dublicate = paper.documents.find((paper) => paper.userId === userId);
+    // Check for duplicate papers within the fetched papers
+    const duplicate = paperResponse.documents.find(
+      (doc) => doc.userId === userId
+    );
+    if (duplicate) {
+      throw new Error("You have already attempted this test.");
+    }
 
-    // if (dublicate) {
-    //   throw new Error("Test is Already attained by you");
-    // }
+    const paper = paperResponse.documents[0];
 
-    const { tradeId, tradeName, year, questions } = paper.documents[0];
+    const { tradeId, tradeName, year, questions } = paper;
 
     const processedQuestions = questions.map((question) => {
       const parsedQuestion = JSON.parse(question);
@@ -85,8 +92,8 @@ const createNewMockTest = async ({
 
     return { paperId: response.$id };
   } catch (err) {
-    error(err);
-    return { error: err };
+    error(err.message);
+    return { error: err.message };
   }
 };
 
