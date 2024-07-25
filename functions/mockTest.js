@@ -3,8 +3,16 @@ import generateMockTest from "./generateMockTest.js";
 
 export default async ({ req, res, log, error }) => {
   const body = req.body;
-  const { action, userId, userName, tradeName, tradeId, year, quesCount } =
-    JSON.parse(body);
+  const {
+    action,
+    userId,
+    userName,
+    tradeName,
+    tradeId,
+    year,
+    quesCount,
+    paperId,
+  } = JSON.parse(body);
 
   log(body);
 
