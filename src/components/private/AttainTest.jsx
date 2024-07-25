@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
 import { Functions } from "appwrite";
 import { appwriteService } from "../../appwrite/appwriteConfig";
+import conf from "../../config/config";
 
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
