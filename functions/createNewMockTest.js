@@ -33,7 +33,7 @@ const createNewMockTest = async ({
     );
 
     if (duplicate) {
-      return { paperId: duplicate.$id };
+      return { paperId: duplicate.$id, message: "Paper already generated." };
     }
 
     const paper = paperResponse.documents[0];
@@ -56,27 +56,13 @@ const createNewMockTest = async ({
 
     const shuffledQuestions = shuffleArray(processedQuestions);
 
-    const generateRandomSuffix = (length) => {
-      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      let result = "";
-      for (let i = 0; i < length; i++) {
-        result += characters.charAt(
-          Math.floor(Math.random() * characters.length)
-        );
-      }
-      return result;
-    };
-
-    // Generate a new paperId with a different suffix
-    const newPaperId = paperId.slice(0, -2) + generateRandomSuffix(2);
-
     // Prepare the new paper data
     const newPaperData = {
       tradeId,
       tradeName,
       year,
       quesCount,
-      paperId: newPaperId,
+      paperId,
       questions: shuffledQuestions,
       userId,
       userName,
