@@ -30,7 +30,7 @@ const createNewMockTest = async ({
     //   throw new Error("Test is Already attained by you");
     // }
 
-    const { tradeId, tradeName, year, questions } = paper;
+    const { tradeId, tradeName, year, questions } = paper.documents[0];
 
     const processedQuestions = questions.map((question) => {
       const parsedQuestion = JSON.parse(question);
@@ -86,7 +86,7 @@ const createNewMockTest = async ({
     return { paperId: response.$id };
   } catch (err) {
     error(err);
-    return { error: err.message };
+    return { error: err };
   }
 };
 
