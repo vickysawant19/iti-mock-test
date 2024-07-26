@@ -8,13 +8,14 @@ export class UserProfileService {
     this.database = appwriteService.getDatabases();
   }
 
-  async createUserProfile(
+  async createUserProfile({
     userId,
     userName,
     tradeId,
     batchId,
-    enrolledAt = new Date().toISOString()
-  ) {
+    collegeId,
+    enrolledAt = new Date().toISOString(),
+  }) {
     try {
       const userProfile = {
         userId,
@@ -22,6 +23,7 @@ export class UserProfileService {
         tradeId,
         batchId,
         enrolledAt,
+        collegeId,
       };
 
       return await this.database.createDocument(

@@ -42,7 +42,8 @@ const CreateQuestion = () => {
       data.userName = user.name;
       await quesdbservice.createQuestion(data);
       toast.success("Question created");
-      reset();
+      // reset();
+
       // navigate("/manage-questions");
     } catch (error) {
       toast.error(error.message);
