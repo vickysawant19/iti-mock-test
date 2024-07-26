@@ -41,7 +41,6 @@ function App() {
         }
       } catch (error) {
         console.error("Error checking user status:", error);
-        navigate("/login");
       } finally {
         setIsLoading(false);
       }
