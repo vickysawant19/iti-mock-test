@@ -51,6 +51,7 @@ const router = (
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
         </Route>
+        <Route path="*" element={<Navigate to="/dash" />} />
       </Route>
     </Routes>
   </Router>

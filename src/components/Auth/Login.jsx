@@ -30,7 +30,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/home");
+      navigate("/dash");
     }
   }, [user]);
 
@@ -43,10 +43,11 @@ const Login = () => {
       if (user) {
         dispatch(addUser(user));
         const res = await userProfileService.getUserProfile(user.$id);
-        console.log(res);
+
         if (res) {
           dispatch(addProfile(res));
           toast.success("Login successful!");
+          navigate("/dash");
         } else {
           navigate("/profile");
         }
