@@ -180,12 +180,16 @@ export default async ({ req, res, log, error }) => {
         tradeId: doc.tradeId,
         batchId: doc.batchId,
         collegeId: doc.collegeId,
+        userId: doc.userId,
+        userName: doc.userName,
       };
       return acc;
     }, {});
+    log(JSON.stringify(userProfileData));
 
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
+      log(documentId);
 
       const updatedData = {
         allTime_maxScore: userData.allTime_maxScore ?? 0,
@@ -210,6 +214,8 @@ export default async ({ req, res, log, error }) => {
 
         questions: userData.questions,
         tests: userData.tests,
+        userId: userProfileData[userId].userId,
+        userName: userProfileData[userId].userName,
         tradeId: userProfileData[userId].tradeId,
         batchId: userProfileData[userId].batchId,
         collegeId: userProfileData[userId].collegeId,
