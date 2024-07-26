@@ -1,6 +1,7 @@
 import { Client, Databases, Query } from "node-appwrite";
 
 export default async ({ req, res, log, error }) => {
+  log("Updating userStats....");
   const client = new Client();
   client
     .setEndpoint(process.env.APPWRITE_URL)
@@ -185,11 +186,9 @@ export default async ({ req, res, log, error }) => {
       };
       return acc;
     }, {});
-    log(JSON.stringify(userProfileData));
 
     const updateUserStats = async (userId, userData) => {
       const documentId = existingUserStatsMap[userId];
-      log(documentId);
 
       const updatedData = {
         allTime_maxScore: userData.allTime_maxScore ?? 0,
