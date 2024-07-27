@@ -27,6 +27,7 @@ import ShowMockTest from "./components/private/ShowMockTest.jsx";
 import AttainTest from "./components/private/AttainTest.jsx";
 import Dash from "./components/private/Dash.jsx";
 import EditProfileForm from "./components/private/ProfileEdit.jsx";
+import MockTestResults from "./components/private/MockTestResults.jsx";
 
 const router = (
   <Router>
@@ -50,6 +51,10 @@ const router = (
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
+          <Route
+            path="mock-test-result/:paperId"
+            element={<MockTestResults />}
+          />
         </Route>
         <Route path="*" element={<Navigate to="/dash" />} />
       </Route>

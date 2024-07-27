@@ -85,7 +85,6 @@ class QuestionPaperService {
   }
 
   async fetchPaperById(paperId) {
-    [].sort();
     try {
       const response = await this.database.listDocuments(
         this.databaseId,
@@ -258,15 +257,16 @@ class QuestionPaperService {
     }
   }
 
-  async getUserResults(userId) {
+  async getUserResults(paperId) {
     try {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [],
-        {
-          filters: [`userId=${userId}`, `submitted=true`],
-        }
+        [
+          Query.equal("paperId", paperId),
+          Query.select(["score", "$updatedAt", "userName", "quesCount"]),
+          Query.notEqual("userName", "Admin"),
+        ]
       );
       return response.documents;
     } catch (error) {

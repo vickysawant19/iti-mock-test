@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import questionpaperservice from "../../appwrite/mockTest";
 import { format } from "date-fns";
-import { FaShareAlt, FaTrashAlt } from "react-icons/fa";
+import { FaApper, FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
+import { MdFormatListNumbered } from "react-icons/md";
 
 const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
   <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -30,25 +31,32 @@ const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
     <p className="text-gray-600">
       <strong>Submitted:</strong> {test.submitted ? "Yes" : "No"}
     </p>
-    <div className="mt-4 flex space-x-4">
+    <div className="mt-4 grid grid-cols-2 gap-4 md:flex md:flex-row md:space-x-4 md:space-y-0 ">
       {test.submitted ? (
-        <Link
-          to={`/show-mock-test/${test.$id}`}
-          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md"
-        >
-          Show Test
-        </Link>
+        <div className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md flex items-center justify-center gap-2">
+          <FaPaperPlane />
+          <Link to={`/show-mock-test/${test.$id}`} className="">
+            Show Test
+          </Link>
+        </div>
       ) : (
-        <Link
-          to={`/start-mock-test/${test.$id}`}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
-        >
-          Start Test
-        </Link>
+        <div className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md flex  items-center justify-center w-full gap-2">
+          <FaPaperPlane />
+          <Link to={`/start-mock-test/${test.$id}`} className="">
+            Start Test
+          </Link>
+        </div>
       )}
+
+      <div className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full">
+        <MdFormatListNumbered />
+        <Link to={`/mock-test-result/${test.paperId}`} className="">
+          Test Scores
+        </Link>
+      </div>
       <button
         onClick={() => handleShare(test.paperId)}
-        className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md flex items-center space-x-2"
+        className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full"
       >
         <FaShareAlt />
         <span>Share</span>
@@ -56,7 +64,7 @@ const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
       {user.labels.includes("admin") && (
         <button
           onClick={() => handleDelete(test.$id)}
-          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md flex items-center space-x-2"
+          className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full"
         >
           <FaTrashAlt />
           <span>Delete</span>
@@ -141,7 +149,7 @@ const AllMockTests = () => {
             No mock test generated!
           </div>
         ) : (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 ">
             {mockTests.map((test) => (
               <MockTestCard
                 key={test.$id}
