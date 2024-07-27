@@ -61,8 +61,8 @@ const MockTestResults = () => {
             <tr key={index}>
               <td className="py-2 px-4 border-b">{index + 1}</td>
               <td className="py-2 px-4 border-b">{result.userName}</td>
-              <td className="py-2 px-4 border-b">
-                {result.score} / {result.quesCount}
+              <td className="py-2 px-4 border-b text-nowrap">
+                {result.score || "-"} / {result.quesCount}
               </td>
 
               <td className="py-2 px-4 border-b">
