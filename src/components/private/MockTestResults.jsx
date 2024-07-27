@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { FaSpinner } from "react-icons/fa";
+import { useParams, useNavigate } from "react-router-dom";
+import { FaSpinner, FaArrowLeft } from "react-icons/fa";
 import questionpaperservice from "../../appwrite/mockTest";
 
 const MockTestResults = () => {
   const { paperId } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,6 +19,7 @@ const MockTestResults = () => {
         setData(res);
       } catch (error) {
         console.log(error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
@@ -40,32 +42,38 @@ const MockTestResults = () => {
       </div>
     );
   }
-  console.log(paperId);
-
-  console.log("data", data);
 
   return (
     <div className="container mx-auto p-4 mt-8">
-      <h1 className="text-2xl font-bold mb-4">Mock Test Results</h1>
+      <div className="flex items-center mb-4  gap-4 pl-4">
+        <button onClick={() => navigate(-1)} className="mr-2">
+          <FaArrowLeft className="text-xl text-blue-900 hover:text-blue-700" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold">Mock Test Results</h1>
+          <p className="text-sm text-gray-500">Paper ID: {paperId}</p>
+        </div>
+      </div>
       <table className="min-w-full bg-white border">
         <thead>
           <tr>
-            <th className="py-2 px-4 border-b">Sr No</th>
-            <th className="py-2 px-4 border-b">Student Name</th>
-            <th className="py-2 px-4 border-b">Score</th>
-            <th className="py-2 px-4 border-b">Submitted At</th>
+            <th className="py-2 px-4 border-b text-center">Sr No</th>
+            <th className="py-2 px-4 border-b text-center">Student Name</th>
+            <th className="py-2 px-4 border-b text-center">Score</th>
+            <th className="py-2 px-4 border-b text-center">Submitted At</th>
           </tr>
         </thead>
         <tbody>
           {data.map((result, index) => (
             <tr key={index}>
-              <td className="py-2 px-4 border-b">{index + 1}</td>
-              <td className="py-2 px-4 border-b">{result.userName}</td>
-              <td className="py-2 px-4 border-b text-nowrap">
-                {result.score || "-"} / {result.quesCount}
+              <td className="py-2 px-4 border-b text-center">{index + 1}</td>
+              <td className="py-2 px-4 border-b text-center">
+                {result.userName}
               </td>
-
-              <td className="py-2 px-4 border-b">
+              <td className="py-2 px-4 border-b text-center">
+                {result.score || "-"} / {result.quesCount || 50}
+              </td>
+              <td className="py-2 px-4 border-b text-center">
                 {new Date(result.$updatedAt).toLocaleString()}
               </td>
             </tr>
