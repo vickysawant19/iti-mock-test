@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSpinner, FaArrowLeft } from "react-icons/fa";
 import questionpaperservice from "../../appwrite/mockTest";
+import { format } from "date-fns";
 
 const MockTestResults = () => {
   const { paperId } = useParams();
@@ -54,7 +55,7 @@ const MockTestResults = () => {
           <p className="text-sm text-gray-500">Paper ID: {paperId}</p>
         </div>
       </div>
-      <table className="min-w-full bg-white border">
+      <table className="min-w-full bg-white border text-sm">
         <thead>
           <tr>
             <th className="py-2 px-4 border-b text-center">Sr No</th>
@@ -70,11 +71,12 @@ const MockTestResults = () => {
               <td className="py-2 px-4 border-b text-center">
                 {result.userName}
               </td>
-              <td className="py-2 px-4 border-b text-center">
-                {result.score || "-"} / {result.quesCount || 50}
+              <td className="py-2 px-4 border-b text-center text-base">
+                {result.score || "-"}/
+                <span className="">{result.quesCount || 50}</span>
               </td>
               <td className="py-2 px-4 border-b text-center">
-                {new Date(result.$updatedAt).toLocaleString()}
+                {format(result.$updatedAt, "dd/MM/yyyy HH:MM a")}
               </td>
             </tr>
           ))}

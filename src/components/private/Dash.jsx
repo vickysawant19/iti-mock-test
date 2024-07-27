@@ -19,9 +19,17 @@ import CustomSelect from "../components/CustomSelect";
 import { ClipLoader } from "react-spinners";
 import { Query } from "appwrite";
 import { selectProfile } from "../../store/profileSlice";
-import { format } from "date-fns";
+import {
+  format,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+  subYears,
+} from "date-fns";
 import tradeservice from "../../appwrite/tradedetails";
 import { FaCalendar } from "react-icons/fa";
+import TodaysTestsPopup from "./popup/TodaysTests";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
@@ -39,6 +47,9 @@ const Dashboard = () => {
 
   const [questionsCount, setQuestionsCount] = useState(0);
   const [testsCount, setTestsCount] = useState(0);
+
+  const [testsToday, setTestsToday] = useState([]);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const profile = useSelector(selectProfile);
 
@@ -63,23 +74,24 @@ const Dashboard = () => {
         Query.equal("collegeId", profile.collegeId),
         Query.equal("batchId", profile.batchId),
       ]);
-      console.log(stats);
 
       if (stats.documents.length > 0) {
-        setAllUserStats(stats.documents);
+        const newStats = stats.documents.map((stat) => ({
+          ...stat,
+          questions: stat.questions.map((ques) => JSON.parse(ques)),
+          tests: stat.tests.map((test) => JSON.parse(test)),
+        }));
 
-        const currentUserStats = stats.documents.find(
+        setAllUserStats(newStats);
+
+        const currentUserStats = newStats.find(
           (stats) => stats.userId === user.$id
         );
 
         if (currentUserStats) {
-          const questions = currentUserStats.questions.map((ques) =>
-            JSON.parse(ques)
-          );
+          const questions = currentUserStats.questions;
 
-          const tests = currentUserStats.tests.map((tests) =>
-            JSON.parse(tests)
-          );
+          const tests = currentUserStats.tests;
 
           const groupedQues = questions.reduce((acc, curr) => {
             let date = curr.createdAt.split("T")[0];
@@ -140,6 +152,57 @@ const Dashboard = () => {
     fetchTrades();
     fetchAllUsersStats();
   }, [user.$id]);
+
+  useEffect(() => {
+    if (allUsersStats.length === 0) return;
+
+    let currentTime;
+
+    switch (timePeriod) {
+      case "day":
+        currentTime = format(startOfDay(new Date()), "yyyyMMdd");
+        break;
+      case "week":
+        currentTime = format(
+          startOfWeek(new Date(), { weekStartsOn: 0 }),
+          "yyyyMMdd"
+        ); // Week starts on Sunday
+        break;
+      case "month":
+        currentTime = format(startOfMonth(new Date()), "yyyyMMdd");
+        break;
+      case "year":
+        currentTime = format(startOfYear(new Date()), "yyyyMMdd");
+        break;
+      case "allTime":
+        currentTime = format(subYears(new Date(), 1), "yyyyMMdd"); // Arbitrary old date for all time
+        break;
+      default:
+        currentTime = format(new Date(), "yyyyMMdd");
+        break;
+    }
+
+    const todayQues = allUsersStats.reduce((acc, doc) => {
+      doc.tests.forEach((test) => {
+        const testTime = format(new Date(test.createdAt), "yyyyMMdd");
+
+        if (testTime >= currentTime) {
+          if (!acc[doc.userId]) {
+            acc[doc.userId] = {
+              userId: doc.userId,
+              userName: doc.userName,
+              totalTests: 0,
+            };
+          }
+          acc[doc.userId].totalTests += 1;
+        }
+      });
+
+      return acc;
+    }, {});
+
+    setTestsToday(Object.values(todayQues));
+  }, [allUsersStats, timePeriod]);
 
   useEffect(() => {
     if (allUsersStats.length === 0) return;
@@ -218,17 +281,6 @@ const Dashboard = () => {
         }, 0);
     setTestsCount(testsCount);
   }, [timePeriod, allUsersStats]);
-
-  // const topScorer = allUsersStats?.reduce(
-  //   (prev, curr) => {
-  //     const currScore = curr[`${timePeriod}_maxScore`];
-  //     if (currScore > prev.maxScore) {
-  //       return { maxScore: currScore, userName: curr.userName };
-  //     }
-  //     return prev;
-  //   },
-  //   { maxScore: 0, userName: "" }
-  // );
 
   if (isLoading) {
     return (
@@ -331,9 +383,24 @@ const Dashboard = () => {
 
         <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
           <div className="flex flex-col justify-between">
-            <h2 className="text-base font-semibold text-gray-600">
-              Top Scorers of {timePeriod}
-            </h2>
+            <div className="flex justify-between w-full">
+              <h2 className="text-base font-semibold text-gray-600">
+                Top Scorers of {timePeriod}
+              </h2>
+              <button
+                onClick={() => setIsPopupOpen((prev) => !prev)}
+                className="underline text-blue-800 hover:text-blue-950"
+              >
+                View all..
+              </button>
+
+              <TodaysTestsPopup
+                timePeriod={timePeriod}
+                data={testsToday}
+                isOpen={isPopupOpen}
+                onClose={() => setIsPopupOpen((prev) => !prev)}
+              />
+            </div>
             <h1 className="text-2xl text-gray-700 font-semibold py-2">
               {testsCount}
               <span className="text-sm text-gray-600 ml-2">Nos. of Tests</span>
