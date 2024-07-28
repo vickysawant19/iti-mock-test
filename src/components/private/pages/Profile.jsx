@@ -3,9 +3,8 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { AiOutlineEdit } from "react-icons/ai";
 
-import ProfileView from "./ProfileView";
-import ProfileForm from "./ProfileForm";
 import { ClipLoader } from "react-spinners";
+import ProfileForm from "../ProfileForm";
 
 const Profile = () => {
   const profile = useSelector((state) => state.profile);

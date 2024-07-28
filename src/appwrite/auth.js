@@ -1,5 +1,5 @@
-import { appwriteService } from './appwriteConfig';
-import { ID } from 'appwrite';
+import { appwriteService } from "./appwriteConfig";
+import { ID } from "appwrite";
 
 export class AuthService {
   constructor() {
@@ -44,9 +44,24 @@ export class AuthService {
 
   async logout() {
     try {
-      return await this.account.deleteSession('current');
+      return await this.account.deleteSession("current");
     } catch (error) {
       throw new Error(error);
+    }
+  }
+
+  async forgotPassword(email) {
+    try {
+      // const res = await this.account.createVerification(
+      //   "https://localhost:5173/reset-password"
+      // );
+      const res = await this.account.createRecovery(
+        email,
+        "https://localhost:5173/reset-pass"
+      );
+      console.log(res);
+    } catch (error) {
+      throw new Error(`${error.message.split(".")[0]}`);
     }
   }
 }

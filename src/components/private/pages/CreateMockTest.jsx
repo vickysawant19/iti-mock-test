@@ -5,11 +5,11 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 
-import tradeservice from "../../appwrite/tradedetails";
-import questionpaperservice from "../../appwrite/mockTest";
+import tradeservice from "../../../appwrite/tradedetails";
+import questionpaperservice from "../../../appwrite/mockTest";
 import { Functions } from "appwrite";
-import conf from "../../config/config";
-import { appwriteService } from "../../appwrite/appwriteConfig";
+import conf from "../../../config/config";
+import { appwriteService } from "../../../appwrite/appwriteConfig";
 
 const CreateMockTest = () => {
   const { register, handleSubmit, reset, setValue } = useForm();

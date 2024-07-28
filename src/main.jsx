@@ -13,21 +13,25 @@ import { store } from "./store/store.js";
 
 import Login from "./components/Auth/Login.jsx";
 import Signup from "./components/Auth/Signup.jsx";
-import About from "./components/About.jsx";
+
 import ProtectedRoute from "./components/private/ProtectedRoute.jsx";
-import Home from "./components/private/Home.jsx";
-import CreateQuestion from "./components/private/CreateQuestion.jsx";
-import ManageQuestions from "./components/private/ManageQuestions.jsx";
+
+import CreateQuestion from "./components/private/pages/CreateQuestion.jsx";
+import ManageQuestions from "./components/private/pages/ManageQuestions.jsx";
 import EditQuestion from "./components/private/EditQuestion.jsx";
-import CreateMockTest from "./components/private/CreateMockTest.jsx";
-import AllMockTests from "./components/private/AllMockTests.jsx";
-import Profile from "./components/private/Profile.jsx";
+import CreateMockTest from "./components/private/pages/CreateMockTest.jsx";
+import AllMockTests from "./components/private/pages/AllMockTests.jsx";
+
 import StartMockTest from "./components/private/StartMockTest.jsx";
 import ShowMockTest from "./components/private/ShowMockTest.jsx";
-import AttainTest from "./components/private/AttainTest.jsx";
-import Dash from "./components/private/Dash.jsx";
+import AttainTest from "./components/private/pages/AttainTest.jsx";
+import Dash from "./components/private/pages/Dash.jsx";
 import EditProfileForm from "./components/private/ProfileEdit.jsx";
 import MockTestResults from "./components/private/MockTestResults.jsx";
+import Home from "./components/private/pages/Home.jsx";
+import About from "./components/private/pages/About.jsx";
+import Profile from "./components/private/pages/Profile.jsx";
+import ForgetPass from "./components/Auth/ForgetPass.jsx";
 
 const router = (
   <Router>
@@ -36,6 +40,7 @@ const router = (
         <Route index element={<Navigate to="/login" />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route path="forget-password" element={<ForgetPass />} />
         <Route path="about" element={<About />} />
         <Route path="profile" element={<Profile />} />
 

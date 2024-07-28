@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import questionpaperservice from "../../appwrite/mockTest";
+import questionpaperservice from "../../../appwrite/mockTest";
 import { format } from "date-fns";
 import { FaApper, FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
@@ -31,7 +31,7 @@ const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
     <p className="text-gray-600">
       <strong>Submitted:</strong> {test.submitted ? "Yes" : "No"}
     </p>
-    <div className="mt-4 grid grid-cols-2 gap-4 md:flex md:flex-row md:space-x-4 md:space-y-0 ">
+    <div className="mt-4 grid grid-cols-2 gap-4  ">
       {test.submitted ? (
         <div className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md flex items-center justify-center gap-2">
           <FaPaperPlane />

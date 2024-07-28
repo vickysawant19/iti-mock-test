@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import quesdbservice from "../../appwrite/database";
+import quesdbservice from "../../../appwrite/database";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import tradeservice from "../../appwrite/tradedetails";
+import tradeservice from "../../../appwrite/tradedetails";
 
 const CreateQuestion = () => {
   const {

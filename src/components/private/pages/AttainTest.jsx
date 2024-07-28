@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import questionpaperservice from "../../appwrite/mockTest";
+import questionpaperservice from "../../../appwrite/mockTest";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
 import { Functions } from "appwrite";
-import { appwriteService } from "../../appwrite/appwriteConfig";
-import conf from "../../config/config";
+import { appwriteService } from "../../../appwrite/appwriteConfig";
+import conf from "../../../config/config";
 
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");

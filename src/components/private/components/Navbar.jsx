@@ -13,11 +13,14 @@ import {
   FaBook,
   FaKey,
   FaDashcube,
+  FaSignOutAlt,
 } from "react-icons/fa";
-import authService from "../appwrite/auth";
-import { removeUser } from "../store/userSlice";
-import logo from "../assets/logo.jpeg";
-import { removeProfile, selectProfile } from "../store/profileSlice";
+
+import logo from "../../../assets/logo.jpeg";
+
+import authService from "../../../appwrite/auth";
+import { removeUser } from "../../../store/userSlice";
+import { removeProfile, selectProfile } from "../../../store/profileSlice";
 
 const Navbar = () => {
   const user = useSelector((state) => state.user);
@@ -97,7 +100,7 @@ const Navbar = () => {
                   </NavLink>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md "
                   >
                     Logout
                   </button>
@@ -258,9 +261,9 @@ const Navbar = () => {
               handleLogout();
               toggleMenu();
             }}
-            className="flex items-center gap-2 text-xl mt-4 text-left py-2 hover:bg-gray-100 p-2 rounded-xl w-full"
+            className="flex items-center gap-4 py-2 mt-4 text-xl hover:bg-gray-100 p-2 rounded-xl w-full text-red-700 justify-center border"
           >
-            <FaUserCircle />
+            <FaSignOutAlt />
             <span>Logout</span>
           </button>
         ) : (

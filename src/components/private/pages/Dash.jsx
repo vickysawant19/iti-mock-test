@@ -13,12 +13,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import userStatsService from "../../appwrite/userStats";
+import userStatsService from "../../../appwrite/userStats";
 
-import CustomSelect from "../components/CustomSelect";
+import CustomSelect from "../../components/CustomSelect";
 import { ClipLoader } from "react-spinners";
 import { Query } from "appwrite";
-import { selectProfile } from "../../store/profileSlice";
+import { selectProfile } from "../../../store/profileSlice";
 import {
   format,
   startOfDay,
@@ -27,9 +27,9 @@ import {
   startOfYear,
   subYears,
 } from "date-fns";
-import tradeservice from "../../appwrite/tradedetails";
+import tradeservice from "../../../appwrite/tradedetails";
 import { FaCalendar } from "react-icons/fa";
-import TodaysTestsPopup from "./popup/TodaysTests";
+import TodaysTestsPopup from "../popup/TodaysTests";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);

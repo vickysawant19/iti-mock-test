@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
+
 import { addUser } from "./store/userSlice";
 import authService from "./appwrite/auth";
 import { ClipLoader } from "react-spinners";
@@ -10,6 +10,7 @@ import userProfileService from "./appwrite/userProfileService";
 import { addProfile } from "./store/profileSlice";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Navbar from "./components/private/components/Navbar";
 
 function App() {
   const user = useSelector((state) => state.user);

@@ -1,9 +1,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import Footer from "../Footer";
-import userProfileService from "../../appwrite/userProfileService";
-import { addProfile } from "../../store/profileSlice";
+import Footer from "../components/Footer";
 
 const Home = () => {
   const user = useSelector((state) => state.user);
