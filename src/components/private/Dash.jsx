@@ -192,16 +192,24 @@ const Dashboard = () => {
               userId: doc.userId,
               userName: doc.userName,
               totalTests: 0,
+              maxScore: Number(test.score),
             };
           }
           acc[doc.userId].totalTests += 1;
+          acc[doc.userId].maxScore = Math.max(
+            acc[doc.userId].maxScore,
+            Number(test.score)
+          );
         }
       });
 
       return acc;
     }, {});
+    const statArray = Object.values(todayQues);
 
-    setTestsToday(Object.values(todayQues));
+    const sortedStats = statArray.sort((a, b) => b.maxScore - a.maxScore);
+
+    setTestsToday(sortedStats);
   }, [allUsersStats, timePeriod]);
 
   useEffect(() => {
