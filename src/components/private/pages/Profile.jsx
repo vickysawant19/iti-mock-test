@@ -5,6 +5,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 
 import { ClipLoader } from "react-spinners";
 import ProfileForm from "../ProfileForm";
+import ProfileView from "../ProfileView";
 
 const Profile = () => {
   const profile = useSelector((state) => state.profile);
