@@ -19,8 +19,8 @@ const CreateMockTest = () => {
   const [trades, setTrades] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const navigate = useNavigate();
-  const subjects = ["TRADE THEORY"];
   const [isLoading, setIsLoading] = useState(false);
+  const profile = useSelector((state) => state.profile);
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -33,7 +33,13 @@ const CreateMockTest = () => {
     fetchTrades();
   }, []);
 
-  // console.log(user.labels.includes("admin"));
+  useEffect(() => {
+    if (!profile) return;
+    if (trades.length < 0) return;
+    setValue("tradeId", profile.tradeId);
+    const trade = trades.find((tr) => tr.$id === profile.tradeId);
+    setSelectedTrade(trade);
+  }, [profile, trades]);
 
   const onTradeChange = (e) => {
     const selectedTradeid = e.target.value;
@@ -42,10 +48,6 @@ const CreateMockTest = () => {
   };
 
   const onSubmit = async (data) => {
-    // if (!user.labels.includes("admin")) {
-    //   toast.error("Server Busy! Contact Administration");
-    //   return;
-    // }
     setIsLoading(true);
     data.userName = user.name;
     data.userId = user.$id;
@@ -58,22 +60,14 @@ const CreateMockTest = () => {
         conf.mockTestFunctionId,
         JSON.stringify(data)
       );
-      console.log(res);
-
       const { responseBody } = res;
       if (!responseBody) {
         throw new Error("No response received from the server.");
       }
       const parsedRes = JSON.parse(responseBody);
-      console.log(parsedRes);
       if (parsedRes.error) {
         throw new Error(parsedRes.error);
       }
-      // creating question paper on client side
-      //
-      // const newMockTest = await questionpaperservice.generateQuestionPaper(
-      //   data
-      // );
       toast.success("Mock test created successfully!");
       reset();
       navigate(`/start-mock-test/${parsedRes.paperId}`);
@@ -138,7 +132,8 @@ const CreateMockTest = () => {
               </select>
             </div>
           )}
-          <div className="mb-4">
+
+          {/* <div className="mb-4">
             <label
               htmlFor="subject"
               className="block text-gray-700 font-bold mb-2"
@@ -157,7 +152,7 @@ const CreateMockTest = () => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
           {/* //Number of Questions */}
           <div className="mb-4">
             <label
