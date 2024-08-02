@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import tradeservice from "../../../appwrite/tradedetails";
+import subjectService from "../../../appwrite/subjectService";
+import { FaArrowLeft } from "react-icons/fa";
 
 const CreateQuestion = () => {
   const {
@@ -17,10 +19,12 @@ const CreateQuestion = () => {
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
 
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
+  const profile = useSelector((state) => state.profile);
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -31,11 +35,29 @@ const CreateQuestion = () => {
         toast.error("Failed to fetch trades");
       }
     };
+    const fetchSubjects = async () => {
+      try {
+        const response = await subjectService.listSubjects();
+        setSubjects(response.documents);
+      } catch (error) {
+        toast.error("Failed to fetch trades");
+      }
+    };
+    fetchSubjects();
     fetchTrades();
   }, []);
 
+  useEffect(() => {
+    if (!profile) return;
+    if (trades.length < 0) return;
+    setValue("tradeId", profile.tradeId);
+    const trade = trades.find((t) => t.$id === profile.tradeId);
+    setSelectedTrade(trade);
+  }, [profile, trades]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
+    console.log(data);
 
     try {
       data.userId = user.$id;
@@ -63,7 +85,10 @@ const CreateQuestion = () => {
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <header className="py-6">
+        <header className="py-6 flex gap-6 ml-3 ">
+          <button onClick={() => navigate(-1)} className="text-2xl">
+            <FaArrowLeft />
+          </button>
           <h1 className="text-3xl font-bold text-gray-800 text-center">
             Create New Question
           </h1>
@@ -120,6 +145,33 @@ const CreateQuestion = () => {
                         {index === 0 ? "FIRST" : "SECOND"}
                       </option>
                     ))}
+                </select>
+                {errors.year && (
+                  <p className="text-red-500">{errors.year.message}</p>
+                )}
+              </div>
+            )}
+
+            {selectedTrade && (
+              <div className="mb-6">
+                <label
+                  htmlFor="tradeName"
+                  className="block text-gray-800 font-semibold mb-2"
+                >
+                  Subject
+                </label>
+
+                <select
+                  id="year"
+                  {...register("subjectId", { required: "Year is required" })}
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Select Subject</option>
+                  {subjects.map((sub) => (
+                    <option key={sub.$id} value={sub.$id}>
+                      {sub.subjectName}
+                    </option>
+                  ))}
                 </select>
                 {errors.year && (
                   <p className="text-red-500">{errors.year.message}</p>

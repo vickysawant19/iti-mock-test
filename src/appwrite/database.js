@@ -18,6 +18,7 @@ export class QuesDbService {
     userName,
     tradeId,
     year,
+    subjectId,
   }) {
     try {
       // Check if the question already exists
@@ -40,6 +41,7 @@ export class QuesDbService {
         userName,
         tradeId,
         year,
+        subjectId,
       };
 
       return await this.database.createDocument(
@@ -58,7 +60,15 @@ export class QuesDbService {
 
   async updateQuestion(
     id,
-    { question, options, correctAnswer, imageId = null, tradeId, year }
+    {
+      question,
+      options,
+      correctAnswer,
+      imageId = null,
+      tradeId,
+      year,
+      subjectId,
+    }
   ) {
     try {
       const documentData = {
@@ -68,6 +78,7 @@ export class QuesDbService {
         imageId,
         tradeId,
         year,
+        subjectId,
       };
       return await this.database.updateDocument(
         conf.databaseId,

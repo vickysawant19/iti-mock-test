@@ -17,6 +17,7 @@ const conf = {
     import.meta.env.VITE_COLLEGE_TRADE_COLLECTION_ID
   ),
   collegesCollectionId: String(import.meta.env.VITE_COLLEGE_COLLECTION_ID),
+  subjectsCollectionId: String(import.meta.env.VITE_SUBJECTS_COLLECTION_ID),
   mockTestFunctionId: String(import.meta.env.VITE_MOCKTEST_FUNCTION_ID),
 };
 

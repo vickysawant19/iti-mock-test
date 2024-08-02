@@ -6,12 +6,15 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import tradeservice from "../../appwrite/tradedetails";
+import subjectService from "../../appwrite/subjectService";
+import { FaArrowLeft } from "react-icons/fa";
 
 const EditQuestion = () => {
   const { register, handleSubmit, setValue, watch } = useForm();
   const { quesId } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [trades, setTrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
 
   const navigate = useNavigate();
@@ -22,10 +25,13 @@ const EditQuestion = () => {
       try {
         const response = await tradeservice.listTrades();
         setTrades(response.documents);
+        const subjectRes = await subjectService.listSubjects();
+        setSubjects(subjectRes.documents);
         const question = await quesdbservice.getQuestion(quesId);
         setValue("question", question.question);
         setValue("tradeId", question.tradeId);
         setValue("year", question.year);
+        setValue("subjectId", question.subjectId);
 
         const trade = response.documents.find(
           (tr) => tr.$id === question.tradeId
@@ -75,7 +81,10 @@ const EditQuestion = () => {
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <header className="py-6">
+        <header className="py-3  flex gap-10 pl-4">
+          <button onClick={() => navigate(-1)} className="text-2xl">
+            <FaArrowLeft />
+          </button>
           <h1 className="text-3xl font-bold text-gray-800 text-center">
             Edit Question
           </h1>
@@ -139,6 +148,31 @@ const EditQuestion = () => {
                         {trade.year} YEAR
                       </option>
                     ))}
+                </select>
+              </div>
+            )}
+
+            {selectedTrade && (
+              <div className="mb-6">
+                <label
+                  htmlFor="year"
+                  className="block text-gray-800 font-semibold mb-2"
+                >
+                  Subject
+                </label>
+                <select
+                  id="subjectId"
+                  {...register("subjectId", {
+                    required: "Subject is required",
+                  })}
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Select Subject</option>
+                  {subjects.map((sub) => (
+                    <option key={sub.$id} value={sub.$id}>
+                      {sub.subjectName}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}

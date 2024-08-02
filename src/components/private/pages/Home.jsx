@@ -8,12 +8,12 @@ const Home = () => {
   const profile = useSelector((state) => state.profile);
   const dispatch = useDispatch();
 
-  useEffect(() => {}, [dispatch]);
+  useEffect(() => {}, []);
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <header className="py-6">
+        <header className="py-6 ">
           <h1 className="text-3xl font-bold text-gray-800 text-center">
             Welcome {""}
             <span className="text-orange-600">{user.name},</span>
