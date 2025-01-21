@@ -247,7 +247,10 @@ const Navbar = () => {
                   groupKey="attendance"
                 >
                   {userRole.includes("Teacher") && (
-                    <MenuItem to="/mark-attendance" icon={FaCalendarCheck}>
+                    <MenuItem
+                      to="/attaindance/mark-attendance"
+                      icon={FaCalendarCheck}
+                    >
                       Mark Attendance
                     </MenuItem>
                   )}

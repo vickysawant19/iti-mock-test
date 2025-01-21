@@ -9,7 +9,7 @@ const ViewBatch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [students, setStudents] = useState([]);
 
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
@@ -63,8 +63,8 @@ const ViewBatch = () => {
         >
           <option value="">Select the category</option>
           <option value={"batchId"}>Batch</option>
-          <option value={"collegeId"}>College</option>
           <option value={"tradeId"}>Trade</option>
+          <option value={"collegeId"}>College</option>
         </select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

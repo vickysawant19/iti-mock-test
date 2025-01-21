@@ -34,9 +34,10 @@ import Profile from "./components/private/pages/Profile.jsx";
 import ForgetPass from "./components/Auth/ForgetPass.jsx";
 import ProfileForm from "./components/private/ProfileForm.jsx";
 import CreateBatch from "./components/private/teacher/CreateBatch.jsx";
-import ManageBatch from "./components/private/teacher/ManageBatch.jsx";
+
 import ViewBatch from "./components/private/teacher/ViewBatch.jsx";
 import ProfileView from "./components/private/ProfileView.jsx";
+import MarkAttaindance from "./components/private/teacher/attaindance/MarkAttaindance.jsx";
 
 const router = (
   <Router>
@@ -73,7 +74,18 @@ const router = (
             <Route path="edit/:batchId" element={<div>Edit</div>} />
             <Route path="delete/:batchId" element={<div>Delete</div>} />
           </Route>
+          <Route path="attaindance">
+            <Route path="mark-attendance" element={<MarkAttaindance />} />
+          </Route>
         </Route>
+        <Route
+          path="*"
+          element={
+            <div className="w-full h-screen mt-20  flex justify-center ">
+              404 : Page Not Found
+            </div>
+          }
+        />
         {/* <Route path="*" element={<Navigate to="/dash" />} /> */}
       </Route>
     </Routes>
