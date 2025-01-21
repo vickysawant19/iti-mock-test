@@ -9,21 +9,47 @@ export class UserProfileService {
   }
 
   async createUserProfile({
-    userId,
-    userName,
-    tradeId,
+    DOB,
+    address,
+    assignedBatches,
     batchId,
     collegeId,
+    email,
     enrolledAt = new Date().toISOString(),
+    enrollmentStatus,
+    gradeLevel,
+    parentContact,
+    phone,
+    profileImage,
+    role,
+    specialization,
+    status,
+    studentId,
+    tradeId,
+    userId,
+    userName,
   }) {
     try {
       const userProfile = {
-        userId,
-        userName,
-        tradeId,
-        batchId,
-        enrolledAt,
-        collegeId,
+        DOB: DOB || null,
+        address: address || null,
+        assignedBatches: assignedBatches || null,
+        batchId: batchId || null,
+        collegeId: collegeId || null,
+        email: email || null,
+        enrolledAt: enrolledAt || null,
+        enrollmentStatus: enrollmentStatus || null,
+        gradeLevel: gradeLevel || null,
+        parentContact: parseInt(parentContact) || null,
+        phone: parseInt(phone) || null,
+        profileImage: profileImage || null,
+        role: role || null,
+        specialization: specialization || null,
+        status: status || null,
+        studentId: studentId || null,
+        tradeId: tradeId || null,
+        userId: userId || null,
+        userName: userName || null,
       };
 
       return await this.database.createDocument(
@@ -38,7 +64,52 @@ export class UserProfileService {
     }
   }
 
-  async updateUserProfile(profileId, updatedData) {
+  async updateUserProfile(profileId, data) {
+    console.log("update data:", data);
+    const {
+      DOB,
+      address,
+      assignedBatches,
+      batchId,
+      collegeId,
+      email,
+      enrolledAt,
+      enrollmentStatus,
+      gradeLevel,
+      parentContact,
+      phone,
+      profileImage,
+      specialization,
+      status,
+      studentId,
+      tradeId,
+      userName,
+      // role,
+      // userId,
+    } = data;
+
+    const updatedData = {
+      DOB: DOB || null,
+      address: address || null,
+      assignedBatches: assignedBatches || null,
+      batchId: batchId || null,
+      collegeId: collegeId || null,
+      email: email || null,
+      enrolledAt: enrolledAt || null,
+      enrollmentStatus: enrollmentStatus || null,
+      gradeLevel: gradeLevel || null,
+      parentContact: parseInt(parentContact) || null,
+      phone: parseInt(phone) || null,
+      profileImage: profileImage || null,
+      specialization: specialization || null,
+      status: status || null,
+      studentId: studentId || null,
+      tradeId: tradeId || null,
+      userName: userName || null,
+      // role: role || null,
+      // userId: userId || null,
+    };
+
     try {
       return await this.database.updateDocument(
         conf.databaseId,
@@ -61,6 +132,26 @@ export class UserProfileService {
       );
     } catch (error) {
       console.error("Appwrite error: deleting user profile:", error);
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
+  async getBatchUserProfile(query) {
+    const { key, value } = query;
+    try {
+      const userProfiles = await this.database.listDocuments(
+        conf.databaseId,
+        conf.userProfilesCollectionId,
+        [Query.equal(key, value)]
+      );
+
+      if (userProfiles.total === 0) {
+        throw new Error("No user profiles found for the given batchId.");
+      }
+
+      return userProfiles.documents;
+    } catch (error) {
+      console.error("Appwrite error: get batch user profiles:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }

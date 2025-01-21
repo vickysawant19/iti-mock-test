@@ -8,18 +8,21 @@ export class BatchService {
     this.database = appwriteService.getDatabases();
   }
 
-  async createBatch(start_date, end_date, $id) {
+  async createBatch(data) {
+    //end_date	BatchName	start_date	teacherId	teacherName	tradeId	collegeId	studentIds	Created	Updated
     try {
-      const data = {
-        start_date,
-        end_date,
+      const timestamp = new Date().toISOString();
+      const batchData = {
+        ...data,
       };
+
+      console.log("batch Data", batchData);
 
       return await this.database.createDocument(
         conf.databaseId,
         conf.batchesCollectionId,
         "unique()",
-        data
+        batchData
       );
     } catch (error) {
       console.error("Appwrite error: creating batch:", error);

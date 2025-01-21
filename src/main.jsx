@@ -26,12 +26,17 @@ import StartMockTest from "./components/private/StartMockTest.jsx";
 import ShowMockTest from "./components/private/ShowMockTest.jsx";
 import AttainTest from "./components/private/pages/AttainTest.jsx";
 import Dash from "./components/private/pages/Dash.jsx";
-import EditProfileForm from "./components/private/ProfileEdit.jsx";
+
 import MockTestResults from "./components/private/MockTestResults.jsx";
 import Home from "./components/private/pages/Home.jsx";
 import About from "./components/private/pages/About.jsx";
 import Profile from "./components/private/pages/Profile.jsx";
 import ForgetPass from "./components/Auth/ForgetPass.jsx";
+import ProfileForm from "./components/private/ProfileForm.jsx";
+import CreateBatch from "./components/private/teacher/CreateBatch.jsx";
+import ManageBatch from "./components/private/teacher/ManageBatch.jsx";
+import ViewBatch from "./components/private/teacher/ViewBatch.jsx";
+import ProfileView from "./components/private/ProfileView.jsx";
 
 const router = (
   <Router>
@@ -47,7 +52,7 @@ const router = (
         <Route element={<ProtectedRoute />}>
           <Route path="home" element={<Home />} />
           <Route path="dash" element={<Dash />} />
-          <Route path="profile/edit" element={<EditProfileForm />} />
+          <Route path="profile/edit" element={<ProfileForm />} />
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />
           <Route path="edit/:quesId" element={<EditQuestion />} />
@@ -60,8 +65,16 @@ const router = (
             path="mock-test-result/:paperId"
             element={<MockTestResults />}
           />
+          <Route path="manage-batch">
+            <Route path="create" element={<CreateBatch />} />
+            <Route path="view" element={<ViewBatch />} />
+            <Route path="view/:userId" element={<ProfileView />} />
+            <Route path="edit/:userId" element={<ProfileForm />} />
+            <Route path="edit/:batchId" element={<div>Edit</div>} />
+            <Route path="delete/:batchId" element={<div>Delete</div>} />
+          </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/dash" />} />
+        {/* <Route path="*" element={<Navigate to="/dash" />} /> */}
       </Route>
     </Routes>
   </Router>
