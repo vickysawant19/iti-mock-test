@@ -1,4 +1,11 @@
-import { Account, Client, Databases, Functions, Storage } from "appwrite";
+import {
+  Account,
+  Client,
+  Databases,
+  Functions,
+  Storage,
+  Teams,
+} from "appwrite";
 import conf from "../config/config";
 
 class AppwriteService {

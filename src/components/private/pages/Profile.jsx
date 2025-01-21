@@ -7,16 +7,20 @@ import { ClipLoader } from "react-spinners";
 import ProfileForm from "../ProfileForm";
 import ProfileView from "../ProfileView";
 
-const Profile = () => {
-  const profile = useSelector((state) => state.profile);
-  const isLoading = useSelector((state) => state.loading);
+import { selectProfile } from "../../../store/profileSlice";
+import { selectUser } from "../../../store/userSlice";
+import SetLabels from "../components/SetLabels";
 
-  if (isLoading) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <ClipLoader color="#123abc" size={50} />
-      </div>
-    );
+const Profile = () => {
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
+
+  // If user has no labels set, show SetLabels component; otherwise, proceed with profile display
+  if (
+    !user.labels ||
+    (!user.labels.includes("Teacher") && !user.labels.includes("Student"))
+  ) {
+    return <SetLabels />;
   }
 
   return (

@@ -11,6 +11,8 @@ import { addProfile } from "./store/profileSlice";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./components/private/components/Navbar";
+import { Functions } from "appwrite";
+import { appwriteService } from "./appwrite/appwriteConfig";
 
 function App() {
   const user = useSelector((state) => state.user);
