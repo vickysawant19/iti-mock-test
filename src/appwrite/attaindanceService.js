@@ -8,13 +8,30 @@ export class AttendanceService {
     this.database = appwriteService.getDatabases();
   }
 
+  async getAttendanceByDate(date) {
+    try {
+      const response = await this.database.listDocuments(
+        conf.databaseId,
+        conf.studentAttendanceCollectionId,
+        [Query.search('attendanceRecords', "2025-01-23")]
+      );
+      return response.documents;
+    } catch (error) {
+      console.error("Appwrite error: fetching attendance by date:", error);
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
+
   async getBatchAttendance(batchId) {
     try {
-      return await this.database.listDocuments(
+      const batchAttendance =  await this.database.listDocuments(
         conf.databaseId,
         conf.studentAttendanceCollectionId,
         [Query.equal("batchId", batchId)]
       );
+
+      return batchAttendance.documents;
     } catch (error) {
       console.error("Appwrite error: fetching batch attendance:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -28,43 +45,43 @@ export class AttendanceService {
         conf.studentAttendanceCollectionId,
         [Query.equal("userId", userId)]
       );
-
       if (userAttendance.total === 0) {
         throw new Error("User attendance not found.");
-      }
-
-      return userAttendance.documents[0];
+      }   
+       return ({ ...userAttendance.documents[0], attendanceRecords : userAttendance.documents[0].attendanceRecords.map(a => JSON.parse(a))})
     } catch (error) {
       console.log("Appwrite error: get user attendance:", error);
       return false;
     }
   }
 
-  async markUserAttendance(userId, record) {
+  async markUserAttendance(record) {
     try {
-      console.log("recored", userId, record);
 
-      // const userAttendance = await this.getUserAttendance(userId);
+      const userAttendance = await this.getUserAttendance(record.userId);
 
-      // if (!userAttendance) {
-      //   this.database.createDocument(
-      //     conf.databaseId,
-      //     conf.studentAttendanceCollectionId,
-      //     "unique()",
-      //     attendanceRecord
-      //   );
-      // }
-
-      // userAttendance.attendanceRecords.push(attendanceRecord);
-
-      // console.log("userAttaindance", userAttendance);
-
-      // return await this.database.updateDocument(
-      //   conf.databaseId,
-      //   conf.studentAttendanceCollectionId,
-      //   userAttendance.$id,
-      //   { attendanceRecords: JSON.stringify(userAttendance.attendanceRecords) }
-      // );
+      if (!userAttendance) {
+        const stringyfyRecord = {
+          ...record,
+          attendanceRecords: record.attendanceRecords.map((item) =>
+            JSON.stringify(item)
+          ),
+        };
+        return await this.database.createDocument(
+          conf.databaseId,
+          conf.studentAttendanceCollectionId,
+          "unique()",
+          stringyfyRecord
+        );
+      }
+      userAttendance.attendanceRecords.push(attendanceRecord);
+      console.log("userAttaindance", userAttendance);
+      return await this.database.updateDocument(
+        conf.databaseId,
+        conf.studentAttendanceCollectionId,
+        userAttendance.$id,
+        { attendanceRecords: userAttendance.attendanceRecords.map(a => JSON.stringify(a)) }
+      );
     } catch (error) {
       console.error("Appwrite error: marking user attendance:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
