@@ -3,32 +3,36 @@ import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../store/profileSlice";
 import { format } from "date-fns";
 import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
 
-const MarkAttaindance = () => {
+const MarkAttendance = () => {
   const profile = useSelector(selectProfile);
   const [students, setStudents] = useState([]);
   const [batchAttendance, setBatchAttendance] = useState([]);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(() =>
-    format(new Date(), "yyyy-MM-dd")
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [attendance, setAttendance] = useState({});
   const [expandedRows, setExpandedRows] = useState({});
+  const [datesWithAttendance, setDatesWithAttendance] = useState(new Set());
+  const [dateWithHoliday, setDateWithHoliday] = useState(new Set());
+  const [isHoliday, setIsHoliday] = useState(false);
+  const [holidayText, setHolidayText] = useState("");
 
   const DEFAULT_IN_TIME = "09:30";
   const DEFAULT_OUT_TIME = "17:00";
 
   const updateInitialData = () => {
+    const formattedDate = format(selectedDate, "yyyy-MM-dd");
     const initialAttendance = students.reduce((acc, student) => {
       const existingRecord = batchAttendance.find(
         (record) => record.userId === student.userId
       );
       if (existingRecord) {
         const attendanceRecord = existingRecord.attendanceRecords.find(
-          (record) => record.date === selectedDate
+          (record) => record.date === formattedDate
         );
         if (attendanceRecord) {
           acc[student.userId] = {
@@ -36,13 +40,19 @@ const MarkAttaindance = () => {
             inTime: attendanceRecord.inTime,
             outTime: attendanceRecord.outTime,
             reason: attendanceRecord.reason || "",
+            isHoliday: attendanceRecord.isHoliday || false,
+            holidayText: attendanceRecord.holidayText || "",
           };
+          setIsHoliday(attendanceRecord.isHoliday || false);
+          setHolidayText(attendanceRecord.holidayText || "");
         } else {
           acc[student.userId] = {
             attendanceStatus: "Present",
             inTime: DEFAULT_IN_TIME,
             outTime: DEFAULT_OUT_TIME,
             reason: "",
+            isHoliday: false,
+            holidayText: "",
           };
         }
       } else {
@@ -51,6 +61,8 @@ const MarkAttaindance = () => {
           inTime: DEFAULT_IN_TIME,
           outTime: DEFAULT_OUT_TIME,
           reason: "",
+          isHoliday: false,
+          holidayText: "",
         };
       }
       return acc;
@@ -75,6 +87,17 @@ const MarkAttaindance = () => {
         attendanceRecords: item.attendanceRecords.map((a) => JSON.parse(a)),
       }));
 
+      // Extract unique dates with attendance
+      const dates = new Set();
+      const holidays = new Set();
+      parsedResponse.forEach((record) => {
+        record.attendanceRecords.forEach((attendance) => {
+          dates.add(attendance.date);
+          attendance.isHoliday ? holidays.add(attendance.date) : "";
+        });
+      });
+      setDateWithHoliday(holidays);
+      setDatesWithAttendance(dates);
       setBatchAttendance(parsedResponse);
     } catch (error) {
       console.error("Error fetching batch students:", error);
@@ -124,6 +147,7 @@ const MarkAttaindance = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
       const response = await Promise.all(
         students.map((student) => {
           const studentAttendance = attendance[student.userId];
@@ -131,15 +155,26 @@ const MarkAttaindance = () => {
             userId: student.userId,
             userName: student.userName,
             batchId: student.batchId,
-            attendanceRecords: [{ date: selectedDate, ...studentAttendance }],
+            attendanceRecords: [
+              {
+                date: formattedDate,
+                ...studentAttendance,
+                isHoliday,
+                holidayText,
+              },
+            ],
             admissionDate: student.enrolledAt,
           };
           return attendanceService.markUserAttendance(newRecord);
         })
       );
-      console.log("promise res", response);
 
       setBatchAttendance(response);
+      // Add the new date to dates with attendance
+      isHoliday
+        ? setDateWithHoliday((prev) => new Set([...prev, formattedDate]))
+        : "";
+      setDatesWithAttendance((prev) => new Set([...prev, formattedDate]));
       alert("Attendance marked successfully!");
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -149,9 +184,21 @@ const MarkAttaindance = () => {
     }
   };
 
+  const tileClassName = ({ date }) => {
+    const formattedDate = format(date, "yyyy-MM-dd");
+    if (dateWithHoliday.has(formattedDate)) {
+      return "holiday";
+    }
+    if (datesWithAttendance.has(formattedDate)) {
+      return "has-attendance";
+    }
+
+    return null;
+  };
+
   if (isLoading) {
     return (
-      <div className="flex w-full h-full items-center justify-center">
+      <div className="flex w-full h-full items-center justify-center pt-10">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
@@ -159,150 +206,208 @@ const MarkAttaindance = () => {
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
-      <h1 className="text-xl font-bold mb-4">Quick Attendance</h1>
-
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <input
-            type="date"
+        <div className="mb-4 flex justify-center">
+          <Calendar
+            onChange={setSelectedDate}
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="p-2 border rounded-md text-sm"
+            tileClassName={tileClassName}
+            className="border rounded-lg p-2 bg-white"
           />
+          <style jsx global>{`
+            .has-attendance {
+              background-color: #93c5fd !important;
+              color: white !important;
+            }
+            .holiday {
+              background-color: #f87171 !important;
+              color: white !important;
+            }
+            .react-calendar {
+              width: 350px;
+              max-width: 100%;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            .react-calendar__tile {
+              padding: 0.75em 0.5em;
+              border-radius: 6px;
+            }
+            .react-calendar__tile:enabled:hover,
+            .react-calendar__tile:enabled:focus {
+              background-color: #e5e7eb;
+              border-radius: 6px;
+            }
+            .react-calendar__tile--active {
+              background: #2563eb !important;
+              border-radius: 6px;
+              color: white;
+            }
+          `}</style>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={isHoliday}
+              onChange={(e) => setIsHoliday(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="text-gray-700">Mark as Holiday</span>
+          </label>
+          {isHoliday && (
+            <input
+              type="text"
+              value={holidayText}
+              onChange={(e) => setHolidayText(e.target.value)}
+              placeholder="Holiday reason"
+              className="border rounded-md px-3 py-1 w-1/2"
+            />
+          )}
         </div>
 
-        <div className="space-y-4">
-          {students.map((student) => (
-            <div key={student.userId} className="bg-white rounded-lg shadow-sm">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{student.userName}</span>
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickMark(student.userId, "Present")}
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        attendance[student.userId]?.attendanceStatus ===
-                        "Present"
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      Present
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickMark(student.userId, "Absent")}
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        attendance[student.userId]?.attendanceStatus ===
-                        "Absent"
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      Absent
-                    </button>
+        {!isHoliday && (
+          <div className="space-y-4">
+            {students.map((student) => (
+              <div
+                key={student.userId}
+                className="bg-white rounded-lg shadow-sm"
+              >
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">{student.userName}</span>
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleQuickMark(student.userId, "Present")
+                        }
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          attendance[student.userId]?.attendanceStatus ===
+                          "Present"
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        Present
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleQuickMark(student.userId, "Absent")
+                        }
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          attendance[student.userId]?.attendanceStatus ===
+                          "Absent"
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        Absent
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => toggleOptions(student.userId)}
-                  className="flex items-center text-sm text-gray-500 hover:text-gray-700"
-                >
-                  {expandedRows[student.userId] ? (
-                    <ChevronUp className="w-4 h-4 mr-1" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 mr-1" />
+                  <button
+                    type="button"
+                    onClick={() => toggleOptions(student.userId)}
+                    className="flex items-center text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    {expandedRows[student.userId] ? (
+                      <ChevronUp className="w-4 h-4 mr-1" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 mr-1" />
+                    )}
+                    More options
+                  </button>
+
+                  {expandedRows[student.userId] && (
+                    <div className="mt-3 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Status
+                          </label>
+                          <select
+                            value={attendance[student.userId]?.attendanceStatus}
+                            onChange={(e) =>
+                              handleAttendanceChange(
+                                student.userId,
+                                "attendanceStatus",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-md border-gray-300 text-sm"
+                          >
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Leave">Leave</option>
+                            <option value="Holiday">Holiday</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Reason
+                          </label>
+                          <input
+                            type="text"
+                            value={attendance[student.userId]?.reason || ""}
+                            onChange={(e) =>
+                              handleAttendanceChange(
+                                student.userId,
+                                "reason",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-md border-gray-300 text-sm"
+                            placeholder="Optional"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            In Time
+                          </label>
+                          <input
+                            type="time"
+                            value={attendance[student.userId]?.inTime || ""}
+                            onChange={(e) =>
+                              handleAttendanceChange(
+                                student.userId,
+                                "inTime",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-md border-gray-300 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Out Time
+                          </label>
+                          <input
+                            type="time"
+                            value={attendance[student.userId]?.outTime || ""}
+                            onChange={(e) =>
+                              handleAttendanceChange(
+                                student.userId,
+                                "outTime",
+                                e.target.value
+                              )
+                            }
+                            className="w-full rounded-md border-gray-300 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  More options
-                </button>
-
-                {expandedRows[student.userId] && (
-                  <div className="mt-3 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Status
-                        </label>
-                        <select
-                          value={attendance[student.userId]?.attendanceStatus}
-                          onChange={(e) =>
-                            handleAttendanceChange(
-                              student.userId,
-                              "attendanceStatus",
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-md border-gray-300 text-sm"
-                        >
-                          <option value="Present">Present</option>
-                          <option value="Absent">Absent</option>
-                          <option value="Leave">Leave</option>
-                          <option value="Holiday">Holiday</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Reason
-                        </label>
-                        <input
-                          type="text"
-                          value={attendance[student.userId]?.reason || ""}
-                          onChange={(e) =>
-                            handleAttendanceChange(
-                              student.userId,
-                              "reason",
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-md border-gray-300 text-sm"
-                          placeholder="Optional"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          In Time
-                        </label>
-                        <input
-                          type="time"
-                          value={attendance[student.userId]?.inTime || ""}
-                          onChange={(e) =>
-                            handleAttendanceChange(
-                              student.userId,
-                              "inTime",
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-md border-gray-300 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Out Time
-                        </label>
-                        <input
-                          type="time"
-                          value={attendance[student.userId]?.outTime || ""}
-                          onChange={(e) =>
-                            handleAttendanceChange(
-                              student.userId,
-                              "outTime",
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-md border-gray-300 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <button
           type="submit"
@@ -315,4 +420,4 @@ const MarkAttaindance = () => {
   );
 };
 
-export default MarkAttaindance;
+export default MarkAttendance;
