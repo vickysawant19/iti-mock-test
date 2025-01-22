@@ -9,6 +9,8 @@ import userProfileService from "../../../../appwrite/userProfileService";
 const MarkAttaindance = () => {
   const profile = useSelector(selectProfile);
   const [students, setStudents] = useState([]);
+  const [batchAttendance, setBatchAttendance] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(() =>
     format(new Date(), "yyyy-MM-dd")
@@ -19,6 +21,43 @@ const MarkAttaindance = () => {
   const DEFAULT_IN_TIME = "09:30";
   const DEFAULT_OUT_TIME = "17:00";
 
+  const updateInitialData = () => {
+    const initialAttendance = students.reduce((acc, student) => {
+      const existingRecord = batchAttendance.find(
+        (record) => record.userId === student.userId
+      );
+      if (existingRecord) {
+        const attendanceRecord = existingRecord.attendanceRecords.find(
+          (record) => record.date === selectedDate
+        );
+        if (attendanceRecord) {
+          acc[student.userId] = {
+            attendanceStatus: attendanceRecord.attendanceStatus,
+            inTime: attendanceRecord.inTime,
+            outTime: attendanceRecord.outTime,
+            reason: attendanceRecord.reason || "",
+          };
+        } else {
+          acc[student.userId] = {
+            attendanceStatus: "Present",
+            inTime: DEFAULT_IN_TIME,
+            outTime: DEFAULT_OUT_TIME,
+            reason: "",
+          };
+        }
+      } else {
+        acc[student.userId] = {
+          attendanceStatus: "Present",
+          inTime: DEFAULT_IN_TIME,
+          outTime: DEFAULT_OUT_TIME,
+          reason: "",
+        };
+      }
+      return acc;
+    }, {});
+    setAttendance(initialAttendance);
+  };
+
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
@@ -28,43 +67,15 @@ const MarkAttaindance = () => {
       });
       setStudents(data);
 
-      const response = await attendanceService.getBatchAttendance(profile.batchId)
-      const parsedResponse = response.map(item => ({
+      const response = await attendanceService.getBatchAttendance(
+        profile.batchId
+      );
+      const parsedResponse = response.map((item) => ({
         ...item,
-        attendanceRecords: item.attendanceRecords.map(a => JSON.parse(a))
+        attendanceRecords: item.attendanceRecords.map((a) => JSON.parse(a)),
       }));
-      console.log("parsed", parsedResponse);
 
-      const initialAttendance = data.reduce((acc, student) => {
-        const existingRecord = parsedResponse.find(record => record.userId === student.userId);
-        if (existingRecord) {
-          const attendanceRecord = existingRecord.attendanceRecords.find(record => record.date === selectedDate);
-          if (attendanceRecord) {
-        acc[student.userId] = {
-          attendanceStatus: attendanceRecord.attendanceStatus,
-          inTime: attendanceRecord.inTime,
-          outTime: attendanceRecord.outTime,
-          reason: attendanceRecord.reason || "",
-        };
-          } else {
-        acc[student.userId] = {
-          attendanceStatus: "Present",
-          inTime: DEFAULT_IN_TIME,
-          outTime: DEFAULT_OUT_TIME,
-          reason: "",
-        };
-          }
-        } else {
-          acc[student.userId] = {
-        attendanceStatus: "Present",
-        inTime: DEFAULT_IN_TIME,
-        outTime: DEFAULT_OUT_TIME,
-        reason: "",
-          };
-        }
-        return acc;
-      }, {});
-      setAttendance(initialAttendance);
+      setBatchAttendance(parsedResponse);
     } catch (error) {
       console.error("Error fetching batch students:", error);
     } finally {
@@ -76,53 +87,59 @@ const MarkAttaindance = () => {
     fetchBatchStudents();
   }, []);
 
+  useEffect(() => {
+    updateInitialData();
+  }, [selectedDate, batchAttendance, students]);
+
   const handleQuickMark = (userId, status) => {
-    setAttendance(prev => ({
+    setAttendance((prev) => ({
       ...prev,
       [userId]: {
         ...prev[userId],
         attendanceStatus: status,
         inTime: status === "Present" ? DEFAULT_IN_TIME : "",
         outTime: status === "Present" ? DEFAULT_OUT_TIME : "",
-      }
+      },
     }));
   };
 
   const toggleOptions = (userId) => {
-    setExpandedRows(prev => ({
+    setExpandedRows((prev) => ({
       ...prev,
-      [userId]: !prev[userId]
+      [userId]: !prev[userId],
     }));
   };
 
   const handleAttendanceChange = (userId, field, value) => {
-    setAttendance(prev => ({
+    setAttendance((prev) => ({
       ...prev,
       [userId]: {
         ...prev[userId],
         [field]: value,
-      }
+      },
     }));
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await Promise.all(
+      const response = await Promise.all(
         students.map((student) => {
           const studentAttendance = attendance[student.userId];
           const newRecord = {
             userId: student.userId,
             userName: student.userName,
             batchId: student.batchId,
-            attendanceRecords: [{date: selectedDate, ...studentAttendance}],
+            attendanceRecords: [{ date: selectedDate, ...studentAttendance }],
             admissionDate: student.enrolledAt,
           };
           return attendanceService.markUserAttendance(newRecord);
         })
       );
+      console.log("promise res", response);
+
+      setBatchAttendance(response);
       alert("Attendance marked successfully!");
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -165,7 +182,8 @@ const MarkAttaindance = () => {
                       type="button"
                       onClick={() => handleQuickMark(student.userId, "Present")}
                       className={`px-3 py-1 rounded-md text-sm ${
-                        attendance[student.userId]?.attendanceStatus === "Present"
+                        attendance[student.userId]?.attendanceStatus ===
+                        "Present"
                           ? "bg-green-500 text-white"
                           : "bg-gray-100 text-gray-700"
                       }`}
@@ -176,7 +194,8 @@ const MarkAttaindance = () => {
                       type="button"
                       onClick={() => handleQuickMark(student.userId, "Absent")}
                       className={`px-3 py-1 rounded-md text-sm ${
-                        attendance[student.userId]?.attendanceStatus === "Absent"
+                        attendance[student.userId]?.attendanceStatus ===
+                        "Absent"
                           ? "bg-red-500 text-white"
                           : "bg-gray-100 text-gray-700"
                       }`}
@@ -185,7 +204,7 @@ const MarkAttaindance = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <button
                   type="button"
                   onClick={() => toggleOptions(student.userId)}
@@ -208,7 +227,13 @@ const MarkAttaindance = () => {
                         </label>
                         <select
                           value={attendance[student.userId]?.attendanceStatus}
-                          onChange={(e) => handleAttendanceChange(student.userId, "attendanceStatus", e.target.value)}
+                          onChange={(e) =>
+                            handleAttendanceChange(
+                              student.userId,
+                              "attendanceStatus",
+                              e.target.value
+                            )
+                          }
                           className="w-full rounded-md border-gray-300 text-sm"
                         >
                           <option value="Present">Present</option>
@@ -224,7 +249,13 @@ const MarkAttaindance = () => {
                         <input
                           type="text"
                           value={attendance[student.userId]?.reason || ""}
-                          onChange={(e) => handleAttendanceChange(student.userId, "reason", e.target.value)}
+                          onChange={(e) =>
+                            handleAttendanceChange(
+                              student.userId,
+                              "reason",
+                              e.target.value
+                            )
+                          }
                           className="w-full rounded-md border-gray-300 text-sm"
                           placeholder="Optional"
                         />
@@ -238,7 +269,13 @@ const MarkAttaindance = () => {
                         <input
                           type="time"
                           value={attendance[student.userId]?.inTime || ""}
-                          onChange={(e) => handleAttendanceChange(student.userId, "inTime", e.target.value)}
+                          onChange={(e) =>
+                            handleAttendanceChange(
+                              student.userId,
+                              "inTime",
+                              e.target.value
+                            )
+                          }
                           className="w-full rounded-md border-gray-300 text-sm"
                         />
                       </div>
@@ -249,7 +286,13 @@ const MarkAttaindance = () => {
                         <input
                           type="time"
                           value={attendance[student.userId]?.outTime || ""}
-                          onChange={(e) => handleAttendanceChange(student.userId, "outTime", e.target.value)}
+                          onChange={(e) =>
+                            handleAttendanceChange(
+                              student.userId,
+                              "outTime",
+                              e.target.value
+                            )
+                          }
                           className="w-full rounded-md border-gray-300 text-sm"
                         />
                       </div>
