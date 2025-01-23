@@ -247,21 +247,30 @@ const Navbar = () => {
                   groupKey="attendance"
                 >
                   {userRole.includes("Teacher") && (
-                    <MenuItem
-                      to="/attaindance/mark-attendance"
-                      icon={FaCalendarCheck}
-                    >
-                      Mark Attendance
-                    </MenuItem>
+                    <>
+                      <MenuItem
+                        to="/attaindance/mark-attendance"
+                        icon={FaCalendarCheck}
+                      >
+                        Mark Day Attendance
+                      </MenuItem>
+                      <MenuItem
+                        to="/attaindance/mark-student-attendance"
+                        icon={FaCalendarCheck}
+                      >
+                        Mark Student Attendance
+                      </MenuItem>
+                      <MenuItem to="/attaindance/daily-diary" icon={FaBookReader}>
+                        Daily Diary
+                      </MenuItem>
+                    </>
                   )}
-                  <MenuItem to="/check-attendance" icon={FaCalendarAlt}>
+                  <MenuItem
+                    to="/attaindance/check-attendance"
+                    icon={FaCalendarAlt}
+                  >
                     Check Attendance
                   </MenuItem>
-                  {userRole.includes("Teacher") && (
-                    <MenuItem to="/daily-diary" icon={FaBookReader}>
-                      Daily Diary
-                    </MenuItem>
-                  )}
                 </MenuGroup>
               </>
             )}

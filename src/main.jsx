@@ -38,6 +38,8 @@ import CreateBatch from "./components/private/teacher/CreateBatch.jsx";
 import ViewBatch from "./components/private/teacher/ViewBatch.jsx";
 import ProfileView from "./components/private/ProfileView.jsx";
 import MarkAttaindance from "./components/private/teacher/attaindance/MarkAttaindance.jsx";
+import CheckAttendance from "./components/private/teacher/attaindance/CheckAttendance.jsx";
+import MarkStudentAttendance from "./components/private/teacher/attaindance/MarkStudentAttendance.jsx";
 
 const router = (
   <Router>
@@ -76,6 +78,8 @@ const router = (
           </Route>
           <Route path="attaindance">
             <Route path="mark-attendance" element={<MarkAttaindance />} />
+            <Route path="mark-student-attendance" element={<MarkStudentAttendance />} />
+            <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
         </Route>
         <Route

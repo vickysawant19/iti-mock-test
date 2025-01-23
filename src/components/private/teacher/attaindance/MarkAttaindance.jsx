@@ -7,6 +7,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
+import CustomCalendar from "./Calender";
 
 const MarkAttendance = () => {
   const profile = useSelector(selectProfile);
@@ -186,11 +187,13 @@ const MarkAttendance = () => {
 
   const tileClassName = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
+
     if (dateWithHoliday.has(formattedDate)) {
-      return "holiday";
+      return "holiday-tile";
     }
+
     if (datesWithAttendance.has(formattedDate)) {
-      return "has-attendance";
+      return "attendance-tile";
     }
 
     return null;
@@ -208,43 +211,23 @@ const MarkAttendance = () => {
     <div className="p-4 bg-gray-50 min-h-screen">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="mb-4 flex justify-center">
-          <Calendar
-            onChange={setSelectedDate}
-            value={selectedDate}
-            tileClassName={tileClassName}
-            className="border rounded-lg p-2 bg-white"
-          />
-          <style jsx global>{`
-            .has-attendance {
-              background-color: #93c5fd !important;
-              color: white !important;
-            }
-            .holiday {
-              background-color: #f87171 !important;
-              color: white !important;
-            }
-            .react-calendar {
-              width: 350px;
-              max-width: 100%;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            }
-            .react-calendar__tile {
-              padding: 0.75em 0.5em;
-              border-radius: 6px;
-            }
-            .react-calendar__tile:enabled:hover,
-            .react-calendar__tile:enabled:focus {
-              background-color: #e5e7eb;
-              border-radius: 6px;
-            }
-            .react-calendar__tile--active {
-              background: #2563eb !important;
-              border-radius: 6px;
-              color: white;
-            }
-          `}</style>
+          <div className="flex justify-center">
+            <div className="w-full max-w-md">
+              <CustomCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                tileClassName={tileClassName}
+              />
+              <style>
+                {`
+                .react-calendar__month-view__days__day {
+                height: auto !important;
+                padding: 0.5rem !important;
+              }
+                `}
+              </style>
+            </div>
+          </div>
         </div>
         <div className="flex items-center justify-between mb-4">
           <label className="flex items-center space-x-2">

@@ -78,12 +78,12 @@ export class AttendanceService {
         );
       }
       //if user attenddance alredy present
-      const newAttendanceRecord = record.attendanceRecords[0];
+      const newAttendanceRecords = record.attendanceRecords;
       const updatedUserAttendance = [
         ...userAttendance.attendanceRecords.filter(
-          (item) => item.date !== newAttendanceRecord.date
+          (item) => !newAttendanceRecords.some((newItem) => newItem.date === item.date)
         ),
-        newAttendanceRecord,
+        ...newAttendanceRecords,
       ];
 
       const updatedAttendeceRes = await this.database.updateDocument(
