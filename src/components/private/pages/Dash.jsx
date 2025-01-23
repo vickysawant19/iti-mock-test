@@ -39,7 +39,7 @@ const Dashboard = () => {
   const [allUsersStats, setAllUserStats] = useState([]);
   const [currUserRecord, setCurrUserRecord] = useState();
   const [timePeriod, setTimePeriod] = useState("day");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [totalQuestions, setTotalQuestions] = useState();
   const [totalTests, setTotalTests] = useState();
@@ -149,9 +149,11 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchTrades();
-    fetchAllUsersStats();
-  }, [user.$id]);
+    if (profile) {
+      fetchTrades();
+      fetchAllUsersStats();
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (allUsersStats.length === 0) return;

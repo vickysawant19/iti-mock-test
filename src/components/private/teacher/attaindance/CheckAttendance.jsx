@@ -7,6 +7,8 @@ import {
   CheckCircle,
   XCircle,
   Calendar as CalendarIcon,
+  X,
+  Check,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../../store/userSlice";
@@ -25,6 +27,7 @@ const CheckAttendance = () => {
     absentDays: 0,
     holidayDays: 0,
     attendancePercentage: 0,
+    monthlyAttendance: {},
   });
 
   const user = useSelector(selectUser);
@@ -41,15 +44,30 @@ const CheckAttendance = () => {
       );
       // Calculate attendance statistics
       const totalDays = workingDays.length;
-      const presentDays = workingDays.filter(
-        (record) => record.attendanceStatus === "Present"
-      ).length;
-      const absentDays = workingDays.filter(
-        (record) => record.attendanceStatus === "Absent"
-      ).length;
-      const holidayDays = data.attendanceRecords.filter(
-        (record) => record.isHoliday
-      ).length;
+      let presentDays = 0;
+      let absentDays = 0;
+      let holidayDays = 0;
+      const monthlyAttendance = {};
+
+      data.attendanceRecords.forEach((record) => {
+        const month = format(new Date(record.date), "yyyy-MM");
+
+        if (!monthlyAttendance[month]) {
+          monthlyAttendance[month] = { present: 0, absent: 0, holidays: 0 };
+        }
+
+        if (record.isHoliday) {
+          holidayDays++;
+          monthlyAttendance[month].holidays++;
+        } else if (record.attendanceStatus === "Present") {
+          presentDays++;
+          monthlyAttendance[month].present++;
+        } else if (record.attendanceStatus === "Absent") {
+          absentDays++;
+          monthlyAttendance[month].absent++;
+        }
+      });
+
       const attendancePercentage =
         totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
 
@@ -59,6 +77,7 @@ const CheckAttendance = () => {
         absentDays,
         holidayDays,
         attendancePercentage,
+        monthlyAttendance,
       });
     } catch (error) {
       console.log(error);
@@ -123,6 +142,18 @@ const CheckAttendance = () => {
     );
   }
 
+  const currentMonth = format(selectedDate, "MMMM yyyy");
+  const currentMonthData = attendanceStats.monthlyAttendance[currentMonth] || {
+    present: 0,
+    absent: 0,
+    holidays: 0,
+  };
+  const totalDays = currentMonthData.present + currentMonthData.absent;
+  const currentMonthAttendancePercentage =
+    totalDays > 0
+      ? ((currentMonthData.present / totalDays) * 100).toFixed(2)
+      : 0;
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -161,6 +192,44 @@ const CheckAttendance = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <CalendarIcon className="mr-2 text-blue-600" size={24} />
+          Current Month Attendance
+        </h2>
+        <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col items-center space-y-4">
+          <div className="text-center">
+            <span className="text-lg font-semibold text-gray-700">
+              {currentMonth}
+            </span>
+          </div>
+
+          <div className="w-full grid grid-cols-3 gap-4">
+            <div className="flex flex-col items-center bg-green-50 p-3 rounded-lg">
+              <Check className="text-green-600 mb-1" size={24} />
+              <span className="text-sm text-gray-500">Present Days</span>
+              <span className="text-xl font-bold text-green-700">
+                {currentMonthData.present}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center bg-red-50 p-3 rounded-lg">
+              <X className="text-red-600 mb-1" size={24} />
+              <span className="text-sm text-gray-500">Absent Days</span>
+              <span className="text-xl font-bold text-red-700">
+                {currentMonthData.absent}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center bg-blue-50 p-3 rounded-lg">
+              <span className="text-sm text-gray-500">Attendance %</span>
+              <span className="text-2xl font-bold text-blue-700">
+                {currentMonthAttendancePercentage}%
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
       <CustomCalendar
         selectedDate={selectedDate}
