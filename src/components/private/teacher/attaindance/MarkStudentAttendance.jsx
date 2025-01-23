@@ -5,17 +5,31 @@ import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../store/profileSlice";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import { format } from "date-fns";
+import { toast } from "react-toastify";
+import { selectUser } from "../../../../store/userSlice";
 import { Loader2 } from "lucide-react";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
   const [studentAttendance, setStudentAttendance] = useState(null);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalData, setModalData] = useState({
+    date: "",
+    attendanceStatus: "Present", // Default status
+    inTime: "9:30",
+    outTime: "17:00",
+    reason: "",
+    isHoliday: false,
+    holidayText: "",
+  });
 
   const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
+
+  const isTeacher = user.labels.includes("Teacher");
 
   const fetchBatchStudents = async () => {
     setIsLoading(true);
@@ -24,7 +38,6 @@ const MarkStudentAttendance = () => {
         key: "batchId",
         value: profile.batchId,
       });
-      console.log("student profile", data);
       setBatchStudents(data);
     } catch (error) {
       console.log(error);
@@ -34,57 +47,103 @@ const MarkStudentAttendance = () => {
   };
 
   const fetchStudentAttendance = async (userId) => {
-    setIsLoadingAttendance(true)
+    setIsLoadingAttendance(true);
     try {
       const data = await attendanceService.getUserAttendance(userId);
-      console.log("student Attendance", data);
       setStudentAttendance(data);
     } catch (error) {
       console.log(error);
     } finally {
-      setIsLoadingAttendance(true);
+      setIsLoadingAttendance(false);
     }
   };
 
   useEffect(() => {
-    fetchBatchStudents();
+    if (isTeacher) {
+      fetchBatchStudents();
+    } else {
+      fetchStudentAttendance(profile.userId);
+    }
   }, []);
+
+  const openModal = (date) => {
+    const formattedDate = format(date, "yyyy-MM-dd");
+    const existingRecord = studentAttendance.attendanceRecords.find(
+      (record) => record.date === formattedDate
+    ) || {
+      date: formattedDate,
+      attendanceStatus: "Present", // Default when attendance isn't marked
+      inTime: "09:30",
+      outTime: "17:00",
+      reason: "",
+      isHoliday: false,
+      holidayText: "",
+    };
+    setModalData(existingRecord);
+    setIsModalOpen(true);
+  };
+
+  const saveAttendance = () => {
+    setStudentAttendance((prev) => {
+      const updatedRecords = prev.attendanceRecords.some(
+        (record) => record.date === modalData.date
+      )
+        ? prev.attendanceRecords.map((record) =>
+            record.date === modalData.date ? modalData : record
+          )
+        : [...prev.attendanceRecords, modalData];
+
+      return {
+        ...prev,
+        attendanceRecords: updatedRecords,
+      };
+    });
+    setIsModalOpen(false);
+  };
 
   const handleSelectChange = (e) => {
     fetchStudentAttendance(e.target.value);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex w-full h-full items-center justify-center pt-10">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  const markUserAttendance = async () => {
+    setIsLoading(true);
+    try {
+      const data = await attendanceService.markUserAttendance(
+        studentAttendance
+      );
+      setStudentAttendance(data);
+      toast.success("Attendance marked successfully!");
+    } catch (error) {
+      console.error("Error marking attendance", error);
+      toast.error("Failed to mark attendance.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const tileContent = ({ date }) => {
-    const formatedDate = format(date, "yyyy-MM-dd");
+    const formattedDate = format(date, "yyyy-MM-dd");
     const selectedDateData = studentAttendance.attendanceRecords.find(
-      (item) => item.date === formatedDate
+      (item) => item.date === formattedDate
     );
 
-    if (!selectedDateData) return null;
-
     return (
-      <div className="w-full h-full flex flex-col">
+      <div
+        className="w-full h-full flex flex-col cursor-pointer"
+        onClick={() => openModal(date)}
+      >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-          {!selectedDateData.isHoliday && (
+          {!selectedDateData?.isHoliday && selectedDateData?.inTime && (
             <div className="italic text-gray-600 mb-1">
-              {selectedDateData.inTime && `In: ${selectedDateData.inTime} `}
-              {selectedDateData.outTime && `Out: ${selectedDateData.outTime}`}
+              {`In: ${selectedDateData.inTime} Out: ${selectedDateData.outTime}`}
             </div>
           )}
-          {selectedDateData.reason && (
+          {selectedDateData?.reason && (
             <div className="italic text-gray-600">
               {selectedDateData.reason}
             </div>
           )}
-          {selectedDateData.isHoliday && (
+          {selectedDateData?.isHoliday && (
             <div className="italic text-gray-600">
               {selectedDateData.holidayText}
             </div>
@@ -95,9 +154,9 @@ const MarkStudentAttendance = () => {
   };
 
   const tileClassName = ({ date }) => {
-    const formatedDate = format(date, "yyyy-MM-dd");
+    const formattedDate = format(date, "yyyy-MM-dd");
     const selectedDateData = studentAttendance.attendanceRecords.find(
-      (item) => item.date === formatedDate
+      (item) => item.date === formattedDate
     );
 
     if (!selectedDateData) return null;
@@ -106,29 +165,141 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
-
   return (
     <div className="w-full">
-      <select className="p-5 text-black m-10 " onChange={handleSelectChange}>
-        <option value="">Select User</option>
-        {batchStudents.map((item) => (
-          <option key={item.userId} value={item.userId}>
-            {item.userName}
-          </option>
-        ))}
-      </select>
-
-      <div className="p-5">
+      <div className="w-full flex justify-end">
+        {isTeacher && (
+          <select
+            className="p-2 text-black m-6 rounded"
+            onChange={handleSelectChange}
+            disabled={isLoading}
+          >
+            <option value="">Select User</option>
+            {batchStudents.map((item) => (
+              <option key={item.userId} value={item.userId}>
+                {item.userName}
+              </option>
+            ))}
+          </select>
+        )}
         {studentAttendance && (
-          <CustomCalendar
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            tileContent={tileContent}
-            tileClassName={tileClassName}
-          />
+          <button
+            onClick={markUserAttendance}
+            className="p-2 bg-blue-500 text-white rounded m-6 flex items-center justify-center"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Mark Attendance"
+            )}
+          </button>
         )}
       </div>
-      <div className="w-full"></div>
+
+      <div className="p-5">
+        {isLoadingAttendance ? (
+          <div className="flex justify-center">
+            <Loader2 className="animate-spin" />
+          </div>
+        ) : (
+          studentAttendance && (
+            <CustomCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              tileContent={tileContent}
+              tileClassName={tileClassName}
+            />
+          )
+        )}
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-xl mb-4">
+              {modalData.attendanceStatus === "Present"
+                ? "Edit Attendance"
+                : "Mark Attendance"}
+            </h2>
+
+            <div className="flex flex-col justify-between mb-2 gap-2">
+              <button
+                onClick={() =>
+                  setModalData((prev) => ({
+                    ...prev,
+                    inTime: "09:30",
+                    outTime: "17:00",
+                    attendanceStatus: "Present",
+                  }))
+                }
+                className={`p-2 rounded ${
+                  modalData.attendanceStatus === "Present"
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                Present
+              </button>
+              <button
+                onClick={() =>
+                  setModalData((prev) => ({
+                    ...prev,
+                    inTime: "",
+                    outTime: "",
+                    attendanceStatus: "Absent",
+                  }))
+                }
+                className={`p-2 rounded ${
+                  modalData.attendanceStatus === "Absent"
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-200"
+                }`}
+              >
+                Absent
+              </button>
+            </div>
+            <label className="block mb-2">
+              In Time:
+              <input
+                type="time"
+                value={modalData.inTime}
+                onChange={(e) =>
+                  setModalData((prev) => ({ ...prev, inTime: e.target.value }))
+                }
+                className="block w-full p-2 border"
+              />
+            </label>
+            <label className="block mb-2">
+              Out Time:
+              <input
+                type="time"
+                value={modalData.outTime}
+                onChange={(e) =>
+                  setModalData((prev) => ({ ...prev, outTime: e.target.value }))
+                }
+                className="block w-full p-2 border"
+              />
+            </label>
+            <label className="block mb-2">
+              Reason:
+              <textarea
+                value={modalData.reason}
+                onChange={(e) =>
+                  setModalData((prev) => ({ ...prev, reason: e.target.value }))
+                }
+                className="block w-full p-2 border"
+              />
+            </label>
+            <button
+              onClick={saveAttendance}
+              className="p-2 bg-blue-500 text-white rounded mt-4"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

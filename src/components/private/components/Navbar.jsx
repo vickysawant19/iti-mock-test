@@ -254,17 +254,21 @@ const Navbar = () => {
                       >
                         Mark Day Attendance
                       </MenuItem>
+
                       <MenuItem
-                        to="/attaindance/mark-student-attendance"
-                        icon={FaCalendarCheck}
+                        to="/attaindance/daily-diary"
+                        icon={FaBookReader}
                       >
-                        Mark Student Attendance
-                      </MenuItem>
-                      <MenuItem to="/attaindance/daily-diary" icon={FaBookReader}>
                         Daily Diary
                       </MenuItem>
                     </>
                   )}
+                  <MenuItem
+                    to="/attaindance/mark-student-attendance"
+                    icon={FaCalendarCheck}
+                  >
+                    Mark Student Attendance
+                  </MenuItem>
                   <MenuItem
                     to="/attaindance/check-attendance"
                     icon={FaCalendarAlt}

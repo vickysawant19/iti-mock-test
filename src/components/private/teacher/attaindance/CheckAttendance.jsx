@@ -77,7 +77,7 @@ const CheckAttendance = () => {
       (item) => item.date === formatedDate
     );
 
-    if (!selectedDateData) return "default-tile";
+    if (!selectedDateData) return null;
     if (selectedDateData.isHoliday) return "holiday-tile";
     if (selectedDateData.attendanceStatus === "Present") return "present-tile";
     return "absent-tile";
