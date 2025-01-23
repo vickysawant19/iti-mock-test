@@ -54,6 +54,7 @@ export class AttendanceService {
         ),
       };
     } catch (error) {
+      console.log(conf);
       console.log("Appwrite error: get user attendance:", error);
       return false;
     }
@@ -81,7 +82,8 @@ export class AttendanceService {
       const newAttendanceRecords = record.attendanceRecords;
       const updatedUserAttendance = [
         ...userAttendance.attendanceRecords.filter(
-          (item) => !newAttendanceRecords.some((newItem) => newItem.date === item.date)
+          (item) =>
+            !newAttendanceRecords.some((newItem) => newItem.date === item.date)
         ),
         ...newAttendanceRecords,
       ];
