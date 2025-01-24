@@ -6,7 +6,7 @@ import batchService from "../../appwrite/batchService";
 import userProfileService from "../../appwrite/userProfileService";
 import collegeService from "../../appwrite/collageService";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { selectUser } from "../../store/userSlice";
 
 const ProfileForm = () => {
@@ -14,6 +14,7 @@ const ProfileForm = () => {
   const [tradeData, setTradeData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmiting , setIsSubmitting] = useState(false)
   const [othersProfile, setOthersProfile] = useState(null);
 
   const [error, setError] = useState("");
@@ -98,6 +99,7 @@ const ProfileForm = () => {
 
   const handleProfileSubmit = async (data) => {
     try {
+      setIsSubmitting(true)
       let updatedProfile;
 
       if (userId) {
@@ -136,6 +138,8 @@ const ProfileForm = () => {
     } catch (err) {
       console.error("Error saving profile:", err);
       setError("Failed to save profile. Please try again.");
+    } finally{
+      setIsSubmitting(false)
     }
   };
 
@@ -229,7 +233,6 @@ const ProfileForm = () => {
 
           <div>
             <label className="block text-gray-600">College</label>
-            {console.log("college id", isFieldEditable("collegeId"))}
             <select
               {...register("collegeId")}
               disabled={!isFieldEditable("collegeId")}
@@ -354,8 +357,9 @@ const ProfileForm = () => {
         </div>
 
         <button
+          disabled={isSubmiting}
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 mt-6"
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 mt-6 disabled:bg-gray-500 disabled:cursor-not-allowed"
         >
           {existingProfile ? "Update Profile" : "Create Profile"}
         </button>

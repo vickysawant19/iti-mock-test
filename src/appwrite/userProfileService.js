@@ -65,7 +65,6 @@ export class UserProfileService {
   }
 
   async updateUserProfile(profileId, data) {
-    console.log("update data:", data);
     const {
       DOB,
       address,

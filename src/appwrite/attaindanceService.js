@@ -54,7 +54,6 @@ export class AttendanceService {
         ),
       };
     } catch (error) {
-      console.log(conf);
       console.log("Appwrite error: get user attendance:", error);
       return false;
     }

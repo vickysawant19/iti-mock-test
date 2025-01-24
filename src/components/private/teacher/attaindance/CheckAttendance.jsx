@@ -35,7 +35,7 @@ const CheckAttendance = () => {
     setIsLoading(true);
     try {
       const data = await attendanceService.getUserAttendance(profile.userId);
-      console.log("data",data)
+      
       if (data.attendanceRecords.length === 0) {
         setAttendance([]);
         setAttendanceStats({
