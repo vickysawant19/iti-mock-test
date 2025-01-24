@@ -50,7 +50,7 @@ const CheckAttendance = () => {
       const monthlyAttendance = {};
 
       data.attendanceRecords.forEach((record) => {
-        const month = format(new Date(record.date), "yyyy-MM");
+        const month = format(new Date(record.date), "MMMM yyyy");
 
         if (!monthlyAttendance[month]) {
           monthlyAttendance[month] = { present: 0, absent: 0, holidays: 0 };
@@ -156,7 +156,12 @@ const CheckAttendance = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <h2 className="text-xl font-bold mb-4 flex items-center">
+          <CalendarIcon className="mr-2 text-blue-600" size={24} />
+          Total Attendance
+        </h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
         {[
           {
             icon: <CalendarIcon className="text-blue-500" />,
@@ -193,44 +198,49 @@ const CheckAttendance = () => {
           </div>
         ))}
       </div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-4 flex items-center">
+      <h2 className="text-xl font-bold mb-4 flex items-center">
           <CalendarIcon className="mr-2 text-blue-600" size={24} />
-          Current Month Attendance
+          Current Month Attendance - {currentMonth}
         </h2>
-        <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 flex flex-col items-center space-y-4">
-          <div className="text-center">
-            <span className="text-lg font-semibold text-gray-700">
-              {currentMonth}
-            </span>
+      <div className="grid  grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+        {[
+          {
+            icon: <CalendarIcon className="text-blue-500" />,
+            label: "Total Days",
+            value: currentMonthData.present + currentMonthData.absent,
+          },
+          {
+            icon: <CheckCircle className="text-green-500" />,
+            label: "Present Days",
+            value: currentMonthData.present,
+          },
+          {
+            icon: <XCircle className="text-red-500" />,
+            label: "Absent Days",
+            value: currentMonthData.absent,
+          },
+          {
+            icon: <Award className="text-purple-500" />,
+            label: "Attendance %",
+            value: `${currentMonthAttendancePercentage}%`,
+          },
+        ].map((stat, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-xl shadow-md p-4 flex items-center hover:scale-105 transition-transform duration-300"
+          >
+            <div className="mr-4">
+              {React.cloneElement(stat.icon, { size: 40 })}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-500">{stat.label}</span>
+              <span className="text-xl font-bold">{stat.value}</span>
+            </div>
           </div>
-
-          <div className="w-full grid grid-cols-3 gap-4">
-            <div className="flex flex-col items-center bg-green-50 p-3 rounded-lg">
-              <Check className="text-green-600 mb-1" size={24} />
-              <span className="text-sm text-gray-500">Present Days</span>
-              <span className="text-xl font-bold text-green-700">
-                {currentMonthData.present}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center bg-red-50 p-3 rounded-lg">
-              <X className="text-red-600 mb-1" size={24} />
-              <span className="text-sm text-gray-500">Absent Days</span>
-              <span className="text-xl font-bold text-red-700">
-                {currentMonthData.absent}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center bg-blue-50 p-3 rounded-lg">
-              <span className="text-sm text-gray-500">Attendance %</span>
-              <span className="text-2xl font-bold text-blue-700">
-                {currentMonthAttendancePercentage}%
-              </span>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
+      
       <CustomCalendar
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
