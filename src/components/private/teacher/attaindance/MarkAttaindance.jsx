@@ -10,7 +10,6 @@ import userProfileService from "../../../../appwrite/userProfileService";
 import CustomCalendar from "./Calender";
 
 const MarkAttendance = () => {
-  const profile = useSelector(selectProfile);
   const [students, setStudents] = useState([]);
   const [batchAttendance, setBatchAttendance] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +23,8 @@ const MarkAttendance = () => {
 
   const DEFAULT_IN_TIME = "09:30";
   const DEFAULT_OUT_TIME = "17:00";
+
+  const profile = useSelector(selectProfile);
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
@@ -74,15 +75,15 @@ const MarkAttendance = () => {
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
-      const data = await userProfileService.getBatchUserProfile({
-        key: "batchId",
-        value: profile.batchId,
-      });
-      setStudents(data);
+      const [data, response] = await Promise.all([
+        userProfileService.getBatchUserProfile({
+          key: "batchId",
+          value: profile.batchId,
+        }),
+        attendanceService.getBatchAttendance(profile.batchId),
+      ]);
 
-      const response = await attendanceService.getBatchAttendance(
-        profile.batchId
-      );
+      setStudents(data);
       const parsedResponse = response.map((item) => ({
         ...item,
         attendanceRecords: item.attendanceRecords.map((a) => JSON.parse(a)),
@@ -325,7 +326,7 @@ const MarkAttendance = () => {
                           >
                             <option value="Present">Present</option>
                             <option value="Absent">Absent</option>
-                            <option value="Leave">Leave</option>
+                            {/* TODO :Add leves */}
                             <option value="Holiday">Holiday</option>
                           </select>
                         </div>

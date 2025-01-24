@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectProfile, addProfile } from "../../store/profileSlice";
-import tradeService from "../../appwrite/tradedetails";
-import batchService from "../../appwrite/batchService";
-import userProfileService from "../../appwrite/userProfileService";
-import collegeService from "../../appwrite/collageService";
+
+import tradeService from "../../../appwrite/tradedetails";
+import batchService from "../../../appwrite/batchService";
+import userProfileService from "../../../appwrite/userProfileService";
+import collegeService from "../../../appwrite/collageService";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { selectUser } from "../../store/userSlice";
+import { selectUser } from "../../../store/userSlice";
+import { addProfile, selectProfile } from "../../../store/profileSlice";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);
   const [tradeData, setTradeData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmiting , setIsSubmitting] = useState(false)
+  const [isSubmiting, setIsSubmitting] = useState(false);
   const [othersProfile, setOthersProfile] = useState(null);
 
   const [error, setError] = useState("");
@@ -99,7 +100,7 @@ const ProfileForm = () => {
 
   const handleProfileSubmit = async (data) => {
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       let updatedProfile;
 
       if (userId) {
@@ -138,8 +139,8 @@ const ProfileForm = () => {
     } catch (err) {
       console.error("Error saving profile:", err);
       setError("Failed to save profile. Please try again.");
-    } finally{
-      setIsSubmitting(false)
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

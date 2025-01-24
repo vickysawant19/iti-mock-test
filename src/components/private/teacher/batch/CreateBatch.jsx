@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
-import collegeService from "../../../appwrite/collageService";
-import tradeservice from "../../../appwrite/tradedetails";
-import { selectProfile } from "../../../store/profileSlice";
+import collegeService from "../../../../appwrite/collageService";
+import tradeservice from "../../../../appwrite/tradedetails";
+import { selectProfile } from "../../../../store/profileSlice";
 import { useSelector } from "react-redux";
-import batchService from "../../../appwrite/batchService";
-import { selectUser } from "../../../store/userSlice";
+import batchService from "../../../../appwrite/batchService";
+import { selectUser } from "../../../../store/userSlice";
 import { useNavigate } from "react-router-dom";
 
 const BatchForm = () => {

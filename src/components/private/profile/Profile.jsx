@@ -1,9 +1,10 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import ProfileForm from "../ProfileForm";
-import ProfileView from "../ProfileView";
 import { selectProfile } from "../../../store/profileSlice";
 import { selectUser } from "../../../store/userSlice";
+
+import ProfileForm from "./ProfileForm";
+import ProfileView from "./ProfileView";
 import SetLabels from "../components/SetLabels";
 
 const Profile = () => {

@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import authService from "../../appwrite/auth";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser } from "../../store/userSlice";
-
-import students from "../../assets/students.jpeg";
-
 import { ClipLoader } from "react-spinners";
+
+import { addUser } from "../../store/userSlice";
+import students from "../../assets/students.jpeg";
+import authService from "../../appwrite/auth";
 import userProfileService from "../../appwrite/userProfileService";
 import { addProfile } from "../../store/profileSlice";
 
@@ -24,33 +23,30 @@ const Login = () => {
     formState: { errors },
   } = useForm();
   const dispatch = useDispatch();
+
   const user = useSelector((state) => state.user);
   const profile = useSelector((state) => state.profile);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && user.$id) {
       navigate("/dash");
     }
-  }, [user]);
+  }, [navigate]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-
     try {
       // Mock API call
       const user = await authService.login(data);
-      if (user) {
-        dispatch(addUser(user));
-        const res = await userProfileService.getUserProfile(user.$id);
-
-        if (res) {
-          dispatch(addProfile(res));
-          toast.success("Login successful!");
-          navigate("/dash");
-        } else {
-          navigate("/profile");
-        }
+      dispatch(addUser(user));
+      const res = await userProfileService.getUserProfile(user.$id);
+      if (res) {
+        dispatch(addProfile(res));
+        toast.success("Login successful!");
+        navigate("/dash");
+      } else {
+        navigate("/profile");
       }
     } catch (error) {
       toast.error(`Login failed: ${error.message}`);

@@ -1,43 +1,48 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Outlet, useNavigate } from "react-router-dom";
-
-import { addUser } from "./store/userSlice";
-import authService from "./appwrite/auth";
-import { ClipLoader } from "react-spinners";
-import { Analytics } from "@vercel/analytics/react";
-import userProfileService from "./appwrite/userProfileService";
-import { addProfile } from "./store/profileSlice";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Analytics } from "@vercel/analytics/react";
+import { useDispatch, useSelector } from "react-redux";
+import { Outlet, useNavigate } from "react-router-dom";
+import { ClipLoader } from "react-spinners";
+
+import { addUser } from "./store/userSlice";
+import { addProfile } from "./store/profileSlice";
+import authService from "./appwrite/auth";
+import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
 
-
 function App() {
-  const user = useSelector((state) => state.user);
-  const profile = useSelector((state) => state.profile);
-  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const profile = useSelector((state) => state.profile);
+  const user = useSelector((state) => state.user);
 
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
         if (!user) {
+          console.log("getting user");
           const res = await authService.getCurrentUser();
           if (res) {
             dispatch(addUser(res));
+            console.log("getting profile");
             const profileRes = await userProfileService.getUserProfile(res.$id);
             if (!profileRes) {
+              console.log("navgetting to profile");
               navigate("/profile");
             }
             dispatch(addProfile(profileRes));
             if (window.location.pathname === "/") {
+              console.log("navgetting to dash");
               navigate("/dash");
             }
           }
         } else {
           if (!profile) {
+            console.log("user present naviging to profile");
             navigate("/profile");
           }
         }

@@ -4,10 +4,9 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { Functions } from "appwrite";
 
 import tradeservice from "../../../appwrite/tradedetails";
-import questionpaperservice from "../../../appwrite/mockTest";
-import { Functions } from "appwrite";
 import conf from "../../../config/config";
 import { appwriteService } from "../../../appwrite/appwriteConfig";
 

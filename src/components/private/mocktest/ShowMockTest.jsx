@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import questionpaperservice from "../../appwrite/mockTest";
+
+import questionpaperservice from "../../../appwrite/mockTest";
 
 const ShowMockTest = () => {
   const { paperId } = useParams();

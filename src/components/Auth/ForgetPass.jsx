@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import authService from "../../appwrite/auth";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
+
+import authService from "../../appwrite/auth";
 
 const ForgetPass = () => {
   const [email, setEmail] = useState("");

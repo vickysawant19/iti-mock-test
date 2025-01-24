@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import questionpaperservice from "../../appwrite/mockTest";
-import MockTestGreet from "./MockTestGreet";
 import { ClipLoader } from "react-spinners";
+
+import MockTestGreet from "./components/MockTestGreet";
+import questionpaperservice from "../../../appwrite/mockTest";
 
 const StartMockTest = () => {
   const { paperId } = useParams();

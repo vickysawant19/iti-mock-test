@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../store/userSlice";
-import { selectProfile } from "../../../store/profileSlice";
-import userProfileService from "../../../appwrite/userProfileService";
+import { selectUser } from "../../../../store/userSlice";
+import { selectProfile } from "../../../../store/profileSlice";
+import userProfileService from "../../../../appwrite/userProfileService";
 import { Link } from "react-router-dom";
 
 const ViewBatch = () => {

@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import authService from "../../appwrite/auth";
 import { useDispatch, useSelector } from "react-redux";
+
+import authService from "../../appwrite/auth";
 import { addUser } from "../../store/userSlice";
 import students from "../../assets/students.jpeg";
+import { ClipLoader } from "react-spinners";
 
 const Signup = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -27,9 +30,10 @@ const Signup = () => {
     if (user) {
       navigate("/dash");
     }
-  }, [user]);
+  }, [navigate]);
 
   const onSubmit = async (data) => {
+    setIsLoading(true);
     try {
       const user = await authService.createAccount(data);
       if (user) {
@@ -39,9 +43,10 @@ const Signup = () => {
       }
     } catch (error) {
       toast.error(`Signup failed: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
-
   const password = watch("password", "");
 
   return (
@@ -166,10 +171,11 @@ const Signup = () => {
           </div>
 
           <button
+            disabled={isLoading}
             type="submit"
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full"
           >
-            Sign Up
+            {isLoading ? <ClipLoader size={20} color="white" /> : "Sign Up"}
           </button>
         </form>
 

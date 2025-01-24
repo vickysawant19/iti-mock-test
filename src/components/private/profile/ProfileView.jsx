@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+
 import { format } from "date-fns";
-import tradeservice from "../../appwrite/tradedetails";
-import batchService from "../../appwrite/batchService";
-import collegeService from "../../appwrite/collageService";
 import { UserCircle } from "lucide-react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { AiOutlineEdit } from "react-icons/ai";
-import userProfileService from "../../appwrite/userProfileService";
+
+import tradeservice from "../../../appwrite/tradedetails";
+import batchService from "../../../appwrite/batchService";
+import collegeService from "../../../appwrite/collageService";
+import userProfileService from "../../../appwrite/userProfileService";
 
 const ProfileView = ({ profileProps }) => {
   const [tradedata, setTradeData] = useState([]);

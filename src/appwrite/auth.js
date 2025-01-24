@@ -19,7 +19,7 @@ export class AuthService {
         return await this.login({ email, password });
       }
     } catch (error) {
-      throw new Error(`${error.message.split(".")[0]}`);
+      this.handleError(error);
     }
   }
 
@@ -28,17 +28,15 @@ export class AuthService {
       await this.account.createEmailPasswordSession(email, password);
       return await this.getCurrentUser();
     } catch (error) {
-      console.log(error);
-      throw new Error(`${error.message.split(".")[0]}`);
+      this.handleError(error);
     }
   }
 
   async getCurrentUser() {
     try {
-      const user = await this.account.get();
-      return user;
+      return await this.account.get();
     } catch (error) {
-      throw new Error(`${error.message.split(".")[0]}`);
+      this.handleError(error);
     }
   }
 
@@ -46,23 +44,36 @@ export class AuthService {
     try {
       return await this.account.deleteSession("current");
     } catch (error) {
-      throw new Error(error);
+      this.handleError(error);
     }
   }
 
   async forgotPassword(email) {
     try {
-      // const res = await this.account.createVerification(
-      //   "https://localhost:5173/reset-password"
-      // );
-      const res = await this.account.createRecovery(
-        email,
-        "https://localhost:5173/reset-pass"
-      );
+      const redirectUrl =
+        process.env.NODE_ENV === "production"
+          ? "https://itimocktest.vercel.app/reset-pass"
+          : "http://localhost:5173/reset-pass";
+
+      console.log("redirect url", redirectUrl);
+      const res = await this.account.createRecovery(email, redirectUrl);
       console.log(res);
     } catch (error) {
-      throw new Error(`${error.message.split(".")[0]}`);
+      this.handleError(error);
     }
+  }
+
+  async resetPassword(userId, secret, password) {
+    try {
+      const res = await this.account.updateRecovery(userId, secret, password);
+      console.log(res);
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  handleError(error) {
+    throw new Error(`${error.message.split(".")[0]}`);
   }
 }
 

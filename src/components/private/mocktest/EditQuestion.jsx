@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import quesdbservice from "../../appwrite/database";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import tradeservice from "../../appwrite/tradedetails";
-import subjectService from "../../appwrite/subjectService";
 import { FaArrowLeft } from "react-icons/fa";
+
+import tradeservice from "../../../appwrite/tradedetails";
+import subjectService from "../../../appwrite/subjectService";
+import quesdbservice from "../../../appwrite/database";
 
 const EditQuestion = () => {
   const { register, handleSubmit, setValue, watch } = useForm();

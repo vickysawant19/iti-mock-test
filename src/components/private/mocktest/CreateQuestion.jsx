@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import quesdbservice from "../../../appwrite/database";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { FaArrowLeft } from "react-icons/fa";
+
+import quesdbservice from "../../../appwrite/database";
 import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
-import { FaArrowLeft } from "react-icons/fa";
 
 const CreateQuestion = () => {
   const {

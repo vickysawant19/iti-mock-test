@@ -16,30 +16,33 @@ import Signup from "./components/Auth/Signup.jsx";
 
 import ProtectedRoute from "./components/private/ProtectedRoute.jsx";
 
-import CreateQuestion from "./components/private/pages/CreateQuestion.jsx";
-import ManageQuestions from "./components/private/pages/ManageQuestions.jsx";
-import EditQuestion from "./components/private/EditQuestion.jsx";
-import CreateMockTest from "./components/private/pages/CreateMockTest.jsx";
-import AllMockTests from "./components/private/pages/AllMockTests.jsx";
+import CreateQuestion from "./components/private/mocktest/CreateQuestion.jsx";
+import ManageQuestions from "./components/private/mocktest/ManageQuestions.jsx";
+import EditQuestion from "./components/private/mocktest/EditQuestion.jsx";
+import CreateMockTest from "./components/private/mocktest/CreateMockTest.jsx";
+import AllMockTests from "./components/private/mocktest/AllMockTests.jsx";
+import StartMockTest from "./components/private/mocktest/StartMockTest.jsx";
+import ShowMockTest from "./components/private/mocktest/ShowMockTest.jsx";
+import AttainTest from "./components/private/mocktest/AttainTest.jsx";
+import MockTestResults from "./components/private/mocktest/MockTestResults.jsx";
 
-import StartMockTest from "./components/private/StartMockTest.jsx";
-import ShowMockTest from "./components/private/ShowMockTest.jsx";
-import AttainTest from "./components/private/pages/AttainTest.jsx";
 import Dash from "./components/private/pages/Dash.jsx";
 
-import MockTestResults from "./components/private/MockTestResults.jsx";
 import Home from "./components/private/pages/Home.jsx";
 import About from "./components/private/pages/About.jsx";
-import Profile from "./components/private/pages/Profile.jsx";
 import ForgetPass from "./components/Auth/ForgetPass.jsx";
-import ProfileForm from "./components/private/ProfileForm.jsx";
-import CreateBatch from "./components/private/teacher/CreateBatch.jsx";
 
-import ViewBatch from "./components/private/teacher/ViewBatch.jsx";
-import ProfileView from "./components/private/ProfileView.jsx";
 import MarkAttaindance from "./components/private/teacher/attaindance/MarkAttaindance.jsx";
 import CheckAttendance from "./components/private/teacher/attaindance/CheckAttendance.jsx";
 import MarkStudentAttendance from "./components/private/teacher/attaindance/MarkStudentAttendance.jsx";
+
+import CreateBatch from "./components/private/teacher/batch/CreateBatch.jsx";
+import ViewBatch from "./components/private/teacher/batch/ViewBatch.jsx";
+
+import Profile from "./components/private/profile/Profile.jsx";
+import ProfileView from "./components/private/profile/ProfileView.jsx";
+import ProfileForm from "./components/private/profile/ProfileForm.jsx";
+import ResetPass from "./components/Auth/ResetPass.jsx";
 
 const router = (
   <Router>
@@ -49,6 +52,7 @@ const router = (
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="forget-password" element={<ForgetPass />} />
+        <Route path="reset-pass" element={<ResetPass />} />
         <Route path="about" element={<About />} />
         <Route path="profile" element={<Profile />} />
 
@@ -78,7 +82,10 @@ const router = (
           </Route>
           <Route path="attaindance">
             <Route path="mark-attendance" element={<MarkAttaindance />} />
-            <Route path="mark-student-attendance" element={<MarkStudentAttendance />} />
+            <Route
+              path="mark-student-attendance"
+              element={<MarkStudentAttendance />}
+            />
             <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
         </Route>
@@ -97,7 +104,7 @@ const router = (
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <Provider store={store}>{router}</Provider>
-  </React.StrictMode>
+  // <React.StrictMode>
+  <Provider store={store}>{router}</Provider>
+  // </React.StrictMode>
 );

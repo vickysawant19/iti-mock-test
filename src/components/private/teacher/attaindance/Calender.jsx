@@ -8,7 +8,16 @@ const CustomCalendar = ({
   tileClassName,
   tileContent,
   className,
+  startDate = new Date(2020, 1, 1),
 }) => {
+  const tileDisabled = ({ date, view }) => {
+    const today = new Date();
+    return (
+      view === "month" &&
+      (date > today || date < startDate.setDate(startDate.getDate() - 1))
+    );
+  };
+
   return (
     <div className="flex justify-center">
       <Calendar
@@ -20,6 +29,7 @@ const CustomCalendar = ({
         view="month"
         minDetail="month"
         maxDetail="month"
+        tileDisabled={tileDisabled}
       />
       <style>{`
                 .react-calendar {
@@ -40,8 +50,6 @@ const CustomCalendar = ({
                 .react-calendar__tile:enabled:hover {
                     opacity: 0.7;
                 }
-
-                
 
                 .react-calendar__tile--now {
                     border: 1px solid #1f2937 !important; /* Dark gray border */

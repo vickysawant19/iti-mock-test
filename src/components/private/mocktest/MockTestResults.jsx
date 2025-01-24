@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSpinner, FaArrowLeft } from "react-icons/fa";
-import questionpaperservice from "../../appwrite/mockTest";
 import { format } from "date-fns";
+
+import questionpaperservice from "../../../appwrite/mockTest";
 
 const MockTestResults = () => {
   const { paperId } = useParams();

@@ -35,7 +35,7 @@ const CheckAttendance = () => {
     setIsLoading(true);
     try {
       const data = await attendanceService.getUserAttendance(profile.userId);
-      
+
       if (data.attendanceRecords.length === 0) {
         setAttendance([]);
         setAttendanceStats({
@@ -62,7 +62,7 @@ const CheckAttendance = () => {
       const monthlyAttendance = {};
 
       data.attendanceRecords.forEach((record) => {
-        if(typeof record === "string") return
+        if (typeof record === "string") return;
         const month = format(new Date(record.date), "MMMM yyyy");
 
         if (!monthlyAttendance[month]) {
