@@ -8,19 +8,19 @@ export class AttendanceService {
     this.database = appwriteService.getDatabases();
   }
 
-  async getAttendanceByDate(date) {
-    try {
-      const response = await this.database.listDocuments(
-        conf.databaseId,
-        conf.studentAttendanceCollectionId,
-        [Query.search("attendanceRecords", "2025-01-23")]
-      );
-      return response.documents;
-    } catch (error) {
-      console.error("Appwrite error: fetching attendance by date:", error);
-      throw new Error(`Error: ${error.message.split(".")[0]}`);
-    }
-  }
+  // async getAttendanceByDate(date) {
+  //   try {
+  //     const response = await this.database.listDocuments(
+  //       conf.databaseId,
+  //       conf.studentAttendanceCollectionId,
+  //       [Query.search("attendanceRecords", "2025-01-23")]
+  //     );
+  //     return response.documents;
+  //   } catch (error) {
+  //     console.error("Appwrite error: fetching attendance by date:", error);
+  //     throw new Error(`Error: ${error.message.split(".")[0]}`);
+  //   }
+  // }
 
   async getBatchAttendance(batchId) {
     try {

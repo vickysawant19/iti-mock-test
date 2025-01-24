@@ -50,7 +50,26 @@ const MarkStudentAttendance = () => {
     setIsLoadingAttendance(true);
     try {
       const data = await attendanceService.getUserAttendance(userId);
-      setStudentAttendance(data);
+      if (!data || !data.attendanceRecords || data.attendanceRecords.length === 0) {
+        // Set dummy fields if no attendance records are found
+        setStudentAttendance({
+          userId,
+          batchId: profile.batchId,
+          attendanceRecords: [
+            // {
+            //   date: format(new Date(), "yyyy-MM-dd"),
+            //   attendanceStatus: "Present",
+            //   inTime: "09:30",
+            //   outTime: "17:00",
+            //   reason: "",
+            //   isHoliday: false,
+            //   holidayText: "",
+            // },
+          ],
+        });
+      } else {
+        setStudentAttendance(data);
+      }
     } catch (error) {
       console.log(error);
     } finally {

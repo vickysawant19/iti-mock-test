@@ -7,8 +7,6 @@ import {
   CheckCircle,
   XCircle,
   Calendar as CalendarIcon,
-  X,
-  Check,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../../store/userSlice";
@@ -37,6 +35,20 @@ const CheckAttendance = () => {
     setIsLoading(true);
     try {
       const data = await attendanceService.getUserAttendance(profile.userId);
+      console.log("data",data)
+      if (data.attendanceRecords.length === 0) {
+        setAttendance([]);
+        setAttendanceStats({
+          totalDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          holidayDays: 0,
+          attendancePercentage: 0,
+          monthlyAttendance: {},
+        });
+        return;
+      }
+
       setAttendance(data.attendanceRecords);
 
       const workingDays = data.attendanceRecords.filter(
@@ -50,6 +62,7 @@ const CheckAttendance = () => {
       const monthlyAttendance = {};
 
       data.attendanceRecords.forEach((record) => {
+        if(typeof record === "string") return
         const month = format(new Date(record.date), "MMMM yyyy");
 
         if (!monthlyAttendance[month]) {
@@ -142,6 +155,14 @@ const CheckAttendance = () => {
     );
   }
 
+  if (attendance.length === 0) {
+    return (
+      <div className="flex w-full h-full items-center justify-center pt-10">
+        <p>No attendance records found.</p>
+      </div>
+    );
+  }
+
   const currentMonth = format(selectedDate, "MMMM yyyy");
   const currentMonthData = attendanceStats.monthlyAttendance[currentMonth] || {
     present: 0,
@@ -157,11 +178,10 @@ const CheckAttendance = () => {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
       <h2 className="text-xl font-bold mb-4 flex items-center">
-          <CalendarIcon className="mr-2 text-blue-600" size={24} />
-          Total Attendance
-        </h2>
+        <CalendarIcon className="mr-2 text-blue-600" size={24} />
+        Total Attendance
+      </h2>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      
         {[
           {
             icon: <CalendarIcon className="text-blue-500" />,
@@ -199,11 +219,10 @@ const CheckAttendance = () => {
         ))}
       </div>
       <h2 className="text-xl font-bold mb-4 flex items-center">
-          <CalendarIcon className="mr-2 text-blue-600" size={24} />
-          Current Month Attendance - {currentMonth}
-        </h2>
-      <div className="grid  grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      
+        <CalendarIcon className="mr-2 text-blue-600" size={24} />
+        Current Month Attendance - {currentMonth}
+      </h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           {
             icon: <CalendarIcon className="text-blue-500" />,
@@ -240,7 +259,7 @@ const CheckAttendance = () => {
           </div>
         ))}
       </div>
-      
+
       <CustomCalendar
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
