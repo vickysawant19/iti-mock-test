@@ -19,7 +19,7 @@ const MarkStudentAttendance = () => {
   const [modalData, setModalData] = useState({
     date: "",
     attendanceStatus: "Present", // Default status
-    inTime: "9:30",
+    inTime: "09:30",
     outTime: "17:00",
     reason: "",
     isHoliday: false,
@@ -68,17 +68,24 @@ const MarkStudentAttendance = () => {
 
   const openModal = (date) => {
     const formattedDate = format(date, "yyyy-MM-dd");
-    const existingRecord = studentAttendance.attendanceRecords.find(
+    let existingRecord = studentAttendance?.attendanceRecords?.find(
       (record) => record.date === formattedDate
-    ) || {
-      date: formattedDate,
-      attendanceStatus: "Present", // Default when attendance isn't marked
-      inTime: "09:30",
-      outTime: "17:00",
-      reason: "",
-      isHoliday: false,
-      holidayText: "",
-    };
+    );
+
+    if (existingRecord) {
+      existingRecord = { ...existingRecord, isMarked: true };
+    } else {
+      existingRecord = {
+        date: formattedDate,
+        attendanceStatus: "Present", // Default when attendance isn't marked
+        inTime: "09:30",
+        outTime: "17:00",
+        reason: "",
+        isHoliday: false,
+        holidayText: "",
+        isMarked: false,
+      };
+    }
     setModalData(existingRecord);
     setIsModalOpen(true);
   };
@@ -218,9 +225,7 @@ const MarkStudentAttendance = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded shadow-lg">
             <h2 className="text-xl mb-4">
-              {modalData.attendanceStatus === "Present"
-                ? "Edit Attendance"
-                : "Mark Attendance"}
+              {modalData.isMarked ? "Edit Attendance" : "Mark Attendance"}
             </h2>
 
             <div className="flex flex-col justify-between mb-2 gap-2">

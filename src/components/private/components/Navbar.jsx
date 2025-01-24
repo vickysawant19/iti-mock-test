@@ -249,17 +249,16 @@ const Navbar = () => {
                   {userRole.includes("Teacher") && (
                     <>
                       <MenuItem
-                        to="/attaindance/mark-attendance"
-                        icon={FaCalendarCheck}
-                      >
-                        Mark Day Attendance
-                      </MenuItem>
-
-                      <MenuItem
                         to="/attaindance/daily-diary"
                         icon={FaBookReader}
                       >
                         Daily Diary
+                      </MenuItem>
+                      <MenuItem
+                        to="/attaindance/mark-attendance"
+                        icon={FaCalendarCheck}
+                      >
+                        Mark Day Attendance
                       </MenuItem>
                     </>
                   )}
