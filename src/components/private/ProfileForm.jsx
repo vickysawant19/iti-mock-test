@@ -232,7 +232,9 @@ const ProfileForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600">College</label>
+            <label className="block text-gray-600">
+              College <span className="text-red-500">*</span>
+            </label>
             <select
               {...register("collegeId")}
               disabled={!isFieldEditable("collegeId")}
@@ -248,7 +250,9 @@ const ProfileForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600">Trade</label>
+            <label className="block text-gray-600">
+              Trade <span className="text-red-500">*</span>
+            </label>
             <select
               {...register("tradeId")}
               disabled={!isFieldEditable("tradeId")}
@@ -264,7 +268,9 @@ const ProfileForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600">Batch</label>
+            <label className="block text-gray-600">
+              Batch <span className="text-red-500">*</span>
+            </label>
             <select
               {...register("batchId")}
               disabled={!isFieldEditable("batchId")}
