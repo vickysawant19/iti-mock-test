@@ -45,7 +45,7 @@ const CustomCalendar = ({
                     aspect-ratio: 1 / 1;
                     height: 100px !important;
                     padding: 10px !important;
-                    border: 1px solid #e0e0e0;
+                    border: 1px solid white !important ;
                 }
 
                 .react-calendar__tile:enabled:hover {

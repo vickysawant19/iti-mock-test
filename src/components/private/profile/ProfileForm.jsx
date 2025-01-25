@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { selectUser } from "../../../store/userSlice";
 import { addProfile, selectProfile } from "../../../store/profileSlice";
+import { Query } from "appwrite";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);
@@ -54,7 +55,7 @@ const ProfileForm = () => {
         const [colleges, trades, batches] = await Promise.all([
           collegeService.listColleges(),
           tradeService.listTrades(),
-          batchService.listBatches(),
+          batchService.listBatches([Query.equal("isActive", true)]),
         ]);
 
         setCollegeData(colleges.documents);
