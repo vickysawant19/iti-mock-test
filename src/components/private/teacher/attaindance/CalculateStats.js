@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 
 export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
-  if (data.attendanceRecords.length === 0) {
+  if (!data || data.attendanceRecords.length === 0) {
     setAttendance && setAttendance([]);
     setAttendanceStats({
       totalDays: 0,

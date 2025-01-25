@@ -13,10 +13,9 @@ const CustomCalendar = ({
 }) => {
   const tileDisabled = ({ date, view }) => {
     const today = new Date();
-    return (
-      view === "month" &&
-      (date > today || date < startDate.setDate(startDate.getDate() - 1))
-    );
+    const adjustedStartDate = new Date(startDate);
+    adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
+    return view === "month" && (date > today || date < adjustedStartDate);
   };
 
   return (

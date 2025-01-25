@@ -2,7 +2,7 @@ import { Award, CalendarIcon, CheckCircle, XCircle } from "lucide-react";
 import React from "react";
 
 const ShowStats = ({ attendance, label = "Attendance" }) => {
-  const totalDays = attendance.presentDays + attendance.absentDays;
+  const totalDays = attendance?.presentDays + attendance?.absentDays;
   return (
     <>
       <h2 className="text-xl font-bold mb-4 flex items-center mt-5">
@@ -20,19 +20,19 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
           {
             icon: <CheckCircle className="text-green-500" />,
             label: "Present Days",
-            value: attendance.presentDays,
+            value: attendance?.presentDays,
           },
           {
             icon: <XCircle className="text-red-500" />,
             label: "Absent Days",
-            value: attendance.absentDays,
+            value: attendance?.absentDays,
           },
           {
             icon: <Award className="text-purple-500" />,
             label: "Attendance %",
             value: `${
               totalDays > 0
-                ? ((attendance.presentDays / totalDays) * 100).toFixed(2)
+                ? ((attendance?.presentDays / totalDays) * 100).toFixed(2)
                 : 0
             }%`,
           },

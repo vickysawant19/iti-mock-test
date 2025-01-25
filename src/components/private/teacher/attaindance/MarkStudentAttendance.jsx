@@ -17,7 +17,14 @@ const MarkStudentAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
   const [studentAttendance, setStudentAttendance] = useState(null);
-  const [attendanceStats, setAttendanceStats] = useState(null);
+  const [attendanceStats, setAttendanceStats] = useState({
+    totalDays: 0,
+    presentDays: 0,
+    absentDays: 0,
+    holidayDays: 0,
+    attendancePercentage: 0,
+    monthlyAttendance: {},
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState({
     date: "",
@@ -158,7 +165,7 @@ const MarkStudentAttendance = () => {
       const data = await attendanceService.markUserAttendance(
         studentAttendance
       );
-      setStudentAttendance(data);
+      setStudentAttendance(data || []);
       calculateStats({ data, setAttendanceStats });
       toast.success("Attendance marked successfully!");
     } catch (error) {
