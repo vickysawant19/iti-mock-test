@@ -19,7 +19,7 @@ const CustomCalendar = ({
   };
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center my-2">
       <Calendar
         onChange={setSelectedDate}
         value={selectedDate}
@@ -68,8 +68,10 @@ const CustomCalendar = ({
                 .absent-tile { background-color: #fee2e2 !important; color: #7f1d1d !important; }
                 .holiday-tile { background-color: #fef9c3 !important; color: red !important; }
                 .react-calendar__tile--active {
-                    background-color: #3b82f6 !important; /* Soft blue */
-                    color: white !important;
+                    filter: brightness(0.8);
+                    /* background-color: #3b82f6 !important;  Soft blue */
+                    /* color: white !important; */
+                    font-weight: 700;
                 }
             `}</style>
     </div>

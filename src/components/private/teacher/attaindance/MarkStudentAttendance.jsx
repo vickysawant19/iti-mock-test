@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { selectUser } from "../../../../store/userSlice";
 import { Loader2 } from "lucide-react";
+import ShowStats from "./ShowStats";
+import { calculateStats } from "./CalculateStats";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +17,7 @@ const MarkStudentAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
   const [studentAttendance, setStudentAttendance] = useState(null);
+  const [attendanceStats, setAttendanceStats] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState({
     date: "",
@@ -74,6 +77,10 @@ const MarkStudentAttendance = () => {
         });
       } else {
         setStudentAttendance(data);
+        calculateStats({
+          data,
+          setAttendanceStats,
+        });
       }
     } catch (error) {
       console.log(error);
@@ -143,6 +150,7 @@ const MarkStudentAttendance = () => {
         studentAttendance
       );
       setStudentAttendance(data);
+      calculateStats({ data, setAttendanceStats });
       toast.success("Attendance marked successfully!");
     } catch (error) {
       console.error("Error marking attendance", error);
@@ -158,10 +166,29 @@ const MarkStudentAttendance = () => {
       (item) => item.date === formattedDate
     );
 
+    const handleClick = (e) => {
+      if (e.type === "click" && e.detail === 2) {
+        openModal(date);
+      }
+    };
+
+    const handleTouchStart = (e) => {
+      e.persist();
+      e.target.longPressTimeout = setTimeout(() => {
+        openModal(date);
+      }, 500);
+    };
+
+    const handleTouchEnd = (e) => {
+      clearTimeout(e.target.longPressTimeout);
+    };
+
     return (
       <div
         className="w-full h-full flex flex-col cursor-pointer"
-        onClick={() => openModal(date)}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
           {!selectedDateData?.isHoliday && selectedDateData?.inTime && (
@@ -196,6 +223,13 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
+  const currentMonth = format(selectedDate, "MMMM yyyy");
+  const currentMonthData = attendanceStats?.monthlyAttendance[currentMonth] || {
+    presentDays: 0,
+    absentDays: 0,
+    holidayDays: 0,
+  };
+
   return (
     <div className="w-full">
       <div className="w-full flex justify-end">
@@ -216,7 +250,7 @@ const MarkStudentAttendance = () => {
         {studentAttendance && (
           <button
             onClick={markUserAttendance}
-            className="p-2 bg-blue-500 text-white rounded m-6 flex items-center justify-center"
+            className="p-2 bg-blue-500 text-white rounded mt-6 mx-4 flex items-center justify-center"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -228,20 +262,32 @@ const MarkStudentAttendance = () => {
         )}
       </div>
 
-      <div className="p-5">
+      <div className="">
         {isLoadingAttendance ? (
           <div className="flex justify-center">
             <Loader2 className="animate-spin" />
           </div>
         ) : (
           studentAttendance && (
-            <CustomCalendar
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              tileContent={tileContent}
-              tileClassName={tileClassName}
-              startDate={!isTeacher ? new Date(profile.enrolledAt) : undefined}
-            />
+            <div className="w-full max-w-6xl mx-auto px-4 py-4">
+              <CustomCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                tileContent={tileContent}
+                tileClassName={tileClassName}
+                startDate={
+                  !isTeacher ? new Date(profile.enrolledAt) : undefined
+                }
+              />
+              <ShowStats
+                attendance={currentMonthData}
+                label={`Month Attendance`}
+              />
+              <ShowStats
+                attendance={attendanceStats}
+                label={`Total Attendance`}
+              />
+            </div>
           )
         )}
       </div>
@@ -407,12 +453,20 @@ const MarkStudentAttendance = () => {
                 </div>
               </label>
             )}
-            <button
-              onClick={saveAttendance}
-              className="p-2 bg-blue-500 text-white rounded mt-4 w-full"
-            >
-              Save
-            </button>
+            <div className=" flex gap-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 bg-red-500 text-white rounded mt-4 w-full"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAttendance}
+                className="p-2 bg-blue-500 text-white rounded mt-4 w-full"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}

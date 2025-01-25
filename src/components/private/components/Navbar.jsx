@@ -258,7 +258,7 @@ const Navbar = () => {
                         to="/attaindance/mark-attendance"
                         icon={FaCalendarCheck}
                       >
-                        Mark Day Attendance
+                        Mark Daywise Attendance
                       </MenuItem>
                     </>
                   )}
