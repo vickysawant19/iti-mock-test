@@ -54,10 +54,8 @@ export class AuthService {
         process.env.NODE_ENV === "production"
           ? "https://itimocktest.vercel.app/reset-pass"
           : "http://localhost:5173/reset-pass";
-
-      console.log("redirect url", redirectUrl);
       const res = await this.account.createRecovery(email, redirectUrl);
-      console.log(res);
+      return res;
     } catch (error) {
       this.handleError(error);
     }
@@ -66,7 +64,16 @@ export class AuthService {
   async resetPassword(userId, secret, password) {
     try {
       const res = await this.account.updateRecovery(userId, secret, password);
-      console.log(res);
+      return res;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async changePassword(oldPassword, newPassword) {
+    try {
+      const res = await this.account.updatePassword(newPassword, oldPassword);
+      return res;
     } catch (error) {
       this.handleError(error);
     }

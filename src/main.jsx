@@ -43,6 +43,7 @@ import Profile from "./components/private/profile/Profile.jsx";
 import ProfileView from "./components/private/profile/ProfileView.jsx";
 import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
+import ChangePassword from "./components/Auth/changePassword.jsx";
 
 const router = (
   <Router>
@@ -53,12 +54,14 @@ const router = (
         <Route path="signup" element={<Signup />} />
         <Route path="forget-password" element={<ForgetPass />} />
         <Route path="reset-pass" element={<ResetPass />} />
+
         <Route path="about" element={<About />} />
         <Route path="profile" element={<Profile />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="home" element={<Home />} />
           <Route path="dash" element={<Dash />} />
+          <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile/edit" element={<ProfileForm />} />
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import CustomCalendar from "./Calender";
-import userProfileService from "../../../../appwrite/userProfileService";
-import { useSelector } from "react-redux";
-import { selectProfile } from "../../../../store/profileSlice";
-import attendanceService from "../../../../appwrite/attaindanceService";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
-import { selectUser } from "../../../../store/userSlice";
 import { Loader2 } from "lucide-react";
+import { useSelector } from "react-redux";
+
+import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
+import userProfileService from "../../../../appwrite/userProfileService";
+import attendanceService from "../../../../appwrite/attaindanceService";
+import { selectProfile } from "../../../../store/profileSlice";
+import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
 
 const MarkStudentAttendance = () => {
@@ -17,6 +18,8 @@ const MarkStudentAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
   const [studentAttendance, setStudentAttendance] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
     presentDays: 0,
@@ -25,7 +28,6 @@ const MarkStudentAttendance = () => {
     attendancePercentage: 0,
     monthlyAttendance: {},
   });
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState({
     date: "",
     attendanceStatus: "Present", // Default status
@@ -40,14 +42,12 @@ const MarkStudentAttendance = () => {
     absentDays: 0,
     holidayDays: 0,
   });
-
   const [currentMonth, setCurrentMonth] = useState(
     format(new Date(), "MMMM yyyy")
   );
 
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
-  // console.log(studentAttendance, profile);
 
   const isTeacher = user.labels.includes("Teacher");
 
@@ -75,9 +75,13 @@ const MarkStudentAttendance = () => {
         !data.attendanceRecords ||
         data.attendanceRecords.length === 0
       ) {
+        const selectedStudent = batchStudents?.find(
+          (item) => item.userId === userId
+        );
         // Set dummy fields if no attendance records are found
         setStudentAttendance({
           userId,
+          userName: !isTeacher ? user.name : selectedStudent?.userName,
           batchId: profile.batchId,
           attendanceRecords: [
             // {

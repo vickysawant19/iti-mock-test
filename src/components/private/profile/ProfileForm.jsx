@@ -21,7 +21,7 @@ const ProfileForm = () => {
 
   const [error, setError] = useState("");
   const dispatch = useDispatch();
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, setValue } = useForm();
   const navigate = useNavigate();
 
   const { userId } = useParams();
@@ -87,6 +87,14 @@ const ProfileForm = () => {
               : "",
           };
           reset(formattedData);
+        } else {
+          console.log("New User");
+          reset({
+            userId: user.$id,
+            userName: user.name,
+            email: user.email,
+            phone: user.phone,
+          });
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -132,7 +140,7 @@ const ProfileForm = () => {
         // Creating new profile
         data.role = user.labels;
         data.userId = user.$id;
-        data.userName = user.name;
+        data.userName = data.userName || user.name;
         updatedProfile = await userProfileService.createUserProfile(data);
         dispatch(addProfile(updatedProfile));
         navigate("/profile");
@@ -163,59 +171,71 @@ const ProfileForm = () => {
       <form onSubmit={handleSubmit(handleProfileSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-gray-600">Username</label>
+            <label className="block text-gray-600">
+              Username <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              {...register("userName")}
+              {...register("userName", { required: true })}
               disabled={!isFieldEditable("userName")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
           </div>
           {/* Personal Information */}
           <div>
-            <label className="block text-gray-600">Date of Birth</label>
+            <label className="block text-gray-600">
+              Date of Birth <span className="text-red-500">*</span>
+            </label>
             <input
               type="date"
-              {...register("DOB")}
+              {...register("DOB", { required: true })}
               disabled={!isFieldEditable("DOB")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
           </div>
 
           <div>
-            <label className="block text-gray-600">Email</label>
+            <label className="block text-gray-600">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
-              {...register("email")}
+              {...register("email", { required: true })}
               disabled={!isFieldEditable("email")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
           </div>
 
           <div>
-            <label className="block text-gray-600">Phone</label>
+            <label className="block text-gray-600">
+              Phone <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
-              {...register("phone")}
+              {...register("phone", { required: true })}
               disabled={!isFieldEditable("phone")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
           </div>
 
           <div>
-            <label className="block text-gray-600">Parent Contact</label>
+            <label className="block text-gray-600">
+              Parent Contact <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
-              {...register("parentContact")}
+              {...register("parentContact", { required: true })}
               disabled={!isFieldEditable("parentContact")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-gray-600">Address</label>
+            <label className="block text-gray-600">
+              Address <span className="text-red-500">*</span>
+            </label>
             <textarea
-              {...register("address")}
+              {...register("address", { required: true })}
               disabled={!isFieldEditable("address")}
               rows={3}
               className="mt-1  block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
@@ -238,7 +258,7 @@ const ProfileForm = () => {
               College <span className="text-red-500">*</span>
             </label>
             <select
-              {...register("collegeId")}
+              {...register("collegeId", { required: true })}
               disabled={!isFieldEditable("collegeId")}
               className="mt-1  block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
@@ -256,7 +276,7 @@ const ProfileForm = () => {
               Trade <span className="text-red-500">*</span>
             </label>
             <select
-              {...register("tradeId")}
+              {...register("tradeId", { required: true })}
               disabled={!isFieldEditable("tradeId")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
@@ -271,10 +291,10 @@ const ProfileForm = () => {
 
           <div>
             <label className="block text-gray-600">
-              Batch <span className="text-red-500">*</span>
+              Batch {isStudent ? <span className="text-red-500">*</span> : ""}
             </label>
             <select
-              {...register("batchId")}
+              {...register("batchId", { required: isStudent })}
               disabled={!isFieldEditable("batchId")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
@@ -288,10 +308,12 @@ const ProfileForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600">Enrollment Date</label>
+            <label className="block text-gray-600">
+              Enrollment Date <span className="text-red-500">*</span>
+            </label>
             <input
               type="date"
-              {...register("enrolledAt")}
+              {...register("enrolledAt", { required: true })}
               disabled={!isFieldEditable("enrolledAt")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             />
@@ -328,9 +350,11 @@ const ProfileForm = () => {
           )}
 
           <div>
-            <label className="block text-gray-600">Enrollment Status</label>
+            <label className="block text-gray-600">
+              Enrollment Status <span className="text-red-500">*</span>
+            </label>
             <select
-              {...register("enrollmentStatus")}
+              {...register("enrollmentStatus", { required: true })}
               disabled={!isFieldEditable("enrollmentStatus")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
@@ -342,9 +366,11 @@ const ProfileForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-600">Status</label>
+            <label className="block text-gray-600">
+              Status <span className="text-red-500">*</span>
+            </label>
             <select
-              {...register("status")}
+              {...register("status", { required: true })}
               disabled={!isFieldEditable("status")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >

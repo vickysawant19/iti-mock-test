@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
 import { selectUser } from "../../../store/userSlice";
@@ -6,10 +6,22 @@ import { selectUser } from "../../../store/userSlice";
 import ProfileForm from "./ProfileForm";
 import ProfileView from "./ProfileView";
 import SetLabels from "../components/SetLabels";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return null;
+  }
 
   // If user has no labels set, show SetLabels component; otherwise, proceed with profile display
   if (

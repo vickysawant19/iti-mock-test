@@ -8,20 +8,6 @@ export class AttendanceService {
     this.database = appwriteService.getDatabases();
   }
 
-  // async getAttendanceByDate(date) {
-  //   try {
-  //     const response = await this.database.listDocuments(
-  //       conf.databaseId,
-  //       conf.studentAttendanceCollectionId,
-  //       [Query.search("attendanceRecords", "2025-01-23")]
-  //     );
-  //     return response.documents;
-  //   } catch (error) {
-  //     console.error("Appwrite error: fetching attendance by date:", error);
-  //     throw new Error(`Error: ${error.message.split(".")[0]}`);
-  //   }
-  // }
-
   async getBatchAttendance(batchId) {
     try {
       const batchAttendance = await this.database.listDocuments(
@@ -47,6 +33,11 @@ export class AttendanceService {
       if (userAttendance.total === 0) {
         throw new Error("User attendance not found.");
       }
+
+      if (userAttendance.total > 1) {
+        console.log("Multiple User attendance found.");
+      }
+
       return {
         ...userAttendance.documents[0],
         attendanceRecords: userAttendance.documents[0].attendanceRecords.map(
@@ -77,7 +68,7 @@ export class AttendanceService {
           stringyfyRecord
         );
       }
-      //if user attenddance alredy present
+      //if user attenddance already present
       const newAttendanceRecords = record.attendanceRecords;
       const updatedUserAttendance = [
         ...userAttendance.attendanceRecords.filter(
@@ -105,38 +96,6 @@ export class AttendanceService {
       };
     } catch (error) {
       console.error("Appwrite error: marking user attendance:", error);
-      throw new Error(`Error: ${error.message.split(".")[0]}`);
-    }
-  }
-
-  async markBatchAttendance(batchId, attendanceRecords) {
-    try {
-      const batchAttendance = await this.getBatchAttendance(batchId);
-
-      const updatePromises = batchAttendance.documents.map((record) => {
-        const studentAttendance = record;
-        const attendanceRecord = attendanceRecords.find(
-          (ar) => ar.studentId === studentAttendance.studentId
-        );
-
-        if (attendanceRecord) {
-          studentAttendance.attendanceRecords.push(attendanceRecord);
-          return this.database.updateDocument(
-            conf.databaseId,
-            conf.studentAttendanceCollectionId,
-            studentAttendance.$id,
-            {
-              attendanceRecords: JSON.stringify(
-                studentAttendance.attendanceRecords
-              ),
-            }
-          );
-        }
-      });
-
-      return await Promise.all(updatePromises);
-    } catch (error) {
-      console.error("Appwrite error: marking batch attendance:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
