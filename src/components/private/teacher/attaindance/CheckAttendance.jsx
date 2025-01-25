@@ -13,6 +13,9 @@ import { calculateStats } from "./CalculateStats";
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(
+    format(new Date(), "MMMM yyyy")
+  );
   const [attendance, setAttendance] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
@@ -21,6 +24,11 @@ const CheckAttendance = () => {
     holidayDays: 0,
     attendancePercentage: 0,
     monthlyAttendance: {},
+  });
+  const [currentMonthData, setCurrentMonthData] = useState({
+    presentDays: 0,
+    absentDays: 0,
+    holidayDays: 0,
   });
 
   const user = useSelector(selectUser);
@@ -41,6 +49,20 @@ const CheckAttendance = () => {
   useEffect(() => {
     fetchAttendance();
   }, []);
+
+  useEffect(() => {
+    const monthData = attendanceStats.monthlyAttendance[currentMonth] || {
+      presentDays: 0,
+      absentDays: 0,
+      holidayDays: 0,
+    };
+    setCurrentMonthData(monthData);
+  }, [currentMonth, attendanceStats]);
+
+  const handleMonthChange = ({ activeStartDate }) => {
+    const newMonth = format(activeStartDate, "MMMM yyyy");
+    setCurrentMonth(newMonth);
+  };
 
   const tileClassName = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
@@ -102,26 +124,35 @@ const CheckAttendance = () => {
     );
   }
 
-  const currentMonth = format(selectedDate, "MMMM yyyy");
-  const currentMonthData = attendanceStats.monthlyAttendance[currentMonth] || {
-    presentDays: 0,
-    absentDays: 0,
-    holidayDays: 0,
-  };
-
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
+      <div className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p>
+              <strong>Name:</strong> {profile.userName}
+            </p>
+            <p>
+              <strong>Email:</strong> {profile.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {profile.phone}
+            </p>
+          </div>
+        </div>
+      </div>
       <CustomCalendar
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         tileClassName={tileClassName}
         tileContent={tileContent}
+        handleActiveStartDateChange={handleMonthChange}
       />
-      <ShowStats attendance={attendanceStats} label={`Total Attendance`} />
       <ShowStats
         attendance={currentMonthData}
         label={`Month Attendance - ${currentMonth}`}
       />
+      <ShowStats attendance={attendanceStats} label={`Total Attendance`} />
     </div>
   );
 };

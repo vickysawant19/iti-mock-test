@@ -9,6 +9,7 @@ const CustomCalendar = ({
   tileContent,
   className,
   startDate = new Date(2020, 1, 1),
+  handleActiveStartDateChange,
 }) => {
   const tileDisabled = ({ date, view }) => {
     const today = new Date();
@@ -30,6 +31,7 @@ const CustomCalendar = ({
         minDetail="month"
         maxDetail="month"
         tileDisabled={tileDisabled}
+        onActiveStartDateChange={handleActiveStartDateChange}
       />
       <style>{`
                 .react-calendar {

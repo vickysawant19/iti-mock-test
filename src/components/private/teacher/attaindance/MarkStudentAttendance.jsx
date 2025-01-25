@@ -28,6 +28,15 @@ const MarkStudentAttendance = () => {
     isHoliday: false,
     holidayText: "",
   });
+  const [currentMonthData, setCurrentMonthData] = useState({
+    presentDays: 0,
+    absentDays: 0,
+    holidayDays: 0,
+  });
+
+  const [currentMonth, setCurrentMonth] = useState(
+    format(new Date(), "MMMM yyyy")
+  );
 
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
@@ -172,23 +181,10 @@ const MarkStudentAttendance = () => {
       }
     };
 
-    const handleTouchStart = (e) => {
-      e.persist();
-      e.target.longPressTimeout = setTimeout(() => {
-        openModal(date);
-      }, 500);
-    };
-
-    const handleTouchEnd = (e) => {
-      clearTimeout(e.target.longPressTimeout);
-    };
-
     return (
       <div
         className="w-full h-full flex flex-col cursor-pointer"
         onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
           {!selectedDateData?.isHoliday && selectedDateData?.inTime && (
@@ -223,19 +219,26 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
-  const currentMonth = format(selectedDate, "MMMM yyyy");
-  const currentMonthData = attendanceStats?.monthlyAttendance[currentMonth] || {
-    presentDays: 0,
-    absentDays: 0,
-    holidayDays: 0,
+  useEffect(() => {
+    const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
+      presentDays: 0,
+      absentDays: 0,
+      holidayDays: 0,
+    };
+    setCurrentMonthData(monthData);
+  }, [currentMonth, attendanceStats]);
+
+  const handleMonthChange = ({ activeStartDate }) => {
+    const newMonth = format(activeStartDate, "MMMM yyyy");
+    setCurrentMonth(newMonth);
   };
 
   return (
     <div className="w-full">
-      <div className="w-full flex justify-end">
+      <div className="w-full flex justify-end gap-4 px-4">
         {isTeacher && (
           <select
-            className="p-2 text-black m-6 rounded"
+            className="p-2 text-black  rounded mt-6 flex items-center justify-center"
             onChange={handleSelectChange}
             disabled={isLoading}
           >
@@ -250,7 +253,7 @@ const MarkStudentAttendance = () => {
         {studentAttendance && (
           <button
             onClick={markUserAttendance}
-            className="p-2 bg-blue-500 text-white rounded mt-6 mx-4 flex items-center justify-center"
+            className="p-2 bg-blue-500 text-white rounded mt-6 flex items-center justify-center w-40"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -278,14 +281,15 @@ const MarkStudentAttendance = () => {
                 startDate={
                   !isTeacher ? new Date(profile.enrolledAt) : undefined
                 }
+                handleActiveStartDateChange={handleMonthChange}
               />
               <ShowStats
                 attendance={currentMonthData}
-                label={`Month Attendance`}
+                label={`Month Attendance - ${currentMonth}`}
               />
               <ShowStats
                 attendance={attendanceStats}
-                label={`Total Attendance`}
+                label={`Total Attendance `}
               />
             </div>
           )
