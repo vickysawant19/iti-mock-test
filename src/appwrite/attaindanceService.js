@@ -16,7 +16,12 @@ export class AttendanceService {
         [Query.equal("batchId", batchId)]
       );
 
-      return batchAttendance.documents;
+      return batchAttendance.documents.map((userAttendance) => ({
+        ...userAttendance,
+        attendanceRecords: userAttendance.attendanceRecords.map((a) =>
+          JSON.parse(a)
+        ),
+      }));
     } catch (error) {
       console.error("Appwrite error: fetching batch attendance:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);

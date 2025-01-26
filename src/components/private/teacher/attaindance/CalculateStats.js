@@ -2,16 +2,19 @@ import { format } from "date-fns";
 
 export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
   if (!data || data.attendanceRecords.length === 0) {
-    setAttendance && setAttendance([]);
-    setAttendanceStats({
+    const stats = {
+      userId: data.userId,
+      userName: data.userName,
       totalDays: 0,
       presentDays: 0,
       absentDays: 0,
       holidayDays: 0,
       attendancePercentage: 0,
       monthlyAttendance: {},
-    });
-    return;
+    };
+    setAttendance && setAttendance([]);
+    setAttendanceStats && setAttendanceStats(stats);
+    return stats;
   }
 
   setAttendance && setAttendance(data.attendanceRecords);
@@ -53,12 +56,17 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
   const attendancePercentage =
     totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
 
-  setAttendanceStats({
+  const stats = {
+    userName: data.userName,
+    userId: data.userId,
     totalDays,
     presentDays,
     absentDays,
     holidayDays,
     attendancePercentage,
     monthlyAttendance,
-  });
+  };
+
+  setAttendanceStats && setAttendanceStats(stats);
+  return stats;
 };

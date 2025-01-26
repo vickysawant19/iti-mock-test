@@ -83,8 +83,7 @@ export class UserProfileService {
       studentId,
       tradeId,
       userName,
-      // role,
-      // userId,
+      role,
     } = data;
 
     const updatedData = {
@@ -105,8 +104,7 @@ export class UserProfileService {
       studentId: studentId || null,
       tradeId: tradeId || null,
       userName: userName || null,
-      // role: role || null,
-      // userId: userId || null,
+      role: role || null,
     };
 
     try {

@@ -44,6 +44,7 @@ import ProfileView from "./components/private/profile/ProfileView.jsx";
 import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
+import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
 
 const router = (
   <Router>
@@ -75,7 +76,7 @@ const router = (
             path="mock-test-result/:paperId"
             element={<MockTestResults />}
           />
-          <Route path="manage-batch">
+          <Route path="manage-batch" element={<ProtectedTeacherRoutes />}>
             <Route path="create" element={<CreateBatch />} />
             <Route path="view" element={<ViewBatch />} />
             <Route path="view/:userId" element={<ProfileView />} />
