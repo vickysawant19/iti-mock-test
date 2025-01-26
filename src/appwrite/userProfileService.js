@@ -136,12 +136,11 @@ export class UserProfileService {
   }
 
   async getBatchUserProfile(query) {
-    const { key, value } = query;
     try {
       const userProfiles = await this.database.listDocuments(
         conf.databaseId,
         conf.userProfilesCollectionId,
-        [Query.equal(key, value)]
+        [...query]
       );
 
       if (userProfiles.total === 0) {

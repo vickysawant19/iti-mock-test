@@ -11,6 +11,8 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
+import { useNavigate } from "react-router-dom";
+import { Query } from "appwrite";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,15 +51,16 @@ const MarkStudentAttendance = () => {
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
 
+  const navigate = useNavigate();
+
   const isTeacher = user.labels.includes("Teacher");
 
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
-      const data = await userProfileService.getBatchUserProfile({
-        key: "batchId",
-        value: profile.batchId,
-      });
+      const data = await userProfileService.getBatchUserProfile([
+        Query.equal("batchId", profile.batchId),
+      ]);
       setBatchStudents(data);
     } catch (error) {
       console.log(error);
@@ -110,6 +113,13 @@ const MarkStudentAttendance = () => {
   };
 
   useEffect(() => {
+    if (!profile.batchId) {
+      toast.error("You need to Create/Select a batch");
+      // Navigate to create-batch page
+      navigate("/profile");
+      return;
+    }
+
     if (isTeacher) {
       fetchBatchStudents();
     } else {

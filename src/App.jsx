@@ -24,25 +24,20 @@ function App() {
     const checkUserStatus = async () => {
       try {
         if (!user) {
-          console.log("getting user");
           const res = await authService.getCurrentUser();
           if (res) {
             dispatch(addUser(res));
-            console.log("getting profile");
             const profileRes = await userProfileService.getUserProfile(res.$id);
             if (!profileRes) {
-              console.log("navgetting to profile");
               navigate("/profile");
             }
             dispatch(addProfile(profileRes));
             if (window.location.pathname === "/") {
-              console.log("navgetting to dash");
               navigate("/dash");
             }
           }
         } else {
           if (!profile) {
-            console.log("user present naviging to profile");
             navigate("/profile");
           }
         }

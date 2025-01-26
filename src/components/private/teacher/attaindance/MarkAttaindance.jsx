@@ -3,11 +3,12 @@ import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../store/profileSlice";
 import { format } from "date-fns";
 import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
 import CustomCalendar from "./Calender";
+import { Query } from "appwrite";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const MarkAttendance = () => {
   const [students, setStudents] = useState([]);
@@ -25,6 +26,8 @@ const MarkAttendance = () => {
   const DEFAULT_OUT_TIME = "17:00";
 
   const profile = useSelector(selectProfile);
+
+  const navigate = useNavigate();
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
@@ -76,10 +79,9 @@ const MarkAttendance = () => {
     setIsLoading(true);
     try {
       const [data, response] = await Promise.all([
-        userProfileService.getBatchUserProfile({
-          key: "batchId",
-          value: profile.batchId,
-        }),
+        userProfileService.getBatchUserProfile([
+          Query.equal("batchId", profile.batchId),
+        ]),
         attendanceService.getBatchAttendance(profile.batchId),
       ]);
 
@@ -109,6 +111,13 @@ const MarkAttendance = () => {
   };
 
   useEffect(() => {
+    if (!profile.batchId) {
+      toast.error("You need to Create/Select a batch");
+      // Navigate to create-batch page
+      navigate("/profile");
+      return;
+    }
+
     fetchBatchStudents();
   }, []);
 

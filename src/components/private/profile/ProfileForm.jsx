@@ -291,7 +291,15 @@ const ProfileForm = () => {
 
           <div>
             <label className="block text-gray-600">
-              Batch {isStudent ? <span className="text-red-500">*</span> : ""}
+              Batch{" "}
+              {isStudent ? (
+                <span className="text-red-500">*</span>
+              ) : (
+                <div className="text-gray-500 italic text-sm">
+                  (If Your batch Not available. Please create a batch and add it
+                  later.)
+                </div>
+              )}
             </label>
             <select
               {...register("batchId", { required: isStudent })}
@@ -299,11 +307,12 @@ const ProfileForm = () => {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
               <option value="">Select Batch</option>
-              {batchesData.map((batch) => (
-                <option key={batch.$id} value={batch.$id}>
-                  {batch.BatchName}
-                </option>
-              ))}
+              {batchesData.length > 0 &&
+                batchesData.map((batch) => (
+                  <option key={batch.$id} value={batch.$id}>
+                    {batch.BatchName}
+                  </option>
+                ))}
             </select>
           </div>
 

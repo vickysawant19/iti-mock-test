@@ -4,15 +4,16 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { ClipLoader } from "react-spinners";
 import { useNavigate } from "react-router-dom";
+import { Query } from "appwrite";
 
 import collegeService from "../../../../appwrite/collageService";
 import tradeservice from "../../../../appwrite/tradedetails";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
-import { Query } from "appwrite";
+import userProfileService from "../../../../appwrite/userProfileService";
 
-const BatchForm = () => {
+const BatchForm = ({ onClose }) => {
   const [collegesData, setCollegesData] = useState([]);
   const [tradesData, setTradesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +37,6 @@ const BatchForm = () => {
         Query.equal("teacherId", profile.userId),
       ]);
       setAllBatches(data.documents);
-      console.log("batch data : ", data);
     } catch (error) {
       console.log(error);
     } finally {
@@ -93,9 +93,11 @@ const BatchForm = () => {
   };
 
   useEffect(() => {
-    fetchBatches();
-    fetchData();
-  }, []);
+    if (profile) {
+      fetchBatches();
+      fetchData();
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (selectedBatchId && user.labels.includes("Teacher")) {
@@ -295,6 +297,20 @@ const BatchForm = () => {
             : "Create Batch"}
         </button>
       </form>
+      {!selectedBatchId && (
+        <div className="mt-6 text-center">
+          <p className="text-gray-600">
+            If you have created a batch, please update the batch in your
+            profile.
+          </p>
+          <button
+            onClick={() => navigate("/profile/edit")}
+            className="mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+          >
+            Update Profile
+          </button>
+        </div>
+      )}
     </div>
   );
 };
