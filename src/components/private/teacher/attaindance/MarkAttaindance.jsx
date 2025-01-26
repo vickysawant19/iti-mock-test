@@ -86,15 +86,11 @@ const MarkAttendance = () => {
       ]);
 
       setStudents(data);
-      const parsedResponse = response.map((item) => ({
-        ...item,
-        attendanceRecords: item.attendanceRecords.map((a) => JSON.parse(a)),
-      }));
 
       // Extract unique dates with attendance
       const dates = new Set();
       const holidays = new Set();
-      parsedResponse.forEach((record) => {
+      response.forEach((record) => {
         record.attendanceRecords.forEach((attendance) => {
           dates.add(attendance.date);
           attendance.isHoliday ? holidays.add(attendance.date) : "";
@@ -102,7 +98,7 @@ const MarkAttendance = () => {
       });
       setDateWithHoliday(holidays);
       setDatesWithAttendance(dates);
-      setBatchAttendance(parsedResponse);
+      setBatchAttendance(response);
     } catch (error) {
       console.error("Error fetching batch students:", error);
     } finally {
