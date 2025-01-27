@@ -37,7 +37,6 @@ const ProfileView = ({ profileProps }) => {
           setProfile(profileProps);
         } else {
           const res = await userProfileService.getUserProfile(userId);
-          console.log(res);
           setProfile(res);
         }
       } catch (error) {
@@ -122,14 +121,17 @@ const ProfileView = ({ profileProps }) => {
               </span>
             </div>
           </div>
-          <div className="mt-4 flex justify-center sm:justify-start">
-            <Link
-              to="/change-password"
-              className="text-blue-600 hover:underline"
-            >
-              Change Password
-            </Link>
-          </div>
+
+          {userId === undefined && (
+            <div className="mt-4 flex justify-center sm:justify-start">
+              <Link
+                to="/change-password"
+                className="text-blue-600 hover:underline"
+              >
+                Change Password
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}

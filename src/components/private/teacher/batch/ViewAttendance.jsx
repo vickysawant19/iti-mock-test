@@ -122,7 +122,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600">
+                <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white">
                   Student
                 </th>
                 {/* Monthly Attendance Group */}
@@ -141,7 +141,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
                 </th>
               </tr>
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600"></th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-white"></th>
                 {/* Monthly Attendance Subheaders */}
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50">
                   Present
@@ -192,7 +192,10 @@ const ViewAttendance = ({ isLoading, stats }) => {
                     : 0;
 
                 return (
-                  <tr key={student.userId} className="hover:bg-gray-50">
+                  <tr
+                    key={student.userId}
+                    className="hover:bg-gray-50 border-t-2"
+                  >
                     <td className="px-4 py-2">
                       <div className="flex items-center space-x-3">
                         <LuUser className="text-gray-500" />
@@ -256,115 +259,6 @@ const ViewAttendance = ({ isLoading, stats }) => {
               })}
             </tbody>
           </table>
-
-          {/* <table className="min-w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Student
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Present Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Absent Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Total Month Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Month Attendance %
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Total Present Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Total Absent Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Total Days
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">
-                  Attendance %
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {stats.map((student) => {
-                const monthData = student.monthlyAttendance[selectedMonth] || {
-                  presentDays: 0,
-                  absentDays: 0,
-                  totalDays: 0,
-                  attendancePercentage: 0,
-                };
-                return (
-                  <tr key={student.userId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <LuUser className="text-gray-500" />
-                        <span>{student.userName}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendarCheck className="text-green-500" />
-                        <span>{monthData.presentDays}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendarX className="text-red-500" />
-                        <span>{monthData.absentDays}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendar className="text-blue-500" />
-                        <span>
-                          {monthData.presentDays + monthData.absentDays}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuPercent className="text-purple-500" />
-                        <span>
-                          {(monthData.presentDays /
-                            (monthData.presentDays + monthData.absentDays)) *
-                            100 || 0}
-                          %
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendarCheck className="text-green-500" />
-                        <span>{student.presentDays}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendarX className="text-red-500" />
-                        <span>{student.absentDays}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuCalendar className="text-blue-500" />
-                        <span>{student.totalDays}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <LuPercent className="text-purple-500" />
-                        <span>{student.attendancePercentage}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table> */}
         </div>
       </div>
     </div>

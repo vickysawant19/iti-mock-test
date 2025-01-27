@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectProfile } from "../../../../store/profileSlice";
 import { format } from "date-fns";
 import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import attendanceService from "../../../../appwrite/attaindanceService";
-import userProfileService from "../../../../appwrite/userProfileService";
-import CustomCalendar from "./Calender";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+
+import { selectProfile } from "../../../../store/profileSlice";
+import attendanceService from "../../../../appwrite/attaindanceService";
+import userProfileService from "../../../../appwrite/userProfileService";
+import CustomCalendar from "./Calender";
 
 const MarkAttendance = () => {
   const [students, setStudents] = useState([]);

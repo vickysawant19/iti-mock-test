@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaUserCircle,
   FaBars,
@@ -37,12 +37,15 @@ const Navbar = () => {
 
   const userRole = user?.labels || [];
 
+  const navigate = useNavigate();
+
   const handleLogout = async () => {
     try {
       if (user) {
         await authService.logout();
         dispatch(removeUser());
         dispatch(removeProfile());
+        navigate("/");
       }
     } catch (error) {
       console.log(error);

@@ -98,7 +98,7 @@ const ViewBatch = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 bg-gray-50">
+    <div className="container mx-auto p-6 ">
       {/* Batch Selection Header */}
       <div className="mb-8 flex justify-end">
         <select
@@ -144,7 +144,7 @@ const ViewBatch = () => {
       )}
 
       {/* Content Section */}
-      <div className=" rounded-xl shadow-md">
+      <div className="">
         {!studentsLoading && students.length > 0 && !attendaceLoading ? (
           view === "profiles" ? (
             <ViewProfiles students={students} />
