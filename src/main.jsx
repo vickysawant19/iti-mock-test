@@ -45,6 +45,7 @@ import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
+import { Analytics } from "@vercel/analytics/react";
 
 const router = (
   <Router>

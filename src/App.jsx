@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Analytics } from "@vercel/analytics/react";
+
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
@@ -11,6 +11,7 @@ import { addProfile } from "./store/profileSlice";
 import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);

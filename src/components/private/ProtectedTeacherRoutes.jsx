@@ -6,8 +6,6 @@ import { selectUser } from "../../store/userSlice";
 const ProtectedTeacherRoutes = () => {
   const user = useSelector(selectUser);
 
-  console.log(user.labels);
-
   if (
     !user ||
     (!user.labels.includes("Teacher") && !user.labels.includes("admin"))

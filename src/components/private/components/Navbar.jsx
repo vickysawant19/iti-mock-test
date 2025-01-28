@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   FaUserCircle,
   FaBars,
@@ -38,6 +38,31 @@ const Navbar = () => {
   const userRole = user?.labels || [];
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const pathToHeading = {
+    "/": "Home",
+    "/home": "Home",
+    "/dash": "Dashboard",
+    "/profile": "Profile",
+    "/manage-batch/create": "Create/Update Batch",
+    "/manage-batch/view": "View Batch Students",
+    "/create-question": "Create Question",
+    "/manage-questions": "Manage Questions",
+    "/mock-exam": "Create Mock Exam",
+    "/all-mock-tests": "My Mock Tests",
+    "/attain-test": "Attain Test",
+    "/attaindance/daily-diary": "Daily Diary",
+    "/attaindance/mark-attendance": "Mark Daywise Attendance",
+    "/attaindance/mark-student-attendance": "Mark Student Attendance",
+    "/attaindance/check-attendance": "Check Attendance",
+    "/about": "About",
+    "/login": "Login",
+    "/signup": "SignUp",
+  };
+
+  // Get the current heading based on the path
+  const currentHeading = pathToHeading[location.pathname] || "";
 
   const handleLogout = async () => {
     try {
@@ -105,7 +130,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto px-3">
           <div className="flex items-center gap-3 w-full">
             <button
-              className="text-white text-xl hover:scale-105 transition-transform duration-300"
+              className="text-white text-xl hover:scale-105 transition-transform duration-300 "
               onClick={toggleMenu}
             >
               <FaBars />
@@ -115,17 +140,11 @@ const Navbar = () => {
               src={logo}
               alt="ITI"
             />
-            <span className="font-semibold text-white text-sm">
-              ITI MOCK TEST
-            </span>
+            {currentHeading && (
+              <span className="text-white text-sm"> {currentHeading}</span>
+            )}
           </div>
           <div className="hidden md:flex text-white gap-4 items-center">
-            {/* <MenuItem to="/home" icon={FaHome}>
-              Home
-            </MenuItem>
-            <MenuItem to="/about" icon={FaInfoCircle}>
-              About
-            </MenuItem> */}
             {user ? (
               <div className="relative group py-1 px-2">
                 <FaUserCircle className="w-5 h-5 cursor-pointer" />
@@ -158,31 +177,51 @@ const Navbar = () => {
 
       {/* Sliding Menu */}
       <div
-        className={` fixed top-0 left-0 h-full w-64 z-20 transition-transform duration-300 transform bg-white text-gray-800 p-4 ${
+        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white text-gray-800 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } overflow-y-auto shadow-xl`}
+        } overflow-y-auto shadow-2xl `}
       >
-        <div className=" w-full h-full relative">
-          <div className="flex items-center justify-between mb-4 ">
-            <img className="w-8 h-8" src={logo} alt="logo" />
-            <button
-              className="text-gray-600 hover:text-gray-800"
-              onClick={toggleMenu}
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
+        <div className="w-full h-full p-4 flex flex-col ">
+          <div className="flex items-center justify-between mb-6 border-b pb-4  ">
+            <div className="flex items-center gap-3  w-full">
+              <img className="w-8 h-8 rounded-md" src={logo} alt="logo" />
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
+                  `font-semibold text-gray-800 text-sm text-center w-full hover:text-blue-600 transition-colors ${
+                    isActive ? "text-blue-600" : ""
+                  }`
+                }
+              >
+                ITI MOCK TEST
+              </NavLink>
+              <button
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={toggleMenu}
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {user && (
-            <div className="flex items-center mb-4 border rounded-lg py-2 px-3">
-              <FaUserCircle className="text-gray-500 w-8 h-8" />
-              <div className="ml-2">
-                <span className="text-sm font-medium block">
+            <div className="flex items-center mb-6 bg-gray-50 rounded-lg py-3 px-4 ">
+              {profile?.profileImage ? (
+                <img
+                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  src={profile?.profileImage}
+                  alt="Profile"
+                />
+              ) : (
+                <FaUserCircle className="text-gray-400 w-10 h-10" />
+              )}
+              <div className="ml-3">
+                <span className="text-sm font-medium text-gray-800 block">
                   {profile?.userName}
                 </span>
                 <NavLink
                   to="/profile"
-                  className="text-xs text-blue-600 hover:text-blue-700"
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                   onClick={toggleMenu}
                 >
                   View Profile
@@ -191,7 +230,7 @@ const Navbar = () => {
             </div>
           )}
 
-          <div className="space-y-1">
+          <div className="flex-grow space-y-2">
             <MenuItem to="/home" icon={FaHome}>
               Home
             </MenuItem>
@@ -284,14 +323,16 @@ const Navbar = () => {
             <MenuItem to="/about" icon={FaInfoCircle}>
               About
             </MenuItem>
+          </div>
 
+          <div className="mt-auto pt-4">
             {user ? (
               <button
                 onClick={() => {
                   handleLogout();
                   toggleMenu();
                 }}
-                className="flex absolute bottom-0 items-center gap-2 w-full py-1.5 mt-4 text-sm hover:bg-red-50 px-3 rounded-lg text-red-600 justify-center border border-red-200"
+                className="flex items-center gap-2 w-full py-1.5 text-sm hover:bg-red-50 px-3 rounded-lg text-red-600 justify-center border border-red-200"
               >
                 <FaSignOutAlt className="w-4 h-4" />
                 <span>Logout</span>
@@ -313,7 +354,7 @@ const Navbar = () => {
       {/* Overlay */}
       {isMenuOpen && (
         <div
-          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-10"
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-10 md:hidden"
           onClick={toggleMenu}
         ></div>
       )}
