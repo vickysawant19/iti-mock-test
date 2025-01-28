@@ -28,12 +28,17 @@ export class AttendanceService {
     }
   }
 
-  async getUserAttendance(userId) {
+  async getUserAttendance(userId, batchId) {
     try {
+      const queries = [Query.equal("userId", userId)];
+      if (batchId) {
+        queries.push(Query.equal("batchId", batchId));
+      }
+
       const userAttendance = await this.database.listDocuments(
         conf.databaseId,
         conf.studentAttendanceCollectionId,
-        [Query.equal("userId", userId)]
+        queries
       );
       if (userAttendance.total === 0) {
         throw new Error("User attendance not found.");
@@ -57,7 +62,10 @@ export class AttendanceService {
 
   async markUserAttendance(record) {
     try {
-      const userAttendance = await this.getUserAttendance(record.userId);
+      const userAttendance = await this.getUserAttendance(
+        record.userId,
+        record.batchId
+      );
 
       if (!userAttendance) {
         const stringyfyRecord = {

@@ -52,15 +52,23 @@ const ProfileForm = () => {
   const fetchFeildData = async () => {
     try {
       if (watch("tradeId") && watch("collegeId")) {
-        const response = await batchService.listBatches([
+        const queryFilters = [
           Query.equal("collegeId", watch("collegeId")),
           Query.equal("tradeId", watch("tradeId")),
           Query.equal("isActive", true),
-        ]);
+        ];
+        if (isTeacher) {
+          queryFilters.push(Query.equal("teacherId", existingProfile.userId));
+        }
+        const response = await batchService.listBatches(queryFilters);
         setBatchesData(response.documents);
-        const batchId =
-          existingProfile?.batchId || othersProfile?.batchId || "";
-
+        const batchExists = response.documents.some(
+          (doc) =>
+            doc.$id === (existingProfile?.batchId || othersProfile?.batchId)
+        );
+        const batchId = batchExists
+          ? existingProfile?.batchId || othersProfile?.batchId
+          : "";
         setValue("batchId", batchId);
       }
     } catch (error) {
@@ -111,7 +119,7 @@ const ProfileForm = () => {
           };
           reset(formattedData);
         } else {
-          console.log("New User");
+          console.log("Welcome New User");
           reset({
             userId: user.$id,
             userName: user.name,
@@ -135,7 +143,7 @@ const ProfileForm = () => {
       setIsSubmitting(true);
       let updatedProfile;
       let newBatchData;
-      if (data.batchId === "" && isTeacher) {
+      if (data.batchName !== "" && data.batchId === "" && isTeacher) {
         newBatchData = await batchService.createBatch({
           BatchName: data.BatchName,
           teacherId: user.$id,

@@ -72,7 +72,10 @@ const MarkStudentAttendance = () => {
   const fetchStudentAttendance = async (userId) => {
     setIsLoadingAttendance(true);
     try {
-      const data = await attendanceService.getUserAttendance(userId);
+      const data = await attendanceService.getUserAttendance(
+        userId,
+        profile?.batchId
+      );
       if (
         !data ||
         !data.attendanceRecords ||

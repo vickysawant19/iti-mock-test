@@ -16,8 +16,6 @@ export class BatchService {
         ...data,
       };
 
-      console.log("batch Data", batchData);
-
       return await this.database.createDocument(
         conf.databaseId,
         conf.batchesCollectionId,
