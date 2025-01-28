@@ -19,35 +19,47 @@ const ProfileView = ({ profileProps }) => {
 
   const { userId } = useParams();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [tradesRes, batchesRes, collegesRes] = await Promise.all([
-          tradeservice.listTrades(),
-          batchService.listBatches(),
-          collegeService.listColleges(),
-        ]);
-
-        setTradeData(tradesRes.documents);
-        setBatches(batchesRes.documents);
-        setColleges(collegesRes.documents);
-
-        if (profileProps) {
-          setProfile(profileProps);
-        } else {
-          const res = await userProfileService.getUserProfile(userId);
-          setProfile(res);
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsLoading(false);
+  const fetchProfile = async () => {
+    setIsLoading(true);
+    try {
+      if (profileProps) {
+        setProfile(profileProps);
+      } else {
+        const res = await userProfileService.getUserProfile(userId);
+        setProfile(res);
       }
-    };
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [tradesRes, batchesRes, collegesRes] = await Promise.all([
+        tradeservice.getTrade(profile.tradeId),
+        batchService.getBatch(profile.batchId),
+        collegeService.getCollege(profile.collegeId),
+      ]);
+
+      setTradeData(tradesRes);
+      setBatches(batchesRes);
+      setColleges(collegesRes);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    if (profile) {
+      fetchData();
+    }
+  }, [profile]);
 
   if (isLoading) {
     return (
@@ -164,21 +176,9 @@ const ProfileView = ({ profileProps }) => {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {renderField("Student ID", profile.studentId)}
-                {renderField(
-                  "College",
-                  colleges.find((clg) => clg.$id === profile.collegeId)
-                    ?.collageName
-                )}
-                {renderField(
-                  "Trade",
-                  tradedata.find((trade) => trade.$id === profile.tradeId)
-                    ?.tradeName
-                )}
-                {renderField(
-                  "Batch",
-                  batches.find((batch) => batch.$id === profile.batchId)
-                    ?.BatchName
-                )}
+                {renderField("College", colleges?.collageName)}
+                {renderField("Trade", tradedata?.tradeName)}
+                {renderField("Batch", batches?.BatchName)}
                 {renderField("Enrollment Status", profile.enrollmentStatus)}
                 {renderField(
                   "Enrolled At",

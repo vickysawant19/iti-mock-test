@@ -11,7 +11,6 @@ import tradeservice from "../../../../appwrite/tradedetails";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
-import userProfileService from "../../../../appwrite/userProfileService";
 
 const BatchForm = ({ onClose }) => {
   const [collegesData, setCollegesData] = useState([]);
