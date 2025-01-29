@@ -41,6 +41,7 @@ const ProfileForm = () => {
     "parentContact",
     "address",
     "profileImage",
+    "registerId",
   ];
 
   const isFieldEditable = (fieldName) => {
