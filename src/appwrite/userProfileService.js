@@ -85,6 +85,7 @@ export class UserProfileService {
       tradeId,
       userName,
       role,
+      registerId
     } = data;
 
     const updatedData = {
@@ -106,8 +107,10 @@ export class UserProfileService {
       tradeId: tradeId || null,
       userName: userName || null,
       role: role || null,
+      registerId: registerId || null
     };
     
+    console.log(updatedData)
 
 
     try {

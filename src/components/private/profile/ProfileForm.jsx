@@ -270,6 +270,12 @@ const ProfileForm = () => {
             {...register("studentId")}
             disabled={!isFieldEditable("studentId")}
           />
+          <CustomInput
+            label={"Registration ID"}
+            type="text"
+            {...register("registerId")}
+            disabled={!isFieldEditable("studentId")}
+          />
           <div className="md:col-span-2">
             <label className="block text-gray-600">
               College <span className="text-red-500">*</span>

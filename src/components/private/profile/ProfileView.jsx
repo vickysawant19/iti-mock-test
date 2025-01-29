@@ -180,6 +180,7 @@ const ProfileView = ({ profileProps }) => {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {renderField("Student ID", profile.studentId)}
+                {renderField("Registration ID", profile.registerId)}
                 {renderField("College", colleges?.collageName)}
                 {renderField("Trade", tradedata?.tradeName)}
                 {renderField("Batch", batches?.BatchName)}
