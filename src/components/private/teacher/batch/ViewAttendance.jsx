@@ -41,7 +41,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
     <div className="">
       <div className="w-full  mx-auto bg-white rounded-lg  overflow-hidden">
         {/* Month selector */}
-        <div className="p-2 bg-gray-50">
+        <div className="p-2 bg-gray-50 flex w-full justify-end">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -122,10 +122,16 @@ const ViewAttendance = ({ isLoading, stats }) => {
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
-              <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white text-wrap">
+                <th
+                  rowSpan={2}
+                  className="p-2  row-span-2 text-center text-sm font-semibold text-gray-600 bg-white text-wrap"
+                >
                   Student Id
                 </th>
-                <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white">
+                <th
+                  rowSpan={2}
+                  className="  px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white"
+                >
                   Student
                 </th>
                 {/* Monthly Attendance Group */}
@@ -144,8 +150,6 @@ const ViewAttendance = ({ isLoading, stats }) => {
                 </th>
               </tr>
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-white"></th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-white"></th>
                 {/* Monthly Attendance Subheaders */}
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50">
                   Present
@@ -201,7 +205,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
                     className="hover:bg-gray-50 border-t-2"
                   >
                     <td className="px-2 text-center">
-                        <span>{student.studentId}</span>    
+                      <span>{student.studentId}</span>
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex items-center space-x-3">

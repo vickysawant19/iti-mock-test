@@ -13,12 +13,15 @@ import CustomCalendar from "./Calender";
 import CustomInput from "../../../components/CustomInput";
 
 const MarkAttendance = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [students, setStudents] = useState([]);
   const [batchAttendance, setBatchAttendance] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [attendance, setAttendance] = useState({});
   const [expandedRows, setExpandedRows] = useState({});
+
   const [datesWithAttendance, setDatesWithAttendance] = useState(new Set());
   const [dateWithHoliday, setDateWithHoliday] = useState(new Set());
   const [isHoliday, setIsHoliday] = useState(false);
@@ -40,40 +43,44 @@ const MarkAttendance = () => {
     let totalCount = students.length;
 
     const initialAttendance = students.reduce((acc, student) => {
+      // Pre-filter batchAttendance for the specific date to avoid repeated searches
+      const dateRecords = batchAttendance
+        .map((record) =>
+          record.attendanceRecords.find((r) => r.date === formattedDate)
+        )
+        .filter(Boolean);
+
       const existingRecord = batchAttendance.find(
         (record) => record.userId === student.userId
       );
-      if (existingRecord) {
-        const attendanceRecord = existingRecord.attendanceRecords.find(
-          (record) => record.date === formattedDate
+
+      const attendanceRecord = existingRecord?.attendanceRecords.find(
+        (record) => record.date === formattedDate
+      );
+
+      if (attendanceRecord) {
+        acc[student.userId] = {
+          isMarked: true,
+          attendanceStatus: attendanceRecord.attendanceStatus,
+          inTime: attendanceRecord.inTime,
+          outTime: attendanceRecord.outTime,
+          reason: attendanceRecord.reason || "",
+          isHoliday: attendanceRecord.isHoliday || false,
+          holidayText: attendanceRecord.holidayText || "",
+        };
+        markedCount++;
+        attendanceRecord.attendanceStatus === "Present"
+          ? presentCount++
+          : absentCount++;
+
+        // Check holiday status
+        const holidayCount = dateRecords.filter((r) => r.isHoliday).length;
+        const shouldBeHoliday = holidayCount > dateRecords.length / 2;
+
+        setIsHoliday(shouldBeHoliday);
+        setHolidayText(
+          shouldBeHoliday ? attendanceRecord.holidayText || "" : ""
         );
-        if (attendanceRecord) {
-          acc[student.userId] = {
-            isMarked: true,
-            attendanceStatus: attendanceRecord.attendanceStatus,
-            inTime: attendanceRecord.inTime,
-            outTime: attendanceRecord.outTime,
-            reason: attendanceRecord.reason || "",
-            isHoliday: attendanceRecord.isHoliday || false,
-            holidayText: attendanceRecord.holidayText || "",
-          };
-          markedCount++;
-          if (attendanceRecord.attendanceStatus === "Present") presentCount++;
-          if (attendanceRecord.attendanceStatus === "Absent") absentCount++;
-          setIsHoliday(attendanceRecord.isHoliday || false);
-          setHolidayText(attendanceRecord.holidayText || "");
-        } else {
-          acc[student.userId] = {
-            isMarked: false,
-            attendanceStatus: "Present",
-            inTime: DEFAULT_IN_TIME,
-            outTime: DEFAULT_OUT_TIME,
-            reason: "",
-            isHoliday: false,
-            holidayText: "",
-          };
-          unmarkCount++;
-        }
       } else {
         acc[student.userId] = {
           isMarked: false,
@@ -177,7 +184,7 @@ const MarkAttendance = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       const response = await Promise.all(
@@ -212,7 +219,7 @@ const MarkAttendance = () => {
       console.error("Error updating attendance:", error);
       alert("Failed to mark attendance.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -477,9 +484,17 @@ const MarkAttendance = () => {
 
         <button
           type="submit"
-          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={isSubmitting}
+          className={`w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
         >
-          Submit Attendance
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Attendance"
+          )}
         </button>
       </form>
     </div>

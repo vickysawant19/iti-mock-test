@@ -28,9 +28,10 @@ export class AttendanceService {
     }
   }
 
-  async getUserAttendance(userId, batchId) {
+  async getUserAttendance(userId, batchId, queries = []) {
     try {
-      const queries = [Query.equal("userId", userId)];
+      queries.push(Query.equal("userId", userId));
+
       if (batchId) {
         queries.push(Query.equal("batchId", batchId));
       }
@@ -95,7 +96,7 @@ export class AttendanceService {
         conf.databaseId,
         conf.studentAttendanceCollectionId,
         userAttendance.$id,
-        { 
+        {
           userName: record.userName,
           attendanceRecords: updatedUserAttendance.map((a) =>
             JSON.stringify(a)

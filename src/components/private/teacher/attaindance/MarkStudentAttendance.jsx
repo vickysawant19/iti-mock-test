@@ -60,9 +60,12 @@ const MarkStudentAttendance = () => {
     try {
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("batchId", profile.batchId),
+        Query.orderDesc("studentId"),
       ]);
-      console.log(data)
-      setBatchStudents(data.sort((a,b) => parseInt(b) - parseInt(a)));
+      // Convert string numbers to integers and sort
+      setBatchStudents(
+        data.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
+      );
     } catch (error) {
       console.log(error);
     } finally {
@@ -77,6 +80,7 @@ const MarkStudentAttendance = () => {
         userId,
         profile?.batchId
       );
+
       const selectedStudent = batchStudents?.find(
         (item) => item.userId === userId
       );
@@ -96,7 +100,7 @@ const MarkStudentAttendance = () => {
             //   date: format(new Date(), "yyyy-MM-dd"),
             //   attendanceStatus: "Present",
             //   inTime: "09:30",
-            //   outTime: "17:00",  
+            //   outTime: "17:00",
             //   reason: "",
             //   isHoliday: false,
             //   holidayText: "",
@@ -104,7 +108,7 @@ const MarkStudentAttendance = () => {
           ],
         });
       } else {
-        setStudentAttendance({...data, userName: selectedStudent?.userName});
+        setStudentAttendance({ ...data, userName: selectedStudent?.userName });
         calculateStats({
           data,
           setAttendanceStats,
@@ -270,6 +274,9 @@ const MarkStudentAttendance = () => {
             <option value="">Select User</option>
             {batchStudents.map((item) => (
               <option key={item.userId} value={item.userId}>
+                {item.studentId
+                  ? item.studentId.toString().padStart(2, "0")
+                  : "00"}{" "}
                 {item.userName}
               </option>
             ))}

@@ -48,6 +48,7 @@ const ViewBatch = () => {
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("batchId", selectedBatch),
       ]);
+      data.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId));
       setStudents(Array.isArray(data) ? data : [data]);
     } catch (error) {
       console.error("Error fetching batch students:", error);
@@ -59,9 +60,11 @@ const ViewBatch = () => {
   const fetchStudentsAttendance = async () => {
     setAttendaceLoading(true);
     try {
-      const data = await attendanceService.getBatchAttendance(selectedBatch);   
+      const data = await attendanceService.getBatchAttendance(selectedBatch);
       const studentsWithStudentIds = data.map((attendance) => {
-        const student = students.find((student) => student.userId === attendance.userId);
+        const student = students.find(
+          (student) => student.userId === attendance.userId
+        );
         return {
           ...attendance,
           studentId: student ? student.studentId : null,
@@ -69,8 +72,16 @@ const ViewBatch = () => {
       });
       // setStudentAttendance(Array.isArray(data) ? data : [data]);
       // setAttendanceStats(data.map((item) => calculateStats({ data: item })));
-      setStudentAttendance(Array.isArray(studentsWithStudentIds) ? studentsWithStudentIds : [studentsWithStudentIds]);
-      setAttendanceStats(studentsWithStudentIds.sort((a,b) => parseInt(a.studentId) - parseInt(b.studentId)).map((item) => calculateStats({ data: item })));
+      setStudentAttendance(
+        Array.isArray(studentsWithStudentIds)
+          ? studentsWithStudentIds
+          : [studentsWithStudentIds]
+      );
+      setAttendanceStats(
+        studentsWithStudentIds
+          .sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
+          .map((item) => calculateStats({ data: item }))
+      );
     } catch (error) {
       console.error("Error fetching batch attendance:", error);
     } finally {
