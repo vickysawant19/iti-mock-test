@@ -61,7 +61,8 @@ const MarkStudentAttendance = () => {
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("batchId", profile.batchId),
       ]);
-      setBatchStudents(data);
+      console.log(data)
+      setBatchStudents(data.sort((a,b) => parseInt(b) - parseInt(a)));
     } catch (error) {
       console.log(error);
     } finally {

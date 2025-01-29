@@ -16,18 +16,17 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
     setAttendanceStats && setAttendanceStats(stats);
     return stats;
   }
+  
 
   setAttendance && setAttendance(data.attendanceRecords);
 
-  const workingDays = data.attendanceRecords.filter(
-    (record) => !record.isHoliday
-  );
   // Calculate attendance statistics
-  const totalDays = workingDays.length;
   let presentDays = 0;
   let absentDays = 0;
   let holidayDays = 0;
   const monthlyAttendance = {};
+
+  
 
   data.attendanceRecords.forEach((record) => {
     if (typeof record === "string") return;
@@ -53,10 +52,13 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
     }
   });
 
+  let totalDays = presentDays+absentDays;
+
   const attendancePercentage =
     totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
 
   const stats = {
+    studentId : data.studentId,
     userName: data.userName,
     userId: data.userId,
     totalDays,

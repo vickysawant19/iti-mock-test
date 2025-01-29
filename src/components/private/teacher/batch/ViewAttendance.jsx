@@ -122,6 +122,9 @@ const ViewAttendance = ({ isLoading, stats }) => {
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
+              <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white text-wrap">
+                  Student Id
+                </th>
                 <th className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-white">
                   Student
                 </th>
@@ -141,6 +144,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
                 </th>
               </tr>
               <tr>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-white"></th>
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-white"></th>
                 {/* Monthly Attendance Subheaders */}
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50">
@@ -196,6 +200,9 @@ const ViewAttendance = ({ isLoading, stats }) => {
                     key={student.userId}
                     className="hover:bg-gray-50 border-t-2"
                   >
+                    <td className="px-2 text-center">
+                        <span>{student.studentId}</span>    
+                    </td>
                     <td className="px-4 py-2">
                       <div className="flex items-center space-x-3">
                         <LuUser className="text-gray-500" />
