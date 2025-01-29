@@ -42,6 +42,7 @@ const ProfileForm = () => {
     "address",
     "profileImage",
     "registerId",
+    "studentId"
   ];
 
   const isFieldEditable = (fieldName) => {
