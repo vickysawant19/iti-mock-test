@@ -1,6 +1,7 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
+import attendanceService from "./attaindanceService";
 
 export class UserProfileService {
   constructor() {
@@ -106,6 +107,8 @@ export class UserProfileService {
       userName: userName || null,
       role: role || null,
     };
+    
+
 
     try {
       return await this.database.updateDocument(

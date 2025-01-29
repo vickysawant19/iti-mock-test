@@ -95,7 +95,8 @@ export class AttendanceService {
         conf.databaseId,
         conf.studentAttendanceCollectionId,
         userAttendance.$id,
-        {
+        { 
+          userName: record.userName,
           attendanceRecords: updatedUserAttendance.map((a) =>
             JSON.stringify(a)
           ),
