@@ -2,6 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectProfile } from "../../../../store/profileSlice";
+import { AiOutlineEdit } from "react-icons/ai";
 
 const ViewProfiles = ({ students }) => {
   const profile = useSelector(selectProfile);
@@ -70,18 +71,18 @@ const ViewProfiles = ({ students }) => {
               >
                 View Profile
               </Link>
-              <button
-                onClick={() => handleEditProfile(student.userId)}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              <Link
+                to={`/manage-batch/edit/${student.userId}`}
+                className=" flex items-center gap-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
               >
-                Edit
-              </button>
-              <button
-                onClick={() => handleMessage(student.userId)}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-              >
-                Message
-              </button>
+                <AiOutlineEdit
+                  className=""
+                  size={24}
+                />
+                <h1 className="font-bold"> Edit</h1>
+              </Link>
+           
+        
               <a
                 href={`tel:${student.phone}`}
                 className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
