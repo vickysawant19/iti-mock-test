@@ -57,7 +57,7 @@ const ProfileForm = () => {
           Query.equal("tradeId", watch("tradeId")),
           Query.equal("isActive", true),
         ];
-        if (isTeacher) {
+        if (isTeacher && !isUserProfile) {
           queryFilters.push(Query.equal("teacherId", existingProfile.userId));
         }
         const response = await batchService.listBatches(queryFilters);

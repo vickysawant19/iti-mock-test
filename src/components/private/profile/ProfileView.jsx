@@ -21,6 +21,7 @@ const ProfileView = ({ profileProps }) => {
 
   const fetchProfile = async () => {
     setIsLoading(true);
+
     try {
       if (profileProps) {
         setProfile(profileProps);
@@ -56,6 +57,9 @@ const ProfileView = ({ profileProps }) => {
 
   useEffect(() => {
     fetchProfile();
+  }, [userId, profileProps]);
+
+  useEffect(() => {
     if (profile) {
       fetchData();
     }
