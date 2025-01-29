@@ -275,7 +275,7 @@ const ProfileForm = () => {
             label={"Registration ID"}
             type="text"
             {...register("registerId")}
-            disabled={!isFieldEditable("studentId")}
+            disabled={!isFieldEditable("registerId")}
           />
           <div className="md:col-span-2">
             <label className="block text-gray-600">
