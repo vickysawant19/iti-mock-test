@@ -76,14 +76,15 @@ const MarkStudentAttendance = () => {
         userId,
         profile?.batchId
       );
+      const selectedStudent = batchStudents?.find(
+        (item) => item.userId === userId
+      );
+
       if (
         !data ||
         !data.attendanceRecords ||
         data.attendanceRecords.length === 0
       ) {
-        const selectedStudent = batchStudents?.find(
-          (item) => item.userId === userId
-        );
         // Set dummy fields if no attendance records are found
         setStudentAttendance({
           userId,
@@ -94,7 +95,7 @@ const MarkStudentAttendance = () => {
             //   date: format(new Date(), "yyyy-MM-dd"),
             //   attendanceStatus: "Present",
             //   inTime: "09:30",
-            //   outTime: "17:00",
+            //   outTime: "17:00",  
             //   reason: "",
             //   isHoliday: false,
             //   holidayText: "",
@@ -102,7 +103,7 @@ const MarkStudentAttendance = () => {
           ],
         });
       } else {
-        setStudentAttendance(data);
+        setStudentAttendance({...data, userName: selectedStudent?.userName});
         calculateStats({
           data,
           setAttendanceStats,
@@ -114,7 +115,6 @@ const MarkStudentAttendance = () => {
       setIsLoadingAttendance(false);
     }
   };
-
   useEffect(() => {
     if (!profile.batchId) {
       toast.error("You need to Create/Select a batch");
