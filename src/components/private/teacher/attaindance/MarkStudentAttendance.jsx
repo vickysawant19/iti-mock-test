@@ -13,14 +13,19 @@ import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
 import { useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
+import batchService from "../../../../appwrite/batchService";
+import { haversineDistance } from "./calculateDistance";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
+  const [batchData, setBatchData] = useState({});
   const [studentAttendance, setStudentAttendance] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deviceLocation, setDeviceLocation] = useState({ lat: null, lon: null });
+  const [distance , setDistance] = useState(null)
 
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
@@ -54,6 +59,42 @@ const MarkStudentAttendance = () => {
   const navigate = useNavigate();
 
   const isTeacher = user.labels.includes("Teacher");
+
+
+  const [locationText, setLocationText] = React.useState({ device: "", batch: ""});
+
+  React.useEffect(() => {
+    if (deviceLocation && batchData?.location) {
+      const fetchLocationText = async () => {
+        try {
+          const device = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${deviceLocation.lat}&longitude=${deviceLocation.lon}&localityLanguage=en`
+          );
+          const batch = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${batchData?.location.lat}&longitude=${batchData?.location.lon}&localityLanguage=en`
+          );
+          const data1 = await device.json();
+          const data2 = await batch.json();
+          setLocationText( { device: data1.locality || data1.city || "Unknown location", batch: data2.locality || data2.city || "Unknown location" });
+        } catch (error) {
+          console.error("Error fetching location text:", error);
+          setLocationText("Error fetching location");
+        }
+      };
+      fetchLocationText();
+      const dist = haversineDistance(deviceLocation, batchData.location)
+      setDistance(dist) 
+    }
+  }, [deviceLocation]);
+
+  const fetchBatchData = async (batchId) => {
+    try {
+      const data = await batchService.getBatch(batchId);
+      setBatchData(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const fetchBatchStudents = async () => {
     setIsLoading(true);
@@ -95,17 +136,7 @@ const MarkStudentAttendance = () => {
           userId,
           userName: !isTeacher ? user.name : selectedStudent?.userName,
           batchId: profile.batchId,
-          attendanceRecords: [
-            // {
-            //   date: format(new Date(), "yyyy-MM-dd"),
-            //   attendanceStatus: "Present",
-            //   inTime: "09:30",
-            //   outTime: "17:00",
-            //   reason: "",
-            //   isHoliday: false,
-            //   holidayText: "",
-            // },
-          ],
+          attendanceRecords: [],
         });
       } else {
         setStudentAttendance({ ...data, userName: selectedStudent?.userName });
@@ -120,6 +151,7 @@ const MarkStudentAttendance = () => {
       setIsLoadingAttendance(false);
     }
   };
+
   useEffect(() => {
     if (!profile.batchId) {
       toast.error("You need to Create/Select a batch");
@@ -127,13 +159,33 @@ const MarkStudentAttendance = () => {
       navigate("/profile");
       return;
     }
-
+    fetchBatchData(profile.batchId);
     if (isTeacher) {
       fetchBatchStudents();
     } else {
       fetchStudentAttendance(profile.userId);
     }
+
+    // Get current location and watch for changes
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+      setDeviceLocation({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+      });
+      },
+      (error) => {
+      console.error("Error getting location", error);
+      },
+      { enableHighAccuracy: true }
+    );
+
+    // Cleanup function to clear the watch when the component unmounts
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
+
 
   const openModal = (date) => {
     const formattedDate = format(date, "yyyy-MM-dd");
@@ -297,6 +349,27 @@ const MarkStudentAttendance = () => {
         )}
       </div>
 
+      {!isTeacher && (
+        <div
+          className={`text-center my-2 p-1 rounded text-sm mx-auto max-w-fit ${
+            distance > 1000 ? "bg-red-500" : "bg-green-500"
+          }`}
+        >
+          <p>
+            Device Location: {deviceLocation.lat}, {deviceLocation.lon}
+          </p>
+          <p>
+            Batch Location: {batchData?.location?.lat}, {batchData?.location?.lon}
+          </p>
+          <p>
+            You are {distance} meters away from the {locationText.batch} location.{" "}
+            {distance > 1000
+              ? "You cannot mark attendance."
+              : "You can mark attendance."}
+          </p>
+        </div>
+      )}
+
       <div className="">
         {isLoadingAttendance ? (
           <div className="flex justify-center">
@@ -314,6 +387,9 @@ const MarkStudentAttendance = () => {
                   !isTeacher ? new Date(profile.enrolledAt) : undefined
                 }
                 handleActiveStartDateChange={handleMonthChange}
+                distance={distance}
+                canMarkPrevious = {batchData.canMarkPrevious}
+                attendanceTime= {batchData.attendanceTime}
               />
               <ShowStats
                 attendance={currentMonthData}

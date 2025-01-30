@@ -1,6 +1,8 @@
 import React from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../../../store/userSlice";
 
 const CustomCalendar = ({
   selectedDate,
@@ -10,16 +12,34 @@ const CustomCalendar = ({
   className,
   startDate = new Date(2020, 1, 1),
   handleActiveStartDateChange,
+  distance = 1200,
+  canMarkAttendance,
+  attendanceTime,
 }) => {
+  const user = useSelector(selectUser);
+  const isTeacher = user.labels.includes("Teacher");
   const tileDisabled = ({ date, view }) => {
     const today = new Date();
     const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
-    return view === "month" && (date > today || date < adjustedStartDate);
+    const isWithinRange = distance <= 1000;
+
+    const attendanceStartTime = new Date(attendanceTime.start);
+    const attendanceEndTime = new Date(attendanceTime.end);
+
+    const isWithinAttendanceTime =
+      date >= attendanceStartTime && date <= attendanceEndTime;
+
+    return (
+      view === "month" &&
+      (date > today ||
+        date < adjustedStartDate ||
+        (!isTeacher && (!isWithinRange || !canMarkAttendance || !isWithinAttendanceTime)))
+    );
   };
 
   return (
-    <div className="flex justify-center my-2">
+    <div className="flex flex-col justify-center my-2 w-full items-center">
       <Calendar
         onChange={setSelectedDate}
         value={selectedDate}

@@ -57,11 +57,17 @@ export class BatchService {
 
   async getBatch(batchId) {
     try {
-      return await this.database.getDocument(
+      const data = await this.database.getDocument(
         conf.databaseId,
         conf.batchesCollectionId,
         batchId
       );
+
+      return {
+        ...data,
+        attendanceTime: JSON.parse(data.attendanceTime),
+        location: JSON.parse(data.location) || { lat: "", lon: "" },
+      };
     } catch (error) {
       console.log("Appwrite error: get batch:", error);
       return false;

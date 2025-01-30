@@ -11,6 +11,7 @@ import tradeservice from "../../../../appwrite/tradedetails";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
+import { Watch } from "lucide-react";
 
 const BatchForm = ({ onClose }) => {
   const [collegesData, setCollegesData] = useState([]);
@@ -36,9 +37,6 @@ const BatchForm = ({ onClose }) => {
     formState: { errors },
   } = useForm();
   const navigate = useNavigate();
-
-  console.log(errors);
-
   // Fetch location from browser
   const handleGetLocation = () => {
     setLocationLoading(true);
@@ -100,6 +98,7 @@ const BatchForm = ({ onClose }) => {
           ? data.studentIds.join(", ")
           : data.studentIds
       );
+      
       setValue("canEditAttendance", data.canEditAttendance ?? false);
       setValue("attendanceTime", {
         start: data.attendanceTime?.start || "",
@@ -114,6 +113,7 @@ const BatchForm = ({ onClose }) => {
       setIsBatchDataLoading(false);
     }
   };
+  
 
   const fetchData = async () => {
     try {
@@ -161,12 +161,12 @@ const BatchForm = ({ onClose }) => {
           ? data.studentIds.split(",").map((id) => id.trim())
           : [],
         // canEditAttendance: data.canEditAttendance,
-        // attendanceTime: {
-        //   start: data.attendanceTime.start,
-        //   end: data.attendanceTime.end,
-        // },
-        // location: data.location,
-        // canMarkPrevious: data.canMarkPrevious,
+        attendanceTime: JSON.stringify({
+          start: data.attendanceTime.start,
+          end: data.attendanceTime.end,
+        }),
+        location: JSON.stringify(data.location),
+        canMarkPrevious: data.canMarkPrevious,
       };
 
       if (selectedBatchId) {
@@ -324,7 +324,7 @@ const BatchForm = ({ onClose }) => {
           {/* Updated Location Fields */}
           <div className="col-span-full">
             <label className="block text-gray-600 mb-2">Location</label>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
                 value={watch("location.lat") || ""}
@@ -373,17 +373,21 @@ const BatchForm = ({ onClose }) => {
           </div>
 
           {/* New Previous Attendance Checkbox */}
+          
           <div className="flex items-center gap-2">
             <input
+            id="canMarkPrevious"
               type="checkbox"
               {...register("canMarkPrevious")}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label className="text-gray-600">
+            <label htmlFor="canMarkPrevious" className="text-gray-600">
               Allow Students to mark previous attendance
             </label>
           </div>
+          
         </div>
+        
         <button
           type="submit"
           className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
