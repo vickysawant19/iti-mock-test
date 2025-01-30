@@ -13,28 +13,38 @@ const CustomCalendar = ({
   startDate = new Date(2020, 1, 1),
   handleActiveStartDateChange,
   distance = 1200,
-  canMarkAttendance,
+  canMarkPrevious,
   attendanceTime,
 }) => {
   const user = useSelector(selectUser);
   const isTeacher = user.labels.includes("Teacher");
+
   const tileDisabled = ({ date, view }) => {
     const today = new Date();
     const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
     const isWithinRange = distance <= 1000;
 
-    const attendanceStartTime = new Date(attendanceTime.start);
-    const attendanceEndTime = new Date(attendanceTime.end);
+    const attendanceStartTime = new Date(
+      `${new Date().toDateString()} ${attendanceTime?.start || "09:00"}`
+    );
+    const attendanceEndTime = new Date(
+      `${new Date().toDateString()} ${attendanceTime?.end || "17:00"}`
+    );
 
     const isWithinAttendanceTime =
-      date >= attendanceStartTime && date <= attendanceEndTime;
+      today >= attendanceStartTime && today <= attendanceEndTime;
+
+    const isNotToday = date.toDateString() !== today.toDateString();
 
     return (
       view === "month" &&
       (date > today ||
         date < adjustedStartDate ||
-        (!isTeacher && (!isWithinRange || !canMarkAttendance || !isWithinAttendanceTime)))
+        (!isTeacher &&
+          (!isWithinRange ||
+            !isWithinAttendanceTime ||
+            (!canMarkPrevious && isNotToday))))
     );
   };
 

@@ -24,8 +24,11 @@ const MarkStudentAttendance = () => {
   const [batchData, setBatchData] = useState({});
   const [studentAttendance, setStudentAttendance] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deviceLocation, setDeviceLocation] = useState({ lat: null, lon: null });
-  const [distance , setDistance] = useState(null)
+  const [deviceLocation, setDeviceLocation] = useState({
+    lat: null,
+    lon: null,
+  });
+  const [distance, setDistance] = useState(null);
 
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
@@ -60,8 +63,10 @@ const MarkStudentAttendance = () => {
 
   const isTeacher = user.labels.includes("Teacher");
 
-
-  const [locationText, setLocationText] = React.useState({ device: "", batch: ""});
+  const [locationText, setLocationText] = React.useState({
+    device: "",
+    batch: "",
+  });
 
   React.useEffect(() => {
     if (deviceLocation && batchData?.location) {
@@ -75,15 +80,18 @@ const MarkStudentAttendance = () => {
           );
           const data1 = await device.json();
           const data2 = await batch.json();
-          setLocationText( { device: data1.locality || data1.city || "Unknown location", batch: data2.locality || data2.city || "Unknown location" });
+          setLocationText({
+            device: data1.locality || data1.city || "Unknown location",
+            batch: data2.locality || data2.city || "Unknown location",
+          });
         } catch (error) {
           console.error("Error fetching location text:", error);
           setLocationText("Error fetching location");
         }
       };
       fetchLocationText();
-      const dist = haversineDistance(deviceLocation, batchData.location)
-      setDistance(dist) 
+      const dist = haversineDistance(deviceLocation, batchData.location);
+      setDistance(dist);
     }
   }, [deviceLocation]);
 
@@ -169,13 +177,13 @@ const MarkStudentAttendance = () => {
     // Get current location and watch for changes
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-      setDeviceLocation({
-        lat: position.coords.latitude,
-        lon: position.coords.longitude,
-      });
+        setDeviceLocation({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
       },
       (error) => {
-      console.error("Error getting location", error);
+        console.error("Error getting location", error);
       },
       { enableHighAccuracy: true }
     );
@@ -185,7 +193,6 @@ const MarkStudentAttendance = () => {
       navigator.geolocation.clearWatch(watchId);
     };
   }, []);
-
 
   const openModal = (date) => {
     const formattedDate = format(date, "yyyy-MM-dd");
@@ -249,7 +256,7 @@ const MarkStudentAttendance = () => {
       setIsLoading(false);
     }
   };
-
+  console.log(batchData);
   const tileContent = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
     const selectedDateData = studentAttendance.attendanceRecords.find(
@@ -359,10 +366,12 @@ const MarkStudentAttendance = () => {
             Device Location: {deviceLocation.lat}, {deviceLocation.lon}
           </p>
           <p>
-            Batch Location: {batchData?.location?.lat}, {batchData?.location?.lon}
+            Batch Location: {batchData?.location?.lat},{" "}
+            {batchData?.location?.lon}
           </p>
           <p>
-            You are {distance} meters away from the {locationText.batch} location.{" "}
+            You are {distance} meters away from the {locationText.batch}{" "}
+            location.{" "}
             {distance > 1000
               ? "You cannot mark attendance."
               : "You can mark attendance."}
@@ -388,8 +397,8 @@ const MarkStudentAttendance = () => {
                 }
                 handleActiveStartDateChange={handleMonthChange}
                 distance={distance}
-                canMarkPrevious = {batchData.canMarkPrevious}
-                attendanceTime= {batchData.attendanceTime}
+                canMarkPrevious={batchData.canMarkPrevious}
+                attendanceTime={batchData.attendanceTime}
               />
               <ShowStats
                 attendance={currentMonthData}
