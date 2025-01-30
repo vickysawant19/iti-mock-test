@@ -12,6 +12,7 @@ import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
 import { Watch } from "lucide-react";
+import LocationPicker from "../components/LocationPicker";
 
 const BatchForm = ({ onClose }) => {
   const [collegesData, setCollegesData] = useState([]);
@@ -19,6 +20,8 @@ const BatchForm = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isBatchDataLoading, setIsBatchDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showMaps, setShowMaps] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
   const [allBatches, setAllBatches] = useState(null);
@@ -98,7 +101,7 @@ const BatchForm = ({ onClose }) => {
           ? data.studentIds.join(", ")
           : data.studentIds
       );
-      
+
       setValue("canEditAttendance", data.canEditAttendance ?? false);
       setValue("attendanceTime", {
         start: data.attendanceTime?.start || "",
@@ -113,7 +116,6 @@ const BatchForm = ({ onClose }) => {
       setIsBatchDataLoading(false);
     }
   };
-  
 
   const fetchData = async () => {
     try {
@@ -214,7 +216,7 @@ const BatchForm = ({ onClose }) => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 bg-white shadow-md rounded-lg">
+    <div className="max-w-3xl mx-auto p-2 bg-white">
       <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-6">
         {selectedBatchId ? "Edit Batch" : "Create New Batch"}
       </h1>
@@ -243,9 +245,9 @@ const BatchForm = ({ onClose }) => {
 
       <form
         onSubmit={handleSubmit(handleBatchSubmit)}
-        className="space-y-6 px-10"
+        className="space-y-6 px-10  w-full"
       >
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 relative ">
           <div>
             <label className="block text-gray-600">Batch Name</label>
             <input
@@ -321,9 +323,13 @@ const BatchForm = ({ onClose }) => {
             </label>
           </div>
 
-          {/* Updated Location Fields */}
-          <div className="col-span-full">
-            <label className="block text-gray-600 mb-2">Location</label>
+          <div className="col-span-full relative">
+            <label className="block text-gray-600 mb-2">
+              Location{" "}
+              <span className="text-xs italic text-gray-500">
+                (Student can mark attendance from 1km range)
+              </span>
+            </label>
             <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
@@ -351,10 +357,35 @@ const BatchForm = ({ onClose }) => {
                   "Get Location"
                 )}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowMaps((prev) => !prev)}
+                className="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 disabled:bg-gray-400"
+              >
+                {locationLoading ? (
+                  <ClipLoader size={20} color="#fff" />
+                ) : showMaps ? (
+                  "Hide Map"
+                ) : (
+                  "Show Map"
+                )}
+              </button>
+            </div>
+
+            <div
+              className={`border mt-4 overflow-hidden rounded w-full transition-all ease-in-out duration-300 top-0 z-[2] ${
+                showMaps ? "h-80" : "h-0"
+              }`}
+            >
+              {showMaps && (
+                <LocationPicker
+                  batchLocation={batchData?.location || undefined}
+                  deviceLocation={watch("location")}
+                  setValue={setValue}
+                />
+              )}
             </div>
           </div>
-
-          {/* Updated Attendance Time */}
           <div>
             <label className="block text-gray-600">Attendance Start Time</label>
             <input
@@ -371,12 +402,10 @@ const BatchForm = ({ onClose }) => {
               className="w-full border border-gray-300 rounded-md py-2 px-3"
             />
           </div>
-
           {/* New Previous Attendance Checkbox */}
-          
           <div className="flex items-center gap-2">
             <input
-            id="canMarkPrevious"
+              id="canMarkPrevious"
               type="checkbox"
               {...register("canMarkPrevious")}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -385,9 +414,8 @@ const BatchForm = ({ onClose }) => {
               Allow Students to mark previous attendance
             </label>
           </div>
-          
         </div>
-        
+
         <button
           type="submit"
           className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
