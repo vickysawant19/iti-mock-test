@@ -39,7 +39,7 @@ const Dashboard = () => {
   const [allUsersStats, setAllUserStats] = useState([]);
   const [currUserRecord, setCurrUserRecord] = useState();
   const [timePeriod, setTimePeriod] = useState("day");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [totalQuestions, setTotalQuestions] = useState();
   const [totalTests, setTotalTests] = useState();
@@ -54,7 +54,7 @@ const Dashboard = () => {
   const profile = useSelector(selectProfile);
 
   const fetchTrades = async () => {
-    setIsLoading(true);
+
     try {
       const res = await tradeservice.getTrade(profile.tradeId);
       if (res) {
@@ -62,9 +62,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const fetchAllUsersStats = async () => {
@@ -295,10 +293,10 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <div
-        className="w-full min-h-screen flex items-center justify-center"
-        style={{ minHeight: `calc(100vh - 16px)` }}
+      className="w-full flex items-center justify-center"
+      style={{ minHeight: `calc(100vh - 70px)` }}
       >
-        <ClipLoader color="#123abc" size={50} />
+      <ClipLoader color="#123abc" size={50} />
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
 import batchService from "../../../../appwrite/batchService";
 import { haversineDistance } from "./calculateDistance";
+import LocationPicker from "../components/LocationPicker";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,11 +25,12 @@ const MarkStudentAttendance = () => {
   const [batchData, setBatchData] = useState({});
   const [studentAttendance, setStudentAttendance] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isShowMap, setIsShowMap] = useState(false);
   const [deviceLocation, setDeviceLocation] = useState({
-    lat: null,
-    lon: null,
+    lat: 0,
+    lon: 0,
   });
-  const [distance, setDistance] = useState(null);
+  const [distance, setDistance] = useState(Infinity);
 
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
@@ -94,6 +96,7 @@ const MarkStudentAttendance = () => {
       setDistance(dist);
     }
   }, [deviceLocation]);
+  
 
   const fetchBatchData = async (batchId) => {
     try {
@@ -194,6 +197,20 @@ const MarkStudentAttendance = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
+      presentDays: 0,
+      absentDays: 0,
+      holidayDays: 0,
+    };
+    setCurrentMonthData(monthData);
+  }, [currentMonth, attendanceStats]);
+
+  const handleMonthChange = ({ activeStartDate }) => {
+    const newMonth = format(activeStartDate, "MMMM yyyy");
+    setCurrentMonth(newMonth);
+  };
+
   const openModal = (date) => {
     const formattedDate = format(date, "yyyy-MM-dd");
     let existingRecord = studentAttendance?.attendanceRecords?.find(
@@ -256,7 +273,7 @@ const MarkStudentAttendance = () => {
       setIsLoading(false);
     }
   };
-  console.log(batchData);
+
   const tileContent = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
     const selectedDateData = studentAttendance.attendanceRecords.find(
@@ -307,26 +324,13 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
-  useEffect(() => {
-    const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
-      presentDays: 0,
-      absentDays: 0,
-      holidayDays: 0,
-    };
-    setCurrentMonthData(monthData);
-  }, [currentMonth, attendanceStats]);
-
-  const handleMonthChange = ({ activeStartDate }) => {
-    const newMonth = format(activeStartDate, "MMMM yyyy");
-    setCurrentMonth(newMonth);
-  };
-
   return (
-    <div className="w-full">
-      <div className="w-full flex justify-end gap-4 px-4">
-        {isTeacher && (
+    <div className="w-full ">
+      {/* Top button bar */}
+      <div className="w-full flex justify-end gap-10  items-center mt-10 h-fit p-5">
+        {isTeacher ? (
           <select
-            className="p-2 text-black  rounded mt-6 flex items-center justify-center"
+            className="p-2 text-black  rounded  flex items-center justify-center w-40"
             onChange={handleSelectChange}
             disabled={isLoading}
           >
@@ -340,11 +344,19 @@ const MarkStudentAttendance = () => {
               </option>
             ))}
           </select>
+        ) : (
+          <button
+            onClick={() => setIsShowMap((prev) => !prev)}
+            className=" bg-teal-500 text-white rounded p-2 flex items-center justify-center w-40"
+          >
+            {!isShowMap ? "Show Map" : "Hide Map"}
+          </button>
         )}
-        {studentAttendance && (
+
+        {studentAttendance && distance < 1000 && (
           <button
             onClick={markUserAttendance}
-            className="p-2 bg-blue-500 text-white rounded mt-6 flex items-center justify-center w-40"
+            className=" bg-blue-500 text-white rounded p-2 flex items-center justify-center w-40"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -355,6 +367,21 @@ const MarkStudentAttendance = () => {
           </button>
         )}
       </div>
+      {/* Location Map */}
+      <div
+        className={`w-full ${
+          isShowMap ? "h-80" : "h-0"
+        } transition-all ease-linear duration-300  overflow-hidden p-4`}
+      >
+        {isShowMap && (
+          <LocationPicker
+            deviceLocation={deviceLocation}
+            batchLocation={batchData.location}
+            disableSelection={true}
+            circleRadius={500}
+          />
+        )}
+      </div>
 
       {!isTeacher && (
         <div
@@ -363,15 +390,11 @@ const MarkStudentAttendance = () => {
           }`}
         >
           <p>
-            Device Location: {deviceLocation.lat}, {deviceLocation.lon}
-          </p>
-          <p>
-            Batch Location: {batchData?.location?.lat},{" "}
-            {batchData?.location?.lon}
-          </p>
-          <p>
-            You are {distance} meters away from the {locationText.batch}{" "}
-            location.{" "}
+            You are{" "}
+            {distance > 1000
+              ? `${(distance / 1000).toFixed(2)} km`
+              : `${distance.toFixed(2)} meters`}{" "}
+            away from the {locationText.batch} location.{" "}
             {distance > 1000
               ? "You cannot mark attendance."
               : "You can mark attendance."}
