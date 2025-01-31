@@ -96,7 +96,6 @@ const MarkStudentAttendance = () => {
       setDistance(dist);
     }
   }, [deviceLocation]);
-  
 
   const fetchBatchData = async (batchId) => {
     try {
@@ -376,9 +375,9 @@ const MarkStudentAttendance = () => {
         {isShowMap && (
           <LocationPicker
             deviceLocation={deviceLocation}
-            batchLocation={batchData.location}
+            batchLocation={batchData?.location}
             disableSelection={true}
-            circleRadius={500}
+            circleRadius={batchData?.circleRadius}
           />
         )}
       </div>
@@ -399,9 +398,13 @@ const MarkStudentAttendance = () => {
               ? "You cannot mark attendance."
               : "You can mark attendance."}
           </p>
+          <p>
+            Current Time: {format(new Date(), "HH:mm")} | Marking Time:{" "}
+            {batchData?.attendanceTime?.start || ""} -{" "}
+            {batchData?.attendanceTime?.end || ""}
+          </p>
         </div>
       )}
-
       <div className="">
         {isLoadingAttendance ? (
           <div className="flex justify-center">
@@ -435,7 +438,6 @@ const MarkStudentAttendance = () => {
           )
         )}
       </div>
-
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded shadow-lg">

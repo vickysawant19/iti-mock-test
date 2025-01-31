@@ -86,6 +86,7 @@ const BatchForm = ({ onClose }) => {
       if (data.teacherId !== profile.userId) {
         toast.error("You are not authorized to access this batch");
         navigate("/dash");
+        return;
       }
       setBatchData(data);
 
@@ -109,6 +110,7 @@ const BatchForm = ({ onClose }) => {
       });
       setValue("location", data.location || { lat: "", lon: "" });
       setValue("canMarkPrevious", data.canMarkPrevious ?? false);
+      setValue("circleRadius", data.circleRadius || 1000);
     } catch (error) {
       console.error("Error fetching batch data:", error);
       toast.error("Failed to load batch data");
@@ -149,6 +151,8 @@ const BatchForm = ({ onClose }) => {
 
   const handleBatchSubmit = async (data) => {
     setIsSubmitting(true);
+
+    console.log("type of: ", typeof data.circleRadius);
     try {
       const batchPayload = {
         BatchName: data.BatchName,
@@ -159,6 +163,7 @@ const BatchForm = ({ onClose }) => {
         teacherId: profile.userId,
         teacherName: profile.userName,
         isActive: data.isActive,
+        circleRadius: parseInt(data.circleRadius),
         studentIds: data.studentIds
           ? data.studentIds.split(",").map((id) => id.trim())
           : [],
@@ -382,8 +387,22 @@ const BatchForm = ({ onClose }) => {
                   batchLocation={batchData?.location || undefined}
                   deviceLocation={watch("location")}
                   setValue={setValue}
+                  circleRadius={watch("circleRadius")}
                 />
               )}
+            </div>
+            <div className="mt-5">
+              <label className="block text-gray-600">
+                Attendace Circle Radius : {watch("circleRadius")} meter
+              </label>
+
+              <input
+                type="range"
+                min={10}
+                max={1000}
+                {...register("circleRadius", {})}
+                className="w-full border border-gray-300 rounded-md py-2 px-3"
+              />
             </div>
           </div>
           <div>

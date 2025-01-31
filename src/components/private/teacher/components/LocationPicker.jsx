@@ -14,27 +14,29 @@ import L from "leaflet";
 import { haversineDistance } from "../attaindance/calculateDistance";
 
 // Default coordinates for Mumbai, India
-const DEFAULT_LAT = 19.0760;
+const DEFAULT_LAT = 19.076;
 const DEFAULT_LON = 72.8777;
 
 const deviceIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/2536/2536745.png',
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/2536/2536745.png",
   iconSize: [41, 41],
-  iconAnchor: [20.5, 41],  // Centered bottom anchor
+  iconAnchor: [20.5, 41], // Centered bottom anchor
   popupAnchor: [0, -41],
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   shadowSize: [41, 41],
-  shadowAnchor: [20.5, 41]
+  shadowAnchor: [20.5, 41],
 });
 
 const batchIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/18796/18796384.png',
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/18796/18796384.png",
   iconSize: [41, 41],
-  iconAnchor: [20.5, 41],  // Centered bottom anchor
+  iconAnchor: [20.5, 41], // Centered bottom anchor
   popupAnchor: [0, -41],
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   shadowSize: [41, 41],
-  shadowAnchor: [20.5, 41]
+  shadowAnchor: [20.5, 41],
 });
 
 const LocationPicker = ({
@@ -43,13 +45,13 @@ const LocationPicker = ({
   batchLocation = { lat: DEFAULT_LAT, lon: DEFAULT_LON },
   disableSelection = false,
   circleRadius = 1000,
-  zoom = 13
+  zoom = 13,
 }) => {
   const [location, setLocation] = useState(deviceLocation);
-  
+
   // Memoize distance calculation
-  const distance = useMemo(() => 
-    haversineDistance(deviceLocation, batchLocation),
+  const distance = useMemo(
+    () => haversineDistance(deviceLocation, batchLocation),
     [deviceLocation, batchLocation]
   );
 
@@ -70,7 +72,7 @@ const LocationPicker = ({
       },
     });
 
-    return (location.lat && location.lon) ? (
+    return location.lat && location.lon ? (
       <Marker position={[location.lat, location.lon]} icon={deviceIcon}>
         <Popup>
           Selected Location: <br />
@@ -93,22 +95,29 @@ const LocationPicker = ({
   return (
     <div className="h-80">
       <MapContainer
-        key={`${deviceLocation.lat}-${deviceLocation.lon}`}
+        // key={`${deviceLocation.lat}-${deviceLocation.lon}`}
         center={[deviceLocation.lat, deviceLocation.lon]}
         zoom={zoom}
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
 
-        <Marker position={[batchLocation.lat, batchLocation.lon]} icon={batchIcon}>
+        <Marker
+          position={[batchLocation.lat, batchLocation.lon]}
+          icon={batchIcon}
+        >
           <Popup>College Location</Popup>
         </Marker>
 
         <Circle
-          center={disableSelection ? [batchLocation.lat, batchLocation.lon] : [location.lat, location.lon]}
+          center={
+            disableSelection
+              ? [batchLocation.lat, batchLocation.lon]
+              : [location.lat, location.lon]
+          }
           radius={circleRadius}
           pathOptions={{
             color: "#ff0000",
@@ -121,7 +130,7 @@ const LocationPicker = ({
         <LocationMarker />
         <MapCenterUpdater />
 
-        {(location.lat && location.lon) && (
+        {location.lat && location.lon && (
           <Polyline
             positions={[
               [batchLocation.lat, batchLocation.lon],
@@ -130,10 +139,10 @@ const LocationPicker = ({
             pathOptions={{ color: "blue", dashArray: "5, 10" }}
           >
             <Popup>
-              Distance: {distance > 1000 
+              Distance:{" "}
+              {distance > 1000
                 ? `${(distance / 1000).toFixed(2)} km`
-                : `${Math.round(distance)} meters`
-              }
+                : `${Math.round(distance)} meters`}
             </Popup>
           </Polyline>
         )}
@@ -141,7 +150,5 @@ const LocationPicker = ({
     </div>
   );
 };
-
-
 
 export default LocationPicker;
