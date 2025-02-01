@@ -23,7 +23,7 @@ const MarkStudentAttendance = () => {
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [batchStudents, setBatchStudents] = useState([]);
-  const [batchData, setBatchData] = useState({});
+  const [batchData, setBatchData] = useState(null);
   const [studentAttendance, setStudentAttendance] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
@@ -83,6 +83,7 @@ const MarkStudentAttendance = () => {
           );
           const data1 = await device.json();
           const data2 = await batch.json();
+
           setLocationText({
             device: data1.locality || data1.city || "Unknown location",
             batch: data2.locality || data2.city || "Unknown location",
@@ -101,7 +102,10 @@ const MarkStudentAttendance = () => {
   const fetchBatchData = async (batchId) => {
     try {
       const data = await batchService.getBatch(batchId);
-      setBatchData(data);
+      const parsedData = data?.attendanceHolidays.map((item) =>
+        JSON.parse(item)
+      );
+      setBatchData({ ...data, attendanceHolidays: parsedData || [] });
     } catch (error) {
       console.log(error);
     }
@@ -150,9 +154,26 @@ const MarkStudentAttendance = () => {
           attendanceRecords: [],
         });
       } else {
-        setStudentAttendance({ ...data, userName: selectedStudent?.userName });
+        const filterWithoutHolidays = data.attendanceRecords.filter(
+          (item) =>
+            !item.isHoliday &&
+            !batchData.attendanceHolidays.some(
+              (holiday) => holiday.date === item.date
+            )
+        );
+
+        console.log(filterWithoutHolidays);
+        setStudentAttendance({
+          ...data,
+          attendanceRecords: filterWithoutHolidays,
+          userName: selectedStudent?.userName,
+        });
         calculateStats({
-          data,
+          data: {
+            ...data,
+            attendanceRecords: filterWithoutHolidays,
+            userName: selectedStudent?.userName,
+          },
           setAttendanceStats,
         });
       }
@@ -170,13 +191,18 @@ const MarkStudentAttendance = () => {
       navigate("/profile");
       return;
     }
-    fetchBatchData(profile.batchId);
-    if (isTeacher) {
-      fetchBatchStudents();
+    if (!batchData) {
+      fetchBatchData(profile.batchId);
     } else {
-      fetchStudentAttendance(profile.userId);
+      if (isTeacher) {
+        fetchBatchStudents();
+      } else {
+        fetchStudentAttendance(profile.userId);
+      }
     }
+  }, [batchData]);
 
+  useEffect(() => {
     // Get current location and watch for changes
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -259,9 +285,21 @@ const MarkStudentAttendance = () => {
 
   const markUserAttendance = async () => {
     setIsLoading(true);
+    const filterOutHolidays = studentAttendance.attendanceRecords.filter(
+      (item) =>
+        typeof item === "object" &&
+        !item.isHoliday &&
+        !batchData.attendanceHolidays.some(
+          (holiday) => holiday.date === item.date
+        )
+    );
     try {
       const data = await attendanceService.markUserAttendance(
-        studentAttendance
+        {
+          ...studentAttendance,
+          attendanceRecords: filterOutHolidays,
+        },
+        false
       );
       setStudentAttendance(data || []);
       calculateStats({ data, setAttendanceStats });
@@ -276,10 +314,24 @@ const MarkStudentAttendance = () => {
 
   const tileContent = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
+    const holiday = batchData.attendanceHolidays.find(
+      (holiday) => holiday.date === formattedDate
+    );
+    if (holiday) {
+      return (
+        <div className="w-full h-full flex flex-col cursor-pointer">
+          <div className="flex flex-col justify-center items-center text-center text-xs p-1">
+            <div className="italic text-red-600 mb-1">
+              {holiday?.holidayText || "Holiday"}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const selectedDateData = studentAttendance.attendanceRecords.find(
       (item) => item.date === formattedDate
     );
-
     const handleClick = (e) => {
       if (e.type === "click" && e.detail === 2) {
         openModal(date);
@@ -302,11 +354,6 @@ const MarkStudentAttendance = () => {
               {selectedDateData.reason}
             </div>
           )}
-          {selectedDateData?.isHoliday && (
-            <div className="italic text-gray-600">
-              {selectedDateData.holidayText}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -314,10 +361,16 @@ const MarkStudentAttendance = () => {
 
   const tileClassName = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
+    const holiday = batchData?.attendanceHolidays.find(
+      (item) => item.date === formattedDate
+    );
+    if (holiday) {
+      return "holiday-tile";
+    }
+
     const selectedDateData = studentAttendance.attendanceRecords.find(
       (item) => item.date === formattedDate
     );
-
     if (!selectedDateData) return null;
     if (selectedDateData.isHoliday) return "holiday-tile";
     if (selectedDateData.attendanceStatus === "Present") return "present-tile";
@@ -448,6 +501,7 @@ const MarkStudentAttendance = () => {
                         ...prev,
                         inTime: "09:30",
                         outTime: "17:00",
+                        isHoliday: false,
                         attendanceStatus: "Present",
                       }))
                     }
@@ -465,6 +519,7 @@ const MarkStudentAttendance = () => {
                         ...prev,
                         inTime: "",
                         outTime: "",
+                        isHoliday: false,
                         attendanceStatus: "Absent",
                       }))
                     }
@@ -551,6 +606,7 @@ const MarkStudentAttendance = () => {
                     setModalData((prev) => ({
                       ...prev,
                       holidayText: e.target.value,
+                      isHoliday: true,
                     }))
                   }
                   className="block w-full p-2 border"
@@ -562,6 +618,7 @@ const MarkStudentAttendance = () => {
                       setModalData((prev) => ({
                         ...prev,
                         holidayText: "Sunday",
+                        isHoliday: true,
                       }))
                     }
                     className="p-2 bg-gray-200 rounded"
@@ -573,6 +630,7 @@ const MarkStudentAttendance = () => {
                       setModalData((prev) => ({
                         ...prev,
                         holidayText: "2nd Saturday",
+                        isHoliday: true,
                       }))
                     }
                     className="p-2 bg-gray-200 rounded"
@@ -584,6 +642,7 @@ const MarkStudentAttendance = () => {
                       setModalData((prev) => ({
                         ...prev,
                         holidayText: "4th Saturday",
+                        isHoliday: true,
                       }))
                     }
                     className="p-2 bg-gray-200 rounded"

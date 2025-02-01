@@ -9,6 +9,7 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import { calculateStats } from "./CalculateStats";
+import batchService from "../../../../appwrite/batchService";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,9 +31,21 @@ const CheckAttendance = () => {
     absentDays: 0,
     holidayDays: 0,
   });
+  const [batchData, setBatchData] = useState(null);
 
-  const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+
+  const fetchBatchData = async (batchId) => {
+    try {
+      const data = await batchService.getBatch(batchId);
+      const parsedData = data?.attendanceHolidays.map((item) =>
+        JSON.parse(item)
+      );
+      setBatchData({ ...data, attendanceHolidays: parsedData || [] });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const fetchAttendance = async () => {
     setIsLoading(true);
@@ -47,8 +60,11 @@ const CheckAttendance = () => {
   };
 
   useEffect(() => {
-    fetchAttendance();
-  }, []);
+    if (profile) {
+      fetchAttendance();
+      fetchBatchData(profile.batchId);
+    }
+  }, [profile]);
 
   useEffect(() => {
     const monthData = attendanceStats.monthlyAttendance[currentMonth] || {
@@ -66,6 +82,14 @@ const CheckAttendance = () => {
 
   const tileClassName = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
+
+    const holiday = batchData?.attendanceHolidays.find(
+      (item) => item.date === formatedDate
+    );
+    if (holiday) {
+      return "holiday-tile";
+    }
+
     const selectedDateData = attendance.find(
       (item) => item.date === formatedDate
     );
@@ -78,6 +102,22 @@ const CheckAttendance = () => {
 
   const tileContent = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
+
+    const holiday = batchData.attendanceHolidays.find(
+      (holiday) => holiday.date === formatedDate
+    );
+    if (holiday) {
+      return (
+        <div className="w-full h-full flex flex-col cursor-pointer">
+          <div className="flex flex-col justify-center items-center text-center text-xs p-1">
+            <div className="italic text-red-600 mb-1">
+              {holiday?.holidayText || "Holiday"}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const selectedDateData = attendance.find(
       (item) => item.date === formatedDate
     );

@@ -16,6 +16,7 @@ const CustomCalendar = ({
   circleRadius = -Infinity,
   canMarkPrevious,
   attendanceTime,
+  enableNextTiles = false,
 }) => {
   const user = useSelector(selectUser);
   const isTeacher = user.labels.includes("Teacher");
@@ -40,7 +41,7 @@ const CustomCalendar = ({
 
     return (
       view === "month" &&
-      (date > today ||
+      ((!enableNextTiles && date > today) ||
         date < adjustedStartDate ||
         (!isTeacher &&
           (!isWithinRange ||

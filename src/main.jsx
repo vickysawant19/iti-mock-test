@@ -46,6 +46,7 @@ import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
 import { Analytics } from "@vercel/analytics/react";
+import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
 
 const router = (
   <Router>
@@ -86,6 +87,7 @@ const router = (
             <Route path="delete/:batchId" element={<div>Delete</div>} />
           </Route>
           <Route path="attaindance">
+            <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttaindance />} />
             <Route
               path="mark-student-attendance"

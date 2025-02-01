@@ -188,7 +188,7 @@ const Navbar = () => {
               <NavLink
                 to="/"
                 className={({ isActive }) =>
-                  `font-semibold text-gray-800 text-sm text-center w-full hover:text-blue-600 transition-colors ${
+                  `font-bold text-gray-800  text-center w-full hover:text-blue-600 transition-colors ${
                     isActive ? "text-blue-600" : ""
                   }`
                 }
@@ -295,6 +295,12 @@ const Navbar = () => {
                         icon={FaBookReader}
                       >
                         Daily Diary
+                      </MenuItem>
+                      <MenuItem
+                        to="/attaindance/mark-holidays"
+                        icon={FaBookReader}
+                      >
+                        Mark Holidays
                       </MenuItem>
                       <MenuItem
                         to="/attaindance/mark-attendance"

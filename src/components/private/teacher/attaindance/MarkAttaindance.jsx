@@ -11,6 +11,7 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
 import CustomCalendar from "./Calender";
 import CustomInput from "../../../components/CustomInput";
+import batchService from "../../../../appwrite/batchService";
 
 const MarkAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,7 @@ const MarkAttendance = () => {
   const [dateWithHoliday, setDateWithHoliday] = useState(new Set());
   const [isHoliday, setIsHoliday] = useState(false);
   const [holidayText, setHolidayText] = useState("");
+  const [batchData, setBatchData] = useState(null);
 
   const DEFAULT_IN_TIME = "09:30";
   const DEFAULT_OUT_TIME = "17:00";
@@ -36,6 +38,16 @@ const MarkAttendance = () => {
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+    // const holiday =
+    //   batchData &&
+    //   batchData.attendanceHolidays.find(
+    //     (holiday) => holiday.date === formattedDate
+    //   );
+    // if (holiday) {
+    //   return;
+    // }
+
     let markedCount = 0;
     let unmarkCount = 0;
     let presentCount = 0;
@@ -107,6 +119,18 @@ const MarkAttendance = () => {
     setAttendance({ ...initialAttendance, stats });
   };
 
+  const fetchBatchData = async (batchId) => {
+    try {
+      const data = await batchService.getBatch(batchId);
+      const parsedData = data?.attendanceHolidays.map((item) =>
+        JSON.parse(item)
+      );
+      setBatchData({ ...data, attendanceHolidays: parsedData || [] });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
@@ -145,7 +169,7 @@ const MarkAttendance = () => {
       navigate("/profile");
       return;
     }
-
+    fetchBatchData(profile.batchId);
     fetchBatchStudents();
   }, []);
 
@@ -226,7 +250,11 @@ const MarkAttendance = () => {
   const tileClassName = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
 
-    if (dateWithHoliday.has(formattedDate)) {
+    const holiday = batchData?.attendanceHolidays.find(
+      (item) => item.date === formattedDate
+    );
+
+    if (holiday) {
       return "holiday-tile";
     }
 
@@ -235,6 +263,24 @@ const MarkAttendance = () => {
     }
 
     return null;
+  };
+
+  const tileContent = ({ date }) => {
+    const formatedDate = format(date, "yyyy-MM-dd");
+    const holiday = batchData?.attendanceHolidays.find(
+      (holiday) => holiday.date === formatedDate
+    );
+    if (holiday) {
+      return (
+        <div className="w-full h-full flex flex-col cursor-pointer">
+          <div className="flex flex-col justify-center items-center text-center text-xs p-1">
+            <div className="italic text-red-600 mb-1">
+              {holiday?.holidayText || "Holiday"}
+            </div>
+          </div>
+        </div>
+      );
+    }
   };
 
   if (isLoading) {
@@ -256,6 +302,7 @@ const MarkAttendance = () => {
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 tileClassName={tileClassName}
+                tileContent={tileContent}
               />
               <style>
                 {`

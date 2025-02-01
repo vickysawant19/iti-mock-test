@@ -61,7 +61,7 @@ export class AttendanceService {
     }
   }
 
-  async markUserAttendance(record) {
+  async markUserAttendance(record, keepPrevious = true) {
     try {
       const userAttendance = await this.getUserAttendance(
         record.userId,
@@ -84,13 +84,20 @@ export class AttendanceService {
       }
       //if user attenddance already present
       const newAttendanceRecords = record.attendanceRecords;
-      const updatedUserAttendance = [
-        ...userAttendance.attendanceRecords.filter(
-          (item) =>
-            !newAttendanceRecords.some((newItem) => newItem.date === item.date)
-        ),
-        ...newAttendanceRecords,
-      ];
+
+      let updatedUserAttendance = newAttendanceRecords;
+
+      if (keepPrevious) {
+        updatedUserAttendance = [
+          ...userAttendance.attendanceRecords.filter(
+            (item) =>
+              !newAttendanceRecords.some(
+                (newItem) => newItem.date === item.date
+              )
+          ),
+          ...newAttendanceRecords,
+        ];
+      }
 
       const updatedAttendeceRes = await this.database.updateDocument(
         conf.databaseId,
