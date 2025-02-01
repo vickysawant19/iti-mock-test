@@ -16,6 +16,7 @@ import { Query } from "appwrite";
 import batchService from "../../../../appwrite/batchService";
 import { haversineDistance } from "./calculateDistance";
 import LocationPicker from "../components/LocationPicker";
+import AttendanceStatus from "./AttendanceStatus";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -352,59 +353,51 @@ const MarkStudentAttendance = () => {
           </button>
         )}
 
-        {studentAttendance && distance < 1000 && (
-          <button
-            onClick={markUserAttendance}
-            className=" bg-blue-500 text-white rounded p-2 flex items-center justify-center w-40"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              "Mark Attendance"
-            )}
-          </button>
-        )}
+        {(isTeacher || distance < batchData?.circleRadius) &&
+          studentAttendance && (
+            <button
+              onClick={markUserAttendance}
+              className=" bg-blue-500 text-white rounded p-2 flex items-center justify-center w-40"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Mark Attendance"
+              )}
+            </button>
+          )}
       </div>
       {/* Location Map */}
-      <div
-        className={`w-full ${
-          isShowMap ? "h-80" : "h-0"
-        } transition-all ease-linear duration-300  overflow-hidden p-4`}
-      >
-        {isShowMap && (
-          <LocationPicker
-            deviceLocation={deviceLocation}
-            batchLocation={batchData?.location}
-            disableSelection={true}
-            circleRadius={batchData?.circleRadius}
-          />
-        )}
-      </div>
-
-      {!isTeacher && (
+      <div className="w-full flex  flex-wrap p-4 gap-4 ">
         <div
-          className={`text-center my-2 p-1 rounded text-sm mx-auto max-w-fit ${
-            distance > 1000 ? "bg-red-500" : "bg-green-500"
-          }`}
+          className={`w-full max-w-md mx-auto rounded-md  ${
+            isShowMap ? "h-80" : "h-0"
+          } transition-all ease-linear duration-300  overflow-hidden`}
         >
-          <p>
-            You are{" "}
-            {distance > 1000
-              ? `${(distance / 1000).toFixed(2)} km`
-              : `${distance.toFixed(2)} meters`}{" "}
-            away from the {locationText.batch} location.{" "}
-            {distance > 1000
-              ? "You cannot mark attendance."
-              : "You can mark attendance."}
-          </p>
-          <p>
-            Current Time: {format(new Date(), "HH:mm")} | Marking Time:{" "}
-            {batchData?.attendanceTime?.start || ""} -{" "}
-            {batchData?.attendanceTime?.end || ""}
-          </p>
+          {isShowMap && (
+            <LocationPicker
+              deviceLocation={deviceLocation}
+              batchLocation={batchData?.location}
+              disableSelection={true}
+              circleRadius={batchData?.circleRadius}
+            />
+          )}
         </div>
-      )}
+        <div
+          className={`w-full max-w-md mx-auto rounded-md  ${
+            isShowMap ? "h-80" : "h-0"
+          } transition-all ease-linear duration-300  overflow-hidden`}
+        >
+          {isShowMap && (
+            <AttendanceStatus
+              batchData={batchData}
+              distance={distance}
+              locationText={locationText}
+            />
+          )}
+        </div>
+      </div>
       <div className="">
         {isLoadingAttendance ? (
           <div className="flex justify-center">
@@ -425,6 +418,7 @@ const MarkStudentAttendance = () => {
                 distance={distance}
                 canMarkPrevious={batchData.canMarkPrevious}
                 attendanceTime={batchData.attendanceTime}
+                circleRadius={batchData.circleRadius}
               />
               <ShowStats
                 attendance={currentMonthData}

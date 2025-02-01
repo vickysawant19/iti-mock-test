@@ -13,6 +13,7 @@ const CustomCalendar = ({
   startDate = new Date(2020, 1, 1),
   handleActiveStartDateChange,
   distance = 1200,
+  circleRadius = -Infinity,
   canMarkPrevious,
   attendanceTime,
 }) => {
@@ -23,7 +24,7 @@ const CustomCalendar = ({
     const today = new Date();
     const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
-    const isWithinRange = distance <= 1000;
+    const isWithinRange = distance <= circleRadius;
 
     const attendanceStartTime = new Date(
       `${new Date().toDateString()} ${attendanceTime?.start || "09:00"}`
