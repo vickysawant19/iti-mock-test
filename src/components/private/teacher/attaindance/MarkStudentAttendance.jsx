@@ -72,7 +72,7 @@ const MarkStudentAttendance = () => {
   });
 
   React.useEffect(() => {
-    if (deviceLocation && batchData?.location) {
+    if (!isTeacher && deviceLocation && batchData?.location) {
       const fetchLocationText = async () => {
         try {
           const device = await fetch(
@@ -156,7 +156,6 @@ const MarkStudentAttendance = () => {
       } else {
         const filterWithoutHolidays = data.attendanceRecords.filter(
           (item) =>
-            !item.isHoliday &&
             !batchData.attendanceHolidays.some(
               (holiday) => holiday.date === item.date
             )
@@ -201,6 +200,8 @@ const MarkStudentAttendance = () => {
   }, [batchData]);
 
   useEffect(() => {
+    if (isTeacher) return;
+
     // Get current location and watch for changes
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -250,8 +251,6 @@ const MarkStudentAttendance = () => {
         inTime: "09:30",
         outTime: "17:00",
         reason: "",
-        isHoliday: false,
-        holidayText: "",
         isMarked: false,
       };
     }
@@ -286,7 +285,6 @@ const MarkStudentAttendance = () => {
     const filterOutHolidays = studentAttendance.attendanceRecords.filter(
       (item) =>
         typeof item === "object" &&
-        !item.isHoliday &&
         !batchData.attendanceHolidays.some(
           (holiday) => holiday.date === item.date
         )
@@ -342,7 +340,7 @@ const MarkStudentAttendance = () => {
         onClick={handleClick}
       >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-          {!selectedDateData?.isHoliday && selectedDateData?.inTime && (
+          {selectedDateData?.inTime && (
             <div className="italic text-gray-600 mb-1">
               {`In: ${selectedDateData.inTime} Out: ${selectedDateData.outTime}`}
             </div>
@@ -365,16 +363,15 @@ const MarkStudentAttendance = () => {
     if (holiday) {
       return "holiday-tile";
     }
-
     const selectedDateData = studentAttendance.attendanceRecords.find(
       (item) => item.date === formattedDate
     );
     if (!selectedDateData) return null;
-    if (selectedDateData.isHoliday) return "holiday-tile";
     if (selectedDateData.attendanceStatus === "Present") return "present-tile";
     return "absent-tile";
   };
 
+  console.log(studentAttendance);
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-6">
       {/* Top Actions Bar */}
@@ -507,7 +504,6 @@ const MarkStudentAttendance = () => {
                         ...prev,
                         inTime: "09:30",
                         outTime: "17:00",
-                        isHoliday: false,
                         attendanceStatus: "Present",
                       }))
                     }
@@ -525,7 +521,6 @@ const MarkStudentAttendance = () => {
                         ...prev,
                         inTime: "",
                         outTime: "",
-                        isHoliday: false,
                         attendanceStatus: "Absent",
                       }))
                     }
@@ -540,118 +535,59 @@ const MarkStudentAttendance = () => {
                 </div>
               )}
 
-              {/* Holiday Button */}
-              <button
-                onClick={() =>
-                  setModalData((prev) => ({
-                    ...prev,
-                    inTime: "",
-                    outTime: "",
-                    isHoliday: !prev.isHoliday,
-                  }))
-                }
-                className={`w-full p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  modalData.isHoliday
-                    ? "bg-yellow-500 text-white"
-                    : "bg-gray-100 hover:bg-gray-200"
-                }`}
-              >
-                Holiday
-              </button>
-
               {/* Time Inputs */}
-              {!modalData.isHoliday && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      In Time:
-                    </label>
-                    <input
-                      type="time"
-                      value={modalData.inTime}
-                      onChange={(e) =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          inTime: e.target.value,
-                        }))
-                      }
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Out Time:
-                    </label>
-                    <input
-                      type="time"
-                      value={modalData.outTime}
-                      onChange={(e) =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          outTime: e.target.value,
-                        }))
-                      }
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    In Time:
+                  </label>
+                  <input
+                    type="time"
+                    value={modalData.inTime}
+                    onChange={(e) =>
+                      setModalData((prev) => ({
+                        ...prev,
+                        inTime: e.target.value,
+                      }))
+                    }
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Out Time:
+                  </label>
+                  <input
+                    type="time"
+                    value={modalData.outTime}
+                    onChange={(e) =>
+                      setModalData((prev) => ({
+                        ...prev,
+                        outTime: e.target.value,
+                      }))
+                    }
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
 
-              {/* Reason/Holiday Text Input */}
-              {!modalData.isHoliday ? (
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Reason:
-                  </label>
-                  <textarea
-                    value={modalData.reason}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        reason: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Holiday Type:
-                  </label>
-                  <textarea
-                    value={modalData.holidayText}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        holidayText: e.target.value,
-                        isHoliday: true,
-                      }))
-                    }
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Sunday, 2nd Saturday, 4th Saturday"
-                    rows={2}
-                  />
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {["Sunday", "2nd Saturday", "4th Saturday"].map((text) => (
-                      <button
-                        key={text}
-                        onClick={() =>
-                          setModalData((prev) => ({
-                            ...prev,
-                            holidayText: text,
-                            isHoliday: true,
-                          }))
-                        }
-                        className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors"
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Reason  Text Input */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Reason:
+                </label>
+                <textarea
+                  value={modalData.reason}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      reason: e.target.value,
+                    }))
+                  }
+                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3 mt-6">
