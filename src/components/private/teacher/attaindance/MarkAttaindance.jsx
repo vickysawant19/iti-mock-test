@@ -49,7 +49,6 @@ const MarkAttendance = () => {
       console.log(error);
     }
   };
-  console.log(dateWithHoliday);
 
   const fetchBatchStudents = async () => {
     setIsLoading(true);
@@ -101,66 +100,57 @@ const MarkAttendance = () => {
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
+    // Directly set holiday flag
+    setIsHoliday(dateWithHoliday.has(formattedDate));
+
     let markedCount = 0;
     let unmarkCount = 0;
     let presentCount = 0;
     let absentCount = 0;
-    let totalCount = students.length;
+    const totalCount = students.length;
+
+    // Preprocess batchAttendance into a Map for O(1) lookups by userId
+    const attendanceMap = new Map();
+    batchAttendance.forEach((record) => {
+      attendanceMap.set(record.userId, record.attendanceRecords);
+    });
+
     const initialAttendance = students.reduce((acc, student) => {
-      // Pre-filter batchAttendance for the specific date to avoid repeated searches
-      const dateRecords = batchAttendance
-        .map((record) =>
-          record.attendanceRecords.find((r) => r.date === formattedDate)
-        )
-        .filter(Boolean);
-
-      const existingRecord = batchAttendance.find(
-        (record) => record.userId === student.userId
-      );
-
-      const attendanceRecord = existingRecord?.attendanceRecords.find(
+      // Get the attendance records for the student
+      const records = attendanceMap.get(student.userId) || [];
+      // Find the record that matches the formatted date
+      const attendanceRecord = records.find(
         (record) => record.date === formattedDate
       );
 
-      if (attendanceRecord) {
+      if (attendanceRecord && !dateWithHoliday.has(formattedDate)) {
         acc[student.userId] = {
           isMarked: true,
           attendanceStatus: attendanceRecord.attendanceStatus,
           inTime: attendanceRecord.inTime,
           outTime: attendanceRecord.outTime,
           reason: attendanceRecord.reason || "",
-          isHoliday: attendanceRecord.isHoliday || false,
-          holidayText: attendanceRecord.holidayText || "",
         };
         markedCount++;
-        attendanceRecord.attendanceStatus === "Present"
-          ? presentCount++
-          : absentCount++;
-
-        // Check holiday status
-        const holidayCount = dateRecords.filter((r) => r.isHoliday).length;
-        const shouldBeHoliday = holidayCount > dateRecords.length / 2;
-
-        setIsHoliday(shouldBeHoliday);
-        setHolidayText(
-          shouldBeHoliday ? attendanceRecord.holidayText || "" : ""
-        );
+        if (attendanceRecord.attendanceStatus === "Present") {
+          presentCount++;
+        } else {
+          absentCount++;
+        }
       } else {
         acc[student.userId] = {
           isMarked: false,
-          attendanceStatus: "Present",
+          attendanceStatus: "Present", // default status when unmarked
           inTime: DEFAULT_IN_TIME,
           outTime: DEFAULT_OUT_TIME,
           reason: "",
-          isHoliday: false,
-          holidayText: "",
         };
         unmarkCount++;
       }
       return acc;
     }, {});
 
-    // You can store these stats in state if needed
+    // Consolidate stats
     const stats = {
       markedCount,
       unmarkCount,
@@ -168,6 +158,8 @@ const MarkAttendance = () => {
       absentCount,
       totalCount,
     };
+
+    // Merge attendance records with stats
     setAttendance({ ...initialAttendance, stats });
   };
 
@@ -209,6 +201,11 @@ const MarkAttendance = () => {
     setIsSubmitting(true);
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      if (dateWithHoliday.has(formattedDate)) {
+        toast.error("Cant mark attendance Its a Holiday");
+        return;
+      }
+
       const response = await Promise.all(
         students.map((student) => {
           const studentAttendance = attendance[student.userId];
@@ -220,8 +217,6 @@ const MarkAttendance = () => {
               {
                 date: formattedDate,
                 ...studentAttendance,
-                isHoliday,
-                holidayText,
               },
             ],
             admissionDate: student.enrolledAt,
@@ -230,11 +225,24 @@ const MarkAttendance = () => {
         })
       );
       setBatchAttendance(response);
-      // Add the new date to dates with attendance
-      isHoliday
-        ? setDateWithHoliday((prev) => new Set([...prev, formattedDate]))
-        : "";
-      setDatesWithAttendance((prev) => new Set([...prev, formattedDate]));
+      setDatesWithAttendance((prev) => {
+        const newMap = new Map(prev); // Clone previous Map
+        const temp = new Map();
+        temp.set(formattedDate, { P: 0, A: 0 });
+        Object.values(attendance).forEach((record) => {
+          if (!record.attendanceStatus) return;
+          // Get or initialize the data for the given date
+          const existingData = temp.get(formattedDate);
+          const updatedData = {
+            P: existingData.P + (record.attendanceStatus === "Present" ? 1 : 0),
+            A: existingData.A + (record.attendanceStatus === "Absent" ? 1 : 0),
+          };
+          temp.set(formattedDate, updatedData);
+        });
+        newMap.set(formattedDate, temp.get(formattedDate));
+        return newMap;
+      });
+
       alert("Attendance marked successfully!");
     } catch (error) {
       console.error("Error updating attendance:", error);
