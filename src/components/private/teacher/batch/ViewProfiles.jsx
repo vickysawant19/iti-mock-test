@@ -3,20 +3,12 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectProfile } from "../../../../store/profileSlice";
 import { AiOutlineEdit } from "react-icons/ai";
+import { format } from "date-fns";
 
 const ViewProfiles = ({ students }) => {
   const profile = useSelector(selectProfile);
   students = students.filter((item) => item.userId !== profile.userId);
 
-  const handleEditProfile = (userId) => {
-    console.log("Edit profile for:", userId);
-    // Add your edit profile logic here
-  };
-
-  const handleMessage = (userId) => {
-    console.log("Message user:", userId);
-    // Add your messaging logic here
-  };
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {students.map((student, index) => (
@@ -62,6 +54,12 @@ const ViewProfiles = ({ students }) => {
                 <span className="text-gray-500">Phone:</span>{" "}
                 <span className="font-medium">{student.phone || "N/A"}</span>
               </div>
+              <div className="text-sm">
+                <span className="text-gray-500">Admission Date:</span>{" "}
+                <span className="font-medium">
+                  {format(student.enrolledAt, "dd-MM-yyyy") || "N/A"}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -75,14 +73,10 @@ const ViewProfiles = ({ students }) => {
                 to={`/manage-batch/edit/${student.userId}`}
                 className=" flex items-center gap-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
               >
-                <AiOutlineEdit
-                  className=""
-                  size={24}
-                />
+                <AiOutlineEdit className="" size={24} />
                 <h1 className="font-bold"> Edit</h1>
               </Link>
-           
-        
+
               <a
                 href={`tel:${student.phone}`}
                 className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"

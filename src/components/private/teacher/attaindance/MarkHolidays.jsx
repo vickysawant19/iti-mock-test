@@ -56,7 +56,6 @@ const MarkHolidays = () => {
     ]);
     setModalData({});
     setShowModal(false);
-    toast.success("Holiday added successfully");
   };
 
   const openModal = (date) => {
@@ -80,7 +79,6 @@ const MarkHolidays = () => {
       )
     );
     setShowModal(false);
-    toast.success("Holiday removed successfully");
   };
 
   const handleSubmit = async () => {

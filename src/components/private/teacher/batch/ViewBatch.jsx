@@ -70,8 +70,7 @@ const ViewBatch = () => {
           studentId: student ? student.studentId : null,
         };
       });
-      // setStudentAttendance(Array.isArray(data) ? data : [data]);
-      // setAttendanceStats(data.map((item) => calculateStats({ data: item })));
+
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
           ? studentsWithStudentIds

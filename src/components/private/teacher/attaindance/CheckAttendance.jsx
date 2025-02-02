@@ -30,7 +30,8 @@ const CheckAttendance = () => {
     absentDays: 0,
     holidayDays: 0,
   });
-  const [batchData, setBatchData] = useState(null);
+  const [holidays, setHolidays] = useState(new Map());
+  const [workingDays, setWorkingDays] = useState(new Map());
 
   const profile = useSelector(selectProfile);
 
@@ -40,7 +41,9 @@ const CheckAttendance = () => {
       const parsedData = data?.attendanceHolidays.map((item) =>
         JSON.parse(item)
       );
-      setBatchData({ ...data, attendanceHolidays: parsedData || [] });
+      const holiday = new Map();
+      parsedData.forEach((item) => holiday.set(item.date, item.holidayText));
+      setHolidays(holiday);
     } catch (error) {
       console.log(error);
     }
@@ -50,6 +53,9 @@ const CheckAttendance = () => {
     setIsLoading(true);
     try {
       const data = await attendanceService.getUserAttendance(profile.userId);
+      const working = new Map();
+      data?.attendanceRecords.forEach((item) => working.set(item.date, item));
+      setWorkingDays(working);
       calculateStats({ data, setAttendance, setAttendanceStats });
     } catch (error) {
       console.log(error);
@@ -81,67 +87,39 @@ const CheckAttendance = () => {
 
   const tileClassName = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
-
-    const holiday = batchData?.attendanceHolidays.find(
-      (item) => item.date === formatedDate
-    );
-    if (holiday) {
+    if (holidays.has(formatedDate)) {
       return "holiday-tile";
     }
-
-    const selectedDateData = attendance.find(
-      (item) => item.date === formatedDate
-    );
-
+    const selectedDateData = workingDays.get(formatedDate);
     if (!selectedDateData) return null;
-    if (selectedDateData.isHoliday) return "holiday-tile";
     if (selectedDateData.attendanceStatus === "Present") return "present-tile";
     return "absent-tile";
   };
 
   const tileContent = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
-
-    const holiday = batchData?.attendanceHolidays.find(
-      (holiday) => holiday.date === formatedDate
-    );
-    if (holiday) {
+    if (holidays.has(formatedDate)) {
       return (
         <div className="w-full h-full flex flex-col cursor-pointer">
           <div className="flex flex-col justify-center items-center text-center text-xs p-1">
             <div className="italic text-red-600 mb-1">
-              {holiday?.holidayText || "Holiday"}
+              {holidays.get(formatedDate) || "Holiday"}
             </div>
           </div>
         </div>
       );
     }
-
-    const selectedDateData = attendance.find(
-      (item) => item.date === formatedDate
-    );
+    const selectedDateData = workingDays.get(formatedDate);
 
     if (!selectedDateData) return null;
-
     return (
       <div className="w-full h-full flex flex-col">
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-          {!selectedDateData.isHoliday && (
-            <div className="italic text-gray-600 mb-1">
-              {selectedDateData.inTime && `In: ${selectedDateData.inTime} `}
-              {selectedDateData.outTime && `Out: ${selectedDateData.outTime}`}
-            </div>
-          )}
-          {selectedDateData.reason && (
-            <div className="italic text-gray-600">
-              {selectedDateData.reason}
-            </div>
-          )}
-          {selectedDateData.isHoliday && (
-            <div className="italic text-gray-600">
-              {selectedDateData.holidayText}
-            </div>
-          )}
+          <div className="italic text-gray-600 mb-1">
+            {selectedDateData.inTime && `In: ${selectedDateData.inTime} `}
+            {selectedDateData.outTime && `Out: ${selectedDateData.outTime}`}
+          </div>
+          <div className="italic text-gray-600">{selectedDateData.reason}</div>
         </div>
       </div>
     );

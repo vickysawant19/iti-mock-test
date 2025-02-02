@@ -25,6 +25,9 @@ const MarkStudentAttendance = () => {
   const [batchStudents, setBatchStudents] = useState([]);
   const [batchData, setBatchData] = useState(null);
   const [studentAttendance, setStudentAttendance] = useState(null);
+  const [holidays, setHolidays] = useState(new Map());
+  const [workingDays, setWorkingDays] = useState(new Map());
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
   const [deviceLocation, setDeviceLocation] = useState({
@@ -105,6 +108,9 @@ const MarkStudentAttendance = () => {
       const parsedData = data?.attendanceHolidays.map((item) =>
         JSON.parse(item)
       );
+      const newMap = new Map();
+      parsedData.forEach((item) => newMap.set(item.date, item.holidayText));
+      setHolidays(newMap);
       setBatchData({ ...data, attendanceHolidays: parsedData || [] });
     } catch (error) {
       console.log(error);
@@ -154,6 +160,10 @@ const MarkStudentAttendance = () => {
           attendanceRecords: [],
         });
       } else {
+        const newMap = new Map();
+        data.attendanceRecords.forEach((item) => newMap.set(item.date, item));
+        setWorkingDays(newMap);
+
         const filterWithoutHolidays = data.attendanceRecords.filter(
           (item) =>
             !batchData.attendanceHolidays.some(
@@ -273,6 +283,26 @@ const MarkStudentAttendance = () => {
         attendanceRecords: updatedRecords,
       };
     });
+    setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
+    setIsModalOpen(false);
+  };
+
+  const removeAttendance = () => {
+    setStudentAttendance((prev) => {
+      const updatedRecords = prev.attendanceRecords.filter(
+        (record) => record.date !== modalData.date
+      );
+
+      return {
+        ...prev,
+        attendanceRecords: updatedRecords,
+      };
+    });
+    setWorkingDays((prevMap) => {
+      const newMap = new Map(prevMap);
+      newMap.delete(modalData.date);
+      return newMap;
+    });
     setIsModalOpen(false);
   };
 
@@ -283,12 +313,9 @@ const MarkStudentAttendance = () => {
   const markUserAttendance = async () => {
     setIsLoading(true);
     const filterOutHolidays = studentAttendance.attendanceRecords.filter(
-      (item) =>
-        typeof item === "object" &&
-        !batchData.attendanceHolidays.some(
-          (holiday) => holiday.date === item.date
-        )
+      (item) => typeof item === "object" && !holidays.has(item.date)
     );
+
     try {
       const data = await attendanceService.markUserAttendance(
         {
@@ -310,34 +337,24 @@ const MarkStudentAttendance = () => {
 
   const tileContent = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
-    const holiday = batchData.attendanceHolidays.find(
-      (holiday) => holiday.date === formattedDate
-    );
+    const holiday = holidays.get(formattedDate);
     if (holiday) {
       return (
         <div className="w-full h-full flex flex-col cursor-pointer">
           <div className="flex flex-col justify-center items-center text-center text-xs p-1">
             <div className="italic text-red-600 mb-1">
-              {holiday?.holidayText || "Holiday"}
+              {holiday || "Holiday"}
             </div>
           </div>
         </div>
       );
     }
-
-    const selectedDateData = studentAttendance.attendanceRecords.find(
-      (item) => item.date === formattedDate
-    );
-    const handleClick = (e) => {
-      if (e.type === "click" && e.detail === 2) {
-        openModal(date);
-      }
-    };
+    const selectedDateData = workingDays.get(formattedDate);
 
     return (
       <div
         className="w-full h-full flex flex-col cursor-pointer"
-        onClick={handleClick}
+        onDoubleClick={() => openModal(date)}
       >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
           {selectedDateData?.inTime && (
@@ -357,15 +374,11 @@ const MarkStudentAttendance = () => {
 
   const tileClassName = ({ date }) => {
     const formattedDate = format(date, "yyyy-MM-dd");
-    const holiday = batchData?.attendanceHolidays.find(
-      (item) => item.date === formattedDate
-    );
+    const holiday = holidays.get(formattedDate);
     if (holiday) {
       return "holiday-tile";
     }
-    const selectedDateData = studentAttendance.attendanceRecords.find(
-      (item) => item.date === formattedDate
-    );
+    const selectedDateData = workingDays.get(formattedDate);
     if (!selectedDateData) return null;
     if (selectedDateData.attendanceStatus === "Present") return "present-tile";
     return "absent-tile";
@@ -595,6 +608,12 @@ const MarkStudentAttendance = () => {
                   className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={removeAttendance}
+                  className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Remove marking
                 </button>
                 <button
                   onClick={saveAttendance}

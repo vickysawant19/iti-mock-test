@@ -11,6 +11,7 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
 import CustomCalendar from "./Calender";
 import batchService from "../../../../appwrite/batchService";
+import { selectUser } from "../../../../store/userSlice";
 
 const MarkAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,14 +25,18 @@ const MarkAttendance = () => {
 
   const [datesWithAttendance, setDatesWithAttendance] = useState(new Set());
   const [dateWithHoliday, setDateWithHoliday] = useState(new Map());
+
   const [isHoliday, setIsHoliday] = useState(false);
   const [holidayText, setHolidayText] = useState("");
+
   const [batchData, setBatchData] = useState(null);
 
   const DEFAULT_IN_TIME = "09:30";
   const DEFAULT_OUT_TIME = "17:00";
 
+  const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const isTeacher = user?.labels.includes("Teacher");
 
   const navigate = useNavigate();
 
@@ -219,7 +224,6 @@ const MarkAttendance = () => {
                 ...studentAttendance,
               },
             ],
-            admissionDate: student.enrolledAt,
           };
           return attendanceService.markUserAttendance(newRecord);
         })
@@ -371,6 +375,10 @@ const MarkAttendance = () => {
               setSelectedDate={setSelectedDate}
               tileClassName={tileClassName}
               tileContent={tileContent}
+              enableNextTiles={isTeacher}
+              startDate={((d) => (d ? new Date(d) : undefined))(
+                batchData?.start_date
+              )}
             />
           </div>
 
