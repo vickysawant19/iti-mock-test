@@ -35,7 +35,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState("");
 
-  const isTeacher = user.labels.includes("Teacher");
+  const isTeacher = user?.labels.includes("Teacher");
 
   const navigate = useNavigate();
   const location = useLocation();
