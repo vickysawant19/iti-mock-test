@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../../store/userSlice";
 import { selectProfile } from "../../../../store/profileSlice";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import CustomCalendar from "./Calender";
@@ -103,7 +102,7 @@ const CheckAttendance = () => {
   const tileContent = ({ date }) => {
     const formatedDate = format(date, "yyyy-MM-dd");
 
-    const holiday = batchData.attendanceHolidays.find(
+    const holiday = batchData?.attendanceHolidays.find(
       (holiday) => holiday.date === formatedDate
     );
     if (holiday) {
@@ -165,34 +164,59 @@ const CheckAttendance = () => {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+      {/* Profile Info */}
+      <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p>
+            <p className="text-sm text-gray-600">
               <strong>Name:</strong> {profile.userName}
             </p>
-            <p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">
               <strong>Email:</strong> {profile.email}
             </p>
-            <p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">
               <strong>Phone:</strong> {profile.phone}
             </p>
           </div>
         </div>
       </div>
-      <CustomCalendar
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        tileClassName={tileClassName}
-        tileContent={tileContent}
-        handleActiveStartDateChange={handleMonthChange}
-      />
-      <ShowStats
-        attendance={currentMonthData}
-        label={`Month Attendance - ${currentMonth}`}
-      />
-      <ShowStats attendance={attendanceStats} label={`Total Attendance`} />
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Calendar Section - Takes up 7 columns on desktop */}
+        <div className="lg:col-span-7">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <CustomCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              tileClassName={tileClassName}
+              tileContent={tileContent}
+              handleActiveStartDateChange={handleMonthChange}
+            />
+          </div>
+        </div>
+
+        {/* Stats Section - Takes up 5 columns on desktop */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Monthly Stats */}
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <ShowStats
+              attendance={currentMonthData}
+              label={`Month Attendance - ${currentMonth}`}
+            />
+          </div>
+
+          {/* Total Stats */}
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <ShowStats attendance={attendanceStats} label="Total Attendance" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -8,76 +8,65 @@ const AttendanceStatus = ({
   batchData,
   currentTime = new Date(),
 }) => {
-  // Check if current time is within attendance window
   const currentTimeStr = format(currentTime, "HH:mm");
   const isWithinTimeWindow =
     currentTimeStr >= batchData?.attendanceTime?.start &&
     currentTimeStr <= batchData?.attendanceTime?.end;
-
-  // Check if within radius
   const isWithinRadius = distance <= batchData.circleRadius;
-
-  // Can mark attendance only if both conditions are met
   const canMarkAttendance = isWithinRadius && isWithinTimeWindow;
 
+  const StatusIcon = ({ isValid }) =>
+    isValid ? (
+      <CheckCircle className="text-green-500 shrink-0" size={16} />
+    ) : (
+      <XCircle className="text-red-500 shrink-0" size={16} />
+    );
+
   return (
-    <div className="bg-white rounded-lg shadow p-4 max-w-md mx-auto h-fit">
-      <h3 className="text-lg font-semibold mb-4">Attendance Requirements</h3>
+    <div className="p-3 h-full w-full">
+      <h3 className="text-sm font-semibold mb-2">Attendance Status</h3>
 
-      {/* Location Status */}
-      <div className="space-y-4 mb-4">
-        <div className="flex items-start gap-2">
-          {isWithinRadius ? (
-            <CheckCircle className="text-green-500 mt-1" size={20} />
-          ) : (
-            <XCircle className="text-red-500 mt-1" size={20} />
-          )}
-          <div>
-            <p className="font-medium">Location Requirement</p>
-            <p className="text-sm text-gray-600">
-              You are{" "}
-              {distance > 1000
-                ? `${(distance / 1000).toFixed(2)} km`
-                : `${distance.toFixed(2)} meters`}{" "}
-              away from {locationText.batch}.
-              <br />
-              Must be within {batchData.circleRadius} meters.
-            </p>
+      <div className="space-y-2">
+        {/* Location Check */}
+        <div className="bg-gray-50 p-2 rounded">
+          <div className="flex items-center gap-2 mb-1">
+            <StatusIcon isValid={isWithinRadius} />
+            <span className="text-xs font-medium">Location Check</span>
           </div>
+          <p className="text-xs text-gray-600 pl-6">
+            {distance > 1000
+              ? `${(distance / 1000).toFixed(2)} km`
+              : `${distance.toFixed(0)}m`}{" "}
+            from {locationText.batch}
+            <br />
+            Required: within {batchData.circleRadius}m
+          </p>
         </div>
 
-        {/* Time Status */}
-        <div className="flex items-start gap-2">
-          {isWithinTimeWindow ? (
-            <CheckCircle className="text-green-500 mt-1" size={20} />
-          ) : (
-            <XCircle className="text-red-500 mt-1" size={20} />
-          )}
-          <div>
-            <p className="font-medium">Time Requirement</p>
-            <p className="text-sm text-gray-600">
-              Current time: {format(currentTime, "HH:mm")}
-              <br />
-              Marking window: {batchData?.attendanceTime?.start} -{" "}
-              {batchData?.attendanceTime?.end}
-            </p>
+        {/* Time Check */}
+        <div className="bg-gray-50 p-2 rounded">
+          <div className="flex items-center gap-2 mb-1">
+            <StatusIcon isValid={isWithinTimeWindow} />
+            <span className="text-xs font-medium">Time Check</span>
           </div>
+          <p className="text-xs text-gray-600 pl-6">
+            Now: {format(currentTime, "HH:mm")}
+            <br />
+            Window: {batchData?.attendanceTime?.start} -{" "}
+            {batchData?.attendanceTime?.end}
+          </p>
         </div>
-      </div>
 
-      {/* Final Status */}
-      <div
-        className={`mt-4 p-2 rounded-md text-center ${
-          canMarkAttendance
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800"
-        }`}
-      >
-        {canMarkAttendance ? (
-          <p className="font-medium">You can mark attendance now ✓</p>
-        ) : (
-          <p className="font-medium">Cannot mark attendance ✗</p>
-        )}
+        {/* Status Summary */}
+        <div
+          className={`text-xs font-medium p-2 rounded text-center ${
+            canMarkAttendance
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+          }`}
+        >
+          {canMarkAttendance ? "Ready to Mark ✓" : "Cannot Mark ✗"}
+        </div>
       </div>
     </div>
   );

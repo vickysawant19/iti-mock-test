@@ -3,14 +3,15 @@ import React from "react";
 
 const ShowStats = ({ attendance, label = "Attendance" }) => {
   const totalDays = attendance?.presentDays + attendance?.absentDays;
+
   return (
-    <>
-      <h2 className="text-xl font-bold mb-4 flex items-center mt-5">
-        <CalendarIcon className="mr-2 text-blue-600" size={24} />
+    <div className="w-full">
+      <h2 className="text-lg font-semibold mb-4 flex items-center">
+        <CalendarIcon className="mr-2 text-blue-600" size={20} />
         {label}
       </h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="flex flex-wrap gap-3">
         {[
           {
             icon: <CalendarIcon className="text-blue-500" />,
@@ -39,19 +40,21 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
         ].map((stat, index) => (
           <div
             key={index}
-            className="bg-white rounded-xl shadow-md p-4 flex items-center hover:scale-105 transition-transform duration-300"
+            className="flex-1 min-w-[140px] bg-white rounded-lg border border-gray-100 p-3 flex items-center gap-3 hover:shadow-md transition-shadow duration-200"
           >
-            <div className="mr-4">
-              {React.cloneElement(stat.icon, { size: 40 })}
+            <div className="shrink-0">
+              {React.cloneElement(stat.icon, { size: 32 })}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-500">{stat.label}</span>
-              <span className="text-xl font-bold">{stat.value}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs text-gray-500 font-medium">
+                {stat.label}
+              </span>
+              <span className="text-lg font-bold truncate">{stat.value}</span>
             </div>
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

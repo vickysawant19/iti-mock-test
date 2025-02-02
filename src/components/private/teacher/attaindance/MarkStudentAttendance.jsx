@@ -161,8 +161,6 @@ const MarkStudentAttendance = () => {
               (holiday) => holiday.date === item.date
             )
         );
-
-        console.log(filterWithoutHolidays);
         setStudentAttendance({
           ...data,
           attendanceRecords: filterWithoutHolidays,
@@ -378,123 +376,131 @@ const MarkStudentAttendance = () => {
   };
 
   return (
-    <div className="w-full ">
-      {/* Top button bar */}
-      <div className="w-full flex justify-end gap-10  items-center mt-10 h-fit p-5">
-        {isTeacher ? (
-          <select
-            className="p-2 text-black  rounded  flex items-center justify-center w-40"
-            onChange={handleSelectChange}
-            disabled={isLoading}
-          >
-            <option value="">Select User</option>
-            {batchStudents.map((item) => (
-              <option key={item.userId} value={item.userId}>
-                {item.studentId
-                  ? item.studentId.toString().padStart(2, "0")
-                  : "00"}{" "}
-                {item.userName}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <button
-            onClick={() => setIsShowMap((prev) => !prev)}
-            className=" bg-teal-500 text-white rounded p-2 flex items-center justify-center w-40"
-          >
-            {!isShowMap ? "Show Map" : "Hide Map"}
-          </button>
-        )}
-
-        {(isTeacher || distance < batchData?.circleRadius) &&
-          studentAttendance && (
-            <button
-              onClick={markUserAttendance}
-              className=" bg-blue-500 text-white rounded p-2 flex items-center justify-center w-40"
+    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+      {/* Top Actions Bar */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="flex flex-wrap gap-4 items-center justify-end">
+          {isTeacher ? (
+            <select
+              className="min-w-[160px] p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={handleSelectChange}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                "Mark Attendance"
-              )}
+              <option value="">Select User</option>
+              {batchStudents.map((item) => (
+                <option key={item.userId} value={item.userId}>
+                  {item.studentId?.toString().padStart(2, "0") || "00"}{" "}
+                  {item.userName}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button
+              onClick={() => setIsShowMap((prev) => !prev)}
+              className="min-w-[160px] bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-2.5 text-sm transition-colors"
+            >
+              {!isShowMap ? "Show Map" : "Hide Map"}
             </button>
           )}
-      </div>
-      {/* Location Map */}
-      <div className="w-full flex  flex-wrap p-4 gap-4 ">
-        <div
-          className={`w-full max-w-md mx-auto rounded-md  ${
-            isShowMap ? "h-80" : "h-0"
-          } transition-all ease-linear duration-300  overflow-hidden`}
-        >
-          {isShowMap && (
-            <LocationPicker
-              deviceLocation={deviceLocation}
-              batchLocation={batchData?.location}
-              disableSelection={true}
-              circleRadius={batchData?.circleRadius}
-            />
-          )}
-        </div>
-        <div
-          className={`w-full max-w-md mx-auto rounded-md  ${
-            isShowMap ? "h-80" : "h-0"
-          } transition-all ease-linear duration-300  overflow-hidden`}
-        >
-          {isShowMap && (
-            <AttendanceStatus
-              batchData={batchData}
-              distance={distance}
-              locationText={locationText}
-            />
-          )}
+
+          {(isTeacher || distance < batchData?.circleRadius) &&
+            studentAttendance && (
+              <button
+                onClick={markUserAttendance}
+                disabled={isLoading}
+                className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-2.5 text-sm transition-colors disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin mx-auto" />
+                ) : (
+                  "Mark Attendance"
+                )}
+              </button>
+            )}
         </div>
       </div>
-      <div className="">
+
+      {/* Map Section */}
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          isShowMap ? "mb-6" : "h-0 overflow-hidden"
+        }`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white  rounded-lg shadow-sm overflow-hidden h-fit lg:h-80 ">
+            {isShowMap && (
+              <AttendanceStatus
+                batchData={batchData}
+                distance={distance}
+                locationText={locationText}
+              />
+            )}
+          </div>
+          <div className="bg-white md:col-span-2 rounded-lg shadow-sm overflow-hidden h-80">
+            {isShowMap && (
+              <LocationPicker
+                deviceLocation={deviceLocation}
+                batchLocation={batchData?.location}
+                disableSelection={true}
+                circleRadius={batchData?.circleRadius}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Attendance Section */}
+      <div className="bg-white rounded-lg shadow-sm">
         {isLoadingAttendance ? (
-          <div className="flex justify-center">
-            <Loader2 className="animate-spin" />
+          <div className="flex justify-center p-8">
+            <Loader2 className="animate-spin w-8 h-8" />
           </div>
         ) : (
           studentAttendance && (
-            <div className="w-full max-w-6xl mx-auto px-4 py-4">
-              <CustomCalendar
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                tileContent={tileContent}
-                tileClassName={tileClassName}
-                startDate={
-                  !isTeacher ? new Date(profile.enrolledAt) : undefined
-                }
-                handleActiveStartDateChange={handleMonthChange}
-                distance={distance}
-                canMarkPrevious={batchData.canMarkPrevious}
-                attendanceTime={batchData.attendanceTime}
-                circleRadius={batchData.circleRadius}
-              />
-              <ShowStats
-                attendance={currentMonthData}
-                label={`Month Attendance - ${currentMonth}`}
-              />
-              <ShowStats
-                attendance={attendanceStats}
-                label={`Total Attendance `}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+              <div className="lg:col-span-7">
+                <CustomCalendar
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  tileContent={tileContent}
+                  tileClassName={tileClassName}
+                  startDate={
+                    !isTeacher ? new Date(profile.enrolledAt) : undefined
+                  }
+                  handleActiveStartDateChange={handleMonthChange}
+                  distance={distance}
+                  canMarkPrevious={batchData.canMarkPrevious}
+                  attendanceTime={batchData.attendanceTime}
+                  circleRadius={batchData.circleRadius}
+                />
+              </div>
+              <div className="lg:col-span-5 space-y-6">
+                <ShowStats
+                  attendance={currentMonthData}
+                  label={`Month Attendance - ${currentMonth}`}
+                />
+                <ShowStats
+                  attendance={attendanceStats}
+                  label="Total Attendance"
+                />
+              </div>
             </div>
           )
         )}
       </div>
+
+      {/* Attendance Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-lg">
-            <h2 className="text-xl mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold mb-4">
               {modalData.isMarked ? "Edit Attendance" : "Mark Attendance"}
             </h2>
 
-            <div className="flex flex-col justify-between mb-2 gap-2 text-sm">
+            <div className="space-y-3">
+              {/* Attendance Type Buttons */}
               {!modalData.isHoliday && (
-                <>
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() =>
                       setModalData((prev) => ({
@@ -505,10 +511,10 @@ const MarkStudentAttendance = () => {
                         attendanceStatus: "Present",
                       }))
                     }
-                    className={`p-2 rounded ${
+                    className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                       modalData.attendanceStatus === "Present"
                         ? "bg-green-500 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-100 hover:bg-gray-200"
                     }`}
                   >
                     Present
@@ -523,148 +529,145 @@ const MarkStudentAttendance = () => {
                         attendanceStatus: "Absent",
                       }))
                     }
-                    className={`p-2 rounded ${
+                    className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                       modalData.attendanceStatus === "Absent"
                         ? "bg-red-500 text-white"
-                        : "bg-gray-200"
+                        : "bg-gray-100 hover:bg-gray-200"
                     }`}
                   >
                     Absent
-                  </button>{" "}
-                </>
+                  </button>
+                </div>
               )}
+
+              {/* Holiday Button */}
               <button
                 onClick={() =>
                   setModalData((prev) => ({
                     ...prev,
                     inTime: "",
                     outTime: "",
-                    isHoliday: prev.isHoliday ? false : true,
+                    isHoliday: !prev.isHoliday,
                   }))
                 }
-                className={`p-2 rounded ${
+                className={`w-full p-2.5 rounded-lg text-sm font-medium transition-colors ${
                   modalData.isHoliday
                     ? "bg-yellow-500 text-white"
-                    : "bg-gray-200"
+                    : "bg-gray-100 hover:bg-gray-200"
                 }`}
               >
                 Holiday
               </button>
-            </div>
-            {!modalData.isHoliday && (
-              <>
-                <label className="block mb-2">
-                  In Time:
-                  <input
-                    type="time"
-                    value={modalData.inTime}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        inTime: e.target.value,
-                      }))
-                    }
-                    className="block w-full p-2 border"
-                  />
-                </label>
-                <label className="block mb-2">
-                  Out Time:
-                  <input
-                    type="time"
-                    value={modalData.outTime}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        outTime: e.target.value,
-                      }))
-                    }
-                    className="block w-full p-2 border"
-                  />
-                </label>
-              </>
-            )}
-            {!modalData.isHoliday ? (
-              <label className="block mb-2">
-                Reason:
-                <textarea
-                  value={modalData.reason}
-                  onChange={(e) =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                  className="block w-full p-2 border"
-                />
-              </label>
-            ) : (
-              <label className="block mb-2">
-                Holiday Type:
-                <textarea
-                  value={modalData.holidayText}
-                  onChange={(e) =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      holidayText: e.target.value,
-                      isHoliday: true,
-                    }))
-                  }
-                  className="block w-full p-2 border"
-                  placeholder="e.g., Sunday, 2nd Saturday, 4th Saturday"
-                />
-                <div className="flex flex-wrap w-full justify-evenly gap-2 my-2 text-sm">
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        holidayText: "Sunday",
-                        isHoliday: true,
-                      }))
-                    }
-                    className="p-2 bg-gray-200 rounded"
-                  >
-                    Sunday
-                  </button>
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        holidayText: "2nd Saturday",
-                        isHoliday: true,
-                      }))
-                    }
-                    className="p-2 bg-gray-200 rounded"
-                  >
-                    2nd Saturday
-                  </button>
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        holidayText: "4th Saturday",
-                        isHoliday: true,
-                      }))
-                    }
-                    className="p-2 bg-gray-200 rounded"
-                  >
-                    4th Saturday
-                  </button>
+
+              {/* Time Inputs */}
+              {!modalData.isHoliday && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      In Time:
+                    </label>
+                    <input
+                      type="time"
+                      value={modalData.inTime}
+                      onChange={(e) =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          inTime: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Out Time:
+                    </label>
+                    <input
+                      type="time"
+                      value={modalData.outTime}
+                      onChange={(e) =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          outTime: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
-              </label>
-            )}
-            <div className=" flex gap-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 bg-red-500 text-white rounded mt-4 w-full"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveAttendance}
-                className="p-2 bg-blue-500 text-white rounded mt-4 w-full"
-              >
-                Save
-              </button>
+              )}
+
+              {/* Reason/Holiday Text Input */}
+              {!modalData.isHoliday ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Reason:
+                  </label>
+                  <textarea
+                    value={modalData.reason}
+                    onChange={(e) =>
+                      setModalData((prev) => ({
+                        ...prev,
+                        reason: e.target.value,
+                      }))
+                    }
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Holiday Type:
+                  </label>
+                  <textarea
+                    value={modalData.holidayText}
+                    onChange={(e) =>
+                      setModalData((prev) => ({
+                        ...prev,
+                        holidayText: e.target.value,
+                        isHoliday: true,
+                      }))
+                    }
+                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Sunday, 2nd Saturday, 4th Saturday"
+                    rows={2}
+                  />
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {["Sunday", "2nd Saturday", "4th Saturday"].map((text) => (
+                      <button
+                        key={text}
+                        onClick={() =>
+                          setModalData((prev) => ({
+                            ...prev,
+                            holidayText: text,
+                            isHoliday: true,
+                          }))
+                        }
+                        className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors"
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAttendance}
+                  className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         </div>
