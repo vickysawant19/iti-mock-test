@@ -371,7 +371,6 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
-  console.log(studentAttendance);
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-6">
       {/* Top Actions Bar */}
