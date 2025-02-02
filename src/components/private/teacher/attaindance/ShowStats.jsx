@@ -15,21 +15,25 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
         {[
           {
             icon: <CalendarIcon className="text-blue-500" />,
+            background: "bg-blue-50",
             label: "Total Days",
             value: totalDays,
           },
           {
             icon: <CheckCircle className="text-green-500" />,
+            background: "bg-green-50",
             label: "Present Days",
             value: attendance?.presentDays,
           },
           {
             icon: <XCircle className="text-red-500" />,
+            background: "bg-red-50",
             label: "Absent Days",
             value: attendance?.absentDays,
           },
           {
             icon: <Award className="text-purple-500" />,
+            background: "bg-purple-50",
             label: "Attendance %",
             value: `${
               totalDays > 0
@@ -40,12 +44,12 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
         ].map((stat, index) => (
           <div
             key={index}
-            className="flex-1 min-w-[140px] bg-white rounded-lg border border-gray-100 p-3 flex items-center gap-3 hover:shadow-md transition-shadow duration-200"
+            className={`flex-1 min-w-[140px] rounded-lg border border-gray-100 p-3 flex items-center gap-3 hover:shadow-md transition-shadow duration-200 ${stat.background}`}
           >
-            <div className="shrink-0">
+            <div className={`shrink-0 `}>
               {React.cloneElement(stat.icon, { size: 32 })}
             </div>
-            <div className="flex flex-col min-w-0">
+            <div className={`flex flex-col min-w-0 `}>
               <span className="text-xs text-gray-500 font-medium">
                 {stat.label}
               </span>

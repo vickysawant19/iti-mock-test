@@ -35,7 +35,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState("");
 
-  const userRole = user?.labels || [];
+  const isTeacher = user.labels.includes("Teacher");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,9 +53,14 @@ const Navbar = () => {
     "/all-mock-tests": "My Mock Tests",
     "/attain-test": "Attain Test",
     "/attaindance/daily-diary": "Daily Diary",
+    "/attaindance/mark-holidays": "Mark Holidays",
     "/attaindance/mark-attendance": "Mark Daywise Attendance",
-    "/attaindance/mark-student-attendance": "Mark Student Attendance",
-    "/attaindance/check-attendance": "Check Attendance",
+    "/attaindance/mark-student-attendance": isTeacher
+      ? "Mark Student Attendance"
+      : "Mark My Attendance",
+    "/attaindance/check-attendance": isTeacher
+      ? "Check Attendance"
+      : "Check My Attendance",
     "/about": "About",
     "/login": "Login",
     "/signup": "SignUp",
@@ -240,7 +245,7 @@ const Navbar = () => {
                 <MenuItem to="/dash" icon={FaDashcube}>
                   Dashboard
                 </MenuItem>
-                {userRole.includes("Teacher") && (
+                {isTeacher && (
                   <MenuGroup
                     title="Manage Batch"
                     icon={FaLayerGroup}
@@ -261,7 +266,7 @@ const Navbar = () => {
                   icon={FaBook}
                   groupKey="mockTests"
                 >
-                  {user?.labels.includes("Teacher") && (
+                  {isTeacher && (
                     <>
                       <MenuItem to="/create-question" icon={FaQuestionCircle}>
                         Create Question
@@ -288,7 +293,7 @@ const Navbar = () => {
                   icon={FaCalendarCheck}
                   groupKey="attendance"
                 >
-                  {userRole.includes("Teacher") && (
+                  {isTeacher && (
                     <>
                       <MenuItem
                         to="/attaindance/daily-diary"
@@ -314,13 +319,15 @@ const Navbar = () => {
                     to="/attaindance/mark-student-attendance"
                     icon={FaCalendarCheck}
                   >
-                    Mark Student Attendance
+                    {isTeacher
+                      ? "Mark Student Attendance"
+                      : "Mark My Attendnace"}
                   </MenuItem>
                   <MenuItem
                     to="/attaindance/check-attendance"
                     icon={FaCalendarAlt}
                   >
-                    Check Attendance
+                    {isTeacher ? "Check Attendance" : "Check My Attendance"}
                   </MenuItem>
                 </MenuGroup>
               </>

@@ -297,258 +297,261 @@ const MarkAttendance = () => {
   }
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="mb-4 flex justify-center">
-          <div className="flex flex-col md:flex-row items-center w-full max-w-4xl space-y-4 md:space-y-0 md:space-x-6">
-            {/* Calendar Section */}
-            <div className="w-full max-w-md">
-              <CustomCalendar
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                tileClassName={tileClassName}
-                tileContent={tileContent}
-              />
-              <style>
-                {`
-          .react-calendar__month-view__days__day {
-            height: auto !important;
-            padding: 0.5rem !important;
-          }
-        `}
-              </style>
-            </div>
-
-            {/* Stats Card Section */}
-            <div className="w-full md:w-auto">
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-                <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-center md:text-left">
-                  Day Statistics {format(selectedDate, "dd-MM-yy")}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                  {/* Total - Full width row */}
-                  <div className="col-span-2 sm:col-span-4 p-2 sm:p-3 rounded-lg text-center border-b pb-4 mb-2">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
-                      Total Students
-                    </p>
-                    <p className="text-base sm:text-lg font-bold text-blue-600">
-                      {attendance?.stats?.totalCount ?? "-"}
-                    </p>
-                  </div>
-
-                  {/* Marked/Unmarked Pair */}
-                  <div className="col-span-2 sm:col-span-2 flex gap-3 sm:gap-4">
-                    <div className="flex-1 p-2 sm:p-3 rounded-lg text-center bg-gray-50/50">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
-                        Marked
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-green-600">
-                        {attendance?.stats?.markedCount ?? "-"}
-                      </p>
-                    </div>
-                    <div className="flex-1 p-2 sm:p-3 rounded-lg text-center bg-gray-50/50">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
-                        Unmarked
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-yellow-600">
-                        {attendance?.stats?.unmarkCount ?? "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Present/Absent Pair */}
-                  <div className="col-span-2 sm:col-span-2 flex gap-3 sm:gap-4">
-                    <div className="flex-1 p-2 sm:p-3 rounded-lg text-center bg-gray-50/50">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
-                        Present
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-purple-600">
-                        {attendance?.stats?.presentCount ?? "-"}
-                      </p>
-                    </div>
-                    <div className="flex-1 p-2 sm:p-3 rounded-lg text-center bg-gray-50/50">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
-                        Absent
-                      </p>
-                      <p className="text-base sm:text-lg font-bold text-red-600">
-                        {attendance?.stats?.absentCount ?? "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="grid grid-cols-1 gap-4">
+        {/* Top Section with Stats and Submit Button in one container */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Stats in a single line on desktop */}
+            <div className="grid grid-cols-5 sm:flex sm:flex-row sm:space-x-4 gap-2 sm:gap-0 flex-1">
+              <div className="bg-blue-50 p-2 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-xs text-blue-600 font-medium">Total</p>
+                <p className="text-sm font-bold text-blue-700">
+                  {attendance?.stats?.totalCount ?? "-"}
+                </p>
+              </div>
+              <div className="bg-green-50 p-2 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-xs text-green-600 font-medium">Marked</p>
+                <p className="text-sm font-bold text-green-700">
+                  {attendance?.stats?.markedCount ?? "-"}
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-2 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-xs text-yellow-600 font-medium">Unmarked</p>
+                <p className="text-sm font-bold text-yellow-700">
+                  {attendance?.stats?.unmarkCount ?? "-"}
+                </p>
+              </div>
+              <div className="bg-purple-50 p-2 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-xs text-purple-600 font-medium">Present</p>
+                <p className="text-sm font-bold text-purple-700">
+                  {attendance?.stats?.presentCount ?? "-"}
+                </p>
+              </div>
+              <div className="bg-red-50 p-2 rounded-lg flex flex-col justify-center items-center">
+                <p className="text-xs text-red-600 font-medium">Absent</p>
+                <p className="text-sm font-bold text-red-700">
+                  {attendance?.stats?.absentCount ?? "-"}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between mb-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={isHoliday}
-              onChange={(e) => setIsHoliday(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-blue-600"
-            />
-            <span className="text-gray-700">Mark as Holiday</span>
-          </label>
-          {isHoliday && (
-            <input
-              type="text"
-              value={holidayText}
-              onChange={(e) => setHolidayText(e.target.value)}
-              placeholder="Holiday reason"
-              className="border rounded-md px-3 py-1 w-1/2"
-            />
-          )}
-        </div>
 
-        {!isHoliday && (
-          <div className="space-y-4">
-            {students.map((student) => (
-              <div
-                key={student.userId}
-                className="bg-white rounded-lg shadow-sm"
+            {/* Submit Button */}
+            <form
+              onSubmit={handleSubmit}
+              className="w-full sm:w-auto flex items-center"
+            >
+              <div className="mr-10 font-bold text-center text-nowrap">
+                {format(selectedDate, "dd-MM-yyyy")}
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">
-                      {student?.isMarked ? <></> : <></>}
-                      {student.userName}
-                    </span>
-                    {attendance[student.userId]?.isMarked ? (
-                      <span className="text-green-500/90 text-sm">
-                        ✓ Marked
-                      </span>
-                    ) : (
-                      <span className="text-orange-500/90 text-sm opacity-50">
-                        ⚠ Unmarked
-                      </span>
-                    )}
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleQuickMark(student.userId, "Present")
-                        }
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          attendance[student.userId]?.attendanceStatus ===
-                          "Present"
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        Present
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleQuickMark(student.userId, "Absent")
-                        }
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          attendance[student.userId]?.attendanceStatus ===
-                          "Absent"
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        Absent
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleOptions(student.userId)}
-                    className="flex items-center text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    {expandedRows[student.userId] ? (
-                      <ChevronUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 mr-1" />
-                    )}
-                    More options
-                  </button>
-
-                  {expandedRows[student.userId] && (
-                    <div className="mt-3 space-y-3">
-                      <div className="grid grid-cols-2 gap-3 ">
-                        <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Reason
-                          </label>
-                          <input
-                            type="text"
-                            value={attendance[student.userId]?.reason || ""}
-                            onChange={(e) =>
-                              handleAttendanceChange(
-                                student.userId,
-                                "reason",
-                                e.target.value
-                              )
-                            }
-                            className="w-full rounded-md border-gray-300 text-sm p-2"
-                            placeholder="Optional"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            In Time
-                          </label>
-                          <input
-                            type="time"
-                            value={attendance[student.userId]?.inTime || ""}
-                            onChange={(e) =>
-                              handleAttendanceChange(
-                                student.userId,
-                                "inTime",
-                                e.target.value
-                              )
-                            }
-                            className="w-full rounded-md border-gray-300 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Out Time
-                          </label>
-                          <input
-                            type="time"
-                            value={attendance[student.userId]?.outTime || ""}
-                            onChange={(e) =>
-                              handleAttendanceChange(
-                                student.userId,
-                                "outTime",
-                                e.target.value
-                              )
-                            }
-                            className="w-full rounded-md border-gray-300 text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Attendance"
+                )}
+              </button>
+            </form>
           </div>
-        )}
+        </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Attendance"
-          )}
-        </button>
-      </form>
+        {/* Bottom Section with Calendar and Attendance List */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* Calendar Section - 2/3 width on desktop */}
+          <div className="lg:col-span-3  bg-white rounded-lg shadow-sm p-4">
+            <CustomCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              tileClassName={tileClassName}
+              tileContent={tileContent}
+            />
+          </div>
+
+          {/* Attendance List Section - 1/3 width on desktop */}
+          <div className="lg:col-span-2  flex flex-col h-[calc(100vh-76px)] ">
+            {/* Holiday Toggle */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+              <div className="space-y-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={isHoliday}
+                    onChange={(e) => setIsHoliday(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="text-gray-700">Mark as Holiday</span>
+                </label>
+                {isHoliday && (
+                  <input
+                    type="text"
+                    value={holidayText}
+                    onChange={(e) => setHolidayText(e.target.value)}
+                    placeholder="Holiday reason"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Scrollable Student List */}
+            <div className="bg-white rounded-lg shadow-sm flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4">
+                {!isHoliday && (
+                  <div className="space-y-4">
+                    {students
+                      .sort(
+                        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+                      )
+                      .map((student) => (
+                        <div
+                          key={student.userId}
+                          className="border rounded-lg p-4"
+                        >
+                          {/* Student card content remains the same */}
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-lg">
+                                {student.studentId || 0}
+                              </span>
+                              <span className="font-medium text-gray-800">
+                                {student.userName}
+                              </span>
+                              {attendance[student.userId]?.isMarked ? (
+                                <span className="text-green-500 text-sm">
+                                  ✓ Marked
+                                </span>
+                              ) : (
+                                <span className="text-orange-500 text-sm">
+                                  ⚠ Unmarked
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickMark(student.userId, "Present")
+                                }
+                                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                                  attendance[student.userId]
+                                    ?.attendanceStatus === "Present"
+                                    ? "bg-green-500 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                Present
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickMark(student.userId, "Absent")
+                                }
+                                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                                  attendance[student.userId]
+                                    ?.attendanceStatus === "Absent"
+                                    ? "bg-red-500 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                Absent
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* More options section remains the same */}
+                          <button
+                            type="button"
+                            onClick={() => toggleOptions(student.userId)}
+                            className="mt-4 flex items-center text-sm text-gray-500 hover:text-gray-700"
+                          >
+                            {expandedRows[student.userId] ? (
+                              <ChevronUp className="w-4 h-4 mr-1" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 mr-1" />
+                            )}
+                            More options
+                          </button>
+
+                          {expandedRows[student.userId] && (
+                            <div className="mt-4 space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Reason
+                                </label>
+                                <input
+                                  type="text"
+                                  value={
+                                    attendance[student.userId]?.reason || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleAttendanceChange(
+                                      student.userId,
+                                      "reason",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 border rounded-lg"
+                                  placeholder="Optional"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    In Time
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={
+                                      attendance[student.userId]?.inTime || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleAttendanceChange(
+                                        student.userId,
+                                        "inTime",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border rounded-lg"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Out Time
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={
+                                      attendance[student.userId]?.outTime || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleAttendanceChange(
+                                        student.userId,
+                                        "outTime",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border rounded-lg"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
