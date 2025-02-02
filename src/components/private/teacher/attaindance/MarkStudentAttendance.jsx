@@ -605,19 +605,19 @@ const MarkStudentAttendance = () => {
               <div className="grid grid-cols-2 gap-3 mt-6">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-red-100 hover:bg-red-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={removeAttendance}
-                  className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-purple-100 hover:bg-purple-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                 >
-                  Remove marking
+                  Undo marking
                 </button>
                 <button
                   onClick={saveAttendance}
-                  className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-blue-500 col-span-2 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Save
                 </button>
