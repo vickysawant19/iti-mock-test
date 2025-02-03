@@ -274,14 +274,16 @@ class QuestionPaperService {
     }
   }
 
-  async getQuestionPaperByUserId(userId) {
+  async getQuestionPaperByUserId(userId, queries = []) {
+    queries.push(Query.equal("userId", userId))
+    queries.push(Query.orderDesc("$createdAt"))
     try {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
+        queries
       );
-      return response.documents;
+      return response;
     } catch (error) {
       console.error("Error getting question paper by user ID:", error);
       throw error;

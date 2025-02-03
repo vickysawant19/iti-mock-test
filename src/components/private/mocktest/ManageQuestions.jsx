@@ -7,20 +7,31 @@ import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
 
 import quesdbservice from "../../../appwrite/database";
+import Pagination from "./components/Pagination";
+
+const ITEMS_PER_PAGE = 20;
 
 const ManageQuestions = () => {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setisLoading] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  
   const user = useSelector((state) => state.user);
 
   useEffect(() => {
+
     const fetchQuestions = async () => {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
       setisLoading(true);
       try {
         const response = await quesdbservice.listQuestions([
           Query.equal("userId", user.$id),
           Query.orderDesc("$createdAt"),
+          Query.limit(ITEMS_PER_PAGE), Query.offset(startIndex)
         ]);
+        setTotalPages(Math.ceil(response.total/ITEMS_PER_PAGE))
         setQuestions(response.documents);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -28,9 +39,8 @@ const ManageQuestions = () => {
         setisLoading(false);
       }
     };
-
     fetchQuestions();
-  }, [user.$id]);
+  }, [user.$id,currentPage]);
 
   const handleDelete = async (slug) => {
     const confirmation = confirm("Are you want to delete this question?");
@@ -53,12 +63,18 @@ const ManageQuestions = () => {
     }
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+
   const getOptionIndex = (correctAnswer) => {
     return ["A", "B", "C", "D"].indexOf(correctAnswer);
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-gray-100 min-h-screen w-full max-w-4xl">
       <div className="container mx-auto px-4 py-8">
         <header className="flex flex-col items-center py-6">
           <h1 className="text-3xl font-bold text-gray-800 text-center mb-4">
@@ -71,6 +87,13 @@ const ManageQuestions = () => {
             Create New Question
           </Link>
         </header>
+      
+             <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+       
 
         {isLoading ? (
           <div className="flex justify-center mt-20 ">
