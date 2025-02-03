@@ -4,6 +4,8 @@ import { FaSpinner, FaArrowLeft } from "react-icons/fa";
 import { format } from "date-fns";
 
 import questionpaperservice from "../../../appwrite/mockTest";
+import { useSelector } from "react-redux";
+import { selectProfile } from "../../../store/profileSlice";
 
 const MockTestResults = () => {
   const { paperId } = useParams();
@@ -12,11 +14,12 @@ const MockTestResults = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const profile = useSelector(selectProfile);
+
   useEffect(() => {
     const getData = async () => {
       try {
         const res = await questionpaperservice.getUserResults(paperId);
-        console.log("res", res);
         res.sort((a, b) => b.score - a.score);
         setData(res);
       } catch (error) {
@@ -45,6 +48,12 @@ const MockTestResults = () => {
     );
   }
 
+  const winner = {
+    1: "🥇",
+    2: "🥈",
+    3: "🥉",
+  };
+
   return (
     <div className="container mx-auto p-4 mt-8">
       <div className="flex items-center mb-4  gap-4 pl-4">
@@ -67,10 +76,17 @@ const MockTestResults = () => {
         </thead>
         <tbody>
           {data.map((result, index) => (
-            <tr key={index}>
+            <tr
+              key={index}
+              className={`${
+                profile.userId === result.userId
+                  ? "bg-blue-200 font-semibold"
+                  : ""
+              }`}
+            >
               <td className="py-2 px-4 border-b text-center">{index + 1}</td>
               <td className="py-2 px-4 border-b text-center">
-                {result.userName}
+                {result.userName} {winner[index + 1]}
               </td>
               <td className="py-2 px-4 border-b text-center text-base">
                 {result.score || "-"}/

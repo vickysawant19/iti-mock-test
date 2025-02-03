@@ -264,8 +264,8 @@ class QuestionPaperService {
         this.questionPapersCollectionId,
         [
           Query.equal("paperId", paperId),
-          Query.select(["score", "$updatedAt", "userName", "quesCount"]),
-          Query.notEqual("userName", "Admin"),
+          Query.select(["score", "$updatedAt", "userName", "quesCount","userId"]),
+          // Query.notEqual("userName", "Admin"),
         ]
       );
       return response.documents;

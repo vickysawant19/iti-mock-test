@@ -1,84 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
-import { MdFormatListNumbered } from "react-icons/md";
 
 import questionpaperservice from "../../../appwrite/mockTest";
-import { format } from "date-fns";
-
-const MockTestCard = ({ test, user, handleShare, handleDelete }) => (
-  <div className="bg-white p-6 rounded-lg shadow-lg">
-    <p className="text-sm text-gray-500">
-      {format(new Date(test.$createdAt), "yyyy/MM/dd hh:mm a")}
-    </p>
-    <h2 className="text-xl font-semibold text-gray-800 mt-2">
-      {test.tradeName || "No Trade Name"}
-    </h2>
-    <p className="text-gray-600 mt-2">
-      <strong>Paper ID:</strong> {test.paperId}
-    </p>
-    <p className="text-gray-600">
-      <strong>Year:</strong> {test.year || "-"}
-    </p>
-    <p className="text-gray-600">
-      <strong>Score:</strong> {test.score !== null ? test.score : "-"}
-    </p>
-    <p className="text-gray-600">
-      <strong>Total Questions:</strong>{" "}
-      {test.quesCount !== null ? test.quesCount : "50"}
-    </p>
-    <p className="text-gray-600">
-      <strong>Submitted:</strong> {test.submitted ? "Yes" : "No"}
-    </p>
-    <div className="mt-4 grid grid-cols-2 gap-4  ">
-      {test.submitted ? (
-        <div className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md flex items-center justify-center gap-2">
-          <FaPaperPlane />
-          <Link to={`/show-mock-test/${test.$id}`} className="">
-            Show Test
-          </Link>
-        </div>
-      ) : (
-        <div className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md flex  items-center justify-center w-full gap-2">
-          <FaPaperPlane />
-          <Link to={`/start-mock-test/${test.$id}`} className="">
-            Start Test
-          </Link>
-        </div>
-      )}
-
-      <div className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full">
-        <MdFormatListNumbered />
-        <Link to={`/mock-test-result/${test.paperId}`} className="">
-          Test Scores
-        </Link>
-      </div>
-      <button
-        onClick={() => handleShare(test.paperId)}
-        className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full"
-      >
-        <FaShareAlt />
-        <span>Share</span>
-      </button>
-      {user.labels.includes("admin") && (
-        <button
-          onClick={() => handleDelete(test.$id)}
-          className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full"
-        >
-          <FaTrashAlt />
-          <span>Delete</span>
-        </button>
-      )}
-    </div>
-  </div>
-);
+import MockTestCard from "./components/MockTestCard";
 
 const AllMockTests = () => {
   const [mockTests, setMockTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pageNumber , setPageNumber ] = useState(1)
   const user = useSelector((state) => state.user);
 
   const fetchMockTests = useCallback(async () => {
@@ -150,7 +81,11 @@ const AllMockTests = () => {
             No mock test generated!
           </div>
         ) : (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 ">
+          <div>
+            <div>
+              <h1>he</h1>
+            </div>
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 ">
             {mockTests.map((test) => (
               <MockTestCard
                 key={test.$id}
@@ -160,6 +95,7 @@ const AllMockTests = () => {
                 handleDelete={handleDelete}
               />
             ))}
+          </div>
           </div>
         )}
       </div>
