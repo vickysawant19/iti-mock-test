@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { ClipLoader } from "react-spinners";
@@ -22,11 +22,16 @@ const Login = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-  const dispatch = useDispatch();
 
   const user = useSelector((state) => state.user);
   const profile = useSelector((state) => state.profile);
+
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const location = useLocation();
+
+  // Default redirect is /dash if no previous location is set
+  const from = location.state?.from || "/dash";
 
   useEffect(() => {
     if (user && user.$id) {
@@ -44,7 +49,7 @@ const Login = () => {
       if (res) {
         dispatch(addProfile(res));
         toast.success("Login successful!");
-        navigate("/dash");
+        navigate(from, { replace: true });
       } else {
         navigate("/profile");
       }
