@@ -2,8 +2,70 @@ import { format } from "date-fns";
 import { FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { MdFormatListNumbered } from "react-icons/md";
 import { Link } from "react-router-dom";
+import questionpaperservice from "../../../../appwrite/mockTest";
 
-const MockTestCard = ({ test, user, handleShare, handleDelete }) => {
+const baseUrl =
+  process.env.NODE_ENV === "production"
+    ? "https://itimocktest.vercel.app"
+    : "http://localhost:3000";
+
+const MockTestCard = ({ test, user, fetchMockTests }) => {
+  const handleShare = async (paperId) => {
+    // Construct a decorated share message
+
+    const examUrl = `${baseUrl}/attain-test?paperid=${paperId}`;
+    const shareText = `
+    🎉 *_MSQs Exam Paper_* 🎉
+    
+    _Hey there!_
+    _Check out this Exam Paper_
+     Paper ID: *${paperId}*
+    
+    📚 *Trade:* ${test.tradeName}
+    💯 *Total Marks:* ${test.quesCount}
+    ⏳ *Duration:* 1 Hour
+    
+    👉 Click the link below to get started:
+    ${examUrl}
+    
+    *Remember to submit on complete!*
+    
+     Good luck and happy Exam!
+    `;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Mock Test Paper",
+          text: shareText,
+        });
+
+        console.log("Share successful");
+      } else {
+        console.log("Web Share API not supported");
+        // Fallback copy to clipboard
+        await navigator.clipboard.writeText(shareText);
+        alert("Link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+    }
+  };
+
+  const handleDelete = async (paperId) => {
+    const confirmation = window.confirm(
+      "Are you sure you want to delete this paper?"
+    );
+    if (!confirmation) return;
+
+    try {
+      await questionpaperservice.deleteQuestionPaper(paperId);
+      fetchMockTests();
+    } catch (error) {
+      console.error("Error deleting paper:", error);
+      setError("Failed to delete the paper. Please try again later.");
+    }
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,13 +12,19 @@ import conf from "../../../config/config";
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
+
+  const [paper] = useSearchParams();
+
+  useEffect(() => {
+    setPaperId(paper.get("paperid") || "");
+  }, [paper]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const data = {
         action: "createNewMockTest",

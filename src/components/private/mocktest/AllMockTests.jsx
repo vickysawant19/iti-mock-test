@@ -20,7 +20,6 @@ const AllMockTests = () => {
   const fetchMockTests = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
       const response = await questionpaperservice.getQuestionPaperByUserId(
@@ -44,42 +43,6 @@ const AllMockTests = () => {
     fetchMockTests();
   }, [fetchMockTests]);
 
-  const handleShare = async (paperId) => {
-    const shareText = `Check out this mock test paper with ID: ${paperId}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Mock Test Paper",
-          text: shareText,
-        });
-        console.log("Share successful");
-      } else {
-        console.log("Web Share API not supported");
-        // Fallback copy to clipboard
-        await navigator.clipboard.writeText(shareText);
-        alert("Link copied to clipboard!");
-      }
-    } catch (error) {
-      console.error("Share failed:", error);
-    }
-  };
-
-  const handleDelete = async (paperId) => {
-    const confirmation = window.confirm(
-      "Are you sure you want to delete this paper?"
-    );
-    if (!confirmation) return;
-
-    try {
-      await questionpaperservice.deleteQuestionPaper(paperId);
-      fetchMockTests();
-    } catch (error) {
-      console.error("Error deleting paper:", error);
-      setError("Failed to delete the paper. Please try again later.");
-    }
-  };
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -92,18 +55,18 @@ const AllMockTests = () => {
           All Mock Tests
         </h1>
         <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
 
         {error && (
           <div className="text-center w-full text-white p-4 bg-red-400 rounded-md mb-6">
             {error}
           </div>
         )}
-        {loading ? ( 
-          <div className="flex justify-center items-center min-h-[200px]" >
+        {loading ? (
+          <div className="flex justify-center items-center min-h-[200px]">
             <ClipLoader size={50} color={"#123abc"} />
           </div>
         ) : mockTests.length === 0 ? (
@@ -111,17 +74,16 @@ const AllMockTests = () => {
             <p className="text-gray-600">No mock tests generated yet!</p>
           </div>
         ) : (
-            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
-              {mockTests.map((test) => (
-                <MockTestCard
-                  key={test.$id}
-                  test={test}
-                  user={user}
-                  handleShare={handleShare}
-                  handleDelete={handleDelete}
-                />
-              ))}
-            </div>
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
+            {mockTests.map((test) => (
+              <MockTestCard
+                key={test.$id}
+                test={test}
+                user={user}
+                fetchMockTests={fetchMockTests}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
