@@ -28,7 +28,7 @@ import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 
-const Navbar = ({isNavOpen , setIsNavOpen}) => {
+const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
   const profile = useSelector(selectProfile);
   const dispatch = useDispatch();
@@ -130,11 +130,19 @@ const Navbar = ({isNavOpen , setIsNavOpen}) => {
   return (
     <>
       {/* Navbar */}
-      <div className={`bg-blue-900 h-12 w-full flex fixed z-10 shadow-md ${isNavOpen ? "" : ""}`}>
-        <div className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out md:ml-72 ${isNavOpen ? "" : ""}`}>
-          <div className="flex items-center gap-3 w-full ">
+      <div
+        className={`bg-blue-900 h-12 w-full flex fixed z-10 shadow-md ${
+          isNavOpen ? "" : ""
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out md:ml-72 ${
+            isNavOpen ? "" : ""
+          }`}
+        >
+          <div className="flex items-center gap-3 w-full md:hidden">
             <button
-              className= {`text-white text-xl hover:scale-105 transition-transform duration-300 md:hidden`}
+              className={`text-white text-xl hover:scale-105 transition-transform duration-300 md:hidden`}
               onClick={toggleMenu}
             >
               <FaBars />
@@ -148,7 +156,7 @@ const Navbar = ({isNavOpen , setIsNavOpen}) => {
               <span className="text-white text-sm"> {currentHeading}</span>
             )}
           </div>
-          <div className="hidden md:flex text-white gap-4 items-center">
+          <div className="hidden md:flex text-white gap-4 items-center md:justify-end w-full">
             {user ? (
               <div className="relative group py-1 px-2">
                 <FaUserCircle className="w-5 h-5 cursor-pointer" />
@@ -181,55 +189,59 @@ const Navbar = ({isNavOpen , setIsNavOpen}) => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800 ${
+        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800  ${
           isNavOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-y-auto shadow-2xl `}
       >
-        <div className="w-full h-full p-4 flex flex-col ">
-          <div className="flex items-center justify-between mb-6 border-b pb-4  ">
-            <div className="flex items-center gap-3  w-full">
+        <div className="w-full h-full flex flex-col">
+          <div className="flex items-center justify-between  pb-4 ">
+            <div className="flex items-center gap-3 max-h-12  w-full bg-blue-900">
+              <div className=" flex items-center w-full p-2">
               <img className="w-8 h-8 rounded-md" src={logo} alt="logo" />
               <NavLink
                 to="/"
                 className={({ isActive }) =>
-                  `font-bold text-gray-800  text-center w-full hover:text-blue-600 transition-colors ${
-                    isActive ? "text-blue-600" : ""
+                  `font-bold text-gray-100  text-center w-full hover:text-white transition-colors ${
+                    isActive ? "text-white" : ""
                   }`
                 }
               >
                 ITI MOCK TEST
               </NavLink>
               <button
-                className="text-gray-500 hover:text-gray-700 transition-colors md:hidden"
+                className="text-gray-50 hover:text-white transition-colors md:hidden"
                 onClick={toggleMenu}
               >
                 <FaTimes className="w-5 h-5" />
               </button>
+              </div>
             </div>
           </div>
 
           {user && (
-            <div className="flex items-center mb-6 bg-gray-50 rounded-lg py-3 px-4 ">
-              {profile?.profileImage ? (
-                <img
-                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                  src={profile?.profileImage}
-                  alt="Profile"
-                />
-              ) : (
-                <FaUserCircle className="text-gray-400 w-10 h-10" />
-              )}
-              <div className="ml-3">
-                <span className="text-sm font-medium text-gray-800 block">
-                  {profile?.userName}
-                </span>
-                <NavLink
-                  to="/profile"
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  onClick={toggleMenu}
-                >
-                  View Profile
-                </NavLink>
+            <div className="p-4">
+              <div className="flex items-center bg-gray-50 rounded-lg py-3 px-4 ">
+                {profile?.profileImage ? (
+                  <img
+                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    src={profile?.profileImage}
+                    alt="Profile"
+                  />
+                ) : (
+                  <FaUserCircle className="text-gray-400 w-10 h-10" />
+                )}
+                <div className="ml-3">
+                  <span className="text-sm font-medium text-gray-800 block">
+                    {profile?.userName}
+                  </span>
+                  <NavLink
+                    to="/profile"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    onClick={toggleMenu}
+                  >
+                    View Profile
+                  </NavLink>
+                </div>
               </div>
             </div>
           )}
