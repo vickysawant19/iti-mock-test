@@ -4,6 +4,7 @@ import { ClipLoader } from "react-spinners";
 
 import MockTestGreet from "./components/MockTestGreet";
 import questionpaperservice from "../../../appwrite/mockTest";
+import { toast } from "react-toastify";
 
 const StartMockTest = () => {
   const { paperId } = useParams();
@@ -22,6 +23,7 @@ const StartMockTest = () => {
     const fetchMockTest = async () => {
       try {
         const response = await questionpaperservice.getQuestionPaper(paperId);
+        console.log(response)
         if (response) {
           const parsedQuestions = response.questions.map((question) =>
             JSON.parse(question)
@@ -31,6 +33,10 @@ const StartMockTest = () => {
           }
           setSubmitted(response.submitted);
           setMockTest({ ...response, questions: parsedQuestions });
+        }else{
+          setIsLoading(false)
+          toast.error("Mock test not found!")
+          navigate(`/all-mock-tests`);
         }
       } catch (error) {
         console.error("Error fetching mock test:", error);

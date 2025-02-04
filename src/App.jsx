@@ -15,6 +15,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavOpen , setIsNavOpen ] = useState(false)
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -64,12 +65,14 @@ function App() {
 
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
-      <Navbar />
+      <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen}/>
       <Analytics />
-      <div className="pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto">
+      <div className="md:ml-72">
+      <div className={`pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto border`}>
         <Outlet />
-      </div>
       <ToastContainer />
+      </div>
+      </div>
     </div>
   );
 }

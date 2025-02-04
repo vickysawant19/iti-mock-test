@@ -9,6 +9,7 @@ import tradeservice from "../../../appwrite/tradedetails";
 import batchService from "../../../appwrite/batchService";
 import collegeService from "../../../appwrite/collageService";
 import userProfileService from "../../../appwrite/userProfileService";
+import authService from "../../../appwrite/auth";
 
 const ProfileView = ({ profileProps }) => {
   const [tradedata, setTradeData] = useState([]);
@@ -64,6 +65,20 @@ const ProfileView = ({ profileProps }) => {
       fetchData();
     }
   }, [profile]);
+
+  const handleLogout = async () => {
+    try {
+      if (user) {
+        await authService.logout();
+        dispatch(removeUser());
+        dispatch(removeProfile());
+        navigate("/login");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -139,13 +154,19 @@ const ProfileView = ({ profileProps }) => {
           </div>
 
           {userId === undefined && (
-            <div className="mt-4 flex justify-center sm:justify-start">
+            <div className="mt-4 flex  gap-6 justify-center sm:justify-start border-t-2 pt-2 ">
               <Link
                 to="/change-password"
                 className="text-blue-600 hover:underline"
               >
                 Change Password
               </Link>
+              <button
+                
+                className="text-red-600 hover:underline"
+              >
+                Logout
+              </button>
             </div>
           )}
         </div>

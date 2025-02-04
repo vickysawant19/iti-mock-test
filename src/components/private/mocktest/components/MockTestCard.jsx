@@ -2,14 +2,14 @@ import { format } from "date-fns";
 import { FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { MdFormatListNumbered } from "react-icons/md";
 import { Link } from "react-router-dom";
-import questionpaperservice from "../../../../appwrite/mockTest";
+
 
 const baseUrl =
   process.env.NODE_ENV === "production"
     ? "https://itimocktest.vercel.app"
     : "http://localhost:3000";
 
-const MockTestCard = ({ test, user, fetchMockTests }) => {
+const MockTestCard = ({ test, user, handleDelete }) => {
   const handleShare = async (paperId) => {
     // Construct a decorated share message
 
@@ -52,21 +52,7 @@ const MockTestCard = ({ test, user, fetchMockTests }) => {
     }
   };
 
-  const handleDelete = async (paperId) => {
-    const confirmation = window.confirm(
-      "Are you sure you want to delete this paper?"
-    );
-    if (!confirmation) return;
-
-    try {
-      await questionpaperservice.deleteQuestionPaper(paperId);
-      fetchMockTests();
-    } catch (error) {
-      console.error("Error deleting paper:", error);
-      setError("Failed to delete the paper. Please try again later.");
-    }
-  };
-
+ 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <p className="text-sm text-gray-500">

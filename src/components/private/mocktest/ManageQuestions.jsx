@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
@@ -14,24 +14,32 @@ const ITEMS_PER_PAGE = 20;
 const ManageQuestions = () => {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setisLoading] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  
+  const cachedQues = useRef(new Map());
+
   const user = useSelector((state) => state.user);
 
   useEffect(() => {
-
     const fetchQuestions = async () => {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
       setisLoading(true);
       try {
+        if (cachedQues.current.has(currentPage)) {
+          const resp = cachedQues.current.get(currentPage);
+          setQuestions(resp.documents);
+          setTotalPages(Math.ceil(resp.total / ITEMS_PER_PAGE));
+          setisLoading(false);
+          return;
+        }
         const response = await quesdbservice.listQuestions([
           Query.equal("userId", user.$id),
           Query.orderDesc("$createdAt"),
-          Query.limit(ITEMS_PER_PAGE), Query.offset(startIndex)
+          Query.limit(ITEMS_PER_PAGE),
+          Query.offset(startIndex),
         ]);
-        setTotalPages(Math.ceil(response.total/ITEMS_PER_PAGE))
+        cachedQues.current.set(currentPage, response);
+        setTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
         setQuestions(response.documents);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -40,7 +48,7 @@ const ManageQuestions = () => {
       }
     };
     fetchQuestions();
-  }, [user.$id,currentPage]);
+  }, [user.$id, currentPage]);
 
   const handleDelete = async (slug) => {
     const confirmation = confirm("Are you want to delete this question?");
@@ -48,11 +56,22 @@ const ManageQuestions = () => {
       return;
     }
     try {
-      const deleted = await quesdbservice.deleteQuestion(slug);
+      const deleted = await quesdbservice.deleteQuestion(v);
       if (deleted) {
         setQuestions((prevQuestions) =>
           prevQuestions.filter((question) => question.$id !== slug)
         );
+        // Update cache by removing the deleted item
+        if (cachedQues.current.has(currentPage)) {
+          const cachedData = cachedQues.current.get(currentPage);
+          const updatedDocuments = cachedData.documents.filter(
+            (test) => test.$id !== slug
+          );
+          cachedQues.current.set(currentPage, {
+            ...cachedData,
+            documents: updatedDocuments,
+          });
+        }
         toast.success("Deleted successfully");
       } else {
         toast.error("Error deleting question");
@@ -67,7 +86,6 @@ const ManageQuestions = () => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
 
   const getOptionIndex = (correctAnswer) => {
     return ["A", "B", "C", "D"].indexOf(correctAnswer);
@@ -87,13 +105,12 @@ const ManageQuestions = () => {
             Create New Question
           </Link>
         </header>
-      
-             <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-       
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
 
         {isLoading ? (
           <div className="flex justify-center mt-20 ">

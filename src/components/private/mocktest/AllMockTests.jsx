@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import questionpaperservice from "../../../appwrite/mockTest";
 import MockTestCard from "./components/MockTestCard";
@@ -10,11 +10,11 @@ const ITEMS_PER_PAGE = 10;
 
 const AllMockTests = () => {
   const [mockTests, setMockTests] = useState([]);
+  const cachedMockTests = useRef(new Map()); // Use useRef for caching
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-
   const user = useSelector((state) => state.user);
 
   const fetchMockTests = useCallback(async () => {
@@ -22,13 +22,26 @@ const AllMockTests = () => {
     setError(null);
     try {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      // Check if data is already cached
+      if (cachedMockTests.current.has(currentPage)) {
+        const cachedData = cachedMockTests.current.get(currentPage);
+        setMockTests(cachedData.documents);
+        setTotalPages(cachedData.totalPages);
+        setLoading(false);
+        return;
+      }
       const response = await questionpaperservice.getQuestionPaperByUserId(
         user.$id,
         [Query.limit(ITEMS_PER_PAGE), Query.offset(startIndex)]
       );
-
       if (response) {
-        setTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
+        const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);     
+        // Cache the fetched data
+        cachedMockTests.current.set(currentPage, {
+          documents: response.documents,
+          totalPages,
+        });
+        setTotalPages(totalPages);
         setMockTests(response.documents);
       }
     } catch (error) {
@@ -46,6 +59,32 @@ const AllMockTests = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (paperId) => {
+    const confirmation = window.confirm(
+      "Are you sure you want to delete this paper?"
+    );
+    if (!confirmation) return;   
+    try {
+      await questionpaperservice.deleteQuestionPaper(paperId);
+      // Remove the deleted item from state
+      setMockTests((prevMockTests) =>
+        prevMockTests.filter((test) => test.$id !== paperId)
+      );
+      // Update cache by removing the deleted item
+      if (cachedMockTests.current.has(currentPage)) {
+        const cachedData = cachedMockTests.current.get(currentPage);
+        const updatedDocuments = cachedData.documents.filter((test) => test.$id !== paperId);
+        cachedMockTests.current.set(currentPage, {
+          ...cachedData,
+          documents: updatedDocuments,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting paper:", error);
+      setError("Failed to delete the paper. Please try again later.");
+    }
   };
 
   return (
@@ -81,6 +120,7 @@ const AllMockTests = () => {
                 test={test}
                 user={user}
                 fetchMockTests={fetchMockTests}
+                handleDelete={handleDelete}
               />
             ))}
           </div>

@@ -28,11 +28,10 @@ import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 
-const Navbar = () => {
+const Navbar = ({isNavOpen , setIsNavOpen}) => {
   const user = useSelector((state) => state.user);
   const profile = useSelector(selectProfile);
   const dispatch = useDispatch();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState("");
 
   const isTeacher = user?.labels.includes("Teacher");
@@ -75,7 +74,7 @@ const Navbar = () => {
         await authService.logout();
         dispatch(removeUser());
         dispatch(removeProfile());
-        navigate("/");
+        navigate("/login");
       }
     } catch (error) {
       console.log(error);
@@ -83,7 +82,7 @@ const Navbar = () => {
   };
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsNavOpen(!isNavOpen);
   };
 
   const toggleGroup = (group) => {
@@ -131,11 +130,11 @@ const Navbar = () => {
   return (
     <>
       {/* Navbar */}
-      <div className="bg-blue-900 h-12 w-full flex fixed z-10 shadow-md">
-        <div className="flex items-center justify-between max-w-screen-lg w-full mx-auto px-3">
-          <div className="flex items-center gap-3 w-full">
+      <div className={`bg-blue-900 h-12 w-full flex fixed z-10 shadow-md ${isNavOpen ? "" : ""}`}>
+        <div className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out md:ml-72 ${isNavOpen ? "" : ""}`}>
+          <div className="flex items-center gap-3 w-full ">
             <button
-              className="text-white text-xl hover:scale-105 transition-transform duration-300 "
+              className= {`text-white text-xl hover:scale-105 transition-transform duration-300 md:hidden`}
               onClick={toggleMenu}
             >
               <FaBars />
@@ -159,7 +158,7 @@ const Navbar = () => {
                   </MenuItem>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-gray-100 text-red-600"
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-gray-100 text-red-600 "
                   >
                     <FaSignOutAlt className="w-4 h-4" />
                     <span>Logout</span>
@@ -182,8 +181,8 @@ const Navbar = () => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white text-gray-800 ${
-          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800 ${
+          isNavOpen ? "translate-x-0" : "-translate-x-full"
         } overflow-y-auto shadow-2xl `}
       >
         <div className="w-full h-full p-4 flex flex-col ">
@@ -201,7 +200,7 @@ const Navbar = () => {
                 ITI MOCK TEST
               </NavLink>
               <button
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-gray-500 hover:text-gray-700 transition-colors md:hidden"
                 onClick={toggleMenu}
               >
                 <FaTimes className="w-5 h-5" />
@@ -345,7 +344,7 @@ const Navbar = () => {
                   handleLogout();
                   toggleMenu();
                 }}
-                className="flex items-center gap-2 w-full py-1.5 text-sm hover:bg-red-50 px-3 rounded-lg text-red-600 justify-center border border-red-200"
+                className="flex items-center gap-2 w-full py-1.5 text-sm hover:bg-red-50 px-3 rounded-lg text-red-600 justify-center border border-red-200 md:hidden"
               >
                 <FaSignOutAlt className="w-4 h-4" />
                 <span>Logout</span>
@@ -365,7 +364,7 @@ const Navbar = () => {
       </div>
 
       {/* Overlay */}
-      {isMenuOpen && (
+      {isNavOpen && (
         <div
           className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-10 md:hidden"
           onClick={toggleMenu}
