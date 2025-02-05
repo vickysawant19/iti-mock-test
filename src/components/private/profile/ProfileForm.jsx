@@ -42,7 +42,7 @@ const ProfileForm = () => {
     "address",
     "profileImage",
     "registerId",
-    "studentId"
+    "studentId",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -209,7 +209,7 @@ const ProfileForm = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div className=" mx-auto bg-gray-50 p-6 rounded-lg shadow-md">
       <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
         {existingProfile ? "Edit Your Profile" : "Create Your Profile"}
       </h1>
@@ -267,8 +267,8 @@ const ProfileForm = () => {
           </div>
           {/* Academic Information */}
           <CustomInput
-            label={"Student ID"}
-            type="text"
+            label={"Student ID/Roll Number"}
+            type="number"
             {...register("studentId")}
             disabled={!isFieldEditable("studentId")}
           />

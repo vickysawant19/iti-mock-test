@@ -221,7 +221,7 @@ const BatchForm = ({ onClose }) => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-2 bg-white">
+    <div className=" p-2 bg-gray-50">
       <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-6">
         {selectedBatchId ? "Edit Batch" : "Create New Batch"}
       </h1>
@@ -330,12 +330,12 @@ const BatchForm = ({ onClose }) => {
 
           <div className="col-span-full relative">
             <label className="block text-gray-600 mb-2">
-              Location{" "}
-              <span className="text-xs italic text-gray-500">
+              Location
+              <span className="text-xs italic text-gray-500 ml-2">
                 (Student can mark attendance from 1km range)
               </span>
             </label>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               <input
                 type="text"
                 value={watch("location.lat") || ""}
@@ -350,31 +350,33 @@ const BatchForm = ({ onClose }) => {
                 className="flex-1 border border-gray-300 rounded-md py-2 px-3"
                 disabled
               />
-              <button
-                type="button"
-                onClick={handleGetLocation}
-                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
-                disabled={locationLoading}
-              >
-                {locationLoading ? (
-                  <ClipLoader size={20} color="#fff" />
-                ) : (
-                  "Get Location"
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMaps((prev) => !prev)}
-                className="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 disabled:bg-gray-400"
-              >
-                {locationLoading ? (
-                  <ClipLoader size={20} color="#fff" />
-                ) : showMaps ? (
-                  "Hide Map"
-                ) : (
-                  "Show Map"
-                )}
-              </button>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+                  disabled={locationLoading}
+                >
+                  {locationLoading ? (
+                    <ClipLoader size={20} color="#fff" />
+                  ) : (
+                    "Get Location"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMaps((prev) => !prev)}
+                  className="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 disabled:bg-gray-400"
+                >
+                  {locationLoading ? (
+                    <ClipLoader size={20} color="#fff" />
+                  ) : showMaps ? (
+                    "Hide Map"
+                  ) : (
+                    "Show Map"
+                  )}
+                </button>
+              </div>
             </div>
 
             <div
