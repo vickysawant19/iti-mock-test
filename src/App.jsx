@@ -68,7 +68,7 @@ function App() {
       <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen}/>
       <Analytics />
       <div className="md:ml-72">
-      <div className={`pt-10 bg-gray-100 w-full max-w-screen-lg mx-auto border`}>
+      <div className={`pt-10 bg-gray-100 w-full mx-auto `}>
         <Outlet />
       <ToastContainer />
       </div>

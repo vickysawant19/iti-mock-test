@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
@@ -8,6 +8,7 @@ import { ClipLoader } from "react-spinners";
 
 import quesdbservice from "../../../appwrite/database";
 import Pagination from "./components/Pagination";
+import { FaArrowLeft } from "react-icons/fa";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -19,6 +20,8 @@ const ManageQuestions = () => {
   const cachedQues = useRef(new Map());
 
   const user = useSelector((state) => state.user);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -92,12 +95,17 @@ const ManageQuestions = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen w-full max-w-4xl">
+    <div className="bg-gray-100 min-h-screen w-full">
       <div className="container mx-auto px-4 py-8">
-        <header className="flex flex-col items-center py-6">
-          <h1 className="text-3xl font-bold text-gray-800 text-center mb-4">
-            Manage Questions
-          </h1>
+        <header className="flex flex-col lg:flex-row w-full justify-between items-center py-6">
+          <div className="flex gap-6 items-center justify-center mb-4 lg:mb-0">
+            <button onClick={() => navigate(-1)} className="text-2xl hidden lg:block">
+              <FaArrowLeft />
+            </button>
+            <h1 className="text-3xl font-bold text-gray-800 ">
+              Manage Questions
+            </h1>
+          </div>
           <Link
             to="/create-question"
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4"
@@ -120,7 +128,7 @@ const ManageQuestions = () => {
         ) : (
           <main className="mt-8 ">
             {questions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {questions.map((question) => (
                   <div
                     key={question.$id}

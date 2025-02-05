@@ -27,6 +27,7 @@ import logo from "../../../assets/logo.jpeg";
 import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
+import { Menu, X } from "lucide-react";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
@@ -109,7 +110,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </div>
   );
 
-  const MenuItem = ({ to, icon: Icon, children, onClick }) => (
+  const MenuItem = ({ to, icon: Icon, children, onClick, img }) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
@@ -122,7 +123,15 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         toggleMenu();
       }}
     >
-      <Icon className="w-4 h-4" />
+      {img ? (
+        <img
+          className="w-4 h-4 rounded-full object-cover border-1 bg-white border-gray-200"
+          src={profile?.profileImage}
+          alt="Profile"
+        />
+      ) : (
+        <Icon className="w-4 h-4" />
+      )}
       <span>{children}</span>
     </NavLink>
   );
@@ -131,22 +140,29 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     <>
       {/* Navbar */}
       <div
-        className={`bg-blue-900 h-12 w-full flex fixed z-10 shadow-md ${
+        className={`bg-blue-900 h-12 w-full flex fixed z-20 shadow-md ${
           isNavOpen ? "" : ""
         }`}
       >
         <div
-          className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out md:ml-72 ${
+          className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out  ${
             isNavOpen ? "" : ""
           }`}
         >
-          <div className="flex items-center gap-3 w-full md:hidden">
-            <button
-              className={`text-white text-xl hover:scale-105 transition-transform duration-300 md:hidden`}
-              onClick={toggleMenu}
-            >
-              <FaBars />
-            </button>
+          <div className="flex items-center gap-3 w-full ">
+            <div className="relative w-10 h-10 md:hidden">
+              <button
+                aria-label={isNavOpen ? "Close Menu" : "Open Menu"}
+                onClick={toggleMenu}
+                className="w-full h-full p-2 rounded-lg hover:bg-white/10 transition-colors duration-300 "
+              >
+                {isNavOpen ? (
+                  <X className="w-full h-full text-white transform transition-all duration-300 rotate-90 animate-in" />
+                ) : (
+                  <Menu className="w-full h-full text-white transform transition-all duration-300 animate-in" />
+                )}
+              </button>
+            </div>
             <img
               className="w-6 h-6 rounded-full shadow-xl mix-blend-screen"
               src={logo}
@@ -159,9 +175,21 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           <div className="hidden md:flex text-white gap-4 items-center md:justify-end w-full">
             {user ? (
               <div className="relative group py-1 px-2">
-                <FaUserCircle className="w-5 h-5 cursor-pointer" />
+                {profile?.profileImage ? (
+                  <img
+                    className="w-8 h-8 rounded-full object-cover border-1 bg-white border-gray-200"
+                    src={profile?.profileImage}
+                    alt="Profile"
+                  />
+                ) : (
+                  <FaUserCircle className="text-gray-400 w-10 h-10" />
+                )}
                 <div className="absolute right-0 top-6 w-36 bg-white text-gray-800 rounded-lg shadow-lg py-1 hidden group-hover:block border border-gray-100">
-                  <MenuItem to="/profile" icon={FaUserCircle}>
+                  <MenuItem
+                    to="/profile"
+                    icon={FaUserCircle}
+                    img={profile?.profileImage}
+                  >
                     Profile
                   </MenuItem>
                   <button
@@ -189,37 +217,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 z-20 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800  ${
+        className={`fixed top-0 left-0 h-full w-72 z-10 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800  ${
           isNavOpen ? "translate-x-0" : "-translate-x-full"
-        } overflow-y-auto shadow-2xl `}
+        } overflow-y-auto shadow-2xl md:shadow-none `}
       >
-        <div className="w-full h-full flex flex-col">
-          <div className="flex items-center justify-between  pb-4 ">
-            <div className="flex items-center gap-3 max-h-12  w-full bg-blue-900">
-              <div className=" flex items-center w-full p-2">
-              <img className="w-8 h-8 rounded-md" src={logo} alt="logo" />
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  `font-bold text-gray-100  text-center w-full hover:text-white transition-colors ${
-                    isActive ? "text-white" : ""
-                  }`
-                }
-              >
-                ITI MOCK TEST
-              </NavLink>
-              <button
-                className="text-gray-50 hover:text-white transition-colors md:hidden"
-                onClick={toggleMenu}
-              >
-                <FaTimes className="w-5 h-5" />
-              </button>
-              </div>
-            </div>
-          </div>
-
+        <div className="w-full h-full flex flex-col pt-14 p-4">
           {user && (
-            <div className="p-4">
+            <div className="py-2 pb-4">
               <div className="flex items-center bg-gray-50 rounded-lg py-3 px-4 ">
                 {profile?.profileImage ? (
                   <img
@@ -378,7 +382,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       {/* Overlay */}
       {isNavOpen && (
         <div
-          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-10 md:hidden"
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-[5] md:hidden"
           onClick={toggleMenu}
         ></div>
       )}
