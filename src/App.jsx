@@ -12,10 +12,11 @@ import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
+import ScrollToTop from "./utils/ScrollToTop.Jsx";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isNavOpen , setIsNavOpen ] = useState(false)
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -65,13 +66,15 @@ function App() {
 
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
-      <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen}/>
+      <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
+
       <Analytics />
       <div className="md:ml-72">
-      <div className={`pt-10 bg-gray-100 w-full mx-auto `}>
-        <Outlet />
-      <ToastContainer />
-      </div>
+        <div className={`pt-10 bg-gray-100 w-full mx-auto`}>
+          <ScrollToTop />
+          <Outlet />
+          <ToastContainer />
+        </div>
       </div>
     </div>
   );

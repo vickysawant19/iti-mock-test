@@ -16,6 +16,7 @@ const CreateQuestion = () => {
     handleSubmit,
     setValue,
     reset,
+    watch,
     formState: { errors },
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +66,10 @@ const CreateQuestion = () => {
       data.userName = user.name;
       await quesdbservice.createQuestion(data);
       toast.success("Question created");
-      reset();
+      reset({
+        question: "",
+        options: ["", "", "", ""], // Clears all 4 options
+      });
 
       // navigate("/manage-questions");
     } catch (error) {
@@ -81,6 +85,97 @@ const CreateQuestion = () => {
     const trade = trades.find((t) => t.$id === selectedTradeId);
     setSelectedTrade(trade);
     setValue("tradeId", selectedTradeId);
+  };
+
+  // const handleQuestionPaste = (e) => {
+  //   e.preventDefault(); // Prevent default paste behavior
+  //   const pastedText = e.clipboardData.getData("text");
+  //   // Get existing question text
+  //   const existingQuestion = watch("question") || "";
+  //   // Split into lines, remove empty lines & trim spaces
+  //   let lines = pastedText.split("\n").map(line => line.trim()).filter(line => line !== "");
+  //   if (lines.length >= 5) {
+  //     // Set question (first line)
+  //     setValue("question", lines[0]);
+  //     // Regex to remove prefixes like "A.", "B)", "C -", "D:"
+  //     const optionPrefixRegex = /^[A-Da-d][:.)\-\s]+/;
+  //     // Set options after cleaning
+  //     lines.slice(1, 5).forEach((option, index) => {
+  //       setValue(`options.${index}`, option.replace(optionPrefixRegex, "").trim());
+  //     });
+  //   } else {
+  //     // Append the pasted text to the existing question
+  //     setValue("question", `${existingQuestion} ${pastedText}`.trim());
+  //   }
+  // };
+  const handleQuestionPaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData("text");
+    const existingQuestion = watch("question") || "";
+    // Split and clean text into non-empty trimmed lines
+    const cleanedLines = pastedText
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line !== "");
+
+    let questionText = existingQuestion;
+    const newOptions = Array(4).fill("");
+
+    // Helper to check option prefixes
+    const isOptionLine = (line, prefix) => new RegExp(`^${prefix}[.:)\\-\\s]`, "i").test(line);
+  
+    // Try to find A-B-C-D sequence
+    let optionStartIndex = -1;
+    for (let i = 0; i <= cleanedLines.length - 4; i++) {
+      if (["A", "B", "C", "D"].every(
+        (prefix, idx) => isOptionLine(cleanedLines[i + idx], prefix)
+      )) {
+        optionStartIndex = i;
+        break;
+      }
+    }
+  
+    if (optionStartIndex !== -1) {
+      // Case 1: Found complete A-B-C-D sequence
+      const questionLines = cleanedLines.slice(0, optionStartIndex);
+      questionText = questionLines.join(" ").trim();
+      
+      cleanedLines.slice(optionStartIndex, optionStartIndex + 4).forEach((line, i) => {
+        newOptions[i] = line.replace(/^[A-Da-d][:.)\-\s]+/, "").trim();
+      });
+    } else if (cleanedLines.length >= 4) {
+      // Case 2: Fallback to question/options detection
+      const questionLines = [];
+      let optionsFound = 0;
+  
+      // Find first potential option line
+      const firstOptionIndex = cleanedLines.findIndex(line => 
+        /^[A-Da-d][:.)\-\s]+/.test(line)
+      );
+  
+      if (firstOptionIndex !== -1 && firstOptionIndex <= cleanedLines.length - 4) {
+        // Use prefix-based detection
+        questionText = cleanedLines.slice(0, firstOptionIndex).join(" ").trim();
+        cleanedLines.slice(firstOptionIndex, firstOptionIndex + 4).forEach((line, i) => {
+          newOptions[i] = line.replace(/^[A-Da-d][:.)\-\s]+/, "").trim();
+        });
+      } else {
+        // Assume last 4 lines are options
+        questionText = cleanedLines.slice(0, -4).join(" ").trim() || existingQuestion;
+        cleanedLines.slice(-4).forEach((line, i) => {
+          newOptions[i] = line.replace(/^[A-Da-d][:.)\-\s]+/, "").trim();
+        });
+      }
+    } else {
+      // Case 3: Append to existing question
+      questionText = [existingQuestion, pastedText].filter(Boolean).join(" ").trim();
+    }
+  
+    // Update form values
+    setValue("question", questionText);
+    newOptions.forEach((option, index) => {
+      setValue(`options.${index}`, option);
+    });
   };
 
   return (
@@ -185,7 +280,7 @@ const CreateQuestion = () => {
                 htmlFor="question"
                 className="block text-gray-800 font-semibold mb-2"
               >
-                Question
+                Question <span className="text-xs italic">(Copy-paste whole question+options supported)</span>
               </label>
               <textarea
                 spellCheck={true}
@@ -193,6 +288,7 @@ const CreateQuestion = () => {
                 {...register("question", { required: "Question is required" })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 rows="3"
+                onPaste={handleQuestionPaste}
               ></textarea>
               {errors.question && (
                 <p className="text-red-500">{errors.question.message}</p>

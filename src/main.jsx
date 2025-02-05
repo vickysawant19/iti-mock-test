@@ -53,6 +53,7 @@ const router = (
     <Routes>
       <Route path="/" element={<App />}>
         <Route index element={<Navigate to="/login" />} />
+        <Route index path="home" element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="forget-password" element={<ForgetPass />} />
@@ -62,7 +63,7 @@ const router = (
         <Route path="profile" element={<Profile />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="home" element={<Home />} />
+          
           <Route path="dash" element={<Dash />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile/edit" element={<ProfileForm />} />

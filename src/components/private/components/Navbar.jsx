@@ -110,13 +110,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </div>
   );
 
-  const MenuItem = ({ to, icon: Icon, children, onClick, img }) => (
+  const MenuItem = ({ to, icon: Icon, children, onClick, img, className }) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
         `flex items-center gap-2 py-1.5 text-sm hover:bg-gray-100 px-3 rounded-lg transition-colors duration-200 ${
           isActive ? "bg-gray-100 text-blue-600" : "text-gray-700"
-        }`
+        } ${className}`
       }
       onClick={() => {
         onClick?.();
@@ -135,6 +135,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       <span>{children}</span>
     </NavLink>
   );
+
+ 
 
   return (
     <>
@@ -203,10 +205,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </div>
             ) : (
               <>
-                <MenuItem to="/login" icon={FaUserCircle}>
+                <MenuItem className={"text-black hover:bg-white hover:text-black"} to="/login" icon={FaUserCircle}>
                   Login
                 </MenuItem>
-                <MenuItem to="/signup" icon={FaUserCircle}>
+                <MenuItem className={"text-black hover:bg-white hover:text-black"} to="/signup" icon={FaUserCircle}>
                   SignUp
                 </MenuItem>
               </>
@@ -367,10 +369,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </button>
             ) : (
               <>
-                <MenuItem to="/login" icon={FaUserCircle}>
+                <MenuItem className={"md:hidden"} to="/login" icon={FaUserCircle}>
                   Login
                 </MenuItem>
-                <MenuItem to="/signup" icon={FaUserCircle}>
+                <MenuItem className={"md:hidden"} to="/signup" icon={FaUserCircle}>
                   SignUp
                 </MenuItem>
               </>

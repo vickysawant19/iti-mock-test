@@ -25,29 +25,35 @@ const CustomCalendar = ({
     const today = new Date();
     const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
-    const isWithinRange = distance <= circleRadius;
-
+  
+    // Get current time for attendance check
     const attendanceStartTime = new Date(
       `${new Date().toDateString()} ${attendanceTime?.start || "09:00"}`
     );
     const attendanceEndTime = new Date(
       `${new Date().toDateString()} ${attendanceTime?.end || "17:00"}`
     );
-
+  
     const isWithinAttendanceTime =
       today >= attendanceStartTime && today <= attendanceEndTime;
-
+    const isWithinRange = distance <= circleRadius;
     const isNotToday = date.toDateString() !== today.toDateString();
-
-    return (
-      view === "month" &&
-      ((!enableNextTiles && date > today) ||
-        date < adjustedStartDate ||
-        (!isTeacher &&
-          (!isWithinRange ||
-            !isWithinAttendanceTime ||
-            (!canMarkPrevious && isNotToday))))
-    );
+  
+    if (view === "month") {
+      // Basic date validation
+      if (!enableNextTiles && date > today) return true;
+      if (date < adjustedStartDate) return true;
+  
+      // For non-teachers
+      if (!isTeacher) {
+        // Disable tile if either distance or time conditions are not met
+        if (!isWithinRange) return true;
+        if (!isWithinAttendanceTime) return true;
+        if (!canMarkPrevious && isNotToday) return true;
+      }
+    }
+  
+    return false;
   };
 
   return (
