@@ -216,10 +216,10 @@ const ProfileForm = () => {
       {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit(handleProfileSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <CustomInput
-            label={"Username"}
-            extraclass={"md:col-span-2"}
+            label={"Full Name"}
+            extraclass={"md:col-span-2 lg:col-span-3"}
             required={true}
             type="text"
             {...register("userName", { required: true })}
