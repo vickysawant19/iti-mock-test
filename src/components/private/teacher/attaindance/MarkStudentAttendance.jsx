@@ -479,6 +479,7 @@ const MarkStudentAttendance = () => {
                   handleActiveStartDateChange={handleMonthChange}
                   distance={distance}
                   canMarkPrevious={batchData.canMarkPrevious}
+                  enableNextTiles={isTeacher}
                   attendanceTime={batchData.attendanceTime}
                   circleRadius={batchData.circleRadius}
                 />

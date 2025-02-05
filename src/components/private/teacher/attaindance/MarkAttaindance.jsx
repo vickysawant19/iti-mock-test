@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Link, ArrowUp } from "lucide-react";
+import { Link as Linkto } from "react-router-dom";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -26,9 +27,6 @@ const MarkAttendance = () => {
   const [datesWithAttendance, setDatesWithAttendance] = useState(new Set());
   const [dateWithHoliday, setDateWithHoliday] = useState(new Map());
 
-  const [isHoliday, setIsHoliday] = useState(false);
-  const [holidayText, setHolidayText] = useState("");
-
   const [batchData, setBatchData] = useState(null);
 
   const DEFAULT_IN_TIME = "09:30";
@@ -37,6 +35,7 @@ const MarkAttendance = () => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
   const isTeacher = user?.labels.includes("Teacher");
+  const isHoliday = dateWithHoliday.has(format(selectedDate, "yyyy-MM-dd"));
 
   const navigate = useNavigate();
 
@@ -47,7 +46,7 @@ const MarkAttendance = () => {
         JSON.parse(item)
       );
       const holidays = new Map();
-      parsedData.forEach((item) => holidays.set(item.date, item.holidayText));
+      parsedData.forEach((item) => holidays.set(item.date, item));
       setDateWithHoliday(holidays);
       setBatchData({ ...data, attendanceHolidays: parsedData || [] });
     } catch (error) {
@@ -105,8 +104,9 @@ const MarkAttendance = () => {
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");
-    // Directly set holiday flag
-    setIsHoliday(dateWithHoliday.has(formattedDate));
+    if (dateWithHoliday.get(formattedDate)) {
+      return;
+    }
 
     let markedCount = 0;
     let unmarkCount = 0;
@@ -207,10 +207,9 @@ const MarkAttendance = () => {
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       if (dateWithHoliday.has(formattedDate)) {
-        toast.error("Cant mark attendance Its a Holiday");
+        toast.warn("Cant mark attendace on holiday! ");
         return;
       }
-
       const response = await Promise.all(
         students.map((student) => {
           const studentAttendance = attendance[student.userId];
@@ -272,7 +271,7 @@ const MarkAttendance = () => {
         <div className="w-full h-full flex flex-col cursor-pointer">
           <div className="flex flex-col justify-center items-center text-center text-xs p-1">
             <div className="italic text-red-600 mb-1">
-              {dateWithHoliday.get(formatedDate) || "Holiday"}
+              {dateWithHoliday.get(formatedDate)?.holidayText || "Holiday"}
             </div>
           </div>
         </div>
@@ -367,9 +366,11 @@ const MarkAttendance = () => {
         </div>
 
         {/* Bottom Section with Calendar and Attendance List */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className={`grid grid-cols-1 lg:grid-cols-5 gap-4`}>
           {/* Calendar Section - 2/3 width on desktop */}
-          <div className="lg:col-span-3  bg-white rounded-lg shadow-sm p-4">
+          <div
+            className={`lg:col-span-3 transition-all duration-300  bg-white rounded-lg shadow-sm p-4`}
+          >
             <CustomCalendar
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
@@ -383,31 +384,20 @@ const MarkAttendance = () => {
           </div>
 
           {/* Attendance List Section - 1/3 width on desktop */}
-          <div className="lg:col-span-2  flex flex-col h-[calc(100vh-76px)] ">
+          <div className="lg:col-span-2  flex flex-col h-[calc(100vh-76px)]">
             {/* Holiday Toggle */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={isHoliday}
-                    onChange={(e) => setIsHoliday(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-700">Mark as Holiday</span>
-                </label>
-                {isHoliday && (
-                  <input
-                    type="text"
-                    value={holidayText}
-                    onChange={(e) => setHolidayText(e.target.value)}
-                    placeholder="Holiday reason"
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                )}
-              </div>
-            </div>
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-4 flex items-center justify-between">
+              {/* Left Icon */}
+              <Link className="w-6 h-6 text-gray-500" />
 
+              {/* Button-like Link */}
+              <Linkto
+                to="/attaindance/mark-holidays"
+                className="px-4 py-2 bg-teal-500 text-white font-medium rounded-md hover:bg-teal-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                Go to add/update Holidays
+              </Linkto>
+            </div>
             {/* Scrollable Student List */}
             <div className="bg-white rounded-lg shadow-sm flex-1 overflow-hidden">
               <div className="h-full overflow-y-auto p-4">
