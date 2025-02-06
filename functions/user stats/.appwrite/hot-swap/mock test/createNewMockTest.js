@@ -1,11 +1,17 @@
-import { Query } from "node-appwrite";
+import { Databases, Query, Client } from "node-appwrite";
+
+const client = new Client();
+client
+  .setEndpoint(process.env.APPWRITE_URL)
+  .setProject(process.env.APPWRITE_PROJECT_ID);
+
+const database = new Databases(client);
 
 const createNewMockTest = async ({
   paperId,
   userId,
   userName = null,
   error,
-  database,
 }) => {
   try {
     const paperResponse = await database.listDocuments(

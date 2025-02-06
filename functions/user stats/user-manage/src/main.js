@@ -52,7 +52,6 @@ export default async ({ req, res, log, error }) => {
     if (!process.env.APPWRITE_FUNCTION_API_ENDPOINT || !process.env.APPWRITE_FUNCTION_PROJECT_ID) {
       throw new Error('Missing required environment variables');
     }
-    
 
     // Initialize Appwrite client
     const client = new Client()

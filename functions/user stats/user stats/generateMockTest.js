@@ -1,4 +1,11 @@
-import { Query } from "node-appwrite";
+import { Databases, Query, Client } from "node-appwrite";
+
+const client = new Client();
+client
+  .setEndpoint(process.env.APPWRITE_URL)
+  .setProject(process.env.APPWRITE_PROJECT_ID);
+
+const database = new Databases(client);
 
 const generateMockTest = async ({
   userId,
@@ -8,7 +15,6 @@ const generateMockTest = async ({
   year,
   quesCount,
   error,
-  database,
 }) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
