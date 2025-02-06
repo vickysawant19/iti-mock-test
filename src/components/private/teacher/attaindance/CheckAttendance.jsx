@@ -142,7 +142,7 @@ const CheckAttendance = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+    <div className="w-full  mx-auto px-4 py-6">
       {/* Profile Info */}
       <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
