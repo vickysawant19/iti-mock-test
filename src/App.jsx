@@ -45,7 +45,7 @@ function App() {
           }
         }
       } catch (error) {
-        console.error("Error checking user status:", error);
+        console.error("Error checking user status: ", error);
       } finally {
         setIsLoading(false);
       }
