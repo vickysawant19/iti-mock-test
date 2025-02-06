@@ -18,6 +18,7 @@ const conf = {
   ),
   collegesCollectionId: String(import.meta.env.VITE_COLLEGE_COLLECTION_ID),
   subjectsCollectionId: String(import.meta.env.VITE_SUBJECTS_COLLECTION_ID),
+  modulesesCollectionId: String(import.meta.env.VITE_MODULES_COLLECTION_ID),
   mockTestFunctionId: String(import.meta.env.VITE_MOCKTEST_FUNCTION_ID),
   studentAttendanceCollectionId: String(
     import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID

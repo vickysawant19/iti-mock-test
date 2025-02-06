@@ -21,6 +21,7 @@ import {
   FaUserPlus,
   FaUsers,
   FaLayerGroup,
+  FaUserSecret,
 } from "react-icons/fa";
 
 import logo from "../../../assets/logo.jpeg";
@@ -28,6 +29,7 @@ import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 import { Menu, X } from "lucide-react";
+import { MdAddCard } from "react-icons/md";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
@@ -136,8 +138,6 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </NavLink>
   );
 
- 
-
   return (
     <>
       {/* Navbar */}
@@ -205,10 +205,18 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </div>
             ) : (
               <>
-                <MenuItem className={"text-black hover:bg-white hover:text-black"} to="/login" icon={FaUserCircle}>
+                <MenuItem
+                  className={"text-black hover:bg-white hover:text-black"}
+                  to="/login"
+                  icon={FaUserCircle}
+                >
                   Login
                 </MenuItem>
-                <MenuItem className={"text-black hover:bg-white hover:text-black"} to="/signup" icon={FaUserCircle}>
+                <MenuItem
+                  className={"text-black hover:bg-white hover:text-black"}
+                  to="/signup"
+                  icon={FaUserCircle}
+                >
                   SignUp
                 </MenuItem>
               </>
@@ -253,6 +261,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           )}
 
           <div className="flex-grow space-y-2">
+            <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
+              <MenuItem to="/add-modules" icon={MdAddCard}>
+                Add modules
+              </MenuItem>
+            </MenuGroup>
+
             <MenuItem to="/home" icon={FaHome}>
               Home
             </MenuItem>
@@ -369,10 +383,18 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </button>
             ) : (
               <>
-                <MenuItem className={"md:hidden"} to="/login" icon={FaUserCircle}>
+                <MenuItem
+                  className={"md:hidden"}
+                  to="/login"
+                  icon={FaUserCircle}
+                >
                   Login
                 </MenuItem>
-                <MenuItem className={"md:hidden"} to="/signup" icon={FaUserCircle}>
+                <MenuItem
+                  className={"md:hidden"}
+                  to="/signup"
+                  icon={FaUserCircle}
+                >
                   SignUp
                 </MenuItem>
               </>

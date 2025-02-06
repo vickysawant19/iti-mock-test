@@ -47,6 +47,8 @@ import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
 import { Analytics } from "@vercel/analytics/react";
 import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
+import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
+import AddModules from "./components/private/admin/AddModules.jsx";
 
 const router = (
   <Router>
@@ -63,7 +65,6 @@ const router = (
         <Route path="profile" element={<Profile />} />
 
         <Route element={<ProtectedRoute />}>
-          
           <Route path="dash" element={<Dash />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile/edit" element={<ProfileForm />} />
@@ -95,6 +96,9 @@ const router = (
               element={<MarkStudentAttendance />}
             />
             <Route path="check-attendance" element={<CheckAttendance />} />
+          </Route>
+          <Route path="" element={<ProtectedAdminRoutes />}>
+            <Route path="add-modules" element={<AddModules />} />
           </Route>
         </Route>
         <Route
