@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
@@ -73,6 +73,8 @@ const MarkStudentAttendance = () => {
     device: "",
     batch: "",
   });
+
+  const debounceRef = useRef(null);
 
   React.useEffect(() => {
     if (!isTeacher && deviceLocation && batchData?.location) {
@@ -285,6 +287,13 @@ const MarkStudentAttendance = () => {
     });
     setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
     setIsModalOpen(false);
+
+    // Clear any existing debounce timer
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    // Set a new debounce timer (e.g., 5 seconds delay)
+    debounceRef.current = setTimeout(() => {
+      markUserAttendance();
+    }, 5000);
   };
 
   const removeAttendance = () => {
@@ -311,6 +320,7 @@ const MarkStudentAttendance = () => {
   };
 
   const markUserAttendance = async () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setIsLoading(true);
     const filterOutHolidays = studentAttendance.attendanceRecords.filter(
       (item) => typeof item === "object" && !holidays.has(item.date)
@@ -385,7 +395,7 @@ const MarkStudentAttendance = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+    <div className="w-full  mx-auto px-4 py-6">
       {/* Top Actions Bar */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center justify-end">
