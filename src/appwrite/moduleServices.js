@@ -2,7 +2,7 @@ import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
 
-export class moduleServices {
+export class ModuleServices {
   constructor() {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getDatabases();
@@ -83,6 +83,6 @@ export class moduleServices {
   }
 }
 
-const moduleServices = new moduleServices();
+const moduleServices = new ModuleServices();
 
 export default moduleServices;
