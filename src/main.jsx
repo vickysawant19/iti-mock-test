@@ -49,6 +49,7 @@ import { Analytics } from "@vercel/analytics/react";
 import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
 import AddModules from "./components/private/admin/AddModules.jsx";
+import Modules from "./components/private/admin/Modules.jsx";
 
 const router = (
   <Router>
@@ -98,7 +99,7 @@ const router = (
             <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
           <Route path="" element={<ProtectedAdminRoutes />}>
-            <Route path="add-modules" element={<AddModules />} />
+            <Route path="add-modules" element={<Modules />} />
           </Route>
         </Route>
         <Route
