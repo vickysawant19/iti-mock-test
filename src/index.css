@@ -10,4 +10,34 @@
 html {
     scroll-behavior: smooth;
   }
+
+  @layer base {
+    /* For Chrome, Safari, and Edge */
+    ::-webkit-scrollbar {
+      width: 1px; /* very thin */
+      height: 3px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #d1d5db; /* Tailwind's gray-300 */
+      border-radius: 1px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background-color: #1e3a8a; /* Tailwind's blue-900 */
+      border-radius: 10px;
+      border: 2px solid #d1d5db; /* matches the track background */
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #1e40af; /* Tailwind's blue-800 on hover */
+    }
+    
+    /* For Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #1e3a8a #d1d5db;
+    }
+  }
+
   

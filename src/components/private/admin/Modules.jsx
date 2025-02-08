@@ -107,6 +107,33 @@ const Modules = () => {
     }
   };
 
+  const handleDeleteModule = () => {
+    if (!moduleId) return;
+    if (!confirm("Deleteing Module with Module Id:", moduleId)) return;
+    setModules((prev) => {
+      return {
+        ...prev,
+        syllabus: prev.syllabus.filter((m) => m.moduleId !== moduleId),
+      };
+    });
+  };
+
+  const handleDeleteTopic = () => {
+    if (!moduleId || !topicId) return;
+    if (!confirm("Deleteing Topic with Topic Id:", topicId)) return;
+
+    setModules((prev) => {
+      return {
+        ...prev,
+        syllabus: prev.syllabus.map((m) =>
+          m.moduleId === moduleId
+            ? { ...m, topics: m.topics.filter((t) => t.topicId !== topicId) }
+            : m
+        ),
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 py-6 shadow-md">
@@ -120,7 +147,7 @@ const Modules = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 ">
         <div className="flex sm:flex-row flex-col flex-wrap gap-4 mb-6 p-6 bg-white shadow-lg rounded-lg">
           <div className="flex-1 min-w-[200px]">
             <div className="flex items-center gap-2 mb-2">
@@ -166,7 +193,7 @@ const Modules = () => {
         </div>
 
         {selectedTradeID && selectedSubjectID && (
-          <div className="mb-6">
+          <div className="mb-6 sticky top-20">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="col-span-full flex justify-end gap-4">
                 <button
@@ -239,6 +266,7 @@ const Modules = () => {
                 {show.has("showModules") && (
                   <ShowModules
                     setShow={setShow}
+                    handleDeleteModule={handleDeleteModule}
                     module={modules.syllabus.find(
                       (item) => item.moduleId === moduleId
                     )}
@@ -247,6 +275,7 @@ const Modules = () => {
                 {show.has("showTopics") && (
                   <ShowTopic
                     setShow={setShow}
+                    handleDeleteTopic={handleDeleteTopic}
                     topic={modules.syllabus
                       .find((item) => item.moduleId === moduleId)
                       ?.topics.find((item) => item.topicId === topicId)}

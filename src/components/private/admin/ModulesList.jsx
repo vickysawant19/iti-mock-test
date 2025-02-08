@@ -16,7 +16,7 @@ const ModuleList = ({
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6 space-y-4">
+    <div className="bg-white shadow-lg rounded-lg p-6 space-y-4 h-screen overflow-y-scroll  ">
       <div className="flex items-center gap-2 mb-4">
         <BookOpen className="w-5 h-5 text-blue-600" />
         <h3 className="text-lg font-semibold text-gray-800">Module List</h3>

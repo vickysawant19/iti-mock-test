@@ -1,7 +1,15 @@
 import React from "react";
-import { Clock, Book, ClipboardList, Edit2, Bookmark } from "lucide-react";
+import {
+  Clock,
+  Book,
+  ClipboardList,
+  Edit2,
+  Bookmark,
+  LucideDelete,
+  Delete,
+} from "lucide-react";
 
-const ShowTopic = ({ topic, setShow }) => {
+const ShowTopic = ({ topic, setShow, handleDeleteTopic }) => {
   if (!topic) {
     return null;
   }
@@ -10,20 +18,29 @@ const ShowTopic = ({ topic, setShow }) => {
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
             <Bookmark className="w-5 h-5 text-blue-600" />
             <h3 className="text-xl font-semibold text-gray-800">
               {topic.topicName}
             </h3>
           </div>
-          <button
-            onClick={() => setShow(new Set().add("AddTopics"))}
-            className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span>Edit</span>
-          </button>
+          <div className="flex ">
+            <button
+              onClick={() => setShow(new Set().add("AddTopics"))}
+              className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"
+            >
+              <Edit2 className="w-4 h-4" />
+              <span>Edit</span>
+            </button>
+            <button
+              onClick={() => handleDeleteTopic()}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+            >
+              <Delete className="w-4 h-4" />
+              <span>delete</span>
+            </button>
+          </div>
         </div>
       </div>
 

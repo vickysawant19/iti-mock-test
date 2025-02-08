@@ -6,29 +6,40 @@ import {
   Target,
   FileText,
   Calendar,
+  Delete,
+  DeleteIcon,
 } from "lucide-react";
 
-const ShowModules = ({ module, setShow }) => {
+const ShowModules = ({ module, setShow, handleDeleteModule }) => {
   if (!module) return null;
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
             <BookOpen className="w-6 h-6 text-blue-600" />
             <h2 className="text-2xl font-semibold text-gray-800">
               {module.moduleName}
             </h2>
           </div>
-          <button
-            onClick={() => setShow(new Set().add("AddModules"))}
-            className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span>Edit</span>
-          </button>
+          <div className="flex ">
+            <button
+              onClick={() => setShow(new Set().add("AddModules"))}
+              className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"
+            >
+              <Edit2 className="w-4 h-4" />
+              <span>Edit</span>
+            </button>
+            <button
+              onClick={() => handleDeleteModule()}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+            >
+              <DeleteIcon className="w-4 h-4" />
+              <span>Delete</span>
+            </button>
+          </div>
         </div>
       </div>
 
