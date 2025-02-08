@@ -12,6 +12,7 @@ export class ModuleServices {
     try {
       const modulesData = {
         ...data,
+        syllabus: data.syllabus.map((item) => JSON.stringify(item)),
       };
       return await this.database.createDocument(
         conf.databaseId,
@@ -26,13 +27,22 @@ export class ModuleServices {
   }
 
   async updateModules(modulesId, updatedData) {
+    const { tradeId, subjectId, syllabus } = updatedData;
     try {
-      return await this.database.updateDocument(
+      const data = await this.database.updateDocument(
         conf.databaseId,
         conf.modulesesCollectionId,
         modulesId,
-        updatedData
+        {
+          tradeId,
+          subjectId,
+          syllabus: syllabus.map((item) => JSON.stringify(item)),
+        }
       );
+      return {
+        ...data,
+        syllabus: data.syllabus.map((item) => JSON.parse(item)),
+      };
     } catch (error) {
       console.error("Appwrite error: updating modules:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -62,6 +72,7 @@ export class ModuleServices {
 
       return {
         ...data,
+        syllabus: data.syllabus((item) => JSON.parse(item)),
       };
     } catch (error) {
       console.log("Appwrite error: get modules:", error);
@@ -71,11 +82,19 @@ export class ModuleServices {
 
   async listModules(queries = [Query.orderDesc("$createdAt")]) {
     try {
-      return await this.database.listDocuments(
+      const data = await this.database.listDocuments(
         conf.databaseId,
         conf.modulesesCollectionId,
         queries
       );
+      if (data.total > 0) {
+        return {
+          ...data.documents[0],
+          syllabus: data.documents[0].syllabus.map((item) => JSON.parse(item)),
+        };
+      } else {
+        return data.documents[0];
+      }
     } catch (error) {
       console.error("Appwrite error: fetching moduleses:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);

@@ -1,122 +1,57 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../store/userSlice";
 import { selectProfile } from "../../../store/profileSlice";
 import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import { Query } from "appwrite";
-import { useForm } from "react-hook-form";
-import {
-  Book,
-  Clock,
-  Target,
-  Link,
-  CheckSquare,
-  Trash,
-  Edit,
-  Plus,
-} from "lucide-react";
 import ModulesList from "./ModulesList";
 import AddTopics from "./AddTopics";
 import AddModules from "./AddModules";
 import ShowModules from "./ShowModules";
 import ShowTopic from "./ShowTopic";
-
-const dummySyllabus = {
-  tradeId: "TRADE-001",
-  subjectId: "SUBJ-101",
-  syllabus: [
-    {
-      moduleId: "MOD-101",
-      moduleName: "Introduction to Carpentry",
-      moduleDuration: 40,
-      learningOutcome:
-        "Understand basic woodworking techniques and tool safety",
-      moduleDescription:
-        "Foundation course covering essential carpentry skills and workshop safety protocols",
-      hours: 10,
-      topics: [
-        {
-          topicId: "TOP-1011",
-          topicName: "Wood Types and Properties",
-          hours: 4,
-          resources: ["Wood_Handbook.pdf", "Material_Samples.zip"],
-          assessment: "Material Identification Test",
-        },
-        {
-          topicId: "TOP-1012",
-          topicName: "Basic Tool Handling",
-          hours: 6,
-          resources: ["Tool_Safety_Video.mp4", "Toolkit_Checklist.pdf"],
-          assessment: "Practical Demonstration and Quiz",
-        },
-      ],
-    },
-    {
-      moduleId: "MOD-102",
-      moduleName: "Advanced Joinery Techniques",
-      moduleDuration: 60,
-      learningOutcome: "Master complex wood joints and furniture construction",
-      moduleDescription:
-        "Advanced techniques for creating durable joints and custom furniture pieces",
-      hours: 15,
-      topics: [
-        {
-          topicId: "TOP-1021",
-          topicName: "Mortise and Tenon Joints",
-          hours: 8,
-          resources: ["Joint_Designs.pdf", "Workshop_Guide.docx"],
-          assessment: "Practical Joint Construction",
-        },
-        {
-          topicId: "TOP-1022",
-          topicName: "Cabinet Making Basics",
-          hours: 7,
-          resources: ["Cabinet_Plans.zip", "Finishing_Techniques.mp4"],
-          assessment: "Cabinet Construction Project",
-        },
-      ],
-    },
-  ],
-};
+import { PlusCircle, Save, BookOpen, Filter } from "lucide-react";
 
 const Modules = () => {
   const [tradeData, setTradeData] = useState([]);
   const [subjectData, setSubjectData] = useState([]);
   const [selectedTradeID, setSelectedTradeID] = useState("");
   const [selectedSubjectID, setSelectedSubjectID] = useState("");
-  const [modules, setModules] = useState(dummySyllabus);
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
+
   const [moduleId, setModuleId] = useState("");
   const [topicId, setTopicId] = useState("");
+  const [modules, setModules] = useState({
+    tradeId: selectedTradeID,
+    subjectId: selectedSubjectID,
+  });
 
+  const [show, setShow] = useState(new Set());
 
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm();
-
-  const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
   const fetchTrades = async () => {
+    setFetchingData(true);
     try {
       const data = await tradeservice.listTrades();
       setTradeData(data.documents);
     } catch (error) {
       console.error("Error fetching trades:", error);
+    } finally {
+      setFetchingData(false);
     }
   };
 
   const fetchSubjects = async () => {
+    setFetchingData(true);
     try {
       const data = await subjectService.listSubjects();
       setSubjectData(data.documents);
     } catch (error) {
       console.error("Error fetching subjects:", error);
+    } finally {
+      setFetchingData(false);
     }
   };
 
@@ -127,8 +62,14 @@ const Modules = () => {
         Query.equal("tradeId", selectedTradeID),
         Query.equal("subjectId", selectedSubjectID),
       ]);
-      setModules(dummySyllabus);
-      // setModules(data.documents[0]);
+      setShow(new Set());
+      setModules(
+        data || {
+          tradeId: selectedTradeID,
+          subjectId: selectedSubjectID,
+          syllabus: [],
+        }
+      );
     } catch (error) {
       console.error("Error fetching modules:", error);
     } finally {
@@ -149,84 +90,48 @@ const Modules = () => {
     }
   }, [selectedTradeID, selectedSubjectID]);
 
-  const onSubmit = async (formData) => {
+  const submitModuleData = async () => {
+    setLoading(true);
     try {
-      const newModule = {
-        tradeId: selectedTradeID,
-        subjectId: selectedSubjectID,
-        syllabus: [
-          {
-            moduleId: formData.moduleId,
-            moduleName: "",
-            moduleDuration: parseInt(formData.moduleDuration),
-            learningOutcome: "",
-            moduleDescription: "",
-            hours: parseInt(formData.sectionHours),
-            topics: [
-              {
-                topicId: formData.topicId,
-                topicName: formData.topicName,
-                hours: parseInt(formData.topicHours),
-                resources: [formData.topicResource],
-                assessment: formData.topicAssessment,
-              },
-            ],
-          },
-        ],
-      };
-
-      console.log(newModule);
-
-      // await moduleServices.createModules(newModule);
-      // await fetchModules();
-      // setShowForm(false);
-      // reset();
+      if (modules.$id) {
+        const res = await moduleServices.updateModules(modules.$id, modules);
+        setModules(res);
+      } else {
+        const res = await moduleServices.createModules(modules);
+        setModules(res);
+      }
     } catch (error) {
-      console.error("Error creating module:", error);
+      console.log("module error", error);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleDelete = async (moduleId) => {
-    try {
-      await moduleServices.deleteModules(moduleId);
-      setModules(modules.filter((module) => module.$id !== moduleId));
-    } catch (error) {
-      console.error("Error deleting module:", error);
-    }
-  };
-
-  const getTradeName = (tradeId) => {
-    return tradeData.find((trade) => trade.$id === tradeId)?.tradeName || "";
-  };
-
-  const getSubjectName = (subjectId) => {
-    return (
-      subjectData.find((subject) => subject.$id === subjectId)?.subjectName ||
-      ""
-    );
   };
 
   return (
-    <div className="bg-white">
-      <header className="bg-blue-600 text-white py-6 mb-6">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 py-6 shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 className="text-2xl font-bold text-center">
-              Module Management System
-            </h1>
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-6 h-6" />
+              <h1 className="text-2xl font-bold">Module Management System</h1>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4">
-        {/* Select the trade and subject to get module */}
-        <div className="flex flex-wrap gap-4 mb-6">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex sm:flex-row flex-col flex-wrap gap-4 mb-6 p-6 bg-white shadow-lg rounded-lg">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-2">Trade</label>
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <label className="text-sm font-medium text-gray-700">Trade</label>
+            </div>
             <select
               value={selectedTradeID}
               onChange={(e) => setSelectedTradeID(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-gray-50"
+              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors"
+              disabled={fetchingData}
             >
               <option value="">Select Trade</option>
               {tradeData.map((trade) => (
@@ -238,12 +143,17 @@ const Modules = () => {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-2">Subject</label>
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <label className="text-sm font-medium text-gray-700">
+                Subject
+              </label>
+            </div>
             <select
               value={selectedSubjectID}
               onChange={(e) => setSelectedSubjectID(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-gray-50"
-              disabled={!selectedTradeID}
+              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              disabled={!selectedTradeID || fetchingData}
             >
               <option value="">Select Subject</option>
               {subjectData.map((subject) => (
@@ -255,53 +165,97 @@ const Modules = () => {
           </div>
         </div>
 
-        {
+        {selectedTradeID && selectedSubjectID && (
           <div className="mb-6">
-            <h2 className="text-xl font-bold mb-6">Manage Modules</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="col-span-1">
-                <h1>Modules</h1>
-                <button className="bg-blue-300 p-2 w-full mb-2 rounded">
-                  Add Module
+              <div className="col-span-full flex justify-end gap-4">
+                <button
+                  disabled={loading}
+                  onClick={() => {
+                    setShow(new Set().add("AddModules"));
+                    setModuleId("");
+                    setTopicId("");
+                  }}
+                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  {loading ? (
+                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
+                  ) : (
+                    "Add New Module"
+                  )}
                 </button>
-                <ModulesList
-                  syllabus={modules?.syllabus}
-                  setModuleId={setModuleId}
-                  setTopicId={setTopicId}
-                  topicId={topicId}
-                  moduleId={moduleId}
-                //   setShowModuleForm={setShowModuleForm}
-                //   setShowTopicForm={setShowTopicForm}
-                />
+                <button
+                  disabled={loading}
+                  onClick={submitModuleData}
+                  className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors disabled:bg-green-300"
+                >
+                  <Save className="w-5 h-5" />
+                  {loading ? (
+                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
               </div>
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-6 col-span-2"
-              >
-                <AddModules register={register} errors={errors} />
-                <ShowModules module={modules.syllabus.filter(item => item.moduleId === moduleId)} />
-                <AddTopics register={register} errors={errors} />
-                {/* <ShowTopic topic={modules.syllabus.filter(item => item.filter(item1 => item1.topicId === topicId))}/> */}
 
-                <div className="flex justify-end gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Save Module
-                  </button>
-                </div>
-              </form>
+              <div className="col-span-1">
+                {loading ? (
+                  <div className="flex justify-center items-center h-40">
+                    <div className="w-10 h-10 border-t-4 border-blue-500 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  modules?.syllabus?.length > 0 && (
+                    <ModulesList
+                      syllabus={modules?.syllabus}
+                      setModuleId={setModuleId}
+                      setTopicId={setTopicId}
+                      topicId={topicId}
+                      moduleId={moduleId}
+                      setShow={setShow}
+                    />
+                  )
+                )}
+              </div>
+
+              <div className="lg:col-span-2 md:col-span-1 flex flex-wrap flex-col">
+                {show.has("AddModules") && (
+                  <AddModules
+                    setModules={setModules}
+                    modules={modules}
+                    moduleId={moduleId}
+                    setShow={setShow}
+                  />
+                )}
+                {show.has("AddTopics") && (
+                  <AddTopics
+                    setModules={setModules}
+                    modules={modules}
+                    moduleId={moduleId}
+                    topicId={topicId}
+                    setShow={setShow}
+                  />
+                )}
+                {show.has("showModules") && (
+                  <ShowModules
+                    setShow={setShow}
+                    module={modules.syllabus.find(
+                      (item) => item.moduleId === moduleId
+                    )}
+                  />
+                )}
+                {show.has("showTopics") && (
+                  <ShowTopic
+                    setShow={setShow}
+                    topic={modules.syllabus
+                      .find((item) => item.moduleId === moduleId)
+                      ?.topics.find((item) => item.topicId === topicId)}
+                  />
+                )}
+              </div>
             </div>
           </div>
-        }
+        )}
       </div>
     </div>
   );

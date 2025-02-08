@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, BookOpen, FileText } from "lucide-react";
 
 const ModuleList = ({
   syllabus = [],
@@ -7,62 +7,104 @@ const ModuleList = ({
   setTopicId,
   topicId,
   moduleId,
-  setShowTopicForm,
-  setShowModuleForm
+  setShow,
 }) => {
-  // State to track which module's topics are expanded
   const [expandedModule, setExpandedModule] = useState(null);
 
-  // Toggle the expanded state of a module
   const toggleModule = (moduleId) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId);
   };
 
-
   return (
-    <div className="space-y-4">
-      {syllabus.map((module) => (
-        <div key={module.moduleId} className="border rounded-lg shadow-sm p-4">
-          {/* Module Header */}
+    <div className="bg-white shadow-lg rounded-lg p-6 space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <BookOpen className="w-5 h-5 text-blue-600" />
+        <h3 className="text-lg font-semibold text-gray-800">Module List</h3>
+      </div>
+
+      <div className="space-y-3">
+        {syllabus.map((module) => (
           <div
-            className={`flex justify-between items-center cursor-pointer ${
+            key={module.moduleId}
+            className={`border rounded-lg transition-all duration-200 ${
               moduleId === module.moduleId
-                ? " text-gray-950"
-                : " text-gray-600"
+                ? "border-blue-300 shadow-md bg-blue-50"
+                : "border-gray-200 hover:border-blue-200 hover:shadow-sm"
             }`}
-            onClick={() => {
-              toggleModule(module.moduleId);
-              setModuleId(module.moduleId);
-            }}
           >
-            <h3 className="text-lg font-semibold">{module.moduleName}</h3>
-            {expandedModule === module.moduleId ? (
-              <ChevronUp className="h-5 w-5 text-gray-500" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-gray-500" />
+            {/* Module Header */}
+            <div
+              className={`flex justify-between items-center p-4 cursor-pointer transition-colors duration-200 ${
+                moduleId === module.moduleId
+                  ? "text-blue-900"
+                  : "text-gray-700 hover:text-blue-800"
+              }`}
+              onClick={() => {
+                toggleModule(module.moduleId);
+                setModuleId(module.moduleId);
+                setShow(new Set().add("showModules"));
+                setTopicId("");
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-medium">
+                  {module.moduleId} {module.moduleName}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">
+                  {module.topics?.length || 0} topics
+                </span>
+                {expandedModule === module.moduleId ? (
+                  <ChevronUp className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-gray-400" />
+                )}
+              </div>
+            </div>
+
+            {/* Topics Dropdown */}
+            {expandedModule === module.moduleId && (
+              <div className="border-t border-gray-100 bg-white rounded-b-lg">
+                <div className="p-4 space-y-2">
+                  {module?.topics?.map((topic) => (
+                    <div
+                      key={topic.topicId}
+                      onClick={() => {
+                        setModuleId(module.moduleId);
+                        setTopicId(topic.topicId);
+                        setShow(new Set().add("showTopics"));
+                      }}
+                      className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors duration-200 ${
+                        topicId === topic.topicId
+                          ? "bg-blue-100 text-blue-900"
+                          : "hover:bg-gray-50 text-gray-600"
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <h4 className="font-medium">
+                        {topic.topicId}-{topic.topicName}
+                      </h4>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShow(new Set().add("AddTopics"));
+                      setTopicId("");
+                    }}
+                    className="flex items-center gap-2 mt-3 p-2 w-full text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="font-medium">Add New Topic</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-
-          {/* Topics Dropdown */}
-          {expandedModule === module.moduleId && (
-            <div className="mt-4 space-y-2">
-              {module.topics.map((topic) => (
-                <div
-                  onClick={() => setTopicId(topic.topicId)}
-                  key={topic.topicId}
-                  className="pl-4"
-                >
-                  <h4 className={`font-medium ${topicId === topic.topicId ? "text-gray-950 underline" : "text-gray-600 no-underline"}`}>{topic.topicName}</h4>
-                  <p className="text-sm text-gray-600">Hours: {topic.hours}</p>
-                  <p className="text-sm text-gray-600">
-                    Assessment: {topic.assessment}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
