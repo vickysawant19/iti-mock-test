@@ -17,6 +17,7 @@ const Modules = () => {
   const [subjectData, setSubjectData] = useState([]);
   const [selectedTradeID, setSelectedTradeID] = useState("");
   const [selectedSubjectID, setSelectedSubjectID] = useState("");
+  const [selectedTradeYear, setSelectedTradeYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
 
@@ -60,6 +61,7 @@ const Modules = () => {
       setLoading(true);
       const data = await moduleServices.listModules([
         Query.equal("tradeId", selectedTradeID),
+        Query.equal("year", selectedTradeYear),
         Query.equal("subjectId", selectedSubjectID),
       ]);
       setShow(new Set());
@@ -67,6 +69,7 @@ const Modules = () => {
         data || {
           tradeId: selectedTradeID,
           subjectId: selectedSubjectID,
+          year: selectedTradeYear,
           syllabus: [],
         }
       );
@@ -88,7 +91,7 @@ const Modules = () => {
     if (selectedTradeID && selectedSubjectID) {
       fetchModules();
     }
-  }, [selectedTradeID, selectedSubjectID]);
+  }, [selectedTradeID, selectedTradeYear, selectedSubjectID]);
 
   const submitModuleData = async () => {
     setLoading(true);
@@ -166,6 +169,31 @@ const Modules = () => {
                   {trade.tradeName}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <label className="text-sm font-medium text-gray-700">Year</label>
+            </div>
+            <select
+              value={selectedTradeYear}
+              onChange={(e) => setSelectedTradeYear(e.target.value)}
+              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors"
+              disabled={fetchingData}
+            >
+              <option value="">Select Year</option>
+              {selectedTradeID &&
+                Array.from({
+                  length: tradeData.find(
+                    (trade) => trade.$id === selectedTradeID
+                  ).duration,
+                }).map((_, idx) => (
+                  <option key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
+                    {idx === 0 ? "FIRST" : "SECOND"}
+                  </option>
+                ))}
             </select>
           </div>
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FaArrowLeft } from "react-icons/fa";
@@ -9,48 +9,89 @@ import { FaArrowLeft } from "react-icons/fa";
 import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import quesdbservice from "../../../appwrite/database";
+import moduleServices from "../../../appwrite/moduleServices";
+import { Query } from "appwrite";
 
 const EditQuestion = () => {
-  const { register, handleSubmit, setValue, watch } = useForm();
   const { quesId } = useParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [trades, setTrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
+  const [modules, setModules] = useState(null);
 
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
+  const { register, handleSubmit, setValue, watch, reset, getValues, control } =
+    useForm();
+
+  const tradeId = useWatch({ control, name: "tradeId" });
+  const subjectId = useWatch({ control, name: "subjectId" });
+  const year = useWatch({ control, name: "year" });
+
+  const fetchModules = async () => {
+    if (!tradeId || !subjectId || !year) return;
+    setIsLoading(true);
+    try {
+      const response = await moduleServices.listModules([
+        Query.equal("tradeId", tradeId),
+        Query.equal("subjectId", subjectId),
+        Query.equal("year", year),
+      ]);
+      const currentModuleId = getValues("moduleId");
+      if (currentModuleId) {
+        setValue("moduleId", currentModuleId);
+      }
+      setModules(response);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch Modules");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTradesAndQuestion = async () => {
+    setIsLoading(true);
+    try {
+      const response = await tradeservice.listTrades();
+      setTrades(response.documents);
+      const subjectRes = await subjectService.listSubjects();
+      setSubjects(subjectRes.documents);
+      const question = await quesdbservice.getQuestion(quesId);
+
+      const trade = response.documents.find(
+        (tr) => tr.$id === question.tradeId
+      );
+      setSelectedTrade(trade);
+      reset({
+        question: question.question,
+        tradeId: question.tradeId,
+        year: question.year,
+        subjectId: question.subjectId,
+        moduleId: String(question.moduleId),
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+      });
+    } catch (error) {
+      console.log(error.message);
+      toast.error("Error fetching data gg");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTradesAndQuestion = async () => {
-      try {
-        const response = await tradeservice.listTrades();
-        setTrades(response.documents);
-        const subjectRes = await subjectService.listSubjects();
-        setSubjects(subjectRes.documents);
-        const question = await quesdbservice.getQuestion(quesId);
-        setValue("question", question.question);
-        setValue("tradeId", question.tradeId);
-        setValue("year", question.year);
-        setValue("subjectId", question.subjectId);
-
-        const trade = response.documents.find(
-          (tr) => tr.$id === question.tradeId
-        );
-        setSelectedTrade(trade);
-
-        question.options.forEach((option, index) =>
-          setValue(`options.${index}`, option)
-        );
-        setValue("correctAnswer", question.correctAnswer);
-      } catch (error) {
-        console.log(error.message);
-        toast.error("Error fetching data gg");
-      }
-    };
-
     fetchTradesAndQuestion();
-  }, [quesId, setValue]);
+  }, [quesId]);
+
+  useEffect(() => {
+    if (tradeId && subjectId && year) {
+      console.log("fetching module");
+      fetchModules();
+    }
+  }, [tradeId, subjectId, year]);
 
   const onTradeChange = (e) => {
     const selectedTradeId = e.target.value;
@@ -58,26 +99,22 @@ const EditQuestion = () => {
     setSelectedTrade(trade);
   };
 
-
-
   const onSubmit = async (data) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     if (!data.correctAnswer) {
       toast.error("Correct answer is required");
-      setIsLoading(false);
+      setIsSubmitting(false);
       return;
     }
-
     data.userId = user.$id;
-
     try {
       await quesdbservice.updateQuestion(quesId, data);
       toast.success("Question updated");
-      navigate("/manage-questions");
+      // navigate("/manage-questions");
     } catch (error) {
       toast.error("Error updating question");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -104,7 +141,10 @@ const EditQuestion = () => {
               </label>
               <select
                 id="tradeId"
-                {...register("tradeId", { required: "Trade is required" })}
+                {...register("tradeId", {
+                  required: "Trade is required",
+                  disabled: isLoading,
+                })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 onChange={onTradeChange}
               >
@@ -116,7 +156,6 @@ const EditQuestion = () => {
                 ))}
               </select>
             </div>
-
             {selectedTrade && (
               <div className="mb-6">
                 <label
@@ -127,7 +166,10 @@ const EditQuestion = () => {
                 </label>
                 <select
                   id="year"
-                  {...register("year", { required: "Year is required" })}
+                  {...register("year", {
+                    required: "Year is required",
+                    disabled: isLoading,
+                  })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 >
                   <option value="">Select Year</option>
@@ -154,7 +196,6 @@ const EditQuestion = () => {
                 </select>
               </div>
             )}
-
             {selectedTrade && (
               <div className="mb-6">
                 <label
@@ -167,6 +208,7 @@ const EditQuestion = () => {
                   id="subjectId"
                   {...register("subjectId", {
                     required: "Subject is required",
+                    disabled: isLoading,
                   })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 >
@@ -180,6 +222,39 @@ const EditQuestion = () => {
               </div>
             )}
 
+            {selectedTrade && (
+              <div className="mb-6">
+                <label
+                  htmlFor="moduleId"
+                  className="block text-gray-800 font-semibold mb-2"
+                >
+                  Module
+                </label>
+
+                <Controller
+                  name="moduleId"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Module is required" }}
+                  render={({ field }) => (
+                    <select
+                      id="moduleId"
+                      {...field}
+                      disabled={isLoading}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">Select Module</option>
+                      {modules &&
+                        modules.syllabus.map((m) => (
+                          <option key={m.moduleId} value={String(m.moduleId)}>
+                            {m.moduleId} {m.moduleName}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                />
+              </div>
+            )}
             <div className="mb-6">
               <label
                 htmlFor="question"
@@ -190,12 +265,14 @@ const EditQuestion = () => {
               <textarea
                 spellCheck={true}
                 id="question"
-                {...register("question", { required: "Question is required" })}
+                {...register("question", {
+                  required: "Question is required",
+                  disabled: isLoading,
+                })}
                 className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 rows="3"
               ></textarea>
             </div>
-
             <div className="mb-6">
               <label className="block text-gray-800 font-semibold mb-2">
                 Options
@@ -224,6 +301,7 @@ const EditQuestion = () => {
                     id={`option-text-${value}`}
                     {...register(`options.${index}`, {
                       required: "Option is required",
+                      disabled: isLoading,
                     })}
                     className="ml-2 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                     rows="2"
@@ -231,15 +309,14 @@ const EditQuestion = () => {
                 </div>
               ))}
             </div>
-
             <button
               type="submit"
               className={`hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${
-                isLoading ? "bg-gray-500" : "bg-blue-500"
+                isSubmitting ? "bg-gray-500" : "bg-blue-500"
               }`}
-              disabled={isLoading}
+              disabled={isSubmitting || isLoading}
             >
-              {isLoading ? "Updating..." : "Update Question"}
+              {isSubmitting ? "Updating..." : "Update Question"}
             </button>
           </form>
         </main>

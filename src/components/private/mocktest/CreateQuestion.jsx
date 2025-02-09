@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
@@ -9,42 +9,69 @@ import { FaArrowLeft } from "react-icons/fa";
 import quesdbservice from "../../../appwrite/database";
 import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
+import moduleServices from "../../../appwrite/moduleServices";
+import { Query } from "appwrite";
 
 const CreateQuestion = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [trades, setTrades] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [modules, setModules] = useState(null);
+  const [selectedTrade, setSelectedTrade] = useState(null);
+
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.user);
+  const profile = useSelector((state) => state.profile);
   const {
     register,
     handleSubmit,
     setValue,
     reset,
     watch,
+    control,
     formState: { errors },
   } = useForm();
-  const [isLoading, setIsLoading] = useState(false);
-  const [trades, setTrades] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [selectedTrade, setSelectedTrade] = useState(null);
 
-  const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
-  const profile = useSelector((state) => state.profile);
+  const tradeId = useWatch({ control, name: "tradeId" });
+  const subjectId = useWatch({ control, name: "subjectId" });
+  const year = useWatch({ control, name: "year" });
+
+  const fetchTrades = async () => {
+    try {
+      const response = await tradeservice.listTrades();
+      setTrades(response.documents);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch trades");
+    }
+  };
+  const fetchSubjects = async () => {
+    try {
+      const response = await subjectService.listSubjects();
+      setSubjects(response.documents);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch trades");
+    }
+  };
+
+  const fetchModules = async () => {
+    if (!tradeId || !subjectId || !year) return;
+    try {
+      const response = await moduleServices.listModules([
+        Query.equal("tradeId", tradeId),
+        Query.equal("subjectId", subjectId),
+        Query.equal("year", year),
+      ]);
+
+      setModules(response);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to fetch Modules");
+    }
+  };
 
   useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        const response = await tradeservice.listTrades();
-        setTrades(response.documents);
-      } catch (error) {
-        toast.error("Failed to fetch trades");
-      }
-    };
-    const fetchSubjects = async () => {
-      try {
-        const response = await subjectService.listSubjects();
-        setSubjects(response.documents);
-      } catch (error) {
-        toast.error("Failed to fetch trades");
-      }
-    };
     fetchSubjects();
     fetchTrades();
   }, []);
@@ -57,20 +84,25 @@ const CreateQuestion = () => {
     setSelectedTrade(trade);
   }, [profile, trades]);
 
+  useEffect(() => {
+    if (tradeId && subjectId && year) {
+      console.log("Fetching modules based on updated form values...");
+      fetchModules();
+    }
+  }, [tradeId, subjectId, year]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
-    console.log(data);
 
     try {
       data.userId = user.$id;
       data.userName = user.name;
       await quesdbservice.createQuestion(data);
-      toast.success("Question created");
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options
       });
-
+      toast.success("Question created");
       // navigate("/manage-questions");
     } catch (error) {
       toast.error(error.message);
@@ -183,9 +215,12 @@ const CreateQuestion = () => {
           </h1>
         </header>
 
-        <main className="mt-8 bg-white shadow-md rounded-lg p-6">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-6">
+        <main className="mt-8 bg-white shadow-md rounded-lg p-6  ">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="lg:grid lg:grid-cols-3 gap-3"
+          >
+            <div className="mb-6  lg:col-span-2 ">
               <label
                 htmlFor="tradeName"
                 className="block text-gray-800 font-semibold mb-2"
@@ -210,9 +245,9 @@ const CreateQuestion = () => {
               )}
             </div>
             {selectedTrade && (
-              <div className="mb-6">
+              <div className="mb-6  lg:col-span-1 ">
                 <label
-                  htmlFor="tradeName"
+                  htmlFor="year"
                   className="block text-gray-800 font-semibold mb-2"
                 >
                   Trade Year
@@ -242,17 +277,19 @@ const CreateQuestion = () => {
             )}
 
             {selectedTrade && (
-              <div className="mb-6">
+              <div className="mb-6   lg:col-span-1">
                 <label
-                  htmlFor="tradeName"
+                  htmlFor="subjectId"
                   className="block text-gray-800 font-semibold mb-2"
                 >
                   Subject
                 </label>
 
                 <select
-                  id="year"
-                  {...register("subjectId", { required: "Year is required" })}
+                  id="subjectId"
+                  {...register("subjectId", {
+                    required: "Subject is required",
+                  })}
                   className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
                 >
                   <option value="">Select Subject</option>
@@ -262,13 +299,41 @@ const CreateQuestion = () => {
                     </option>
                   ))}
                 </select>
-                {errors.year && (
-                  <p className="text-red-500">{errors.year.message}</p>
+                {errors.subjectId && (
+                  <p className="text-red-500">{errors.subjectId.message}</p>
+                )}
+              </div>
+            )}
+            {modules && (
+              <div className="mb-6  lg:col-span-2">
+                <label
+                  htmlFor="moduleId"
+                  className="block text-gray-800 font-semibold mb-2"
+                >
+                  Module
+                </label>
+
+                <select
+                  id="moduleId"
+                  {...register("moduleId", {
+                    required: "Module is required",
+                  })}
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Select Module</option>
+                  {modules.syllabus.map((m) => (
+                    <option key={m.moduleId} value={m.moduleId}>
+                      {m.moduleId} {m.moduleName}
+                    </option>
+                  ))}
+                </select>
+                {errors.moduleId && (
+                  <p className="text-red-500">{errors.moduleId.message}</p>
                 )}
               </div>
             )}
 
-            <div className="mb-6">
+            <div className="mb-6  lg:col-span-full">
               <label
                 htmlFor="question"
                 className="block text-gray-800 font-semibold mb-2"
@@ -313,8 +378,11 @@ const CreateQuestion = () => {
               )}
             </div> */}
 
-            <div className="mb-6">
-              <label className="block text-gray-800 font-semibold mb-2">
+            <div className="mb-6 col-span-full lg:grid lg:grid-cols-2">
+              <label
+                className="block text-gray-800 font-semibold mb-2 col-span-full
+              "
+              >
                 Options
               </label>
               {["A", "B", "C", "D"].map((value, index) => (
@@ -356,7 +424,7 @@ const CreateQuestion = () => {
 
             <button
               type="submit"
-              className={`hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold rounded-md py-2 px-4 w-full bg-blue-500`}
+              className={`hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold rounded-md py-2 px-4 w-full bg-blue-500 col-start-3`}
               disabled={isLoading}
             >
               {isLoading ? "Creating..." : "Create Question"}

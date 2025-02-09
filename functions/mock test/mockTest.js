@@ -3,9 +3,11 @@ import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
 
 export default async ({ req, res, log, error }) => {
+
   if (!req.body) {
     throw new Error("Request body is required");
   }
+ 
   const {
     action,
     userId,

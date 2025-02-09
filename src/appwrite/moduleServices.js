@@ -27,7 +27,7 @@ export class ModuleServices {
   }
 
   async updateModules(modulesId, updatedData) {
-    const { tradeId, subjectId, syllabus } = updatedData;
+    const { tradeId, year, subjectId, syllabus } = updatedData;
     try {
       const data = await this.database.updateDocument(
         conf.databaseId,
@@ -36,6 +36,7 @@ export class ModuleServices {
         {
           tradeId,
           subjectId,
+          year,
           syllabus: syllabus.map((item) => JSON.stringify(item)),
         }
       );

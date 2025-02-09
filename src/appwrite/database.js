@@ -19,6 +19,7 @@ export class QuesDbService {
     tradeId,
     year,
     subjectId,
+    moduleId,
   }) {
     try {
       // Check if the question already exists
@@ -42,6 +43,7 @@ export class QuesDbService {
         tradeId,
         year,
         subjectId,
+        moduleId,
       };
 
       return await this.database.createDocument(
@@ -68,6 +70,7 @@ export class QuesDbService {
       tradeId,
       year,
       subjectId,
+      moduleId,
     }
   ) {
     try {
@@ -79,6 +82,7 @@ export class QuesDbService {
         tradeId,
         year,
         subjectId,
+        moduleId,
       };
       return await this.database.updateDocument(
         conf.databaseId,
