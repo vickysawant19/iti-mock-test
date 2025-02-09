@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,6 +9,9 @@ import { ClipLoader } from "react-spinners";
 import quesdbservice from "../../../appwrite/database";
 import Pagination from "./components/Pagination";
 import { FaArrowLeft } from "react-icons/fa";
+import { addQuestions, selectQuestions } from "../../../store/questionSlice";
+import { selectUser } from "../../../store/userSlice";
+import QuestionCard from "./components/QuestionCard";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -20,7 +23,9 @@ const ManageQuestions = () => {
   const [isDeleting, setIsDeleting] = useState(new Set());
   const cachedQues = useRef(new Map());
 
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
+  const questionsStore = useSelector(selectQuestions);
+  const dispatch = useDispatch();
 
   const navigate = useNavigate();
 
@@ -44,6 +49,7 @@ const ManageQuestions = () => {
         ]);
         cachedQues.current.set(currentPage, response);
         setTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
+        dispatch(addQuestions(response.documents));
         setQuestions(response.documents);
       } catch (error) {
         console.error("Error fetching questions:", error);
@@ -89,7 +95,6 @@ const ManageQuestions = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const getOptionIndex = (correctAnswer) => {
@@ -135,45 +140,12 @@ const ManageQuestions = () => {
             {questions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {questions.map((question) => (
-                  <div
-                    key={question.$id}
-                    className="bg-gray-50 p-4 rounded-lg shadow"
-                  >
-                    <h2 className="font-semibold text-lg text-gray-800">
-                      {question.question}
-                    </h2>
-                    <ul className="mt-2 mb-4">
-                      {question.options.map((option, index) => (
-                        <li
-                          key={index}
-                          className={`px-2 py-1 mt-1 rounded ${
-                            getOptionIndex(question.correctAnswer) === index
-                              ? "bg-green-200"
-                              : "bg-gray-200"
-                          }`}
-                        >
-                          {option}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex items-center space-x-4 ">
-                      <Link
-                        to={`/edit/${question.$id}`}
-                        className="text-blue-500 border py-2 px-1 hover:bg-blue-500 rounded w-16 text-center hover:text-blue-100 transition-colors duration-300"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        disabled={isDeleting.has(question.$id)}
-                        onClick={() => handleDelete(question.$id)}
-                        className="text-red-500 border py-2 px-1 hover:bg-red-500 rounded min-w-16 text-center hover:text-red-100 transition-colors duration-300"
-                      >
-                        {isDeleting.has(question.$id)
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-                    </div>
-                  </div>
+                  <QuestionCard
+                    question={question}
+                    onDelete={handleDelete}
+                    isDeleting={isDeleting}
+                    getOptionIndex={getOptionIndex}
+                  />
                 ))}
               </div>
             ) : (

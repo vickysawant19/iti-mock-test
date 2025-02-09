@@ -2,15 +2,35 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Save,
+  GraduationCap,
+  BookOpen,
+  CalendarDays,
+  Layout,
+  HelpCircle,
+} from "lucide-react";
 
 import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import quesdbservice from "../../../appwrite/database";
 import moduleServices from "../../../appwrite/moduleServices";
 import { Query } from "appwrite";
+import { selectUser } from "../../../store/userSlice";
+import { selectQuestions } from "../../../store/questionSlice";
+
+const LoadingSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="h-10 bg-gray-200 rounded-lg w-full mb-4"></div>
+    {/* <div className="h-10 bg-gray-200 rounded-lg w-3/4"></div> */}
+  </div>
+);
 
 const EditQuestion = () => {
   const { quesId } = useParams();
@@ -22,7 +42,9 @@ const EditQuestion = () => {
   const [modules, setModules] = useState(null);
 
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
+  const questionsStore = useSelector(selectQuestions);
+
   const { register, handleSubmit, setValue, watch, reset, getValues, control } =
     useForm();
 
@@ -118,208 +140,229 @@ const EditQuestion = () => {
     }
   };
 
+  const currentIndex = questionsStore.findIndex((item) => item.$id === quesId);
+
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        <header className="py-3  flex gap-10 pl-4">
-          <button onClick={() => navigate(-1)} className="text-2xl">
-            <FaArrowLeft />
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800 text-center">
-            Edit Question
-          </h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-4 md:py-8">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="hidden md:inline">Back</span>
+            </button>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+              Edit Question
+            </h1>
+          </div>
+
+          {questionsStore[currentIndex + 1] && (
+            <Link
+              to={`/edit/${questionsStore[currentIndex + 1].$id}`}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <span className="hidden md:inline">Next</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          )}
         </header>
 
-        <main className="mt-8 bg-white shadow-md rounded-lg p-6">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-6">
-              <label
-                htmlFor="tradeId"
-                className="block text-gray-800 font-semibold mb-2"
-              >
-                Trade
-              </label>
-              <select
-                id="tradeId"
-                {...register("tradeId", {
-                  required: "Trade is required",
-                  disabled: isLoading,
-                })}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                onChange={onTradeChange}
-              >
-                <option value="">Select Trade</option>
-                {trades.map((trade) => (
-                  <option key={trade.$id} value={trade.$id}>
-                    {trade.tradeName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedTrade && (
-              <div className="mb-6">
-                <label
-                  htmlFor="year"
-                  className="block text-gray-800 font-semibold mb-2"
-                >
-                  Year
+        {/* Main Form Card */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Trade Selection */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <GraduationCap className="w-4 h-4" />
+                  Trade
                 </label>
-                <select
-                  id="year"
-                  {...register("year", {
-                    required: "Year is required",
-                    disabled: isLoading,
-                  })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="">Select Year</option>
-                  {new Array(selectedTrade.duration)
-                    .fill(null)
-                    .map((_, index) => {
-                      return (
-                        <option
-                          key={index}
-                          value={index === 0 ? "FIRST" : "SECOND"}
-                        >
-                          {index === 0 ? "FIRST" : "SECOND"}
-                        </option>
-                      );
-                    })}
-
-                  {trades
-                    .filter((trade) => trade.tradeName === selectedTrade)
-                    .map((trade) => (
-                      <option key={trade.$id} value={trade.year}>
-                        {trade.year} YEAR
+                {isLoading ? (
+                  <LoadingSkeleton />
+                ) : (
+                  <select
+                    {...register("tradeId")}
+                    onChange={onTradeChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  >
+                    <option value="">Select Trade</option>
+                    {trades.map((trade) => (
+                      <option key={trade.$id} value={trade.$id}>
+                        {trade.tradeName}
                       </option>
                     ))}
-                </select>
+                  </select>
+                )}
               </div>
-            )}
-            {selectedTrade && (
-              <div className="mb-6">
-                <label
-                  htmlFor="year"
-                  className="block text-gray-800 font-semibold mb-2"
-                >
-                  Subject
-                </label>
-                <select
-                  id="subjectId"
-                  {...register("subjectId", {
-                    required: "Subject is required",
-                    disabled: isLoading,
-                  })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                >
-                  <option value="">Select Subject</option>
-                  {subjects.map((sub) => (
-                    <option key={sub.$id} value={sub.$id}>
-                      {sub.subjectName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
-            {selectedTrade && (
-              <div className="mb-6">
-                <label
-                  htmlFor="moduleId"
-                  className="block text-gray-800 font-semibold mb-2"
-                >
-                  Module
-                </label>
-
-                <Controller
-                  name="moduleId"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Module is required" }}
-                  render={({ field }) => (
+              {selectedTrade && (
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <CalendarDays className="w-4 h-4" />
+                    Year
+                  </label>
+                  {isLoading ? (
+                    <LoadingSkeleton />
+                  ) : (
                     <select
-                      id="moduleId"
-                      {...field}
-                      disabled={isLoading}
-                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                      {...register("year")}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     >
-                      <option value="">Select Module</option>
-                      {modules &&
-                        modules.syllabus.map((m) => (
-                          <option key={m.moduleId} value={String(m.moduleId)}>
-                            {m.moduleId} {m.moduleName}
+                      <option value="">Select Year</option>
+                      {new Array(selectedTrade.duration)
+                        .fill(null)
+                        .map((_, index) => (
+                          <option
+                            key={index}
+                            value={index === 0 ? "FIRST" : "SECOND"}
+                          >
+                            {index === 0 ? "FIRST" : "SECOND"} YEAR
                           </option>
                         ))}
                     </select>
                   )}
-                />
+                </div>
+              )}
+            </div>
+
+            {selectedTrade && (
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <BookOpen className="w-4 h-4" />
+                    Subject
+                  </label>
+                  {isLoading ? (
+                    <LoadingSkeleton />
+                  ) : (
+                    <select
+                      {...register("subjectId")}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Select Subject</option>
+                      {subjects.map((sub) => (
+                        <option key={sub.$id} value={sub.$id}>
+                          {sub.subjectName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Layout className="w-4 h-4" />
+                    Module
+                  </label>
+                  {isLoading ? (
+                    <LoadingSkeleton />
+                  ) : (
+                    <Controller
+                      name="moduleId"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        >
+                          <option value="">Select Module</option>
+                          {modules?.syllabus.map((m) => (
+                            <option key={m.moduleId} value={String(m.moduleId)}>
+                              {m.moduleId} {m.moduleName}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    />
+                  )}
+                </div>
               </div>
             )}
-            <div className="mb-6">
-              <label
-                htmlFor="question"
-                className="block text-gray-800 font-semibold mb-2"
-              >
+
+            {/* Question Input */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <HelpCircle className="w-4 h-4" />
                 Question
               </label>
-              <textarea
-                spellCheck={true}
-                id="question"
-                {...register("question", {
-                  required: "Question is required",
-                  disabled: isLoading,
-                })}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                rows="3"
-              ></textarea>
+              {isLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-32 bg-gray-200 rounded-lg w-full"></div>
+                </div>
+              ) : (
+                <textarea
+                  {...register("question")}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows="3"
+                />
+              )}
             </div>
-            <div className="mb-6">
-              <label className="block text-gray-800 font-semibold mb-2">
+
+            {/* Options */}
+            <div className="space-y-4">
+              <label className="text-sm font-medium text-gray-700">
                 Options
               </label>
               {["A", "B", "C", "D"].map((value, index) => (
                 <div
                   key={index}
-                  className="flex items-center mb-2 p-2 rounded-md"
+                  className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50 rounded-lg"
                 >
-                  <input
-                    type="radio"
-                    id={`option-${value}`}
-                    value={value}
-                    {...register("correctAnswer", {
-                      required: "Correct answer is required",
-                    })}
-                    className="mr-2"
-                  />
-                  <label
-                    htmlFor={`option-${value}`}
-                    className="block text-gray-800 text-nowrap m-2"
-                  >
-                    Option {value}
-                  </label>
-                  <textarea
-                    id={`option-text-${value}`}
-                    {...register(`options.${index}`, {
-                      required: "Option is required",
-                      disabled: isLoading,
-                    })}
-                    className="ml-2 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-                    rows="2"
-                  ></textarea>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id={`option-${value}`}
+                      value={value}
+                      {...register("correctAnswer")}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <label
+                      htmlFor={`option-${value}`}
+                      className="text-sm font-medium"
+                    >
+                      Option {value}
+                    </label>
+                  </div>
+                  {isLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-20 bg-gray-200 rounded-lg w-full"></div>
+                    </div>
+                  ) : (
+                    <textarea
+                      {...register(`options.${index}`)}
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows="2"
+                    />
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
-              className={`hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full ${
-                isSubmitting ? "bg-gray-500" : "bg-blue-500"
-              }`}
               disabled={isSubmitting || isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Updating..." : "Update Question"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  <span>Update Question</span>
+                </>
+              )}
             </button>
           </form>
-        </main>
+        </div>
       </div>
     </div>
   );

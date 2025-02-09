@@ -23,7 +23,6 @@ const StartMockTest = () => {
     const fetchMockTest = async () => {
       try {
         const response = await questionpaperservice.getQuestionPaper(paperId);
-        console.log(response)
         if (response) {
           const parsedQuestions = response.questions.map((question) =>
             JSON.parse(question)
@@ -33,9 +32,9 @@ const StartMockTest = () => {
           }
           setSubmitted(response.submitted);
           setMockTest({ ...response, questions: parsedQuestions });
-        }else{
-          setIsLoading(false)
-          toast.error("Mock test not found!")
+        } else {
+          setIsLoading(false);
+          toast.error("Mock test not found!");
           navigate(`/all-mock-tests`);
         }
       } catch (error) {
@@ -99,19 +98,29 @@ const StartMockTest = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen  p-4 md:p-8">
+    <div className="bg-gray-100 min-h-screen">
       {!isGreetShown ? (
-        <div>
-          <MockTestGreet mockTest={mockTest} />
-          <button
-            onClick={handleStartExam}
-            className="block w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
-          >
-            Start Exam
-          </button>
-        </div>
+        <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-6 mt-10">
+        <form onSubmit={handleSubmit} className="space-y-6 p-4">
+          <div className="mt-4 flex justify-end">
+            {submitted ? (
+              <Link
+                to={`/show-mock-test/${paperId}`}
+                className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-center"
+              >
+                View Result
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitLoading}
+                className="block bg-red-500 disabled:bg-gray-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md"
+              >
+                Submit Exam
+              </button>
+            )}
+          </div>
           <div className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800 ">
@@ -154,7 +163,11 @@ const StartMockTest = () => {
               )}
             </div>
           </div>
-          <div className="flex justify-between">
+          <div
+            className={`flex  ${
+              currentQuestionIndex > 0 ? "justify-between" : "justify-end"
+            }`}
+          >
             {currentQuestionIndex > 0 && (
               <button
                 type="button"
@@ -180,24 +193,7 @@ const StartMockTest = () => {
               </button>
             )}
           </div>
-          <div className="mt-4">
-            {submitted ? (
-              <Link
-                to={`/show-mock-test/${paperId}`}
-                className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-center"
-              >
-                View Result
-              </Link>
-            ) : (
-              <button
-                type="submit"
-                disabled={isSubmitLoading}
-                className="block w-full bg-red-500 disabled:bg-gray-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md"
-              >
-                Submit Exam
-              </button>
-            )}
-          </div>
+
           <div className="flex flex-wrap mt-4 border justify-center">
             {mockTest.questions.map((ques, index) => (
               <button
