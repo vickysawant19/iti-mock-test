@@ -120,13 +120,23 @@
             "$id": "67a88715003234e3617a",
             "name": "Mock-Test-Service",
             "runtime": "node-22",
-            "specification": "s-0.5vcpu-512mb",
+            "specification": "s-1vcpu-512mb",
             "execute": [
                 "any"
             ],
             "events": [],
             "scopes": [
-                "users.read"
+                "users.read",
+                "databases.read",
+                "databases.write",
+                "collections.read",
+                "collections.write",
+                "attributes.read",
+                "attributes.write",
+                "indexes.read",
+                "indexes.write",
+                "documents.read",
+                "documents.write"
             ],
             "schedule": "",
             "timeout": 15,

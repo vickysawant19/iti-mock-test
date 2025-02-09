@@ -14,10 +14,13 @@ export default async ({ req, res, log, error }) => {
     userName,
     tradeName,
     tradeId,
+    subjectId,
     year,
     quesCount,
     paperId,
+    selectedModules,
   } = req.bodyJson;
+  
 
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
@@ -37,6 +40,8 @@ export default async ({ req, res, log, error }) => {
         quesCount,
         error,
         database,
+        selectedModules,
+        subjectId
       });
       break;
 

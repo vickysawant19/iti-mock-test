@@ -5,26 +5,34 @@ const generateMockTest = async ({
   userName,
   tradeName,
   tradeId,
+  subjectId,
   year,
   quesCount,
   error,
   database,
+  selectedModules
 }) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
     let offset = 0;
     let hasMore = true;
+    const queries = [
+      Query.equal("tradeId", tradeId),
+      Query.equal("subjectId", subjectId),
+      Query.equal("year", year),
+      Query.limit(100),
+      Query.select(["$id"])
+    ];
+    
+    if (selectedModules.length > 0) {
+      queries.push(Query.equal("moduleId", selectedModules));
+    }
 
     while (hasMore) {
       const response = await database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID,
-        [
-          Query.equal("tradeId", tradeId),
-          Query.equal("year", year),
-          Query.limit(100),
-          Query.offset(offset),
-        ]
+        [...queries, Query.offset(offset) ]
       );
 
       documents = documents.concat(response.documents);
@@ -80,9 +88,18 @@ const generateMockTest = async ({
       );
     }
 
-    const selectedQuestions = getRandomQuestions(questions, quesCount);
+    const randomQuestionIds = getRandomQuestions(questions, quesCount);
 
-    const questionsWithResponses = selectedQuestions.map((question) => ({
+    const selectedQuestions = await database.listDocuments(
+      process.env.APPWRITE_DATABASE_ID,
+      process.env.APPWRITE_QUES_COLLECTION_ID,
+      [Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
+        Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId"])]
+    );
+
+    const shuffledQuestions = selectedQuestions.documents.sort(() => Math.random - 1)
+
+    const questionsWithResponses = shuffledQuestions.map((question) => ({
       $id: question.$id,
       question: question.question,
       options: question.options,
@@ -91,6 +108,7 @@ const generateMockTest = async ({
       correctAnswer: question.correctAnswer,
       tradeId: question.tradeId,
       year: question.year,
+      moduleId: question?.moduleId || "",
       response: null, // initializing response to null
     }));
 
