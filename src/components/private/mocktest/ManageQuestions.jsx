@@ -17,6 +17,7 @@ const ManageQuestions = () => {
   const [isLoading, setisLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(new Set());
   const cachedQues = useRef(new Map());
 
   const user = useSelector((state) => state.user);
@@ -58,8 +59,9 @@ const ManageQuestions = () => {
     if (!confirmation) {
       return;
     }
+    setIsDeleting(() => new Set().add(slug));
     try {
-      const deleted = await quesdbservice.deleteQuestion(v);
+      const deleted = await quesdbservice.deleteQuestion(slug);
       if (deleted) {
         setQuestions((prevQuestions) =>
           prevQuestions.filter((question) => question.$id !== slug)
@@ -99,7 +101,10 @@ const ManageQuestions = () => {
       <div className="container mx-auto px-4 py-8">
         <header className="flex flex-col lg:flex-row w-full justify-between items-center py-6">
           <div className="flex gap-6 items-center justify-center mb-4 lg:mb-0">
-            <button onClick={() => navigate(-1)} className="text-2xl hidden lg:block">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-2xl hidden lg:block"
+            >
               <FaArrowLeft />
             </button>
             <h1 className="text-3xl font-bold text-gray-800 ">
@@ -159,10 +164,13 @@ const ManageQuestions = () => {
                         Edit
                       </Link>
                       <button
+                        disabled={isDeleting.has(question.$id)}
                         onClick={() => handleDelete(question.$id)}
-                        className="text-red-500 border py-2 px-1 hover:bg-red-500 rounded w-16 text-center hover:text-red-100 transition-colors duration-300"
+                        className="text-red-500 border py-2 px-1 hover:bg-red-500 rounded min-w-16 text-center hover:text-red-100 transition-colors duration-300"
                       >
-                        Delete
+                        {isDeleting.has(question.$id)
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </div>
                   </div>

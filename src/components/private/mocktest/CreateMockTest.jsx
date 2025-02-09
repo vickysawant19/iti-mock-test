@@ -311,7 +311,7 @@ const CreateMockTest = () => {
                     <Controller
                       name="selectedModules"
                       control={control}
-                      rules={{ required: "Please select at least one module" }}
+                      rules={{}}
                       render={({ field }) => (
                         <div>
                           <Checkbox

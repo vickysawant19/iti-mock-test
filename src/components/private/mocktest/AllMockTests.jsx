@@ -5,6 +5,7 @@ import MockTestCard from "./components/MockTestCard";
 import { Query } from "appwrite";
 import Pagination from "./components/Pagination";
 import { ClipLoader } from "react-spinners";
+import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -15,6 +16,7 @@ const AllMockTests = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [isDeleting, setIsDeleting] = useState({});
   const user = useSelector((state) => state.user);
 
   const fetchMockTests = useCallback(async () => {
@@ -35,7 +37,7 @@ const AllMockTests = () => {
         [Query.limit(ITEMS_PER_PAGE), Query.offset(startIndex)]
       );
       if (response) {
-        const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);     
+        const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
         // Cache the fetched data
         cachedMockTests.current.set(currentPage, {
           documents: response.documents,
@@ -65,7 +67,10 @@ const AllMockTests = () => {
     const confirmation = window.confirm(
       "Are you sure you want to delete this paper?"
     );
-    if (!confirmation) return;   
+    if (!confirmation) return;
+
+    setIsDeleting((prev) => ({ ...prev, [paperId]: true }));
+
     try {
       await questionpaperservice.deleteQuestionPaper(paperId);
       // Remove the deleted item from state
@@ -75,15 +80,21 @@ const AllMockTests = () => {
       // Update cache by removing the deleted item
       if (cachedMockTests.current.has(currentPage)) {
         const cachedData = cachedMockTests.current.get(currentPage);
-        const updatedDocuments = cachedData.documents.filter((test) => test.$id !== paperId);
+        const updatedDocuments = cachedData.documents.filter(
+          (test) => test.$id !== paperId
+        );
         cachedMockTests.current.set(currentPage, {
           ...cachedData,
           documents: updatedDocuments,
         });
       }
+      toast.success("Deleted!");
     } catch (error) {
       console.error("Error deleting paper:", error);
+      toast.error("Failed to Delete. Please try again.");
       setError("Failed to delete the paper. Please try again later.");
+    } finally {
+      setIsDeleting((prev) => ({ ...prev, [paperId]: false }));
     }
   };
 
@@ -121,6 +132,7 @@ const AllMockTests = () => {
                 user={user}
                 fetchMockTests={fetchMockTests}
                 handleDelete={handleDelete}
+                isDeleting={isDeleting}
               />
             ))}
           </div>

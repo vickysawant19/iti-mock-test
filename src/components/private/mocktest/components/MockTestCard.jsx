@@ -3,13 +3,12 @@ import { FaPaperPlane, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { MdFormatListNumbered } from "react-icons/md";
 import { Link } from "react-router-dom";
 
-
 const baseUrl =
   process.env.NODE_ENV === "production"
     ? "https://itimocktest.vercel.app"
     : "http://localhost:3000";
 
-const MockTestCard = ({ test, user, handleDelete }) => {
+const MockTestCard = ({ test, user, handleDelete, isDeleting }) => {
   const handleShare = async (paperId) => {
     // Construct a decorated share message
 
@@ -52,7 +51,6 @@ const MockTestCard = ({ test, user, handleDelete }) => {
     }
   };
 
- 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <p className="text-sm text-gray-500">
@@ -109,11 +107,13 @@ const MockTestCard = ({ test, user, handleDelete }) => {
         </button>
         {user.labels.includes("Teacher") && (
           <button
+            disabled={isDeleting[test.$id]}
             onClick={() => handleDelete(test.$id)}
             className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md flex gap-2 items-center justify-center w-full"
           >
             <FaTrashAlt />
-            <span>Delete</span>
+
+            <span>{isDeleting[test.$id] ? "Deleting..." : "Delete"}</span>
           </button>
         )}
       </div>
