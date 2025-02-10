@@ -1,19 +1,45 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-
+import { useNavigate, useParams } from "react-router-dom";
 import questionpaperservice from "../../../appwrite/mockTest";
+import { Query } from "appwrite";
+import { toast } from "react-toastify";
 
 const ShowMockTest = () => {
   const { paperId } = useParams();
   const [mockTest, setMockTest] = useState(null);
+  const navigate = useNavigate();
+
+  const checkProtection = async () => {
+    try {
+      //fetch paperId
+      const userPaper = await questionpaperservice.listQuestions([
+        Query.equal("$id", paperId),
+        Query.select(["paperId"]),
+      ]);
+
+      const originalPaper = await questionpaperservice.listQuestions([
+        Query.equal("paperId", userPaper[0].paperId),
+        Query.equal("isOriginal", true),
+        Query.select(["isProtected"]),
+      ]);
+      return originalPaper[0].isProtected;
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
-    const fetchMockTest = async () => {
+    const init = async () => {
+      const isProtected = await checkProtection();
+      if (isProtected) {
+        toast.error("Protected Paper!\n You can't view result!\n");
+        navigate("/all-mock-tests");
+        return;
+      }
       try {
         const response = await questionpaperservice.getQuestionPaper(paperId);
-
         if (response) {
-          const test = response;
+          const test = { ...response };
           test.questions = test.questions.map((ques) => JSON.parse(ques));
           setMockTest(test);
         }
@@ -22,7 +48,7 @@ const ShowMockTest = () => {
       }
     };
 
-    fetchMockTest();
+    init();
   }, [paperId]);
 
   const getIndex = (res) => {

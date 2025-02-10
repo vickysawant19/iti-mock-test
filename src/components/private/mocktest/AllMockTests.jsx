@@ -34,8 +34,30 @@ const AllMockTests = () => {
       }
       const response = await questionpaperservice.getQuestionPaperByUserId(
         user.$id,
-        [Query.limit(ITEMS_PER_PAGE), Query.offset(startIndex)]
+        [
+          Query.limit(ITEMS_PER_PAGE),
+          Query.offset(startIndex),
+          Query.select([
+            "endTime",
+            "isOriginal",
+            "isProtected",
+            "paperId",
+            "quesCount",
+            "score",
+            "startTime",
+            "submitted",
+            "totalMinutes",
+            "tradeId",
+            "tradeName",
+            "userId",
+            "userName",
+            "year",
+            "$createdAt",
+            "$id",
+          ]),
+        ]
       );
+
       if (response) {
         const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
         // Cache the fetched data
@@ -99,7 +121,7 @@ const AllMockTests = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-8">
+    <div className="bg-gray-100 min-h-screen p-2">
       <div className="container mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           All Mock Tests
@@ -111,7 +133,7 @@ const AllMockTests = () => {
         />
 
         {error && (
-          <div className="text-center w-full text-white p-4 bg-red-400 rounded-md mb-6">
+          <div className="text-center w-full text-white p-4  rounded-md mb-6">
             {error}
           </div>
         )}
@@ -133,6 +155,7 @@ const AllMockTests = () => {
                 fetchMockTests={fetchMockTests}
                 handleDelete={handleDelete}
                 isDeleting={isDeleting}
+                setMockTests={setMockTests}
               />
             ))}
           </div>

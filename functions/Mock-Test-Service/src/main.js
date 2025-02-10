@@ -19,6 +19,7 @@ export default async ({ req, res, log, error }) => {
     quesCount,
     paperId,
     selectedModules,
+    totalMinutes
   } = req.bodyJson;
   
 
@@ -41,7 +42,8 @@ export default async ({ req, res, log, error }) => {
         error,
         database,
         selectedModules,
-        subjectId
+        subjectId,
+        totalMinutes
       });
       break;
 

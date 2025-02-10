@@ -9,82 +9,9 @@ class QuestionPaperService {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getDatabases();
     this.bucket = appwriteService.getStorage();
-
     this.databaseId = conf.databaseId;
     this.questionsCollectionId = conf.quesCollectionId;
     this.questionPapersCollectionId = conf.questionPapersCollectionId;
-  }
-
-  async generateQuestionPaper({ userId, userName, tradeName, tradeId, year }) {
-    try {
-      // Fetching questions
-      const questions = await quesdbservice.listQuestions([
-        Query.equal("tradeId", tradeId),
-        Query.equal("year", year),
-        Query.limit(100),
-      ]);
-
-      console.log(questions.total);
-
-      if (questions.total <= 0) {
-        throw new Error("No Questions available");
-      }
-
-      // Selecting random 50 questions
-      const selectedQuestions = this.getRandomQuestions(
-        questions.documents,
-        50
-      );
-
-      // Adding response property to each question
-      const questionsWithResponses = selectedQuestions.map((question) => ({
-        $id: question.$id,
-        question: question.question,
-        options: question.options,
-        userId: question.userId,
-        userName: question.userName,
-        correctAnswer: question.correctAnswer,
-        tradeId: question.tradeId,
-        year: question.year,
-        response: null, // initializing response to null
-      }));
-
-      // Serializing questions
-      const serializedQuestions = questionsWithResponses.map((question) =>
-        JSON.stringify(question)
-      );
-
-      // Generating paperId
-      const tradePrefix = tradeName.slice(0, 3).toUpperCase();
-      const date = new Date();
-      const formattedDate = format(date, "yyyyMMdd");
-      const formattedTime = format(date, "HHmmssSSS");
-      const paperId = `${tradePrefix}${formattedDate}${formattedTime}`;
-
-      // Creating question paper object
-      const questionPaper = {
-        userId, // id of user who made paper
-        userName, // his name
-        tradeId, // trade id of paper
-        tradeName,
-        year,
-        paperId,
-        questions: serializedQuestions,
-        score: null,
-        submitted: false,
-      };
-
-      // Saving question paper to database
-      const response = await this.database.createDocument(
-        this.databaseId,
-        this.questionPapersCollectionId,
-        "unique()",
-        questionPaper
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
   }
 
   async fetchPaperById(paperId) {
@@ -176,12 +103,12 @@ class QuestionPaperService {
     return shuffled.slice(0, count);
   }
 
-  async getQuestionPaper(paperId) {
+  async getQuestionPaper($Id) {
     try {
       const response = await this.database.getDocument(
         this.databaseId,
         this.questionPapersCollectionId,
-        paperId
+        $Id
       );
       return response;
     } catch (error) {
@@ -248,7 +175,7 @@ class QuestionPaperService {
           questions: updatedQuestions,
           score,
           submitted: true,
-          endTime: data.endTime
+          endTime: data.endTime,
         }
       );
 
@@ -274,16 +201,12 @@ class QuestionPaperService {
     }
   }
 
-  async getUserResults(paperId) {
+  async listQuestions(queries = []) {
     try {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [
-          Query.equal("paperId", paperId),
-          Query.select(["score", "$updatedAt", "userName", "quesCount","userId"]),
-          // Query.notEqual("userName", "Admin"),
-        ]
+        queries
       );
       return response.documents;
     } catch (error) {
@@ -291,9 +214,49 @@ class QuestionPaperService {
     }
   }
 
+  async updateQuestion(id, data) {
+    console.log(id);
+    try {
+      const response = await this.database.updateDocument(
+        this.databaseId,
+        this.questionPapersCollectionId,
+        id,
+        data
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Error getting Questions", error);
+    }
+  }
+
+  async getUserResults(paperId) {
+    try {
+      const response = await this.database.listDocuments(
+        this.databaseId,
+        this.questionPapersCollectionId,
+        [
+          Query.equal("paperId", paperId),
+          Query.select([
+            "score",
+            "$updatedAt",
+            "userName",
+            "quesCount",
+            "userId",
+            "endTime",
+            "isOriginal",
+          ]),
+        ]
+      );
+      return response?.documents || [];
+    } catch (error) {
+      console.error("Error getting user results:", error);
+    }
+  }
+
   async getQuestionPaperByUserId(userId, queries = []) {
-    queries.push(Query.equal("userId", userId))
-    queries.push(Query.orderDesc("$createdAt"))
+    queries.push(Query.equal("userId", userId));
+    queries.push(Query.orderDesc("$createdAt"));
     try {
       const response = await this.database.listDocuments(
         this.databaseId,

@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, Clock, Award, CheckCircle, AlertCircle } from "lucide-react";
 
 const MockTestGreet = ({ mockTest, handleStartExam }) => {
-  const navigate = useNavigate();
+  function toHoursAndMinutes(totalMinutes = 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours} Hours ${minutes} Minutes`;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 relative overflow-hidden">
@@ -30,7 +34,7 @@ const MockTestGreet = ({ mockTest, handleStartExam }) => {
               <div className="flex items-center justify-center space-x-2">
                 <Clock className="w-5 h-5 text-indigo-600" />
                 <span className="text-lg font-semibold text-gray-700">
-                  Duration: 1 hour
+                  Duration: {toHoursAndMinutes(mockTest?.totalMinutes)}
                 </span>
               </div>
 

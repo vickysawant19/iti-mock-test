@@ -196,10 +196,9 @@ const CreateMockTest = () => {
       if (parsedRes.error) {
         throw new Error(parsedRes.error);
       }
-      console.log(parsedRes);
-      toast.success("Mock test created successfully!");
-      // reset();
-      // navigate(`/start-mock-test/${parsedRes.paperId}`);
+      toast.success(`Mock test created successfully!`);
+      reset();
+      navigate(`/all-mock-tests`);
     } catch (error) {
       console.log(error);
       toast.error(`Error creating mock test: ${error.message}`);
@@ -280,24 +279,28 @@ const CreateMockTest = () => {
                   <Clock className="h-4 w-4" /> Questions Count
                 </label>
                 <input
-                type="number"
-                  {...register("quesCount", {required: "Question count is required",
+                  type="number"
+                  {...register("quesCount", {
+                    required: "Question count is required",
                     min: {
                       value: 10,
-                      message: "Minimum 10 questions required"
+                      message: "Minimum 10 questions required",
                     },
                     max: {
                       value: 50,
-                      message: "Maximum 50 questions allowed"
+                      message: "Maximum 50 questions allowed",
                     },
                     valueAsNumber: true,
-                  validate: (value) => !isNaN(value) || "Please enter a valid number"
+                    validate: (value) =>
+                      !isNaN(value) || "Please enter a valid number",
                   })}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
-                        ${errors.quesCount
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300"}`}
-                /> 
+                        ${
+                          errors.quesCount
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300"
+                        }`}
+                />
                 {errors.quesCount && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.quesCount?.message}
@@ -305,40 +308,39 @@ const CreateMockTest = () => {
                 )}
               </div>
 
-
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Clock className="h-4 w-4" /> Exam Time (Minutes)
                 </label>
                 <input
-                type="number"
+                  type="number"
                   {...register("totalMinutes", {
                     required: "Minutes is required",
                     min: {
                       value: 10,
-                      message: "Minimum 10 Minutes required"
+                      message: "Minimum 10 Minutes required",
                     },
                     max: {
-                      value: 50,
-                      message: "Maximum 200 Minutes allowed"
+                      value: 200,
+                      message: "Maximum 200 Minutes allowed",
                     },
                     valueAsNumber: true,
-                     validate: (value) => !isNaN(value) || "Please enter a valid number"
+                    validate: (value) =>
+                      !isNaN(value) || "Please enter a valid number",
                   })}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
-                        ${errors.totalMinutes
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300"}`}
-                /> 
+                        ${
+                          errors.totalMinutes
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300"
+                        }`}
+                />
                 {errors.totalMinutes && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.totalMinutes?.message}
                   </p>
                 )}
               </div>
-
-
-
             </div>
 
             {modules && (

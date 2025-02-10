@@ -14,7 +14,6 @@ const StartMockTest = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [remainingTime, setRemainingTime] = useState(null);
   const [remainingSeconds, setRemainingSeconds] = useState(null);
 
   const [timeWarning, setTimeWarning] = useState(false);
@@ -37,7 +36,8 @@ const StartMockTest = () => {
       });
       toast.success("Exam submitted successfully!");
       setSubmitted(true);
-      navigate(`/show-mock-test/${paperId}`);
+      navigate(`/all-mock-tests`);
+      // navigate(`/show-mock-test/${paperId}`);
     } catch (error) {
       toast.error("Error submitting exam!");
       console.error("Error submitting exam:", error);
@@ -54,7 +54,7 @@ const StartMockTest = () => {
           const parsedQuestions = response.questions.map((question) =>
             JSON.parse(question)
           );
-          
+
           if (response.submitted) {
             navigate(`/show-mock-test/${paperId}`);
             return;
@@ -62,11 +62,11 @@ const StartMockTest = () => {
 
           // Calculate remaining time if exam already started
           if (response.startTime) {
-             const startTime = new Date(response.startTime);
+            const startTime = new Date(response.startTime);
             const totalSeconds = (response.totalMinutes || 60) * 60;
             const elapsedSeconds = differenceInSeconds(new Date(), startTime);
             const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-            
+
             setRemainingSeconds(remainingSeconds);
             setIsGreetShown(true);
           }
@@ -87,7 +87,6 @@ const StartMockTest = () => {
     fetchMockTest();
   }, [paperId]);
 
-
   useEffect(() => {
     if (remainingSeconds === null || submitted) return;
 
@@ -98,12 +97,13 @@ const StartMockTest = () => {
           handleSubmitExam();
           return 0;
         }
-        
+
         // Show warning when 5 minutes remaining
-        if (prev === 300) { // 5 minutes = 300 seconds
+        if (prev === 300) {
+          // 5 minutes = 300 seconds
           setTimeWarning(true);
         }
-        
+
         return prev - 1;
       });
     }, 1000);
@@ -114,9 +114,14 @@ const StartMockTest = () => {
   const handleStartExam = async () => {
     try {
       const startTime = new Date();
-      const res = await questionpaperservice.updateTime(mockTest.$id, { startTime });
+      const res = await questionpaperservice.updateTime(mockTest.$id, {
+        startTime,
+      });
       setRemainingSeconds((mockTest.totalMinutes || 60) * 60); // Convert minutes to seconds
-      setMockTest({...res, questions: res.questions.map(item => JSON.parse(item))});
+      setMockTest({
+        ...res,
+        questions: res.questions.map((item) => JSON.parse(item)),
+      });
       setIsGreetShown(true);
     } catch (error) {
       toast.error("Error starting exam!");
@@ -126,12 +131,15 @@ const StartMockTest = () => {
 
   const formatTime = (totalSeconds) => {
     if (totalSeconds === null) return "00:00:00";
-    
+
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(seconds).padStart(2, "0")}`;
   };
 
   const handleOptionChange = (questionId, selectedAnswer) => {
@@ -159,26 +167,35 @@ const StartMockTest = () => {
       {!isGreetShown ? (
         <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const confirmation = window.confirm("Do you want to submit the exam?");
-          if (confirmation) handleSubmitExam();
-        }} className="space-y-6 p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const confirmation = window.confirm(
+              "Do you want to submit the exam?"
+            );
+            if (confirmation) handleSubmitExam();
+          }}
+          className="space-y-6 p-4"
+        >
           {timeWarning && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <p>Warning: Less than 5 minutes remaining!</p>
             </div>
           )}
-          
+
           <div className="mt-4 flex justify-between items-center">
-          <div className="flex items-center gap-2 text-lg font-semibold">
+            <div className="flex items-center gap-2 text-lg font-semibold">
               <Timer className="h-6 w-6" />
-              <span className={`${remainingSeconds <= 300 ? 'text-red-600' : ''} font-mono`}>
+              <span
+                className={`${
+                  remainingSeconds <= 300 ? "text-red-600" : ""
+                } font-mono`}
+              >
                 {formatTime(remainingSeconds)}
               </span>
             </div>
-            
+
             {!submitted && (
               <button
                 type="submit"
@@ -193,11 +210,13 @@ const StartMockTest = () => {
           <div className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">
-                Question {currentQuestionIndex + 1} of {mockTest.questions.length}
+                Question {currentQuestionIndex + 1} of{" "}
+                {mockTest.questions.length}
               </h2>
               {mockTest.questions[currentQuestionIndex].userName && (
                 <h6 className="text-xs font-thin text-slate-400">
-                  Created by: {mockTest.questions[currentQuestionIndex].userName}
+                  Created by:{" "}
+                  {mockTest.questions[currentQuestionIndex].userName}
                 </h6>
               )}
             </div>
@@ -205,35 +224,43 @@ const StartMockTest = () => {
               {mockTest.questions[currentQuestionIndex].question}
             </p>
             <div className="space-y-2">
-              {mockTest.questions[currentQuestionIndex].options.map((option, index) => (
-                <label key={index} className="block text-gray-700">
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestionIndex}`}
-                    value={String.fromCharCode(65 + index)}
-                    onChange={() =>
-                      handleOptionChange(
-                        mockTest.questions[currentQuestionIndex].$id,
+              {mockTest.questions[currentQuestionIndex].options.map(
+                (option, index) => (
+                  <label key={index} className="block text-gray-700">
+                    <input
+                      type="radio"
+                      name={`question-${currentQuestionIndex}`}
+                      value={String.fromCharCode(65 + index)}
+                      onChange={() =>
+                        handleOptionChange(
+                          mockTest.questions[currentQuestionIndex].$id,
+                          String.fromCharCode(65 + index)
+                        )
+                      }
+                      className="mr-2"
+                      checked={
+                        mockTest.questions[currentQuestionIndex].response ===
                         String.fromCharCode(65 + index)
-                      )
-                    }
-                    className="mr-2"
-                    checked={
-                      mockTest.questions[currentQuestionIndex].response ===
-                      String.fromCharCode(65 + index)
-                    }
-                  />
-                  {String.fromCharCode(65 + index)}. {option}
-                </label>
-              ))}
+                      }
+                    />
+                    {String.fromCharCode(65 + index)}. {option}
+                  </label>
+                )
+              )}
             </div>
           </div>
 
-          <div className={`flex ${currentQuestionIndex > 0 ? "justify-between" : "justify-end"}`}>
+          <div
+            className={`flex ${
+              currentQuestionIndex > 0 ? "justify-between" : "justify-end"
+            }`}
+          >
             {currentQuestionIndex > 0 && (
               <button
                 type="button"
-                onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
+                onClick={() =>
+                  setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
+                }
                 className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md"
               >
                 Previous
@@ -242,9 +269,11 @@ const StartMockTest = () => {
             {currentQuestionIndex < mockTest.questions.length - 1 && (
               <button
                 type="button"
-                onClick={() => setCurrentQuestionIndex((prev) =>
-                  Math.min(prev + 1, mockTest.questions.length - 1)
-                )}
+                onClick={() =>
+                  setCurrentQuestionIndex((prev) =>
+                    Math.min(prev + 1, mockTest.questions.length - 1)
+                  )
+                }
                 className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
               >
                 Next

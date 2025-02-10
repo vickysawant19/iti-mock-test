@@ -10,7 +10,8 @@ const generateMockTest = async ({
   quesCount,
   error,
   database,
-  selectedModules
+  selectedModules,
+  totalMinutes
 }) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
@@ -126,9 +127,12 @@ const generateMockTest = async ({
       year,
       paperId,
       questions: serializedQuestions,
-      quesCount: parseInt(quesCount),
+      quesCount: parseInt(serializedQuestions.length),
       score: null,
       submitted: false,
+      isOriginal: true,
+      isProtected: true,
+      totalMinutes: parseInt(totalMinutes) || 60,
     };
 
     const response = await database.createDocument(
