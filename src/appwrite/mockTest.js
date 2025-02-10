@@ -6,7 +6,10 @@ import { format } from "date-fns";
 
 class QuestionPaperService {
   constructor() {
+    this.client = appwriteService.getClient();
     this.database = appwriteService.getDatabases();
+    this.bucket = appwriteService.getStorage();
+
     this.databaseId = conf.databaseId;
     this.questionsCollectionId = conf.quesCollectionId;
     this.questionPapersCollectionId = conf.questionPapersCollectionId;
@@ -215,18 +218,16 @@ class QuestionPaperService {
     }
   }
 
-  async updateAllResponses(paperId, responses) {
+  async updateAllResponses(paperId, data) {
     try {
       const paper = await this.getQuestionPaper(paperId);
       if (paper.submitted) {
         throw new Error("Cannot update responses for a submitted paper");
       }
-
       let score = 0;
-
       const updatedQuestions = paper.questions.map((question) => {
         const parsedQuestion = JSON.parse(question);
-        const response = responses.find(
+        const response = data.responses.find(
           (res) => res.questionId === parsedQuestion.$id
         );
         if (response) {
@@ -247,12 +248,28 @@ class QuestionPaperService {
           questions: updatedQuestions,
           score,
           submitted: true,
+          endTime: data.endTime
         }
       );
 
       return response;
     } catch (error) {
       console.error("Error updating all responses:", error);
+      throw error;
+    }
+  }
+
+  async updateTime(paperId, time) {
+    try {
+      const response = await this.database.updateDocument(
+        this.databaseId,
+        this.questionPapersCollectionId,
+        paperId,
+        time
+      );
+      return response;
+    } catch (error) {
+      console.error("Error updating Time:", error);
       throw error;
     }
   }

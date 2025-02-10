@@ -38,6 +38,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const [expandedGroup, setExpandedGroup] = useState("");
 
   const isTeacher = user?.labels.includes("Teacher");
+  const isAdmin = user?.labels.includes("admin");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -261,11 +262,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           )}
 
           <div className="flex-grow space-y-2">
-            <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
+            {isAdmin && <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
               <MenuItem to="/add-modules" icon={MdAddCard}>
                 Add modules
               </MenuItem>
-            </MenuGroup>
+            </MenuGroup>}
 
             <MenuItem to="/home" icon={FaHome}>
               Home

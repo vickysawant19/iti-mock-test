@@ -17,6 +17,7 @@ import {
   Calendar,
   List,
   Loader2,
+  Clock,
 } from "lucide-react";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
@@ -157,7 +158,6 @@ const CreateMockTest = () => {
 
   useEffect(() => {
     if (!trades.length) return;
-    console.log(tradeId);
     const onTradeChange = (e) => {
       setSelectedTrade(trades.find((tr) => tr.$id === tradeId));
     };
@@ -275,20 +275,70 @@ const CreateMockTest = () => {
                 ))}
               </Select>
 
-              <Select
-                label="Questions Count"
-                error={errors.quesCount?.message}
-                register={register("quesCount", {
-                  required: "Questions count is required",
-                })}
-              >
-                <option value="">Select Count</option>
-                {[25, 50].map((count) => (
-                  <option key={count} value={count}>
-                    {count} Questions
-                  </option>
-                ))}
-              </Select>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Questions Count
+                </label>
+                <input
+                type="number"
+                  {...register("quesCount", {required: "Question count is required",
+                    min: {
+                      value: 10,
+                      message: "Minimum 10 questions required"
+                    },
+                    max: {
+                      value: 50,
+                      message: "Maximum 50 questions allowed"
+                    },
+                    valueAsNumber: true,
+                  validate: (value) => !isNaN(value) || "Please enter a valid number"
+                  })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
+                        ${errors.quesCount
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300"}`}
+                /> 
+                {errors.quesCount && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.quesCount?.message}
+                  </p>
+                )}
+              </div>
+
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Exam Time (Minutes)
+                </label>
+                <input
+                type="number"
+                  {...register("totalMinutes", {
+                    required: "Minutes is required",
+                    min: {
+                      value: 10,
+                      message: "Minimum 10 Minutes required"
+                    },
+                    max: {
+                      value: 50,
+                      message: "Maximum 200 Minutes allowed"
+                    },
+                    valueAsNumber: true,
+                     validate: (value) => !isNaN(value) || "Please enter a valid number"
+                  })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
+                        ${errors.totalMinutes
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300"}`}
+                /> 
+                {errors.totalMinutes && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.totalMinutes?.message}
+                  </p>
+                )}
+              </div>
+
+
+
             </div>
 
             {modules && (
