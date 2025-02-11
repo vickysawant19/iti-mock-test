@@ -369,7 +369,7 @@ const MarkAttendance = () => {
         <div className={`grid grid-cols-1 lg:grid-cols-5 gap-4`}>
           {/* Calendar Section - 2/3 width on desktop */}
           <div
-            className={`lg:col-span-3 transition-all duration-300  bg-white rounded-lg shadow-sm p-4`}
+            className={`lg:col-span-3 transition-all duration-300`}
           >
             <CustomCalendar
               selectedDate={selectedDate}

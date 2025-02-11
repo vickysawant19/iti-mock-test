@@ -57,13 +57,13 @@ const CustomCalendar = ({
   };
 
   return (
-    <div className="flex flex-col justify-center my-2 w-full items-center">
+    <div className="flex flex-col justify-center my-2 w-full items-center" >
       <Calendar
         onChange={setSelectedDate}
         value={selectedDate}
         tileClassName={tileClassName}
         tileContent={tileContent}
-        className={`w-full max-w-2xl ${className}`}
+        className={`w-full ${className}`}
         view="month"
         minDetail="month"
         maxDetail="month"
@@ -73,7 +73,6 @@ const CustomCalendar = ({
       <style>{`
                 .react-calendar {
                     width: 100% !important;
-                    max-width: 800px !important;
                     border-radius: 1rem;
                     overflow: hidden;
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

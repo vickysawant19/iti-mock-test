@@ -168,7 +168,7 @@ const CheckAttendance = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Calendar Section - Takes up 7 columns on desktop */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-lg shadow-sm">
             <CustomCalendar
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}

@@ -469,14 +469,14 @@ const MarkStudentAttendance = () => {
       </div>
 
       {/* Attendance Section */}
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="">
         {isLoadingAttendance ? (
           <div className="flex justify-center p-8">
             <Loader2 className="animate-spin w-8 h-8" />
           </div>
         ) : (
           studentAttendance && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 ">
               <div className="lg:col-span-7">
                 <CustomCalendar
                   selectedDate={selectedDate}
@@ -495,14 +495,18 @@ const MarkStudentAttendance = () => {
                 />
               </div>
               <div className="lg:col-span-5 space-y-6">
+                <div className="bg-white p-4 rounded-lg">
                 <ShowStats
                   attendance={currentMonthData}
                   label={`Month Attendance - ${currentMonth}`}
                 />
+                </div>
+                <div className="bg-white p-4 rounded-lg">
                 <ShowStats
                   attendance={attendanceStats}
                   label="Total Attendance"
                 />
+                </div>
               </div>
             </div>
           )
