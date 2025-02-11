@@ -64,7 +64,7 @@
             "timeout": 30,
             "entrypoint": "userStats.js",
             "commands": "npm install",
-            "specification": "s-0.5vcpu-512mb",
+            "specification": "s-1vcpu-512mb",
             "path": "functions/user stats"
         },
         {
@@ -240,6 +240,14 @@
                     "array": false,
                     "size": 50,
                     "default": null
+                },
+                {
+                    "key": "moduleId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null
                 }
             ],
             "indexes": []
@@ -376,6 +384,45 @@
                     "min": -9223372036854775808,
                     "max": 9223372036854775807,
                     "default": 0
+                },
+                {
+                    "key": "startTime",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "endTime",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "totalMinutes",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "isOriginal",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                },
+                {
+                    "key": "isProtected",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
                 }
             ],
             "indexes": []
@@ -1050,7 +1097,13 @@
         },
         {
             "$id": "67a470d40039eacbd794",
-            "$permissions": [],
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")"
+            ],
             "databaseId": "itimocktest",
             "name": "modulesData",
             "enabled": true,
@@ -1073,27 +1126,19 @@
                     "default": null
                 },
                 {
-                    "key": "collegeId",
+                    "key": "syllabus",
                     "type": "string",
                     "required": false,
+                    "array": true,
+                    "size": 100000,
+                    "default": null
+                },
+                {
+                    "key": "year",
+                    "type": "string",
+                    "required": true,
                     "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "practicals",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null
-                },
-                {
-                    "key": "theory",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
+                    "size": 20,
                     "default": null
                 }
             ],
