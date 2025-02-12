@@ -3,6 +3,7 @@ import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser, selectUser } from "../../../store/userSlice";
 import { appwriteService } from "../../../appwrite/appwriteConfig";
+import { toast } from "react-toastify";
 
 const SetLabels = () => {
   const user = useSelector(selectUser);
@@ -34,7 +35,9 @@ const SetLabels = () => {
         })
       );
       const parsedResponse = JSON.parse(response.responseBody);
-      // console.log("Function response", parsedResponse);
+      if(parsedResponse.error) {
+        toast.error(`Error : ${parsedResponse.error}`)
+      }
       dispatch(addUser(parsedResponse.data));
     } catch (error) {
       console.error("Error updating labels", error);
