@@ -181,6 +181,8 @@ const CreateMockTest = () => {
     data.userId = user.$id;
     data.tradeName = selectedTrade.tradeName;
     data.action = "generateMockTest";
+    console.log("data", data)
+    return
 
     try {
       const functions = new Functions(appwriteService.getClient());

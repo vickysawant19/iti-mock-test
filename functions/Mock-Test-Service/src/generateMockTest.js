@@ -94,8 +94,9 @@ const generateMockTest = async ({
     const selectedQuestions = await database.listDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.APPWRITE_QUES_COLLECTION_ID,
-      [Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
-        Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId"])]
+      [Query.limit(quesCount),
+       Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
+       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId"])]
     );
 
     const shuffledQuestions = selectedQuestions.documents.sort(() => Math.random - 1)
