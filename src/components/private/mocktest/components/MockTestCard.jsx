@@ -37,8 +37,8 @@ const MockTestCard = ({
      Paper ID: *${paperId}*
     
     📚 *Trade:* ${test.tradeName}
-    💯 *Total Marks:* ${test.quesCount}
-    ⏳ *Duration:* 1 Hour
+    💯 *Total Questions:* ${test.quesCount}
+    ⏳ *Duration:* ${test.totalMinutes} Minutes
     
     👉 Click the link below to get started:
     ${examUrl}
