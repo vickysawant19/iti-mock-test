@@ -151,23 +151,32 @@ class QuestionPaperService {
       if (paper.submitted) {
         throw new Error("Cannot update responses for a submitted paper");
       }
+
       let score = 0;
-      const updatedQuestions = paper.questions.map((question) => {
-        const parsedQuestion = JSON.parse(question);
-        const response = data.responses.find(
-          (res) => res.questionId === parsedQuestion.$id
-        );
+      const responseMap = new Map(
+        data.responses.map((res) => [res.questionId, res.selectedAnswer])
+      );
+
+      const updatedQuestions = paper.questions.map((q) => {
+        const parsedQuestion = JSON.parse(q);
+        const response = responseMap.get(parsedQuestion.$id);
+
         if (response) {
-          parsedQuestion.response = response.selectedAnswer;
-          const isCorrect =
-            parsedQuestion.response === parsedQuestion.correctAnswer;
-          if (isCorrect) score += 1;
+          parsedQuestion.response = response;
+          const isCorrect = response === parsedQuestion.correctAnswer;
           parsedQuestion.result = isCorrect;
+          if (isCorrect) score += 1;
         }
-        return JSON.stringify(parsedQuestion);
+
+        return paper.isOriginal
+          ? JSON.stringify(parsedQuestion)
+          : JSON.stringify({
+              $id: parsedQuestion.$id,
+              response: parsedQuestion.response,
+            });
       });
 
-      const response = await this.database.updateDocument(
+      return await this.database.updateDocument(
         this.databaseId,
         this.questionPapersCollectionId,
         paperId,
@@ -178,8 +187,6 @@ class QuestionPaperService {
           endTime: data.endTime,
         }
       );
-
-      return response;
     } catch (error) {
       console.error("Error updating all responses:", error);
       throw error;

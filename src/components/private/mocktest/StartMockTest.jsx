@@ -36,6 +36,7 @@ const StartMockTest = () => {
         endTime: new Date(),
       });
       toast.success("Exam submitted successfully!");
+      localStorage.removeItem(paperId);
       setSubmitted(true);
       navigate(`/all-mock-tests`);
       // navigate(`/show-mock-test/${paperId}`);
@@ -53,6 +54,10 @@ const StartMockTest = () => {
 
   useEffect(() => {
     const fetchMockTest = async () => {
+      if (!paperId) {
+        navigate(`/show-mock-test/${paperId}`);
+        return;
+      }
       try {
         const existingTest = JSON.parse(localStorage.getItem(paperId));
         if (existingTest && existingTest.startTime) {
@@ -73,12 +78,23 @@ const StartMockTest = () => {
           Query.equal("$id", paperId),
           Query.limit(1),
         ]);
+
         const userTest = userTestResponse[0];
-        if (userTest) {
-          if (userTest.submitted) {
-            navigate(`/show-mock-test/${paperId}`);
-            return;
-          }
+        if (!userTest) {
+          toast.error("Mock test not found!");
+          navigate(`/all-mock-tests`);
+        }
+
+        if (userTest.submitted) {
+          navigate(`/show-mock-test/${paperId}`);
+          return;
+        }
+
+        userTest.questions = userTest.questions.map((question) =>
+          JSON.parse(question)
+        );
+
+        if (!userTest.isOriginal) {
           const originalTestResponse = await questionpaperservice.listQuestions(
             [
               Query.equal("paperId", userTest.paperId),
@@ -92,32 +108,25 @@ const StartMockTest = () => {
           const QuestionsLookup = new Map(
             originalTest.questions.map((item) => [item.$id, item])
           );
-          userTest.questions = userTest.questions.map((question) =>
-            JSON.parse(question)
-          );
           userTest.questions = userTest.questions.map((ques) => ({
             ...QuestionsLookup.get(ques.$id),
             response: ques.response,
           }));
-
-          // Calculate remaining time if exam already started
-          if (userTest.startTime) {
-            const startTime = new Date(userTest.startTime);
-            const totalSeconds = (userTest.totalMinutes || 60) * 60;
-            setRemainingSeconds(
-              Math.max(
-                0,
-                totalSeconds - differenceInSeconds(new Date(), startTime)
-              )
-            );
-            setIsGreetShown(true);
-          }
-          saveMockTestToLocalStorage(userTest);
-          setMockTest(userTest);
-        } else {
-          toast.error("Mock test not found!");
-          navigate(`/all-mock-tests`);
         }
+        // Calculate remaining time if exam already started
+        if (userTest.startTime) {
+          const startTime = new Date(userTest.startTime);
+          const totalSeconds = (userTest.totalMinutes || 60) * 60;
+          setRemainingSeconds(
+            Math.max(
+              0,
+              totalSeconds - differenceInSeconds(new Date(), startTime)
+            )
+          );
+          setIsGreetShown(true);
+        }
+        saveMockTestToLocalStorage(userTest);
+        setMockTest(userTest);
       } catch (error) {
         console.error("Error fetching mock test:", error);
         toast.error("Error loading mock test!");
