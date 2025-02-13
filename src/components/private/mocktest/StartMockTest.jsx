@@ -85,7 +85,7 @@ const StartMockTest = () => {
               Query.equal("isOriginal", true),
             ]
           );
-          const originalTest = originalTestResponse;
+          const originalTest = originalTestResponse[0];
           originalTest.questions = originalTest.questions.map((item) =>
             JSON.parse(item)
           );
