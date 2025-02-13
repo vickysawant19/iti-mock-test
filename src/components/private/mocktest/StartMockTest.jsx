@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import { Timer, AlertCircle } from "lucide-react";
@@ -7,6 +7,7 @@ import { differenceInMinutes, differenceInSeconds, format } from "date-fns";
 import MockTestGreet from "./components/MockTestGreet";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { toast } from "react-toastify";
+import { Query } from "appwrite";
 
 const StartMockTest = () => {
   const { paperId } = useParams();
@@ -46,33 +47,73 @@ const StartMockTest = () => {
     }
   };
 
+  const saveMockTestToLocalStorage = (test) => {
+    localStorage.setItem(paperId, JSON.stringify(test));
+  };
+
   useEffect(() => {
     const fetchMockTest = async () => {
       try {
-        const response = await questionpaperservice.getQuestionPaper(paperId);
-        if (response) {
-          const parsedQuestions = response.questions.map((question) =>
-            JSON.parse(question)
+        const existingTest = JSON.parse(localStorage.getItem(paperId));
+        if (existingTest && existingTest.startTime) {
+          const startTime = new Date(existingTest.startTime);
+          const totalSeconds = (existingTest.totalMinutes || 60) * 60;
+          setRemainingSeconds(
+            Math.max(
+              0,
+              totalSeconds - differenceInSeconds(new Date(), startTime)
+            )
           );
-          console.log(response)
+          setIsGreetShown(true);
+          setMockTest(existingTest);
+          return;
+        }
 
-          if (response.submitted) {
+        const userTestResponse = await questionpaperservice.listQuestions([
+          Query.equal("$id", paperId),
+          Query.limit(1),
+        ]);
+        const userTest = userTestResponse[0];
+        if (userTest) {
+          if (userTest.submitted) {
             navigate(`/show-mock-test/${paperId}`);
             return;
           }
+          const originalTestResponse = await questionpaperservice.listQuestions(
+            [
+              Query.equal("paperId", userTest.paperId),
+              Query.equal("isOriginal", true),
+            ]
+          );
+          const originalTest = originalTestResponse;
+          originalTest.questions = originalTest.questions.map((item) =>
+            JSON.parse(item)
+          );
+          const QuestionsLookup = new Map(
+            originalTest.questions.map((item) => [item.$id, item])
+          );
+          userTest.questions = userTest.questions.map((question) =>
+            JSON.parse(question)
+          );
+          userTest.questions = userTest.questions.map((ques) => ({
+            ...QuestionsLookup.get(ques.$id),
+            response: ques.response,
+          }));
 
           // Calculate remaining time if exam already started
-          if (response.startTime) {
-            const startTime = new Date(response.startTime);
-            const totalSeconds = (response.totalMinutes || 60) * 60;
-            const elapsedSeconds = differenceInSeconds(new Date(), startTime);
-            const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-
-            setRemainingSeconds(remainingSeconds);
+          if (userTest.startTime) {
+            const startTime = new Date(userTest.startTime);
+            const totalSeconds = (userTest.totalMinutes || 60) * 60;
+            setRemainingSeconds(
+              Math.max(
+                0,
+                totalSeconds - differenceInSeconds(new Date(), startTime)
+              )
+            );
             setIsGreetShown(true);
           }
-
-          setMockTest({ ...response, questions: parsedQuestions });
+          saveMockTestToLocalStorage(userTest);
+          setMockTest(userTest);
         } else {
           toast.error("Mock test not found!");
           navigate(`/all-mock-tests`);
@@ -88,28 +129,24 @@ const StartMockTest = () => {
     fetchMockTest();
   }, [paperId]);
 
+  const timerRef = useRef(null);
+
   useEffect(() => {
     if (remainingSeconds === null || submitted) return;
 
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setRemainingSeconds((prev) => {
         if (prev <= 0) {
-          clearInterval(timer);
+          clearInterval(timerRef.current);
           handleSubmitExam();
           return 0;
         }
-
-        // Show warning when 5 minutes remaining
-        if (prev === 300) {
-          // 5 minutes = 300 seconds
-          setTimeWarning(true);
-        }
-
+        if (prev === 300) setTimeWarning(true); // Show warning at 5 minutes
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(timerRef.current);
   }, [remainingSeconds, submitted]);
 
   const handleStartExam = async () => {
@@ -151,7 +188,20 @@ const StartMockTest = () => {
         }
         return ques;
       });
+      saveMockTestToLocalStorage({
+        ...prevMockTest,
+        questions: updatedQuestions,
+      });
       return { ...prevMockTest, questions: updatedQuestions };
+    });
+  };
+
+  const handleNavigation = (step) => {
+    setCurrentQuestionIndex((prev) => {
+      const newIndex = prev + step;
+      return newIndex >= 0 && newIndex < mockTest.questions.length
+        ? newIndex
+        : prev;
     });
   };
 
@@ -259,9 +309,7 @@ const StartMockTest = () => {
             {currentQuestionIndex > 0 && (
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
-                }
+                onClick={() => handleNavigation(-1)}
                 className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md"
               >
                 Previous
@@ -270,11 +318,7 @@ const StartMockTest = () => {
             {currentQuestionIndex < mockTest.questions.length - 1 && (
               <button
                 type="button"
-                onClick={() =>
-                  setCurrentQuestionIndex((prev) =>
-                    Math.min(prev + 1, mockTest.questions.length - 1)
-                  )
-                }
+                onClick={() => handleNavigation(1)}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
               >
                 Next
