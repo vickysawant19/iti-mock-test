@@ -2,6 +2,7 @@ import React from "react";
 import { FaTimes } from "react-icons/fa";
 
 const TodaysTestsPopup = ({ isOpen, onClose, data, timePeriod = "Day" }) => {
+  console.log("data",data)
   if (!isOpen) return null;
 
   return (
@@ -22,7 +23,7 @@ const TodaysTestsPopup = ({ isOpen, onClose, data, timePeriod = "Day" }) => {
               <th className="py-2 px-4 text-left">Sr.No</th>
               <th className="py-2 px-4 text-left">User Name</th>
               <th className="py-2 px-4 text-left">Tests Count</th>
-              <th className="py-2 px-4 text-left">Max Score</th>
+              <th className="py-2 px-4 text-left">Max Percent</th>
             </tr>
           </thead>
           <tbody>
@@ -32,7 +33,7 @@ const TodaysTestsPopup = ({ isOpen, onClose, data, timePeriod = "Day" }) => {
                   <td className="py-2 px-4">{index + 1}</td>
                   <td className="py-2 px-4">{item.userName}</td>
                   <td className="py-2 px-4 text-center">{item.totalTests}</td>
-                  <td className="py-2 px-4 text-center">{item.maxScore}</td>
+                  <td className="py-2 px-4 text-center">{item.maxPercent}</td>
                 </tr>
               ))
             ) : (
