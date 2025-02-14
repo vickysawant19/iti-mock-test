@@ -77,19 +77,25 @@ const ShowMockTest = () => {
     return (
       <div className="p-4 mx-auto bg-white shadow-md rounded-md animate-pulse">
         {/* Header Skeleton */}
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="flex mb-4">
-            <div className="h-4 bg-gray-300 rounded w-1/4"></div>
-            <div className="h-4 bg-gray-300 rounded w-2/4 ml-2"></div>
-          </div>
-        ))}
+        <div className="p-1 max-w-md  bg-white animate-pulse">
+      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+      <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
+    </div>
+  
 
         {/* Question Skeleton */}
-        <div className="h-20 bg-gray-300 rounded w-full mb-4 mt-6"></div>
+        <div className="h-20 bg-gray-300 rounded w-full mb-4 mt-6 p-4"></div>
 
         {/* Options Skeleton */}
         {[...Array(2)].map((_, sectionIndex) => (
-          <div key={sectionIndex} className="space-y-2 mb-6">
+          <div key={sectionIndex} className="space-y-2 mb-6 mt-2">
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
