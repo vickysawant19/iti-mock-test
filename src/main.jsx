@@ -50,6 +50,16 @@ import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
 import AddModules from "./components/private/admin/AddModules.jsx";
 import Modules from "./components/private/admin/Modules.jsx";
+import { registerSW } from 'virtual:pwa-register';
+
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('New content available. Reload to update?')) {
+      updateSW(true);
+    }
+  }
+});
+
 
 const router = (
   <Router>
