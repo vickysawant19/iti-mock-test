@@ -76,19 +76,21 @@ const ShowMockTest = () => {
   const SkeletonLoader = () => {
     return (
       <div className="p-4 mx-auto bg-white shadow-md rounded-md animate-pulse">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              Mock Test Results
+            </h1>
         {/* Header Skeleton */}
         <div className="p-1 max-w-md  bg-white animate-pulse">
-      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-      <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
-    </div>
-  
+          <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
+        </div>
 
         {/* Question Skeleton */}
         <div className="h-20 bg-gray-300 rounded w-full mb-4 mt-6 p-4"></div>
@@ -109,15 +111,15 @@ const ShowMockTest = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-8">
+    <div className=" min-h-screen">
       <div className="container mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          Mock Test Results
-        </h1>
         {isLoading ? (
           <SkeletonLoader />
         ) : mockTest ? (
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="bg-gray-100 p-4 rounded-lg shadow-lg">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              Mock Test Results
+            </h1>
             <div className="mb-6">
               <p>
                 <strong>Paper ID:</strong> {mockTest.paperId}

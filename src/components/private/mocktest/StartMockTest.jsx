@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
-import { Timer, AlertCircle } from "lucide-react";
+import { Timer, AlertCircle, Check } from "lucide-react";
 import { differenceInMinutes, differenceInSeconds, format } from "date-fns";
 
 import MockTestGreet from "./components/MockTestGreet";
@@ -267,7 +267,84 @@ const StartMockTest = () => {
             )}
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow-md">
+     
+          <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">
+          Question {currentQuestionIndex + 1} of{" "}
+          {mockTest.questions.length}
+        </h2>
+        {mockTest.questions[currentQuestionIndex].userName && (
+          <h6 className="text-xs font-thin text-slate-400">
+            Created by:{" "}
+            {mockTest.questions[currentQuestionIndex].userName}
+          </h6>
+        )}
+      </div>
+
+      <p className="text-gray-600 mb-6 font-semibold">
+        {mockTest.questions[currentQuestionIndex].question}
+      </p>
+
+      <div className="space-y-3">
+        {mockTest.questions[currentQuestionIndex].options.map(
+          (option, index) => {
+            const isSelected = 
+              mockTest.questions[currentQuestionIndex].response === 
+              String.fromCharCode(65 + index);
+
+            return (
+              <label
+                key={index}
+                className={`
+                  block text-gray-700 cursor-pointer
+                  p-2 rounded-lg border-2 transition-all duration-200
+                  ${isSelected 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'}
+                `}
+              >
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    name={`question-${currentQuestionIndex}`}
+                    value={String.fromCharCode(65 + index)}
+                    onChange={() =>
+                      handleOptionChange(
+                        mockTest.questions[currentQuestionIndex].$id,
+                        String.fromCharCode(65 + index)
+                      )
+                    }
+                    checked={isSelected}
+                    className="hidden"
+                  />
+                  
+                  <div className={`
+                    w-8 h-8 flex items-center p-2 justify-center rounded-full border-2
+                    ${isSelected 
+                      ? 'border-blue-500 bg-blue-500 text-white' 
+                      : 'border-gray-300 text-gray-500'}
+                  `}>
+                    {isSelected ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <span className="font-medium">
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="ml-4">
+                    {option}
+                  </span>
+                </div>
+              </label>
+            );
+          }
+        )}
+      </div>
+    </div>
+          {/* <div className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-800">
                 Question {currentQuestionIndex + 1} of{" "}
@@ -308,7 +385,7 @@ const StartMockTest = () => {
                 )
               )}
             </div>
-          </div>
+          </div> */}
 
           <div
             className={`flex ${

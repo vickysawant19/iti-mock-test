@@ -2,7 +2,6 @@ import React from "react";
 import { FaTimes } from "react-icons/fa";
 
 const TodaysTestsPopup = ({ isOpen, onClose, data, timePeriod = "Day" }) => {
-  console.log("data",data)
   if (!isOpen) return null;
 
   return (

@@ -323,7 +323,6 @@ const Dashboard = () => {
             </button>
           }
         >
-          {console.log("ts",state.topScorers)}
           {state.topScorers.length > 0 && (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={state.topScorers.map(item => ({
