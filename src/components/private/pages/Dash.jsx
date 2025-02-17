@@ -206,6 +206,8 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
       setState(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setState(prev => ({...prev , isLoading: false}))
     }
   }, [profile, state.timePeriod, processUserStats, processTopStats, processTestsToday]);
 
@@ -231,18 +233,18 @@ const Dashboard = () => {
     setState(prev => ({ ...prev, metrics: newMetrics }));
   }, [state.allUsersStats, state.timePeriod, user.$id]);
 
-  if (state.isLoading) {
+  if (state.allUsersStats.length === 0 || !Array.isArray(state.allUsersStats)) {
     return (
-      <div className="w-full flex items-center justify-center" style={{ minHeight: 'calc(100vh - 70px)' }}>
-        <ClipLoader color="#123abc" size={50} />
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <p>No data available.</p>
       </div>
     );
   }
 
-  if (!state.allUsersStats || !Array.isArray(state.allUsersStats)) {
+  if (state.isLoading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <p>No data available.</p>
+      <div className="w-full flex items-center justify-center" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <ClipLoader color="#123abc" size={50} />
       </div>
     );
   }
