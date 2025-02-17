@@ -250,8 +250,11 @@ class QuestionPaperService {
             "userName",
             "quesCount",
             "userId",
+            "startTime",
             "endTime",
             "isOriginal",
+            "submitted",
+            "totalMinutes"
           ]),
         ]
       );

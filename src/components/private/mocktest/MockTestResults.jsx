@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronFirst, Loader2, Trophy } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { format, differenceInMinutes } from "date-fns";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
@@ -9,23 +9,20 @@ import { selectProfile } from "../../../store/profileSlice";
 const MockTestResults = () => {
   const { paperId } = useParams();
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const profile = useSelector(selectProfile);
 
   useEffect(() => {
     const getData = async () => {
       try {
         const res = await questionpaperservice.getUserResults(paperId);
-
         setData(
-          res
-            ?.filter((item) => item.isOriginal !== true)
-            .sort((a, b) => b.score - a.score)
+          (res ?? []).filter((item) => !item.isOriginal).sort((a, b) => b.score - a.score || new Date(a.endTime) - new Date(b.endTime))
         );
       } catch (error) {
-        console.log(error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -34,28 +31,36 @@ const MockTestResults = () => {
     getData();
   }, [paperId]);
 
-  const formatName = (name) => {
-    return name
+  const formatName = (name) =>
+    name
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
+
+  const filteredData = useMemo(() =>
+    data.filter((item) => item.userName.toLowerCase().includes(searchQuery.toLowerCase()))
+  , [data, searchQuery]);
+
+  const exportCSV = () => {
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      ["Rank, Name, Score, Time Taken, Submission Status"].concat(
+        filteredData.map((res, index) =>
+          `${index + 1}, ${res.userName}, ${res.score}, ${
+            res.submitted
+              ? differenceInMinutes(new Date(res.endTime), new Date(res.startTime))
+              : "Not Submitted"
+          }, ${res.submitted ? "Submitted" : "Not Submitted"}`
+        )
+      ).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "mock_test_results.csv");
+    document.body.appendChild(link);
+    link.click();
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center text-red-500">
-        {error}
-      </div>
-    );
-  }
 
   const getMedalColor = (position) => {
     switch (position) {
@@ -70,75 +75,64 @@ const MockTestResults = () => {
     }
   };
 
+  if (loading) return <Loader2 className="animate-spin text-blue-500 mx-auto" />;
+  if (error) return <div className="text-red-500 text-center">{error}</div>;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
         <div className="mb-6 flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100"
-          >
+          <button onClick={() => navigate(-1)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Mock Test Results
-            </h1>
-            <p className="text-sm text-gray-500">Paper ID: {paperId}</p>
-          </div>
+          <h1 className="text-2xl font-bold">Mock Test Results</h1>
         </div>
 
-        {/* Results Table */}
-        <div className="overflow-x-auto rounded-lg bg-white shadow">
+        <input
+          type="text"
+          placeholder="Search by name..."
+          className="border p-2 rounded w-full mb-4"
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+
+        <button onClick={exportCSV} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+          Export CSV
+        </button>
+
+        <div className="overflow-x-auto bg-white shadow rounded-lg ">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
-                  Rank
-                </th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
-                  Student Name
-                </th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
-                  Score
-                </th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
-                  Submitted At
-                </th>
+              <tr className="bg-gray-50 border-b">
+                <th className="p-4 text-left">Rank</th>
+                <th className="p-4 text-left">Student Name</th>
+                <th className="p-4 text-left">Score</th>
+                <th className="p-4 text-left">Total Minutes</th>
+                <th className="p-4 text-left">Submission Status</th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-600">Submitted At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data?.map((result, index) => (
-                <tr
-                  key={index}
-                  className={`
-                    transition-colors hover:bg-gray-50
-                    ${profile.userId === result.userId ? "bg-blue-50" : ""}
-                  `}
-                >
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{index + 1}</span>
-                      <Trophy
-                        className={`h-5 w-5 ${getMedalColor(index + 1)}`}
-                      />
-                    </div>
+            <tbody>
+              {filteredData.map((result, index) => (
+                <tr key={index} className={profile.userId === result.userId ? "bg-blue-50" : ""}>
+                  <td className="p-4 flex items-center gap-2">
+                    {index + 1}
+                    {index < 3 && <Trophy className={`h-5 w-5 ${getMedalColor(index + 1)}`} />}
                   </td>
-                  <td className="p-4 font-medium">
-                    {formatName(result.userName)}
+                  <td className="p-4 font-medium">{formatName(result.userName)}</td>
+                  <td className="p-4 text-blue-800 font-semibold">{result.score || "-"}/{result.quesCount || 50}</td>
+                  <td className="p-4 text-gray-600">
+                    {result.submitted ? `${differenceInMinutes(new Date(result.endTime), new Date(result.startTime))} min` : "Not Submitted"}
                   </td>
                   <td className="p-4">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                      {result.score || "-"}/{result.quesCount || 50}
+                    <span className={`px-3 py-1 rounded-full text-sm ${result.submitted ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                      {result.submitted ? "Submitted" : "Not Submitted"}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-600">
-                    {format(
-                      result.endTime || result.$updatedAt,
-                      "dd/MM/yyyy hh:mm a"
-                    )}
-                  </td>
+                      {result.submitted
+                        ? format(new Date(result.endTime || result.$updatedAt), "dd/MM/yyyy hh:mm a")
+                        : "Not Submitted"}
+                    </td>
                 </tr>
               ))}
             </tbody>
