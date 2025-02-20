@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy } from "react";
 import { format } from "date-fns";
 import { Printer } from "lucide-react";
 import {
