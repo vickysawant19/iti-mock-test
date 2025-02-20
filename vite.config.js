@@ -17,7 +17,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      maximumFileSizeToCacheInBytes: 5000000,
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB limit
+      },
       registerType: "autoUpdate",
       manifest: {
         name: "ITI Mock Test",
