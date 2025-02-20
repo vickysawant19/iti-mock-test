@@ -44,6 +44,7 @@ const EditQuestion = () => {
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const questionsStore = useSelector(selectQuestions);
+  const isTeacher = user.labels.includes("Teacher")
 
   const { register, handleSubmit, setValue, watch, reset, getValues, control } =
     useForm();
@@ -105,8 +106,11 @@ const EditQuestion = () => {
   };
 
   useEffect(() => {
+    if(!isTeacher) {
+      toast.error("You are not Authorized")
+    }
     fetchTradesAndQuestion();
-  }, [quesId]);
+  }, [quesId, isTeacher]);
 
   useEffect(() => {
     if (tradeId && subjectId && year) {
@@ -140,7 +144,7 @@ const EditQuestion = () => {
     }
   };
 
-  const currentIndex = questionsStore.findIndex((item) => item.$id === quesId);
+  const currentIndex = questionsStore?.findIndex((item) => item.$id === quesId);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,7 +164,7 @@ const EditQuestion = () => {
             </h1>
           </div>
 
-          {questionsStore[currentIndex + 1] && (
+          {questionsStore &&  questionsStore[currentIndex + 1] && (
             <Link
               to={`/edit/${questionsStore[currentIndex + 1].$id}`}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"

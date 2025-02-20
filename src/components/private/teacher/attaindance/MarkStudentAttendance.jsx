@@ -74,8 +74,6 @@ const MarkStudentAttendance = () => {
     batch: "",
   });
 
-  const debounceRef = useRef(null);
-
   React.useEffect(() => {
     if (!isTeacher && deviceLocation && batchData?.location) {
       const fetchLocationText = async () => {
@@ -288,12 +286,6 @@ const MarkStudentAttendance = () => {
     setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
     setIsModalOpen(false);
 
-    // Clear any existing debounce timer
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    // Set a new debounce timer (e.g., 5 seconds delay)
-    debounceRef.current = setTimeout(() => {
-      markUserAttendance();
-    }, 5000);
   };
 
   const removeAttendance = () => {
@@ -320,7 +312,7 @@ const MarkStudentAttendance = () => {
   };
 
   const markUserAttendance = async () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+   
     setIsLoading(true);
     const filterOutHolidays = studentAttendance.attendanceRecords.filter(
       (item) => typeof item === "object" && !holidays.has(item.date)

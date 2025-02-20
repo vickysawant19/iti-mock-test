@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
-import { ClipLoader } from "react-spinners";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../../store/userSlice";
+
 
 const OPTIONS = ["A", "B", "C", "D"];
 
@@ -12,6 +14,10 @@ const ShowMockTest = () => {
   const [mockTest, setMockTest] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  const user = useSelector(selectUser)
+ 
+  const isTeacher = user.labels.includes("Teacher")
 
   useEffect(() => {
     if (!paperId) return;
@@ -155,9 +161,9 @@ const ShowMockTest = () => {
                       : "border-l-4 border-red-500"
                   }`}
                 >
-                  <h3 className="text-lg font-semibold mb-2 ">
-                    {index + 1}. {question.question}
-                  </h3>
+                  <div className=" mb-2 flex justify-between">
+                    <h1 className="text-lg font-semibold">{index + 1}. {question.question}  </h1> {isTeacher ? <Link className="text-gray-500 text-xs"  to={`/edit/${question.$id}`}>{question.$id}</Link>: <span className="text-gray-500 text-xs">{question.$id}</span>}
+                  </div>
                   <div className="space-y-2">
                     {question.options.map((option, idx) => (
                       <p
