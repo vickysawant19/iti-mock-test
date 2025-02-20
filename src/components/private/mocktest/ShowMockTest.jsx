@@ -127,29 +127,32 @@ const ShowMockTest = () => {
               Mock Test Results
             </h1>
             <div className="mb-6">
+            <p>
+                <strong>User Name:</strong> {mockTest.userName || "N/A"}
+              </p>
+            <p>
+                <strong>Trade Name:</strong> {mockTest.tradeName || "N/A"}
+              </p>
+              <p>
+                <strong>Year:</strong> {mockTest.year || "N/A"}
+              </p>
               <p>
                 <strong>Paper ID:</strong> {mockTest.paperId}
               </p>
-              <p>
-                <strong>User Name:</strong> {mockTest.userName || "N/A"}
-              </p>
+              
               <p>
                 <strong>Created At:</strong>{" "}
                 {new Date(mockTest.$createdAt).toLocaleString()}
               </p>
               <p>
                 <strong>Score:</strong> {mockTest.score}/
-                {mockTest.quesCount || 50}
+                {mockTest.quesCount || "NA"}
               </p>
               <p>
-                <strong>Total Questions:</strong> {mockTest.quesCount || 50}
+                <strong>Total Questions:</strong> {mockTest.quesCount || "NA"}
               </p>
-              <p>
-                <strong>Trade Name:</strong> {mockTest.tradeName || "N/A"}
-              </p>
-              <p>
-                <strong>Year:</strong> {mockTest.year || "N/A"}
-              </p>
+              
+              
             </div>
             <div className="space-y-4">
               {mockTest.questions.map((question, index) => (
@@ -161,8 +164,9 @@ const ShowMockTest = () => {
                       : "border-l-4 border-red-500"
                   }`}
                 >
-                  <div className=" mb-2 flex justify-between">
-                    <h1 className="text-lg font-semibold">{index + 1}. {question.question}  </h1> {isTeacher ? <Link className="text-gray-500 text-xs"  to={`/edit/${question.$id}`}>{question.$id}</Link>: <span className="text-gray-500 text-xs">{question.$id}</span>}
+                  <div className=" mb-2 flex justify-between flex-col">
+                  {isTeacher ? <Link className="text-gray-500 text-xs mb-2 h-fit w-fit"  to={`/edit/${question.$id}`}>{question.$id}</Link>: <span className="text-gray-500 text-xs bg-red-400">{question.$id}</span>}
+                    <h1 className="text-lg font-semibold">{index + 1}. {question.question}  </h1> 
                   </div>
                   <div className="space-y-2">
                     {question.options.map((option, idx) => (
