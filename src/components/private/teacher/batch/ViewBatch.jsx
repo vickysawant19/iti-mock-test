@@ -12,6 +12,8 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import { calculateStats } from "../attaindance/CalculateStats";
 import ViewAttendance from "./ViewAttendance";
 import { ClipboardListIcon, UsersIcon } from "lucide-react";
+import ProgressCard from "./progressCard";
+
 
 const ViewBatch = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +24,7 @@ const ViewBatch = () => {
   const [attendanceStats, setAttendanceStats] = useState([]);
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
-  const [view, setView] = useState("profiles"); // New state to toggle view
+  const [view, setView] = useState(new Set().add("profiles"));
 
   const profile = useSelector(selectProfile);
 
@@ -70,7 +72,7 @@ const ViewBatch = () => {
           studentId: student ? student.studentId : null,
         };
       });
-
+  
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
           ? studentsWithStudentIds
@@ -99,8 +101,9 @@ const ViewBatch = () => {
   }, [selectedBatch]);
 
   useEffect(() => {
+
     if (
-      view === "attendance" &&
+      view.has("attendance") &&
       selectedBatch !== "" &&
       studentAttendance.length === 0
     ) {
@@ -115,6 +118,7 @@ const ViewBatch = () => {
       </div>
     );
   }
+  
 
   return (
     <div className="container mx-auto p-6 ">
@@ -139,25 +143,36 @@ const ViewBatch = () => {
         <div className="flex justify-center gap-4 mb-8">
           <button
             className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-              view === "profiles"
+              view.has("profiles")
                 ? "bg-blue-600 text-white shadow-lg"
                 : "bg-white text-gray-700 border border-gray-300"
             }`}
-            onClick={() => setView("profiles")}
+            onClick={() => setView(new Set().add("profiles"))}
           >
             <UsersIcon className="w-5 h-5" />
             Student Profiles
           </button>
           <button
             className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-              view === "attendance"
+              view.has("attendance")
                 ? "bg-blue-600 text-white shadow-lg"
                 : "bg-white text-gray-700 border border-gray-300"
             }`}
-            onClick={() => setView("attendance")}
+            onClick={() => setView(new Set().add("attendance"))}
           >
             <ClipboardListIcon className="w-5 h-5" />
             Attendance Records
+          </button>
+          <button
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
+              view.has("progress-card")
+                ? "bg-blue-600 text-white shadow-lg"
+                : "bg-white text-gray-700 border border-gray-300"
+            }`}
+            onClick={() => setView(new Set().add("progress-card"))}
+          >
+            <ClipboardListIcon className="w-5 h-5" />
+            Progress Card
           </button>
         </div>
       )}
@@ -165,14 +180,16 @@ const ViewBatch = () => {
       {/* Content Section */}
       <div className="">
         {!studentsLoading && students.length > 0 && !attendaceLoading ? (
-          view === "profiles" ? (
+          view.has("profiles") ? (
             <ViewProfiles students={students} />
-          ) : (
+          ) : view.has("attendance") ? (
             <ViewAttendance
               students={students}
               stats={attendanceStats}
               isLoading={attendaceLoading}
             />
+          ) : (
+            <ProgressCard studentProfiles={students} stats={attendanceStats}  />
           )
         ) : (
           <div className="flex items-center justify-center min-h-[400px]">
