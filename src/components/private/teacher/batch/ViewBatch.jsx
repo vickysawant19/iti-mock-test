@@ -14,7 +14,6 @@ import ViewAttendance from "./ViewAttendance";
 import { ClipboardListIcon, UsersIcon } from "lucide-react";
 import ProgressCard from "./progressCard";
 
-
 const ViewBatch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [studentsLoading, setStudentLoading] = useState(false);
@@ -72,7 +71,7 @@ const ViewBatch = () => {
           studentId: student ? student.studentId : null,
         };
       });
-  
+
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
           ? studentsWithStudentIds
@@ -101,7 +100,6 @@ const ViewBatch = () => {
   }, [selectedBatch]);
 
   useEffect(() => {
-
     if (
       view.has("attendance") &&
       selectedBatch !== "" &&
@@ -118,7 +116,6 @@ const ViewBatch = () => {
       </div>
     );
   }
-  
 
   return (
     <div className="container mx-auto p-6 ">
@@ -189,7 +186,8 @@ const ViewBatch = () => {
               isLoading={attendaceLoading}
             />
           ) : (
-            <ProgressCard studentProfiles={students} stats={attendanceStats}  />
+            // <ProgressCard studentProfiles={students} stats={attendanceStats}  />
+            <></>
           )
         ) : (
           <div className="flex items-center justify-center min-h-[400px]">
