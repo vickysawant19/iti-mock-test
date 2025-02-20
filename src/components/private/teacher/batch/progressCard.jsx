@@ -73,8 +73,7 @@ const styles = StyleSheet.create({
   }
 });
 
-// PDF Document Component
-const ProgressCardPDF = ({ student, monthlyRecords = [], quarterlyTests = [] }) => {
+const ProgressCardPDF = ({ student, monthlyRecords = {}, quarterlyTests = [] }) => {
   if (!student) return null;
 
   const formatDate = (dateString) => {
@@ -85,15 +84,28 @@ const ProgressCardPDF = ({ student, monthlyRecords = [], quarterlyTests = [] }) 
     }
   };
 
+  // Extract months from monthlyRecords object and sort them chronologically
+  const sortedMonthlyRecords = Object.entries(monthlyRecords).sort((a, b) => {
+    const monthsOrder = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    const monthA = a[0].split('-')[0];
+    const monthB = b[0].split('-')[0];
+    return monthsOrder.indexOf(monthA) - monthsOrder.indexOf(monthB);
+  });
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING</Text>
           <Text style={styles.headerSubtitle}>Industrial Training Institute, Dodamarg</Text>
           <Text style={[styles.headerTitle, { marginTop: 10 }]}>PROGRESS CARD</Text>
         </View>
 
+        {/* Student Details Section */}
         <View style={styles.section}>
           <View style={styles.grid}>
             <View style={styles.gridItem}>
@@ -106,83 +118,85 @@ const ProgressCardPDF = ({ student, monthlyRecords = [], quarterlyTests = [] }) 
                 {formatDate(student.DOB)}
               </Text>
               <Text>
-                <Text style={styles.label}>Register ID:</Text>
-                {student.registerId || '-'}
-              </Text>
-              <Text>
                 <Text style={styles.label}>Trade:</Text>
                 {student.trade || '-'}
+              </Text>
+              <Text>
+                <Text style={styles.label}>Edu. Qual.:</Text>
+                {student.educationQualification || '-'}
+              </Text>
+              <Text>
+                <Text style={styles.label}>Stipend:</Text>
+                {student.stipend ? 'YES' : 'NO'}
               </Text>
             </View>
             <View style={styles.gridItem}>
               <Text>
-                <Text style={styles.label}>Enrollment Date:</Text>
-                {formatDate(student.enrolledAt)}
+                <Text style={styles.label}>Trainee Code:</Text>
+                {student.registerId || '-'}
               </Text>
               <Text>
-                <Text style={styles.label}>Status:</Text>
-                {student.enrollmentStatus || '-'}
+                <Text style={styles.label}>CMD Rec. No.:</Text>
+                {student.cmdRecordNumber || '-'}
               </Text>
               <Text>
-                <Text style={styles.label}>Contact:</Text>
-                {student.phone || '-'}
-              </Text>
-              <Text>
-                <Text style={styles.label}>Parent Contact:</Text>
-                {student.parentContact || '-'}
+                <Text style={styles.label}>Permanent Address:</Text>
+                {student.address || '-'}
               </Text>
             </View>
           </View>
-          <Text style={{ marginTop: 10 }}>
-            <Text style={styles.label}>Address:</Text>
-            {student.address || '-'}
-          </Text>
         </View>
 
+        {/* Monthly Record Table */}
         <View style={styles.table}>
           <Text style={[styles.label, { marginBottom: 5 }]}>Monthly Record</Text>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Month</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Theory</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Practical</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Attendance</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Progress</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '25%' }]}>Remarks</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '5%' }]}>Sr. No.</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Month</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Theory</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Practical</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Attendance</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Progress %</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Signature</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '30%' }]}>Remarks</Text>
           </View>
-          {Object.entries(monthlyRecords).map(([month, record], index) => (
+          {sortedMonthlyRecords.map(([month, record], index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: '15%' }]}>
-                {month}
-              </Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.theory || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.practical || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.presentDays || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.absenttDays || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.totalDays || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{record.progress || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '25%' }]}>{record.remarks || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '5%' }]}>{index + 1}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{month}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{record.theory || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{record.practical || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{`${record.presentDays || '-'} / ${record.totalDays || '-'}`}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{record.progress || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '15%' }]}>{record.signature || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '30%' }]}>{record.remarks || '-'}</Text>
             </View>
           ))}
+          <Text style={{ marginTop: 10 }}>Average(Sep-Jun): {sortedMonthlyRecords.reduce((sum, [_, record]) => sum + (record.progress || 0), 0) / sortedMonthlyRecords.length || '-'}</Text>
         </View>
 
+        {/* Quarterly Tests Table */}
         <View style={styles.table}>
           <Text style={[styles.label, { marginBottom: 5 }]}>QUARTERLY TESTS</Text>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Quarter</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '20%' }]}>Theory</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '20%' }]}>Practical</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '20%' }]}>Skills</Text>
-            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '25%' }]}>Remarks</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '5%' }]}>Quart. No.</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Practical</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Theory</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '10%' }]}>Empl. Skills</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '15%' }]}>Signature</Text>
+            <Text style={[styles.tableCell, styles.tableCellHeader, { width: '50%' }]}>Remarks</Text>
           </View>
           {quarterlyTests.map((test, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: '15%' }]}>Q{test.quarter}</Text>
-              <Text style={[styles.tableCell, { width: '20%' }]}>{test.theory || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '20%' }]}>{test.practical || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '20%' }]}>{test.skills || '-'}</Text>
-              <Text style={[styles.tableCell, { width: '25%' }]}>{test.remarks || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '5%' }]}>Q{test.quarter}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{test.practical || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{test.theory || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '10%' }]}>{test.skills || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '15%' }]}>{test.signature || '-'}</Text>
+              <Text style={[styles.tableCell, { width: '50%' }]}>{test.remarks || '-'}</Text>
             </View>
           ))}
+          <Text style={{ marginTop: 10 }}>Average: {quarterlyTests.reduce((sum, test) => sum + (test.practical || 0) + (test.theory || 0) + (test.skills || 0), 0) / (quarterlyTests.length * 3) || '-'}</Text>
         </View>
       </Page>
     </Document>
