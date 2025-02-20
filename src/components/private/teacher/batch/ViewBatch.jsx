@@ -186,8 +186,7 @@ const ViewBatch = () => {
               isLoading={attendaceLoading}
             />
           ) : (
-            // <ProgressCard studentProfiles={students} stats={attendanceStats}  />
-            <></>
+            <ProgressCard studentProfiles={students} stats={attendanceStats} />
           )
         ) : (
           <div className="flex items-center justify-center min-h-[400px]">
