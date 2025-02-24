@@ -46,6 +46,7 @@ const ViewBatch = () => {
       const data = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
       ]);
+     
       setTeacherBatches(
         Array.isArray(data.documents) ? data.documents : [data.documents]
       );
@@ -156,6 +157,7 @@ const ViewBatch = () => {
             studentProfiles={students}
             stats={attendanceStats}
             isLoading={attendaceLoading}
+            batchData = {teacherBatches.find(item => item.$id === selectedBatch)}
           />
         );
       case "leave-record":

@@ -12,6 +12,8 @@ import {
   PDFDownloadLink,
 } from "@react-pdf/renderer";
 
+
+
 // Register fonts for PDF
 Font.register({
   family: "Roboto",
@@ -173,6 +175,7 @@ const ProgressCardPDF = ({
   student,
   monthlyRecords = {},
   quarterlyTests = [],
+  batch
 }) => {
   if (!student) return null;
 
@@ -184,21 +187,10 @@ const ProgressCardPDF = ({
     }
   };
 
-  // Step 1: Extract and sort available months
-  const sortedEntries = Object.keys(monthlyRecords).sort((a, b) => {
-    const dateA = parse(a, "MMMM yyyy", new Date());
-    const dateB = parse(b, "MMMM yyyy", new Date());
-    return compareAsc(dateA, dateB);
-  });
+  const endDate = addMonths(batch.start_date, 11);
+  let currentDate = new Date(batch.start_date);
 
-  // Step 2: Get first and last month dynamically
-  const firstMonth = sortedEntries[0]; // Earliest available month
-  const startDate = parse(firstMonth, "MMMM yyyy", new Date());
-  const endDate = addMonths(startDate, 11);
-
-  // Step 3: Fill missing months
   const completeRecords = {};
-  let currentDate = startDate;
 
   while (!isAfter(currentDate, endDate)) {
     const monthKey = format(currentDate, "MMMM yyyy");
@@ -625,7 +617,7 @@ const ProgressCardPDF = ({
   );
 };
 
-const ProgressCard = ({ studentProfiles = [], stats, isLoading }) => {
+const ProgressCard = ({ studentProfiles = [], stats, isLoading, batchData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
@@ -642,6 +634,7 @@ const ProgressCard = ({ studentProfiles = [], stats, isLoading }) => {
       try {
         const blob = await pdf(
           <ProgressCardPDF
+          batch={batchData}
             student={selectedStudent}
             monthlyRecords={
               stats.find((item) => item.userId === selectedStudent.userId)
@@ -715,6 +708,7 @@ const ProgressCard = ({ studentProfiles = [], stats, isLoading }) => {
           <PDFDownloadLink
             document={
               <ProgressCardPDF
+                batch={batchData}
                 student={selectedStudent}
                 monthlyRecords={
                   stats.find((item) => item.userId === selectedStudent.userId)
