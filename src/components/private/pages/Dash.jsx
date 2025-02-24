@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import {
   LineChart,
@@ -6,7 +6,6 @@ import {
   BarChart,
   Bar,
   Tooltip,
-  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,8 +13,8 @@ import {
 } from "recharts";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, subYears, subDays } from "date-fns";
 import { Query } from "appwrite";
-import { ClipLoader } from "react-spinners";
 import { FaCalendar } from "react-icons/fa";
+import { motion } from "framer-motion"; 
 
 import userStatsService from "../../../appwrite/userStats";
 import tradeservice from "../../../appwrite/tradedetails";
@@ -23,22 +22,39 @@ import { selectProfile } from "../../../store/profileSlice";
 import CustomSelect from "../../components/CustomSelect";
 import TodaysTestsPopup from "../popup/TodaysTests";
 
+const SkeletonChart = () => (
+  <div className="animate-pulse">
+    <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+    <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+    <div className="h-64 bg-gray-200 rounded"></div>
+  </div>
+);
+
+const SkeletonCard = () => (
+  <div className="animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+    <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+  </div>
+);
+
 // Custom chart component to reduce repetition
 const ChartContainer = ({ title, subtitle, children, rightContent }) => (
-  <div className="bg-white shadow-md rounded-lg p-4 col-span-1 md:col-span-2 xl:col-span-1">
-    <div className="flex flex-col justify-between">
-      <div className="flex justify-between w-full">
-        <h2 className="text-base font-semibold text-gray-600">{title}</h2>
-        {rightContent}
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-white shadow-lg rounded-xl p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300"
+  >
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
+        {subtitle && (
+          <p className="text-2xl font-bold text-gray-800 mt-1">{subtitle}</p>
+        )}
       </div>
-      {subtitle && (
-        <h1 className="text-2xl text-gray-700 font-semibold py-2">
-          {subtitle}
-        </h1>
-      )}
+      {rightContent}
     </div>
     {children}
-  </div>
+  </motion.div>
 );
 
 const Dashboard = () => {
@@ -168,10 +184,10 @@ const Dashboard = () => {
     return Object.values(testStats).sort((a, b) => b.maxPercent - a.maxPercent);
   }, [getTimeForPeriod]);
 
-  // Fetch data
   const fetchData = useCallback(async () => {
     if (!profile) return;
 
+    setState(prev => ({ ...prev, isLoading: true }));
     try {
       const [tradeRes, statsRes] = await Promise.all([
         tradeservice.getTrade(profile.tradeId),
@@ -205,9 +221,8 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      setState(prev => ({ ...prev, isLoading: false }));
     } finally {
-      setState(prev => ({...prev , isLoading: false}))
+      setState(prev => ({ ...prev, isLoading: false }));
     }
   }, [profile, state.timePeriod, processUserStats, processTopStats, processTestsToday]);
 
@@ -233,186 +248,194 @@ const Dashboard = () => {
     setState(prev => ({ ...prev, metrics: newMetrics }));
   }, [state.allUsersStats, state.timePeriod, user.$id]);
 
-  if (state.allUsersStats.length === 0 || !Array.isArray(state.allUsersStats)) {
+ 
+  if (state.isLoading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <p>No data available.</p>
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[...Array(5)].map((_, i) => (
+              <SkeletonChart key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (state.isLoading) {
+  if (!state.allUsersStats.length) {
     return (
-      <div className="w-full flex items-center justify-center" style={{ minHeight: 'calc(100vh - 70px)' }}>
-        <ClipLoader color="#123abc" size={50} />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <p className="text-gray-600">No data available at the moment.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen mt-5 overflow-hidden">
-      {/* Header Section */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        {state.metrics.updatedAt && (
-          <h6 className="text-sm text-slate-500">
-            Updated At: {format(state.metrics.updatedAt, "dd/MM/yyyy hh:mm a")}
-          </h6>
-        )}
-        <h6 className="text-sm text-slate-500 capitalize">
-          {state.trades?.tradeName?.toLowerCase() || ""}
-        </h6>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-slate-500">My Total Questions</h2>
-          <p className="text-4xl py-2 font-semibold">
-            {state.metrics.totalQuestions} <span className="text-sm text-slate-600">Nos.</span>
-          </p>
-        </div>
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-slate-500">My Total Tests</h2>
-          <p className="text-4xl py-2 font-semibold">
-            {state.metrics.totalTests} <span className="text-sm text-slate-600">Nos.</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Time Period Selector */}
-      <div className="w-full flex items-end justify-end mb-6">
-        <CustomSelect
-          icon={<FaCalendar />}
-          options={["day", "week", "month", "year", "allTime"]}
-          value={state.timePeriod}
-          onChangeFunc={(value) => setState(prev => ({ ...prev, timePeriod: value }))}
-        />
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ChartContainer
-          title="Top Questions Contributors"
-          subtitle={`${state.metrics.questionsCount} Nos. of Questions`}
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-8"
         >
-          {state.topContributors.length > 0 && (
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {state.metrics.updatedAt && (
+              <p className="text-sm text-gray-500">
+                Last Updated: {format(state.metrics.updatedAt, "dd/MM/yyyy hh:mm a")}
+              </p>
+            )}
+            <p className="text-sm text-gray-500 capitalize bg-blue-100 px-3 py-1 rounded-full">
+              {state.trades?.tradeName?.toLowerCase() || ""}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          {[
+            { title: "My Total Questions", value: state.metrics.totalQuestions },
+            { title: "My Total Tests", value: state.metrics.totalTests },
+          ].map((metric, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            >
+              <h2 className="text-sm font-medium text-gray-600">{metric.title}</h2>
+              <p className="text-3xl font-bold text-gray-800 mt-2">
+                {metric.value} <span className="text-sm text-gray-500">Nos.</span>
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Time Period Selector */}
+        <div className="flex justify-end mb-8">
+          <CustomSelect
+            icon={<FaCalendar className="text-gray-500" />}
+            options={["day", "week", "month", "year", "allTime"]}
+            value={state.timePeriod}
+            onChangeFunc={(value) => setState(prev => ({ ...prev, timePeriod: value }))}
+            className="w-48"
+          />
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <ChartContainer
+            title="Top Questions Contributors"
+            subtitle={`${state.metrics.questionsCount} Questions`}
+          >
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={state.topContributors.map(item => ({
                 name: item.userName,
                 questions: item[`${state.timePeriod}_questionsCount`]
               }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="questions" fill="#82ca9d" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="questions" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </ChartContainer>
+          </ChartContainer>
 
-        <ChartContainer
-          title={`Top percentage of ${state.timePeriod}`}
-          subtitle={`${state.metrics.testsCount} Nos. of Tests`}
-          rightContent={
-            <button
-              onClick={() => setState(prev => ({ ...prev, isPopupOpen: true }))}
-              className="underline text-blue-800 hover:text-blue-950"
-            >
-              View all..
-            </button>
-          }
-        >
-          {state.topScorers.length > 0 && (
+          <ChartContainer
+            title={`Top ${state.timePeriod} Performers`}
+            subtitle={`${state.metrics.testsCount} Tests`}
+            rightContent={
+              <button
+                onClick={() => setState(prev => ({ ...prev, isPopupOpen: true }))}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+              >
+                View All
+              </button>
+            }
+          >
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={state.topScorers.map(item => ({
                 name: item.userName,
                 maxScore: item[`${state.timePeriod}_maxScore`]
               }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="maxScore" fill="#8884d8" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="maxScore" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </ChartContainer>
+          </ChartContainer>
 
-        <ChartContainer title="Your Test Count Timeline">
-          {state.currUserRecord && (
+          <ChartContainer title="Your Test Timeline">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={state.currUserRecord.tests}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#8884d8" />
+              <BarChart data={state.currUserRecord?.tests}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </ChartContainer>
+          </ChartContainer>
 
-        <ChartContainer title="Your Questions Count Timeline">
-          {state.currUserRecord && (
+          <ChartContainer title="Your Questions Timeline">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={state.currUserRecord.questions}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#82ca9d" />
+              <BarChart data={state.currUserRecord?.questions}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </ChartContainer>
+          </ChartContainer>
 
-        <ChartContainer title="Your Scores Timeline">
-          {state.currUserRecord && (
+          <ChartContainer title="Your Scores Timeline">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={state.currUserRecord.scores}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+              <LineChart data={state.currUserRecord?.scores}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
                 <Tooltip
+                  contentStyle={{ borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
                   formatter={(value, name, props) => [
-                    `Percent: ${value}`,
+                    `Percent: ${value}%`,
                     `Paper ID: ${props.payload.paperId}`,
                   ]}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
-                <Legend
-                  formatter={(value) => {
-                    if (value === "percent") return "Percent";
-                    if (value === "date") return "Date";
-                    if (value === "paperId") return "Paper ID";
-                    return value;
-                  }}
-                />
                 <Line
                   type="monotone"
                   dataKey="percent"
-                  stroke="#8884d8"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  dot={{ fill: '#8b5cf6', r: 4 }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          )}
-        </ChartContainer>
-      </div>
+          </ChartContainer>
+        </div>
 
-      {/* Popup */}
-      <TodaysTestsPopup
-        timePeriod={state.timePeriod}
-        data={state.testsToday}
-        isOpen={state.isPopupOpen}
-        onClose={() => setState(prev => ({ ...prev, isPopupOpen: false }))}
-      />
+        <TodaysTestsPopup
+          timePeriod={state.timePeriod}
+          data={state.testsToday}
+          isOpen={state.isPopupOpen}
+          onClose={() => setState(prev => ({ ...prev, isPopupOpen: false }))}
+        />
+      </div>
     </div>
   );
 };

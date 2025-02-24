@@ -625,10 +625,12 @@ const ProgressCardPDF = ({
   );
 };
 
-const ProgressCard = ({ studentProfiles = [], stats }) => {
+const ProgressCard = ({ studentProfiles = [], stats, isLoading }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+
+  if (isLoading) return <div>Loading...</div>;
 
   useEffect(() => {
     const generatePreview = async () => {
@@ -666,8 +668,8 @@ const ProgressCard = ({ studentProfiles = [], stats }) => {
   }, [selectedStudent, stats]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="mb-4 flex justify-between items-center">
+    <div className="w-full max-w-4xl mx-auto ">
+      <div className="mb-4 flex justify-between items-center ">
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -722,7 +724,7 @@ const ProgressCard = ({ studentProfiles = [], stats }) => {
               />
             }
             fileName={`progress-card-${selectedStudent.userName}.pdf`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             {({ loading }) => (
               <>
@@ -734,7 +736,7 @@ const ProgressCard = ({ studentProfiles = [], stats }) => {
         )}
       </div>
 
-      <div className="bg-white p-6 border rounded-lg shadow-sm">
+      <div className="overflow-hidden border rounded-lg shadow-sm">
         {selectedStudent ? (
           pdfUrl ? (
             <iframe
@@ -748,7 +750,7 @@ const ProgressCard = ({ studentProfiles = [], stats }) => {
             </div>
           )
         ) : (
-          <div className="w-full h-[842px] flex items-center justify-center">
+          <div className="w-full h-[842px] flex items-center justify-center bg-white">
             <p className="text-gray-500">
               Select a student to view their progress card
             </p>

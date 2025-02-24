@@ -69,6 +69,7 @@ const CustomCalendar = ({
         maxDetail="month"
         tileDisabled={tileDisabled}
         onActiveStartDateChange={handleActiveStartDateChange}
+        calendarType="gregory"
       />
       <style>{`
                 .react-calendar {

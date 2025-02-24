@@ -1,18 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
-
 import { selectProfile } from "../../../../store/profileSlice";
 import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
-import ViewProfiles from "./ViewProfiles";
-import { ClipLoader } from "react-spinners";
-
 import attendanceService from "../../../../appwrite/attaindanceService";
 import { calculateStats } from "../attaindance/CalculateStats";
+import ViewProfiles from "./ViewProfiles";
 import ViewAttendance from "./ViewAttendance";
-import { ClipboardListIcon, UsersIcon } from "lucide-react";
 import ProgressCard from "./progressCard";
+import { ClipLoader } from "react-spinners";
+import {
+  Users,
+  ClipboardList,
+  TrendingUp,
+  Calendar,
+  BookOpen,
+  Award
+} from "lucide-react";
+
+const TABS = [
+  { id: 'profiles', label: 'Student Profiles', icon: Users },
+  { id: 'attendance', label: 'Attendance Records', icon: ClipboardList },
+  { id: 'progress-card', label: 'Progress Card', icon: TrendingUp },
+  { id: 'leave-record', label: 'Leave Records', icon: Calendar },
+  { id: 'assignments', label: 'Assignments', icon: BookOpen },
+  { id: 'achievements', label: 'Achievements', icon: Award }
+];
 
 const ViewBatch = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,10 +37,9 @@ const ViewBatch = () => {
   const [attendanceStats, setAttendanceStats] = useState([]);
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
-  const [view, setView] = useState(new Set().add("profiles"));
+  const [activeTab, setActiveTab] = useState("profiles");
 
   const profile = useSelector(selectProfile);
-
   const fetchTeacherBatches = async () => {
     setIsLoading(true);
     try {
@@ -101,13 +114,60 @@ const ViewBatch = () => {
 
   useEffect(() => {
     if (
-      view.has("attendance") &&
+      (activeTab === "attendance" || activeTab === "progress-card") &&
       selectedBatch !== "" &&
       studentAttendance.length === 0
     ) {
       fetchStudentsAttendance();
     }
-  }, [view, selectedBatch, studentAttendance.length]);
+  }, [activeTab, selectedBatch, studentAttendance.length]);
+
+  const renderContent = () => {
+    if (studentsLoading || attendaceLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <ClipLoader size={40} color="#2563eb" loading={true} />
+        </div>
+      );
+    }
+
+    if (!students.length) {
+      return (
+        <div className="text-center text-gray-500 py-10">
+          No students found in this batch
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "profiles":
+        return <ViewProfiles students={students} />;
+      case "attendance":
+        return (
+          <ViewAttendance
+            students={students}
+            stats={attendanceStats}
+            isLoading={attendaceLoading}
+          />
+        );
+      case "progress-card":
+        return (
+          <ProgressCard
+            studentProfiles={students}
+            stats={attendanceStats}
+            isLoading={attendaceLoading}
+          />
+        );
+      case "leave-record":
+        return <div className="text-center ">Leave Records Coming Soon</div>;
+      case "assignments":
+        return <div className="text-center ">Assignments Coming Soon</div>;
+      case "achievements":
+        return <div className="text-center ">Achievements Coming Soon</div>;
+      default:
+        return null;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -118,11 +178,11 @@ const ViewBatch = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 ">
-      {/* Batch Selection Header */}
-      <div className="mb-8 flex justify-end">
+    <div className="container mx-auto p-4 ">
+      {/* Header Section */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
         <select
-          className="p-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+          className="w-full md:w-64 p-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={selectedBatch}
           onChange={(e) => setSelectedBatch(e.target.value)}
         >
@@ -135,70 +195,44 @@ const ViewBatch = () => {
         </select>
       </div>
 
-      {/* View Toggle Buttons */}
+      {/* Navigation Tabs */}
       {selectedBatch && (
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-              view.has("profiles")
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-white text-gray-700 border border-gray-300"
-            }`}
-            onClick={() => setView(new Set().add("profiles"))}
-          >
-            <UsersIcon className="w-5 h-5" />
-            Student Profiles
-          </button>
-          <button
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-              view.has("attendance")
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-white text-gray-700 border border-gray-300"
-            }`}
-            onClick={() => setView(new Set().add("attendance"))}
-          >
-            <ClipboardListIcon className="w-5 h-5" />
-            Attendance Records
-          </button>
-          <button
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-200 ${
-              view.has("progress-card")
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-white text-gray-700 border border-gray-300"
-            }`}
-            onClick={() => setView(new Set().add("progress-card"))}
-          >
-            <ClipboardListIcon className="w-5 h-5" />
-            Progress Card
-          </button>
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm">
+            <div className="overflow-x-auto">
+              <div className="flex space-x-1 p-2 min-w-max">
+                {TABS.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 whitespace-nowrap
+                      ${
+                        activeTab === id
+                          ? "bg-blue-600 text-white"
+                          : "hover:bg-gray-100 text-gray-700"
+                      }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Content Section */}
-      <div className="">
-        {!studentsLoading && students.length > 0 && !attendaceLoading ? (
-          view.has("profiles") ? (
-            <ViewProfiles students={students} />
-          ) : view.has("attendance") ? (
-            <ViewAttendance
-              students={students}
-              stats={attendanceStats}
-              isLoading={attendaceLoading}
-            />
-          ) : (
-            <ProgressCard studentProfiles={students} stats={attendanceStats} />
-          )
+      
+        {selectedBatch ? (
+          renderContent()
         ) : (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <ClipLoader
-              size={40}
-              color="#2563eb"
-              loading={studentsLoading || attendaceLoading}
-            />
+          <div className="text-center text-gray-500 py-10">
+            Please select a batch to view details
           </div>
         )}
       </div>
-    </div>
+    
   );
 };
 

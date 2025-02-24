@@ -36,7 +36,7 @@ function App() {
             }
             dispatch(addProfile(profileRes));
             if (window.location.pathname === "/") {
-              navigate("/dash");
+              navigate("/home");
             }
           }
         } else {
