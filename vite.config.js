@@ -22,6 +22,7 @@ export default defineConfig({
       },
       registerType: "autoUpdate",
       manifest: {
+        id: "/",
         name: "ITI Mock Test",
         short_name: "ITI Test",
         description: "An online platform for ITI students to take mock exams.",
