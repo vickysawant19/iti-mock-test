@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
-import { selectProfile } from "../../../../store/profileSlice";
-import userProfileService from "../../../../appwrite/userProfileService";
-import batchService from "../../../../appwrite/batchService";
-import attendanceService from "../../../../appwrite/attaindanceService";
-import { calculateStats } from "../attaindance/CalculateStats";
-import ViewProfiles from "./ViewProfiles";
-import ViewAttendance from "./ViewAttendance";
-import ProgressCard from "./ProgressCard";
 import { ClipLoader } from "react-spinners";
 import {
   Users,
@@ -19,6 +11,14 @@ import {
   Award,
 } from "lucide-react";
 
+import { selectProfile } from "../../../../store/profileSlice";
+import userProfileService from "../../../../appwrite/userProfileService";
+import batchService from "../../../../appwrite/batchService";
+import attendanceService from "../../../../appwrite/attaindanceService";
+import { calculateStats } from "../attaindance/CalculateStats";
+import ViewProfiles from "./ViewProfiles";
+import ViewAttendance from "./ViewAttendance";
+import ProgressCard from "./ProgressCards"
 import TraineeLeaveRecord from "./LeaveRecord";
 import { selectUser } from "../../../../store/userSlice";
 
