@@ -8,7 +8,7 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import { calculateStats } from "../attaindance/CalculateStats";
 import ViewProfiles from "./ViewProfiles";
 import ViewAttendance from "./ViewAttendance";
-import ProgressCard from "./progressCard";
+import ProgressCard from "./ProgressCard";
 import { ClipLoader } from "react-spinners";
 import {
   Users,
@@ -16,16 +16,19 @@ import {
   TrendingUp,
   Calendar,
   BookOpen,
-  Award
+  Award,
 } from "lucide-react";
 
+import TraineeLeaveRecord from "./LeaveRecord";
+import { selectUser } from "../../../../store/userSlice";
+
 const TABS = [
-  { id: 'profiles', label: 'Student Profiles', icon: Users },
-  { id: 'attendance', label: 'Attendance Records', icon: ClipboardList },
-  { id: 'progress-card', label: 'Progress Card', icon: TrendingUp },
-  { id: 'leave-record', label: 'Leave Records', icon: Calendar },
-  { id: 'assignments', label: 'Assignments', icon: BookOpen },
-  { id: 'achievements', label: 'Achievements', icon: Award }
+  { id: "profiles", label: "Student Profiles", icon: Users },
+  { id: "attendance", label: "Attendance Records", icon: ClipboardList },
+  { id: "progress-card", label: "Progress Card", icon: TrendingUp },
+  { id: "leave-record", label: "Leave Records", icon: Calendar },
+  { id: "assignments", label: "Assignments", icon: BookOpen },
+  { id: "achievements", label: "Achievements", icon: Award },
 ];
 
 const ViewBatch = () => {
@@ -39,6 +42,10 @@ const ViewBatch = () => {
   const [selectedBatch, setSelectedBatch] = useState("");
   const [activeTab, setActiveTab] = useState("profiles");
 
+
+  const user = useSelector(selectUser)
+  const isAdmin = user.labels.includes("admin")
+
   const profile = useSelector(selectProfile);
   const fetchTeacherBatches = async () => {
     setIsLoading(true);
@@ -46,7 +53,7 @@ const ViewBatch = () => {
       const data = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
       ]);
-     
+
       setTeacherBatches(
         Array.isArray(data.documents) ? data.documents : [data.documents]
       );
@@ -115,7 +122,7 @@ const ViewBatch = () => {
 
   useEffect(() => {
     if (
-      (activeTab === "attendance" || activeTab === "progress-card") &&
+      (activeTab === "attendance" || activeTab === "progress-card" , activeTab === "leave-record") &&
       selectedBatch !== "" &&
       studentAttendance.length === 0
     ) {
@@ -157,11 +164,21 @@ const ViewBatch = () => {
             studentProfiles={students}
             stats={attendanceStats}
             isLoading={attendaceLoading}
-            batchData = {teacherBatches.find(item => item.$id === selectedBatch)}
+            batchData={teacherBatches.find(
+              (item) => item.$id === selectedBatch
+            )}
           />
         );
       case "leave-record":
-        return <div className="text-center ">Leave Records Coming Soon</div>;
+        return (
+          isAdmin ? <TraineeLeaveRecord
+            studentProfiles={students}
+            stats={attendanceStats}
+            batchData={teacherBatches.find(
+              (item) => item.$id === selectedBatch 
+            )}
+          />  :<div className="text-center ">Leave Record Coming Soon</div>
+        );
       case "assignments":
         return <div className="text-center ">Assignments Coming Soon</div>;
       case "achievements":
@@ -225,16 +242,15 @@ const ViewBatch = () => {
       )}
 
       {/* Content Section */}
-      
-        {selectedBatch ? (
-          renderContent()
-        ) : (
-          <div className="text-center text-gray-500 py-10">
-            Please select a batch to view details
-          </div>
-        )}
-      </div>
-    
+
+      {selectedBatch ? (
+        renderContent()
+      ) : (
+        <div className="text-center text-gray-500 py-10">
+          Please select a batch to view details
+        </div>
+      )}
+    </div>
   );
 };
 
