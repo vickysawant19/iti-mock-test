@@ -50,16 +50,16 @@ import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
 import AddModules from "./components/private/admin/AddModules.jsx";
 import Modules from "./components/private/admin/Modules.jsx";
-import { registerSW } from 'virtual:pwa-register';
+import { registerSW } from "virtual:pwa-register";
+import DailyDiary from "./components/private/teacher/batch/DailyDiary.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
-    if (confirm('New content available. Reload to update?')) {
+    if (confirm("New content available. Reload to update?")) {
       updateSW(true);
     }
-  }
+  },
 });
-
 
 const router = (
   <Router>
@@ -87,6 +87,7 @@ const router = (
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
+          <Route path="daily-dairy" element={<DailyDiary />} />
           <Route
             path="mock-test-result/:paperId"
             element={<MockTestResults />}

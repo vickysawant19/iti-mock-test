@@ -3,20 +3,20 @@ import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { Query } from "appwrite";
 
 import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import userProfileService from "../../../../appwrite/userProfileService";
 import attendanceService from "../../../../appwrite/attaindanceService";
+import batchService from "../../../../appwrite/batchService";
+import LocationPicker from "../components/LocationPicker";
+import AttendanceStatus from "./AttendanceStatus";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
-import { useNavigate } from "react-router-dom";
-import { Query } from "appwrite";
-import batchService from "../../../../appwrite/batchService";
 import { haversineDistance } from "./calculateDistance";
-import LocationPicker from "../components/LocationPicker";
-import AttendanceStatus from "./AttendanceStatus";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,6 @@ const MarkStudentAttendance = () => {
   const [studentAttendance, setStudentAttendance] = useState(null);
   const [holidays, setHolidays] = useState(new Map());
   const [workingDays, setWorkingDays] = useState(new Map());
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
   const [deviceLocation, setDeviceLocation] = useState({
@@ -35,7 +34,6 @@ const MarkStudentAttendance = () => {
     lon: 0,
   });
   const [distance, setDistance] = useState(Infinity);
-
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
     presentDays: 0,
@@ -47,11 +45,11 @@ const MarkStudentAttendance = () => {
   const [modalData, setModalData] = useState({
     date: "",
     attendanceStatus: "Present", // Default status
-    inTime: "09:30",
+    inTime: format(new Date(), "HH:mm"),
     outTime: "17:00",
     reason: "",
-    isHoliday: false,
-    holidayText: "",
+    type: "",
+    isMarked: false,
   });
   const [currentMonthData, setCurrentMonthData] = useState({
     presentDays: 0,
@@ -155,7 +153,7 @@ const MarkStudentAttendance = () => {
         // Set dummy fields if no attendance records are found
         setStudentAttendance({
           userId,
-          userName: !isTeacher ? user.name : selectedStudent?.userName,
+          userName: !isTeacher ? profile.userName : selectedStudent?.userName,
           batchId: profile.batchId,
           attendanceRecords: [],
         });
@@ -164,21 +162,15 @@ const MarkStudentAttendance = () => {
         data.attendanceRecords.forEach((item) => newMap.set(item.date, item));
         setWorkingDays(newMap);
 
-        const filterWithoutHolidays = data.attendanceRecords.filter(
-          (item) =>
-            !batchData.attendanceHolidays.some(
-              (holiday) => holiday.date === item.date
-            )
-        );
         setStudentAttendance({
           ...data,
-          attendanceRecords: filterWithoutHolidays,
+          attendanceRecords: data.attendanceRecords,
           userName: selectedStudent?.userName,
         });
         calculateStats({
           data: {
             ...data,
-            attendanceRecords: filterWithoutHolidays,
+            attendanceRecords: data.attendanceRecords,
             userName: selectedStudent?.userName,
           },
           setAttendanceStats,
@@ -258,10 +250,10 @@ const MarkStudentAttendance = () => {
       existingRecord = {
         date: formattedDate,
         attendanceStatus: "Present", // Default when attendance isn't marked
-        inTime: "09:30",
+        inTime: format(new Date(), "HH:mm"),
         outTime: "17:00",
         reason: "",
-        isMarked: false,
+        type: "",
       };
     }
     setModalData(existingRecord);
@@ -285,7 +277,6 @@ const MarkStudentAttendance = () => {
     });
     setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
     setIsModalOpen(false);
-
   };
 
   const removeAttendance = () => {
@@ -312,12 +303,10 @@ const MarkStudentAttendance = () => {
   };
 
   const markUserAttendance = async () => {
-   
     setIsLoading(true);
     const filterOutHolidays = studentAttendance.attendanceRecords.filter(
       (item) => typeof item === "object" && !holidays.has(item.date)
     );
-
     try {
       const data = await attendanceService.markUserAttendance(
         {
@@ -488,16 +477,16 @@ const MarkStudentAttendance = () => {
               </div>
               <div className="lg:col-span-5 space-y-6">
                 <div className="bg-white p-4 rounded-lg">
-                <ShowStats
-                  attendance={currentMonthData}
-                  label={`Month Attendance - ${currentMonth}`}
-                />
+                  <ShowStats
+                    attendance={currentMonthData}
+                    label={`Month Attendance - ${currentMonth}`}
+                  />
                 </div>
                 <div className="bg-white p-4 rounded-lg">
-                <ShowStats
-                  attendance={attendanceStats}
-                  label="Total Attendance"
-                />
+                  <ShowStats
+                    attendance={attendanceStats}
+                    label="Total Attendance"
+                  />
                 </div>
               </div>
             </div>
@@ -515,99 +504,158 @@ const MarkStudentAttendance = () => {
 
             <div className="space-y-3">
               {/* Attendance Type Buttons */}
-              {!modalData.isHoliday && (
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        inTime: "09:30",
-                        outTime: "17:00",
-                        attendanceStatus: "Present",
-                      }))
-                    }
-                    className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      modalData.attendanceStatus === "Present"
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    Present
-                  </button>
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        inTime: "",
-                        outTime: "",
-                        attendanceStatus: "Absent",
-                      }))
-                    }
-                    className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      modalData.attendanceStatus === "Absent"
-                        ? "bg-red-500 text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    Absent
-                  </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      inTime: format(new Date(), "HH:mm"),
+                      outTime: "17:00",
+                      attendanceStatus: "Present",
+                      type: "",
+                      isMarked: true,
+                    }))
+                  }
+                  className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    modalData.attendanceStatus === "Present"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  Present
+                </button>
+                <button
+                  onClick={() =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      inTime: "",
+                      outTime: "",
+                      attendanceStatus: "Absent",
+                      type: "CL",
+                      isMarked: true,
+                    }))
+                  }
+                  className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    modalData.attendanceStatus === "Absent"
+                      ? "bg-red-500 text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                >
+                  Absent
+                </button>
+              </div>
+
+              {/* Time Inputs */}
+              {modalData.attendanceStatus === "Present" && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      In Time:
+                    </label>
+                    <input
+                      disabled={!isTeacher}
+                      type="time"
+                      value={modalData.inTime}
+                      onChange={(e) =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          inTime: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Out Time:
+                    </label>
+                    <input
+                      type="time"
+                      value={modalData.outTime}
+                      onChange={(e) =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          outTime: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Time Inputs */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    In Time:
-                  </label>
-                  <input
-                    type="time"
-                    value={modalData.inTime}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        inTime: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Out Time:
-                  </label>
-                  <input
-                    type="time"
-                    value={modalData.outTime}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        outTime: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
               {/* Reason  Text Input */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Reason:
-                </label>
-                <textarea
-                  value={modalData.reason}
-                  onChange={(e) =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      reason: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
+              {modalData.attendanceStatus === "Absent" && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Absent Type:
+                  </label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <button
+                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        modalData.type === "CL"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-100 hover:bg-gray-200"
+                      }`}
+                      onClick={() =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          type: "CL",
+                        }))
+                      }
+                    >
+                      Casual Leave
+                    </button>
+                    <button
+                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        modalData.type === "SL"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-100 hover:bg-gray-200"
+                      }`}
+                      onClick={() =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          type: "SL",
+                        }))
+                      }
+                    >
+                      Sick Leave
+                    </button>
+                    <button
+                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        modalData.type === "Excess"
+                          ? "bg-purple-500 text-white"
+                          : "bg-gray-100 hover:bg-gray-200"
+                      }`}
+                      onClick={() =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          type: "Excess",
+                        }))
+                      }
+                    >
+                      Excess
+                    </button>
+                  </div>
 
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Reason:
+                    </label>
+                    <textarea
+                      value={modalData.reason}
+                      onChange={(e) =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          reason: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              )}
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3 mt-6">
                 <button

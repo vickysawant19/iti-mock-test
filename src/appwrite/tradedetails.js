@@ -103,7 +103,8 @@ export class TradeService {
 
       // If the request is GET and the URL is "/trades", list all trades with query params if provided
       if (reqMethod === "GET" && url === "/trades") {
-        const queries = data && data.queries ? data.queries : [Query.orderDesc("$createdAt")];
+        const queries =
+          data && data.queries ? data.queries : [Query.orderDesc("$createdAt")];
         const result = await tradeService.listTrades(queries);
         return { data: result };
       }

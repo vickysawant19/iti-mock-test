@@ -262,11 +262,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           )}
 
           <div className="flex-grow space-y-2">
-            {isAdmin && <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
-              <MenuItem to="/add-modules" icon={MdAddCard}>
-                Add modules
-              </MenuItem>
-            </MenuGroup>}
+            {isAdmin && (
+              <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
+                <MenuItem to="/add-modules" icon={MdAddCard}>
+                  Add modules
+                </MenuItem>
+              </MenuGroup>
+            )}
 
             <MenuItem to="/home" icon={FaHome}>
               Home
@@ -287,7 +289,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                       Create/Update Batch
                     </MenuItem>
                     <MenuItem to="manage-batch/view" icon={FaUserPlus}>
-                      View Batch Students
+                      View Batch
                     </MenuItem>
                   </MenuGroup>
                 )}
@@ -325,14 +327,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                   icon={FaCalendarCheck}
                   groupKey="attendance"
                 >
+                  <MenuItem to="/daily-dairy" icon={FaBookReader}>
+                    Daily Diary
+                  </MenuItem>
                   {isTeacher && (
                     <>
-                      <MenuItem
-                        to="/attaindance/daily-diary"
-                        icon={FaBookReader}
-                      >
-                        Daily Diary
-                      </MenuItem>
                       <MenuItem
                         to="/attaindance/mark-holidays"
                         icon={FaBookReader}

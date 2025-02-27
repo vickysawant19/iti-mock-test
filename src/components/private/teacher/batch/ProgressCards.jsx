@@ -100,36 +100,28 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
         </div>
 
         {selectedStudent && (
-          <div className="flex flex-row gap-5">
-            <PDFDownloadLink
-              document={
-                <ProgressCardPDF
-                  batch={batchData}
-                  student={selectedStudent}
-                  monthlyRecords={
-                    stats.find((item) => item.userId === selectedStudent.userId)
-                      ?.monthlyAttendance || {}
-                  }
-                  quarterlyTests={selectedStudent.quarterlyTests || []}
-                />
-              }
-              fileName={`progress-card-${selectedStudent.userName}.pdf`}
-              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              {({ loading }) => (
-                <>
-                  <Printer className="h-4 w-4" />
-                  {loading ? "Generating PDF..." : "Download PDF"}
-                </>
-              )}
-            </PDFDownloadLink>
-            <button
-              onClick={() => window.open(pdfUrl, "_blank")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open PDF in new tab
-            </button>
-          </div>
+          <PDFDownloadLink
+            document={
+              <ProgressCardPDF
+                batch={batchData}
+                student={selectedStudent}
+                monthlyRecords={
+                  stats.find((item) => item.userId === selectedStudent.userId)
+                    ?.monthlyAttendance || {}
+                }
+                quarterlyTests={selectedStudent.quarterlyTests || []}
+              />
+            }
+            fileName={`progress-card-${selectedStudent.userName}.pdf`}
+            className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            {({ loading }) => (
+              <>
+                <Printer className="h-4" />
+                {loading ? "Generating PDF..." : "Download PDF"}
+              </>
+            )}
+          </PDFDownloadLink>
         )}
       </div>
 

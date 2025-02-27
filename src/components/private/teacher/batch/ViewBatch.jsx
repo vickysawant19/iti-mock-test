@@ -18,10 +18,9 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import { calculateStats } from "../attaindance/CalculateStats";
 import ViewProfiles from "./ViewProfiles";
 import ViewAttendance from "./ViewAttendance";
-import ProgressCard from "./ProgressCards"
+import ProgressCard from "./ProgressCards";
 import TraineeLeaveRecord from "./LeaveRecord";
 import { selectUser } from "../../../../store/userSlice";
-
 
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
@@ -43,11 +42,10 @@ const ViewBatch = () => {
   const [selectedBatch, setSelectedBatch] = useState("");
   const [activeTab, setActiveTab] = useState("profiles");
 
-  const user = useSelector(selectUser)
-  const isAdmin = user.labels.includes("admin")
+  const user = useSelector(selectUser);
+  const isAdmin = user.labels.includes("admin");
   const profile = useSelector(selectProfile);
 
-  
   const fetchTeacherBatches = async () => {
     setIsLoading(true);
     try {
@@ -88,9 +86,13 @@ const ViewBatch = () => {
         const student = students.find(
           (student) => student.userId === attendance.userId
         );
+
         return {
           ...attendance,
           studentId: student ? student.studentId : null,
+          userName: student
+            ? student.userName
+            : attendance?.userName || "Unknown",
         };
       });
 
@@ -123,7 +125,9 @@ const ViewBatch = () => {
 
   useEffect(() => {
     if (
-      (activeTab === "attendance" || activeTab === "progress-card" || activeTab === "leave-record") &&
+      (activeTab === "attendance" ||
+        activeTab === "progress-card" ||
+        activeTab === "leave-record") &&
       selectedBatch !== "" &&
       studentAttendance.length === 0
     ) {
@@ -176,9 +180,9 @@ const ViewBatch = () => {
             studentProfiles={students}
             stats={attendanceStats}
             batchData={teacherBatches.find(
-              (item) => item.$id === selectedBatch 
+              (item) => item.$id === selectedBatch
             )}
-          />  
+          />
         );
       case "assignments":
         return <div className="text-center ">Assignments Coming Soon</div>;

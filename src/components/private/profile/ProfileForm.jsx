@@ -11,6 +11,7 @@ import { selectUser } from "../../../store/userSlice";
 import { addProfile, selectProfile } from "../../../store/profileSlice";
 import { Query } from "appwrite";
 import CustomInput from "../../components/CustomInput";
+import { useGetAllTradesQuery } from "../../../store/api/tradeApi";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);

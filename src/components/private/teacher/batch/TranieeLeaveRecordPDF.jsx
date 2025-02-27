@@ -48,8 +48,8 @@ const styles = StyleSheet.create({
     objectFit: "contain",
   },
   header: {
-      textAlign: "center",
-      maxWidth: "70%",
+    textAlign: "center",
+    maxWidth: "70%",
   },
   headerTitle: {
     fontSize: 14,
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 12,
     fontWeight: "bold",
-    width:"100%"
+    width: "100%",
   },
   section: {
     marginBottom: 10,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
 
 const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
   // Default data structure if no data is provided
- 
+
   let attendance = Object.entries(leaveRecords.monthlyAttendance).reduce(
     (acc, doc) => {
       let month = format(doc[0], "MMM");
@@ -168,23 +168,25 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
     const start = new Date(startDate);
     return Array.from({ length: 12 }, (_, i) => {
       const date = new Date(start.getFullYear(), start.getMonth() + i);
-      return date.toLocaleString('en-US', { month: 'short' }); // "Aug", "Sep", etc.
+      return date.toLocaleString("en-US", { month: "short" }); // "Aug", "Sep", etc.
     });
   };
-  
-  const months = getMonthsArray(batch.start_date);
-  attendance = months.reduce((acc, doc ) => {
-    if(attendance[doc]) {
-       acc[doc] = attendance[doc]
-    }else{
-       acc[doc] = {}
-    }
-    return acc
-  }, {})
 
+  const months = getMonthsArray(batch.start_date);
+  attendance = months.reduce((acc, doc) => {
+    if (attendance[doc]) {
+      acc[doc] = attendance[doc];
+    } else {
+      acc[doc] = {};
+    }
+    return acc;
+  }, {});
 
   const defaultData = {
-    year: `${format(batch.start_date, "MMMM-yyyy")} to ${format(addMonths(batch.start_date, 12), "MMMM-yyyy")}`,
+    year: `${format(batch.start_date, "MMMM-yyyy")} to ${format(
+      addMonths(batch.start_date, 12),
+      "MMMM-yyyy"
+    )}`,
     // year: "Aug-2024 to July -2025",
     stipend: "Yes",
     attendance,
@@ -205,10 +207,9 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
     return isNaN(percentage) ? "-" : `${Math.round(percentage)}%`;
   };
 
-
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="LEGAL" style={styles.page}>
         {/* Header Section */}
         <View style={styles.headerContainer}>
           {/* Left Logo (DVET) */}
@@ -218,7 +219,9 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
 
           {/* Center Text */}
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, {textAlign: "center"}]}>{data.collageName}</Text>
+            <Text style={[styles.headerTitle, { textAlign: "center" }]}>
+              {data.collageName}
+            </Text>
             <Text style={styles.headerSubtitle}>TRAINEE LEAVE RECORD</Text>
           </View>
 
@@ -537,7 +540,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
         </View>
 
         {/* Meeting with Parents */}
-        <View style={styles.section}>
+        <View style={[styles.section, {}]}>
           <Text style={styles.sectionTitle}>Meeting with Parents</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>

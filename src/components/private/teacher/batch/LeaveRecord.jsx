@@ -11,8 +11,12 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-  const {data: college, isLoading : collegeDataLoading} = useGetCollegeQuery(batchData.collegeId)
-  const {data: trade, isLoading : tradeDataLoading } = useGetTradeQuery(batchData.tradeId)
+  const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
+    batchData.collegeId
+  );
+  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
+    batchData.tradeId
+  );
 
   useEffect(() => {
     let currentUrl = "";
@@ -26,7 +30,9 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
           <TraineeLeaveRecordPDF
             batch={batchData}
             student={selectedStudent}
-            leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
+            leaveRecords={stats.find(
+              (i) => i.userId === selectedStudent.userId
+            )}
           />
         ).toBlob();
         currentUrl = URL.createObjectURL(blob);
@@ -44,8 +50,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     };
   }, [selectedStudent]);
 
-
-  if(collegeDataLoading || tradeDataLoading ) return <div>Loading...</div>
+  if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -98,7 +103,9 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
                 <TraineeLeaveRecordPDF
                   batch={batchData}
                   student={selectedStudent}
-                  leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
+                  leaveRecords={stats.find(
+                    (i) => i.userId === selectedStudent.userId
+                  )}
                 />
               }
               fileName={`leave-record-${selectedStudent.userName}.pdf`}
@@ -122,7 +129,9 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
               <TraineeLeaveRecordPDF
                 batch={batchData}
                 student={selectedStudent}
-                leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
+                leaveRecords={stats.find(
+                  (i) => i.userId === selectedStudent.userId
+                )}
               />
             </PDFViewer>
           ) : (

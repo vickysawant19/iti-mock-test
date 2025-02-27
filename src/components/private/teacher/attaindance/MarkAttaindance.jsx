@@ -20,11 +20,12 @@ const MarkAttendance = () => {
 
   const [students, setStudents] = useState([]);
   const [batchAttendance, setBatchAttendance] = useState([]);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [attendance, setAttendance] = useState({});
   const [expandedRows, setExpandedRows] = useState({});
 
-  const [datesWithAttendance, setDatesWithAttendance] = useState(new Set());
+  const [datesWithAttendance, setDatesWithAttendance] = useState(new Map());
   const [dateWithHoliday, setDateWithHoliday] = useState(new Map());
 
   const [batchData, setBatchData] = useState(null);
@@ -81,6 +82,7 @@ const MarkAttendance = () => {
           }
         });
       });
+
       setDatesWithAttendance(dates);
       setStudents(batchStudentsProfiles);
       setBatchAttendance(batchStudentsAttendance);
@@ -145,7 +147,7 @@ const MarkAttendance = () => {
       } else {
         acc[student.userId] = {
           isMarked: false,
-          attendanceStatus: "Present", // default status when unmarked
+          attendanceStatus: "Absent", // default status when unmarked
           inTime: DEFAULT_IN_TIME,
           outTime: DEFAULT_OUT_TIME,
           reason: "",
@@ -299,129 +301,139 @@ const MarkAttendance = () => {
     );
   }
   const StatCard = ({ title, value, bgColor, textColor, valueColor }) => (
-    <div className={`${bgColor} rounded-lg p-4 flex flex-col items-center justify-center shadow-md`}>
+    <div
+      className={`${bgColor} rounded-lg p-4 flex flex-col items-center justify-center shadow-md`}
+    >
       <p className={`text-sm ${textColor} font-medium`}>{title}</p>
       <p className={`text-lg font-bold ${valueColor}`}>{value}</p>
     </div>
   );
 
   return (
-    
-      <div className="min-h-screen bg-gray-100 p-6">
-        <div className="mx-auto space-y-4">
-          {/* Stats Cards Row */}
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-            <StatCard
-              title="Total"
-              value={attendance?.stats?.totalCount ?? "-"}
-              bgColor="bg-blue-50"
-              textColor="text-blue-600"
-              valueColor="text-blue-700"
-            />
-            <StatCard
-              title="Marked"
-              value={attendance?.stats?.markedCount ?? "-"}
-              bgColor="bg-green-50"
-              textColor="text-green-600"
-              valueColor="text-green-700"
-            />
-            <StatCard
-              title="Unmarked"
-              value={attendance?.stats?.unmarkCount ?? "-"}
-              bgColor="bg-yellow-50"
-              textColor="text-yellow-600"
-              valueColor="text-yellow-700"
-            />
-            <StatCard
-              title="Present"
-              value={attendance?.stats?.presentCount ?? "-"}
-              bgColor="bg-purple-50"
-              textColor="text-purple-600"
-              valueColor="text-purple-700"
-            />
-            <StatCard
-              title="Absent"
-              value={attendance?.stats?.absentCount ?? "-"}
-              bgColor="bg-red-50"
-              textColor="text-red-600"
-              valueColor="text-red-700"
-            />
-          </div>
-  
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-           
-           
-          </div>
-  
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Calendar Section */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b flex justify-between items-center">
-                  <h2 className="text-lg font-medium">
-                    Date: {format(selectedDate, "dd MMMM yyyy")}
-                  </h2>
-                  <Linkto
-              to="/attaindance/mark-holidays"
-              className=" px-6 py-2.5 bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 transition-all shadow-sm text-center"
-            >
-              Manage Holidays
-            </Linkto>
-                 
-                </div>
-                <div className="p-4">
-                  <CustomCalendar
-                    selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    tileClassName={tileClassName}
-                    tileContent={tileContent}
-                    enableNextTiles={isTeacher}
-                    startDate={batchData?.start_date ? new Date(batchData.start_date) : undefined}
-                  />
-                </div>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="mx-auto space-y-4">
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+          <StatCard
+            title="Total"
+            value={attendance?.stats?.totalCount ?? "-"}
+            bgColor="bg-blue-50"
+            textColor="text-blue-600"
+            valueColor="text-blue-700"
+          />
+          <StatCard
+            title="Marked"
+            value={attendance?.stats?.markedCount ?? "-"}
+            bgColor="bg-green-50"
+            textColor="text-green-600"
+            valueColor="text-green-700"
+          />
+          <StatCard
+            title="Unmarked"
+            value={attendance?.stats?.unmarkCount ?? "-"}
+            bgColor="bg-yellow-50"
+            textColor="text-yellow-600"
+            valueColor="text-yellow-700"
+          />
+          <StatCard
+            title="Present"
+            value={attendance?.stats?.presentCount ?? "-"}
+            bgColor="bg-purple-50"
+            textColor="text-purple-600"
+            valueColor="text-purple-700"
+          />
+          <StatCard
+            title="Absent"
+            value={attendance?.stats?.absentCount ?? "-"}
+            bgColor="bg-red-50"
+            textColor="text-red-600"
+            valueColor="text-red-700"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4"></div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar Section */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-lg font-medium">
+                  Date: {format(selectedDate, "dd MMMM yyyy")}
+                </h2>
+                <Linkto
+                  to="/attaindance/mark-holidays"
+                  className=" px-6 py-2.5 bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 transition-all shadow-sm text-center"
+                >
+                  Manage Holidays
+                </Linkto>
+              </div>
+              <div className="p-4">
+                <CustomCalendar
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  tileClassName={tileClassName}
+                  tileContent={tileContent}
+                  enableNextTiles={isTeacher}
+                  startDate={
+                    batchData?.start_date
+                      ? new Date(batchData.start_date)
+                      : undefined
+                  }
+                />
               </div>
             </div>
-  
-            {/* Attendance List Section */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm h-[calc(100vh-12rem)] ">
-                <div className="p-4 border-b flex justify-between items-center">
-                  <h2 className="text-lg font-medium">Student List</h2>
-                  <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className=" px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                "Submit Attendance"
-              )}
-            </button>
-                </div>
-                <div className="p-4 h-[calc(100vh-18rem)] overflow-y-auto">
-                  {!isHoliday && (
-                    <div className="space-y-4">
-                      {students
-                        .sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
-                        .map((student) => (
-                          <div key={student.userId} className={`border rounded-lg p-4  transition-colors text-sm hover:border-gray-500`}>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 flex-wrap ">
-                              <div type={"button"} onClick={() => toggleOptions(student.userId)} className="flex items-center gap-3">
-                                <span className="font-bold text-lg text-gray-700">
-                                  {student.studentId || 0}
-                                </span>
-                                <span className="font-medium text-gray-800">
-                                  {student.userName}
-                                  {attendance[student.userId]?.isMarked ? (
+          </div>
+
+          {/* Attendance List Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm h-[calc(100vh-12rem)] ">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-lg font-medium">Student List</h2>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className=" px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    "Submit Attendance"
+                  )}
+                </button>
+              </div>
+              <div className="p-4 h-[calc(100vh-18rem)] overflow-y-auto">
+                {!isHoliday && (
+                  <div className="space-y-4">
+                    {students
+                      .sort(
+                        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+                      )
+                      .map((student) => (
+                        <div
+                          key={student.userId}
+                          className={`border rounded-lg p-4  transition-colors text-sm hover:border-gray-500`}
+                        >
+                          <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 flex-wrap ">
+                            <div
+                              type={"button"}
+                              onClick={() => toggleOptions(student.userId)}
+                              className="flex items-center gap-3"
+                            >
+                              <span className="font-bold text-lg text-gray-700">
+                                {student.studentId || 0}
+                              </span>
+                              <span className="font-medium text-gray-800">
+                                {student.userName}
+                                {attendance[student.userId]?.isMarked ? (
                                   <span className="text-green-500 flex items-center gap-1 text-xs opacity-70">
                                     <span className="w-2 h-2 rounded-full bg-green-500" />
-                                   marked
+                                    marked
                                   </span>
                                 ) : (
                                   <span className="text-orange-500 text-xs flex items-center gap-1 opacity-70">
@@ -429,89 +441,115 @@ const MarkAttendance = () => {
                                     unmarked
                                   </span>
                                 )}
-                                </span>
-                                
-                              </div>
-                              <div className="flex gap-2 w-full sm:w-auto">
-                                <button
-                                  type="button"
-                                  onClick={() => handleQuickMark(student.userId, "Present")}
-                                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                    attendance[student.userId]?.attendanceStatus === "Present"
-                                      ? "bg-green-500 text-white"
-                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                  }`}
-                                >
-                                  Present
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleQuickMark(student.userId, "Absent")}
-                                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                    attendance[student.userId]?.attendanceStatus === "Absent"
-                                      ? "bg-red-500 text-white"
-                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                  }`}
-                                >
-                                  Absent
-                                </button>
-                              </div>
+                              </span>
                             </div>
-  
-                            
-  
-                            {expandedRows[student.userId] && (
-                              <div className="mt-4 space-y-4">
+                            <div className="flex gap-2 w-full sm:w-auto">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickMark(student.userId, "Present")
+                                }
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  attendance[student.userId]
+                                    ?.attendanceStatus === "Present"
+                                    ? "bg-green-500 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                Present
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleQuickMark(student.userId, "Absent")
+                                }
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  attendance[student.userId]
+                                    ?.attendanceStatus === "Absent"
+                                    ? "bg-red-500 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                Absent
+                              </button>
+                            </div>
+                          </div>
+
+                          {expandedRows[student.userId] && (
+                            <div className="mt-4 space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Reason
+                                </label>
+                                <input
+                                  type="text"
+                                  value={
+                                    attendance[student.userId]?.reason || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleAttendanceChange(
+                                      student.userId,
+                                      "reason",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Optional"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Reason
+                                    In Time
                                   </label>
                                   <input
-                                    type="text"
-                                    value={attendance[student.userId]?.reason || ""}
-                                    onChange={(e) => handleAttendanceChange(student.userId, "reason", e.target.value)}
+                                    type="time"
+                                    value={
+                                      attendance[student.userId]?.inTime || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleAttendanceChange(
+                                        student.userId,
+                                        "inTime",
+                                        e.target.value
+                                      )
+                                    }
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Optional"
                                   />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      In Time
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={attendance[student.userId]?.inTime || ""}
-                                      onChange={(e) => handleAttendanceChange(student.userId, "inTime", e.target.value)}
-                                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                      Out Time
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={attendance[student.userId]?.outTime || ""}
-                                      onChange={(e) => handleAttendanceChange(student.userId, "outTime", e.target.value)}
-                                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                  </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Out Time
+                                  </label>
+                                  <input
+                                    type="time"
+                                    value={
+                                      attendance[student.userId]?.outTime || ""
+                                    }
+                                    onChange={(e) =>
+                                      handleAttendanceChange(
+                                        student.userId,
+                                        "outTime",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  />
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-    );
-  
+    </div>
+  );
 };
 
 export default MarkAttendance;
