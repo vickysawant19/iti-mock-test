@@ -22,7 +22,7 @@ export class TradeService {
   }
 
   async createTrade(tradeData) {
-    const { tradeName, year } = tradeData
+    const { tradeName, year } = tradeData;
     try {
       // Check if the trade already exists
       const existingTrades = await this.database.listDocuments(
@@ -95,18 +95,24 @@ export class TradeService {
     }
   }
 
- 
-  static async customTradeBaseQuery({ method, data }) {
+  static async customTradeBaseQuery({ method, data, url }) {
     const tradeService = new TradeService();
     try {
       // Ensure method is uppercase
       const reqMethod = method.toUpperCase();
 
+      // If the request is GET and the URL is "/trades", list all trades with query params if provided
+      if (reqMethod === "GET" && url === "/trades") {
+        const queries = data && data.queries ? data.queries : [Query.orderDesc("$createdAt")];
+        const result = await tradeService.listTrades(queries);
+        return { data: result };
+      }
+
+      // Otherwise, handle other methods as before
       const methodMap = {
         GET: () => tradeService.getTrade(data.tradeId),
         POST: () => tradeService.createTrade(data),
-        UPDATE: () =>
-          tradeService.updateTrade(data.tradeId, data.updatedData),
+        UPDATE: () => tradeService.updateTrade(data.tradeId, data.updatedData),
         DELETE: () => tradeService.deleteTrade(data.tradeId),
       };
 

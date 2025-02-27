@@ -5,18 +5,20 @@ import { BatchService } from '../../appwrite/batchService';
 export const batchApi = createApi({
   reducerPath: 'batchApi',
   baseQuery: BatchService.customBatchBaseQuery,
+  tagTypes: ["batch"],
   endpoints: (build) => ({
-    getTrade: build.query({
+    getBatch: build.query({
       query: (batchId) => ({
         method: 'GET',
         data: { batchId },
       }),
+      providesTags : ["batch"]
     }),
     //TODO:  Add additional endpoints (e.g., create, update, delete) here.
   }),
 });
 
 
-export const { useGetTradeQuery } = batchApi;
+export const { useGetBatchQuery } = batchApi;
 
 
