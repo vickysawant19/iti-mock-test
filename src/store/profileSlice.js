@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = null;
 
-const profileSlice = createSlice({
+export const profileSlice = createSlice({
   name: "profile",
   initialState,
   reducers: {
@@ -15,7 +15,6 @@ const profileSlice = createSlice({
   },
 });
 
-export default profileSlice.reducer;
 
 export const { addProfile, removeProfile } = profileSlice.actions;
 

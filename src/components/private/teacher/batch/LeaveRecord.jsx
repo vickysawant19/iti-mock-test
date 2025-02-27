@@ -2,33 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Printer } from "lucide-react";
 import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 
-import collegeService from "../../../../appwrite/collageService";
-import tradeservice from "../../../../appwrite/tradedetails";
 import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
+import { useGetCollegeQuery } from "../../../../store/api/collegeApi";
+import { useGetTradeQuery } from "../../../../store/api/tradeApi";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [college, setCollege] = useState(null);
-  const [trade, setTrade] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-  const fetchData = async () => {
-    try {
-      const [college, trade] = await Promise.all([
-        collegeService.getCollege(batchData.collegeId),
-        tradeservice.getTrade(batchData.tradeId),
-      ]);
-      setCollege(college);
-      setTrade(trade);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const {data: college, isLoading : collegeDataLoading} = useGetCollegeQuery(batchData.collegeId)
+  const {data: trade, isLoading : tradeDataLoading } = useGetTradeQuery(batchData.tradeId)
 
   useEffect(() => {
     let currentUrl = "";
@@ -37,24 +21,14 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         setPdfUrl("");
         return;
       }
-
       try {
-        // const studentLeaveData =
-        //   leaveData?.find(
-        //     (item) => item.userId === selectedStudent.userId
-        //   ) || { leaveRecords: [] };
-        console.log(stats)
-
-        const studentLeaveData = { leaveRecords: [] };
-
         const blob = await pdf(
           <TraineeLeaveRecordPDF
             batch={batchData}
             student={selectedStudent}
-            leaveRecords={studentLeaveData?.leaveRecords || []}
+            leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
           />
         ).toBlob();
-
         currentUrl = URL.createObjectURL(blob);
         setPdfUrl(currentUrl);
       } catch (error) {
@@ -62,9 +36,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         setPdfUrl("");
       }
     };
-
     generatePreview();
-
     return () => {
       if (currentUrl) {
         URL.revokeObjectURL(currentUrl);
@@ -72,14 +44,8 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     };
   }, [selectedStudent]);
 
-  // Get student-specific leave data
-  const getStudentLeaveData = () => {
-    if (!selectedStudent) return { leaveRecords: [] };
-    return (
-      //   leaveData?.find((item) => item.userId === selectedStudent.userId) ||
-      { leaveRecords: [] }
-    );
-  };
+
+  if(collegeDataLoading || tradeDataLoading ) return <div>Loading...</div>
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -132,7 +98,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
                 <TraineeLeaveRecordPDF
                   batch={batchData}
                   student={selectedStudent}
-                  leaveRecords={getStudentLeaveData().leaveRecords}
+                  leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
                 />
               }
               fileName={`leave-record-${selectedStudent.userName}.pdf`}
@@ -156,7 +122,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
               <TraineeLeaveRecordPDF
                 batch={batchData}
                 student={selectedStudent}
-                leaveRecords={getStudentLeaveData().leaveRecords}
+                leaveRecords={stats.find(i => i.userId === selectedStudent.userId)}
               />
             </PDFViewer>
           ) : (

@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = null;
 
-const questionsSlice = createSlice({
+export const questionsSlice = createSlice({
   name: "questions",
   initialState,
   reducers: {
@@ -14,8 +14,6 @@ const questionsSlice = createSlice({
     },
   },
 });
-
-export default questionsSlice.reducer;
 
 export const { addQuestions, removeQuestions } = questionsSlice.actions;
 

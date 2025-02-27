@@ -5,33 +5,17 @@ import {
   PDFDownloadLink,
 } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
-import collegeService from "../../../../appwrite/collageService";
-import tradeservice from "../../../../appwrite/tradedetails";
+import { useGetCollegeQuery } from "../../../../store/api/collegeApi";
+import { useGetTradeQuery } from "../../../../store/api/tradeApi";
 
 
-const ProgressCard = ({ studentProfiles = [], stats, isLoading, batchData }) => {
+const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [college , setCollege] = useState(null)
-  const [trade , setTrade] = useState(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-
-
-  const fetchData = async () => {
-    try {
-      const [college , trade ] = await Promise.all([collegeService.getCollege(batchData.collegeId),tradeservice.getTrade(batchData.tradeId)])
-      setCollege(college)
-      setTrade(trade)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
+  const {data: college, isLoading : collegeDataLoading} = useGetCollegeQuery(batchData.collegeId)
+  const {data: trade, isLoading : tradeDataLoading } = useGetTradeQuery(batchData.tradeId)
 
   const generatePreview = async () => {
     if (!selectedStudent) {
@@ -47,7 +31,7 @@ const ProgressCard = ({ studentProfiles = [], stats, isLoading, batchData }) => 
             stats.find((item) => item.userId === selectedStudent.userId)
               ?.monthlyAttendance || {}
           }
-          quarterlyTests={selectedStudent.quarterlyTests || []}
+          quarterlyTests={selectedStudent.quarterlyTests || new Array(3).fill({})}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -66,6 +50,8 @@ const ProgressCard = ({ studentProfiles = [], stats, isLoading, batchData }) => 
       }
     };
   }, [selectedStudent, stats]);
+
+  if(collegeDataLoading || tradeDataLoading ) return <div>Loading...</div>
  
 
   return (

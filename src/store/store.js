@@ -1,11 +1,22 @@
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "./userSlice";
-import profileReducer from "./profileSlice";
-import questionsReducer from "./questionSlice";
+import { collegeApi } from "./api/collegeApi";
+import { tradeApi } from "./api/tradeApi";
+
+import { userSlice } from "./userSlice";
+import { profileSlice } from "./profileSlice";
+import { questionsSlice } from "./questionSlice"
+import { batchApi } from "./api/batchApi";
+
 export const store = configureStore({
   reducer: {
-    user: userReducer,
-    profile: profileReducer,
-    questions: questionsReducer,
+    [collegeApi.reducerPath]: collegeApi.reducer,
+    [tradeApi.reducerPath] : tradeApi.reducer,
+    [batchApi.reducerPath]:  batchApi.reducer,
+    [userSlice.name]: userSlice.reducer,
+    [profileSlice.name]: profileSlice.reducer,
+    [questionsSlice.name]: questionsSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(collegeApi.middleware,tradeApi.middleware),
 });
+

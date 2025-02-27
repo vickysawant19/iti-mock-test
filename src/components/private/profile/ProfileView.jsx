@@ -5,24 +5,32 @@ import { UserCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { AiOutlineEdit } from "react-icons/ai";
 
-import tradeservice from "../../../appwrite/tradedetails";
 import batchService from "../../../appwrite/batchService";
-import collegeService from "../../../appwrite/collageService";
 import userProfileService from "../../../appwrite/userProfileService";
 import authService from "../../../appwrite/auth";
+import { useGetCollegeQuery } from "../../../store/api/collegeApi";
+import { useGetTradeQuery } from "../../../store/api/tradeApi";
 
 const ProfileView = ({ profileProps }) => {
-  const [tradedata, setTradeData] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [colleges, setColleges] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-
   const { userId } = useParams();
+
+  
+  const {
+    data: college,
+    isLoading: collegeDataLoading,
+  } = useGetCollegeQuery(profile?.collegeId , { skip: !profile?.collegeId });
+  const {
+    data: trade,
+    isLoading: tradeDataLoading,
+  } = useGetTradeQuery(profile?.tradeId , { skip: !profile?.tradeId });
+
+
 
   const fetchProfile = async () => {
     setIsLoading(true);
-
     try {
       if (profileProps) {
         setProfile(profileProps);
@@ -40,15 +48,10 @@ const ProfileView = ({ profileProps }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tradesRes, batchesRes, collegesRes] = await Promise.all([
-        tradeservice.getTrade(profile.tradeId),
+      const [ batchesRes ] = await Promise.all([
         batchService.getBatch(profile.batchId),
-        collegeService.getCollege(profile.collegeId),
       ]);
-
-      setTradeData(tradesRes);
       setBatches(batchesRes);
-      setColleges(collegesRes);
     } catch (error) {
       console.log(error);
     } finally {
@@ -80,10 +83,18 @@ const ProfileView = ({ profileProps }) => {
   };
 
 
-  if (isLoading) {
+  if (isLoading || collegeDataLoading || tradeDataLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="w-8 h-8 border-4 border-blue-500 rounded-full animate-spin border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-gray-500">No profile data available.</p>
       </div>
     );
   }
@@ -202,8 +213,8 @@ const ProfileView = ({ profileProps }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {renderField("Student ID", profile.studentId)}
                 {renderField("Registration ID", profile.registerId)}
-                {renderField("College", colleges?.collageName)}
-                {renderField("Trade", tradedata?.tradeName)}
+                {renderField("College", college?.collageName)}
+                {renderField("Trade", trade?.tradeName)}
                 {renderField("Batch", batches?.BatchName)}
                 {renderField("Enrollment Status", profile.enrollmentStatus)}
                 {renderField(

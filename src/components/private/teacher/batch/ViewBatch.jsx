@@ -22,6 +22,7 @@ import ProgressCard from "./ProgressCards"
 import TraineeLeaveRecord from "./LeaveRecord";
 import { selectUser } from "../../../../store/userSlice";
 
+
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
@@ -42,11 +43,11 @@ const ViewBatch = () => {
   const [selectedBatch, setSelectedBatch] = useState("");
   const [activeTab, setActiveTab] = useState("profiles");
 
-
   const user = useSelector(selectUser)
   const isAdmin = user.labels.includes("admin")
-
   const profile = useSelector(selectProfile);
+
+  
   const fetchTeacherBatches = async () => {
     setIsLoading(true);
     try {
@@ -122,7 +123,7 @@ const ViewBatch = () => {
 
   useEffect(() => {
     if (
-      (activeTab === "attendance" || activeTab === "progress-card" , activeTab === "leave-record") &&
+      (activeTab === "attendance" || activeTab === "progress-card" || activeTab === "leave-record") &&
       selectedBatch !== "" &&
       studentAttendance.length === 0
     ) {
@@ -171,13 +172,13 @@ const ViewBatch = () => {
         );
       case "leave-record":
         return (
-          isAdmin ? <TraineeLeaveRecord
+          <TraineeLeaveRecord
             studentProfiles={students}
             stats={attendanceStats}
             batchData={teacherBatches.find(
               (item) => item.$id === selectedBatch 
             )}
-          />  :<div className="text-center ">Leave Record Coming Soon</div>
+          />  
         );
       case "assignments":
         return <div className="text-center ">Assignments Coming Soon</div>;

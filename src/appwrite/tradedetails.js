@@ -8,7 +8,21 @@ export class TradeService {
     this.database = appwriteService.getDatabases();
   }
 
-  async createTrade({ tradeName, year }) {
+  async getTrade(id) {
+    try {
+      return await this.database.getDocument(
+        conf.databaseId,
+        conf.tradeCollectionId,
+        id
+      );
+    } catch (error) {
+      console.log("Appwrite error: get Trade:", error);
+      return false;
+    }
+  }
+
+  async createTrade(tradeData) {
+    const { tradeName, year } = tradeData
     try {
       // Check if the trade already exists
       const existingTrades = await this.database.listDocuments(
@@ -81,16 +95,29 @@ export class TradeService {
     }
   }
 
-  async getTrade(id) {
+ 
+  static async customTradeBaseQuery({ method, data }) {
+    const tradeService = new TradeService();
     try {
-      return await this.database.getDocument(
-        conf.databaseId,
-        conf.tradeCollectionId,
-        id
-      );
+      // Ensure method is uppercase
+      const reqMethod = method.toUpperCase();
+
+      const methodMap = {
+        GET: () => tradeService.getTrade(data.tradeId),
+        POST: () => tradeService.createTrade(data),
+        UPDATE: () =>
+          tradeService.updateTrade(data.tradeId, data.updatedData),
+        DELETE: () => tradeService.deleteTrade(data.tradeId),
+      };
+
+      if (!methodMap[reqMethod]) {
+        throw new Error(`Method ${reqMethod} not supported`);
+      }
+
+      const result = await methodMap[reqMethod]();
+      return { data: result };
     } catch (error) {
-      console.log("Appwrite error: get Trade:", error);
-      return false;
+      return { error: error.message };
     }
   }
 }

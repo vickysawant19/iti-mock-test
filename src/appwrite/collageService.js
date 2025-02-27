@@ -11,7 +11,6 @@ export class CollegeService {
   async createCollege(collegeName) {
     try {
       const data = { name: collegeName };
-
       return await this.database.createDocument(
         conf.databaseId,
         conf.collegesCollectionId,
@@ -20,7 +19,7 @@ export class CollegeService {
       );
     } catch (error) {
       console.error("Appwrite error: creating college:", error);
-      throw new Error(`${error.message}`);
+      throw new Error(error.message);
     }
   }
 
@@ -53,13 +52,15 @@ export class CollegeService {
 
   async getCollege(collegeId) {
     try {
-      return await this.database.getDocument(
+      const res =  await this.database.getDocument(
         conf.databaseId,
         conf.collegesCollectionId,
         collegeId
       );
+  
+      return res
     } catch (error) {
-      console.log("Appwrite error: get college:", error);
+      console.error("Appwrite error: get college:", error);
       return false;
     }
   }
@@ -74,6 +75,31 @@ export class CollegeService {
     } catch (error) {
       console.error("Appwrite error: fetching colleges:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
+  static async customCollegeBaseQuery({ method, data }) {
+    const collegeService = new CollegeService();
+    try {
+      // Ensure method is uppercase
+      const reqMethod = method.toUpperCase();
+
+      const methodMap = {
+        GET: () => collegeService.getCollege(data.collegeId),
+        POST: () => collegeService.createCollege(data.collegeName),
+        UPDATE: () =>
+          collegeService.updateCollege(data.collegeId, data.updatedData),
+        DELETE: () => collegeService.deleteCollege(data.collegeId),
+      };
+
+      if (!methodMap[reqMethod]) {
+        throw new Error(`Method ${reqMethod} not supported`);
+      }
+
+      const result = await methodMap[reqMethod]();
+      return { data: result };
+    } catch (error) {
+      return { error: error.message };
     }
   }
 }

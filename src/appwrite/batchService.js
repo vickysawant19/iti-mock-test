@@ -86,6 +86,31 @@ export class BatchService {
       throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
+
+  static async customBatchBaseQuery({ method, data }) {
+    const batchService = new BatchService();
+    try {
+      // Ensure method is uppercase
+      const reqMethod = method.toUpperCase();
+
+      const methodMap = {
+        GET: () => batchService.getBatch(data.batchId),
+        POST: () => batchService.createBatch(data.batchName),
+        UPDATE: () =>
+          batchService.updateBatch(data.batchId, data.updatedData),
+        DELETE: () => batchService.deleteBatch(data.batchId),
+      };
+
+      if (!methodMap[reqMethod]) {
+        throw new Error(`Method ${reqMethod} not supported`);
+      }
+
+      const result = await methodMap[reqMethod]();
+      return { data: result };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
 }
 
 const batchService = new BatchService();
