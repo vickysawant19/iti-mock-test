@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { Printer } from "lucide-react";
-import {
-  pdf,
-  PDFDownloadLink,
-} from "@react-pdf/renderer";
+import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
 import { useGetCollegeQuery } from "../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../store/api/tradeApi";
-
 
 const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
-  const {data: college, isLoading : collegeDataLoading} = useGetCollegeQuery(batchData.collegeId)
-  const {data: trade, isLoading : tradeDataLoading } = useGetTradeQuery(batchData.tradeId)
+  const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
+    batchData.collegeId
+  );
+  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
+    batchData.tradeId
+  );
 
   const generatePreview = async () => {
     if (!selectedStudent) {
@@ -25,13 +25,15 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
     try {
       const blob = await pdf(
         <ProgressCardPDF
-        batch={batchData}
+          batch={batchData}
           student={selectedStudent}
           monthlyRecords={
             stats.find((item) => item.userId === selectedStudent.userId)
               ?.monthlyAttendance || {}
           }
-          quarterlyTests={selectedStudent.quarterlyTests || new Array(3).fill({})}
+          quarterlyTests={
+            selectedStudent.quarterlyTests || new Array(3).fill({})
+          }
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -51,8 +53,7 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
     };
   }, [selectedStudent, stats]);
 
-  if(collegeDataLoading || tradeDataLoading ) return <div>Loading...</div>
- 
+  if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
 
   return (
     <div className="w-full max-w-4xl mx-auto  ">
@@ -87,7 +88,7 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
                   key={student.userId}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
-                    setSelectedStudent({...student, ...college, ...trade});
+                    setSelectedStudent({ ...student, ...college, ...trade });
                     setIsDropdownOpen(false);
                   }}
                 >
@@ -99,39 +100,49 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
         </div>
 
         {selectedStudent && (
-          <PDFDownloadLink
-            document={
-              <ProgressCardPDF
-                batch={batchData}
-                student={selectedStudent}
-                monthlyRecords={
-                  stats.find((item) => item.userId === selectedStudent.userId)
-                    ?.monthlyAttendance || {}
-                }
-                quarterlyTests={selectedStudent.quarterlyTests || []}
-              />
-            }
-            fileName={`progress-card-${selectedStudent.userName}.pdf`}
-            className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            {({ loading }) => (
-              <>
-                <Printer className="h-4 w-4" />
-                {loading ? "Generating PDF..." : "Download PDF"}
-              </>
-            )}
-          </PDFDownloadLink>
+          <div className="flex flex-row gap-5">
+            <PDFDownloadLink
+              document={
+                <ProgressCardPDF
+                  batch={batchData}
+                  student={selectedStudent}
+                  monthlyRecords={
+                    stats.find((item) => item.userId === selectedStudent.userId)
+                      ?.monthlyAttendance || {}
+                  }
+                  quarterlyTests={selectedStudent.quarterlyTests || []}
+                />
+              }
+              fileName={`progress-card-${selectedStudent.userName}.pdf`}
+              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              {({ loading }) => (
+                <>
+                  <Printer className="h-4 w-4" />
+                  {loading ? "Generating PDF..." : "Download PDF"}
+                </>
+              )}
+            </PDFDownloadLink>
+            <button
+              onClick={() => window.open(pdfUrl, "_blank")}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open PDF in new tab
+            </button>
+          </div>
         )}
       </div>
 
       <div className="overflow-hidden border rounded-lg shadow-sm">
         {selectedStudent ? (
           pdfUrl ? (
-            <iframe
-              src={pdfUrl}
-              className="w-full h-[842px] border-0"
-              title="Progress Card Preview"
-            />
+            <>
+              <iframe
+                src={pdfUrl}
+                className="w-full h-[842px] border-0"
+                title="Progress Card Preview"
+              />
+            </>
           ) : (
             <div className="w-full h-[842px] flex items-center justify-center">
               <p className="text-gray-500">Generating preview...</p>
