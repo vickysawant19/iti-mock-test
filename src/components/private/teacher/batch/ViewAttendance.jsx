@@ -38,7 +38,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
   });
 
   return (
-    <div className="">
+    <div className="text-sm">
       <div className="w-full  mx-auto bg-white rounded-lg  overflow-hidden">
         {/* Month selector */}
         <div className="p-2 bg-gray-50 flex w-full justify-end">
@@ -119,7 +119,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-full text-sm">
             <thead className="bg-gray-100">
               <tr>
                 <th

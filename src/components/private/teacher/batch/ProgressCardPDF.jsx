@@ -59,7 +59,12 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
     width: "100%",
+    alignSelf: "center",
   },
   progressTitle: {
     fontSize: 14,
@@ -249,7 +254,7 @@ const ProgressCardPDF = ({
             <Text style={styles.headerTitle}>
               DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING
             </Text>
-            <Text style={styles.headerSubtitle}>
+            <Text style={[styles.headerSubtitle]}>
               {student?.collageName || ""}
             </Text>
             <Text style={styles.progressTitle}>PROGRESS CARD</Text>

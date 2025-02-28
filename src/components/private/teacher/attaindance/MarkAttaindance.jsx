@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
-import { Loader2, ChevronDown, ChevronUp, Link, ArrowUp } from "lucide-react";
+import {
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Link,
+  ArrowUp,
+  CircleArrowOutUpLeftIcon,
+} from "lucide-react";
 import { Link as Linkto } from "react-router-dom";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
@@ -302,10 +309,10 @@ const MarkAttendance = () => {
   }
   const StatCard = ({ title, value, bgColor, textColor, valueColor }) => (
     <div
-      className={`${bgColor} rounded-lg p-4 flex flex-col items-center justify-center shadow-md`}
+      className={`${bgColor} rounded-lg p-2 flex flex-col items-center justify-center shadow-md`}
     >
-      <p className={`text-sm ${textColor} font-medium`}>{title}</p>
       <p className={`text-lg font-bold ${valueColor}`}>{value}</p>
+      <p className={`text-xs opacity-50 ${textColor} font-medium`}>{title}</p>
     </div>
   );
 
@@ -355,19 +362,19 @@ const MarkAttendance = () => {
         <div className="flex flex-col sm:flex-row gap-4"></div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 grid-rows-1 lg:grid-cols-3 gap-6 text-sm">
           {/* Calendar Section */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 row-span-1">
             <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-4 border-b flex justify-between items-center">
+              <div className="p-2 border-b flex justify-between items-center">
                 <h2 className="text-lg font-medium">
                   Date: {format(selectedDate, "dd MMMM yyyy")}
                 </h2>
                 <Linkto
                   to="/attaindance/mark-holidays"
-                  className=" px-6 py-2.5 bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 transition-all shadow-sm text-center"
+                  className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-sm text-center"
                 >
-                  Manage Holidays
+                  Mark Holidays
                 </Linkto>
               </div>
               <div className="p-4">
@@ -388,9 +395,9 @@ const MarkAttendance = () => {
           </div>
 
           {/* Attendance List Section */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm h-[calc(100vh-12rem)] ">
-              <div className="p-4 border-b flex justify-between items-center">
+          <div className="lg:col-span-1 row-span-1">
+            <div className="bg-white rounded-lg shadow-sm  ">
+              <div className="p-2 border-b flex justify-between items-center">
                 <h2 className="text-lg font-medium">Student List</h2>
                 <button
                   onClick={handleSubmit}
@@ -407,7 +414,7 @@ const MarkAttendance = () => {
                   )}
                 </button>
               </div>
-              <div className="p-4 h-[calc(100vh-18rem)] overflow-y-auto">
+              <div className="p-4 h-[calc(100vh-4rem)] overflow-y-auto">
                 {!isHoliday && (
                   <div className="space-y-4">
                     {students
@@ -419,7 +426,7 @@ const MarkAttendance = () => {
                           key={student.userId}
                           className={`border rounded-lg p-4  transition-colors text-sm hover:border-gray-500`}
                         >
-                          <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 flex-wrap ">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3  ">
                             <div
                               type={"button"}
                               onClick={() => toggleOptions(student.userId)}

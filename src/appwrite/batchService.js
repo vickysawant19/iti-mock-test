@@ -96,8 +96,7 @@ export class BatchService {
       const methodMap = {
         GET: () => batchService.getBatch(data.batchId),
         POST: () => batchService.createBatch(data.batchName),
-        UPDATE: () =>
-          batchService.updateBatch(data.batchId, data.updatedData),
+        UPDATE: () => batchService.updateBatch(data.batchId, data.updatedData),
         DELETE: () => batchService.deleteBatch(data.batchId),
       };
 

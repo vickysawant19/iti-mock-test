@@ -15,7 +15,6 @@ import { selectUser } from "../../../../store/userSlice";
 import { toast } from "react-toastify";
 import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
-import AttendanceStatus from "../attaindance/AttendanceStatus";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(
@@ -29,7 +28,7 @@ function DailyDiary() {
 
   // Store entries by date (formatted as "yyyy-MM-dd")
   const [diaryData, setDiaryData] = useState({});
-  const [attendance, setAttendance ] = useState(new Map())
+  const [attendance, setAttendance] = useState(new Map());
   const [holidays, setHolidays] = useState(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,18 +46,23 @@ function DailyDiary() {
 
   const fetchAttendance = async () => {
     try {
-      const data = await attendanceService.getUserAttendance(profile.userId, profile.batchId)
-      let map = new Map()
-      data.attendanceRecords.forEach(item => map.set(item.date, item.attendanceStatus)  )
-      setAttendance(map)
+      const data = await attendanceService.getUserAttendance(
+        profile.userId,
+        profile.batchId
+      );
+      let map = new Map();
+      data.attendanceRecords.forEach((item) =>
+        map.set(item.date, item.attendanceStatus)
+      );
+      setAttendance(map);
     } catch (error) {
-      console.log("Error batch daily dairy " , error)
+      console.log("Error batch daily dairy ", error);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAttendance()
-  }, [ profile])
+    fetchAttendance();
+  }, [profile]);
 
   useEffect(() => {
     if (!batchData) return;
@@ -243,24 +247,26 @@ function DailyDiary() {
 
       {/* Diary table */}
       <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-indigo-700 text-white">
-              <th className="p-3 text-left border border-indigo-800 w-24">
+              <th className="p-2 text-center  border border-indigo-800 w-24">
                 Date
               </th>
-              <th className="p-3 text-left border border-indigo-800 w-20">
+              <th className="p-2 text-center border border-indigo-800 w-20">
                 Day
               </th>
-              <th className="p-3 text-left border border-indigo-800">Theory</th>
-              <th className="p-3 text-left border border-indigo-800">
+              <th className="p-2 text-center border border-indigo-800">
+                Theory
+              </th>
+              <th className="p-2 text-center border border-indigo-800">
                 Practical
               </th>
-              <th className="p-3 text-left border border-indigo-800 w-28">
+              <th className="p-2 text-center border border-indigo-800 w-28">
                 Practical #
               </th>
               {isTeacher && (
-                <th className="p-3 text-center border border-indigo-800 w-24">
+                <th className="p-2 text-center border border-indigo-800 w-24">
                   Actions
                 </th>
               )}
@@ -276,7 +282,8 @@ function DailyDiary() {
                 isEditing: true,
               };
 
-              const isAbsent = !isTeacher && attendance.get(dateKey) === "Absent"
+              const isAbsent =
+                !isTeacher && attendance.get(dateKey) === "Absent";
               const isHoliday = holidays.has(dateKey);
               const isWeekend =
                 format(day, "E") === "Sat" || format(day, "E") === "Sun";
@@ -288,20 +295,27 @@ function DailyDiary() {
                     ${
                       isHoliday
                         ? "bg-red-100"
-                        : isAbsent ? "bg-pink-200"  : isWeekend
+                        : isAbsent
+                        ? "bg-pink-200"
+                        : isWeekend
                         ? "bg-gray-50"
                         : "bg-white"
                     } 
-                     transition-colors h-32 min-h-32
+                     transition-colors
                   `}
                 >
-                  <td className="p-3 border border-gray-300 whitespace-nowrap font-medium">
+                  <td className="p-2 border border-gray-300 whitespace-nowrap font-medium text-wrap text-center">
                     {format(day, "MMM dd, yyyy")}
                   </td>
-                  <td className="p-3 border border-gray-300 font-medium whitespace-nowrap">
+                  <td className="p-2 border border-gray-300 font-medium whitespace-nowrap text-center">
                     {format(day, "EEEE")}
                   </td>
-                  <td className="p-3 border border-gray-300">
+                  <td
+                    colSpan={isHoliday ? 3 : 1}
+                    className={`p-2 border border-gray-300 ${
+                      isHoliday ? "text-center" : "text-left"
+                    }`}
+                  >
                     {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
                         disabled={isHoliday}
@@ -309,37 +323,51 @@ function DailyDiary() {
                         onChange={(e) =>
                           updateDiaryField(dateKey, "theory", e.target.value)
                         }
-                        className="w-full min-w-60 p-2 border border-gray-300 rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="w-full min-w-40 p-2 border border-gray-300 rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         placeholder="Add theory notes..."
                       />
                     ) : (
                       <div className="whitespace-pre-wrap break-words">
                         {isHoliday
                           ? holidays.get(dateKey)?.holidayText || "Holiday"
-                          :isAbsent ? "Absent" : entry.theory || "-"}
+                          : isAbsent
+                          ? "Absent"
+                          : entry.theory || "-"}
                       </div>
                     )}
                   </td>
-                  <td className={`${isHoliday ? "border-none" : "p-3 border border-gray-300"}`}>
-                    {!isAbsent &&!isHoliday && isTeacher && entry.isEditing ? (
+                  <td
+                    className={`${
+                      isHoliday ? "hidden" : "p-2 border border-gray-300"
+                    }`}
+                  >
+                    {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
                         disabled={isHoliday}
                         value={entry.practical || ""}
                         onChange={(e) =>
                           updateDiaryField(dateKey, "practical", e.target.value)
                         }
-                        className={`w-full min-w-60 p-2  ${isHoliday ? "border-none" : "border border-gray-300"}   rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                        className={`w-full min-w-40 p-2  ${
+                          isHoliday ? "border-none" : "border border-gray-300"
+                        }   rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                         placeholder="Add practical notes..."
                       />
                     ) : (
                       <div className="whitespace-pre-wrap break-words ">
                         {isHoliday
                           ? holidays.get(dateKey)?.holidayText || "Holiday"
-                          : isAbsent ? "Absent" : entry.practical || "-"}
+                          : isAbsent
+                          ? "Absent"
+                          : entry.practical || "-"}
                       </div>
                     )}
                   </td>
-                  <td className="p-3 border border-gray-300">
+                  <td
+                    className={
+                      isHoliday ? "hidden" : "p-2 border border-gray-300"
+                    }
+                  >
                     {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <input
                         type="number"
@@ -356,7 +384,11 @@ function DailyDiary() {
                       />
                     ) : (
                       <span>
-                        {isHoliday ? "" : isAbsent ? "Absent" : entry.practicalNumber || "-"}
+                        {isHoliday
+                          ? ""
+                          : isAbsent
+                          ? "Absent"
+                          : entry.practicalNumber || "-"}
                       </span>
                     )}
                   </td>
@@ -371,7 +403,7 @@ function DailyDiary() {
                               className="flex items-center justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                             >
                               <Save size={16} className="mr-1" />
-                             Save
+                              Save
                             </button>
                           ) : (
                             <button

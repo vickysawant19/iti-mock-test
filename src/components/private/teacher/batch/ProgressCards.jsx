@@ -109,7 +109,9 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
                   stats.find((item) => item.userId === selectedStudent.userId)
                     ?.monthlyAttendance || {}
                 }
-                quarterlyTests={selectedStudent.quarterlyTests || []}
+                quarterlyTests={
+                  selectedStudent.quarterlyTests || new Array(3).fill({})
+                }
               />
             }
             fileName={`progress-card-${selectedStudent.userName}.pdf`}
