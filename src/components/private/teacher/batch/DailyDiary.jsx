@@ -1,27 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   startOfWeek,
   addDays,
   format,
   differenceInCalendarWeeks,
   addWeeks,
-  isAfter,
+  parseISO,
 } from "date-fns";
-import { Edit, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { Edit, Save, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useGetBatchQuery } from "../../../../store/api/batchApi";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
+import { toast } from "react-toastify";
+import batchService from "../../../../appwrite/batchService";
+import attendanceService from "../../../../appwrite/attaindanceService";
+import AttendanceStatus from "../attaindance/AttendanceStatus";
 
 function DailyDiary() {
-  // currentWeekStart is initialized to the Sunday of the current week.
-  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 0 })
+  const currentWeekStartInitial = useMemo(
+    () => startOfWeek(new Date(), { weekStartsOn: 0 }),
+    []
   );
-  // diaryData stores entries keyed by date (formatted as "yyyy-MM-dd")
+
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    currentWeekStartInitial
+  );
+
+  // Store entries by date (formatted as "yyyy-MM-dd")
   const [diaryData, setDiaryData] = useState({});
-  const [attendance, setAttendance] = useState([]);
+  const [attendance, setAttendance ] = useState(new Map())
   const [holidays, setHolidays] = useState(new Map());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
@@ -33,40 +43,81 @@ function DailyDiary() {
     isError,
   } = useGetBatchQuery(profile.batchId);
 
-  console.log(batchData);
+  // const [updateDiaryEntry] = useUpdateDiaryEntryMutation();
+
+  const fetchAttendance = async () => {
+    try {
+      const data = await attendanceService.getUserAttendance(profile.userId, profile.batchId)
+      let map = new Map()
+      data.attendanceRecords.forEach(item => map.set(item.date, item.attendanceStatus)  )
+      setAttendance(map)
+    } catch (error) {
+      console.log("Error batch daily dairy " , error)
+    }
+  }
+
+  useEffect(() => {
+    fetchAttendance()
+  }, [ profile])
 
   useEffect(() => {
     if (!batchData) return;
+    // Load diary entries from API if available
+    if (batchData.dailyDairy) {
+      const data = Object.fromEntries(
+        batchData.dailyDairy.map((itm) => JSON.parse(itm))
+      );
+      setDiaryData(data);
+    }
+
+    // Set holidays
     const map = new Map();
-    batchData.attendanceHolidays.forEach((itm) => {
-      const holiday = JSON.parse(itm);
-      map.set(holiday.date, holiday);
-    });
+    if (batchData.attendanceHolidays) {
+      batchData.attendanceHolidays.forEach((itm) => {
+        try {
+          const holiday = typeof itm === "string" ? JSON.parse(itm) : itm;
+          map.set(holiday.date, holiday);
+        } catch (e) {
+          console.error("Error parsing holiday:", e);
+        }
+      });
+    }
     setHolidays(map);
   }, [batchData]);
 
-  // Calculate week number relative to the provided startDate.
-  const weekNumber =
-    differenceInCalendarWeeks(currentWeekStart, batchData?.start_date, {
-      weekStartsOn: 0,
-    }) + 1;
-  // Navigate to the previous week, but prevent going below week 1
+  // Calculate week number with useMemo to avoid calculations during render
+  const weekNumber = useMemo(() => {
+    if (!batchData?.start_date) return 1;
+
+    const startDate =
+      typeof batchData.start_date === "string"
+        ? parseISO(batchData.start_date)
+        : batchData.start_date;
+
+    return (
+      differenceInCalendarWeeks(currentWeekStart, startDate, {
+        weekStartsOn: 0,
+      }) + 1
+    );
+  }, [batchData, currentWeekStart]);
+
+  // Navigation functions
   const handlePreviousWeek = () => {
     if (weekNumber > 1) {
       setCurrentWeekStart((prev) => addWeeks(prev, -1));
     }
   };
-  // Navigate to the next week.
+
   const handleNextWeek = () => {
     setCurrentWeekStart((prev) => addWeeks(prev, 1));
   };
 
-  // Update a specific field for a given day's diary entry.
-  const updateDiaryEntry = (dateKey, field, value) => {
+  // Update a specific field for a given day's diary entry
+  const updateDiaryField = (dateKey, field, value) => {
     setDiaryData((prev) => ({
       ...prev,
       [dateKey]: {
-        // If no entry exists yet, start with default values.
+        // If no entry exists yet, start with default values
         ...(prev[dateKey] || {
           theory: "",
           practical: "",
@@ -78,76 +129,138 @@ function DailyDiary() {
     }));
   };
 
-  // Toggle the editing mode (edit/save) for a given day.
+  // Toggle editing mode for a specific day
   const toggleEditing = (dateKey) => {
-    setDiaryData((prev) => ({
-      ...prev,
-      [dateKey]: {
-        ...(prev[dateKey] || {
-          theory: "",
-          practical: "",
-          practicalNumber: "",
+    // Get the current entry from diaryData or initialize it
+    const currentEntry = diaryData[dateKey] || {
+      theory: "",
+      practical: "",
+      practicalNumber: "",
+      isEditing: true,
+    };
+
+    // If currently editing, update state first to set isEditing to false and then submit
+    if (currentEntry.isEditing) {
+      setDiaryData((prev) => ({
+        ...prev,
+        [dateKey]: {
+          ...currentEntry,
+          isEditing: false,
+        },
+      }));
+      handleSubmit(dateKey);
+    } else {
+      // Otherwise, simply toggle into editing mode
+      setDiaryData((prev) => ({
+        ...prev,
+        [dateKey]: {
+          ...currentEntry,
           isEditing: true,
-        }),
-        isEditing: !((prev[dateKey] && prev[dateKey].isEditing) ?? true),
-      },
-    }));
+        },
+      }));
+    }
   };
 
-  // Generate an array of 7 days starting with the currentWeekStart (Sunday).
+  // Submit diary entry to backend
+  const handleSubmit = async (dateKey) => {
+    const entry = diaryData[dateKey];
+    if (!entry) return;
+    const updateData = {
+      ...diaryData,
+      [dateKey]: { ...entry, isEditing: false },
+    };
+    setIsSubmitting(true);
+
+    try {
+      const stringyfiedData = Object.entries(updateData).map((itm) =>
+        JSON.stringify(itm)
+      );
+      const res = await batchService.updateBatch(profile.batchId, {
+        dailyDairy: stringyfiedData,
+      });
+      setDiaryData(
+        Object.fromEntries(res.dailyDairy.map((item) => JSON.parse(item)))
+      );
+      toast.success("Diary entry saved successfully");
+    } catch (error) {
+      console.error("Failed to save diary entry:", error);
+      toast.error("Failed to save diary entry");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Generate array of 7 days starting with currentWeekStart
   const weekDays = Array.from({ length: 7 }).map((_, index) =>
     addDays(currentWeekStart, index)
   );
 
-  // Determine if Previous button should be disabled
-  const isPreviousDisabled = weekNumber <= 1;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Failed to load diary data. Please try again later.
+      </div>
+    );
+  }
 
   return (
-    <div className=" w-full mx-auto my-6 px-2 md:px-4">
-      <div className="flex items-center justify-between mb-6 w-full ">
+    <div className="w-full mx-auto my-6 px-2 md:px-4">
+      {/* Week navigation */}
+      <div className="flex items-center justify-between mb-6 w-full">
         <button
-          className={`flex items-center px-3 py-2 text-white rounded-l transition-colors ${
-            isPreviousDisabled
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
+          className={`flex items-center px-3 py-2 text-white rounded-md transition-colors ${
+            weekNumber <= 1
+              ? "bg-gray-500 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700"
           }`}
           onClick={handlePreviousWeek}
-          disabled={isPreviousDisabled}
+          disabled={weekNumber <= 1}
+          aria-label="Previous Week"
         >
           <ChevronLeft size={18} className="mr-1" />
           Previous
         </button>
-        <span className="px-4 py-2 font-bold bg-gray-100">
+        <div className="px-4 py-2 font-bold bg-gray-100 rounded-md border border-gray-300">
           Week {weekNumber}
-        </span>
+        </div>
         <button
-          className="flex items-center px-3 py-2 bg-blue-500 text-white rounded-r hover:bg-blue-600 transition-colors"
+          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
           onClick={handleNextWeek}
+          aria-label="Next Week"
         >
           Next
           <ChevronRight size={18} className="ml-1" />
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg shadow">
+      {/* Diary table */}
+      <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-indigo-600 text-white">
-              <th className="p-3 text-left border border-indigo-700 w-24">
+            <tr className="bg-indigo-700 text-white">
+              <th className="p-3 text-left border border-indigo-800 w-24">
                 Date
               </th>
-              <th className="p-3 text-left border border-indigo-700 w-20">
+              <th className="p-3 text-left border border-indigo-800 w-20">
                 Day
               </th>
-              <th className="p-3 text-left border border-indigo-700">Theory</th>
-              <th className="p-3 text-left border border-indigo-700">
+              <th className="p-3 text-left border border-indigo-800">Theory</th>
+              <th className="p-3 text-left border border-indigo-800">
                 Practical
               </th>
-              <th className="p-3 text-left border border-indigo-700 w-28">
+              <th className="p-3 text-left border border-indigo-800 w-28">
                 Practical #
               </th>
               {isTeacher && (
-                <th className="p-3 text-center border border-indigo-700 w-24">
+                <th className="p-3 text-center border border-indigo-800 w-24">
                   Actions
                 </th>
               )}
@@ -156,7 +269,6 @@ function DailyDiary() {
           <tbody>
             {weekDays.map((day) => {
               const dateKey = format(day, "yyyy-MM-dd");
-              // If no diary entry exists for this day, use default values.
               const entry = diaryData[dateKey] || {
                 theory: "",
                 practical: "",
@@ -164,105 +276,115 @@ function DailyDiary() {
                 isEditing: true,
               };
 
-              // Alternate row colors
-              const isEvenRow = weekDays.indexOf(day) % 2 === 0;
-              const rowBgClass = isEvenRow ? "bg-white" : "bg-gray-50";
-
+              const isAbsent = !isTeacher && attendance.get(dateKey) === "Absent"
               const isHoliday = holidays.has(dateKey);
+              const isWeekend =
+                format(day, "E") === "Sat" || format(day, "E") === "Sun";
 
               return (
                 <tr
                   key={dateKey}
-                  className={`${rowBgClass} ${
-                    isHoliday ? "bg-red-300" : "hover:bg-blue-50"
-                  }  transition-colors`}
+                  className={`
+                    ${
+                      isHoliday
+                        ? "bg-red-100"
+                        : isAbsent ? "bg-pink-200"  : isWeekend
+                        ? "bg-gray-50"
+                        : "bg-white"
+                    } 
+                     transition-colors h-32 min-h-32
+                  `}
                 >
-                  <td className="p-3 border border-gray-200 whitespace-nowrap">
+                  <td className="p-3 border border-gray-300 whitespace-nowrap font-medium">
                     {format(day, "MMM dd, yyyy")}
                   </td>
-                  <td className="p-3 border border-gray-200 font-medium whitespace-nowrap">
+                  <td className="p-3 border border-gray-300 font-medium whitespace-nowrap">
                     {format(day, "EEEE")}
                   </td>
-                  <td className="p-3 border border-gray-200">
-                    {!isHoliday && isTeacher && entry.isEditing ? (
+                  <td className="p-3 border border-gray-300">
+                    {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
                         disabled={isHoliday}
-                        value={entry.practical}
+                        value={entry.theory || ""}
                         onChange={(e) =>
-                          updateDiaryEntry(dateKey, "theory", e.target.value)
+                          updateDiaryField(dateKey, "theory", e.target.value)
                         }
-                        className="w-full min-w-60 p-2 border border-gray-300 rounded min-h-20 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        className="w-full min-w-60 p-2 border border-gray-300 rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         placeholder="Add theory notes..."
                       />
                     ) : (
                       <div className="whitespace-pre-wrap break-words">
                         {isHoliday
-                          ? holidays.get(dateKey).holidayText
-                          : entry.theory || "-"}
+                          ? holidays.get(dateKey)?.holidayText || "Holiday"
+                          :isAbsent ? "Absent" : entry.theory || "-"}
                       </div>
                     )}
                   </td>
-                  <td className="p-3 border border-gray-200">
-                    {!isHoliday && isTeacher && entry.isEditing ? (
+                  <td className={`${isHoliday ? "border-none" : "p-3 border border-gray-300"}`}>
+                    {!isAbsent &&!isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
                         disabled={isHoliday}
-                        value={entry.practical}
+                        value={entry.practical || ""}
                         onChange={(e) =>
-                          updateDiaryEntry(dateKey, "practical", e.target.value)
+                          updateDiaryField(dateKey, "practical", e.target.value)
                         }
-                        className="w-full min-w-60 p-2 border border-gray-300 rounded min-h-20 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        className={`w-full min-w-60 p-2  ${isHoliday ? "border-none" : "border border-gray-300"}   rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                         placeholder="Add practical notes..."
                       />
                     ) : (
-                      <div className="whitespace-pre-wrap break-words">
+                      <div className="whitespace-pre-wrap break-words ">
                         {isHoliday
-                          ? holidays.get(dateKey).holidayText
-                          : entry.practical || "-"}
+                          ? holidays.get(dateKey)?.holidayText || "Holiday"
+                          : isAbsent ? "Absent" : entry.practical || "-"}
                       </div>
                     )}
                   </td>
-                  <td className="p-3 border border-gray-200">
-                    {!isHoliday && isTeacher && entry.isEditing ? (
+                  <td className="p-3 border border-gray-300">
+                    {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <input
                         type="number"
-                        value={entry.practicalNumber}
+                        value={entry.practicalNumber || ""}
                         onChange={(e) =>
-                          updateDiaryEntry(
+                          updateDiaryField(
                             dateKey,
                             "practicalNumber",
                             e.target.value
                           )
                         }
-                        className="w-full p-2 border border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        className="w-full p-2 border border-gray-300 rounded focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                         placeholder="#"
                       />
                     ) : (
                       <span>
-                        {isHoliday ? "" : entry.practicalNumber || "-"}
+                        {isHoliday ? "" : isAbsent ? "Absent" : entry.practicalNumber || "-"}
                       </span>
                     )}
                   </td>
                   {isTeacher && (
-                    <td className="p-3 border border-gray-200">
-                      <div className="flex justify-between w-full">
-                        {isHoliday ? (
-                          ""
-                        ) : entry.isEditing ? (
-                          <button
-                            onClick={() => toggleEditing(dateKey)}
-                            className="flex items-center justify-center w-full px-3 py-2 rounded bg-green-500 hover:bg-green-600 text-white transition-colors"
-                          >
-                            <Save size={16} className="mr-1" /> Save
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toggleEditing(dateKey)}
-                            className="flex items-center justify-center w-full px-3 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                          >
-                            <Edit size={16} className="mr-1" /> Edit
-                          </button>
-                        )}
-                      </div>
+                    <td className="p-3 border border-gray-300">
+                      {!isHoliday && (
+                        <div className="flex flex-col gap-2">
+                          {entry.isEditing ? (
+                            <button
+                              disabled={isSubmitting}
+                              onClick={() => toggleEditing(dateKey)}
+                              className="flex items-center justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                            >
+                              <Save size={16} className="mr-1" />
+                             Save
+                            </button>
+                          ) : (
+                            <button
+                              disabled={isSubmitting}
+                              onClick={() => toggleEditing(dateKey)}
+                              className="flex items-center justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                            >
+                              <Edit size={16} className="mr-1" />
+                              Edit
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   )}
                 </tr>
@@ -272,8 +394,8 @@ function DailyDiary() {
         </table>
       </div>
 
-      {/* Mobile responsive view */}
-      <div className="md:hidden mt-4 text-sm text-gray-500">
+      {/* Mobile helper text */}
+      <div className="md:hidden mt-4 text-sm text-gray-600 text-center">
         <p>Swipe left/right to view all columns</p>
       </div>
     </div>
