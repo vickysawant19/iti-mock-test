@@ -26,6 +26,11 @@ Font.register({
   ],
 });
 
+
+Font.registerHyphenationCallback((word) => {
+  return [word];
+});
+
 const styles = StyleSheet.create({
   page: {
     padding: 30,
