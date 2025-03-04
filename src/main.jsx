@@ -52,6 +52,7 @@ import AddModules from "./components/private/admin/AddModules.jsx";
 import Modules from "./components/private/admin/Modules.jsx";
 import { registerSW } from "virtual:pwa-register";
 import DailyDiary from "./components/private/teacher/batch/DailyDiary.jsx";
+import MarkTodaysAttendance from "./components/private/teacher/attaindance/MarkTodaysAttendance.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -101,6 +102,7 @@ const router = (
             <Route path="delete/:batchId" element={<div>Delete</div>} />
           </Route>
           <Route path="attaindance">
+            <Route path="mark-today" element={<MarkTodaysAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttaindance />} />
             <Route

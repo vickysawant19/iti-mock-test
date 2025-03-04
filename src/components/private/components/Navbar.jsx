@@ -58,6 +58,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     "/attaindance/daily-diary": "Daily Diary",
     "/attaindance/mark-holidays": "Mark Holidays",
     "/attaindance/mark-attendance": "Mark Daywise Attendance",
+    "/attaindance/mark-today": "Mark Todays Attendance",
     "/attaindance/mark-student-attendance": isTeacher
       ? "Mark Student Attendance"
       : "Mark My Attendance",
@@ -67,6 +68,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     "/about": "About",
     "/login": "Login",
     "/signup": "SignUp",
+    
   };
 
   // Get the current heading based on the path
