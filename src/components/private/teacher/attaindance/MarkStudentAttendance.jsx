@@ -121,7 +121,9 @@ const MarkStudentAttendance = () => {
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("batchId", profile.batchId),
         Query.orderDesc("studentId"),
+        Query.equal("status", "Active")
       ]);
+
       // Convert string numbers to integers and sort
       setBatchStudents(
         data.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))

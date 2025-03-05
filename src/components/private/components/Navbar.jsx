@@ -24,12 +24,12 @@ import {
   FaUserSecret,
 } from "react-icons/fa";
 
+import { MdAddCard } from "react-icons/md";
 import logo from "../../../assets/logo.jpeg";
 import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 import { Menu, X } from "lucide-react";
-import { MdAddCard } from "react-icons/md";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
@@ -39,10 +39,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   const isTeacher = user?.labels.includes("Teacher");
   const isAdmin = user?.labels.includes("admin");
+  const isStudent = user && !isTeacher && !isAdmin;
 
   const navigate = useNavigate();
   const location = useLocation();
 
+  // This object maps current paths to headings
   const pathToHeading = {
     "/": "Home",
     "/home": "Home",
@@ -55,10 +57,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     "/mock-exam": "Create Mock Exam",
     "/all-mock-tests": "My Mock Tests",
     "/attain-test": "Attain Test",
-    "/attaindance/daily-diary": "Daily Diary",
+    "/daily-dairy": "Daily Diary",
     "/attaindance/mark-holidays": "Mark Holidays",
     "/attaindance/mark-attendance": "Mark Daywise Attendance",
-    "/attaindance/mark-today": "Mark Todays Attendance",
     "/attaindance/mark-student-attendance": isTeacher
       ? "Mark Student Attendance"
       : "Mark My Attendance",
@@ -68,10 +69,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     "/about": "About",
     "/login": "Login",
     "/signup": "SignUp",
-    
   };
 
-  // Get the current heading based on the path
   const currentHeading = pathToHeading[location.pathname] || "";
 
   const handleLogout = async () => {
@@ -141,19 +140,129 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </NavLink>
   );
 
+  // Helper to check if the current user has one of the allowed roles
+  const hasRole = (roles) => {
+    return roles.some((role) => {
+      if (role === "teacher") return isTeacher;
+      if (role === "admin") return isAdmin;
+      if (role === "student") return isStudent;
+      return false;
+    });
+  };
+
+  // Define a configuration object for all the menu links
+  const menuConfig = [
+    {
+      // Admin-only group
+      group: "Admin",
+      roles: ["admin"],
+      icon: FaUserSecret,
+      groupKey: "admin",
+      children: [
+        { label: "Add modules", path: "/add-modules", icon: MdAddCard },
+      ],
+    },
+    {
+      // Non-group items available to all logged-in users (or public)
+      items: [
+        { label: "Home", path: "/home", icon: FaHome },
+        {
+          label: "Dashboard",
+          path: "/dash",
+          icon: FaDashcube,
+          requiresAuth: true,
+        },
+      ],
+    },
+    {
+      // Teacher-only group for batch management
+      group: "Manage Batch",
+      roles: ["teacher"],
+      icon: FaLayerGroup,
+      groupKey: "manageBatch",
+      children: [
+        {
+          label: "Create/Update Batch",
+          path: "/manage-batch/create",
+          icon: FaUserPlus,
+        },
+        { label: "View Batch", path: "/manage-batch/view", icon: FaUserPlus },
+      ],
+    },
+    {
+      // Mock Tests group – some items only for teachers
+      group: "Mock Tests",
+      icon: FaBook,
+      groupKey: "mockTests",
+      children: [
+        {
+          label: "Create Question",
+          path: "/create-question",
+          icon: FaQuestionCircle,
+          roles: ["teacher"],
+        },
+        {
+          label: "Manage Questions",
+          path: "/manage-questions",
+          icon: FaList,
+          roles: ["teacher"],
+        },
+        {
+          label: "Create Mock Exam",
+          path: "/mock-exam",
+          icon: FaBook,
+          roles: ["teacher"],
+        },
+        { label: "My Mock Tests", path: "/all-mock-tests", icon: FaFileAlt },
+        { label: "Attain Test", path: "/attain-test", icon: FaKey },
+      ],
+    },
+    {
+      // Attendance group – with alternate labels based on role.
+      group: "Attendance",
+      icon: FaCalendarCheck,
+      groupKey: "attendance",
+      children: [
+        { label: "Daily Diary", path: "/daily-dairy", icon: FaBookReader },
+        {
+          label: "Mark Holidays",
+          path: "/attaindance/mark-holidays",
+          icon: FaBookReader,
+          roles: ["teacher"],
+        },
+        {
+          label: "Mark Daywise Attendance",
+          path: "/attaindance/mark-attendance",
+          icon: FaCalendarCheck,
+          roles: ["teacher"],
+        },
+        {
+          teacherLabel: "Mark Student Attendance",
+          studentLabel: "Mark My Attendance",
+          path: "/attaindance/mark-student-attendance",
+          icon: FaCalendarCheck,
+          roles: ["teacher", "student"],
+        },
+        {
+          teacherLabel: "Check Attendance",
+          studentLabel: "Check My Attendance",
+          path: "/attaindance/check-attendance",
+          icon: FaCalendarAlt,
+          roles: ["teacher", "student"],
+        },
+      ],
+    },
+    {
+      // Public items (or available for all users)
+      items: [{ label: "About", path: "/about", icon: FaInfoCircle }],
+    },
+  ];
+
   return (
     <>
-      {/* Navbar */}
-      <div
-        className={`bg-blue-900 h-12 w-full flex fixed z-20 shadow-md ${
-          isNavOpen ? "" : ""
-        }`}
-      >
-        <div
-          className={`flex items-center justify-between  w-full mx-auto px-3 transition-all duration-300 ease-in-out  ${
-            isNavOpen ? "" : ""
-          }`}
-        >
+      {/* Top Navbar */}
+      <div className={`bg-blue-900 h-12 w-full flex fixed z-20 shadow-md`}>
+        <div className="flex items-center justify-between w-full mx-auto px-3 transition-all duration-300 ease-in-out">
           <div className="flex items-center gap-3 w-full ">
             <div className="relative w-10 h-10 md:hidden">
               <button
@@ -209,14 +318,14 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             ) : (
               <>
                 <MenuItem
-                  className={"text-black hover:bg-white hover:text-black"}
+                  className="text-black hover:bg-white hover:text-black"
                   to="/login"
                   icon={FaUserCircle}
                 >
                   Login
                 </MenuItem>
                 <MenuItem
-                  className={"text-black hover:bg-white hover:text-black"}
+                  className="text-black hover:bg-white hover:text-black"
                   to="/signup"
                   icon={FaUserCircle}
                 >
@@ -230,9 +339,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 z-10 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800  ${
+        className={`fixed top-0 left-0 h-full w-72 z-10 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800 overflow-y-auto shadow-2xl md:shadow-none ${
           isNavOpen ? "translate-x-0" : "-translate-x-full"
-        } overflow-y-auto shadow-2xl md:shadow-none `}
+        }`}
       >
         <div className="w-full h-full flex flex-col pt-14 p-4">
           {user && (
@@ -264,111 +373,51 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           )}
 
           <div className="flex-grow space-y-2">
-            {isAdmin && (
-              <MenuGroup title={"Admin"} groupKey={"admin"} icon={FaUserSecret}>
-                <MenuItem to="/add-modules" icon={MdAddCard}>
-                  Add modules
-                </MenuItem>
-              </MenuGroup>
-            )}
-
-            <MenuItem to="/home" icon={FaHome}>
-              Home
-            </MenuItem>
-
-            {user && (
-              <>
-                <MenuItem to="/dash" icon={FaDashcube}>
-                  Dashboard
-                </MenuItem>
-                {isTeacher && (
+            {menuConfig.map((configItem, index) => {
+              // Check if the entire group/item has a roles restriction
+              if (configItem.roles && !hasRole(configItem.roles)) return null;
+              if (configItem.group) {
+                return (
                   <MenuGroup
-                    title="Manage Batch"
-                    icon={FaLayerGroup}
-                    groupKey="manageBatch"
+                    key={index}
+                    title={configItem.group}
+                    groupKey={configItem.groupKey}
+                    icon={configItem.icon}
                   >
-                    <MenuItem to="manage-batch/create" icon={FaUserPlus}>
-                      Create/Update Batch
-                    </MenuItem>
-                    <MenuItem to="manage-batch/view" icon={FaUserPlus}>
-                      View Batch
-                    </MenuItem>
+                    {configItem.children.map((child, idx) => {
+                      if (child.requiresAuth && !user) return null;
+                      if (child.roles && !hasRole(child.roles)) return null;
+                      let label = child.label;
+                      if (child.teacherLabel && child.studentLabel) {
+                        label = isTeacher
+                          ? child.teacherLabel
+                          : child.studentLabel;
+                      }
+                      return (
+                        <MenuItem key={idx} to={child.path} icon={child.icon}>
+                          {label}
+                        </MenuItem>
+                      );
+                    })}
                   </MenuGroup>
-                )}
-
-                {/* Mock Test Group */}
-                <MenuGroup
-                  title="Mock Tests"
-                  icon={FaBook}
-                  groupKey="mockTests"
-                >
-                  {isTeacher && (
-                    <>
-                      <MenuItem to="/create-question" icon={FaQuestionCircle}>
-                        Create Question
-                      </MenuItem>
-                      <MenuItem to="/manage-questions" icon={FaList}>
-                        Manage Questions
-                      </MenuItem>
-                      <MenuItem to="/mock-exam" icon={FaBook}>
-                        Create Mock Exam
-                      </MenuItem>
-                    </>
-                  )}
-                  <MenuItem to="/all-mock-tests" icon={FaFileAlt}>
-                    My Mock Tests
-                  </MenuItem>
-                  <MenuItem to="/attain-test" icon={FaKey}>
-                    Attain Test
-                  </MenuItem>
-                </MenuGroup>
-
-                {/* Attendance Group */}
-                <MenuGroup
-                  title="Attendance"
-                  icon={FaCalendarCheck}
-                  groupKey="attendance"
-                >
-                  <MenuItem to="/daily-dairy" icon={FaBookReader}>
-                    Daily Diary
-                  </MenuItem>
-                  {isTeacher && (
-                    <>
-                      <MenuItem
-                        to="/attaindance/mark-holidays"
-                        icon={FaBookReader}
-                      >
-                        Mark Holidays
-                      </MenuItem>
-                      <MenuItem
-                        to="/attaindance/mark-attendance"
-                        icon={FaCalendarCheck}
-                      >
-                        Mark Daywise Attendance
-                      </MenuItem>
-                    </>
-                  )}
-                  <MenuItem
-                    to="/attaindance/mark-student-attendance"
-                    icon={FaCalendarCheck}
-                  >
-                    {isTeacher
-                      ? "Mark Student Attendance"
-                      : "Mark My Attendnace"}
-                  </MenuItem>
-                  <MenuItem
-                    to="/attaindance/check-attendance"
-                    icon={FaCalendarAlt}
-                  >
-                    {isTeacher ? "Check Attendance" : "Check My Attendance"}
-                  </MenuItem>
-                </MenuGroup>
-              </>
-            )}
-
-            <MenuItem to="/about" icon={FaInfoCircle}>
-              About
-            </MenuItem>
+                );
+              } else if (configItem.items) {
+                return configItem.items.map((child, idx) => {
+                  if (child.requiresAuth && !user) return null;
+                  if (child.roles && !hasRole(child.roles)) return null;
+                  let label = child.label;
+                  if (child.teacherLabel && child.studentLabel) {
+                    label = isTeacher ? child.teacherLabel : child.studentLabel;
+                  }
+                  return (
+                    <MenuItem key={idx} to={child.path} icon={child.icon}>
+                      {label}
+                    </MenuItem>
+                  );
+                });
+              }
+              return null;
+            })}
           </div>
 
           <div className="mt-auto pt-4">
@@ -385,15 +434,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </button>
             ) : (
               <>
-                <MenuItem
-                  className={"md:hidden"}
-                  to="/login"
-                  icon={FaUserCircle}
-                >
+                <MenuItem className="md:hidden" to="/login" icon={FaUserCircle}>
                   Login
                 </MenuItem>
                 <MenuItem
-                  className={"md:hidden"}
+                  className="md:hidden"
                   to="/signup"
                   icon={FaUserCircle}
                 >

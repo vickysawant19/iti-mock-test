@@ -20,6 +20,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
 
   stats = stats.filter((item) => item.userId !== profile.userId);
 
+
   if (isLoading) return <div>Loading...</div>;
 
   // Get unique months from all students' attendance records and sort them

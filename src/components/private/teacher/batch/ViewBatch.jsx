@@ -43,7 +43,6 @@ const ViewBatch = () => {
   const [activeTab, setActiveTab] = useState("profiles");
 
   const user = useSelector(selectUser);
-  const isAdmin = user.labels.includes("admin");
   const profile = useSelector(selectProfile);
 
   const fetchTeacherBatches = async () => {
@@ -86,16 +85,17 @@ const ViewBatch = () => {
         const student = students.find(
           (student) => student.userId === attendance.userId
         );
-
+   
         return {
           ...attendance,
+          status: student ? student.status : null,
           studentId: student ? student.studentId : null,
           userName: student
             ? student.userName
             : attendance?.userName || "Unknown",
         };
-      });
-
+      }).filter(item =>  item.status === "Active")
+    
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
           ? studentsWithStudentIds
