@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
-import {
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Link,
-  ArrowUp,
-  CircleArrowOutUpLeftIcon,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Link as Linkto } from "react-router-dom";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
@@ -42,6 +35,7 @@ const MarkAttendance = () => {
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+
   const isTeacher = user?.labels.includes("Teacher");
   const isHoliday = dateWithHoliday.has(format(selectedDate, "yyyy-MM-dd"));
 
@@ -187,6 +181,7 @@ const MarkAttendance = () => {
       [userId]: {
         ...prev[userId],
         attendanceStatus: status,
+        isMarked: true,
         inTime: status === "Present" ? DEFAULT_IN_TIME : "",
         outTime: status === "Present" ? DEFAULT_OUT_TIME : "",
       },
@@ -309,7 +304,7 @@ const MarkAttendance = () => {
   }
   const StatCard = ({ title, value, bgColor, textColor, valueColor }) => (
     <div
-      className={`${bgColor} rounded-lg p-2 flex flex-col items-center justify-center shadow-md`}
+      className={`${bgColor} rounded-lg p-2   flex flex-col items-center justify-center shadow-md `}
     >
       <p className={`text-lg font-bold ${valueColor}`}>{value}</p>
       <p className={`text-xs opacity-50 ${textColor} font-medium`}>{title}</p>
@@ -318,239 +313,231 @@ const MarkAttendance = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto space-y-4">
-        {/* Stats Cards Row */}
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-          <StatCard
-            title="Total"
-            value={attendance?.stats?.totalCount ?? "-"}
-            bgColor="bg-blue-50"
-            textColor="text-blue-600"
-            valueColor="text-blue-700"
-          />
-          <StatCard
-            title="Marked"
-            value={attendance?.stats?.markedCount ?? "-"}
-            bgColor="bg-green-50"
-            textColor="text-green-600"
-            valueColor="text-green-700"
-          />
-          <StatCard
-            title="Unmarked"
-            value={attendance?.stats?.unmarkCount ?? "-"}
-            bgColor="bg-yellow-50"
-            textColor="text-yellow-600"
-            valueColor="text-yellow-700"
-          />
-          <StatCard
-            title="Present"
-            value={attendance?.stats?.presentCount ?? "-"}
-            bgColor="bg-purple-50"
-            textColor="text-purple-600"
-            valueColor="text-purple-700"
-          />
-          <StatCard
-            title="Absent"
-            value={attendance?.stats?.absentCount ?? "-"}
-            bgColor="bg-red-50"
-            textColor="text-red-600"
-            valueColor="text-red-700"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4"></div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 grid-rows-1 lg:grid-cols-3 gap-6 text-sm">
-          {/* Calendar Section */}
-          <div className="lg:col-span-2 row-span-1">
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-2 border-b flex justify-between items-center">
-                <h2 className="text-lg font-medium">
-                  Date: {format(selectedDate, "dd MMMM yyyy")}
-                </h2>
-                <Linkto
-                  to="/attaindance/mark-holidays"
-                  className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-sm text-center"
-                >
-                  Mark Holidays
-                </Linkto>
-              </div>
-              <div className="p-4">
-                <CustomCalendar
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  tileClassName={tileClassName}
-                  tileContent={tileContent}
-                  enableNextTiles={isTeacher}
-                  startDate={
-                    batchData?.start_date
-                      ? new Date(batchData.start_date)
-                      : undefined
-                  }
-                />
-              </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1  lg:grid-cols-3 gap-6 text-sm">
+        {/* Calendar Section */}
+        <div className="lg:col-span-2 row-span-1">
+          {/* Stats Cards Row */}
+          <div className="grid lg:col-span-1 lg:grid-cols-5 grid-cols-5 gap-2">
+            <StatCard
+              title="Total"
+              value={attendance?.stats?.totalCount ?? "-"}
+              bgColor="bg-blue-50"
+              textColor="text-blue-600"
+              valueColor="text-blue-700"
+            />
+            <StatCard
+              title="Marked"
+              value={attendance?.stats?.markedCount ?? "-"}
+              bgColor="bg-green-50"
+              textColor="text-green-600"
+              valueColor="text-green-700"
+            />
+            <StatCard
+              title="Unmarked"
+              value={attendance?.stats?.unmarkCount ?? "-"}
+              bgColor="bg-yellow-50"
+              textColor="text-yellow-600"
+              valueColor="text-yellow-700"
+            />
+            <StatCard
+              title="Present"
+              value={attendance?.stats?.presentCount ?? "-"}
+              bgColor="bg-purple-50"
+              textColor="text-purple-600"
+              valueColor="text-purple-700"
+            />
+            <StatCard
+              title="Absent"
+              value={attendance?.stats?.absentCount ?? "-"}
+              bgColor="bg-red-50"
+              textColor="text-red-600"
+              valueColor="text-red-700"
+            />
+          </div>
+          <div className="bg-white rounded-lg shadow-sm mt-5">
+            <div className="p-2 border-b flex justify-between items-center">
+              <h2 className="text-lg font-medium">
+                Date: {format(selectedDate, "dd MMMM yyyy")}
+              </h2>
+              <Linkto
+                to="/attaindance/mark-holidays"
+                className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-sm text-center"
+              >
+                Edit Holidays
+              </Linkto>
+            </div>
+            <div className="p-4">
+              <CustomCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                tileClassName={tileClassName}
+                tileContent={tileContent}
+                enableNextTiles={isTeacher}
+                startDate={
+                  batchData?.start_date
+                    ? new Date(batchData.start_date)
+                    : undefined
+                }
+              />
             </div>
           </div>
+        </div>
 
-          {/* Attendance List Section */}
-          <div className="lg:col-span-1 row-span-1">
-            <div className="bg-white rounded-lg shadow-sm  ">
-              <div className="p-2 border-b flex justify-between items-center">
-                <h2 className="text-lg font-medium">Student List</h2>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className=" px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    "Submit Attendance"
-                  )}
-                </button>
-              </div>
-              <div className="p-4 h-[calc(100vh-4rem)] overflow-y-auto">
-                {!isHoliday && (
-                  <div className="space-y-4">
-                    {students
-                      .sort(
-                        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
-                      )
-                      .map((student) => (
-                        <div
-                          key={student.userId}
-                          className={`border rounded-lg p-4  transition-colors text-sm hover:border-gray-500`}
-                        >
-                          <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3  ">
-                            <div
-                              type={"button"}
-                              onClick={() => toggleOptions(student.userId)}
-                              className="flex items-center gap-3"
-                            >
-                              <span className="font-bold text-lg text-gray-700">
-                                {student.studentId || 0}
-                              </span>
-                              <span className="font-medium text-gray-800">
-                                {student.userName}
-                                {attendance[student.userId]?.isMarked ? (
-                                  <span className="text-green-500 flex items-center gap-1 text-xs opacity-70">
-                                    <span className="w-2 h-2 rounded-full bg-green-500" />
-                                    marked
-                                  </span>
-                                ) : (
-                                  <span className="text-orange-500 text-xs flex items-center gap-1 opacity-70">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                                    unmarked
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex gap-2 w-full sm:w-auto">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleQuickMark(student.userId, "Present")
-                                }
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                  attendance[student.userId]
-                                    ?.attendanceStatus === "Present"
-                                    ? "bg-green-500 text-white"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                }`}
-                              >
-                                Present
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleQuickMark(student.userId, "Absent")
-                                }
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                  attendance[student.userId]
-                                    ?.attendanceStatus === "Absent"
-                                    ? "bg-red-500 text-white"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                }`}
-                              >
-                                Absent
-                              </button>
-                            </div>
+        {/* Attendance List Section */}
+        <div className="lg:col-span-1 row-span-1">
+          <div className="bg-white rounded-lg shadow-sm  ">
+            <div className="p-2 border-b flex justify-between items-center">
+              <h2 className="text-lg font-medium">Student List</h2>
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className=" px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  "Submit Attendance"
+                )}
+              </button>
+            </div>
+            <div className="p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+              {!isHoliday && (
+                <div className="space-y-4">
+                  {students
+                    .sort(
+                      (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+                    )
+                    .map((student) => (
+                      <div
+                        key={student.userId}
+                        className={`border rounded-lg p-4 border-l-4  transition-colors text-sm ${
+                          attendance[student.userId]?.isMarked
+                            ? attendance[student.userId]?.attendanceStatus ===
+                              "Present"
+                              ? "border-green-400 hover:border-green-500"
+                              : "border-red-400 hover:border-red-500"
+                            : "border-gray-400 hover:border-gray-500"
+                        }  `}
+                      >
+                        <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3  ">
+                          <div
+                            type={"button"}
+                            onClick={() => toggleOptions(student.userId)}
+                            className="flex items-center gap-3 "
+                          >
+                            <span className="font-bold text-lg text-gray-700">
+                              {student.studentId || 0}
+                            </span>
+                            <span className="font-medium text-gray-800">
+                              {student.userName}
+                            </span>
                           </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleQuickMark(student.userId, "Present")
+                              }
+                              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                attendance[student.userId]?.isMarked
+                                  ? attendance[student.userId]
+                                      ?.attendanceStatus === "Present"
+                                    ? "bg-green-400 hover:bg-green-500"
+                                    : "bg-gray-100 hover:bg-gray-200"
+                                  : "bg-green-100 hover:bg-green-200"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleQuickMark(student.userId, "Absent")
+                              }
+                              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                attendance[student.userId]?.isMarked
+                                  ? attendance[student.userId]
+                                      ?.attendanceStatus === "Absent"
+                                    ? "bg-red-400 hover:bg-red-500"
+                                    : "bg-gray-100 hover:bg-gray-200"
+                                  : "bg-red-100 hover:bg-red-200"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </div>
 
-                          {expandedRows[student.userId] && (
-                            <div className="mt-4 space-y-4">
+                        {expandedRows[student.userId] && (
+                          <div className="mt-4 space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Reason
+                              </label>
+                              <input
+                                type="text"
+                                value={attendance[student.userId]?.reason || ""}
+                                onChange={(e) =>
+                                  handleAttendanceChange(
+                                    student.userId,
+                                    "reason",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Optional"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Reason
+                                  In Time
                                 </label>
                                 <input
-                                  type="text"
+                                  type="time"
                                   value={
-                                    attendance[student.userId]?.reason || ""
+                                    attendance[student.userId]?.inTime || ""
                                   }
                                   onChange={(e) =>
                                     handleAttendanceChange(
                                       student.userId,
-                                      "reason",
+                                      "inTime",
                                       e.target.value
                                     )
                                   }
                                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Optional"
                                 />
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    In Time
-                                  </label>
-                                  <input
-                                    type="time"
-                                    value={
-                                      attendance[student.userId]?.inTime || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleAttendanceChange(
-                                        student.userId,
-                                        "inTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Out Time
-                                  </label>
-                                  <input
-                                    type="time"
-                                    value={
-                                      attendance[student.userId]?.outTime || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleAttendanceChange(
-                                        student.userId,
-                                        "outTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  />
-                                </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Out Time
+                                </label>
+                                <input
+                                  type="time"
+                                  value={
+                                    attendance[student.userId]?.outTime || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleAttendanceChange(
+                                      student.userId,
+                                      "outTime",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
                               </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

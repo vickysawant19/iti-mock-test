@@ -378,37 +378,47 @@ const MarkStudentAttendance = () => {
   return (
     <div className="w-full  mx-auto px-4 py-6">
       {/* Top Actions Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap gap-4 items-center justify-end">
-          {isTeacher ? (
-            <select
-              className="min-w-[160px] p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onChange={handleSelectChange}
-              disabled={isLoading}
-            >
-              <option value="">Select User</option>
-              {batchStudents.map((item) => (
-                <option key={item.userId} value={item.userId}>
-                  {item.studentId?.toString().padStart(2, "0") || "00"}{" "}
-                  {item.userName}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <button
-              onClick={() => setIsShowMap((prev) => !prev)}
-              className="min-w-[160px] bg-teal-500 hover:bg-teal-600 text-white rounded-lg p-2.5 text-sm transition-colors"
-            >
-              {!isShowMap ? "Show Map" : "Hide Map"}
-            </button>
-          )}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        {isTeacher ? (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            {/* Student Select and Details */}
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <label className="block text-sm font-medium text-gray-700">
+                Select Student
+              </label>
+              <select
+                className="p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={handleSelectChange}
+                disabled={isLoading}
+              >
+                <option value="">Select User</option>
+                {batchStudents.map((item) => (
+                  <option key={item.userId} value={item.userId}>
+                    {item.studentId?.toString().padStart(2, "0") || "00"} -{" "}
+                    {item.userName}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {(isTeacher || distance < batchData?.circleRadius) &&
-            studentAttendance && (
+            {/* Student Details (conditionally rendered when a student is selected) */}
+            {studentAttendance && (
+              <div className="flex flex-col gap-1 p-2 border rounded-md bg-gray-50 w-full sm:w-auto min-w-60">
+                <p className="text-sm font-semibold">
+                  Name: {studentAttendance.userName}
+                </p>
+                <p className="text-sm">
+                  Roll number: {studentAttendance.studentId}
+                </p>
+              </div>
+            )}
+
+            {/* Mark Attendance Button */}
+            {studentAttendance && (
               <button
                 onClick={markUserAttendance}
                 disabled={isLoading}
-                className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-2.5 text-sm transition-colors disabled:opacity-50"
+                className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-md p-2 text-sm transition-colors disabled:opacity-50"
               >
                 {isLoading ? (
                   <Loader2 className="animate-spin mx-auto" />
@@ -417,7 +427,41 @@ const MarkStudentAttendance = () => {
                 )}
               </button>
             )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            {/* Student Details (conditionally rendered when a student is selected) */}
+            {profile && (
+              <div className="flex flex-col gap-1 p-2 border rounded-md bg-gray-50 w-full sm:w-auto min-w-60">
+                <p className="text-sm font-semibold">
+                  Name: {profile.userName}
+                </p>
+                <p className="text-sm">Roll number: {profile.studentId}</p>
+              </div>
+            )}
+            <div className="flex gap-4">
+              <button
+                onClick={() => setIsShowMap((prev) => !prev)}
+                className="min-w-[160px] bg-teal-500 hover:bg-teal-600 text-white rounded-md p-2 text-sm transition-colors"
+              >
+                {!isShowMap ? "Show Map" : "Hide Map"}
+              </button>
+              {!distance < batchData?.circleRadius && studentAttendance && (
+                <button
+                  onClick={markUserAttendance}
+                  disabled={isLoading}
+                  className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-md p-2 text-sm transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader2 className="animate-spin mx-auto" />
+                  ) : (
+                    "Mark Attendance"
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Map Section */}

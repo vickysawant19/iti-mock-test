@@ -138,7 +138,7 @@ const MarkHolidays = () => {
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Mark Holidays</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">Update Holidays</h1>
         <button
           onClick={handleSubmit}
           disabled={isLoading || isSubmitting}

@@ -74,7 +74,8 @@ const CustomCalendar = ({
       <style>{`
                 .react-calendar {
                     width: 100% !important;
-                    border-radius: 1rem;
+                    border-radius: 0.6rem;
+                    border-color: white;
                     overflow: hidden;
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 }
