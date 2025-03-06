@@ -59,17 +59,29 @@ const MarkAttendance = () => {
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
-      const [batchStudentsProfiles, batchStudentsAttendance] =
-        await Promise.all([
-          userProfileService.getBatchUserProfile([
-            Query.equal("batchId", profile.batchId),
-          ]),
-          attendanceService.getBatchAttendance(profile.batchId),
-        ]);
-      // Extract unique dates with attendance
+      const [batchStudentsProfiles, batchStudentsAttendance] = await Promise.all([
+        userProfileService.getBatchUserProfile([
+          Query.equal("batchId", profile.batchId),
+          Query.equal("status", "Active"),
+          Query.notEqual("userId", profile.userId),
+        ]),
+        attendanceService.getBatchAttendance(profile.batchId, [
+          Query.notEqual("userId", profile.userId),
+        ]),
+      ]);
+  
+      // Create a set of valid user IDs from the student profiles
+      const validUserIds = new Set(batchStudentsProfiles.map(student => student.userId));
+  
+      // Filter attendance records to include only those from valid student profiles
+      const filteredAttendance = batchStudentsAttendance.filter(record =>
+        validUserIds.has(record.userId)
+      );
+  
+      // Extract unique dates with attendance counts from the filtered records
       const dates = new Map();
-      batchStudentsAttendance.forEach((record) => {
-        record.attendanceRecords.forEach((attendance) => {
+      filteredAttendance.forEach(record => {
+        record.attendanceRecords.forEach(attendance => {
           if (attendance.attendanceStatus === "Present") {
             dates.set(attendance.date, {
               ...dates.get(attendance.date),
@@ -83,17 +95,17 @@ const MarkAttendance = () => {
           }
         });
       });
-
+  
       setDatesWithAttendance(dates);
       setStudents(batchStudentsProfiles);
-      setBatchAttendance(batchStudentsAttendance);
+      setBatchAttendance(filteredAttendance);
     } catch (error) {
       console.error("Error fetching batch students:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   useEffect(() => {
     if (!profile.batchId) {
       toast.error("You need to Create/Select a batch");
@@ -147,10 +159,10 @@ const MarkAttendance = () => {
         }
       } else {
         acc[student.userId] = {
-          isMarked: false,
+          isMarked: true,
           attendanceStatus: "Absent", // default status when unmarked
-          inTime: DEFAULT_IN_TIME,
-          outTime: DEFAULT_OUT_TIME,
+          inTime: "",
+          outTime: "",
           reason: "",
         };
         unmarkCount++;

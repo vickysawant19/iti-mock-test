@@ -420,6 +420,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             })}
           </div>
 
+          {/* Bottom Buttons aside logout  */}
           <div className="mt-auto pt-4">
             {user ? (
               <button

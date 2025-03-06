@@ -8,12 +8,12 @@ export class AttendanceService {
     this.database = appwriteService.getDatabases();
   }
 
-  async getBatchAttendance(batchId) {
+  async getBatchAttendance(batchId, queries = []) {
     try {
       const batchAttendance = await this.database.listDocuments(
         conf.databaseId,
         conf.studentAttendanceCollectionId,
-        [Query.equal("batchId", batchId)]
+        [Query.equal("batchId", batchId), ...queries]
       );
 
       return batchAttendance.documents.map((userAttendance) => ({
