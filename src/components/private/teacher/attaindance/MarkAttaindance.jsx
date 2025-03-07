@@ -7,19 +7,18 @@ import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+import CustomCalendar from "./Calender";
 import { selectProfile } from "../../../../store/profileSlice";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
-import CustomCalendar from "./Calender";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
 
 const MarkAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [students, setStudents] = useState([]);
-  const [batchAttendance, setBatchAttendance] = useState([]);
+  const [studentProfileMap, setStudentProfileMap] = useState(new Map());
+  const [batchAttendanceMap, setBatchAttendanceMap] = useState(new Map());
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [attendance, setAttendance] = useState({});
@@ -59,29 +58,32 @@ const MarkAttendance = () => {
   const fetchBatchStudents = async () => {
     setIsLoading(true);
     try {
-      const [batchStudentsProfiles, batchStudentsAttendance] = await Promise.all([
-        userProfileService.getBatchUserProfile([
-          Query.equal("batchId", profile.batchId),
-          Query.equal("status", "Active"),
-          Query.notEqual("userId", profile.userId),
-        ]),
-        attendanceService.getBatchAttendance(profile.batchId, [
-          Query.notEqual("userId", profile.userId),
-        ]),
-      ]);
-  
+      const [batchStudentsProfiles, batchStudentsAttendance] =
+        await Promise.all([
+          userProfileService.getBatchUserProfile([
+            Query.equal("batchId", profile.batchId),
+            Query.equal("status", "Active"),
+            Query.notEqual("userId", profile.userId),
+          ]),
+          attendanceService.getBatchAttendance(profile.batchId, [
+            Query.notEqual("userId", profile.userId),
+          ]),
+        ]);
+
       // Create a set of valid user IDs from the student profiles
-      const validUserIds = new Set(batchStudentsProfiles.map(student => student.userId));
-  
+      const validUserIds = new Set(
+        batchStudentsProfiles.map((student) => student.userId)
+      );
+
       // Filter attendance records to include only those from valid student profiles
-      const filteredAttendance = batchStudentsAttendance.filter(record =>
+      const filteredAttendance = batchStudentsAttendance.filter((record) =>
         validUserIds.has(record.userId)
       );
-  
+
       // Extract unique dates with attendance counts from the filtered records
       const dates = new Map();
-      filteredAttendance.forEach(record => {
-        record.attendanceRecords.forEach(attendance => {
+      filteredAttendance.forEach((record) => {
+        record.attendanceRecords.forEach((attendance) => {
           if (attendance.attendanceStatus === "Present") {
             dates.set(attendance.date, {
               ...dates.get(attendance.date),
@@ -95,17 +97,22 @@ const MarkAttendance = () => {
           }
         });
       });
-  
+      setStudentProfileMap(
+        new Map(
+          batchStudentsProfiles.map((profile) => [profile.userId, profile])
+        )
+      );
+      setBatchAttendanceMap(
+        new Map(filteredAttendance.map((item) => [item.userId, item]))
+      );
       setDatesWithAttendance(dates);
-      setStudents(batchStudentsProfiles);
-      setBatchAttendance(filteredAttendance);
     } catch (error) {
       console.error("Error fetching batch students:", error);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     if (!profile.batchId) {
       toast.error("You need to Create/Select a batch");
@@ -127,49 +134,45 @@ const MarkAttendance = () => {
     let unmarkCount = 0;
     let presentCount = 0;
     let absentCount = 0;
-    const totalCount = students.length;
+    const totalCount = studentProfileMap.size;
 
-    // Preprocess batchAttendance into a Map for O(1) lookups by userId
-    const attendanceMap = new Map();
-    batchAttendance.forEach((record) => {
-      attendanceMap.set(record.userId, record.attendanceRecords);
-    });
+    const initialAttendance = [...studentProfileMap.values()].reduce(
+      (acc, student) => {
+        // Get the attendance records for the student
+        const records = batchAttendanceMap.get(student.userId) || [];
+        // Find the record that matches the formatted date
+        const attendanceRecord = records.attendanceRecords.find(
+          (record) => record.date === formattedDate
+        );
 
-    const initialAttendance = students.reduce((acc, student) => {
-      // Get the attendance records for the student
-      const records = attendanceMap.get(student.userId) || [];
-      // Find the record that matches the formatted date
-      const attendanceRecord = records.find(
-        (record) => record.date === formattedDate
-      );
-
-      if (attendanceRecord && !dateWithHoliday.has(formattedDate)) {
-        acc[student.userId] = {
-          isMarked: true,
-          attendanceStatus: attendanceRecord.attendanceStatus,
-          inTime: attendanceRecord.inTime,
-          outTime: attendanceRecord.outTime,
-          reason: attendanceRecord.reason || "",
-        };
-        markedCount++;
-        if (attendanceRecord.attendanceStatus === "Present") {
-          presentCount++;
+        if (attendanceRecord && !dateWithHoliday.has(formattedDate)) {
+          acc[student.userId] = {
+            isMarked: true,
+            attendanceStatus: attendanceRecord.attendanceStatus,
+            inTime: attendanceRecord.inTime,
+            outTime: attendanceRecord.outTime,
+            reason: attendanceRecord.reason || "",
+          };
+          markedCount++;
+          if (attendanceRecord.attendanceStatus === "Present") {
+            presentCount++;
+          } else {
+            absentCount++;
+          }
         } else {
-          absentCount++;
+          acc[student.userId] = {
+            isMarked: false,
+            attendanceStatus: "Absent", // default status when unmarked
+            inTime: "",
+            outTime: "",
+            reason: "",
+          };
+          unmarkCount++;
         }
-      } else {
-        acc[student.userId] = {
-          isMarked: true,
-          attendanceStatus: "Absent", // default status when unmarked
-          inTime: "",
-          outTime: "",
-          reason: "",
-        };
-        unmarkCount++;
-      }
-      return acc;
-    }, {});
-
+        return acc;
+      },
+      {}
+    );
     // Consolidate stats
     const stats = {
       markedCount,
@@ -178,16 +181,62 @@ const MarkAttendance = () => {
       absentCount,
       totalCount,
     };
-
     // Merge attendance records with stats
     setAttendance({ ...initialAttendance, stats });
   };
 
   useEffect(() => {
     updateInitialData();
-  }, [selectedDate, batchAttendance, students]);
+  }, [selectedDate, studentProfileMap, batchAttendanceMap]);
 
-  const handleQuickMark = (userId, status) => {
+  const saveAttendance = async (userId, status) => {
+    const formattedDate = format(selectedDate, "yyyy-MM-dd");
+    if (dateWithHoliday.has(formattedDate)) {
+      toast.warn("Cant mark attendace on holiday! ");
+      return;
+    }
+    try {
+      const student = studentProfileMap.get(userId);
+      const newRecord = {
+        userId: student.userId,
+        userName: student.userName,
+        batchId: student.batchId,
+        attendanceRecords: [
+          {
+            date: formattedDate,
+            attendanceStatus: status,
+            inTime: status === "Present" ? DEFAULT_IN_TIME : "",
+            outTime: status === "Present" ? DEFAULT_OUT_TIME : "",
+            isMarked: true,
+          },
+        ],
+      };
+      const res = await attendanceService.markUserAttendance(newRecord);
+      setBatchAttendanceMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(res.userId, res);
+        return newMap;
+      });
+
+      setDatesWithAttendance((prev) => {
+        const newMap = new Map(prev);
+        const oldCount = newMap.get(formattedDate);
+        newMap.set(formattedDate, {
+          P: status === "Present" ? oldCount.P + 1 : oldCount.P - 1,
+          A: status === "Present" ? oldCount.A - 1 : oldCount.A + 1,
+        });
+        return newMap;
+      });
+      toast.success(`${student.userName}:${status}`);
+      return res;
+    } catch (error) {
+      console.log("Error: saving attendance", error);
+      return false;
+    }
+  };
+
+  const handleQuickMark = async (userId, status) => {
+    saveAttendance(userId, status);
     setAttendance((prev) => ({
       ...prev,
       [userId]: {
@@ -215,60 +264,6 @@ const MarkAttendance = () => {
         [field]: value,
       },
     }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const formattedDate = format(selectedDate, "yyyy-MM-dd");
-      if (dateWithHoliday.has(formattedDate)) {
-        toast.warn("Cant mark attendace on holiday! ");
-        return;
-      }
-      const response = await Promise.all(
-        students.map((student) => {
-          const studentAttendance = attendance[student.userId];
-          const newRecord = {
-            userId: student.userId,
-            userName: student.userName,
-            batchId: student.batchId,
-            attendanceRecords: [
-              {
-                date: formattedDate,
-                ...studentAttendance,
-              },
-            ],
-          };
-          return attendanceService.markUserAttendance(newRecord);
-        })
-      );
-      setBatchAttendance(response);
-      setDatesWithAttendance((prev) => {
-        const newMap = new Map(prev); // Clone previous Map
-        const temp = new Map();
-        temp.set(formattedDate, { P: 0, A: 0 });
-        Object.values(attendance).forEach((record) => {
-          if (!record.attendanceStatus) return;
-          // Get or initialize the data for the given date
-          const existingData = temp.get(formattedDate);
-          const updatedData = {
-            P: existingData.P + (record.attendanceStatus === "Present" ? 1 : 0),
-            A: existingData.A + (record.attendanceStatus === "Absent" ? 1 : 0),
-          };
-          temp.set(formattedDate, updatedData);
-        });
-        newMap.set(formattedDate, temp.get(formattedDate));
-        return newMap;
-      });
-
-      alert("Attendance marked successfully!");
-    } catch (error) {
-      console.error("Error updating attendance:", error);
-      alert("Failed to mark attendance.");
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const tileClassName = ({ date }) => {
@@ -307,13 +302,6 @@ const MarkAttendance = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex w-full h-full items-center justify-center pt-10">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
   const StatCard = ({ title, value, bgColor, textColor, valueColor }) => (
     <div
       className={`${bgColor} rounded-lg p-2   flex flex-col items-center justify-center shadow-md `}
@@ -322,6 +310,14 @@ const MarkAttendance = () => {
       <p className={`text-xs opacity-50 ${textColor} font-medium`}>{title}</p>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex w-full h-full items-center justify-center pt-10">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -401,25 +397,11 @@ const MarkAttendance = () => {
           <div className="bg-white rounded-lg shadow-sm  ">
             <div className="p-2 border-b flex justify-between items-center">
               <h2 className="text-lg font-medium">Student List</h2>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className=" px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Submitting...</span>
-                  </>
-                ) : (
-                  "Submit Attendance"
-                )}
-              </button>
             </div>
             <div className="p-4 h-[calc(100vh-4rem)] overflow-y-auto">
               {!isHoliday && (
                 <div className="space-y-4">
-                  {students
+                  {Array.from(studentProfileMap.values())
                     .sort(
                       (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
                     )
@@ -445,7 +427,7 @@ const MarkAttendance = () => {
                               {student.studentId || 0}
                             </span>
                             <span className="font-medium text-gray-800">
-                              {student.userName}
+                              {student.userName}{" "}
                             </span>
                           </div>
                           <div className="flex gap-2 w-full sm:w-auto">
