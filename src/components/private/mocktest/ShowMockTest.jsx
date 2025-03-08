@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../store/userSlice";
 
-
 const OPTIONS = ["A", "B", "C", "D"];
 
 const ShowMockTest = () => {
@@ -15,9 +14,9 @@ const ShowMockTest = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const user = useSelector(selectUser)
- 
-  const isTeacher = user.labels.includes("Teacher")
+  const user = useSelector(selectUser);
+
+  const isTeacher = user.labels.includes("Teacher");
 
   useEffect(() => {
     if (!paperId) return;
@@ -39,8 +38,9 @@ const ShowMockTest = () => {
         userPaper.questions = userPaper.questions.map((question) =>
           JSON.parse(question)
         );
+        console.log(userPaper);
 
-        if (!userPaper.isOriginal) {
+        if (userPaper.isOriginal !== null && !userPaper.isOriginal) {
           const originalPaperResponse =
             await questionpaperservice.listQuestions([
               Query.equal("paperId", userPaper.paperId),
@@ -83,8 +83,8 @@ const ShowMockTest = () => {
     return (
       <div className="p-4 mx-auto bg-white shadow-md rounded-md animate-pulse">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-              Mock Test Results
-            </h1>
+          Mock Test Results
+        </h1>
         {/* Header Skeleton */}
         <div className="p-1 max-w-md  bg-white animate-pulse">
           <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
@@ -127,10 +127,10 @@ const ShowMockTest = () => {
               Mock Test Results
             </h1>
             <div className="mb-6">
-            <p>
+              <p>
                 <strong>User Name:</strong> {mockTest.userName || "N/A"}
               </p>
-            <p>
+              <p>
                 <strong>Trade Name:</strong> {mockTest.tradeName || "N/A"}
               </p>
               <p>
@@ -139,7 +139,7 @@ const ShowMockTest = () => {
               <p>
                 <strong>Paper ID:</strong> {mockTest.paperId}
               </p>
-              
+
               <p>
                 <strong>Created At:</strong>{" "}
                 {new Date(mockTest.$createdAt).toLocaleString()}
@@ -151,8 +151,6 @@ const ShowMockTest = () => {
               <p>
                 <strong>Total Questions:</strong> {mockTest.quesCount || "NA"}
               </p>
-              
-              
             </div>
             <div className="space-y-4">
               {mockTest.questions.map((question, index) => (
@@ -165,8 +163,21 @@ const ShowMockTest = () => {
                   }`}
                 >
                   <div className=" mb-2 flex justify-between flex-col">
-                  {isTeacher ? <Link className="text-gray-500 text-xs mb-2 h-fit w-fit"  to={`/edit/${question.$id}`}>{question.$id}</Link>: <span className="text-gray-500 text-xs bg-red-400">{question.$id}</span>}
-                    <h1 className="text-lg font-semibold">{index + 1}. {question.question}  </h1> 
+                    {isTeacher ? (
+                      <Link
+                        className="text-gray-500 text-xs mb-2 h-fit w-fit"
+                        to={`/edit/${question.$id}`}
+                      >
+                        {question.$id}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-500 text-xs bg-red-400">
+                        {question.$id}
+                      </span>
+                    )}
+                    <h1 className="text-lg font-semibold">
+                      {index + 1}. {question.question}{" "}
+                    </h1>
                   </div>
                   <div className="space-y-2">
                     {question.options.map((option, idx) => (

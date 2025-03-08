@@ -21,18 +21,24 @@ import { haversineDistance } from "./calculateDistance";
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [batchStudents, setBatchStudents] = useState([]);
   const [batchData, setBatchData] = useState(null);
   const [studentAttendance, setStudentAttendance] = useState(null);
+
   const [holidays, setHolidays] = useState(new Map());
   const [workingDays, setWorkingDays] = useState(new Map());
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
+
   const [deviceLocation, setDeviceLocation] = useState({
     lat: 0,
     lon: 0,
   });
+
   const [distance, setDistance] = useState(Infinity);
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
@@ -121,7 +127,7 @@ const MarkStudentAttendance = () => {
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("batchId", profile.batchId),
         Query.orderDesc("studentId"),
-        Query.equal("status", "Active")
+        Query.equal("status", "Active"),
       ]);
 
       // Convert string numbers to integers and sort
@@ -262,6 +268,19 @@ const MarkStudentAttendance = () => {
     setIsModalOpen(true);
   };
 
+  const markAttendance = async () => {
+    try {
+      const data = await attendanceService.markUserAttendance({
+        ...studentAttendance,
+        attendanceRecords: [modalData],
+      });
+      toast.success("Attendace saved successfully!");
+    } catch (error) {
+      console.log("mark attendace error:", error);
+      toast.error("Attendance mark failed");
+    }
+  };
+
   const saveAttendance = () => {
     setStudentAttendance((prev) => {
       const updatedRecords = prev.attendanceRecords.some(
@@ -279,6 +298,10 @@ const MarkStudentAttendance = () => {
     });
     setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
     setIsModalOpen(false);
+
+    if (new Date(selectedDate).toDateString() === new Date().toDateString()) {
+      markAttendance();
+    }
   };
 
   const removeAttendance = () => {
