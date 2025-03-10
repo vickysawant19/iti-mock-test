@@ -55,20 +55,15 @@ function App() {
 
   if (isLoading) {
     return (
-      <>
-        <Navbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-        </div>
-      </>
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+      </div>
     );
   }
 
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
       <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
-
-      <Analytics />
       <div className="md:ml-72">
         <div className={`pt-10 bg-gray-100 w-full mx-auto`}>
           <ScrollToTop />
@@ -76,6 +71,7 @@ function App() {
           <ToastContainer />
         </div>
       </div>
+      <Analytics />
     </div>
   );
 }

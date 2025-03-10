@@ -17,6 +17,7 @@ import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
 import { haversineDistance } from "./calculateDistance";
+import { ClipLoader } from "react-spinners";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -521,8 +522,12 @@ const MarkStudentAttendance = () => {
       {/* Attendance Section */}
       <div className="">
         {isLoadingAttendance ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="animate-spin w-8 h-8" />
+          <div className="flex items-center justify-center min-h-screen">
+            <ClipLoader
+              size={50}
+              color={"#123abc"}
+              loading={isLoadingAttendance}
+            />
           </div>
         ) : (
           studentAttendance && (

@@ -81,21 +81,23 @@ const ViewBatch = () => {
     setAttendaceLoading(true);
     try {
       const data = await attendanceService.getBatchAttendance(selectedBatch);
-      const studentsWithStudentIds = data.map((attendance) => {
-        const student = students.find(
-          (student) => student.userId === attendance.userId
-        );
-   
-        return {
-          ...attendance,
-          status: student ? student.status : null,
-          studentId: student ? student.studentId : null,
-          userName: student
-            ? student.userName
-            : attendance?.userName || "Unknown",
-        };
-      }).filter(item =>  item.status === "Active")
-    
+      const studentsWithStudentIds = data
+        .map((attendance) => {
+          const student = students.find(
+            (student) => student.userId === attendance.userId
+          );
+
+          return {
+            ...attendance,
+            status: student ? student.status : null,
+            studentId: student ? student.studentId : null,
+            userName: student
+              ? student.userName
+              : attendance?.userName || "Unknown",
+          };
+        })
+        .filter((item) => item.status === "Active");
+
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
           ? studentsWithStudentIds
@@ -196,7 +198,7 @@ const ViewBatch = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
       </div>
     );
   }

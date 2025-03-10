@@ -138,9 +138,9 @@ const AllMockTests = () => {
           </div>
         )}
         {loading ? (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <ClipLoader size={50} color={"#123abc"} />
-          </div>
+          <div className="flex items-center justify-center min-h-screen">
+                  <ClipLoader size={50} color={"#123abc"} loading={loading} />
+                </div>
         ) : mockTests.length === 0 ? (
           <div className="text-center w-full p-8 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
             <p className="text-gray-600">No mock tests generated yet!</p>

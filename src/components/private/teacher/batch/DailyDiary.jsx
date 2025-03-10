@@ -15,6 +15,7 @@ import { selectUser } from "../../../../store/userSlice";
 import { toast } from "react-toastify";
 import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
+import { ClipLoader } from "react-spinners";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(
@@ -201,8 +202,8 @@ function DailyDiary() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
       </div>
     );
   }

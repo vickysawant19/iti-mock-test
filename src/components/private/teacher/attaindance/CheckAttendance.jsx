@@ -9,6 +9,7 @@ import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import { calculateStats } from "./CalculateStats";
 import batchService from "../../../../appwrite/batchService";
+import { ClipLoader } from "react-spinners";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -127,8 +128,8 @@ const CheckAttendance = () => {
 
   if (isLoading) {
     return (
-      <div className="flex w-full h-full items-center justify-center pt-10">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
       </div>
     );
   }

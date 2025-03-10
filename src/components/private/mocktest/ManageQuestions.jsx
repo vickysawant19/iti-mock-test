@@ -131,9 +131,8 @@ const ManageQuestions = () => {
         />
 
         {isLoading ? (
-          <div className="flex justify-center mt-20 ">
-            {" "}
-            <ClipLoader size={50} color="#123ab" />
+          <div className="flex items-center justify-center min-h-screen">
+            <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
           </div>
         ) : (
           <main className="mt-8 ">

@@ -13,6 +13,7 @@ import attendanceService from "../../../../appwrite/attaindanceService";
 import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
+import { ClipLoader } from "react-spinners";
 
 const MarkAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -220,11 +221,22 @@ const MarkAttendance = () => {
 
       setDatesWithAttendance((prev) => {
         const newMap = new Map(prev);
-        const oldCount = newMap.get(formattedDate);
-        newMap.set(formattedDate, {
-          P: status === "Present" ? oldCount.P + 1 : oldCount.P - 1,
-          A: status === "Present" ? oldCount.A - 1 : oldCount.A + 1,
-        });
+        const oldCount = newMap.get(formattedDate) || { P: 0, A: 0 };
+        // Get the current attendance status for the user
+        const currentRecord = batchAttendanceMap.get(userId);
+        const wasPresent = currentRecord?.attendanceRecords.some(
+          (record) => record.date === formattedDate && record.attendanceStatus === "Present"
+        );
+        // Update counts correctly
+        const newP = status === "Present" 
+          ? wasPresent ? oldCount.P : oldCount.P + 1 
+          : wasPresent ? oldCount.P - 1 : oldCount.P;
+        
+        const newA = status === "Present" 
+          ? wasPresent ? oldCount.A : oldCount.A - 1 
+          : wasPresent ? oldCount.A + 1 : oldCount.A;
+      
+        newMap.set(formattedDate, { P: newP, A: newA });
         return newMap;
       });
       toast.success(`${student.userName}:${status}`);
@@ -236,6 +248,12 @@ const MarkAttendance = () => {
   };
 
   const handleQuickMark = async (userId, status) => {
+    const previousStatus = attendance[userId]
+    if(previousStatus && previousStatus.attendanceStatus === status) {
+      //same attendace status return 
+      return 
+    }
+     // new attendace status update 
     saveAttendance(userId, status);
     setAttendance((prev) => ({
       ...prev,
@@ -313,8 +331,8 @@ const MarkAttendance = () => {
 
   if (isLoading) {
     return (
-      <div className="flex w-full h-full items-center justify-center pt-10">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
       </div>
     );
   }
