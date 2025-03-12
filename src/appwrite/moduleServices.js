@@ -9,17 +9,19 @@ export class ModuleServices {
   }
 
   async createModules(data) {
+    console.log("create", data);
     try {
       const modulesData = {
         ...data,
         syllabus: data.syllabus.map((item) => JSON.stringify(item)),
       };
-      return await this.database.createDocument(
+      const res = await this.database.createDocument(
         conf.databaseId,
         conf.modulesesCollectionId,
         "unique()",
         modulesData
       );
+      return { ...res, syllabus: res.syllabus.map((item) => JSON.parse(item)) };
     } catch (error) {
       console.error("Appwrite error: creating modules:", error);
       throw new Error(`${error.message}`);

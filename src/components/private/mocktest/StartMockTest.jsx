@@ -146,6 +146,24 @@ const StartMockTest = () => {
   const timerRef = useRef(null);
 
   useEffect(() => {
+    const handleCopyPaste = (e) => {
+      e.preventDefault();
+      alert('Copying and pasting is disabled on this page.');
+    };
+ 
+    document.addEventListener('copy', handleCopyPaste);
+    document.addEventListener('paste', handleCopyPaste);
+    document.addEventListener('cut', handleCopyPaste);
+
+    return () => {
+   
+      document.removeEventListener('copy', handleCopyPaste);
+      document.removeEventListener('paste', handleCopyPaste);
+      document.removeEventListener('cut', handleCopyPaste);
+    };
+  }, []);
+
+  useEffect(() => {
     if (remainingSeconds === null || submitted) return;
 
     timerRef.current = setInterval(() => {

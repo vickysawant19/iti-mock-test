@@ -225,17 +225,29 @@ const MarkAttendance = () => {
         // Get the current attendance status for the user
         const currentRecord = batchAttendanceMap.get(userId);
         const wasPresent = currentRecord?.attendanceRecords.some(
-          (record) => record.date === formattedDate && record.attendanceStatus === "Present"
+          (record) =>
+            record.date === formattedDate &&
+            record.attendanceStatus === "Present"
         );
         // Update counts correctly
-        const newP = status === "Present" 
-          ? wasPresent ? oldCount.P : oldCount.P + 1 
-          : wasPresent ? oldCount.P - 1 : oldCount.P;
-        
-        const newA = status === "Present" 
-          ? wasPresent ? oldCount.A : oldCount.A - 1 
-          : wasPresent ? oldCount.A + 1 : oldCount.A;
-      
+        const newP =
+          status === "Present"
+            ? wasPresent
+              ? oldCount.P
+              : oldCount.P + 1
+            : wasPresent
+            ? oldCount.P - 1
+            : oldCount.P;
+
+        const newA =
+          status === "Present"
+            ? wasPresent
+              ? oldCount.A
+              : oldCount.A - 1
+            : wasPresent
+            ? oldCount.A + 1
+            : oldCount.A;
+
         newMap.set(formattedDate, { P: newP, A: newA });
         return newMap;
       });
@@ -248,23 +260,27 @@ const MarkAttendance = () => {
   };
 
   const handleQuickMark = async (userId, status) => {
-    const previousStatus = attendance[userId]
-    if(previousStatus && previousStatus.attendanceStatus === status) {
-      //same attendace status return 
-      return 
+    const previousStatus = attendance[userId];
+    console.log(previousStatus);
+    if (
+      previousStatus &&
+      (!previousStatus.isMarked || previousStatus.attendanceStatus !== status)
+    ) {
+      // new attendace status update
+      saveAttendance(userId, status);
+      setAttendance((prev) => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          attendanceStatus: status,
+          isMarked: true,
+          inTime: status === "Present" ? DEFAULT_IN_TIME : "",
+          outTime: status === "Present" ? DEFAULT_OUT_TIME : "",
+        },
+      }));
     }
-     // new attendace status update 
-    saveAttendance(userId, status);
-    setAttendance((prev) => ({
-      ...prev,
-      [userId]: {
-        ...prev[userId],
-        attendanceStatus: status,
-        isMarked: true,
-        inTime: status === "Present" ? DEFAULT_IN_TIME : "",
-        outTime: status === "Present" ? DEFAULT_OUT_TIME : "",
-      },
-    }));
+
+    return;
   };
 
   const toggleOptions = (userId) => {
