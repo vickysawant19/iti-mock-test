@@ -65,7 +65,6 @@ const Modules = () => {
         Query.equal("subjectId", selectedSubjectID),
       ]);
       setShow(new Set());
-      console.log(data)
       setModules(
         data || {
           tradeId: selectedTradeID,

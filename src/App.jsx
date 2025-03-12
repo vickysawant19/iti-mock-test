@@ -64,7 +64,7 @@ function App() {
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
       <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
-      <div className="md:ml-72">
+      <div className="md:ml-60">
         <div className={`pt-10 bg-gray-100 w-full mx-auto`}>
           <ScrollToTop />
           <Outlet />

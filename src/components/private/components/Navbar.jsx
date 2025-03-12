@@ -339,7 +339,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
       {/* Sliding Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 z-10 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800 overflow-y-auto shadow-2xl md:shadow-none ${
+        className={`fixed top-0 left-0 h-full w-60 z-10 transition-transform duration-300 transform bg-white md:translate-x-0 text-gray-800 overflow-y-auto shadow-2xl md:shadow-none ${
           isNavOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
