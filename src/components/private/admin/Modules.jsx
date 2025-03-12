@@ -64,11 +64,20 @@ const Modules = () => {
         Query.equal("year", selectedTradeYear),
         Query.equal("subjectId", selectedSubjectID),
       ]);
+      console.log("data", data)
       setShow(new Set());
       setModules(
-        data || {
+        data  ? {
+          ...data,
+          subjectName:
+            subjectData.find((item) => item.$id == selectedSubjectID)
+              ?.subjectName || null,
+        } : {
           tradeId: selectedTradeID,
           subjectId: selectedSubjectID,
+          subjectName:
+            subjectData.find((item) => item.$id == selectedSubjectID)
+              ?.subjectName || null,
           year: selectedTradeYear,
           syllabus: [],
         }
@@ -79,6 +88,7 @@ const Modules = () => {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (profile) {

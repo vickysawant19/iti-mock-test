@@ -21,12 +21,14 @@ import ViewAttendance from "./ViewAttendance";
 import ProgressCard from "./ProgressCards";
 import TraineeLeaveRecord from "./LeaveRecord";
 import { selectUser } from "../../../../store/userSlice";
+import JobEvaluation from "./job-evalution/JobEvalution";
 
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
   { id: "leave-record", label: "Leave Records", icon: Calendar },
+  { id: "job-evalution", label: "Job Evalution", icon: Award },
   { id: "assignments", label: "Assignments", icon: BookOpen },
   { id: "achievements", label: "Achievements", icon: Award },
 ];
@@ -180,6 +182,17 @@ const ViewBatch = () => {
         return (
           <TraineeLeaveRecord
             studentProfiles={students}
+            stats={attendanceStats}
+            batchData={teacherBatches.find(
+              (item) => item.$id === selectedBatch
+            )}
+          />
+        );
+
+        case "job-evalution":
+        return (
+          <JobEvaluation
+            studentProfiles={students.filter(item => item.status === "Active" && item.role.includes("Student"))}
             stats={attendanceStats}
             batchData={teacherBatches.find(
               (item) => item.$id === selectedBatch
