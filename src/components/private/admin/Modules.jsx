@@ -1,36 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
-import tradeservice from "../../../appwrite/tradedetails";
-import subjectService from "../../../appwrite/subjectService";
-import moduleServices from "../../../appwrite/moduleServices";
+import { PlusCircle, Save, BookOpen, Filter } from "lucide-react";
 import { Query } from "appwrite";
+
 import ModulesList from "./ModulesList";
 import AddTopics from "./AddTopics";
 import AddModules from "./AddModules";
 import ShowModules from "./ShowModules";
 import ShowTopic from "./ShowTopic";
-import { PlusCircle, Save, BookOpen, Filter } from "lucide-react";
+
+import tradeservice from "../../../appwrite/tradedetails";
+import subjectService from "../../../appwrite/subjectService";
+import moduleServices from "../../../appwrite/moduleServices";
+import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
 
 const Modules = () => {
   const [tradeData, setTradeData] = useState([]);
+  const [selectedTrade, setSelectedTrade] = useState(null);
   const [subjectData, setSubjectData] = useState([]);
   const [selectedTradeID, setSelectedTradeID] = useState("");
   const [selectedSubjectID, setSelectedSubjectID] = useState("");
   const [selectedTradeYear, setSelectedTradeYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
-
   const [moduleId, setModuleId] = useState("");
   const [topicId, setTopicId] = useState("");
   const [modules, setModules] = useState({
     tradeId: selectedTradeID,
     subjectId: selectedSubjectID,
   });
-
   const [show, setShow] = useState(new Set());
-
   const profile = useSelector(selectProfile);
+
+  const { generatePaper, isLoading, isError, error, data } =
+    useModuleTestGenerator({
+      tradeId: selectedTrade?.$id,
+      tradeName: selectedTrade?.tradeName || "-",
+      year: selectedTradeYear,
+      userId: profile.userId,
+      userName: profile.userName,
+    });
 
   const fetchTrades = async () => {
     setFetchingData(true);
@@ -64,23 +74,25 @@ const Modules = () => {
         Query.equal("year", selectedTradeYear),
         Query.equal("subjectId", selectedSubjectID),
       ]);
-      console.log("data", data)
+
       setShow(new Set());
       setModules(
-        data  ? {
-          ...data,
-          subjectName:
-            subjectData.find((item) => item.$id == selectedSubjectID)
-              ?.subjectName || null,
-        } : {
-          tradeId: selectedTradeID,
-          subjectId: selectedSubjectID,
-          subjectName:
-            subjectData.find((item) => item.$id == selectedSubjectID)
-              ?.subjectName || null,
-          year: selectedTradeYear,
-          syllabus: [],
-        }
+        data
+          ? {
+              ...data,
+              subjectName:
+                subjectData.find((item) => item.$id == selectedSubjectID)
+                  ?.subjectName || null,
+            }
+          : {
+              tradeId: selectedTradeID,
+              subjectId: selectedSubjectID,
+              subjectName:
+                subjectData.find((item) => item.$id == selectedSubjectID)
+                  ?.subjectName || null,
+              year: selectedTradeYear,
+              syllabus: [],
+            }
       );
     } catch (error) {
       console.error("Error fetching modules:", error);
@@ -89,6 +101,14 @@ const Modules = () => {
     }
   };
 
+  useEffect(() => {
+    if (selectedTradeYear && selectedTrade) {
+      console.log("generating paper");
+      const practicalName = "what is array?";
+      const paperId = "paper122222";
+      // generatePaper({ practicalName, paperId });
+    }
+  }, [selectedTradeYear, selectedTrade]);
 
   useEffect(() => {
     if (profile) {
@@ -102,6 +122,12 @@ const Modules = () => {
       fetchModules();
     }
   }, [selectedTradeID, selectedTradeYear, selectedSubjectID]);
+
+  useEffect(() => {
+    if (selectedTradeID) {
+      setSelectedTrade(tradeData.find((item) => item.$id === selectedTradeID));
+    }
+  }, [selectedTradeID]);
 
   const submitModuleData = async () => {
     setLoading(true);

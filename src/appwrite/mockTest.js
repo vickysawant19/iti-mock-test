@@ -14,6 +14,30 @@ class QuestionPaperService {
     this.questionPapersCollectionId = conf.questionPapersCollectionId;
   }
 
+  async createPaper(paperData) {
+    console.log("papperData:", paperData);
+    try {
+      // Create a new document in the new collection
+      const response = await this.database.createDocument(
+        this.databaseId,
+        this.questionPapersCollectionId,
+        "unique()",
+        {
+          ...paperData,
+          questions: paperData.questions.map((item) => JSON.stringify(item)),
+        }
+      );
+
+      return {
+        ...response,
+        questions: response.questions.map((item) => JSON.parse(item)),
+      };
+    } catch (error) {
+      console.log("paper error:", error);
+      throw new Error("Paper create error", error);
+    }
+  }
+
   async fetchPaperById(paperId) {
     try {
       const response = await this.database.listDocuments(
@@ -254,7 +278,7 @@ class QuestionPaperService {
             "endTime",
             "isOriginal",
             "submitted",
-            "totalMinutes"
+            "totalMinutes",
           ]),
         ]
       );

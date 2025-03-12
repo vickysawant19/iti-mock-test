@@ -28,12 +28,11 @@ const styles = StyleSheet.create({
     padding: 20,
     fontFamily: "Roboto",
     fontSize: 8,
-    border: "2px solid black",
   },
   // SECTION 1: Header (full width)
   headerSection: {
     width: "100%",
-    // marginBottom: 5,
+    fontSize: 9,
     border: "2px solid black",
     paddingHorizontal: 5,
   },
@@ -149,15 +148,15 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 20,
+    paddingVertical: 10,
     borderColor: "#000",
     borderBottomWidth: 2,
     borderRightWidth: 2,
     borderLeftWidth: 2,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
   },
   signatureBlock: {
-    width: "33%",
+    // width: "33%",
     textAlign: "center",
   },
 });
@@ -172,8 +171,13 @@ const sampleEvalPoints = [
   { point: "F", score: "8" },
 ];
 
-const JobEvaluationReportPDF = ({ batch = {}, studentsMap, college, trade }) => {
- 
+const JobEvaluationReportPDF = ({
+  batch = {},
+  studentsMap,
+  college,
+  trade,
+  selectedModule,
+}) => {
   // Generate sample student marks data for 24 rows
   const studentData = Array.from({ length: 24 }, (_, i) => {
     const student = studentsMap.get(i + 1);
@@ -205,19 +209,33 @@ const JobEvaluationReportPDF = ({ batch = {}, studentsMap, college, trade }) => 
           </Text>
           <Text style={styles.headerSubtitle}>JOB EVALUATION REPORT</Text>
           <View style={styles.headerRow}>
-            <Text>{`Exp. No.: ${batch.expNumber || "________"}`}</Text>
+            <View style={{ display: "flex", flexDirection: "row" }}>
+              <Text style={{ fontWeight: "bold" }}>Job No.: </Text>
+              <Text>{`${selectedModule.moduleId.slice(1) || "________"}`}</Text>
+            </View>
             <Text>{`Date of Starting: ${
-              batch.dateOfStarting || "________"
+              batch.dateOfStarting || "________________"
             }`}</Text>
           </View>
           <View style={styles.headerRow}>
-            <Text>{`Exercise: ${batch.exerciseName || "________"}`}</Text>
+            <View style={{ display: "flex", flexDirection: "row" }}>
+              <Text style={{ fontWeight: "bold" }}>Job title: </Text>
+              <Text>{`${
+                selectedModule.moduleName || "________________________________"
+              }`}</Text>
+            </View>
+
             <Text>{`Date of Finishing: ${
-              batch.dateOfFinishing || "________"
+              batch.dateOfFinishing || "________________"
             }`}</Text>
           </View>
           <View style={styles.headerRow}>
-            <Text>{`Time: ${batch.time || "________"}`}</Text>
+            <View style={{ display: "flex", flexDirection: "row" }}>
+              <Text style={{ fontWeight: "bold" }}>Time: </Text>
+              <Text>
+                {`${selectedModule.moduleDuration || "________________"}`} Hrs.
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -350,7 +368,7 @@ const JobEvaluationReportPDF = ({ batch = {}, studentsMap, college, trade }) => 
           <Text style={styles.signatureBlock}>Instructor Signature</Text>
           <Text style={styles.signatureBlock}>Group Instructor Signature</Text>
           <Text style={styles.signatureBlock}>
-            {batch.collegeName || "College Signature"}
+            {college.collageName || "Industrial Training Institute"}
           </Text>
         </View>
       </Page>
