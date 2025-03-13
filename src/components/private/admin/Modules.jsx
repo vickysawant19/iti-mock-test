@@ -40,7 +40,7 @@ const Modules = () => {
     userId: profile.userId,
     userName: profile.userName,
   });
-  
+
   const fetchTrades = async () => {
     setFetchingData(true);
     try {
@@ -299,43 +299,45 @@ const Modules = () => {
                 )}
               </div>
 
-              <div className="lg:col-span-2 md:col-span-1 flex flex-wrap flex-col">
-                {show.has("AddModules") && (
-                  <AddModules
-                    setModules={setModules}
-                    modules={modules}
-                    moduleId={moduleId}
-                    setShow={setShow}
-                    moduleTest={moduleTest}
-                  />
-                )}
-                {show.has("AddTopics") && (
-                  <AddTopics
-                    setModules={setModules}
-                    modules={modules}
-                    moduleId={moduleId}
-                    topicId={topicId}
-                    setShow={setShow}
-                  />
-                )}
-                {show.has("showModules") && (
-                  <ShowModules
-                    setShow={setShow}
-                    handleDeleteModule={handleDeleteModule}
-                    module={modules.syllabus.find(
-                      (item) => item.moduleId === moduleId
-                    )}
-                  />
-                )}
-                {show.has("showTopics") && (
-                  <ShowTopic
-                    setShow={setShow}
-                    handleDeleteTopic={handleDeleteTopic}
-                    topic={modules.syllabus
-                      .find((item) => item.moduleId === moduleId)
-                      ?.topics.find((item) => item.topicId === topicId)}
-                  />
-                )}
+              <div className="lg:col-span-2 md:col-span-1 h-screen flex flex-col">
+                <div className="flex-1 overflow-y-auto scroll-smooth">
+                  {show.has("AddModules") && (
+                    <AddModules
+                      setModules={setModules}
+                      modules={modules}
+                      moduleId={moduleId}
+                      setShow={setShow}
+                      moduleTest={moduleTest}
+                    />
+                  )}
+                  {show.has("AddTopics") && (
+                    <AddTopics
+                      setModules={setModules}
+                      modules={modules}
+                      moduleId={moduleId}
+                      topicId={topicId}
+                      setShow={setShow}
+                    />
+                  )}
+                  {show.has("showModules") && (
+                    <ShowModules
+                      setShow={setShow}
+                      handleDeleteModule={handleDeleteModule}
+                      module={modules.syllabus.find(
+                        (item) => item.moduleId === moduleId
+                      )}
+                    />
+                  )}
+                  {show.has("showTopics") && (
+                    <ShowTopic
+                      setShow={setShow}
+                      handleDeleteTopic={handleDeleteTopic}
+                      topic={modules.syllabus
+                        .find((item) => item.moduleId === moduleId)
+                        ?.topics.find((item) => item.topicId === topicId)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>

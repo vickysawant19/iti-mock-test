@@ -173,7 +173,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
                       setIsModuleDropdownOpen(false);
                     }}
                   >
-                    {module.moduleName}
+                    {module.moduleId.slice(1)}.{module.moduleName}
                   </div>
                 ))}
             </div>

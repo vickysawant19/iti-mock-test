@@ -112,13 +112,13 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
     try {
       setModules((prev) => {
         let existing = prev.syllabus.find(
-          (m) => m.moduleId === formData.moduleId
+          (m) => m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
         );
         return {
           ...prev,
           syllabus: existing
             ? prev.syllabus.map((m) =>
-                m.moduleId === formData.moduleId
+                m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
                   ? { ...m, ...formData, topics: m?.topics || [] }
                   : m
               )
@@ -132,15 +132,14 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
     }
   };
 
-
   // Reset form fields if moduleId or modules change.
   useEffect(() => {
     if (moduleId !== "" && modules?.syllabus) {
       const selectedModule = modules.syllabus.find(
-        (m) => m.moduleId === moduleId
+        (m) => m.moduleId.toUpperCase() === moduleId.toUpperCase()
       );
       reset(selectedModule || {});
-      setEvalPoints(selectedModule?.evalutionPoints || [])
+      setEvalPoints(selectedModule?.evalutionPoints || []);
     } else {
       reset({
         moduleId: "",
@@ -185,7 +184,21 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
                 Module ID *
               </label>
               <input
-                {...register("moduleId", { required: "Module ID is required" })}
+                {...register("moduleId", {
+                  required: "Module ID is required",
+                  onChange: (e) => {
+                    e.target.value = e.target.value.toUpperCase(); // Transform to uppercase
+                  },
+                  // validate: (value) => {
+                  //   const upperCaseValue = value.toUpperCase();
+                  //   return (
+                  //     !modules.syllabus.some(
+                  //       (module) =>
+                  //         module.moduleId.toUpperCase() === upperCaseValue
+                  //     ) || "Module ID already exists!"
+                  //   );
+                  // },
+                })}
                 className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                 placeholder="Enter module ID"
               />

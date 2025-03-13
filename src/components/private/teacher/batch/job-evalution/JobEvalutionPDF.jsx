@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: "#000",
-    height: 100,
+    height: "50%",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
@@ -115,9 +115,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   evalTable: {
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderRightWidth: 1,
+    borderLeftWidth: 1,
     borderColor: "#000",
     borderStyle: "solid",
+    fontSize: 10,
   },
   evalTableHeader: {
     flexDirection: "row",
@@ -160,16 +163,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
-// Generate sample evaluation points for 6 points: A, B, C, D, E, F
-const sampleEvalPoints = [
-  { point: "A", score: "8" },
-  { point: "B", score: "7" },
-  { point: "C", score: "9" },
-  { point: "D", score: "8" },
-  { point: "E", score: "7" },
-  { point: "F", score: "8" },
-];
 
 const JobEvaluationReportPDF = ({
   batch = {},
@@ -268,24 +261,56 @@ const JobEvaluationReportPDF = ({
                     Score
                   </Text>
                 </View>
-                {sampleEvalPoints.map((item, idx) => (
-                  <View key={idx} style={styles.evalTableRow}>
-                    <Text
-                      style={[
-                        styles.evalTableCell,
-                        { width: "10%", fontWeight: "bold" },
-                      ]}
-                    >
-                      {item.point}
-                    </Text>
-                    <Text style={[styles.evalTableCell, { width: "80%" }]}>
-                      {item.point}
-                    </Text>
-                    <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
-                      {item.score}
-                    </Text>
-                  </View>
-                ))}
+                {selectedModule?.evalutionPoints
+                  ? selectedModule?.evalutionPoints.map((item, idx) => (
+                      <View key={idx} style={styles.evalTableRow}>
+                        <Text
+                          style={[
+                            styles.evalTableCell,
+                            { width: "10%", fontWeight: "bold" },
+                          ]}
+                        >
+                          {Array.from(["A", "B", "C", "D", "E", "F"])[idx]}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.evalTableCell,
+                            {
+                              width: "80%",
+                              textAlign: "left",
+                              paddingHorizontal: 10,
+                            },
+                          ]}
+                        >
+                          {item.evaluation}
+                        </Text>
+                        <Text
+                          style={[styles.evalLastTableCell, { width: "10%" }]}
+                        >
+                          {item.points}
+                        </Text>
+                      </View>
+                    ))
+                  : Array(5)
+                      .fill(0)
+                      .map((item, idx) => (
+                        <View key={idx} style={styles.evalTableRow}>
+                          <Text
+                            style={[
+                              styles.evalTableCell,
+                              { width: "10%", fontWeight: "bold" },
+                            ]}
+                          >
+                            {Array.from(["A", "B", "C", "D", "E", "F"])[idx]}
+                          </Text>
+                          <Text
+                            style={[styles.evalTableCell, { width: "80%" }]}
+                          ></Text>
+                          <Text
+                            style={[styles.evalLastTableCell, { width: "10%" }]}
+                          ></Text>
+                        </View>
+                      ))}
                 <View style={styles.evalTableRow}>
                   <Text
                     style={[
@@ -296,7 +321,12 @@ const JobEvaluationReportPDF = ({
                     Total
                   </Text>
                   <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
-                    {20}
+                    {selectedModule?.evalutionPoints
+                      ? selectedModule.evalutionPoints.reduce(
+                          (acc, doc) => (acc += +doc.points),
+                          0
+                        )
+                      : ""}
                   </Text>
                 </View>
               </View>
