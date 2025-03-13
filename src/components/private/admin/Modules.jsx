@@ -33,15 +33,14 @@ const Modules = () => {
   const [show, setShow] = useState(new Set());
   const profile = useSelector(selectProfile);
 
-  const { generatePaper, isLoading, isError, error, data } =
-    useModuleTestGenerator({
-      tradeId: selectedTrade?.$id,
-      tradeName: selectedTrade?.tradeName || "-",
-      year: selectedTradeYear,
-      userId: profile.userId,
-      userName: profile.userName,
-    });
-
+  const moduleTest = useModuleTestGenerator({
+    tradeId: selectedTrade?.$id,
+    tradeName: selectedTrade?.tradeName || "-",
+    year: selectedTradeYear,
+    userId: profile.userId,
+    userName: profile.userName,
+  });
+  
   const fetchTrades = async () => {
     setFetchingData(true);
     try {
@@ -100,15 +99,6 @@ const Modules = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (selectedTradeYear && selectedTrade) {
-      console.log("generating paper");
-      const practicalName = "what is array?";
-      const paperId = "paper122222";
-      // generatePaper({ practicalName, paperId });
-    }
-  }, [selectedTradeYear, selectedTrade]);
 
   useEffect(() => {
     if (profile) {
@@ -316,6 +306,7 @@ const Modules = () => {
                     modules={modules}
                     moduleId={moduleId}
                     setShow={setShow}
+                    moduleTest={moduleTest}
                   />
                 )}
                 {show.has("AddTopics") && (

@@ -79,6 +79,35 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
             <p className="text-gray-600">{module.moduleDescription}</p>
           </div>
         </div>
+
+        <div className="flex items-start gap-3">
+          <FileText className="w-5 h-5 text-gray-500 mt-1" />
+          <div>
+            <h3 className="text-gray-900 font-medium mb-2">
+              Job Evaluation Points:
+            </h3>
+            <ol>
+              {module?.evalutionPoints?.map((item) => (
+                <li  key={item.id}>
+                  <p className="text-gray-600">
+                    {item.id}.{item.evaluation} - {item.points}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* Module Assement Paper Id */}
+        <div className="flex items-start gap-3">
+          <FileText className="w-5 h-5 text-gray-500 mt-1" />
+          <div>
+            <h3 className="text-gray-900 font-medium mb-2">
+              Assissment Paper Id:
+            </h3>
+            <p className="text-gray-600">{module.assessmentPaperId}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

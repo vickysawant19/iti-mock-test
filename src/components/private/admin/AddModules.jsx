@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Save,
@@ -10,36 +10,105 @@ import {
   ClipboardList,
   LayoutGrid,
 } from "lucide-react";
+import PaperPreview from "./module-assignment/ModuleTestPreview";
+import { toast } from "react-toastify";
+import { format } from "date-fns";
 
-const AddModules = ({ setShow, setModules, modules, moduleId }) => {
+import useModuleEvalutionPoints from "./module-assignment/ModuleEvalutionPoints";
+
+const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
+  const { savePaper, createPaper, isLoading, isError, error, data } =
+    moduleTest;
+
+  const {
+    data: evalutionsPoints,
+    isLoading: loadingEval,
+    isError: evalisError,
+    error: errorEval,
+    generateEvalutionPoint,
+  } = useModuleEvalutionPoints();
+
+  // Local state for paper data and modal visibility
+  const [paperData, setPaperData] = useState(null);
+  const [showPaperModal, setShowPaperModal] = useState(false);
+
+  const [evalPoints, setEvalPoints] = useState(null);
+
+  // Setup react-hook-form and watch for assessmentPaperId
   const {
     handleSubmit,
     register,
     formState: { errors },
+    getValues,
+    setValue,
     reset,
+    watch,
   } = useForm();
+  const assessmentPaperId = watch("assessmentPaperId");
 
-  useEffect(() => {
-    if (moduleId !== "" && modules?.syllabus) {
-      const selectedModule = modules.syllabus.find(
-        (m) => m.moduleId === moduleId
-      );
-      reset(selectedModule || {});
-    } else {
-      reset({
-        moduleId: "",
-        moduleName: "",
-        moduleDescription: "",
-        moduleDuration: "",
-        learningOutcome: "",
-        assessmentCriteria: "",
-        hours: "",
-        topics: [],
+  // Helper to generate a unique 10-character paper ID.
+  // Here we generate 4 random letters and append a 12-digit timestamp.
+  // Note: This produces a 16-character string. Adjust numbers if you want exactly 10 characters.
+  const generatePaperId = () => {
+    const randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let initials = randomChar
+      .split("")
+      .sort(() => Math.random() - 0.5)
+      .join("")
+      .slice(0, 4);
+    const timestamp = format(new Date(), "yyMMddHHmmss");
+    return initials + timestamp;
+  };
+
+  // Function to generate a new paper and open the modal to preview it.
+  const createNewPaper = async () => {
+    try {
+      const moduleName = getValues("moduleName");
+      const newPaperId = generatePaperId();
+      const generatedPaper = await createPaper({
+        paperId: newPaperId,
+        practicalName: moduleName,
       });
+      setPaperData(generatedPaper);
+      setShowPaperModal(true); // open modal to show preview
+    } catch (err) {
+      console.log("Error creating paper: ", err);
+      toast.error("Error generating paper");
     }
-  }, [moduleId, modules, reset]);
+  };
 
+  // Function to save the paper to the database, update the form,
+  // and automatically save the module using current form data.
+  const saveNewPaper = async () => {
+    if (!paperData) return;
+    try {
+      const savedPaper = await savePaper(paperData);
+      // Update the form with the saved paper's ID
+      setValue("assessmentPaperId", savedPaper.paperId);
+      toast.success("Paper saved successfully.");
+      setShowPaperModal(false);
+
+      // Automatically save the module using current form data.
+      const formData = getValues();
+      if (!formData.assessmentPaperId) {
+        toast.error("Paper ID is missing. Please try again.");
+        return;
+      }
+      await handleAddModules(formData);
+    } catch (err) {
+      console.log("Error saving paper", err);
+      toast.error("Error saving paper");
+    }
+  };
+
+  // Save the module; ensure a paper has been generated before saving.
   const handleAddModules = async (formData) => {
+    // if (!formData.assessmentPaperId) {
+    //   toast.error(
+    //     "Please generate and save the paper before saving the module."
+    //   );
+    //   return;
+    // }
     try {
       setModules((prev) => {
         let existing = prev.syllabus.find(
@@ -56,13 +125,40 @@ const AddModules = ({ setShow, setModules, modules, moduleId }) => {
             : [...prev.syllabus, { ...formData, topics: [] }],
         };
       });
-    } catch (error) {
-      console.log(error);
+      toast.success("Module saved successfully!");
+    } catch (err) {
+      console.log("Error saving module:", err);
+      toast.error("Error saving module");
     }
   };
 
+
+  // Reset form fields if moduleId or modules change.
+  useEffect(() => {
+    if (moduleId !== "" && modules?.syllabus) {
+      const selectedModule = modules.syllabus.find(
+        (m) => m.moduleId === moduleId
+      );
+      reset(selectedModule || {});
+      setEvalPoints(selectedModule?.evalutionPoints || [])
+    } else {
+      reset({
+        moduleId: "",
+        moduleName: "",
+        moduleDescription: "",
+        moduleDuration: "",
+        learningOutcome: "",
+        assessmentCriteria: "",
+        assessmentPaperId: "",
+        evalutionsPoints: [],
+        hours: "",
+        topics: [],
+      });
+    }
+  }, [moduleId, modules, reset]);
+
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden relative">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6">
         <div className="flex items-center gap-3">
@@ -74,6 +170,12 @@ const AddModules = ({ setShow, setModules, modules, moduleId }) => {
       </div>
 
       <div className="p-6">
+        {/* Display error if present */}
+        {isError && error && (
+          <div className="bg-red-100 text-red-700 p-2 rounded mb-4">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit(handleAddModules)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Module ID */}
@@ -203,13 +305,136 @@ const AddModules = ({ setShow, setModules, modules, moduleId }) => {
                 </span>
               )}
             </div>
+
+            {/* Module Evaluations */}
+            <div className="md:col-span-2 space-y-2 relative">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <FileText className="w-4 h-4 text-gray-500" />
+                Evaluation Points:
+              </label>
+
+              {/* If evaluation points exist, show each in an editable field */}
+              <div className="flex flex-col gap-2">
+                {evalPoints && evalPoints.length > 0 ? (
+                  evalPoints.map((point, index) => (
+                    <div key={point.id} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={point.evaluation}
+                        onChange={(e) => {
+                          // Update the evaluation label for this item.
+                          const newLabel = e.target.value;
+                          const updatedPoints = [...evalPoints];
+                          updatedPoints[index] = {
+                            ...updatedPoints[index],
+                            evaluation: newLabel,
+                          };
+                          setValue("evalutionPoints", updatedPoints);
+                          setEvalPoints(updatedPoints);
+                        }}
+                        className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      />
+                      <input
+                        type="number"
+                        value={point.points}
+                        onChange={(e) => {
+                          const newPoints = e.target.value;
+                          const updatedPoints = [...evalPoints];
+                          updatedPoints[index] = {
+                            ...updatedPoints[index],
+                            points: newPoints,
+                          };
+                          setEvalPoints(updatedPoints);
+                        }}
+                        className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  // If no evaluation points yet, display a readOnly textarea.
+                  <p>No Evalution Points Found</p>
+                )}
+              </div>
+
+              <div className="flex gap-5">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    // Use your form value for practicalName.
+                    const practicalName = getValues("moduleName");
+                    if (!practicalName.trim()) {
+                      toast.error(
+                        "Please enter a module name to generate evaluation points."
+                      );
+                      return;
+                    }
+                    const generated = await generateEvalutionPoint({
+                      practicalName,
+                    });
+                    setEvalPoints(generated);
+                    setValue("evalutionPoints", generated);
+                  }}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit"
+                >
+                  {loadingEval ? "Generating..." : "Generate Evaluation Points"}
+                </button>
+              </div>
+
+              {errors.evalutionPoints && (
+                <span className="text-red-500 text-sm flex items-center gap-1">
+                  <X className="w-4 h-4" />
+                  {errors.evalutionPoints.message}
+                </span>
+              )}
+
+              {errorEval && (
+                <span className="text-red-500 text-sm flex items-center gap-1">
+                  <X className="w-4 h-4" />
+                  {errorEval}
+                </span>
+              )}
+            </div>
+
+            {/* Display the generated Paper ID if available */}
+            {assessmentPaperId && (
+              <div className="md:col-span-2 space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  Generated Paper ID:
+                </label>
+                <p className="p-2 bg-gray-100 rounded">{assessmentPaperId}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-5">
+            <button
+              type="button"
+              onClick={createNewPaper}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {isLoading
+                ? "Generating..."
+                : assessmentPaperId
+                ? "Generate Again"
+                : "Create Paper"}
+            </button>
+            {paperData && (
+              <button
+                type="button"
+                onClick={() => setShowPaperModal(true)}
+                className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Show Paper
+              </button>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-4 border-t">
             <button
               type="button"
-              onClick={() => ""}
+              onClick={() => setShow(false)}
               className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
@@ -225,6 +450,46 @@ const AddModules = ({ setShow, setModules, modules, moduleId }) => {
           </div>
         </form>
       </div>
+
+      {/* Modal to show generated paper preview */}
+      {showPaperModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          {/* Modal overlay */}
+          <div
+            className="absolute inset-0 bg-black opacity-50"
+            onClick={() => setShowPaperModal(false)}
+          ></div>
+          {/* Modal content */}
+          <div className="bg-white rounded-lg shadow-lg z-50 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPaperModal(false)}
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-4">Generated Paper Preview</h2>
+            {paperData ? (
+              <PaperPreview paperData={paperData} setPaperData={setPaperData} />
+            ) : (
+              <p>No paper data available.</p>
+            )}
+            <div className="mt-4 flex justify-end gap-4">
+              <button
+                onClick={() => setShowPaperModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+              >
+                Close
+              </button>
+              <button
+                onClick={saveNewPaper}
+                className="px-4 py-2 bg-teal-600 text-white rounded"
+              >
+                {isLoading ? "Saving..." : "Save Paper"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

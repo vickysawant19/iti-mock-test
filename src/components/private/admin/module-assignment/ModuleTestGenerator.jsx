@@ -23,24 +23,21 @@ const useModuleTestGenerator = ({
     }
   };
 
-  const generatePaper = async ({ practicalName, paperId }) => {
+  // Function to generate paper data including questions
+  const createPaper = async ({ practicalName, paperId }) => {
     try {
       setIsLoading(true);
       setIsError(false);
       setError("");
-
       // Validate props before proceeding
       validateProps();
-
       // Get questions from GeminiService (limit to at most 5 questions)
       const questions = await geminiService.getJSONObject(practicalName, 5);
-      console.log("Generated questions:", questions);
-
       if (!questions) {
         throw new Error("No questions generated.");
       }
 
-      // Prepare the new paper data
+      // Prepare and return the new paper data
       const newPaperData = {
         tradeId,
         tradeName,
@@ -57,20 +54,37 @@ const useModuleTestGenerator = ({
         isProtected: true,
       };
 
-      // Create the paper using the question paper service
-      const createdPaper = await questionpaperservice.createPaper(newPaperData);
-      console.log("Created paper:", createdPaper);
-      setData(createdPaper);
+      return newPaperData;
     } catch (err) {
       console.error("Error generating paper:", err);
       setError(err.message || "Unknown error");
       setIsError(true);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { generatePaper, isLoading, isError, error, data };
+  // Function to save paper data to the Appwrite DB
+  const savePaper = async (paperData) => {
+    try {
+      setIsLoading(true);
+      setIsError(false);
+      setError("");
+      const createdPaper = await questionpaperservice.createPaper(paperData);
+      setData(createdPaper);
+      return createdPaper;
+    } catch (err) {
+      console.error("Error saving paper:", err);
+      setError(err.message || "Unknown error");
+      setIsError(true);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { createPaper, savePaper, isLoading, isError, error, data };
 };
 
 export default useModuleTestGenerator;

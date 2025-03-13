@@ -15,7 +15,7 @@ class QuestionPaperService {
   }
 
   async createPaper(paperData) {
-    console.log("papperData:", paperData);
+   
     try {
       // Create a new document in the new collection
       const response = await this.database.createDocument(
