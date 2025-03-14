@@ -53,7 +53,7 @@ const ModuleList = ({
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-medium">
+                  <h3 className="text-base font-medium w-full text-ellipsis  line-clamp-2">
                     {module.moduleId.toUpperCase()} {module.moduleName}
                   </h3>
                 </div>

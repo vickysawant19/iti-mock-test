@@ -14,13 +14,13 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
   if (!module) return null;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="bg-blue-50 h-screen shadow-xl ">
       {/* Header */}
-      <div className="border-b border-gray-100 bg-gray-50 p-6">
+      <div className="border-b border-gray-100 bg-blue-100 p-6">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-semibold text-gray-800">
+            {/* <BookOpen className="w-6 h-6 text-blue-600" /> */}
+            <h2 className="text-2xl font-semibold text-gray-800 ">
               {module.moduleName}
             </h2>
           </div>
@@ -88,7 +88,7 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
             </h3>
             <ol>
               {module?.evalutionPoints?.map((item) => (
-                <li  key={item.id}>
+                <li key={item.id}>
                   <p className="text-gray-600">
                     {item.id}.{item.evaluation} - {item.points}
                   </p>

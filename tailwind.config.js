@@ -8,6 +8,9 @@ export default {
         marathi: ["Noto Sans Devanagari", "sans-serif"], // Marathi font
         hindi: ["Noto Sans Devanagari", "sans-serif"], // Hindi font
       },
+      lineClamp: {
+        2: "2",
+      },
     },
   },
   plugins: [],

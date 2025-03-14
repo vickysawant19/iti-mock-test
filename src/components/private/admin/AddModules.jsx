@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { format } from "date-fns";
 
 import useModuleEvalutionPoints from "./module-assignment/ModuleEvalutionPoints";
+import ImageUploader from "./image-upload/ImageUpload";
 
 const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
   const { savePaper, createPaper, isLoading, isError, error, data } =
@@ -407,6 +408,10 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
                 </span>
               )}
             </div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <FileText className="w-4 h-4 text-gray-500" />
+              Generated Paper:
+            </label>
 
             {/* Display the generated Paper ID if available */}
             {assessmentPaperId && (
@@ -442,6 +447,13 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
               </button>
             )}
           </div>
+
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <FileText className="w-4 h-4 text-gray-500" />
+            Upload Images:
+          </label>
+
+          <ImageUploader fileName={"test-image"} folderName={"iti-mock-test"} />
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-4 border-t">

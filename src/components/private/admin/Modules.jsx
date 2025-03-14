@@ -280,7 +280,7 @@ const Modules = () => {
                 </button>
               </div>
 
-              <div className="col-span-1">
+              <div className="col-span-1 rounded-xl">
                 {loading ? (
                   <div className="flex justify-center items-center h-40">
                     <div className="w-10 h-10 border-t-4 border-blue-500 rounded-full animate-spin" />
@@ -299,7 +299,7 @@ const Modules = () => {
                 )}
               </div>
 
-              <div className="lg:col-span-2 md:col-span-1 h-screen flex flex-col">
+              <div className="lg:col-span-2 md:col-span-1 h-screen flex flex-col rounded-lg overflow-hidden shadow-lg">
                 <div className="flex-1 overflow-y-auto scroll-smooth">
                   {show.has("AddModules") && (
                     <AddModules
