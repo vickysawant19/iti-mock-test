@@ -308,6 +308,7 @@ const Modules = () => {
                       moduleId={moduleId}
                       setShow={setShow}
                       moduleTest={moduleTest}
+                      trade={selectedTrade}
                     />
                   )}
                   {show.has("AddTopics") && (

@@ -16,8 +16,16 @@ import { format } from "date-fns";
 
 import useModuleEvalutionPoints from "./module-assignment/ModuleEvalutionPoints";
 import ImageUploader from "./image-upload/ImageUpload";
+import { IKImage } from "imagekitio-react";
 
-const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
+const AddModules = ({
+  setShow,
+  setModules,
+  modules,
+  moduleId,
+  moduleTest,
+  trade,
+}) => {
   const { savePaper, createPaper, isLoading, isError, error, data } =
     moduleTest;
 
@@ -34,6 +42,7 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
   const [showPaperModal, setShowPaperModal] = useState(false);
 
   const [evalPoints, setEvalPoints] = useState(null);
+  const [images, setImages] = useState([]);
 
   // Setup react-hook-form and watch for assessmentPaperId
   const {
@@ -141,6 +150,7 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
       );
       reset(selectedModule || {});
       setEvalPoints(selectedModule?.evalutionPoints || []);
+      setImages(selectedModule?.images || []);
     } else {
       reset({
         moduleId: "",
@@ -151,6 +161,7 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
         assessmentCriteria: "",
         assessmentPaperId: "",
         evalutionsPoints: [],
+        images: [],
         hours: "",
         topics: [],
       });
@@ -453,7 +464,52 @@ const AddModules = ({ setShow, setModules, modules, moduleId, moduleTest }) => {
             Upload Images:
           </label>
 
-          <ImageUploader fileName={"test-image"} folderName={"iti-mock-test"} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {images &&
+              images.length > 0 &&
+              images.map((image, index) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
+                    <IKImage
+                      urlEndpoint="https://ik.imagekit.io/71amgqe4f"
+                      path={image.url.split("/").slice(-2).join("/")}
+                      transformation={[
+                        { height: 300, width: 300, cropMode: "extract" },
+                      ]}
+                      lqip={{ active: true }}
+                      className="object-cover w-full h-full"
+                      alt={image.name}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Filter out the image that matches the clicked image's id.
+                      const updatedImages = images.filter(
+                        (img) => img.id !== image.id
+                      );
+                      setImages(updatedImages);
+                      setValue("images", updatedImages);
+                    }}
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete Image"
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </button>
+                </div>
+              ))}
+          </div>
+
+          <ImageUploader
+            setValue={setValue}
+            setImages={setImages}
+            images={images}
+            fileName={moduleId || "image"}
+            folderName={trade.tradeName
+              .split(" ")
+              .map((i) => i[0])
+              .join("")}
+          />
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-4 border-t">

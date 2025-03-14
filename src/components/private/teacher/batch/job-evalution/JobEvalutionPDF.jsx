@@ -6,6 +6,7 @@ import {
   Text,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 // Register fonts (using Roboto as an example)
@@ -67,16 +68,31 @@ const styles = StyleSheet.create({
     width: "60%",
     padding: 5,
   },
-  // Image Placeholder in left column
   imagePlaceholder: {
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: "#000",
     height: "50%",
-    justifyContent: "center",
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    padding: 5,
+    backgroundColor: "#f9f9f9",
+    overflow: "hidden",
   },
+  imageWrapper: {
+    width: "33%", // Adjust to show the desired number of images per row
+    height: 100, // Fixed height for each image cell
+    margin: 2,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain", // Ensures the image fills the cell, scaling up if small and cropping if large
+  },
+
   // Student Marks Table (with dotted border)
   table: {
     borderWidth: 1,
@@ -234,10 +250,13 @@ const JobEvaluationReportPDF = ({
 
         {/* SECTION 2 & 3: Two Columns */}
         <View style={styles.rowContainer}>
-          {/* Left Column (40%): Image Placeholder & Evaluation Points */}
           <View style={styles.leftColumn}>
             <View style={styles.imagePlaceholder}>
-              <Text>Image</Text>
+              {selectedModule?.images?.map((img, index) => (
+                <View key={index} style={[styles.imageWrapper]}>
+                  <Image key={index} src={img.url} style={styles.image} />
+                </View>
+              ))}
             </View>
             <View style={styles.evalTableContainer}>
               <Text

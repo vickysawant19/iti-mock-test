@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { IKContext, IKUpload, IKImage } from "imagekitio-react";
+import { IKContext, IKUpload, IKImage, IKCore } from "imagekitio-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -12,7 +12,13 @@ import {
 } from "lucide-react";
 import { appwriteService } from "../../../../appwrite/appwriteConfig";
 
-const ImageUploader = ({ folderName, fileName }) => {
+const ImageUploader = ({
+  folderName,
+  fileName,
+  setImages,
+  images,
+  setValue,
+}) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previews, setPreviews] = useState([]);
@@ -47,6 +53,8 @@ const ImageUploader = ({ folderName, fileName }) => {
     //     "AITags": null
     // }
     console.log("Success", res);
+    setValue("images", [...images, { id: res.fileId, url: res.url }]);
+    setImages((prev) => [...prev, { id: res.fileId, url: res.url }]);
     toast.success("Image uploaded successfully!");
     resetUploadState();
 
@@ -146,6 +154,7 @@ const ImageUploader = ({ folderName, fileName }) => {
           {/* Custom upload button */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <button
+              type="button"
               onClick={() => ikUploadRef.current?.click()}
               disabled={isUploading}
               className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
@@ -204,13 +213,14 @@ const ImageUploader = ({ folderName, fileName }) => {
                       transformation={[
                         { height: 300, width: 300, cropMode: "extract" },
                       ]}
-                      loading="lazy"
+                      // loading="lazy"
                       lqip={{ active: true }}
                       className="object-cover w-full h-full"
                       alt={image.name}
                     />
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleRemovePreview(index)}
                     className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove from preview"
