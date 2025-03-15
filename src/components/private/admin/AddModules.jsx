@@ -474,7 +474,7 @@ const AddModules = ({
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
                       path={image.url.split("/").slice(-2).join("/")}
                       transformation={[
-                        { height: 300, width: 300, cropMode: "extract" },
+                        { height: 300, width: 300, cropMode: "pad_resize" },
                       ]}
                       lqip={{ active: true }}
                       className="object-cover w-full h-full"

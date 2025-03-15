@@ -52,7 +52,7 @@ const ImageUploader = ({
     //     "thumbnailUrl": "https://ik.imagekit.io/71amgqe4f/tr:n-ik_ml_thumbnail/iti-mock-test/test-image_zzSP41syb",
     //     "AITags": null
     // }
-    console.log("Success", res);
+    // console.log("Success", res);
     setValue("images", [...images, { id: res.fileId, url: res.url }]);
     setImages((prev) => [...prev, { id: res.fileId, url: res.url }]);
     toast.success("Image uploaded successfully!");
@@ -72,7 +72,7 @@ const ImageUploader = ({
   };
 
   const onUploadProgress = (progress) => {
-    console.log("Progress", progress);
+    // console.log("Progress", progress);
     const percentage =
       progress.loaded && progress.total
         ? Math.round((progress.loaded / progress.total) * 100)
@@ -211,7 +211,7 @@ const ImageUploader = ({
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
                       path={image.url.split("/").slice(-2).join("/")}
                       transformation={[
-                        { height: 300, width: 300, cropMode: "extract" },
+                        { height: 300, width: 300, cropMode: "pad_resize" },
                       ]}
                       // loading="lazy"
                       lqip={{ active: true }}

@@ -122,15 +122,15 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
                   <div
                     key={index}
                     className="relative"
-                    onMouseEnter={() => setPreviewImage(image)}
-                    onMouseLeave={() => setPreviewImage(null)}
+                    onClick={() => setPreviewImage(image) }
+                    title="Click to open"
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
                       <IKImage
                         urlEndpoint="https://ik.imagekit.io/71amgqe4f"
                         path={image.url.split("/").slice(-2).join("/")}
                         transformation={[
-                          { height: 300, width: 300, cropMode: "extract" },
+                          { height: 300, width: 300, cropMode: "pad_resize" },
                         ]}
                         lqip={{ active: true }}
                         className="object-cover w-full h-full"
@@ -147,14 +147,12 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
       {previewImage && (
         <div
           className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
-          onMouseEnter={() => setPreviewImage(previewImage)}
-          // onMouseLeave={() => setPreviewImage(null)}
         >
           <div className="relative rounded-lg overflow-hidden shadow-lg bg-gray-100 border">
             <IKImage
               urlEndpoint="https://ik.imagekit.io/71amgqe4f"
               path={previewImage.url.split("/").slice(-2).join("/")}
-              className="h-96 w-auto"
+              className="h-96 w-auto  "
             />
             <button
               className="absolute top-2 right-2 p-2 bg-red-50 rounded-full hover:bg-red-100 focus:outline-none"

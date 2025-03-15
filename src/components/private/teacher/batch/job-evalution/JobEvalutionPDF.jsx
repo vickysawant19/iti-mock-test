@@ -68,6 +68,8 @@ const styles = StyleSheet.create({
     width: "60%",
     padding: 5,
   },
+
+  //image styles
   imagePlaceholder: {
     borderWidth: 1,
     borderStyle: "solid",
@@ -76,21 +78,19 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
-    backgroundColor: "#f9f9f9",
-    overflow: "hidden",
   },
   imageWrapper: {
-    width: "33%", // Adjust to show the desired number of images per row
-    height: 100, // Fixed height for each image cell
-    margin: 2,
+    height: "100%", // Fixed height for the cell (adjust as needed)
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    
   },
   image: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain", // Ensures the image fills the cell, scaling up if small and cropping if large
+    maxWidth: "100%",
+    maxHeight: "100%",
+    objectFit: "contain",
   },
 
   // Student Marks Table (with dotted border)
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderColor: "#000",
     borderStyle: "solid",
-    fontSize: 10,
+    fontSize: 9,
   },
   evalTableHeader: {
     flexDirection: "row",
@@ -208,6 +208,20 @@ const JobEvaluationReportPDF = ({
     };
   });
 
+  const getColumns = (count) => {
+    if (count === 1) return 1;
+    if (count === 2) return 2;
+    if (count === 3 || count === 4) return 2; // For 3 or 4 images, use 2 columns
+    if (count === 5 || count === 6) return 3; // For 5 or 6 images, use 3 columns
+    return Math.ceil(Math.sqrt(count)); // Fallback for other counts
+  };
+
+  const images = selectedModule?.images || [];
+  const columns = getColumns(images.length);
+  const imageWidthPercent = `${100 / columns}%`;
+  const imageHightPercent = `${100 / columns}%`
+
+
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
@@ -252,9 +266,15 @@ const JobEvaluationReportPDF = ({
         <View style={styles.rowContainer}>
           <View style={styles.leftColumn}>
             <View style={styles.imagePlaceholder}>
-              {selectedModule?.images?.map((img, index) => (
-                <View key={index} style={[styles.imageWrapper]}>
-                  <Image key={index} src={img.url} style={styles.image} />
+            {images.map((img, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.imageWrapper,
+                    { width: imageWidthPercent, height:imageHightPercent },
+                  ]}
+                >
+                  <Image src={img.url} style={styles.image} />
                 </View>
               ))}
             </View>
