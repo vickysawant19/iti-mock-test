@@ -463,6 +463,15 @@ const MarkStudentAttendance = () => {
                   Name: {profile.userName}
                 </p>
                 <p className="text-sm">Roll number: {profile.studentId}</p>
+                <p className="text-sm">
+                  Selected date: {format(selectedDate, "dd-MM-yyyy")}
+                </p>
+                <p className="text-sm">
+                  Attendance status:{" "}
+                  {workingDays.get(
+                    format(selectedDate, "yyyy-MM-dd")?.attendanceStatus
+                  ) || "Not Marked"}
+                </p>
               </div>
             )}
             <div className="flex gap-4">
@@ -472,7 +481,7 @@ const MarkStudentAttendance = () => {
               >
                 {!isShowMap ? "Show Map" : "Hide Map"}
               </button>
-              {!distance < batchData?.circleRadius && studentAttendance && (
+              {distance < batchData?.circleRadius && studentAttendance && (
                 <button
                   onClick={markUserAttendance}
                   disabled={isLoading}
