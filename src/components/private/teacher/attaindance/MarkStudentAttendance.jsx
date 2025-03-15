@@ -467,13 +467,13 @@ const MarkStudentAttendance = () => {
                   Selected date: {format(selectedDate, "dd-MM-yyyy")}
                 </p>
                 <p className="text-sm">
-                  Attendance status:{" "}
-                  {workingDays.get(
-                    format(selectedDate, "yyyy-MM-dd")?.attendanceStatus
-                  ) || "Not Marked"}
+                  Attendance status:
+                  {workingDays.get(format(selectedDate, "yyyy-MM-dd"))?.attendanceStatus
+                  || "Not Marked"}
                 </p>
               </div>
             )}
+          
             <div className="flex gap-4">
               <button
                 onClick={() => setIsShowMap((prev) => !prev)}
