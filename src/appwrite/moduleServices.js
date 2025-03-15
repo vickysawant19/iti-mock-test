@@ -9,7 +9,7 @@ export class ModuleServices {
   }
 
   async createModules(data) {
-    console.log("create", data);
+    
     try {
       const modulesData = {
         ...data,
@@ -29,7 +29,7 @@ export class ModuleServices {
   }
 
   async updateModules(modulesId, updatedData) {
-    const { tradeId, year, subjectId, syllabus } = updatedData;
+    const { tradeId, year, subjectId, syllabus, subjectName } = updatedData;
     try {
       const data = await this.database.updateDocument(
         conf.databaseId,
@@ -39,6 +39,7 @@ export class ModuleServices {
           tradeId,
           subjectId,
           year,
+          subjectName,
           syllabus: syllabus.map((item) => JSON.stringify(item)),
         }
       );

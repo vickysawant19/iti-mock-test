@@ -25,6 +25,7 @@ const AddModules = ({
   moduleId,
   moduleTest,
   trade,
+  isPractical
 }) => {
   const { savePaper, createPaper, isLoading, isError, error, data } =
     moduleTest;
@@ -149,7 +150,7 @@ const AddModules = ({
         (m) => m.moduleId.toUpperCase() === moduleId.toUpperCase()
       );
       reset(selectedModule || {});
-      setEvalPoints(selectedModule?.evalutionPoints || []);
+      isPractical && setEvalPoints(selectedModule?.evalutionPoints || []);
       setImages(selectedModule?.images || []);
     } else {
       reset({
@@ -332,7 +333,7 @@ const AddModules = ({
             </div>
 
             {/* Module Evaluations */}
-            <div className="md:col-span-2 space-y-2 relative">
+           {isPractical && <div className="md:col-span-2 space-y-2 relative">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <FileText className="w-4 h-4 text-gray-500" />
                 Evaluation Points:
@@ -418,7 +419,9 @@ const AddModules = ({
                   {errorEval}
                 </span>
               )}
-            </div>
+            </div>}
+
+
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <FileText className="w-4 h-4 text-gray-500" />
               Generated Paper:

@@ -190,6 +190,16 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       ],
     },
     {
+      // Admin-only group
+      group: "Assessment",
+      
+      icon: FaUserSecret,
+      groupKey: "assessment",
+      children: [
+        { label: "Show Assessment", path: "/assessment", icon: MdAddCard },
+      ],
+    },
+    {
       // Mock Tests group – some items only for teachers
       group: "Mock Tests",
       icon: FaBook,

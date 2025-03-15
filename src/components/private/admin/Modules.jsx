@@ -21,6 +21,7 @@ const Modules = () => {
   const [subjectData, setSubjectData] = useState([]);
   const [selectedTradeID, setSelectedTradeID] = useState("");
   const [selectedSubjectID, setSelectedSubjectID] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTradeYear, setSelectedTradeYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
@@ -40,6 +41,8 @@ const Modules = () => {
     userId: profile.userId,
     userName: profile.userName,
   });
+
+  const isPractical = selectedSubject && selectedSubject.subjectName.includes("PRACTICAL")
 
   const fetchTrades = async () => {
     setFetchingData(true);
@@ -99,6 +102,7 @@ const Modules = () => {
       setLoading(false);
     }
   };
+ 
 
   useEffect(() => {
     if (profile) {
@@ -232,7 +236,12 @@ const Modules = () => {
             </div>
             <select
               value={selectedSubjectID}
-              onChange={(e) => setSelectedSubjectID(e.target.value)}
+              onChange={(e) => {
+                setSelectedSubject(
+                  subjectData.find((item) => item.$id === e.target.value)
+                );
+                setSelectedSubjectID(e.target.value);
+              }}
               className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               disabled={!selectedTradeID || fetchingData}
             >
@@ -309,6 +318,7 @@ const Modules = () => {
                       setShow={setShow}
                       moduleTest={moduleTest}
                       trade={selectedTrade}
+                      isPractical={isPractical}
                     />
                   )}
                   {show.has("AddTopics") && (
