@@ -5,6 +5,7 @@ import { format, differenceInMinutes } from "date-fns";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
+import { ClipLoader } from "react-spinners";
 
 const MockTestResults = () => {
   const { paperId } = useParams();
@@ -100,7 +101,11 @@ const MockTestResults = () => {
   };
 
   if (loading)
-    return <Loader2 className="animate-spin text-blue-500 mx-auto" />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={loading} />
+      </div>
+    );
   if (error) return <div className="text-red-500 text-center">{error}</div>;
 
   return (

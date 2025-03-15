@@ -98,6 +98,7 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
         <div className="w-2/3">
           {selectedModule ? (
             <RenderModule
+              key={selectedModule.moduleId}
               module={selectedModule}
               papersData={papersData}
               redirect={redirect}
@@ -168,6 +169,7 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
                 {isExpanded && (
                   <div className="border-t border-gray-100">
                     <RenderModule
+                      key={module.moduleId}
                       module={module}
                       papersData={papersData}
                       redirect={redirect}

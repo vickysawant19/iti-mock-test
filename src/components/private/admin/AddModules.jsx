@@ -9,7 +9,6 @@ import {
   Target,
   ClipboardList,
   LayoutGrid,
-  MagnetIcon,
 } from "lucide-react";
 import PaperPreview from "./module-assignment/ModuleTestPreview";
 import { toast } from "react-toastify";
@@ -576,6 +575,7 @@ const AddModules = ({
                 Close
               </button>
               <button
+                type="button"
                 onClick={saveNewPaper}
                 className="px-4 py-2 bg-teal-600 text-white rounded"
               >

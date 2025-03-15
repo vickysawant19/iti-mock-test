@@ -36,20 +36,37 @@ const Assessment = () => {
     }
   }, [selectedSubject, selectedTradeYear, setSearchParams]);
 
-  const fetchPapers = async (queries) => {
+  const fetchPapers = async (paperIds) => {
     setIsLoading(true);
     try {
-      const data = await questionpaperservice.listQuestions([
-        ...queries,
-        Query.equal("userId", profile.userId),
-        Query.select(["submitted", "score", "quesCount", "endTime", "paperId"]),
-      ]);
-      const paperMap = new Map();
-      if (data && data.length > 0) {
-        data.forEach((paper) => {
-          paperMap.set(paper.paperId, paper);
-        });
+      const batchSize = 100;
+      const batches = [];
+
+      for (let i = 0; i < paperIds.length; i += batchSize) {
+        batches.push(paperIds.slice(i, i + batchSize));
       }
+
+      const requests = batches.map(async (batch) => {
+        return questionpaperservice.listQuestions([
+          Query.equal("paperId", batch),
+          Query.equal("userId", profile.userId),
+          Query.select([
+            "submitted",
+            "score",
+            "quesCount",
+            "endTime",
+            "paperId",
+          ]),
+          Query.limit(100),
+        ]);
+      });
+
+      const results = await Promise.all(requests);
+      const paperMap = new Map();
+      results.flat().forEach((paper) => {
+        paperMap.set(paper.paperId, paper);
+      });
+
       setPapersData(paperMap);
     } catch (error) {
       console.log(error);
@@ -98,7 +115,7 @@ const Assessment = () => {
           .map((paper) => paper.assessmentPaperId);
 
         if (paperIds.length > 0) {
-          await fetchPapers([Query.equal("paperId", paperIds)]);
+          await fetchPapers(paperIds);
         }
 
         setModulesData(sortedModules);

@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-import { BookOpen, Clock, FileText, Check } from "lucide-react";
+import { BookOpen, Clock, FileText, Check, ExternalLink } from "lucide-react";
 
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import ViewPaper from "./ViewPaper";
 
 const RenderModule = ({ module, papersData, redirect }) => {
+  const [showPaper, setShowPaper] = useState(false);
   const selectedPaper = papersData.get(module.assessmentPaperId);
 
   return (
@@ -84,7 +86,13 @@ const RenderModule = ({ module, papersData, redirect }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 block">Paper ID:</span>
-                  <span className="font-medium">{selectedPaper.paperId}</span>
+                  <Link
+                    to={`/mock-test-result/${selectedPaper.paperId}`}
+                    className="flex gap-2 items-center justify-center hover:underline text-blue-900"
+                  >
+                    <span className="font-medium">{selectedPaper.paperId}</span>
+                    <ExternalLink />
+                  </Link>
                 </div>
                 <div>
                   <span className="text-gray-500 block">Score:</span>
@@ -110,6 +118,24 @@ const RenderModule = ({ module, papersData, redirect }) => {
               </Link>
             )
           )}
+        </div>
+        <div className="w-full justify-center items-center">
+          <button
+            className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
+            type="button"
+            onClick={() => setShowPaper((prev) => !prev)}
+          >
+            {!showPaper ? "Show Paper" : "Hide Paper"}
+          </button>
+
+          <div className={` transition-all ease-in-out duration-300`}>
+            {showPaper && (
+              <ViewPaper
+                key={module.assessmentPaperId}
+                paperId={module.assessmentPaperId}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
