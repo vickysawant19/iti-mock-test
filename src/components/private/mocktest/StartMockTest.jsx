@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  Link,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import { Timer, AlertCircle, Check } from "lucide-react";
 import { differenceInMinutes, differenceInSeconds, format } from "date-fns";
@@ -21,6 +26,12 @@ const StartMockTest = () => {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isGreetShown, setIsGreetShown] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const encodedRedirect = searchParams.get("redirect");
+  const decodedRedirect = encodedRedirect
+    ? decodeURIComponent(encodedRedirect)
+    : "";
+
   const navigate = useNavigate();
 
   const handleSubmitExam = async () => {
@@ -38,6 +49,10 @@ const StartMockTest = () => {
       toast.success("Exam submitted successfully!");
       localStorage.removeItem(paperId);
       setSubmitted(true);
+      if (decodedRedirect) {
+        navigate(decodedRedirect);
+        return;
+      }
       navigate(`/all-mock-tests`);
       // navigate(`/show-mock-test/${paperId}`);
     } catch (error) {
@@ -148,18 +163,17 @@ const StartMockTest = () => {
   useEffect(() => {
     const handleCopyPaste = (e) => {
       e.preventDefault();
-      alert('Copying and pasting is disabled on this page.');
+      alert("Copying and pasting is disabled on this page.");
     };
- 
-    document.addEventListener('copy', handleCopyPaste);
-    document.addEventListener('paste', handleCopyPaste);
-    document.addEventListener('cut', handleCopyPaste);
+
+    document.addEventListener("copy", handleCopyPaste);
+    document.addEventListener("paste", handleCopyPaste);
+    document.addEventListener("cut", handleCopyPaste);
 
     return () => {
-   
-      document.removeEventListener('copy', handleCopyPaste);
-      document.removeEventListener('paste', handleCopyPaste);
-      document.removeEventListener('cut', handleCopyPaste);
+      document.removeEventListener("copy", handleCopyPaste);
+      document.removeEventListener("paste", handleCopyPaste);
+      document.removeEventListener("cut", handleCopyPaste);
     };
   }, []);
 

@@ -29,7 +29,7 @@ import logo from "../../../assets/logo.jpeg";
 import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
-import { Menu, X } from "lucide-react";
+import { ClipboardList, Menu, X } from "lucide-react";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
@@ -190,10 +190,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       ],
     },
     {
-      // Admin-only group
+      //assessment for students
       group: "Assessment",
-      
-      icon: FaUserSecret,
+      icon: ClipboardList,
       groupKey: "assessment",
       children: [
         { label: "Show Assessment", path: "/assessment", icon: MdAddCard },

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+  createSearchParams,
+} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { Functions } from "appwrite";
@@ -11,13 +15,25 @@ import conf from "../../../config/config";
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
-  const [paper] = useSearchParams();
+  const [searchParams, setSerachParams] = useSearchParams();
+
+  const year = searchParams.get("year") || "";
+  const subject = searchParams.get("subject") || "";
+  const assessmentSearchParams = createSearchParams({ year, subject });
+  const assessmentUrl = `/assessment?${assessmentSearchParams.toString()}`;
+  const encodedRedirect = encodeURIComponent(assessmentUrl);
+  // Build the new URL for /attain-test with the redirect parameter
+  const redirectSearchParams = createSearchParams({
+    redirect: encodedRedirect,
+  });
+  const newUrl = `${redirectSearchParams.toString()}`;
 
   useEffect(() => {
-    setPaperId(paper.get("paperid") || "");
-  }, [paper]);
+    setPaperId(searchParams.get("paperid") || "");
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +64,7 @@ const AttainTest = () => {
 
       const msg = parsedRes.message || "Paper generated successfully!";
       toast.success(msg);
-      navigate(`/start-mock-test/${parsedRes.paperId}`);
+      navigate(`/start-mock-test/${parsedRes.paperId}?${newUrl}`);
     } catch (error) {
       toast.error(error.message);
     } finally {

@@ -4,20 +4,37 @@ import { Query } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
 import subjectService from "../../../appwrite/subjectService";
-
 import questionpaperservice from "../../../appwrite/mockTest";
 import AssesmentList from "./AssesmentList";
+import { useSearchParams } from "react-router-dom";
 
 const Assessment = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [modulesData, setModulesData] = useState(null);
   const [subjectsData, setSubjectsData] = useState(null);
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedTradeYear, setSelectedTradeYear] = useState("FIRST");
-  const [selectedModule, setSelectedModule] = useState(null);
+  // Use "subject" as the query parameter key consistently
+  const [selectedSubject, setSelectedSubject] = useState(
+    searchParams.get("subject") ? { $id: searchParams.get("subject") } : null
+  );
+  const [selectedTradeYear, setSelectedTradeYear] = useState(
+    searchParams.get("year") || "FIRST"
+  );
   const [papersData, setPapersData] = useState(new Map());
 
   const profile = useSelector(selectProfile);
+  // Construct a full redirect URL string including the pathname and search parameters
+  const redirect = `${searchParams.toString()}`;
+
+  // Update search params when filters change
+  useEffect(() => {
+    if (selectedTradeYear && selectedSubject) {
+      setSearchParams({
+        year: selectedTradeYear,
+        subject: selectedSubject.$id,
+      });
+    }
+  }, [selectedSubject, selectedTradeYear, setSearchParams]);
 
   const fetchPapers = async (queries) => {
     setIsLoading(true);
@@ -29,7 +46,7 @@ const Assessment = () => {
       ]);
       const paperMap = new Map();
       if (data && data.length > 0) {
-        data.forEach(paper => {
+        data.forEach((paper) => {
           paperMap.set(paper.paperId, paper);
         });
       }
@@ -41,13 +58,12 @@ const Assessment = () => {
     }
   };
 
-
   const fetchSubjects = async () => {
     setIsLoading(true);
     try {
       const data = await subjectService.listSubjects();
       setSubjectsData(data.documents || []);
-      if (data.documents && data.documents.length > 0) {
+      if (data.documents && data.documents.length > 0 && !selectedSubject) {
         setSelectedSubject(data.documents[0]);
       }
     } catch (error) {
@@ -65,24 +81,27 @@ const Assessment = () => {
         Query.equal("subjectId", selectedSubject.$id),
         Query.equal("year", selectedTradeYear),
       ]);
-      // Filter modules with assessmentPaperId and sort by moduleId
-      const filteredModules = data.syllabus.filter(
-        (module) => module.assessmentPaperId
-      );
-      const sortedModules = filteredModules.sort((a, b) => {
-        const moduleIdA = a.moduleId || "";
-        const moduleIdB = b.moduleId || "";
-        return moduleIdA.localeCompare(moduleIdB, undefined, { numeric: true });
-      });
 
-      const paperIds = sortedModules.map((paper) => paper.assessmentPaperId);
-      if (paperIds.length > 0) {
-        await fetchPapers([Query.equal("paperId", paperIds)]);
-      }
+      if (data) {
+        // Filter modules with assessmentPaperId and sort by moduleId
 
-      setModulesData(sortedModules);
-      if (sortedModules.length > 0) {
-        setSelectedModule(sortedModules[0]);
+        const sortedModules = data.syllabus.sort((a, b) => {
+          const moduleIdA = a.moduleId || "";
+          const moduleIdB = b.moduleId || "";
+          return moduleIdA.localeCompare(moduleIdB, undefined, {
+            numeric: true,
+          });
+        });
+
+        const paperIds = sortedModules
+          .filter((module) => module.assessmentPaperId)
+          .map((paper) => paper.assessmentPaperId);
+
+        if (paperIds.length > 0) {
+          await fetchPapers([Query.equal("paperId", paperIds)]);
+        }
+
+        setModulesData(sortedModules);
       }
     } catch (error) {
       console.log(error);
@@ -97,6 +116,8 @@ const Assessment = () => {
 
   useEffect(() => {
     if (selectedSubject && selectedTradeYear) {
+      setModulesData(null);
+      setPapersData(new Map());
       fetchModules();
     }
   }, [selectedTradeYear, selectedSubject]);
@@ -157,7 +178,11 @@ const Assessment = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-     <AssesmentList modulesData= {modulesData} papersData={papersData} setSelectedModule={setSelectedModule} selectedModule={selectedModule} />
+        <AssesmentList
+          modulesData={modulesData}
+          papersData={papersData}
+          redirect={redirect}
+        />
       )}
     </div>
   );

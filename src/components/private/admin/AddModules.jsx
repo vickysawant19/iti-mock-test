@@ -9,6 +9,7 @@ import {
   Target,
   ClipboardList,
   LayoutGrid,
+  MagnetIcon,
 } from "lucide-react";
 import PaperPreview from "./module-assignment/ModuleTestPreview";
 import { toast } from "react-toastify";
@@ -17,6 +18,7 @@ import { format } from "date-fns";
 import useModuleEvalutionPoints from "./module-assignment/ModuleEvalutionPoints";
 import ImageUploader from "./image-upload/ImageUpload";
 import { IKImage } from "imagekitio-react";
+import { FaMagic } from "react-icons/fa";
 
 const AddModules = ({
   setShow,
@@ -25,7 +27,7 @@ const AddModules = ({
   moduleId,
   moduleTest,
   trade,
-  isPractical
+  isPractical,
 }) => {
   const { savePaper, createPaper, isLoading, isError, error, data } =
     moduleTest;
@@ -333,94 +335,98 @@ const AddModules = ({
             </div>
 
             {/* Module Evaluations */}
-           {isPractical && <div className="md:col-span-2 space-y-2 relative">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <FileText className="w-4 h-4 text-gray-500" />
-                Evaluation Points:
-              </label>
+            {isPractical && (
+              <div className="md:col-span-2 space-y-2 relative">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  Evaluation Points:
+                </label>
 
-              {/* If evaluation points exist, show each in an editable field */}
-              <div className="flex flex-col gap-2">
-                {evalPoints && evalPoints.length > 0 ? (
-                  evalPoints.map((point, index) => (
-                    <div key={point.id} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={point.evaluation}
-                        onChange={(e) => {
-                          // Update the evaluation label for this item.
-                          const newLabel = e.target.value;
-                          const updatedPoints = [...evalPoints];
-                          updatedPoints[index] = {
-                            ...updatedPoints[index],
-                            evaluation: newLabel,
-                          };
-                          setValue("evalutionPoints", updatedPoints);
-                          setEvalPoints(updatedPoints);
-                        }}
-                        className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                      />
-                      <input
-                        type="number"
-                        value={point.points}
-                        onChange={(e) => {
-                          const newPoints = e.target.value;
-                          const updatedPoints = [...evalPoints];
-                          updatedPoints[index] = {
-                            ...updatedPoints[index],
-                            points: newPoints,
-                          };
-                          setEvalPoints(updatedPoints);
-                        }}
-                        className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                      />
-                    </div>
-                  ))
-                ) : (
-                  // If no evaluation points yet, display a readOnly textarea.
-                  <p>No Evalution Points Found</p>
+                {/* If evaluation points exist, show each in an editable field */}
+                <div className="flex flex-col gap-2">
+                  {evalPoints && evalPoints.length > 0 ? (
+                    evalPoints.map((point, index) => (
+                      <div key={point.id} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={point.evaluation}
+                          onChange={(e) => {
+                            // Update the evaluation label for this item.
+                            const newLabel = e.target.value;
+                            const updatedPoints = [...evalPoints];
+                            updatedPoints[index] = {
+                              ...updatedPoints[index],
+                              evaluation: newLabel,
+                            };
+                            setValue("evalutionPoints", updatedPoints);
+                            setEvalPoints(updatedPoints);
+                          }}
+                          className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        />
+                        <input
+                          type="number"
+                          value={point.points}
+                          onChange={(e) => {
+                            const newPoints = e.target.value;
+                            const updatedPoints = [...evalPoints];
+                            updatedPoints[index] = {
+                              ...updatedPoints[index],
+                              points: newPoints,
+                            };
+                            setEvalPoints(updatedPoints);
+                          }}
+                          className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    // If no evaluation points yet, display a readOnly textarea.
+                    <p>No Evalution Points Found</p>
+                  )}
+                </div>
+
+                <div className="flex gap-5">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      // Use your form value for practicalName.
+                      const practicalName = getValues("moduleName");
+                      if (!practicalName.trim()) {
+                        toast.error(
+                          "Please enter a module name to generate evaluation points."
+                        );
+                        return;
+                      }
+                      const generated = await generateEvalutionPoint({
+                        practicalName,
+                      });
+                      setEvalPoints(generated);
+                      setValue("evalutionPoints", generated);
+                    }}
+                    className="mt-2 flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit"
+                  >
+                    <FaMagic />
+                    {loadingEval
+                      ? "Generating..."
+                      : "Generate Evaluation Points"}
+                  </button>
+                </div>
+
+                {errors.evalutionPoints && (
+                  <span className="text-red-500 text-sm flex items-center gap-1">
+                    <X className="w-4 h-4" />
+                    {errors.evalutionPoints.message}
+                  </span>
+                )}
+
+                {errorEval && (
+                  <span className="text-red-500 text-sm flex items-center gap-1">
+                    <X className="w-4 h-4" />
+                    {errorEval}
+                  </span>
                 )}
               </div>
-
-              <div className="flex gap-5">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    // Use your form value for practicalName.
-                    const practicalName = getValues("moduleName");
-                    if (!practicalName.trim()) {
-                      toast.error(
-                        "Please enter a module name to generate evaluation points."
-                      );
-                      return;
-                    }
-                    const generated = await generateEvalutionPoint({
-                      practicalName,
-                    });
-                    setEvalPoints(generated);
-                    setValue("evalutionPoints", generated);
-                  }}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit"
-                >
-                  {loadingEval ? "Generating..." : "Generate Evaluation Points"}
-                </button>
-              </div>
-
-              {errors.evalutionPoints && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
-                  <X className="w-4 h-4" />
-                  {errors.evalutionPoints.message}
-                </span>
-              )}
-
-              {errorEval && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
-                  <X className="w-4 h-4" />
-                  {errorEval}
-                </span>
-              )}
-            </div>}
-
+            )}
 
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <FileText className="w-4 h-4 text-gray-500" />
@@ -440,16 +446,21 @@ const AddModules = ({
 
           <div className="flex gap-5">
             <button
+              title={
+                assessmentPaperId
+                  ? "Generate new will delete old paper"
+                  : "AI generate new Paper"
+              }
               type="button"
               onClick={createNewPaper}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors m"
             >
-              <Save className="w-4 h-4" />
+              <FaMagic />
               {isLoading
                 ? "Generating..."
                 : assessmentPaperId
-                ? "Generate Again"
-                : "Create Paper"}
+                ? "Generate New"
+                : "Generate"}
             </button>
             {paperData && (
               <button
