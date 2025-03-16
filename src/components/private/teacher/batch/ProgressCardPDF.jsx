@@ -39,8 +39,9 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
     justifyContent: "space-between",
+    borderBottomWidth: 1,
+    paddingBottom: 5,
   },
   logoContainer: {
     width: 70,
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 10,
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
@@ -71,14 +72,14 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   progressTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
     marginTop: 10,
     textAlign: "center",
   },
 
   section: {
-    marginBottom: 1,
+    paddingVertical: 5,
   },
   grid: {
     flexDirection: "row",
@@ -255,10 +256,10 @@ const ProgressCardPDF = ({
 
           {/* Center Text */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>
+            {/* <Text style={styles.headerTitle}>
               DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING
-            </Text>
-            <Text style={[styles.headerSubtitle]}>
+            </Text> */}
+            <Text style={[styles.headerTitle]}>
               {student?.collageName || ""}
             </Text>
             <Text style={styles.progressTitle}>PROGRESS CARD</Text>

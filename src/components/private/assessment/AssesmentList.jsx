@@ -50,14 +50,14 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
                 return (
                   <div
                     key={module.moduleId}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors border-l-4 ${
+                    className={`p-4 cursor-pointer hover:bg-blue-50 transition-colors border-l-4 ${
                       isSubmitted
                         ? "border-l-green-500 opacity-80"
                         : "border-l-yellow-100"
                     } ${
                       selectedModule &&
                       selectedModule.moduleId === module.moduleId
-                        ? "bg-blue-50"
+                        ? "bg-blue-100"
                         : ""
                     }`}
                     onClick={() => handleModuleClick(module)}

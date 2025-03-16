@@ -36,6 +36,7 @@ const ImageUploader = ({
   };
 
   const onSuccess = (res) => {
+    //success resopnse
     //   {
     //     "fileId": "67d40f5e432c4764161308df",
     //     "name": "test-image_zzSP41syb",

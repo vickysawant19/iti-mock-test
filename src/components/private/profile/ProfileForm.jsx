@@ -44,6 +44,9 @@ const ProfileForm = () => {
     "profileImage",
     "registerId",
     "studentId",
+    "collegeId",
+    "batchId",
+    "tradeId",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -146,7 +149,12 @@ const ProfileForm = () => {
       setIsSubmitting(true);
       let updatedProfile;
       let newBatchData;
-      if (data.batchName !== "" && data.batchId === "" && isTeacher) {
+      if (
+        data.batchName !== "" &&
+        data.batchId === "" &&
+        isTeacher &&
+        !isUserProfile
+      ) {
         newBatchData = await batchService.createBatch({
           BatchName: data.BatchName,
           teacherId: user.$id,
@@ -161,7 +169,6 @@ const ProfileForm = () => {
         setBatchesData((prev) => [...prev, newBatchData]);
       }
       if (isUserProfile) {
-        console.log("updating other user ", userId);
         // Updating another user's profile
         updatedProfile = await userProfileService.updateUserProfile(
           othersProfile.$id,
@@ -345,8 +352,8 @@ const ProfileForm = () => {
             </select>
           </div>
           {/* Batch Creation Section - Only visible for teachers when no batch is selected */}
-          {isTeacher && !watch("batchId") && (
-            <div className="bg-gray-50 p-4 rounded-lg mt-4 md:col-span-2">
+          {isTeacher && !watch("batchId") && !isUserProfile && (
+            <div className="bg-gray-200 p-4 rounded-lg mt-4 md:col-span-2">
               <h3 className="font-medium mb-3">Create New Batch</h3>
               <div className="space-y-3">
                 <CustomInput

@@ -26,7 +26,6 @@ Font.register({
   ],
 });
 
-
 Font.registerHyphenationCallback((word) => {
   return [word];
 });
@@ -40,8 +39,9 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
     justifyContent: "space-between",
+    borderBottomWidth: 1,
+    paddingVertical: 5,
   },
   logoContainer: {
     width: 70,
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   studentDetailsSection: {
-    marginBottom: 15,
+    paddingVertical: 5,
   },
   grid: {
     flexDirection: "row",
@@ -546,7 +546,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
 
         {/* Meeting with Parents */}
         <View style={[styles.section, {}]}>
-          <Text style={styles.sectionTitle}>Meeting with Parents</Text>
+          <Text style={styles.sectionTitle}>MEETING WITH PARENTS</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <View style={[styles.tableCellHeader, { width: "5%" }]}>

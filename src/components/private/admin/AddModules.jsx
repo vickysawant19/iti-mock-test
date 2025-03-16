@@ -547,14 +547,14 @@ const AddModules = ({
 
       {/* Modal to show generated paper preview */}
       {showPaperModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pt-10  overflow-hidden">
           {/* Modal overlay */}
           <div
             className="absolute inset-0 bg-black opacity-50"
             onClick={() => setShowPaperModal(false)}
           ></div>
           {/* Modal content */}
-          <div className="bg-white rounded-lg shadow-lg z-50 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-lg z-50 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto ">
             <button
               onClick={() => setShowPaperModal(false)}
               className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"

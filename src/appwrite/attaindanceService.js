@@ -8,6 +8,25 @@ export class AttendanceService {
     this.database = appwriteService.getDatabases();
   }
 
+  async getStudentsAttendance(queries = []) {
+    try {
+      const batchAttendance = await this.database.listDocuments(
+        conf.databaseId,
+        conf.studentAttendanceCollectionId,
+        queries
+      );
+      return batchAttendance.documents.map((userAttendance) => ({
+        ...userAttendance,
+        attendanceRecords: userAttendance.attendanceRecords.map((a) =>
+          JSON.parse(a)
+        ),
+      }));
+    } catch (error) {
+      console.error("Appwrite error: fetching batch attendance:", error);
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
   async getBatchAttendance(batchId, queries = []) {
     try {
       const batchAttendance = await this.database.listDocuments(

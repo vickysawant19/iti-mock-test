@@ -37,14 +37,13 @@ const ViewBatch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [studentsLoading, setStudentLoading] = useState(false);
   const [attendaceLoading, setAttendaceLoading] = useState(false);
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState(null);
   const [studentAttendance, setStudentAttendance] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState([]);
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
   const [activeTab, setActiveTab] = useState("profiles");
 
-  const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
   const fetchTeacherBatches = async () => {
@@ -53,7 +52,6 @@ const ViewBatch = () => {
       const data = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
       ]);
-
       setTeacherBatches(
         Array.isArray(data.documents) ? data.documents : [data.documents]
       );
@@ -80,25 +78,37 @@ const ViewBatch = () => {
   };
 
   const fetchStudentsAttendance = async () => {
+    if (!students) return;
     setAttendaceLoading(true);
     try {
-      const data = await attendanceService.getBatchAttendance(selectedBatch);
-      const studentsWithStudentIds = data
-        .map((attendance) => {
-          const student = students.find(
-            (student) => student.userId === attendance.userId
-          );
+      const studentsIds = students
+        .filter((student) => student.status === "Active")
+        .map((student) => student.userId);
+      if (studentsIds.length < 0) {
+        setAttendaceLoading(false);
+        console.log("No students found!");
+        return;
+      }
+      const attendance = await attendanceService.getStudentsAttendance([
+        Query.equal("userId", studentsIds),
+        Query.equal("batchId", selectedBatch),
+      ]);
 
-          return {
-            ...attendance,
-            status: student ? student.status : null,
-            studentId: student ? student.studentId : null,
-            userName: student
-              ? student.userName
-              : attendance?.userName || "Unknown",
-          };
-        })
-        .filter((item) => item.status === "Active");
+      const studentMap = new Map();
+      students.forEach((student) => {
+        studentMap.set(student.userId, student);
+      });
+
+      const studentsWithStudentIds = attendance.map((attendance) => {
+        const student = studentMap.get(attendance.userId);
+        return {
+          ...attendance,
+          studentId: student?.studentId || "NA",
+          userName: student
+            ? student.userName
+            : attendance?.userName || "Unknown",
+        };
+      });
 
       setStudentAttendance(
         Array.isArray(studentsWithStudentIds)
@@ -122,10 +132,12 @@ const ViewBatch = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedBatch !== "") {
+    if (!selectedBatch) {
+      setSelectedBatch(teacherBatches.length > 0 ? teacherBatches[0].$id : "");
+    } else {
       fetchBatchStudent();
     }
-  }, [selectedBatch]);
+  }, [selectedBatch, teacherBatches]);
 
   useEffect(() => {
     if (
@@ -148,7 +160,7 @@ const ViewBatch = () => {
       );
     }
 
-    if (!students.length) {
+    if (!students || !students.length) {
       return (
         <div className="text-center text-gray-500 py-10">
           No students found in this batch
@@ -189,10 +201,13 @@ const ViewBatch = () => {
           />
         );
 
-        case "job-evalution":
+      case "job-evalution":
         return (
           <JobEvaluation
-            studentProfiles={students.filter(item => item.status === "Active" && item.role.includes("Student"))}
+            studentProfiles={students.filter(
+              (item) =>
+                item.status === "Active" && item.role.includes("Student")
+            )}
             stats={attendanceStats}
             batchData={teacherBatches.find(
               (item) => item.$id === selectedBatch
@@ -225,7 +240,6 @@ const ViewBatch = () => {
           value={selectedBatch}
           onChange={(e) => setSelectedBatch(e.target.value)}
         >
-          <option value="">Select Batch</option>
           {teacherBatches.map((item) => (
             <option key={item.$id} value={item.$id}>
               {item.BatchName}

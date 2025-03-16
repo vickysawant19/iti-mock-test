@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
 
 import CustomCalendar from "./Calender";
@@ -401,6 +401,15 @@ const MarkStudentAttendance = () => {
     return "absent-tile";
   };
 
+  if (!isTeacher && profile.batchId === "") {
+    console.log("here");
+    return (
+      <div>
+        No profile Found. Add Batch to view this page <Link to={"/profile"} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full  mx-auto px-4 py-6">
       {/* Top Actions Bar */}
@@ -468,12 +477,12 @@ const MarkStudentAttendance = () => {
                 </p>
                 <p className="text-sm">
                   Attendance status:
-                  {workingDays.get(format(selectedDate, "yyyy-MM-dd"))?.attendanceStatus
-                  || "Not Marked"}
+                  {workingDays.get(format(selectedDate, "yyyy-MM-dd"))
+                    ?.attendanceStatus || "Not Marked"}
                 </p>
               </div>
             )}
-          
+
             <div className="flex gap-4">
               <button
                 onClick={() => setIsShowMap((prev) => !prev)}

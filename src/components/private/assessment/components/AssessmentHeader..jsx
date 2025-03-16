@@ -7,8 +7,8 @@ const AssessmentHeader = ({ progress = 0 }) => {
 
   // Determine progress color based on completion percentage
   const getProgressColor = () => {
-    if (validProgress <= 30) return "bg-amber-500";
-    if (validProgress <= 70) return "bg-blue-500";
+    if (validProgress < 30) return "bg-amber-500";
+    if (validProgress < 70) return "bg-yellow-500";
     return "bg-emerald-500";
   };
 

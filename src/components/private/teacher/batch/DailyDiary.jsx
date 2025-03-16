@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import { ClipLoader } from "react-spinners";
+import { useNavigate } from "react-router-dom";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(
@@ -43,6 +44,8 @@ function DailyDiary() {
     isError,
   } = useGetBatchQuery(profile.batchId);
 
+  const navigate = useNavigate();
+
   // const [updateDiaryEntry] = useUpdateDiaryEntryMutation();
 
   const fetchAttendance = async () => {
@@ -62,11 +65,18 @@ function DailyDiary() {
   };
 
   useEffect(() => {
+    if (profile && !profile.batchId) {
+      toast.error("You need to Create/Select a batch");
+      // Navigate to create-batch page
+      navigate("/profile");
+      return;
+    }
     fetchAttendance();
   }, [profile]);
 
   useEffect(() => {
     if (!batchData) return;
+
     // Load diary entries from API if available
     if (batchData.dailyDairy) {
       const data = Object.fromEntries(

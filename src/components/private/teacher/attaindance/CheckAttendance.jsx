@@ -10,6 +10,8 @@ import ShowStats from "./ShowStats";
 import { calculateStats } from "./CalculateStats";
 import batchService from "../../../../appwrite/batchService";
 import { ClipLoader } from "react-spinners";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,7 @@ const CheckAttendance = () => {
   });
   const [holidays, setHolidays] = useState(new Map());
   const [workingDays, setWorkingDays] = useState(new Map());
+  const navigate = useNavigate();
 
   const profile = useSelector(selectProfile);
 
@@ -66,6 +69,12 @@ const CheckAttendance = () => {
   };
 
   useEffect(() => {
+    if (!profile.batchId) {
+      toast.error("You need to Create/Select a batch");
+      // Navigate to create-batch page
+      navigate("/profile");
+      return;
+    }
     if (profile) {
       fetchAttendance();
       fetchBatchData(profile.batchId);
