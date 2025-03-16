@@ -12,7 +12,11 @@ const RenderModule = ({ module, papersData, redirect }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="bg-gray-50 p-4 border-b">
+      <div
+        className={`${
+          selectedPaper?.submitted ? "bg-green-100" : "bg-yellow-100"
+        } p-4 border-b`}
+      >
         <h2 className="text-lg font-semibold text-gray-800">
           {module.moduleId}: {module.moduleName}
         </h2>
@@ -119,24 +123,26 @@ const RenderModule = ({ module, papersData, redirect }) => {
             )
           )}
         </div>
-        <div className="w-full justify-center items-center">
-          <button
-            className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
-            type="button"
-            onClick={() => setShowPaper((prev) => !prev)}
-          >
-            {!showPaper ? "Show Paper" : "Hide Paper"}
-          </button>
+        {module?.assessmentPaperId && (
+          <div className="w-full justify-center items-center">
+            <button
+              className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
+              type="button"
+              onClick={() => setShowPaper((prev) => !prev)}
+            >
+              {!showPaper ? "Show Paper" : "Hide Paper"}
+            </button>
 
-          <div className={` transition-all ease-in-out duration-300`}>
-            {showPaper && (
-              <ViewPaper
-                key={module.assessmentPaperId}
-                paperId={module.assessmentPaperId}
-              />
-            )}
+            <div className={` transition-all ease-in-out duration-300`}>
+              {showPaper && (
+                <ViewPaper
+                  key={module.assessmentPaperId}
+                  paperId={module.assessmentPaperId}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

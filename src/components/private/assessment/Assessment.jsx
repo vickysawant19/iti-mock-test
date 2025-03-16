@@ -7,24 +7,23 @@ import subjectService from "../../../appwrite/subjectService";
 import questionpaperservice from "../../../appwrite/mockTest";
 import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
+import { ClipboardList } from "lucide-react";
 
 const Assessment = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [modulesData, setModulesData] = useState(null);
   const [subjectsData, setSubjectsData] = useState(null);
-  // Use "subject" as the query parameter key consistently
+  const [papersData, setPapersData] = useState(new Map());
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedSubject, setSelectedSubject] = useState(
     searchParams.get("subject") ? { $id: searchParams.get("subject") } : null
   );
   const [selectedTradeYear, setSelectedTradeYear] = useState(
     searchParams.get("year") || "FIRST"
   );
-  const [papersData, setPapersData] = useState(new Map());
+  const redirect = `${searchParams.toString()}`;
 
   const profile = useSelector(selectProfile);
-  // Construct a full redirect URL string including the pathname and search parameters
-  const redirect = `${searchParams.toString()}`;
 
   // Update search params when filters change
   useEffect(() => {
@@ -63,8 +62,14 @@ const Assessment = () => {
 
       const results = await Promise.all(requests);
       const paperMap = new Map();
+      let progress = { total: 0, submitted: 0 };
       results.flat().forEach((paper) => {
+        progress.total += 1;
+        if (paper.submitted) {
+          progress.submitted += 1;
+        }
         paperMap.set(paper.paperId, paper);
+        paperMap.set("progress", progress);
       });
 
       setPapersData(paperMap);
@@ -142,10 +147,14 @@ const Assessment = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="bg-white shadow-md py-4 px-6">
-        <h1 className="text-2xl font-bold text-gray-800">Assessment Portal</h1>
+      <div className="w-full bg-blue-600 text-white shadow-lg pt-2">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-center md:justify-start">
+            <ClipboardList className="mr-2 text-blue-200" size={24} />
+            <h1 className="font-bold text-xl md:text-2xl">Assessment Portal</h1>
+          </div>
+        </div>
       </div>
-
       {/* Filters */}
       <div className="bg-white shadow-sm p-4 mb-4">
         <div className="flex flex-col md:flex-row gap-4">

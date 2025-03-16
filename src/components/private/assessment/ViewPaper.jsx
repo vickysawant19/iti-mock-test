@@ -66,7 +66,13 @@ const ViewPaper = ({ paperId }) => {
       <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
         <div className="flex items-center">
           <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
-          <p className="text-red-700">No paper found with the given ID.</p>
+          <p className="text-red-700">
+            You have not attained this Assessment.
+            <br />
+            <span className="text-red-400 text-sm">
+              No paper found with the given ID.
+            </span>
+          </p>
         </div>
       </div>
     );

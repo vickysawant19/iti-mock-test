@@ -18,6 +18,7 @@ import useModuleEvalutionPoints from "./module-assignment/ModuleEvalutionPoints"
 import ImageUploader from "./image-upload/ImageUpload";
 import { IKImage } from "imagekitio-react";
 import { FaMagic } from "react-icons/fa";
+import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
 
 const AddModules = ({
   setShow,
@@ -76,10 +77,11 @@ const AddModules = ({
   const createNewPaper = async () => {
     try {
       const moduleName = getValues("moduleName");
+      const moduleDescription = getValues("moduleDescription");
       const newPaperId = generatePaperId();
       const generatedPaper = await createPaper({
         paperId: newPaperId,
-        practicalName: moduleName,
+        practicalName: moduleName + moduleDescription,
       });
       setPaperData(generatedPaper);
       setShowPaperModal(true); // open modal to show preview
@@ -442,6 +444,13 @@ const AddModules = ({
               </div>
             )}
           </div>
+          {paperData && paperData.paperId !== assessmentPaperId && (
+            <PaperGeneratedNotification
+              paperId={paperData.paperId}
+              setShowPaperModal={setShowPaperModal}
+              saveNewPaper={saveNewPaper}
+            />
+          )}
 
           <div className="flex gap-5">
             <button
@@ -461,15 +470,6 @@ const AddModules = ({
                 ? "Generate New"
                 : "Generate"}
             </button>
-            {paperData && (
-              <button
-                type="button"
-                onClick={() => setShowPaperModal(true)}
-                className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Show Paper
-              </button>
-            )}
           </div>
 
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700">

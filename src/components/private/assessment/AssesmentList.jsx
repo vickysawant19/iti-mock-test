@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import RenderModule from "./RenderModule";
+import AssessmentHeader from "./components/AssessmentHeader.";
 
 const AssessmentList = ({ modulesData, papersData, redirect }) => {
   const [selectedModule, setSelectedModule] = useState(null);
@@ -26,18 +27,20 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
     }
   };
 
+  const modulePaperProgress = papersData.get("progress");
+  const progress = (
+    ((modulePaperProgress?.submitted ?? 0) /
+      (modulePaperProgress?.total || 1)) *
+    100
+  ).toFixed(2);
+
   return (
     <div className="px-4 md:px-6 py-4 bg-gray-50 min-h-screen">
       {/* Desktop View */}
       <div className="hidden md:flex flex-row gap-6">
         {/* Module List */}
         <div className="w-1/3 bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-blue-600 text-white p-4">
-            <h2 className="font-semibold flex items-center">
-              <ClipboardList className="mr-2" size={18} />
-              Available Assessments
-            </h2>
-          </div>
+          <AssessmentHeader progress={progress} />
           <div className="max-h-[600px] overflow-y-auto">
             {modulesData && modulesData.length > 0 ? (
               modulesData.map((module) => {
@@ -114,6 +117,7 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
 
       {/* Mobile View - Accordion Style */}
       <div className="md:hidden space-y-4">
+        <AssessmentHeader progress={progress} />
         {modulesData && modulesData.length > 0 ? (
           modulesData.map((module) => {
             const modulePaper = papersData.get(module.assessmentPaperId);
