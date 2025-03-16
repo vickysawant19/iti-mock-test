@@ -40,11 +40,9 @@ const Assessment = () => {
     try {
       const batchSize = 100;
       const batches = [];
-
       for (let i = 0; i < paperIds.length; i += batchSize) {
         batches.push(paperIds.slice(i, i + batchSize));
       }
-
       const requests = batches.map(async (batch) => {
         return questionpaperservice.listQuestions([
           Query.equal("paperId", batch),
@@ -55,23 +53,28 @@ const Assessment = () => {
             "quesCount",
             "endTime",
             "paperId",
+            "userId",
           ]),
           Query.limit(100),
+          Query.orderAsc("$createdAt"),
         ]);
       });
 
       const results = await Promise.all(requests);
+      if (!results) {
+        setPapersData(null);
+        return;
+      }
       const paperMap = new Map();
-      let progress = { total: 0, submitted: 0 };
-      results.flat().forEach((paper) => {
-        progress.total += 1;
-        if (paper.submitted) {
+      let progress = { total: paperIds.length, submitted: 0 };
+      results?.flat()?.forEach((paper) => {
+        if (!paper || paperMap.has(paper?.paperId)) return;
+        if (paper?.submitted) {
           progress.submitted += 1;
         }
-        paperMap.set(paper.paperId, paper);
-        paperMap.set("progress", progress);
+        paperMap.set(paper?.paperId, paper);
       });
-
+      paperMap.set("progress", progress);
       setPapersData(paperMap);
     } catch (error) {
       console.log(error);

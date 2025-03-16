@@ -28,15 +28,39 @@ const ViewPaper = ({ paperId }) => {
         Query.equal("paperId", paperId),
         Query.equal("userId", profile.userId),
         Query.equal("submitted", true),
+        Query.orderAsc("$createdAt"),
       ]);
 
       if (data && data.length > 0) {
-        const paper = data[0];
-        setPaperData(paper);
+        const orginalPaper = await questionpaperservice.listQuestions([
+          Query.equal("paperId", paperId),
+          Query.equal("isOriginal", true),
+        ]);
+        if (orginalPaper && orginalPaper.length < 0) {
+          setPaperData(null);
+          return;
+        }
 
-        // Parse the JSON questions
-        const parsedQuestions = paper.questions.map((q) => JSON.parse(q));
-        setQuestions(parsedQuestions);
+        const questionsMap = new Map();
+
+        orginalPaper[0].questions.forEach((ques) => {
+          const question = JSON.parse(ques);
+          questionsMap.set(question.$id, question);
+        });
+
+        const newPaper = {
+          ...data[0],
+          questions: data[0].questions.map((p) => {
+            const userPaper = JSON.parse(p);
+            return {
+              ...questionsMap.get(userPaper.$id),
+              response: userPaper.response,
+            };
+          }),
+        };
+
+        setPaperData(newPaper);
+        setQuestions(newPaper.questions);
       } else {
         setPaperData(null);
       }
@@ -125,7 +149,7 @@ const ViewPaper = ({ paperId }) => {
       {/* Questions */}
       <div className="space-y-6">
         {questions.map((question, index) => {
-          const isCorrect = question.result;
+          const isCorrect = question.response === question.correctAnswer;
 
           return (
             <div
