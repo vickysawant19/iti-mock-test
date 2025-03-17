@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Printer } from "lucide-react";
 import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
-import { useGetCollegeQuery } from "../../../../store/api/collegeApi";
-import { useGetTradeQuery } from "../../../../store/api/tradeApi";
+import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
+import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 
 const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);

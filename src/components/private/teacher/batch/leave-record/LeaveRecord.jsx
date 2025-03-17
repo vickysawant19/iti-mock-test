@@ -3,8 +3,8 @@ import { Printer } from "lucide-react";
 import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 
 import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
-import { useGetCollegeQuery } from "../../../../store/api/collegeApi";
-import { useGetTradeQuery } from "../../../../store/api/tradeApi";
+import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
+import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);

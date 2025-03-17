@@ -7,16 +7,17 @@ import {
   addWeeks,
   parseISO,
 } from "date-fns";
-import { Edit, Save, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { useGetBatchQuery } from "../../../../store/api/batchApi";
-import { useSelector } from "react-redux";
-import { selectProfile } from "../../../../store/profileSlice";
-import { selectUser } from "../../../../store/userSlice";
 import { toast } from "react-toastify";
-import batchService from "../../../../appwrite/batchService";
-import attendanceService from "../../../../appwrite/attaindanceService";
-import { ClipLoader } from "react-spinners";
+import { useSelector } from "react-redux";
+import { Edit, Save, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ClipLoader } from "react-spinners";
+
+import { useGetBatchQuery } from "../../../../../store/api/batchApi";
+import { selectProfile } from "../../../../../store/profileSlice";
+import { selectUser } from "../../../../../store/userSlice";
+import batchService from "../../../../../appwrite/batchService";
+import attendanceService from "../../../../../appwrite/attaindanceService";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(

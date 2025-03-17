@@ -9,8 +9,9 @@ import {
 } from "@react-pdf/renderer";
 
 import { addMonths, format, isAfter } from "date-fns";
-import bodhChinha from "../../../../assets/bodhchinha.png";
-import devtLogo from "../../../../assets/dvet-logo.png";
+
+import devtLogo from "../../../../../assets/dvet-logo.png";
+import bodhChinha from "../../../../../assets/bodhChinha.png";
 
 // Register fonts for PDF
 Font.register({

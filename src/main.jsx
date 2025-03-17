@@ -9,6 +9,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Provider } from "react-redux";
+import { registerSW } from "virtual:pwa-register";
 import { store } from "./store/store.js";
 
 import Login from "./components/Auth/Login.jsx";
@@ -45,15 +46,15 @@ import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
-import { Analytics } from "@vercel/analytics/react";
+
 import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
-import AddModules from "./components/private/admin/AddModules.jsx";
+
 import Modules from "./components/private/admin/Modules.jsx";
-import { registerSW } from "virtual:pwa-register";
-import DailyDiary from "./components/private/teacher/batch/DailyDiary.jsx";
+
 import MarkTodaysAttendance from "./components/private/teacher/attaindance/MarkTodaysAttendance.jsx";
 import Assessment from "./components/private/assessment/Assessment.jsx";
+import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -103,7 +104,7 @@ const router = (
             <Route path="delete/:batchId" element={<div>Delete</div>} />
           </Route>
           <Route path="assessment">
-            <Route path="" element={<Assessment/>} />
+            <Route path="" element={<Assessment />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttaindance />} />
           </Route>
