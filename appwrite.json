@@ -106,14 +106,18 @@
             "logging": true,
             "runtime": "node-22",
             "scopes": [
-                "users.read"
+                "sessions.write",
+                "users.read",
+                "users.write",
+                "teams.read",
+                "teams.write"
             ],
             "events": [],
             "schedule": "",
             "timeout": 15,
             "entrypoint": "src/main.js",
             "commands": "npm install",
-            "specification": "s-0.5vcpu-512mb",
+            "specification": "s-1vcpu-512mb",
             "path": "functions/user-manage"
         },
         {

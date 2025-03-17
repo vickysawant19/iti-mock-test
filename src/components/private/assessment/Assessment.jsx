@@ -48,12 +48,14 @@ const Assessment = () => {
           Query.equal("paperId", batch),
           Query.equal("userId", profile.userId),
           Query.select([
+            "isOriginal",
             "submitted",
             "score",
             "quesCount",
             "endTime",
             "paperId",
             "userId",
+            "$id"
           ]),
           Query.limit(100),
           Query.orderAsc("$createdAt"),

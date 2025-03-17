@@ -1,14 +1,32 @@
 import React, { useEffect, useState } from "react";
 
-import { BookOpen, Clock, FileText, Check, ExternalLink } from "lucide-react";
+import { BookOpen, Clock, FileText, Check, ExternalLink, RefreshCcw } from "lucide-react";
 
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ViewPaper from "./ViewPaper";
+import questionpaperservice from "../../../appwrite/mockTest";
+import { toast } from "react-toastify";
 
 const RenderModule = ({ module, papersData, redirect }) => {
   const [showPaper, setShowPaper] = useState(false);
   const selectedPaper = papersData.get(module.assessmentPaperId);
+
+  const navigate = useNavigate()
+
+  const attemptAssessmentAgain = async () => {
+    try {
+      if(!selectedPaper?.isOriginal) {
+        await questionpaperservice.deleteQuestionPaper(selectedPaper.$id)
+        navigate(`/attain-test?paperid=${module.assessmentPaperId}&${redirect}`)
+      }else{
+        toast.error("Not allowed for Teacher!")
+      }
+    } catch (error) {
+      console.log("error",error)
+      toast.error("Something went wrong!")
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -123,8 +141,10 @@ const RenderModule = ({ module, papersData, redirect }) => {
             )
           )}
         </div>
-        {module?.assessmentPaperId && (
+       
+        {module?.assessmentPaperId && selectedPaper?.submitted && (
           <div className="w-full justify-center items-center">
+            <div className=" flex gap-4">
             <button
               className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
               type="button"
@@ -132,6 +152,16 @@ const RenderModule = ({ module, papersData, redirect }) => {
             >
               {!showPaper ? "Show Paper" : "Hide Paper"}
             </button>
+
+            {selectedPaper?.submitted && <button
+              className="flex bg-teal-700 px-4 py-2 text-white rounded-md my-4"
+              type="button"
+              onClick={() => attemptAssessmentAgain()}
+            >
+              <RefreshCcw />
+              Attempt Again
+            </button>}
+            </div>
 
             <div className={` transition-all ease-in-out duration-300`}>
               {showPaper && (

@@ -38,7 +38,6 @@ const ShowMockTest = () => {
         userPaper.questions = userPaper.questions.map((question) =>
           JSON.parse(question)
         );
-        console.log(userPaper);
 
         if (userPaper.isOriginal !== null && !userPaper.isOriginal) {
           const originalPaperResponse =
@@ -46,6 +45,11 @@ const ShowMockTest = () => {
               Query.equal("paperId", userPaper.paperId),
               Query.equal("isOriginal", true),
             ]);
+            if(originalPaperResponse.length === 0) {
+              toast.error("Something went Wrong!\n");
+              navigate("/all-mock-tests");
+              return;
+            }
           const originalPaper = originalPaperResponse[0];
 
           if (originalPaper.isProtected) {

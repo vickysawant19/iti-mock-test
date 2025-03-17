@@ -11,8 +11,9 @@ const createNewMockTest = async ({
     const paperResponse = await database.listDocuments(
       process.env.APPWRITE_DATABASE_ID,
       process.env.QUESTIONPAPER_COLLECTION_ID,
-      [Query.equal("paperId", paperId)]
+      [Query.equal("paperId", paperId),Query.or([Query.equal("isOriginal", true), Query.equal("userId", userId)]) ]
     );
+
 
     // Check if the paper exists
     if (paperResponse.total === 0) {
@@ -27,10 +28,10 @@ const createNewMockTest = async ({
     );
 
     if (duplicate) {
-      return { paperId: duplicate.$id, message: "Paper already generated." };
+      return { paperId: duplicate.$id, message: "Paper already Attempted." };
     }
 
-    const paper = paperResponse.documents[0];
+    const paper = paperResponse.documents.find(item => item.isOriginal);
 
     const { tradeId, tradeName, year, questions, quesCount,totalMinutes } = paper;
 
