@@ -11,7 +11,7 @@ import {
 import { addMonths, format, isAfter } from "date-fns";
 
 import devtLogo from "../../../../../assets/dvet-logo.png";
-import bodhChinha from "../../../../../assets/bodhChinha.png";
+import bodhChinha from "../../../../../assets/bodh-chinha.png";
 
 // Register fonts for PDF
 Font.register({
