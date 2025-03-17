@@ -82,7 +82,9 @@ export class TradeService {
     }
   }
 
-  async listTrades(queries = [Query.orderDesc("$createdAt")]) {
+  async listTrades(
+    queries = [Query.orderDesc("$createdAt"), Query.limit(100)]
+  ) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,

@@ -52,20 +52,22 @@ export class CollegeService {
 
   async getCollege(collegeId) {
     try {
-      const res =  await this.database.getDocument(
+      const res = await this.database.getDocument(
         conf.databaseId,
         conf.collegesCollectionId,
         collegeId
       );
-  
-      return res
+
+      return res;
     } catch (error) {
       console.error("Appwrite error: get college:", error);
       return false;
     }
   }
 
-  async listColleges(queries = [Query.orderDesc("$createdAt")]) {
+  async listColleges(
+    queries = [Query.orderDesc("$createdAt"), Query.limit(100)]
+  ) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,

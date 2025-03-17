@@ -9,7 +9,7 @@ import {
 } from "react-icons/lu";
 
 import { useSelector } from "react-redux";
-import { selectProfile } from "../../../../store/profileSlice";
+import { selectProfile } from "../../../../../store/profileSlice";
 
 const ViewAttendance = ({ isLoading, stats }) => {
   const [selectedMonth, setSelectedMonth] = useState(
@@ -19,7 +19,6 @@ const ViewAttendance = ({ isLoading, stats }) => {
   const profile = useSelector(selectProfile);
 
   stats = stats.filter((item) => item.userId !== profile.userId);
-
 
   if (isLoading) return <div>Loading...</div>;
 

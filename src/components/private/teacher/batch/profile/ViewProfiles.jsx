@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { selectProfile } from "../../../../store/profileSlice";
+import { selectProfile } from "../../../../../store/profileSlice";
 import { AiOutlineEdit } from "react-icons/ai";
 import { format } from "date-fns";
 

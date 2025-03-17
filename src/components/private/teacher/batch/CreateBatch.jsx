@@ -151,8 +151,6 @@ const BatchForm = ({ onClose }) => {
 
   const handleBatchSubmit = async (data) => {
     setIsSubmitting(true);
-
-    console.log("type of: ", typeof data.circleRadius);
     try {
       const batchPayload = {
         BatchName: data.BatchName,
@@ -221,8 +219,8 @@ const BatchForm = ({ onClose }) => {
   }
 
   return (
-    <div className=" p-2 bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-6">
+    <div className="bg-gray-100 p-4">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-6 ">
         {selectedBatchId ? "Edit Batch" : "Create New Batch"}
       </h1>
       <div className="flex flex-wrap gap-4 mb-4 p-2 justify-center items-center">
@@ -243,7 +241,7 @@ const BatchForm = ({ onClose }) => {
             onClick={handleDeselectBatch}
             className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
           >
-            Deselect Batch
+            Cancel Edit
           </button>
         )}
       </div>
@@ -257,7 +255,9 @@ const BatchForm = ({ onClose }) => {
             <label className="block text-gray-600">Batch Name</label>
             <input
               type="text"
-              {...register("BatchName", { required: "Batch name is required" })}
+              {...register("BatchName", {
+                required: "Batch name is required",
+              })}
               placeholder="Enter batch name"
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               disabled={isBatchDataLoading}

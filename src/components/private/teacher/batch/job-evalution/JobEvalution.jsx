@@ -6,8 +6,11 @@ import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
 import { Query } from "appwrite";
+import { ClipLoader } from "react-spinners";
+import { format, max, min, parseISO } from "date-fns";
 
 const JobEvaluation = ({ studentProfiles = [], batchData }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [modules, setModules] = useState([]);
 
@@ -18,6 +21,13 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
   const [studentsMap, setStudentsMap] = useState(new Map());
 
+  const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
+    batchData.collegeId
+  );
+  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
+    batchData.tradeId
+  );
+
   useEffect(() => {
     if (studentProfiles) {
       setStudentsMap(
@@ -25,13 +35,6 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
       );
     }
   }, [studentProfiles]);
-
-  const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
-    batchData.collegeId
-  );
-  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
-    batchData.tradeId
-  );
 
   const generatePreview = async () => {
     if (!selectedModule) {
@@ -76,7 +79,70 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
         Query.equal("year", selectedYear),
       ]);
 
-      setModules(data);
+      const practicalDates = Array.isArray(batchData?.dailyDairy) // Ensure dailyDairyd is an array
+        ? batchData.dailyDairy
+            .map((item) => {
+              try {
+                const parsedItem = JSON.parse(item);
+                if (!Array.isArray(parsedItem) || parsedItem.length < 2) {
+                  console.warn("Invalid parsed item format:", parsedItem);
+                  return null;
+                }
+                return parsedItem;
+              } catch (error) {
+                console.error("JSON parsing error:", error);
+                return null;
+              }
+            })
+            .filter(Boolean) // Remove null values (invalid entries)
+            .reduce((acc, [date, practical]) => {
+              if (!date || typeof date !== "string") {
+                console.warn("Invalid date format:", date);
+                return acc;
+              }
+
+              if (!practical || typeof practical !== "object") {
+                console.warn("Invalid practical data:", practical);
+                return acc;
+              }
+
+              if (!practical.practicalNumber) return acc;
+
+              acc[practical.practicalNumber] = acc[practical.practicalNumber]
+                ? [...acc[practical.practicalNumber], date]
+                : [date];
+
+              return acc;
+            }, {})
+        : {}; // Ensure practicalDates is an object even if dailyDairyd is missing
+
+      console.log("Validated Practical Dates:", practicalDates);
+
+      const newSyllabus = data.syllabus.map((item) => {
+        const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
+        const rawDates = practicalDates[moduleIdNumber] || [];
+
+        // Validate and parse dates
+        const dateObjects = rawDates
+          .map((date) => (date ? parseISO(date) : null))
+          .filter((date) => date instanceof Date && !isNaN(date));
+
+        // Ensure valid min/max dates
+        const minDate = dateObjects.length
+          ? format(min(dateObjects), "yyyy-MM-dd")
+          : null;
+        const maxDate = dateObjects.length
+          ? format(max(dateObjects), "yyyy-MM-dd")
+          : null;
+
+        return {
+          ...item,
+          startDate: minDate,
+          endDate: maxDate,
+        };
+      });
+
+      setModules({ data, syllabus: newSyllabus });
     } catch (error) {
       console.error("Error fetching modules:", error);
     }
@@ -86,7 +152,13 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
     fetchModules();
   }, [selectedYear, batchData.tradeId]);
 
-  if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
+  if (isLoading || collegeDataLoading || tradeDataLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4">

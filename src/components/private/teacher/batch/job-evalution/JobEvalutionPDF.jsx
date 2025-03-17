@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     padding: 20,
     fontFamily: "Roboto",
     fontSize: 8,
+    paddingLeft: 30,
   },
   // SECTION 1: Header (full width)
   headerSection: {
@@ -85,7 +86,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    
   },
   image: {
     maxWidth: "100%",
@@ -219,8 +219,7 @@ const JobEvaluationReportPDF = ({
   const images = selectedModule?.images || [];
   const columns = getColumns(images.length);
   const imageWidthPercent = `${100 / columns}%`;
-  const imageHightPercent = `${100 / columns}%`
-
+  const imageHightPercent = `${100 / columns}%`;
 
   return (
     <Document>
@@ -237,7 +236,7 @@ const JobEvaluationReportPDF = ({
               <Text>{`${selectedModule.moduleId.slice(1) || "________"}`}</Text>
             </View>
             <Text>{`Date of Starting: ${
-              batch.dateOfStarting || "________________"
+              selectedModule.startDate || "________________"
             }`}</Text>
           </View>
           <View style={styles.headerRow}>
@@ -249,7 +248,7 @@ const JobEvaluationReportPDF = ({
             </View>
 
             <Text>{`Date of Finishing: ${
-              batch.dateOfFinishing || "________________"
+              selectedModule.endDate || "________________"
             }`}</Text>
           </View>
           <View style={styles.headerRow}>
@@ -266,12 +265,12 @@ const JobEvaluationReportPDF = ({
         <View style={styles.rowContainer}>
           <View style={styles.leftColumn}>
             <View style={styles.imagePlaceholder}>
-            {images.map((img, index) => (
+              {images.map((img, index) => (
                 <View
                   key={index}
                   style={[
                     styles.imageWrapper,
-                    { width: imageWidthPercent, height:imageHightPercent },
+                    { width: imageWidthPercent, height: imageHightPercent },
                   ]}
                 >
                   <Image src={img.url} style={styles.image} />
