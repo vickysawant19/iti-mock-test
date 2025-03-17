@@ -116,8 +116,6 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
             }, {})
         : {}; // Ensure practicalDates is an object even if dailyDairyd is missing
 
-      console.log("Validated Practical Dates:", practicalDates);
-
       const newSyllabus = data.syllabus.map((item) => {
         const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
         const rawDates = practicalDates[moduleIdNumber] || [];
