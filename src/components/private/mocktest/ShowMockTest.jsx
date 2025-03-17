@@ -33,11 +33,18 @@ const ShowMockTest = () => {
           throw new Error("Paper not found");
         }
 
-        const userPaper = userPaperResponse[0];
+        const userPaper = { ...userPaperResponse[0] };
 
-        userPaper.questions = userPaper.questions.map((question) =>
-          JSON.parse(question)
-        );
+        userPaper.questions = userPaper.questions
+          .map((questionStr) => {
+            try {
+              return JSON.parse(questionStr);
+            } catch (err) {
+              console.error("Error parsing user paper question:", err);
+              return null;
+            }
+          })
+          .filter(Boolean);
 
         if (userPaper.isOriginal !== null && !userPaper.isOriginal) {
           const originalPaperResponse =
@@ -45,24 +52,29 @@ const ShowMockTest = () => {
               Query.equal("paperId", userPaper.paperId),
               Query.equal("isOriginal", true),
             ]);
-            if(originalPaperResponse.length === 0) {
-              toast.error("Something went Wrong!\n");
-              navigate("/all-mock-tests");
-              return;
-            }
-          const originalPaper = originalPaperResponse[0];
+
+          if (!originalPaperResponse?.length) {
+            toast.error("Something went Wrong!\n");
+            navigate("/all-mock-tests");
+            return;
+          }
+          const originalPaper = { ...originalPaperResponse[0] };
 
           if (originalPaper.isProtected) {
             toast.error("Protected Paper!\n You can't view result!\n");
             navigate("/all-mock-tests");
             return;
           }
-          const questionMap = new Map(
-            originalPaper.questions.map((q) => [
-              JSON.parse(q).$id,
-              JSON.parse(q),
-            ])
-          );
+
+          const questionMap = originalPaper.questions.reduce((map, qStr) => {
+            try {
+              const q = JSON.parse(qStr);
+              map.set(q.$id, q);
+            } catch (err) {
+              console.error("Error parsing original paper question:", err);
+            }
+            return map;
+          }, new Map());
 
           userPaper.questions = userPaper.questions.map((q) => ({
             ...questionMap.get(q.$id),

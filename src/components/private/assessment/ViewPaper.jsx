@@ -14,7 +14,7 @@ import {
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
 
-const ViewPaper = ({ paperId }) => {
+const ViewPaper = ({ paperId, showPaper }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [paperData, setPaperData] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -26,44 +26,57 @@ const ViewPaper = ({ paperId }) => {
     try {
       const data = await questionpaperservice.listQuestions([
         Query.equal("paperId", paperId),
-        Query.equal("userId", profile.userId),
-        Query.equal("submitted", true),
+        Query.or([
+          Query.equal("isOriginal", true),
+          Query.and([
+            Query.equal("userId", profile.userId),
+            Query.equal("submitted", true),
+          ]),
+        ]),
         Query.orderAsc("$createdAt"),
       ]);
 
-      if (data && data.length > 0) {
-        const orginalPaper = await questionpaperservice.listQuestions([
-          Query.equal("paperId", paperId),
-          Query.equal("isOriginal", true),
-        ]);
-        if (orginalPaper && orginalPaper.length < 0) {
-          setPaperData(null);
-          return;
-        }
-
-        const questionsMap = new Map();
-
-        orginalPaper[0].questions.forEach((ques) => {
-          const question = JSON.parse(ques);
-          questionsMap.set(question.$id, question);
-        });
-
-        const newPaper = {
-          ...data[0],
-          questions: data[0].questions.map((p) => {
-            const userPaper = JSON.parse(p);
-            return {
-              ...questionsMap.get(userPaper.$id),
-              response: userPaper.response,
-            };
-          }),
-        };
-
-        setPaperData(newPaper);
-        setQuestions(newPaper.questions);
-      } else {
+      if (!data?.length) {
         setPaperData(null);
+        return;
       }
+
+      const { originalPaper, userPaper } = data.reduce(
+        (acc, paper) => {
+          if (paper.isOriginal && !acc.originalPaper) {
+            acc.originalPaper = paper;
+          }
+          if (paper.userId === profile.userId && !acc.userPaper) {
+            acc.userPaper = paper;
+          }
+          return acc;
+        },
+        { originalPaper: null, userPaper: null }
+      );
+
+      if (!originalPaper || !userPaper) {
+        console.error(!originalPaper ? "Original Paper missing!" : "User Paper missing!");
+        setPaperData(null);
+        return;
+      }
+      const questionsMap = originalPaper.questions.reduce((map, ques) => {
+        const question = JSON.parse(ques);
+        map.set(question.$id, question);
+        return map;
+      }, new Map());
+
+      const newPaper = {
+        ...userPaper,
+        questions: userPaper.questions.map((p) => {
+          const userPaperParse = JSON.parse(p);
+          return {
+            ...questionsMap.get(userPaperParse.$id),
+            response: userPaperParse.response,
+          };
+        }),
+      };
+      setPaperData(newPaper);
+      setQuestions(newPaper.questions);
     } catch (error) {
       console.log("Error fetching paper:", error);
     } finally {
@@ -72,10 +85,10 @@ const ViewPaper = ({ paperId }) => {
   };
 
   useEffect(() => {
-    if (paperId) {
+    if (paperId && paperData?.paperId !== paperId && showPaper) {
       fetchPaper();
     }
-  }, [paperId]);
+  }, [paperId, showPaper]);
 
   if (isLoading) {
     return (

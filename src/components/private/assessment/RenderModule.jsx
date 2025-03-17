@@ -163,13 +163,14 @@ const RenderModule = ({ module, papersData, redirect }) => {
             </button>}
             </div>
 
-            <div className={` transition-all ease-in-out duration-300`}>
-              {showPaper && (
+            <div className={`${showPaper ? "block": "hidden"} transition-all ease-in-out duration-300`}>
+             
                 <ViewPaper
+                showPaper={showPaper}
                   key={module.assessmentPaperId}
                   paperId={module.assessmentPaperId}
                 />
-              )}
+              
             </div>
           </div>
         )}
