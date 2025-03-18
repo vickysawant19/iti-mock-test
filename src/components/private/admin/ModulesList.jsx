@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, BookOpen, FileText } from "lucide-react";
+import useScrollToItem from "../../../utils/useScrollToItem";
 
 const ModuleList = ({
   syllabus = [],
@@ -8,6 +9,7 @@ const ModuleList = ({
   topicId,
   moduleId,
   setShow,
+  itemRefs,
 }) => {
   const [expandedModule, setExpandedModule] = useState(null);
 
@@ -53,7 +55,10 @@ const ModuleList = ({
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-medium w-full text-ellipsis  line-clamp-2">
+                  <h3
+                    ref={(el) => (itemRefs.current[module.moduleId] = el)}
+                    className="text-base font-medium w-full text-ellipsis  line-clamp-2"
+                  >
                     {module.moduleId.toUpperCase()} {module.moduleName}
                   </h3>
                 </div>

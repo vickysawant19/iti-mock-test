@@ -219,36 +219,48 @@ const BatchForm = ({ onClose }) => {
   }
 
   return (
-    <div className="bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center mt-6 ">
-        {selectedBatchId ? "Edit Batch" : "Create New Batch"}
-      </h1>
-      <div className="flex flex-wrap gap-4 mb-4 p-2 justify-center items-center">
-        <select
-          onChange={handleBatchSelect}
-          value={selectedBatchId}
-          className="border border-gray-300 rounded-md py-2 px-3"
-        >
-          <option value="">Select Batch</option>
-          {allBatches?.map((item) => (
-            <option key={item.$id} value={item.$id}>
-              {item.BatchName}
-            </option>
-          ))}
-        </select>
-        {selectedBatchId && (
-          <button
-            onClick={handleDeselectBatch}
-            className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
-          >
-            Cancel Edit
-          </button>
-        )}
+    <div className="bg-gray-100 pb-10">
+      <div className="w-full bg-sky-200 p-6 shadow-md">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <h1 className="text-3xl font-bold ">
+            {selectedBatchId ? "Edit Batch" : "Create New Batch"}
+          </h1>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="batch-select" className="font-medium">
+                Edit Existing Batch
+              </label>
+              <select
+                id="batch-select"
+                onChange={handleBatchSelect}
+                value={selectedBatchId}
+                className="border  rounded-md py-2 px-4 min-w-[200px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select Batch</option>
+                {allBatches?.map((item) => (
+                  <option key={item.$id} value={item.$id}>
+                    {item.BatchName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedBatchId && (
+              <button
+                onClick={handleDeselectBatch}
+                className="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center gap-2 h-10 mt-6"
+              >
+                <span>Cancel</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <form
         onSubmit={handleSubmit(handleBatchSubmit)}
-        className="space-y-6 px-10  w-full"
+        className="space-y-6 px-10  w-full py-10"
       >
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 relative ">
           <div>

@@ -14,6 +14,7 @@ import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
+import useScrollToItem from "../../../utils/useScrollToItem";
 
 const Modules = () => {
   const [tradeData, setTradeData] = useState([]);
@@ -42,7 +43,13 @@ const Modules = () => {
     userName: profile.userName,
   });
 
-  const isPractical = selectedSubject && selectedSubject.subjectName.includes("PRACTICAL")
+  const isPractical =
+    selectedSubject && selectedSubject.subjectName.includes("PRACTICAL");
+
+  const { scrollToItem, itemRefs } = useScrollToItem(
+    modules?.syllabus || [],
+    "moduleId"
+  );
 
   const fetchTrades = async () => {
     setFetchingData(true);
@@ -102,7 +109,6 @@ const Modules = () => {
       setLoading(false);
     }
   };
- 
 
   useEffect(() => {
     if (profile) {
@@ -303,6 +309,7 @@ const Modules = () => {
                       topicId={topicId}
                       moduleId={moduleId}
                       setShow={setShow}
+                      itemRefs={itemRefs}
                     />
                   )
                 )}
@@ -319,6 +326,7 @@ const Modules = () => {
                       moduleTest={moduleTest}
                       trade={selectedTrade}
                       isPractical={isPractical}
+                      scrollToItem={scrollToItem}
                     />
                   )}
                   {show.has("AddTopics") && (

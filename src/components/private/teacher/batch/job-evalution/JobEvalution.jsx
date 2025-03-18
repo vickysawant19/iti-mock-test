@@ -127,10 +127,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
         // Ensure valid min/max dates
         const minDate = dateObjects.length
-          ? format(min(dateObjects), "yyyy-MM-dd")
+          ? format(min(dateObjects), "dd-MM-yyyy")
           : null;
         const maxDate = dateObjects.length
-          ? format(max(dateObjects), "yyyy-MM-dd")
+          ? format(max(dateObjects), "dd-MM-yyyy")
           : null;
 
         return {

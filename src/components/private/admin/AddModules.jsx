@@ -29,6 +29,7 @@ const AddModules = ({
   moduleTest,
   trade,
   isPractical,
+  scrollToItem,
 }) => {
   const { savePaper, createPaper, isLoading, isError, error, data } =
     moduleTest;
@@ -58,6 +59,7 @@ const AddModules = ({
     setValue,
     reset,
     watch,
+    setFocus,
   } = useForm();
   const assessmentPaperId = watch("assessmentPaperId");
 
@@ -141,6 +143,9 @@ const AddModules = ({
             : [...prev.syllabus, { ...formData, topics: [] }],
         };
       });
+      scrollToItem(formData.moduleId.toUpperCase());
+      setFocus("moduleId");
+
       toast.success("Module saved successfully!");
     } catch (err) {
       console.log("Error saving module:", err);
@@ -173,6 +178,7 @@ const AddModules = ({
       });
       setEvalPoints([]);
     }
+    scrollToItem(moduleId);
   }, [moduleId, modules, reset]);
 
   const deleteImage = async ({ fileId }) => {

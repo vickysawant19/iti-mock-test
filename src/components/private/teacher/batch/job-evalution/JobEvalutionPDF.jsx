@@ -57,11 +57,12 @@ const styles = StyleSheet.create({
   // Row container with two columns: left (40%) and right (60%)
   rowContainer: {
     flexDirection: "row",
-    paddingVertical: 5,
     borderLeftWidth: 2,
     borderRightWidth: 2,
   },
+
   leftColumn: {
+    flexDirection: "column",
     width: "40%",
     padding: 5,
   },
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingVertical: 5,
     borderColor: "#000",
     borderBottomWidth: 2,
     borderRightWidth: 2,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   signatureBlock: {
-    // width: "33%",
+    width: "33%",
     textAlign: "center",
   },
 });
@@ -235,21 +236,28 @@ const JobEvaluationReportPDF = ({
               <Text style={{ fontWeight: "bold" }}>Job No.: </Text>
               <Text>{`${selectedModule.moduleId.slice(1) || "________"}`}</Text>
             </View>
-            <Text>{`Date of Starting: ${
-              selectedModule.startDate || "________________"
-            }`}</Text>
+            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Date of Starting:</Text>
+              <Text>{selectedModule.endDate || "________________"}</Text>
+            </View>
           </View>
-          <View style={styles.headerRow}>
-            <View style={{ display: "flex", flexDirection: "row" }}>
+          <View style={[styles.headerRow, {}]}>
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                width: "80%",
+              }}
+            >
               <Text style={{ fontWeight: "bold" }}>Job title: </Text>
-              <Text>{`${
+              <Text style={{ width: "90%" }}>{`${
                 selectedModule.moduleName || "________________________________"
               }`}</Text>
             </View>
-
-            <Text>{`Date of Finishing: ${
-              selectedModule.endDate || "________________"
-            }`}</Text>
+            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+              <Text style={{ fontWeight: "bold" }}>Date of Finish:</Text>
+              <Text>{selectedModule.endDate || "________________"}</Text>
+            </View>
           </View>
           <View style={styles.headerRow}>
             <View style={{ display: "flex", flexDirection: "row" }}>
