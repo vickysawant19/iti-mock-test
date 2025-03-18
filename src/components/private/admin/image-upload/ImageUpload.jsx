@@ -93,7 +93,7 @@ const ImageUploader = ({
   const authenticator = async () => {
     try {
       const func = appwriteService.getFunctions();
-      const result = await func.createExecution("67d3fa29000adc329a4a");
+      const result = await func.createExecution("67d3fa29000adc329a4a", JSON.stringify({action: "auth"}));
       return JSON.parse(result.responseBody);
     } catch (error) {
       console.log(error);

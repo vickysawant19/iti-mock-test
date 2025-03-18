@@ -29,9 +29,9 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
       reset({
         topicId: "",
         topicName: "",
-        topicHours: "",
-        topicAssessment: "",
-        topicResource: "",
+        topicHours: 2,
+        topicAssessment: "NA",
+        topicResource: "NA",
       });
     }
   }, [moduleId, subjectId, reset, modules]);
@@ -104,7 +104,12 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                 Topic ID *
               </label>
               <input
-                {...register("topicId", { required: "Topic ID is required" })}
+                {...register("topicId", {
+                  required: "Topic ID is required",
+                  onChange: (e) => {
+                    e.target.value = e.target.value.toUpperCase(); // Transform to uppercase
+                  },
+                })}
                 className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                 placeholder="Enter topic ID"
               />

@@ -19,6 +19,7 @@ import ImageUploader from "./image-upload/ImageUpload";
 import { IKImage } from "imagekitio-react";
 import { FaMagic } from "react-icons/fa";
 import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
+import { appwriteService } from "../../../appwrite/appwriteConfig";
 
 const AddModules = ({
   setShow,
@@ -46,6 +47,7 @@ const AddModules = ({
 
   const [evalPoints, setEvalPoints] = useState(null);
   const [images, setImages] = useState([]);
+  const [isDeleting, setIsDeleting] = useState({});
 
   // Setup react-hook-form and watch for assessmentPaperId
   const {
@@ -159,18 +161,62 @@ const AddModules = ({
       reset({
         moduleId: "",
         moduleName: "",
-        moduleDescription: "",
-        moduleDuration: "",
-        learningOutcome: "",
-        assessmentCriteria: "",
+        moduleDuration: 5,
+        moduleDescription: "NA",
+        learningOutcome: "NA",
+        assessmentCriteria: "NA",
         assessmentPaperId: "",
         evalutionsPoints: [],
         images: [],
         hours: "",
         topics: [],
       });
+      setEvalPoints([]);
     }
   }, [moduleId, modules, reset]);
+
+  const deleteImage = async ({ fileId }) => {
+    if (!fileId) return toast.error("Invalid file ID");
+
+    setIsDeleting((prev) => ({ ...prev, [fileId]: true }));
+
+    try {
+      const func = appwriteService.getFunctions();
+      const res = await func.createExecution(
+        "67d3fa29000adc329a4a",
+        JSON.stringify({ action: "delete", fileId })
+      );
+
+      // Ensure response exists and is valid JSON
+      if (!res?.responseBody) throw new Error("Empty response from server");
+
+      const result = JSON.parse(res.responseBody);
+
+      if (result.success) {
+        setImages((prevImages) =>
+          prevImages.filter((img) => img.id !== fileId)
+        );
+        setValue("images", (prevImages) =>
+          prevImages.filter((img) => img.id !== fileId)
+        );
+        toast.success("Image deleted successfully!");
+        const formData = getValues();
+
+        await handleAddModules(formData);
+      } else {
+        throw new Error(result.error || "Unknown error");
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error(`Delete failed: ${error.message || error}`);
+    } finally {
+      setIsDeleting((prev) => {
+        const updated = { ...prev };
+        delete updated[fileId]; // Remove only the current image's loading state
+        return updated;
+      });
+    }
+  };
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden relative">
@@ -482,7 +528,13 @@ const AddModules = ({
               images.length > 0 &&
               images.map((image, index) => (
                 <div key={index} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
+                  <div
+                    className={`${
+                      isDeleting[image.id]
+                        ? "animate-pulse border-2 border-red-700"
+                        : "animate-none"
+                    }aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center`}
+                  >
                     <IKImage
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
                       path={image.url.split("/").slice(-2).join("/")}
@@ -497,12 +549,7 @@ const AddModules = ({
                   <button
                     type="button"
                     onClick={() => {
-                      // Filter out the image that matches the clicked image's id.
-                      const updatedImages = images.filter(
-                        (img) => img.id !== image.id
-                      );
-                      setImages(updatedImages);
-                      setValue("images", updatedImages);
+                      deleteImage({ fileId: image.id });
                     }}
                     className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete Image"
