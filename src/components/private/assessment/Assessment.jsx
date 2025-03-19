@@ -9,9 +9,10 @@ import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
 import { ClipboardList } from "lucide-react";
 
+
 const Assessment = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [modulesData, setModulesData] = useState(null);
+  const [modulesData, setModulesData] = useState([]);
   const [subjectsData, setSubjectsData] = useState(null);
   const [papersData, setPapersData] = useState(new Map());
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,12 +29,15 @@ const Assessment = () => {
   // Update search params when filters change
   useEffect(() => {
     if (selectedTradeYear && selectedSubject) {
-      setSearchParams({
+      setSearchParams((params) => ({
+        ...Object.fromEntries(params), // Preserve existing params
         year: selectedTradeYear,
         subject: selectedSubject.$id,
-      });
+      }));
+     
     }
   }, [selectedSubject, selectedTradeYear, setSearchParams]);
+
 
   const fetchPapers = async (paperIds) => {
     setIsLoading(true);
@@ -55,7 +59,7 @@ const Assessment = () => {
             "endTime",
             "paperId",
             "userId",
-            "$id"
+            "$id",
           ]),
           Query.limit(100),
           Query.orderAsc("$createdAt"),
@@ -203,6 +207,7 @@ const Assessment = () => {
           </div>
         </div>
       </div>
+      
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
@@ -210,7 +215,7 @@ const Assessment = () => {
         </div>
       ) : (
         <AssesmentList
-          modulesData={modulesData}
+          modulesData={modulesData || []}
           papersData={papersData}
           redirect={redirect}
         />

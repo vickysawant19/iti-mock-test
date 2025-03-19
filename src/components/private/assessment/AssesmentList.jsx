@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ClipboardList,
   ChevronRight,
@@ -11,21 +11,40 @@ import {
 
 import RenderModule from "./RenderModule";
 import AssessmentHeader from "./components/AssessmentHeader.";
+import useScrollToItem from "../../../utils/useScrollToItem";
 
-const AssessmentList = ({ modulesData, papersData, redirect }) => {
+const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [expandedModuleId, setExpandedModuleId] = useState(null);
 
+
+  // const { scrollToItem, itemRefs } = useScrollToItem(
+  //     modulesData,
+  //     "assessmentPaperId"
+  //   );
+
+    // useEffect(() => {
+    //   const paperId = searchParams.get("paperid")
+    //   scrollToItem(paperId)
+    // },[modulesData,redirect])
+  
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const handleModuleClick = (module) => {
     setSelectedModule(module);
-
-    // For mobile: toggle the expanded state
-    if (expandedModuleId === module.moduleId) {
-      setExpandedModuleId(null);
-    } else {
-      setExpandedModuleId(module.moduleId);
+  
+    if (module?.assessmentPaperId) {
+      setSearchParams((params) => ({
+        ...Object.fromEntries(params),
+        paperid: module.assessmentPaperId,
+      }));
     }
+  
+    // For mobile: toggle the expanded state
+    setExpandedModuleId((prevId) => (prevId === module.moduleId ? null : module.moduleId));
   };
+
 
   const modulePaperProgress = papersData.get("progress");
   const progress = (
@@ -33,6 +52,7 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
       (modulePaperProgress?.total || 1)) *
     100
   ).toFixed(2);
+ 
 
   return (
     <div className="px-4 md:px-6 py-4 bg-gray-50 min-h-screen">
@@ -71,7 +91,9 @@ const AssessmentList = ({ modulesData, papersData, redirect }) => {
                               className="text-green-500 mr-1 flex-shrink-0"
                             />
                           )}
-                          <span className="text-ellipsis line-clamp-1">
+                          <span 
+                          // ref={(elm) => itemRefs.current[module.assessmentPaperId] = elm} 
+                          className="text-ellipsis line-clamp-1">
                             {module.moduleId}: {module.moduleName}
                           </span>
                         </div>
