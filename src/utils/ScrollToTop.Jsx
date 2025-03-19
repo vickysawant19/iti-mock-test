@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 
 const ScrollToTop = () => {
   const location = useLocation();
+  console.log("scroll to top")
 
   useEffect(() => {
     // Scroll to the top with smooth behavior on route change

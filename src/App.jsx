@@ -66,7 +66,6 @@ function App() {
       <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
       <div className="md:ml-60">
         <div className={`pt-10 bg-gray-100 w-full mx-auto`}>
-          <ScrollToTop />
           <Outlet />
           <ToastContainer />
         </div>

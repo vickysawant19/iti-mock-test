@@ -5,21 +5,18 @@ const useScrollToItem = (items = [], keyField = "moduleId") => {
 
   // Function to scroll to a specific key
   const scrollToItem = (key, isClick= false) => {
+    console.log("scroll")
 
-    console.log("scroll trigger")
-    const isMobile = window.innerWidth < 768;
+    
     
     const element = itemRefs.current[key];
-    if(isMobile) {
-      console.log("ismobile", isMobile)
-      return
-    }
-    console.log("scroll")
     if (element) {
+    
       element.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
-        inline: "center",
+        block: "center",
+        // block: "nearest",
+        // inline: "center",
       });
       isClick && 
       setTimeout(() => {
@@ -31,15 +28,14 @@ const useScrollToItem = (items = [], keyField = "moduleId") => {
       if (lastItem && itemRefs.current[lastItem[keyField]]) {
         itemRefs.current[lastItem[keyField]].scrollIntoView({
           behavior: "smooth",
-          block: "nearest",
-          inline: "center",
+          block:"center",
+          // block: "nearest",
+          // inline: "center",
         });
        isClick && setTimeout(() => {
-          lastElement.click();
-        }, 1000);
+        lastItem.click();
+        }, 500);
       }
-
-
     }
   };
 

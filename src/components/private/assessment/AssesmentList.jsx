@@ -18,15 +18,15 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
   const [expandedModuleId, setExpandedModuleId] = useState(null);
 
 
-  // const { scrollToItem, itemRefs } = useScrollToItem(
-  //     modulesData,
-  //     "assessmentPaperId"
-  //   );
+  const { scrollToItem, itemRefs } = useScrollToItem(
+      modulesData,
+      "assessmentPaperId"
+    );
 
-    // useEffect(() => {
-    //   const paperId = searchParams.get("paperid")
-    //   scrollToItem(paperId)
-    // },[modulesData,redirect])
+    useEffect(() => {
+      const paperId = searchParams.get("paperid")
+      scrollToItem(paperId, true)
+    },[modulesData])
   
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -92,7 +92,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                             />
                           )}
                           <span 
-                          // ref={(elm) => itemRefs.current[module.assessmentPaperId] = elm} 
+                          ref={(elm) => itemRefs.current[module.assessmentPaperId] = elm} 
                           className="text-ellipsis line-clamp-1">
                             {module.moduleId}: {module.moduleName}
                           </span>
