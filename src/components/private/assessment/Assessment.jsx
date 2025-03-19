@@ -9,7 +9,6 @@ import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
 import { ClipboardList } from "lucide-react";
 
-
 const Assessment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [modulesData, setModulesData] = useState([]);
@@ -22,7 +21,7 @@ const Assessment = () => {
   const [selectedTradeYear, setSelectedTradeYear] = useState(
     searchParams.get("year") || "FIRST"
   );
-  const redirect = `${searchParams.toString()}`;
+  const redirect = `/assessment?${searchParams.toString()}`;
 
   const profile = useSelector(selectProfile);
 
@@ -34,10 +33,8 @@ const Assessment = () => {
         year: selectedTradeYear,
         subject: selectedSubject.$id,
       }));
-     
     }
   }, [selectedSubject, selectedTradeYear, setSearchParams]);
-
 
   const fetchPapers = async (paperIds) => {
     setIsLoading(true);
@@ -207,19 +204,12 @@ const Assessment = () => {
           </div>
         </div>
       </div>
-      
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : (
-        <AssesmentList
-          modulesData={modulesData || []}
-          papersData={papersData}
-          redirect={redirect}
-        />
-      )}
+      <AssesmentList
+        modulesData={modulesData || []}
+        papersData={papersData}
+        redirect={redirect}
+      />
     </div>
   );
 };

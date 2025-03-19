@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 
-import { BookOpen, Clock, FileText, Check, ExternalLink, RefreshCcw } from "lucide-react";
+import {
+  BookOpen,
+  Clock,
+  FileText,
+  Check,
+  ExternalLink,
+  RefreshCcw,
+} from "lucide-react";
 
 import { format } from "date-fns";
-import { Link, useNavigate } from "react-router-dom";
+import { createSearchParams, Link, useNavigate } from "react-router-dom";
 import ViewPaper from "./ViewPaper";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { toast } from "react-toastify";
@@ -12,21 +19,25 @@ const RenderModule = ({ module, papersData, redirect }) => {
   const [showPaper, setShowPaper] = useState(false);
   const selectedPaper = papersData.get(module.assessmentPaperId);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const attemptAssessmentAgain = async () => {
     try {
-      if(!selectedPaper?.isOriginal) {
-        await questionpaperservice.deleteQuestionPaper(selectedPaper.$id)
-        navigate(`/attain-test?paperid=${module.assessmentPaperId}&${redirect}`)
-      }else{
-        toast.error("Not allowed for Teacher!")
+      if (!selectedPaper?.isOriginal) {
+        await questionpaperservice.deleteQuestionPaper(selectedPaper.$id);
+        navigate(
+          `/attain-test?paperid=${
+            module.assessmentPaperId
+          }&redirect=${encodeURIComponent(redirect)}`
+        );
+      } else {
+        toast.error("Not allowed for Teacher!");
       }
     } catch (error) {
-      console.log("error",error)
-      toast.error("Something went wrong!")
+      console.log("error", error);
+      toast.error("Something went wrong!");
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -133,7 +144,9 @@ const RenderModule = ({ module, papersData, redirect }) => {
           ) : (
             module.assessmentPaperId && (
               <Link
-                to={`/attain-test?paperid=${module.assessmentPaperId}&${redirect}`}
+                to={`/attain-test?paperid=${
+                  module.assessmentPaperId
+                }&redirect=${encodeURIComponent(redirect)}`}
                 className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Attend Exam
@@ -141,36 +154,40 @@ const RenderModule = ({ module, papersData, redirect }) => {
             )
           )}
         </div>
-       
+
         {module?.assessmentPaperId && selectedPaper?.submitted && (
           <div className="w-full justify-center items-center">
             <div className=" flex gap-4">
-            <button
-              className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
-              type="button"
-              onClick={() => setShowPaper((prev) => !prev)}
-            >
-              {!showPaper ? "Show Paper" : "Hide Paper"}
-            </button>
+              <button
+                className="flex bg-blue-700 px-4 py-2 text-white rounded-md my-4"
+                type="button"
+                onClick={() => setShowPaper((prev) => !prev)}
+              >
+                {!showPaper ? "Show Paper" : "Hide Paper"}
+              </button>
 
-            {selectedPaper?.submitted && <button
-              className="flex bg-teal-700 px-4 py-2 text-white rounded-md my-4"
-              type="button"
-              onClick={() => attemptAssessmentAgain()}
-            >
-              <RefreshCcw />
-              Attempt Again
-            </button>}
+              {selectedPaper?.submitted && (
+                <button
+                  className="flex bg-teal-700 px-4 py-2 text-white rounded-md my-4"
+                  type="button"
+                  onClick={() => attemptAssessmentAgain()}
+                >
+                  <RefreshCcw />
+                  Attempt Again
+                </button>
+              )}
             </div>
 
-            <div className={`${showPaper ? "block": "hidden"} transition-all ease-in-out duration-300`}>
-             
-                <ViewPaper
+            <div
+              className={`${
+                showPaper ? "block" : "hidden"
+              } transition-all ease-in-out duration-300`}
+            >
+              <ViewPaper
                 showPaper={showPaper}
-                  key={module.assessmentPaperId}
-                  paperId={module.assessmentPaperId}
-                />
-              
+                key={module.assessmentPaperId}
+                paperId={module.assessmentPaperId}
+              />
             </div>
           </div>
         )}

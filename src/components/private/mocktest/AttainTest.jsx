@@ -20,16 +20,7 @@ const AttainTest = () => {
   const user = useSelector((state) => state.user);
   const [searchParams, setSerachParams] = useSearchParams();
 
-  const year = searchParams.get("year") || "";
-  const subject = searchParams.get("subject") || "";
-  const assessmentSearchParams = createSearchParams({ year, subject });
-  const assessmentUrl = `/assessment?${assessmentSearchParams.toString()}`;
-  const encodedRedirect = encodeURIComponent(assessmentUrl);
-  // Build the new URL for /attain-test with the redirect parameter
-  const redirectSearchParams = createSearchParams({
-    redirect: encodedRedirect,
-  });
-  const newUrl = `${redirectSearchParams.toString()}`;
+  const redirect = searchParams.get("redirect");
 
   useEffect(() => {
     setPaperId(searchParams.get("paperid") || "");
@@ -64,7 +55,11 @@ const AttainTest = () => {
 
       const msg = parsedRes.message || "Paper generated successfully!";
       toast.success(msg);
-      navigate(`/start-mock-test/${parsedRes.paperId}?${newUrl}`);
+      navigate(
+        `/start-mock-test/${parsedRes.paperId}?redirect=${encodeURIComponent(
+          redirect
+        )}`
+      );
     } catch (error) {
       toast.error(error.message);
     } finally {

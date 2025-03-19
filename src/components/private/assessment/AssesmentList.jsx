@@ -8,43 +8,42 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
-
 import RenderModule from "./RenderModule";
 import AssessmentHeader from "./components/AssessmentHeader.";
 import useScrollToItem from "../../../utils/useScrollToItem";
 
 const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
+  const isMobileView = window.innerWidth < 750;
   const [selectedModule, setSelectedModule] = useState(null);
   const [expandedModuleId, setExpandedModuleId] = useState(null);
 
-
+  // Moved useSearchParams hook above useEffect so it is available immediately
+  const [searchParams, setSearchParams] = useSearchParams();
   const { scrollToItem, itemRefs } = useScrollToItem(
-      modulesData,
-      "assessmentPaperId"
-    );
+    modulesData,
+    "assessmentPaperId"
+  );
 
-    useEffect(() => {
-      const paperId = searchParams.get("paperid")
-      scrollToItem(paperId, true)
-    },[modulesData])
-  
-
-  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const paperId = searchParams.get("paperid");
+    scrollToItem(paperId, true);
+  }, [modulesData]);
 
   const handleModuleClick = (module) => {
     setSelectedModule(module);
-  
+
     if (module?.assessmentPaperId) {
       setSearchParams((params) => ({
         ...Object.fromEntries(params),
         paperid: module.assessmentPaperId,
       }));
     }
-  
-    // For mobile: toggle the expanded state
-    setExpandedModuleId((prevId) => (prevId === module.moduleId ? null : module.moduleId));
-  };
 
+    // For mobile: toggle the expanded state
+    setExpandedModuleId((prevId) =>
+      prevId === module.moduleId ? null : module.moduleId
+    );
+  };
 
   const modulePaperProgress = papersData.get("progress");
   const progress = (
@@ -52,7 +51,6 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
       (modulePaperProgress?.total || 1)) *
     100
   ).toFixed(2);
- 
 
   return (
     <div className="px-4 md:px-6 py-4 bg-gray-50 min-h-screen">
@@ -91,9 +89,14 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                               className="text-green-500 mr-1 flex-shrink-0"
                             />
                           )}
-                          <span 
-                          ref={(elm) => itemRefs.current[module.assessmentPaperId] = elm} 
-                          className="text-ellipsis line-clamp-1">
+                          <span
+                            // Fix: Assign ref when NOT in mobile view
+                            ref={(elm) =>
+                              !isMobileView &&
+                              (itemRefs.current[module.assessmentPaperId] = elm)
+                            }
+                            className="text-ellipsis line-clamp-1"
+                          >
                             {module.moduleId}: {module.moduleName}
                           </span>
                         </div>
@@ -149,7 +152,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
             return (
               <div
                 key={module.moduleId}
-                className="bg-white rounded-lg shadow-md overflow-hidden text-ellipsis "
+                className="bg-white rounded-lg shadow-md overflow-hidden text-ellipsis"
               >
                 <div
                   className={`p-4 cursor-pointer border-l-4 ${
@@ -161,14 +164,20 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                 >
                   <div className="flex justify-between items-center ">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-800 flex items-center r">
+                      <div className="font-medium text-gray-800 flex items-center">
                         {isSubmitted && (
                           <Check
                             size={16}
                             className="text-green-500 mr-1 flex-shrink-0"
                           />
                         )}
-                        <span className="text-ellipsis line-clamp-1">
+                        <span
+                          ref={(elm) =>
+                            isMobileView &&
+                            (itemRefs.current[module.assessmentPaperId] = elm)
+                          }
+                          className="text-ellipsis line-clamp-1"
+                        >
                           {module.moduleId}: {module.moduleName}
                         </span>
                       </div>
