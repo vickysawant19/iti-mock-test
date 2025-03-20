@@ -17,7 +17,7 @@ const ImageUploader = ({
   fileName,
   setImages,
   images,
-  setValue,
+  setValue,handleAddModules,getValues
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -35,7 +35,7 @@ const ImageUploader = ({
     resetUploadState();
   };
 
-  const onSuccess = (res) => {
+  const onSuccess = async (res) => {
     //success resopnse
     //   {
     //     "fileId": "67d40f5e432c4764161308df",
@@ -57,6 +57,9 @@ const ImageUploader = ({
     setValue("images", [...images, { id: res.fileId, url: res.url }]);
     setImages((prev) => [...prev, { id: res.fileId, url: res.url }]);
     toast.success("Image uploaded successfully!");
+
+    const formData = getValues()
+    await handleAddModules(formData)
     resetUploadState();
 
     // Add the newly uploaded image to previews
@@ -83,7 +86,7 @@ const ImageUploader = ({
 
   const onUploadStart = () => {
     setIsUploading(true);
-    toast.info("Upload started");
+    // toast.info("Upload started");
   };
 
   const handleRemovePreview = (index) => {
@@ -201,7 +204,7 @@ const ImageUploader = ({
         </div>
 
         {/* Image previews */}
-        {previews.length > 0 && (
+        {/* {previews.length > 0 && (
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-3">Uploaded Images</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -233,7 +236,7 @@ const ImageUploader = ({
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* No images placeholder */}
         {previews.length === 0 && !isUploading && (

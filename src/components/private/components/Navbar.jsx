@@ -159,7 +159,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       icon: FaUserSecret,
       groupKey: "admin",
       children: [
-        { label: "Add modules", path: "/add-modules", icon: MdAddCard },
+        { label: "View modules", path: "/add-modules", icon: MdAddCard },
       ],
     },
     {
@@ -182,7 +182,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       groupKey: "manageBatch",
       children: [
         {
-          label: "Create/Update Batch",
+          label: "Manage Batch",
           path: "/manage-batch/create",
           icon: FaUserPlus,
         },

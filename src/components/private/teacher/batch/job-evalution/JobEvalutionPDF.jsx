@@ -209,18 +209,28 @@ const JobEvaluationReportPDF = ({
     };
   });
 
-  const getColumns = (count) => {
-    if (count === 1) return 1;
-    if (count === 2) return 2;
-    if (count === 3 || count === 4) return 2; // For 3 or 4 images, use 2 columns
-    if (count === 5 || count === 6) return 3; // For 5 or 6 images, use 3 columns
-    return Math.ceil(Math.sqrt(count)); // Fallback for other counts
+  const getLayout = (count) => {
+    let columns;
+    if (count === 1) {
+      columns = 1;
+    } else if (count === 2) {
+      columns = 2;
+    } else if (count === 3 || count === 4) {
+      columns = 2;
+    } else if (count === 5 || count === 6) {
+      columns = 3;
+    } else {
+      columns = Math.ceil(Math.sqrt(count)); // fallback for other counts
+    }
+    
+    const rows = Math.ceil(count / columns);
+    return { columns, rows };
   };
-
+  
   const images = selectedModule?.images || [];
-  const columns = getColumns(images.length);
+  const { columns, rows } = getLayout(images.length);
   const imageWidthPercent = `${100 / columns}%`;
-  const imageHightPercent = `${100 / columns}%`;
+  const imageHeightPercent = `${100 / rows}%`;
 
   return (
     <Document>
@@ -278,7 +288,7 @@ const JobEvaluationReportPDF = ({
                   key={index}
                   style={[
                     styles.imageWrapper,
-                    { width: imageWidthPercent, height: imageHightPercent },
+                    { width: imageWidthPercent, height: imageHeightPercent },
                   ]}
                 >
                   <Image src={img.url} style={styles.image} />

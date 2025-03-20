@@ -568,6 +568,7 @@ const AddModules = ({
 
           <ImageUploader
             setValue={setValue}
+            getValues= {getValues}
             setImages={setImages}
             images={images}
             fileName={moduleId || "image"}
@@ -575,6 +576,7 @@ const AddModules = ({
               .split(" ")
               .map((i) => i[0])
               .join("")}
+              handleAddModules={handleAddModules}
           />
 
           {/* Action Buttons */}
