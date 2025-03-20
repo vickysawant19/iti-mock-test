@@ -176,7 +176,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     },
     {
       // Teacher-only group for batch management
-      group: "Manage Batch",
+      group: "Batch",
       roles: ["teacher"],
       icon: FaLayerGroup,
       groupKey: "manageBatch",

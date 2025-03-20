@@ -15,7 +15,6 @@ export const profileSlice = createSlice({
   },
 });
 
-
 export const { addProfile, removeProfile } = profileSlice.actions;
 
 export const selectProfile = (state) => state.profile;

@@ -17,7 +17,9 @@ const ImageUploader = ({
   fileName,
   setImages,
   images,
-  setValue,handleAddModules,getValues
+  setValue,
+  handleAddModules,
+  getValues,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -58,8 +60,8 @@ const ImageUploader = ({
     setImages((prev) => [...prev, { id: res.fileId, url: res.url }]);
     toast.success("Image uploaded successfully!");
 
-    const formData = getValues()
-    await handleAddModules(formData)
+    const formData = getValues();
+    await handleAddModules(formData);
     resetUploadState();
 
     // Add the newly uploaded image to previews
@@ -96,7 +98,10 @@ const ImageUploader = ({
   const authenticator = async () => {
     try {
       const func = appwriteService.getFunctions();
-      const result = await func.createExecution("67d3fa29000adc329a4a", JSON.stringify({action: "auth"}));
+      const result = await func.createExecution(
+        "67d3fa29000adc329a4a",
+        JSON.stringify({ action: "auth" })
+      );
       return JSON.parse(result.responseBody);
     } catch (error) {
       console.log(error);
@@ -238,7 +243,7 @@ const ImageUploader = ({
           </div>
         )} */}
 
-        {/* No images placeholder */}
+        {/* No images placeholder
         {previews.length === 0 && !isUploading && (
           <div className="mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
             <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
@@ -246,7 +251,7 @@ const ImageUploader = ({
               No images uploaded yet. Click the upload button to add images.
             </p>
           </div>
-        )}
+        )} */}
       </IKContext>
     </div>
   );

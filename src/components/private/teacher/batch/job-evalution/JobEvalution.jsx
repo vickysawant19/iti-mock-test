@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Printer } from "lucide-react";
+import { Query } from "appwrite";
+import { ClipLoader } from "react-spinners";
 import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
+import { format, max, min, parseISO } from "date-fns";
+
 import JobEvaluationReportPDF from "./JobEvalutionPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
-import { Query } from "appwrite";
-import { ClipLoader } from "react-spinners";
-import { format, max, min, parseISO } from "date-fns";
+import useScrollToItem from "../../../../../utils/useScrollToItem";
+import { useSelector } from "react-redux";
+import { selectProfile } from "../../../../../store/profileSlice";
 
 const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
-  const [modules, setModules] = useState([]);
+  const [modules, setModules] = useState(null);
 
   const [selectedYear, setSelectedYear] = useState("FIRST");
   const [selectedModule, setSelectedModule] = useState(null);
@@ -21,12 +25,25 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
   const [studentsMap, setStudentsMap] = useState(new Map());
 
+  const profile = useSelector(selectProfile);
+
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
   const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
     batchData.tradeId
   );
+
+  const { scrollToItem, itemRefs } = useScrollToItem(
+    modules?.syllabus || [],
+    "moduleId"
+  );
+
+  useEffect(() => {
+    if (selectedModule && isModuleDropdownOpen) {
+      scrollToItem(selectedModule.moduleId);
+    }
+  }, [isModuleDropdownOpen]);
 
   useEffect(() => {
     if (studentProfiles) {
@@ -140,7 +157,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
         };
       });
 
-      setModules({ data, syllabus: newSyllabus });
+      setModules({ ...data, syllabus: newSyllabus });
     } catch (error) {
       console.error("Error fetching modules:", error);
     }
@@ -189,10 +206,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
               {["FIRST", "SECOND"].map((year) => (
                 <div
                   key={year}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className={`px-4 py-2 hover:bg-gray-100 cursor-pointer`}
                   onClick={() => {
-                    setSelectedYear(year);
                     setIsYearDropdownOpen(false);
+                    setSelectedYear(year);
                     setSelectedModule(null);
                   }}
                 >
@@ -231,23 +248,31 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
               />
             </svg>
           </button>
-          {isModuleDropdownOpen && (
-            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-              {modules &&
-                modules?.syllabus.map((module) => (
-                  <div
-                    key={module.moduleId}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => {
-                      setSelectedModule(module);
-                      setIsModuleDropdownOpen(false);
-                    }}
-                  >
-                    {module.moduleId.slice(1)}.{module.moduleName}
-                  </div>
-                ))}
-            </div>
-          )}
+
+          <div
+            className={`${
+              isModuleDropdownOpen ? "block" : "hidden"
+            } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto`}
+          >
+            {modules &&
+              modules?.syllabus.map((module) => (
+                <div
+                  ref={(el) => (itemRefs.current[module.moduleId] = el)}
+                  key={module.moduleId}
+                  className={`${
+                    selectedModule?.moduleId === module?.moduleId
+                      ? "bg-gray-200"
+                      : "bg-white"
+                  }  px-4 py-2 hover:bg-gray-100 cursor-pointer`}
+                  onClick={() => {
+                    setSelectedModule(module);
+                    setIsModuleDropdownOpen(false);
+                  }}
+                >
+                  {module.moduleId.slice(1)}.{module.moduleName}
+                </div>
+              ))}
+          </div>
         </div>
       </div>
 
@@ -262,15 +287,16 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
               selectedModule={selectedModule}
             />
           }
-          fileName={`job-evaluation-${selectedModule.moduleName
+          fileName={`job-evaluation-${selectedModule?.moduleName
+            .slice(0, 40)
             .split(" ")
             .join("-")}.pdf`}
           className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           {({ loading }) => (
             <>
-              <Printer className="h-4" />
-              {loading ? "Generating PDF..." : "Download PDF"}
+              <Printer className="h-4  min-w-16" />
+              {loading ? "Generating PDF" : "Download PDF"}
             </>
           )}
         </PDFDownloadLink>

@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import {
   Document,
   Page,
@@ -113,7 +112,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#000",
     borderStyle: "dotted",
-    minHeight: 16,
+    minHeight: 12,
     alignItems: "center",
   },
   tableCell: {
@@ -222,15 +221,15 @@ const JobEvaluationReportPDF = ({
     } else {
       columns = Math.ceil(Math.sqrt(count)); // fallback for other counts
     }
-    
+
     const rows = Math.ceil(count / columns);
     return { columns, rows };
   };
-  
+
   const images = selectedModule?.images || [];
   const { columns, rows } = getLayout(images.length);
-  const imageWidthPercent = `${100 / columns}%`;
-  const imageHeightPercent = `${100 / rows}%`;
+  const imageWidthPercent = `${100 / rows}%`;
+  const imageHeightPercent = `${100 / columns}%`;
 
   return (
     <Document>
@@ -282,13 +281,17 @@ const JobEvaluationReportPDF = ({
         {/* SECTION 2 & 3: Two Columns */}
         <View style={styles.rowContainer}>
           <View style={styles.leftColumn}>
-            <View style={styles.imagePlaceholder}>
+            <View style={[styles.imagePlaceholder, { padding: 2 }]}>
               {images.map((img, index) => (
                 <View
                   key={index}
                   style={[
                     styles.imageWrapper,
-                    { width: imageWidthPercent, height: imageHeightPercent },
+                    {
+                      padding: 1,
+                      width: imageWidthPercent,
+                      height: imageHeightPercent,
+                    },
                   ]}
                 >
                   <Image src={img.url} style={styles.image} />
@@ -451,7 +454,10 @@ const JobEvaluationReportPDF = ({
 
         {/* SECTION 5: Signatures */}
         <View style={styles.signatureSection}>
-          <Text style={styles.signatureBlock}>Instructor Signature</Text>
+          <View style={styles.signatureBlock}>
+            <Text>{batch.teacherName || ""}</Text>
+            <Text>Instructor Signature </Text>
+          </View>
           <Text style={styles.signatureBlock}>Group Instructor Signature</Text>
           <Text style={styles.signatureBlock}>
             {college.collageName || "Industrial Training Institute"}

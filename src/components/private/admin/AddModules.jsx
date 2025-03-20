@@ -9,6 +9,7 @@ import {
   Target,
   ClipboardList,
   LayoutGrid,
+  ImageIcon,
 } from "lucide-react";
 import PaperPreview from "./module-assignment/ModuleTestPreview";
 import { toast } from "react-toastify";
@@ -529,9 +530,8 @@ const AddModules = ({
             Upload Images:
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {images &&
-              images.length > 0 &&
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ">
+            {images && images.length > 0 ? (
               images.map((image, index) => (
                 <div key={index} className="relative group">
                   <div
@@ -539,7 +539,7 @@ const AddModules = ({
                       isDeleting[image.id]
                         ? "animate-pulse border-2 border-red-700"
                         : "animate-none"
-                    }aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center`}
+                    } aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center`}
                   >
                     <IKImage
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
@@ -563,12 +563,20 @@ const AddModules = ({
                     <X className="h-4 w-4 text-red-500" />
                   </button>
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className="col-span-full mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
+                <p className="text-gray-500 text-center">
+                  No images uploaded yet. Click the upload button to add images.
+                </p>
+              </div>
+            )}
           </div>
 
           <ImageUploader
             setValue={setValue}
-            getValues= {getValues}
+            getValues={getValues}
             setImages={setImages}
             images={images}
             fileName={moduleId || "image"}
@@ -576,7 +584,7 @@ const AddModules = ({
               .split(" ")
               .map((i) => i[0])
               .join("")}
-              handleAddModules={handleAddModules}
+            handleAddModules={handleAddModules}
           />
 
           {/* Action Buttons */}
