@@ -16,6 +16,7 @@ import collegeService from "../../../../../appwrite/collageService";
 import tradeservice from "../../../../../appwrite/tradedetails";
 import userProfileService from "../../../../../appwrite/userProfileService";
 import { toast } from "react-toastify";
+import CustomInput from "./CustomInput";
 
 const AddStudents = () => {
   // State for tracking search/create mode and data
@@ -70,29 +71,28 @@ const AddStudents = () => {
   const selectedTradeId = watch("tradeId");
 
   useEffect(() => {
-    const fetchColleges = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const data = await collegeService.listColleges();
-        setCollegeData(data.documents || []);
+        const [colleges, trades] = await Promise.all([
+          collegeService.listColleges(),
+          tradeservice.listTrades(),
+        ]);
+
+        setCollegeData(colleges.documents || []);
+        setTradeData(trades.documents || []);
       } catch (error) {
-        console.error("Error fetching colleges:", error);
-        toast.error("Failed to load colleges");
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    const fetchTrades = async () => {
-      try {
-        const data = await tradeservice.listTrades();
-        setTradeData(data.documents || []);
-      } catch (error) {
-        console.error("Error fetching trades:", error);
-        toast.error("Failed to load trades");
-      }
-    };
-
-    fetchColleges();
-    fetchTrades();
-  }, []);
+    if (showProfileForm && collegeData.length === 0 && tradeData.length === 0) {
+      fetchData();
+    }
+  }, [showProfileForm]);
 
   // Fetch batches when both college and trade are selected
   useEffect(() => {
@@ -137,14 +137,10 @@ const AddStudents = () => {
 
       const response = JSON.parse(responseBody);
 
-      if (
-        response.data &&
-        response.data.users &&
-        response.data.users.length > 0
-      ) {
-        setUserSearchResult(response.data.users[0]);
+      if (response.data) {
+        setUserSearchResult(response.data);
         const userProfile = await userProfileService.getUserProfile(
-          response.data.users[0].$id
+          response.data.$id
         );
         if (userProfile) {
           // Pre-fill old profile form with user data
@@ -153,11 +149,11 @@ const AddStudents = () => {
             ...userProfile,
             DOB: userProfile.DOB.split("T")[0],
             enrolledAt: userProfile.enrolledAt.split("T")[0],
-            role: ["Student"],
+            role: userProfile.role || ["Student"],
           });
         } else {
           // Pre-fill new profile form with user data
-          const user = response.data.users[0];
+          const user = response.data;
           console.log(user);
           resetProfileForm({
             userId: user.$id,
@@ -259,24 +255,6 @@ const AddStudents = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Helper component for form inputs
-  const CustomInput = forwardRef(
-    ({ label, type, extraclass, required, error, ...rest }, ref) => (
-      <div className={`${extraclass || ""}`}>
-        <label className="block text-gray-600">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        <input
-          type={type}
-          ref={ref}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-          {...rest}
-        />
-        {error && <p className="mt-1 text-red-500 text-sm">{error}</p>}
-      </div>
-    )
-  );
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md max-w-6xl mx-auto">
@@ -520,248 +498,230 @@ const AddStudents = () => {
       )}
 
       {/* Student Profile Form */}
-      {showProfileForm && (
-        <div className="mt-8 border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Complete Student Profile
-          </h2>
 
-          <form
-            onSubmit={handleSubmit(handleProfileSubmit)}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <CustomInput
-                label="Full Name"
-                extraclass="md:col-span-2 lg:col-span-3"
-                required={true}
-                type="text"
-                error={errors.userName?.message}
-                {...register("userName", { required: "Full name is required" })}
-              />
+      {showProfileForm ? (
+        isLoading ? (
+          <div className="flex justify-center items-center mt-4 py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Complete Student Profile
+            </h2>
 
-              {/* Personal Information */}
-              <CustomInput
-                label="Date of Birth"
-                required={true}
-                type="date"
-                error={errors.DOB?.message}
-                {...register("DOB", {
-                  required: "Date of birth is required",
-                })}
-              />
-
-              <CustomInput
-                label="Email"
-                type="email"
-                required={true}
-                error={errors.email?.message}
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-              />
-
-              <CustomInput
-                label="Phone"
-                type="tel"
-                required={true}
-                error={errors.phone?.message}
-                {...register("phone", {
-                  required: "Phone is required",
-                  pattern: {
-                    value: /^[0-9]{10}$/,
-                    message: "Phone number must be 10 digits",
-                  },
-                })}
-              />
-
-              <CustomInput
-                label="Parent Contact"
-                type="tel"
-                required={true}
-                error={errors.parentContact?.message}
-                {...register("parentContact", {
-                  required: "Parent contact is required",
-                  pattern: {
-                    value: /^[0-9]{10}$/,
-                    message: "Phone number must be 10 digits",
-                  },
-                })}
-              />
-
-              <div className="md:col-span-2">
-                <label className="block text-gray-600">
-                  Address <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  {...register("address", { required: "Address is required" })}
-                  rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                />
-                {errors.address && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {errors.address.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Academic Information */}
-              <CustomInput
-                label="Student ID/Roll Number"
-                type="text"
-                error={errors.studentId?.message}
-                {...register("studentId")}
-              />
-
-              <CustomInput
-                label="Registration ID"
-                type="text"
-                error={errors.registerId?.message}
-                {...register("registerId")}
-              />
-
-              <div className="md:col-span-2">
-                <label className="block text-gray-600">
-                  College <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register("collegeId", {
-                    required: "College is required",
-                  })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                >
-                  <option value="">Select College</option>
-                  {collegeData.map((college) => (
-                    <option key={college.$id} value={college.$id}>
-                      {college.collageName}
-                    </option>
-                  ))}
-                </select>
-                {errors.collegeId && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {errors.collegeId.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-gray-600">
-                  Trade <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register("tradeId", { required: "Trade is required" })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                >
-                  <option value="">Select Trade</option>
-                  {tradeData.map((trade) => (
-                    <option key={trade.$id} value={trade.$id}>
-                      {trade.tradeName}
-                    </option>
-                  ))}
-                </select>
-                {errors.tradeId && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {errors.tradeId.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Batch Selection Section */}
-              <div>
-                <label className="block text-gray-600">
-                  Batch <span className="text-red-500">*</span>
-                </label>
-                <div className="text-gray-500 italic text-xs mb-1">
-                  (If your batch is not available, please create a batch.)
-                </div>
-                <select
-                  {...register("batchId", { required: "Batch is required" })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                  disabled={isLoadingBatches}
-                >
-                  <option value="">
-                    {isLoadingBatches ? "Loading batches..." : "Select Batch"}
-                  </option>
-                  {batchesData.map((batch) => (
-                    <option key={batch.$id} value={batch.$id}>
-                      {batch.BatchName}
-                    </option>
-                  ))}
-                </select>
-                {errors.batchId && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {errors.batchId.message}
-                  </p>
-                )}
-              </div>
-
-              <CustomInput
-                required={true}
-                label="Enrollment Date"
-                type="date"
-                error={errors.enrolledAt?.message}
-                {...register("enrolledAt", {
-                  required: "Enrollment date is required",
-                })}
-              />
-
-              <div>
-                <label className="block text-gray-600">
-                  Enrollment Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register("enrollmentStatus", { required: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Graduated">Graduated</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-600">
-                  Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  {...register("status", { required: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
-              </div>
-
-              <CustomInput
-                label="Profile Image URL"
-                type="text"
-                {...register("profileImage")}
-              />
-            </div>
-
-            <button
-              disabled={isSubmitting}
-              type="submit"
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 mt-6 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+            <form
+              onSubmit={handleSubmit(handleProfileSubmit)}
+              className="space-y-4"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating Profile...
-                </>
-              ) : (
-                "Create Student Profile"
-              )}
-            </button>
-          </form>
-        </div>
-      )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <CustomInput
+                  label="Full Name"
+                  extraclass="md:col-span-2 lg:col-span-3"
+                  required={true}
+                  type="text"
+                  error={errors.userName?.message}
+                  {...register("userName", {
+                    required: "Full name is required",
+                  })}
+                />
+
+                {/* Personal Information */}
+                <CustomInput
+                  label="Date of Birth"
+                  required={true}
+                  type="date"
+                  error={errors.DOB?.message}
+                  {...register("DOB", {
+                    required: "Date of birth is required",
+                  })}
+                />
+
+                <CustomInput
+                  label="Email"
+                  type="email"
+                  required={true}
+                  error={errors.email?.message}
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                />
+
+                <CustomInput
+                  label="Phone"
+                  type="tel"
+                  required={true}
+                  error={errors.phone?.message}
+                  {...register("phone", {
+                    required: "Phone is required",
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Phone number must be 10 digits",
+                    },
+                  })}
+                />
+
+                <CustomInput
+                  label="Parent Contact"
+                  type="tel"
+                  required={true}
+                  error={errors.parentContact?.message}
+                  {...register("parentContact", {
+                    required: "Parent contact is required",
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Phone number must be 10 digits",
+                    },
+                  })}
+                />
+
+                <div className="md:col-span-2">
+                  <label className="block text-gray-600">
+                    Address <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    {...register("address", {
+                      required: "Address is required",
+                    })}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                  />
+                  {errors.address && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors.address.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Academic Information */}
+                <CustomInput
+                  label="Student ID/Roll Number"
+                  type="text"
+                  error={errors.studentId?.message}
+                  {...register("studentId")}
+                />
+
+                <CustomInput
+                  label="Registration ID"
+                  type="text"
+                  error={errors.registerId?.message}
+                  {...register("registerId")}
+                />
+
+                <div className="md:col-span-2">
+                  <label className="block text-gray-600">
+                    College <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register("collegeId", {
+                      required: "College is required",
+                    })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                  >
+                    <option value="">Select College</option>
+                    {collegeData.map((college) => (
+                      <option key={college.$id} value={college.$id}>
+                        {college.collageName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.collegeId && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors.collegeId.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-600">
+                    Trade <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    {...register("tradeId", { required: "Trade is required" })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                  >
+                    <option value="">Select Trade</option>
+                    {tradeData.map((trade) => (
+                      <option key={trade.$id} value={trade.$id}>
+                        {trade.tradeName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.tradeId && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors.tradeId.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Batch Selection Section */}
+                <div>
+                  <label className="block text-gray-600">
+                    Batch <span className="text-red-500">*</span>
+                  </label>
+                  <div className="text-gray-500 italic text-xs mb-1">
+                    (If your batch is not available, please create a batch.)
+                  </div>
+                  <select
+                    {...register("batchId", { required: "Batch is required" })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    disabled={isLoadingBatches}
+                  >
+                    <option value="">
+                      {isLoadingBatches ? "Loading batches..." : "Select Batch"}
+                    </option>
+                    {batchesData.map((batch) => (
+                      <option key={batch.$id} value={batch.$id}>
+                        {batch.BatchName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.batchId && (
+                    <p className="mt-1 text-red-500 text-sm">
+                      {errors.batchId.message}
+                    </p>
+                  )}
+                </div>
+
+                <CustomInput
+                  required={true}
+                  label="Enrollment Date"
+                  type="date"
+                  error={errors.enrolledAt?.message}
+                  {...register("enrolledAt", {
+                    required: "Enrollment date is required",
+                  })}
+                />
+
+                <CustomInput
+                  label="Profile Image URL"
+                  type="text"
+                  {...register("profileImage")}
+                />
+              </div>
+
+              <button
+                disabled={isSubmitting}
+                type="submit"
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 mt-6 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Creating Profile...
+                  </>
+                ) : (
+                  "Create Student Profile"
+                )}
+              </button>
+            </form>
+          </div>
+        )
+      ) : null}
     </div>
   );
 };

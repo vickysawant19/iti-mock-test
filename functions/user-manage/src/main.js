@@ -88,7 +88,7 @@ export default async ({ req, res, log, error }) => {
         validateLabels(labels);
         
         // Create an account using the provided or a unique ID
-        const newUserResponse = await users.create(userId || ID.unique(), email, phone, password, name);
+        const newUserResponse = await users.create(userId || ID.unique(), email, phone ? `+${phone}` : "", password, name);
         // Update labels for the created account
         response = await users.updateLabels(newUserResponse.$id, labels);
         log(`Account created for user ${newUserResponse.$id}`);
@@ -142,9 +142,8 @@ export default async ({ req, res, log, error }) => {
         // Check if any user is found
         if (userList.total && userList.total > 0 && Array.isArray(userList.users)) {
           // Return the first matching user's id
-          response = userList;
-          // response = { userId: userList.users[0].$id };
-          log(`UserId fetched for email ${email}`);
+          const user = userList.users[0];
+          response = { $id: user.$id, name: user.name, email:user.email, phone:user.phone };
         } else {
           throw new Error('No user found with the given email');
         }
