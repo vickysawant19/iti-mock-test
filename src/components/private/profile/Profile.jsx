@@ -5,8 +5,9 @@ import { selectUser } from "../../../store/userSlice";
 
 import ProfileForm from "./ProfileForm";
 import ProfileView from "./ProfileView";
-import SetLabels from "../components/SetLabels";
+
 import { useNavigate } from "react-router-dom";
+import SetLabels from "./SetLabels";
 
 const Profile = () => {
   const user = useSelector(selectUser);

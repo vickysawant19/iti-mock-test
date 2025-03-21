@@ -27,11 +27,9 @@ const SetLabels = () => {
       const response = await appwriteService.functions.createExecution(
         "678e7277002e1d5c9b9b",
         JSON.stringify({
+          action: "updateLabels",
           userId: user.$id,
-          labels: [
-            selectedLabel,
-            ...user.labels.filter((label) => label !== selectedLabel),
-          ],
+          labels: [selectedLabel],
         })
       );
       const parsedResponse = JSON.parse(response.responseBody);

@@ -11,7 +11,6 @@ import { selectUser } from "../../../store/userSlice";
 import { addProfile, selectProfile } from "../../../store/profileSlice";
 import { Query } from "appwrite";
 import CustomInput from "../../components/CustomInput";
-import { useGetAllTradesQuery } from "../../../store/api/tradeApi";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);
@@ -127,10 +126,10 @@ const ProfileForm = () => {
         } else {
           console.log("Welcome New User");
           reset({
-            userId: user.$id,
-            userName: user.name,
-            email: user.email,
-            phone: user.phone,
+            userId: isTeacher && isUserProfile ? "" : user.$id,
+            userName: isTeacher && isUserProfile ? "" : user.name,
+            email: isTeacher && isUserProfile ? "" : user.email,
+            phone: isTeacher && isUserProfile ? "" : user.phone,
           });
         }
       } catch (err) {

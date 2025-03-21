@@ -182,6 +182,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       groupKey: "manageBatch",
       children: [
         {
+          label: "Students",
+          path: "/manage-batch/students",
+          icon: FaUserPlus,
+        },
+        {
           label: "Manage Batch",
           path: "/manage-batch/create",
           icon: FaUserPlus,

@@ -109,10 +109,7 @@ export class UserProfileService {
       role: role || null,
       registerId: registerId || null
     };
-    
-    console.log(updatedData)
-
-
+  
     try {
       return await this.database.updateDocument(
         conf.databaseId,

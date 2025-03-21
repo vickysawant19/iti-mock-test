@@ -55,6 +55,7 @@ import Modules from "./components/private/admin/Modules.jsx";
 import MarkTodaysAttendance from "./components/private/teacher/attaindance/MarkTodaysAttendance.jsx";
 import Assessment from "./components/private/assessment/Assessment.jsx";
 import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
+import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -97,6 +98,7 @@ const router = (
           />
           <Route path="manage-batch" element={<ProtectedTeacherRoutes />}>
             <Route path="create" element={<CreateBatch />} />
+            <Route path="students" element={<AddStudents />} />
             <Route path="view" element={<ViewBatch />} />
             <Route path="view/:userId" element={<ProfileView />} />
             <Route path="edit/:userId" element={<ProfileForm />} />
