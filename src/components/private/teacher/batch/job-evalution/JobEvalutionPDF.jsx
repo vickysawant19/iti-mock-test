@@ -186,16 +186,35 @@ const JobEvaluationReportPDF = ({
   college,
   trade,
   selectedModule,
+  studentAttendance,
 }) => {
   // Generate sample student marks data for 24 rows
   const studentData = Array.from({ length: 24 }, (_, i) => {
     const student = studentsMap.get(i + 1);
-    const a = student ? Math.floor(Math.random() * 10) + 10 : 0;
-    const b = student ? Math.floor(Math.random() * 10) + 10 : 0;
-    const c = student ? Math.floor(Math.random() * 10) + 10 : 0;
-    const d = student ? Math.floor(Math.random() * 10) + 10 : 0;
-    const e = student ? Math.floor(Math.random() * 10) + 10 : 0;
-    const total = a + b + c + d + e;
+    const startDate = selectedModule?.startDate;
+
+    // Safely check the attendance status if both student and startDate are available.
+    const attendanceStatus =
+      student && startDate
+        ? studentAttendance?.[student.userId]?.[startDate]
+        : null;
+
+    let a, b, c, d, e, total;
+
+    if (attendanceStatus === "Present") {
+      // If the student is present, assign random marks
+      a = Math.floor(Math.random() * 10) + 10;
+      b = Math.floor(Math.random() * 10) + 10;
+      c = Math.floor(Math.random() * 10) + 10;
+      d = Math.floor(Math.random() * 10) + 10;
+      e = Math.floor(Math.random() * 10) + 10;
+      total = a + b + c + d + e;
+    } else {
+      // If not present, assign 0 to all marks and total as "AB"
+      a = b = c = d = e = 0;
+      total = "AB";
+    }
+
     return {
       srNo: (i + 1).toString(),
       name: student?.userName || "-",
@@ -247,7 +266,7 @@ const JobEvaluationReportPDF = ({
             </View>
             <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
               <Text style={{ fontWeight: "bold" }}>Date of Starting:</Text>
-              <Text>{selectedModule.endDate || "________________"}</Text>
+              <Text>{selectedModule.startDate || "________________"}</Text>
             </View>
           </View>
           <View style={[styles.headerRow, {}]}>

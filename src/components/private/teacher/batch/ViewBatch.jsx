@@ -10,19 +10,19 @@ import {
   BookOpen,
   Award,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 import { selectProfile } from "../../../../store/profileSlice";
 import { calculateStats } from "../attaindance/CalculateStats";
-
 import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
+
 import ViewProfiles from "./profile/ViewProfiles";
 import ViewAttendance from "./attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
-import { useSearchParams } from "react-router-dom";
 
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
@@ -41,12 +41,16 @@ const ViewBatch = () => {
   const [studentsLoading, setStudentLoading] = useState(false);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [students, setStudents] = useState(null);
-  const [attendanceStats, setAttendanceStats] = useState([]);
-  const [teacherBatches, setTeacherBatches] = useState([]);
 
+  const [studentsAttendance, setStudentsAttendance] = useState([]);
+  const [attendanceStats, setAttendanceStats] = useState([]);
+
+  const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(
     searchParams.get("batchid") || ""
   );
+  const [selectedBatchData, setSelectedBatchData] = useState(null);
+
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );
@@ -67,18 +71,31 @@ const ViewBatch = () => {
     try {
       const data = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
+        Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
       ]);
       const batchesArray = Array.isArray(data.documents)
         ? data.documents
         : [data.documents];
       setTeacherBatches(batchesArray);
-
       // Initialize selectedBatch if it's empty and we have batches
       if (!selectedBatch && batchesArray.length > 0) {
         setSelectedBatch(batchesArray[0].$id);
       }
     } catch (error) {
       console.error("Error fetching batches:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchBatchData = async () => {
+    if (!selectedBatch) return;
+    setIsLoading(true);
+    try {
+      const data = await batchService.getBatch(selectedBatch);
+      setSelectedBatchData(data);
+    } catch (error) {
+      console.error("Error fetching batch Data", error);
     } finally {
       setIsLoading(false);
     }
@@ -138,6 +155,7 @@ const ViewBatch = () => {
         };
       });
 
+      setStudentsAttendance(studentsWithStudentIds);
       setAttendanceStats(
         studentsWithStudentIds
           .sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
@@ -159,6 +177,7 @@ const ViewBatch = () => {
   // Load students when selected batch changes
   useEffect(() => {
     if (selectedBatch) {
+      fetchBatchData(); //fetch seleted batch data
       setStudents(null); // Reset students when batch changes
       fetchBatchStudent();
     }
@@ -170,6 +189,7 @@ const ViewBatch = () => {
       "attendance",
       "progress-card",
       "leave-record",
+      "job-evaluation",
     ].includes(activeTab);
 
     if (
@@ -185,7 +205,12 @@ const ViewBatch = () => {
   const renderContent = () => {
     if (
       studentsLoading ||
-      (["attendance", "progress-card", "leave-record"].includes(activeTab) &&
+      ([
+        "attendance",
+        "progress-card",
+        "leave-record",
+        "job-evaluation",
+      ].includes(activeTab) &&
         attendanceLoading)
     ) {
       return (
@@ -203,10 +228,6 @@ const ViewBatch = () => {
       );
     }
 
-    const currentBatch = teacherBatches.find(
-      (item) => item.$id === selectedBatch
-    );
-
     switch (activeTab) {
       case "profiles":
         return <ViewProfiles students={students} />;
@@ -223,8 +244,8 @@ const ViewBatch = () => {
           <ProgressCard
             studentProfiles={students}
             stats={attendanceStats}
+            batchData={selectedBatchData}
             isLoading={attendanceLoading}
-            batchData={currentBatch}
           />
         );
       case "leave-record":
@@ -232,7 +253,7 @@ const ViewBatch = () => {
           <TraineeLeaveRecord
             studentProfiles={students}
             stats={attendanceStats}
-            batchData={currentBatch}
+            batchData={selectedBatchData}
           />
         );
       case "job-evaluation":
@@ -243,7 +264,8 @@ const ViewBatch = () => {
                 item.status === "Active" && item.role.includes("Student")
             )}
             stats={attendanceStats}
-            batchData={currentBatch}
+            batchData={selectedBatchData}
+            attendance={studentsAttendance}
           />
         );
       case "assignments":
@@ -286,7 +308,7 @@ const ViewBatch = () => {
       </div>
 
       {/* Navigation Tabs */}
-      {selectedBatch && (
+      {selectedBatchData && (
         <div className="mb-6">
           <div className="bg-white rounded-lg shadow-sm">
             <div className="overflow-x-auto">
@@ -312,7 +334,7 @@ const ViewBatch = () => {
       )}
 
       {/* Content Section */}
-      {selectedBatch ? (
+      {selectedBatchData ? (
         renderContent()
       ) : (
         <div className="text-center text-gray-500 py-10">

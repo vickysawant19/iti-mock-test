@@ -10,10 +10,8 @@ import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
 import useScrollToItem from "../../../../../utils/useScrollToItem";
-import { useSelector } from "react-redux";
-import { selectProfile } from "../../../../../store/profileSlice";
 
-const JobEvaluation = ({ studentProfiles = [], batchData }) => {
+const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [modules, setModules] = useState(null);
@@ -24,8 +22,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
   const [studentsMap, setStudentsMap] = useState(new Map());
-
-  const profile = useSelector(selectProfile);
+  const [studentAttendance, setStudentAttendance] = useState({});
 
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
@@ -38,6 +35,20 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
     modules?.syllabus || [],
     "moduleId"
   );
+
+  useEffect(() => {
+    if (!attendance || attendance.length === 0) return;
+    const dateKeysAttendance = attendance.reduce((acc, doc) => {
+      acc[doc.userId] = doc.attendanceRecords.reduce((a, d) => {
+        a[d.date] = !a[d.date] ? d.attendanceStatus : a[d.date];
+        return a;
+      }, {});
+
+      return acc;
+    }, {});
+
+    setStudentAttendance(dateKeysAttendance);
+  }, [attendance]);
 
   useEffect(() => {
     if (selectedModule && isModuleDropdownOpen) {
@@ -66,6 +77,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
           batch={batchData}
           studentsMap={studentsMap}
           selectedModule={selectedModule}
+          studentAttendance={studentAttendance}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -144,10 +156,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
         // Ensure valid min/max dates
         const minDate = dateObjects.length
-          ? format(min(dateObjects), "dd-MM-yyyy")
+          ? format(min(dateObjects), "yyyy-MM-dd")
           : null;
         const maxDate = dateObjects.length
-          ? format(max(dateObjects), "dd-MM-yyyy")
+          ? format(max(dateObjects), "yyyy-MM-dd")
           : null;
 
         return {
@@ -176,7 +188,17 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className="w-full max-w-4xl mx-auto p-4 text-sm">
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-sm mb-4">
+        <ul className="list-disc ml-6 space-y-2">
+          <li>Add students attendance to ensure accurate evaluations.</li>
+          <li>
+            Include daily diary entries with Practical Number to support a
+            correct job evaluation report.
+          </li>
+        </ul>
+      </div>
+
       {/* Dropdowns for Subject, Year, Module, and Student */}
       <div className="mb-4 flex flex-col gap-4">
         {/* Year Dropdown */}
@@ -285,6 +307,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
               batch={batchData}
               studentsMap={studentsMap}
               selectedModule={selectedModule}
+              studentAttendance={studentAttendance}
             />
           }
           fileName={`job-evaluation-${selectedModule?.moduleName
