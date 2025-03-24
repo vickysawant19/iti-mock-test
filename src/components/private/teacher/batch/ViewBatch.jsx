@@ -259,9 +259,8 @@ const ViewBatch = () => {
       case "job-evaluation":
         return (
           <JobEvaluation
-            studentProfiles={students.filter(
-              (item) =>
-                item.status === "Active" && item.role.includes("Student")
+            studentProfiles={students.filter((item) =>
+              item.role.includes("Student")
             )}
             stats={attendanceStats}
             batchData={selectedBatchData}

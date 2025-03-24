@@ -54,8 +54,6 @@ const AddStudents = () => {
     register,
     handleSubmit,
     watch,
-    setValue,
-    getValues,
     reset: resetProfileForm,
     formState: { errors },
   } = useForm({
@@ -150,6 +148,9 @@ const AddStudents = () => {
             DOB: userProfile.DOB.split("T")[0],
             enrolledAt: userProfile.enrolledAt.split("T")[0],
             role: userProfile.role || ["Student"],
+            status: "Active",
+            enrollmentStatus: "Active",
+            isActive: true,
           });
         } else {
           // Pre-fill new profile form with user data
@@ -161,6 +162,9 @@ const AddStudents = () => {
             email: user.email,
             phone: user.phone,
             role: user.labels,
+            status: "Active",
+            enrollmentStatus: "Active",
+            isActive: true,
           });
         }
       } else {
@@ -191,6 +195,10 @@ const AddStudents = () => {
           userName: response.data.name,
           email: response.data.email,
           phone: response.data.phone,
+          role: ["Student"],
+          status: "Active",
+          enrollmentStatus: "Active",
+          isActive: true,
         });
         setShowProfileForm(true);
       } else {
