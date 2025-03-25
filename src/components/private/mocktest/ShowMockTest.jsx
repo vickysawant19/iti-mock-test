@@ -195,6 +195,20 @@ const ShowMockTest = () => {
                       {index + 1}. {question.question}{" "}
                     </h1>
                   </div>
+                 
+                  <div className="flex gap-2 m-2">
+                    {question?.images?.map((img) => {
+                      const image = JSON.parse(img);
+                      return (
+                        <img
+                          className="max-h-32"
+                          key={image.id}
+                          src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQysm7d0JnuK4_jPG6U3Fyd1cRzbb78Z_7-4g&s"}
+                          alt={image.name}
+                        />
+                      );
+                    })}
+                  </div>
                   <div className="space-y-2">
                     {question.options.map((option, idx) => (
                       <p

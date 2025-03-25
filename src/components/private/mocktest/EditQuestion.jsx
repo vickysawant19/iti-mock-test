@@ -24,6 +24,7 @@ import moduleServices from "../../../appwrite/moduleServices";
 import { Query } from "appwrite";
 import { selectUser } from "../../../store/userSlice";
 import { selectQuestions } from "../../../store/questionSlice";
+import ImageUploader from "./components/ImageUpload";
 
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
@@ -40,6 +41,7 @@ const EditQuestion = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [modules, setModules] = useState(null);
+  const [images, setImages] = useState([])
 
   const navigate = useNavigate();
   const user = useSelector(selectUser);
@@ -78,16 +80,24 @@ const EditQuestion = () => {
   const fetchTradesAndQuestion = async () => {
     setIsLoading(true);
     try {
-      const response = await tradeservice.listTrades();
-      setTrades(response.documents);
-      const subjectRes = await subjectService.listSubjects();
-      setSubjects(subjectRes.documents);
+
+      const [trades, subjects] = await Promise.all([
+        tradeservice.listTrades(),
+        subjectService.listSubjects()
+      ])
+
+      setTrades(trades.documents);
+      setSubjects(subjects.documents);
+
       const question = await quesdbservice.getQuestion(quesId);
 
-      const trade = response.documents.find(
+      const trade = trades.documents.find(
         (tr) => tr.$id === question.tradeId
       );
+      const images = question.images.map(img => JSON.parse(img))
       setSelectedTrade(trade);
+      setImages(images)
+  
       reset({
         question: question.question,
         tradeId: question.tradeId,
@@ -95,11 +105,12 @@ const EditQuestion = () => {
         subjectId: question.subjectId,
         moduleId: String(question.moduleId),
         options: question.options,
-        correctAnswer: question.correctAnswer,
+        correctAnswer: question.correctAnswer,  
+        images: images
       });
     } catch (error) {
       console.log(error.message);
-      toast.error("Error fetching data gg");
+      toast.error("Error fetching data");
     } finally {
       setIsLoading(false);
     }
@@ -127,11 +138,14 @@ const EditQuestion = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+   
     if (!data.correctAnswer) {
       toast.error("Correct answer is required");
       setIsSubmitting(false);
       return;
     }
+    
+    data.images = images.map(img => JSON.stringify(img))
     data.userId = user.$id;
     try {
       await quesdbservice.updateQuestion(quesId, data);
@@ -305,6 +319,11 @@ const EditQuestion = () => {
                   rows="3"
                 />
               )}
+            </div>
+            {/* Images */}
+            <div className="col-span-full">
+
+            <ImageUploader images={images} setImages={setImages} />
             </div>
 
             {/* Options */}

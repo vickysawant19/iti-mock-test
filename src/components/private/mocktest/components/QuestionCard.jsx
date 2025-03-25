@@ -4,6 +4,8 @@ import { Pencil, Trash2, Loader2, BookOpen } from "lucide-react";
 
 const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
   const optionLabels = ["A", "B", "C", "D"];
+  const images = question.images.map(img => JSON.parse(img))
+
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
@@ -21,6 +23,8 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
           <h2 className="text-gray-800 font-medium leading-relaxed">
             {question.question}
           </h2>
+         
+          <div>{images.map(img => <img key={img.id} src={img.url}/>)}</div>
 
           {/* Options list */}
           <div className="mt-4 space-y-2">

@@ -321,6 +321,19 @@ const StartMockTest = () => {
             <p className="text-gray-600 mb-6 font-semibold">
               {mockTest.questions[currentQuestionIndex].question}
             </p>
+            <div className="flex gap-2 m-2">
+              {mockTest.questions[currentQuestionIndex]?.images?.map((img) => {
+                const image = JSON.parse(img);
+                return (
+                  <img
+                    className="max-h-32"
+                    key={image.id}
+                    src={image.url}
+                    alt={image.name}
+                  />
+                );
+              })}
+            </div>
 
             <div className="space-y-3">
               {mockTest.questions[currentQuestionIndex].options.map(

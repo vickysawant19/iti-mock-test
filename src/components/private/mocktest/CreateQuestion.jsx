@@ -11,6 +11,7 @@ import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import { Query } from "appwrite";
+import ImageUploader from "./components/ImageUpload";
 
 const CreateQuestion = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,10 +19,12 @@ const CreateQuestion = () => {
   const [subjects, setSubjects] = useState([]);
   const [modules, setModules] = useState(null);
   const [selectedTrade, setSelectedTrade] = useState(null);
+  const [images, setImages] = useState([]);
 
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   const profile = useSelector((state) => state.profile);
+
   const {
     register,
     handleSubmit,
@@ -36,24 +39,24 @@ const CreateQuestion = () => {
   const subjectId = useWatch({ control, name: "subjectId" });
   const year = useWatch({ control, name: "year" });
 
-  const fetchTrades = async () => {
+  const fetchData = async () => {
     try {
-      const response = await tradeservice.listTrades();
-      setTrades(response.documents);
+      const [trades, subjects] = await Promise.all([
+        tradeservice.listTrades(),
+        subjectService.listSubjects(),
+      ]);
+      setTrades(trades.documents);
+      setSubjects(subjects.documents);
     } catch (error) {
       console.log(error);
-      toast.error("Failed to fetch trades");
     }
   };
-  const fetchSubjects = async () => {
-    try {
-      const response = await subjectService.listSubjects();
-      setSubjects(response.documents);
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to fetch trades");
+
+  useEffect(() => {
+    if (trades.length === 0 && subjects.length === 0) {
+      fetchData();
     }
-  };
+  }, [trades, subjects]);
 
   const fetchModules = async () => {
     if (!tradeId || !subjectId || !year) return;
@@ -72,16 +75,13 @@ const CreateQuestion = () => {
   };
 
   useEffect(() => {
-    fetchSubjects();
-    fetchTrades();
-  }, []);
-
-  useEffect(() => {
     if (!profile) return;
     if (trades.length < 0) return;
-    setValue("tradeId", profile.tradeId);
     const trade = trades.find((t) => t.$id === profile.tradeId);
-    setSelectedTrade(trade);
+    if (trade) {
+      setValue("tradeId", trade.$id);
+      setSelectedTrade(trade);
+    }
   }, [profile, trades]);
 
   useEffect(() => {
@@ -93,15 +93,17 @@ const CreateQuestion = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-
     try {
       data.userId = user.$id;
       data.userName = user.name;
+      data.images = images.map((item) => JSON.stringify(item)) || [];
       await quesdbservice.createQuestion(data);
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options
+        images: [],
       });
+      setImages([]);
       toast.success("Question created");
       // navigate("/manage-questions");
     } catch (error) {
@@ -355,28 +357,16 @@ const CreateQuestion = () => {
                 <p className="text-red-500">{errors.question.message}</p>
               )}
             </div>
-
-            {/* TODO : Add image upload */}
-            {/* <div className="mb-6">
-              <label
-                htmlFor="imageUrl"
-                className="block text-gray-800 font-semibold mb-2"
-              >
-                Image Url{" "}
-                <span className="text-xs italic text-gray-500 font-thin">
-                  (Optional)
-                </span>
-              </label>
-              <input
-                spellCheck={true}
-                id="imageUrl"
-                {...register("imageUrl", {})}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-              ></input>
-              {errors.imageUrl && (
-                <p className="text-red-500">{errors.imageUrl.message}</p>
-              )}
-            </div> */}
+            <div className="col-span-full">
+              <ImageUploader
+                folderName={`questions/${
+                  selectedTrade?.tradeName.split(" ").join("").slice(10) ||
+                  "img"
+                }`}
+                images={images}
+                setImages={setImages}
+              />
+            </div>
 
             <div className="mb-6 col-span-full lg:grid lg:grid-cols-2">
               <label
