@@ -96,7 +96,7 @@ const generateMockTest = async ({
       process.env.APPWRITE_QUES_COLLECTION_ID,
       [Query.limit(quesCount),
        Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
-       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId"])]
+       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId","images"])]
     );
 
     const shuffledQuestions = selectedQuestions.documents.sort(() => Math.random - 1)
@@ -104,6 +104,7 @@ const generateMockTest = async ({
     const questionsWithResponses = shuffledQuestions.map((question) => ({
       $id: question.$id,
       question: question.question,
+      images: question.images,
       options: question.options,
       userId: question.userId,
       userName: question.userName,

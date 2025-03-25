@@ -95,6 +95,7 @@ const StartMockTest = () => {
         ]);
 
         const userTest = userTestResponse[0];
+        
         if (!userTest) {
           toast.error("Mock test not found!");
           navigate(`/all-mock-tests`);
@@ -322,11 +323,12 @@ const StartMockTest = () => {
               {mockTest.questions[currentQuestionIndex].question}
             </p>
             <div className="flex gap-2 m-2">
+   
               {mockTest.questions[currentQuestionIndex]?.images?.map((img) => {
                 const image = JSON.parse(img);
                 return (
                   <img
-                    className="max-h-32"
+                    className="min-h-32 max-h-60"
                     key={image.id}
                     src={image.url}
                     alt={image.name}
