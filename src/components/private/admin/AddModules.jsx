@@ -199,19 +199,21 @@ const AddModules = ({
       if (!res?.responseBody) throw new Error("Empty response from server");
 
       const result = JSON.parse(res.responseBody);
-
-      if (result.success) {
+      
+      if (result.success || result.error.includes("file does not exist")) {
         setImages((prevImages) =>
           prevImages.filter((img) => img.id !== fileId)
         );
         setValue("images", (prevImages) =>
           prevImages.filter((img) => img.id !== fileId)
         );
+        
         toast.success("Image deleted successfully!");
         const formData = getValues();
 
         await handleAddModules(formData);
       } else {
+        
         throw new Error(result.error || "Unknown error");
       }
     } catch (error) {
@@ -551,6 +553,7 @@ const AddModules = ({
                       lqip={{ active: true }}
                       className="object-cover w-full h-full"
                       alt={image.name}
+                      onError={(e) => console.log("error", e)}
                     />
                   </div>
                   <button

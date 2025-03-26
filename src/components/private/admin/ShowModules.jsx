@@ -122,7 +122,7 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
                   <div
                     key={index}
                     className="relative"
-                    onClick={() => setPreviewImage(image) }
+                    onClick={() => setPreviewImage(image)}
                     title="Click to open"
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
@@ -145,25 +145,32 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
 
       {/* Absolute (fixed) overlay for image preview */}
       {previewImage && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
-        >
-          <div className="relative rounded-lg overflow-hidden shadow-lg bg-gray-100 border">
-            <IKImage
-              urlEndpoint="https://ik.imagekit.io/71amgqe4f"
-              path={previewImage.url.split("/").slice(-2).join("/")}
-              className="h-96 w-auto  "
-            />
-            <button
-              className="absolute top-2 right-2 p-2 bg-red-50 rounded-full hover:bg-red-100 focus:outline-none"
-              type="button"
-              onClick={() => setPreviewImage(null)}
-            >
-              <X className="w-4 h-4 text-red-600" />
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+    <div className="relative rounded-lg overflow-hidden shadow-lg bg-gray-100 border">
+      <div className="max-h-96 flex items-center justify-center bg-gray-200">
+        <IKImage
+          urlEndpoint="https://ik.imagekit.io/71amgqe4f"
+          path={previewImage.url.split("/").slice(-2).join("/")}
+          className="max-h-96"
+          onError={(e) => {
+            e.target.onerror = null; // Prevent infinite loops
+            e.target.style.display = "none";
+            e.target.parentElement.innerHTML =
+              '<div class="w-auto flex items-center justify-center text-gray-500 m-10">Failed to load image</div>';
+          }}
+        />
+      <button
+        className="absolute top-2 right-2 p-2 bg-red-50 rounded-full hover:bg-red-100 focus:outline-none"
+        type="button"
+        onClick={() => setPreviewImage(null)}
+      >
+        <X className="w-4 h-4 text-red-600" />
+      </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
