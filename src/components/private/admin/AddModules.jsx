@@ -177,6 +177,7 @@ const AddModules = ({
         hours: "",
         topics: [],
       });
+      setImages([])
       setEvalPoints([]);
     }
     scrollToItem(moduleId);
