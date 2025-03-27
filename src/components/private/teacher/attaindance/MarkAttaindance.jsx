@@ -139,9 +139,10 @@ const MarkAttendance = () => {
     const initialAttendance = [...studentProfileMap.values()].reduce(
       (acc, student) => {
         // Get the attendance records for the student
-        const records = batchAttendanceMap.get(student.userId) || [];
+        const records = batchAttendanceMap.get(student.userId) || {};
         // Find the record that matches the formatted date
-        const attendanceRecord = records.attendanceRecords.find(
+        
+        const attendanceRecord = records?.attendanceRecords?.find(
           (record) => record.date === formattedDate
         );
 
