@@ -7,89 +7,85 @@ import { format } from "date-fns";
 
 const ViewProfiles = ({ students }) => {
   const profile = useSelector(selectProfile);
-  students = students.filter((item) => item.userId !== profile.userId);
-
-  const removeStudentFromBatch = async () => {
-    try {
-    } catch (error) {
-      console.log("Error");
-    }
-  };
+  // Filter out the current user's profile
+  const filteredStudents = students.filter((student) => student.userId !== profile.userId);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {students.map((student, index) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredStudents.map((student, index) => (
         <div
           key={student.userId || index}
-          className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200"
+          className="bg-white rounded-xl shadow-md overflow-hidden"
         >
-          <div className="p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 font-semibold">
-                  {student.userName?.charAt(0) || "U"}
-                </span>
-              </div>
-              <div>
-                <h3 className="font-semibold">{student.userName}</h3>
-                <p className="text-sm text-gray-500">{student.email}</p>
-              </div>
+          {/* Header section with avatar and basic info */}
+          <div className="flex p-4">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-700 mr-4">
+              {student.userName?.charAt(0) || "U"}
             </div>
-
-            <div className="space-y-1 mb-4">
-              <div className="text-sm">
-                <span className="text-gray-500">Role:</span>{" "}
-                <span className="font-medium">
-                  {Array.isArray(student.role)
-                    ? student.role.join(", ")
-                    : student.role || "N/A"}
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Status:</span>{" "}
-                <span
-                  className={`font-medium ${
-                    student.status === "Active"
-                      ? "text-green-600"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {student.status}
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Phone:</span>{" "}
-                <span className="font-medium">{student.phone || "N/A"}</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Admission Date:</span>{" "}
-                <span className="font-medium">
-                  {format(student.enrolledAt, "dd-MM-yyyy") || "N/A"}
-                </span>
-              </div>
+            <div className="flex-grow">
+              <h2 className="text-lg font-semibold">{student.userName}</h2>
+              <p className="text-sm text-gray-500">{student.email}</p>
+              <p className="text-sm text-gray-500">
+                Student ID: {student.studentId || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                Role:{" "}
+                {Array.isArray(student.role)
+                  ? student.role.join(", ")
+                  : student.role || "N/A"}
+              </p>
             </div>
-
-            <div className="flex flex-wrap gap-2">
+          </div>
+          {/* Detail section */}
+          <div className="border-t border-gray-200 p-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               <Link
                 to={`${student.userId}`}
-                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
               >
                 View Profile
               </Link>
               <Link
                 to={`/manage-batch/edit/${student.userId}`}
-                className=" flex items-center gap-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm"
               >
-                <AiOutlineEdit className="" size={24} />
-                <h1 className="font-bold"> Edit</h1>
+                <AiOutlineEdit size={20} />
+                <span>Edit</span>
               </Link>
-
               <a
                 href={`tel:${student.phone}`}
-                className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
               >
                 Call
               </a>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm">
+                <span className="font-medium">Status:</span>{" "}
+                <span
+                  className={
+                    student.status === "Active" ? "text-green-600" : "text-gray-600"
+                  }
+                >
+                  {student.status}
+                </span>
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Phone:</span>{" "}
+                {student.phone || "N/A"}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">Admission Date:</span>{" "}
+                {student.enrolledAt
+                  ? format(new Date(student.enrolledAt), "dd-MM-yyyy")
+                  : "N/A"}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">DOB:</span>{" "}
+                {student.DOB
+                  ? format(new Date(student.DOB), "dd-MM-yyyy")
+                  : "N/A"}
+              </p>
             </div>
           </div>
         </div>

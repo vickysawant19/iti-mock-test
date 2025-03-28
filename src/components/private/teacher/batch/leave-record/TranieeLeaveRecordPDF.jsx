@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
 const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
   // Default data structure if no data is provided
 
-  let attendance = Object.entries(leaveRecords.monthlyAttendance).reduce(
+  let attendance = Object.entries(leaveRecords?.monthlyAttendance || {}).reduce(
     (acc, doc) => {
       let month = format(doc[0], "MMM");
       acc[month] = {
@@ -242,27 +242,30 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
           <View style={styles.grid}>
             <View style={styles.gridItem}>
               <Text>
-                Trainee Name :{" "}
-                <Text style={styles.boldText}>{data.userName}</Text>
+                <Text style={styles.boldText}>Trainee Name: </Text>
+                {data.userName}
               </Text>
               <Text>
-                Trade : <Text style={styles.boldText}>{data.tradeName}</Text>
+                <Text style={styles.boldText}>Trade: </Text>
+                {data.tradeName}
               </Text>
               <Text>
-                Exam Seat No. :{" "}
-                <Text style={styles.boldText}>{data.registerId}</Text>
+                <Text style={styles.boldText}>Exam Seat No.: </Text>
+                {data.registerId}
               </Text>
             </View>
             <View style={styles.gridItem}>
               <Text>
-                Year : <Text style={styles.boldText}>{data.year}</Text>
+                <Text style={styles.boldText}>Year: </Text>
+                {data.year}
               </Text>
               <Text>
-                Address : <Text style={styles.boldText}>{data.address}</Text>
+                <Text style={styles.boldText}>Address: </Text>
+                {data.address}
               </Text>
               <Text>
-                <Text style={styles.boldText}>Stipend :</Text>{" "}
-                <Text style={styles.boldText}>{data.stipend}/No</Text>
+                <Text style={styles.boldText}>Stipend: </Text>
+                {data.stipend}/No
               </Text>
             </View>
           </View>

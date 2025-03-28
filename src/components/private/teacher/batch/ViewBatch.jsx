@@ -110,7 +110,13 @@ const ViewBatch = () => {
         Query.equal("batchId", selectedBatch),
         Query.orderAsc("studentId"),
       ]);
-      setStudents(Array.isArray(data) ? data : [data]);
+      if (data && Array.isArray(data)) {
+        setStudents(
+          data.sort((a, b) => parseInt(a.studentId - parseInt(b.studentId)))
+        );
+      } else {
+        setStudents([]);
+      }
     } catch (error) {
       console.error("Error fetching batch students:", error);
     } finally {
