@@ -6,8 +6,8 @@ import { selectUser } from "../../store/userSlice";
 const ProtectedTeacherRoutes = () => {
   const user = useSelector(selectUser);
 
-  if (!user.labels.includes("Teacher") || !user.labels.includes("admin")) {
-    toast.error("Access denied. Teacher or Admin only");
+  if (!user.labels.includes("Teacher")) {
+    toast.error("Access denied. Teacher only");
     return <Navigate to="/" replace />;
   }
 

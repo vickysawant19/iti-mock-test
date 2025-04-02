@@ -7,6 +7,7 @@ import {
   Font,
   Image,
 } from "@react-pdf/renderer";
+import { isAfter, addDays, format } from 'date-fns';
 
 // Register fonts (using Roboto as an example)
 Font.register({
@@ -188,21 +189,31 @@ const JobEvaluationReportPDF = ({
   selectedModule,
   studentAttendance,
 }) => {
-  // Generate sample student marks data for 24 rows
+
+
   const studentData = Array.from({ length: 24 }, (_, i) => {
     const student = studentsMap.get(i + 1);
+  
+    // Use only the startDate from selectedModule.
     const startDate = selectedModule?.startDate;
-
-    // Safely check the attendance status if both student and startDate are available.
-    const attendanceStatus =
-      student && startDate
-        ? studentAttendance?.[student.userId]?.[startDate]
-        : null;
-
+    const referenceDate = startDate ? new Date(startDate) : null;
+  
+    // Check attendance for the next 7 days starting from the startDate.
+    let isPresentInAnyDay = false;
+    if (student && referenceDate) {
+      for (let j = 0; j < 7; j++) {
+        const checkDate = addDays(referenceDate, j);
+        const dateKey = format(checkDate, 'yyyy-MM-dd'); // Format the date as "YYYY-MM-DD"
+        if (studentAttendance?.[student.userId]?.[dateKey] === "Present") {
+          isPresentInAnyDay = true;
+          break;
+        }
+      }
+    }
+  
     let a, b, c, d, e, total;
-
-    if (attendanceStatus === "Present") {
-      // If the student is present, assign random marks
+    if (isPresentInAnyDay) {
+      // If the student is present on any day, assign random marks.
       a = Math.floor(Math.random() * 10) + 10;
       b = Math.floor(Math.random() * 10) + 10;
       c = Math.floor(Math.random() * 10) + 10;
@@ -210,11 +221,11 @@ const JobEvaluationReportPDF = ({
       e = Math.floor(Math.random() * 10) + 10;
       total = a + b + c + d + e;
     } else {
-      // If not present, assign 0 to all marks and total as "AB"
+      // Otherwise, mark as absent.
       a = b = c = d = e = 0;
       total = "AB";
     }
-
+  
     return {
       srNo: (i + 1).toString(),
       name: student?.userName || "-",
@@ -226,6 +237,7 @@ const JobEvaluationReportPDF = ({
       total: total.toString(),
     };
   });
+  
 
   const getLayout = (count) => {
     let columns;
@@ -439,7 +451,7 @@ const JobEvaluationReportPDF = ({
                   <Text style={[styles.tableCell, { width: "15%" }]}>
                     {row.srNo}
                   </Text>
-                  <Text style={[styles.tableCell, { minWidth: "40%" }]}>
+                  <Text style={[styles.tableCell, { minWidth: "40%", textTransform: "uppercase" }]}>
                     {row.name}
                   </Text>
                   <Text style={[styles.tableCell, { width: "15%" }]}>
@@ -474,7 +486,7 @@ const JobEvaluationReportPDF = ({
         {/* SECTION 5: Signatures */}
         <View style={styles.signatureSection}>
           <View style={styles.signatureBlock}>
-            <Text>{batch.teacherName || ""}</Text>
+            {/* <Text>{batch.teacherName || ""}</Text> */}
             <Text>Instructor Signature </Text>
           </View>
           <Text style={styles.signatureBlock}>Group Instructor Signature</Text>
