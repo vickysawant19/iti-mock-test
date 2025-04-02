@@ -298,7 +298,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         </div>
       </div>
 
-      {selectedModule && (
+      {Array.isArray(modules?.syllabus) && modules.syllabus.length > 0 && selectedModule && (
         <PDFDownloadLink
           document={
             <JobEvaluationReportPDF
@@ -307,6 +307,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
               batch={batchData}
               studentsMap={studentsMap}
               selectedModule={selectedModule}
+              // allModules={modules.syllabus}
               studentAttendance={studentAttendance}
             />
           }

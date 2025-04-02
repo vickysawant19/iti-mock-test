@@ -181,21 +181,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const JobEvaluationReportPDF = ({
-  batch = {},
-  studentsMap,
-  college,
-  trade,
-  selectedModule,
-  studentAttendance,
-}) => {
-
-
-  const studentData = Array.from({ length: 24 }, (_, i) => {
+// Generate student data for a specific module
+const generateStudentData = (studentsMap, moduleData, studentAttendance) => {
+  return Array.from({ length: 24 }, (_, i) => {
     const student = studentsMap.get(i + 1);
   
-    // Use only the startDate from selectedModule.
-    const startDate = selectedModule?.startDate;
+    // Use only the startDate from the current module
+    const startDate = moduleData?.startDate;
     const referenceDate = startDate ? new Date(startDate) : null;
   
     // Check attendance for the next 7 days starting from the startDate.
@@ -237,122 +229,157 @@ const JobEvaluationReportPDF = ({
       total: total.toString(),
     };
   });
+};
+
+// Helper function to get image layout
+const getImageLayout = (count) => {
+  let columns;
+  if (count === 1) {
+    columns = 1;
+  } else if (count === 2) {
+    columns = 2;
+  } else if (count === 3 || count === 4) {
+    columns = 2;
+  } else if (count === 5 || count === 6) {
+    columns = 3;
+  } else {
+    columns = Math.ceil(Math.sqrt(count)); // fallback for other counts
+  }
+
+  const rows = Math.ceil(count / columns);
+  return { columns, rows };
+};
+
+// Component for a single module page
+const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => {
+  const studentData = generateStudentData(studentsMap, moduleData, studentAttendance);
   
-
-  const getLayout = (count) => {
-    let columns;
-    if (count === 1) {
-      columns = 1;
-    } else if (count === 2) {
-      columns = 2;
-    } else if (count === 3 || count === 4) {
-      columns = 2;
-    } else if (count === 5 || count === 6) {
-      columns = 3;
-    } else {
-      columns = Math.ceil(Math.sqrt(count)); // fallback for other counts
-    }
-
-    const rows = Math.ceil(count / columns);
-    return { columns, rows };
-  };
-
-  const images = selectedModule?.images || [];
-  const { columns, rows } = getLayout(images.length);
+  const images = moduleData?.images || [];
+  const { columns, rows } = getImageLayout(images.length);
   const imageWidthPercent = `${100 / rows}%`;
   const imageHeightPercent = `${100 / columns}%`;
 
   return (
-    <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
-        {/* SECTION 1: Header */}
-        <View style={styles.headerSection}>
-          <Text style={styles.headerTitle}>
-            {college.collageName || "Industrial Training Institute"}
-          </Text>
-          <Text style={styles.headerSubtitle}>JOB EVALUATION REPORT</Text>
-          <View style={styles.headerRow}>
-            <View style={{ display: "flex", flexDirection: "row" }}>
-              <Text style={{ fontWeight: "bold" }}>Job No.: </Text>
-              <Text>{`${selectedModule.moduleId.slice(1) || "________"}`}</Text>
-            </View>
-            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <Text style={{ fontWeight: "bold" }}>Date of Starting:</Text>
-              <Text>{selectedModule.startDate || "________________"}</Text>
-            </View>
+    <Page size="A4" orientation="landscape" style={styles.page}>
+      {/* SECTION 1: Header */}
+      <View style={styles.headerSection}>
+        <Text style={styles.headerTitle}>
+          {college.collageName || "Industrial Training Institute"}
+        </Text>
+        <Text style={styles.headerSubtitle}>JOB EVALUATION REPORT</Text>
+        <View style={styles.headerRow}>
+          <View style={{ display: "flex", flexDirection: "row" }}>
+            <Text style={{ fontWeight: "bold" }}>Job No.: </Text>
+            <Text>{`${moduleData.moduleId ? moduleData.moduleId.slice(1) : "________"}`}</Text>
           </View>
-          <View style={[styles.headerRow, {}]}>
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                width: "80%",
-              }}
-            >
-              <Text style={{ fontWeight: "bold" }}>Job title: </Text>
-              <Text style={{ width: "90%" }}>{`${
-                selectedModule.moduleName || "________________________________"
-              }`}</Text>
-            </View>
-            <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
-              <Text style={{ fontWeight: "bold" }}>Date of Finish:</Text>
-              <Text>{selectedModule.endDate || "________________"}</Text>
-            </View>
-          </View>
-          <View style={styles.headerRow}>
-            <View style={{ display: "flex", flexDirection: "row" }}>
-              <Text style={{ fontWeight: "bold" }}>Time: </Text>
-              <Text>
-                {`${selectedModule.moduleDuration || "________________"}`} Hrs.
-              </Text>
-            </View>
+          <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+            <Text style={{ fontWeight: "bold" }}>Date of Starting:</Text>
+            <Text>{moduleData.startDate || "________________"}</Text>
           </View>
         </View>
+        <View style={[styles.headerRow, {}]}>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              width: "80%",
+            }}
+          >
+            <Text style={{ fontWeight: "bold" }}>Job title: </Text>
+            <Text style={{ width: "90%" }}>{`${
+              moduleData.moduleName || "________________________________"
+            }`}</Text>
+          </View>
+          <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
+            <Text style={{ fontWeight: "bold" }}>Date of Finish:</Text>
+            <Text>{moduleData.endDate || "________________"}</Text>
+          </View>
+        </View>
+        <View style={styles.headerRow}>
+          <View style={{ display: "flex", flexDirection: "row" }}>
+            <Text style={{ fontWeight: "bold" }}>Time: </Text>
+            <Text>
+              {`${moduleData.moduleDuration || "________________"}`} Hrs.
+            </Text>
+          </View>
+        </View>
+      </View>
 
-        {/* SECTION 2 & 3: Two Columns */}
-        <View style={styles.rowContainer}>
-          <View style={styles.leftColumn}>
-            <View style={[styles.imagePlaceholder, { padding: 2 }]}>
-              {images.map((img, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.imageWrapper,
-                    {
-                      padding: 1,
-                      width: imageWidthPercent,
-                      height: imageHeightPercent,
-                    },
-                  ]}
-                >
-                  <Image src={img.url} style={styles.image} />
-                </View>
-              ))}
-            </View>
-            <View style={styles.evalTableContainer}>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontWeight: "bold",
-                  marginBottom: 5,
-                }}
+      {/* SECTION 2 & 3: Two Columns */}
+      <View style={styles.rowContainer}>
+        <View style={styles.leftColumn}>
+          <View style={[styles.imagePlaceholder, { padding: 2 }]}>
+            {images.map((img, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.imageWrapper,
+                  {
+                    padding: 1,
+                    width: imageWidthPercent,
+                    height: imageHeightPercent,
+                  },
+                ]}
               >
-                Evaluation Points
-              </Text>
-              <View style={styles.evalTable}>
-                <View style={styles.evalTableHeader}>
-                  <Text style={[styles.evalTableCell, { width: "10%" }]}>
-                    No.
-                  </Text>
-                  <Text style={[styles.evalTableCell, { width: "80%" }]}>
-                    Point
-                  </Text>
-                  <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
-                    Score
-                  </Text>
-                </View>
-                {selectedModule?.evalutionPoints
-                  ? selectedModule?.evalutionPoints.map((item, idx) => (
+                <Image src={img.url} style={styles.image} />
+              </View>
+            ))}
+          </View>
+          <View style={styles.evalTableContainer}>
+            <Text
+              style={{
+                textAlign: "center",
+                fontWeight: "bold",
+                marginBottom: 5,
+              }}
+            >
+              Evaluation Points
+            </Text>
+            <View style={styles.evalTable}>
+              <View style={styles.evalTableHeader}>
+                <Text style={[styles.evalTableCell, { width: "10%" }]}>
+                  No.
+                </Text>
+                <Text style={[styles.evalTableCell, { width: "80%" }]}>
+                  Point
+                </Text>
+                <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
+                  Score
+                </Text>
+              </View>
+              {moduleData?.evalutionPoints
+                ? moduleData.evalutionPoints.map((item, idx) => (
+                    <View key={idx} style={styles.evalTableRow}>
+                      <Text
+                        style={[
+                          styles.evalTableCell,
+                          { width: "10%", fontWeight: "bold" },
+                        ]}
+                      >
+                        {Array.from(["A", "B", "C", "D", "E", "F"])[idx]}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.evalTableCell,
+                          {
+                            width: "80%",
+                            textAlign: "left",
+                            paddingHorizontal: 10,
+                          },
+                        ]}
+                      >
+                        {item.evaluation}
+                      </Text>
+                      <Text
+                        style={[styles.evalLastTableCell, { width: "10%" }]}
+                      >
+                        {item.points}
+                      </Text>
+                    </View>
+                  ))
+                : Array(5)
+                    .fill(0)
+                    .map((item, idx) => (
                       <View key={idx} style={styles.evalTableRow}>
                         <Text
                           style={[
@@ -363,138 +390,137 @@ const JobEvaluationReportPDF = ({
                           {Array.from(["A", "B", "C", "D", "E", "F"])[idx]}
                         </Text>
                         <Text
-                          style={[
-                            styles.evalTableCell,
-                            {
-                              width: "80%",
-                              textAlign: "left",
-                              paddingHorizontal: 10,
-                            },
-                          ]}
-                        >
-                          {item.evaluation}
-                        </Text>
+                          style={[styles.evalTableCell, { width: "80%" }]}
+                        ></Text>
                         <Text
                           style={[styles.evalLastTableCell, { width: "10%" }]}
-                        >
-                          {item.points}
-                        </Text>
+                        ></Text>
                       </View>
-                    ))
-                  : Array(5)
-                      .fill(0)
-                      .map((item, idx) => (
-                        <View key={idx} style={styles.evalTableRow}>
-                          <Text
-                            style={[
-                              styles.evalTableCell,
-                              { width: "10%", fontWeight: "bold" },
-                            ]}
-                          >
-                            {Array.from(["A", "B", "C", "D", "E", "F"])[idx]}
-                          </Text>
-                          <Text
-                            style={[styles.evalTableCell, { width: "80%" }]}
-                          ></Text>
-                          <Text
-                            style={[styles.evalLastTableCell, { width: "10%" }]}
-                          ></Text>
-                        </View>
-                      ))}
-                <View style={styles.evalTableRow}>
-                  <Text
-                    style={[
-                      styles.evalTableCell,
-                      { width: "90%", fontWeight: "bold" },
-                    ]}
-                  >
-                    Total
-                  </Text>
-                  <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
-                    {selectedModule?.evalutionPoints
-                      ? selectedModule.evalutionPoints.reduce(
-                          (acc, doc) => (acc += +doc.points),
-                          0
-                        )
-                      : ""}
-                  </Text>
-                </View>
+                    ))}
+              <View style={styles.evalTableRow}>
+                <Text
+                  style={[
+                    styles.evalTableCell,
+                    { width: "90%", fontWeight: "bold" },
+                  ]}
+                >
+                  Total
+                </Text>
+                <Text style={[styles.evalLastTableCell, { width: "10%" }]}>
+                  {moduleData?.evalutionPoints
+                    ? moduleData.evalutionPoints.reduce(
+                        (acc, doc) => (acc += +doc.points),
+                        0
+                      )
+                    : ""}
+                </Text>
               </View>
             </View>
           </View>
-          {/* Right Column (60%): Student Marks Table */}
-          <View style={styles.rightColumn}>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
+        </View>
+        {/* Right Column (60%): Student Marks Table */}
+        <View style={styles.rightColumn}>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableCell, { width: "15%" }]}>
+                Sr. No.
+              </Text>
+              <Text style={[styles.tableCell, { minWidth: "40%" }]}>
+                Name
+              </Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>A</Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>B</Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>C</Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>D</Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>E</Text>
+              <Text
+                style={[
+                  styles.lastTableCell,
+                  { width: "15%", fontWeight: "bold" },
+                ]}
+              >
+                Total
+              </Text>
+            </View>
+            {studentData.map((row, index) => (
+              <View key={index} style={styles.tableRow}>
                 <Text style={[styles.tableCell, { width: "15%" }]}>
-                  Sr. No.
+                  {row.srNo}
                 </Text>
-                <Text style={[styles.tableCell, { minWidth: "40%" }]}>
-                  Name
+                <Text style={[styles.tableCell, { minWidth: "40%", textTransform: "uppercase" }]}>
+                  {row.name}
                 </Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>A</Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>B</Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>C</Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>D</Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>E</Text>
+                <Text style={[styles.tableCell, { width: "15%" }]}>
+                  {row.A}
+                </Text>
+                <Text style={[styles.tableCell, { width: "15%" }]}>
+                  {row.B}
+                </Text>
+                <Text style={[styles.tableCell, { width: "15%" }]}>
+                  {row.C}
+                </Text>
+                <Text style={[styles.tableCell, { width: "15%" }]}>
+                  {row.D}
+                </Text>
+                <Text style={[styles.tableCell, { width: "15%" }]}>
+                  {row.E}
+                </Text>
                 <Text
                   style={[
                     styles.lastTableCell,
                     { width: "15%", fontWeight: "bold" },
                   ]}
                 >
-                  Total
+                  {row.total}
                 </Text>
               </View>
-              {studentData.map((row, index) => (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.srNo}
-                  </Text>
-                  <Text style={[styles.tableCell, { minWidth: "40%", textTransform: "uppercase" }]}>
-                    {row.name}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.A}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.B}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.C}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.D}
-                  </Text>
-                  <Text style={[styles.tableCell, { width: "15%" }]}>
-                    {row.E}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.lastTableCell,
-                      { width: "15%", fontWeight: "bold" },
-                    ]}
-                  >
-                    {row.total}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            ))}
           </View>
         </View>
+      </View>
 
-        {/* SECTION 5: Signatures */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureBlock}>
-            {/* <Text>{batch.teacherName || ""}</Text> */}
-            <Text>Instructor Signature </Text>
-          </View>
-          <Text style={styles.signatureBlock}>Group Instructor Signature</Text>
-          <Text style={styles.signatureBlock}>
-            {college.collageName || "Industrial Training Institute"}
-          </Text>
+      {/* SECTION 5: Signatures */}
+      <View style={styles.signatureSection}>
+        <View style={styles.signatureBlock}>
+          <Text>Instructor Signature </Text>
         </View>
-      </Page>
+        <Text style={styles.signatureBlock}>Group Instructor Signature</Text>
+        <Text style={styles.signatureBlock}>
+          {college.collageName || "Industrial Training Institute"}
+        </Text>
+      </View>
+    </Page>
+  );
+};
+
+const JobEvaluationReportPDF = ({
+  batch = {},
+  studentsMap,
+  college,
+  trade,
+  selectedModule,
+  allModules,
+  studentAttendance,
+}) => {
+
+
+const modulesToRender =
+  Array.isArray(allModules) && allModules.length > 0
+    ? allModules
+    : [selectedModule];
+
+  return (
+    <Document>
+      {modulesToRender.map((module, index) => (
+        <ModulePage
+          key={`module-${index}`}
+          moduleData={module}
+          studentsMap={studentsMap}
+          college={college}
+          studentAttendance={studentAttendance}
+        />
+      ))}
+      
     </Document>
   );
 };
