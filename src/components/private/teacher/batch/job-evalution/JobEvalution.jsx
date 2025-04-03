@@ -145,7 +145,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
             }, {})
         : {}; // Ensure practicalDates is an object even if dailyDairyd is missing
 
-      const newSyllabus = data.syllabus.map((item) => {
+      const newSyllabus = data?.syllabus?.map((item) => {
         const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
         const rawDates = practicalDates[moduleIdNumber] || [];
 
@@ -169,7 +169,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         };
       });
 
-      setModules({ ...data, syllabus: newSyllabus });
+      setModules({ ...data, syllabus: newSyllabus ? newSyllabus : [] });
     } catch (error) {
       console.error("Error fetching modules:", error);
     }
