@@ -59,11 +59,16 @@ const ViewBatch = () => {
 
   // Update search params whenever selected batch or active tab changes.
   useEffect(() => {
+
+    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
+    ? selectedBatch
+    : profile.batchId;
+
     setSearchParams({
-      batchid: selectedBatch,
+      batchid: batchId,
       active: activeTab,
     });
-  }, [selectedBatch, activeTab, setSearchParams]);
+  }, [selectedBatch, activeTab, setSearchParams, teacherBatches]);
 
   // Fetch teachers all batches
   const fetchTeacherBatches = async () => {
@@ -90,9 +95,15 @@ const ViewBatch = () => {
 
   const fetchBatchData = async () => {
     if (!selectedBatch) return;
+   
+    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
+      ? selectedBatch
+      : profile.batchId;
+
+
     setIsLoading(true);
     try {
-      const data = await batchService.getBatch(selectedBatch);
+      const data = await batchService.getBatch(batchId);
       setSelectedBatchData(data);
     } catch (error) {
       console.error("Error fetching batch Data", error);
@@ -104,10 +115,15 @@ const ViewBatch = () => {
   // Fetch batch students
   const fetchBatchStudent = async () => {
     if (!selectedBatch) return;
+
+    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
+    ? selectedBatch
+    : profile.batchId;
+
     setStudentLoading(true);
     try {
       const data = await userProfileService.getBatchUserProfile([
-        Query.equal("batchId", selectedBatch),
+        Query.equal("batchId", batchId),
         Query.orderAsc("studentId"),
       ]);
       if (data && Array.isArray(data)) {
@@ -127,12 +143,18 @@ const ViewBatch = () => {
   // Fetch student attendance
   const fetchStudentsAttendance = async () => {
     if (!students || !selectedBatch) return;
+
+    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
+    ? selectedBatch
+    : profile.batchId;
+
     setAttendanceLoading(true);
     try {
       const activeStudents = students.filter(
         (student) => student.status === "Active"
       );
       const studentsIds = activeStudents.map((student) => student.userId);
+      console.log("student id ", studentsIds)
 
       if (studentsIds.length <= 0) {
         console.log("No students found!");
@@ -142,8 +164,12 @@ const ViewBatch = () => {
 
       const attendance = await attendanceService.getStudentsAttendance([
         Query.equal("userId", studentsIds),
-        Query.equal("batchId", selectedBatch),
+        Query.equal("batchId", batchId),
+        Query.orderDesc("$updatedAt"),
       ]);
+
+      const attendaceSet = new Map()
+        //TODO: fix the logic where multiple profile get added
 
       const studentMap = new Map();
       students.forEach((student) => {
@@ -160,6 +186,8 @@ const ViewBatch = () => {
             : attendance?.userName || "Unknown",
         };
       });
+
+      console.log("attendace 2 ",studentsWithStudentIds)
 
       setStudentsAttendance(studentsWithStudentIds);
       setAttendanceStats(
@@ -182,12 +210,12 @@ const ViewBatch = () => {
 
   // Load students when selected batch changes
   useEffect(() => {
-    if (selectedBatch) {
+    if (selectedBatch && teacherBatches.length !== 0) {
       fetchBatchData(); //fetch seleted batch data
       setStudents(null); // Reset students when batch changes
       fetchBatchStudent();
     }
-  }, [selectedBatch]);
+  }, [selectedBatch,teacherBatches, profile]);
 
   // Load attendance stats when needed
   useEffect(() => {
