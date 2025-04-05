@@ -66,6 +66,8 @@ export class AttendanceService {
 
       if (userAttendance.total > 1) {
         console.log("Multiple User attendance found.");
+        // Pass userId here to fix the undefined userId error
+        await this.cleanupDuplicateUserRecords(userAttendance, userId);
       }
 
       return {
@@ -77,6 +79,57 @@ export class AttendanceService {
     } catch (error) {
       console.log("Appwrite error: get user attendance:", error);
       return false;
+    }
+  }
+
+  async cleanupDuplicateUserRecords(userAttendances, userId) {
+    try {
+      // If there's only one record or none, no duplicates to clean
+      if (userAttendances.total <= 1) {
+        console.log(`No duplicates found for user ${userId}`);
+        return false;
+      }
+
+      console.log(
+        `Found ${userAttendances.total} records for user ${userId}, cleaning up duplicates...`
+      );
+
+      // Parse all attendance records and sort by length (descending)
+      const parsedAttendances = userAttendances.documents.map((doc) => ({
+        ...doc,
+        recordCount: doc.attendanceRecords.length,
+      }));
+
+      // Sort by number of attendance records (descending)
+      parsedAttendances.sort((a, b) => b.recordCount - a.recordCount);
+
+      // Keep the record with most entries, delete others
+      const recordToKeep = parsedAttendances[0];
+      const recordsToDelete = parsedAttendances.slice(1);
+
+      // Delete duplicate records
+      for (const record of recordsToDelete) {
+        await this.database.deleteDocument(
+          conf.databaseId,
+          conf.studentAttendanceCollectionId,
+          record.$id
+        );
+        console.log(
+          `Deleted duplicate record ${record.$id} for user ${userId}`
+        );
+      }
+
+      return {
+        keptRecord: recordToKeep,
+        deletedRecords: recordsToDelete,
+        deletedCount: recordsToDelete.length,
+      };
+    } catch (error) {
+      console.error(
+        "Appwrite error: cleaning up duplicate user records:",
+        error
+      );
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
 

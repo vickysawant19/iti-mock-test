@@ -59,10 +59,9 @@ const ViewBatch = () => {
 
   // Update search params whenever selected batch or active tab changes.
   useEffect(() => {
-
     const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
-    ? selectedBatch
-    : profile.batchId;
+      ? selectedBatch
+      : profile.batchId;
 
     setSearchParams({
       batchid: batchId,
@@ -95,11 +94,10 @@ const ViewBatch = () => {
 
   const fetchBatchData = async () => {
     if (!selectedBatch) return;
-   
+
     const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
       ? selectedBatch
       : profile.batchId;
-
 
     setIsLoading(true);
     try {
@@ -117,8 +115,8 @@ const ViewBatch = () => {
     if (!selectedBatch) return;
 
     const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
-    ? selectedBatch
-    : profile.batchId;
+      ? selectedBatch
+      : profile.batchId;
 
     setStudentLoading(true);
     try {
@@ -145,8 +143,8 @@ const ViewBatch = () => {
     if (!students || !selectedBatch) return;
 
     const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
-    ? selectedBatch
-    : profile.batchId;
+      ? selectedBatch
+      : profile.batchId;
 
     setAttendanceLoading(true);
     try {
@@ -154,7 +152,6 @@ const ViewBatch = () => {
         (student) => student.status === "Active"
       );
       const studentsIds = activeStudents.map((student) => student.userId);
-      console.log("student id ", studentsIds)
 
       if (studentsIds.length <= 0) {
         console.log("No students found!");
@@ -167,9 +164,6 @@ const ViewBatch = () => {
         Query.equal("batchId", batchId),
         Query.orderDesc("$updatedAt"),
       ]);
-
-      const attendaceSet = new Map()
-        //TODO: fix the logic where multiple profile get added
 
       const studentMap = new Map();
       students.forEach((student) => {
@@ -187,7 +181,7 @@ const ViewBatch = () => {
         };
       });
 
-      console.log("attendace 2 ",studentsWithStudentIds)
+      console.log("attendace 2 ", studentsWithStudentIds);
 
       setStudentsAttendance(studentsWithStudentIds);
       setAttendanceStats(
@@ -215,7 +209,7 @@ const ViewBatch = () => {
       setStudents(null); // Reset students when batch changes
       fetchBatchStudent();
     }
-  }, [selectedBatch,teacherBatches, profile]);
+  }, [selectedBatch, teacherBatches, profile]);
 
   // Load attendance stats when needed
   useEffect(() => {
