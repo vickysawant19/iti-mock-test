@@ -7,6 +7,7 @@ import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 
 const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [progressData, setProgressData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 

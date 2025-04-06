@@ -12,6 +12,7 @@ import { addMonths, format, isAfter } from "date-fns";
 
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
+import { getMonthsArray } from "../util/util";
 
 // Register fonts for PDF
 Font.register({
@@ -210,68 +211,31 @@ const ProgressCardPDF = ({
 }) => {
   if (!student) return null;
 
-  const formatDate = (dateString) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy");
-    } catch {
-      return "-";
-    }
-  };
+  const allMonths = getMonthsArray(
+    batch.start_date,
+    batch.end_date,
+    "MMMM yyyy"
+  );
 
-  // Initialize variables
-  let startDate = new Date(batch.start_date);
-  const endDate = new Date(batch.end_date);
   const completeRecords = {};
 
-  // Fill in complete records for all months between start and end dates
-  while (startDate <= endDate) {
-    const monthKey = format(startDate, "MMMM yyyy");
-    completeRecords[monthKey] = monthlyRecords[monthKey] || {}; // Keep existing or add empty
-    startDate = addMonths(startDate, 1);
-  }
-
-  // Define months order for sorting
-  const monthsOrder = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  // Sort months chronologically
-  const sortedMonthlyRecords = Object.entries(completeRecords).sort((a, b) => {
-    const [monthA, yearA] = a[0].split(" ");
-    const [monthB, yearB] = b[0].split(" ");
-
-    // First compare years
-    if (yearA !== yearB) {
-      return parseInt(yearA) - parseInt(yearB);
-    }
-
-    // Then compare months
-    return monthsOrder.indexOf(monthA) - monthsOrder.indexOf(monthB);
+  allMonths.forEach((monthKey) => {
+    completeRecords[monthKey] = monthlyRecords[monthKey] || {};
   });
 
+  const monthlyRecordArray = Object.entries(completeRecords);
   // Create pages with max 12 months per page
   let pages = [];
   const monthsPerPage = 12;
 
   // Create pages with chunks of data
-  for (let i = 0; i < sortedMonthlyRecords.length; i += monthsPerPage) {
-    pages.push(sortedMonthlyRecords.slice(i, i + monthsPerPage));
+  for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
+    pages.push(monthlyRecordArray.slice(i, i + monthsPerPage));
   }
 
   // Calculate total attendance percentage across all available months
-  const calculateTotalAttendance = (sortedMonthlyRecords) => {
-    if (!sortedMonthlyRecords || sortedMonthlyRecords.length === 0) {
+  const calculateTotalAttendance = (monthlyRecordArray) => {
+    if (!monthlyRecordArray || monthlyRecordArray.length === 0) {
       return "-";
     }
 
@@ -279,7 +243,7 @@ const ProgressCardPDF = ({
     let totalDays = 0;
 
     // Loop through all month records and accumulate the days
-    sortedMonthlyRecords.forEach(([month, record]) => {
+    monthlyRecordArray.forEach(([month, record]) => {
       // Only count months where record exists and has attendance data
       if (
         record &&
@@ -298,6 +262,14 @@ const ProgressCardPDF = ({
 
     const overallPercentage = (totalPresentDays / totalDays) * 100;
     return overallPercentage.toFixed(2) + "%";
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy");
+    } catch {
+      return "-";
+    }
   };
 
   return (

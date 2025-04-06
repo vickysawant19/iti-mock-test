@@ -12,6 +12,7 @@ import { addMonths, differenceInMonths, format } from "date-fns";
 
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
+import { getMonthsArray } from "../util/util";
 
 // Register fonts for PDF
 Font.register({
@@ -163,7 +164,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
         ([dateStr, data]) => {
           try {
             // Format the month key
-            const month = format(new Date(dateStr), "MMM yy");
+            const month = format(new Date(dateStr), "MMM yyyy");
             attendanceMap[month] = {
               possibleDays: data.absentDays + data.presentDays,
               presentDays: data.presentDays,
@@ -177,24 +178,12 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
       );
     }
 
-    // Get all months between start and end date
-    const getMonthsArray = (startDate, endDate, formatStr = "MMM yy") => {
-      // Ensure we have Date objects
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      // Calculate number of months between dates (including both start and end months)
-      const monthDiff = differenceInMonths(end, start) + 1;
-
-      // Generate array of month names
-      return Array.from({ length: monthDiff }, (_, i) => {
-        const date = addMonths(start, i);
-        return format(date, formatStr); // 'MMM' gives "Jan", "Feb", etc.
-      });
-    };
-
     // Get all months from batch start to end date
-    const allMonths = getMonthsArray(batch.start_date, batch.end_date);
+    const allMonths = getMonthsArray(
+      batch.start_date,
+      batch.end_date,
+      "MMM yyyy"
+    );
 
     // Create complete attendance object with all months (including empty ones)
     const completeAttendance = allMonths.reduce((acc, month) => {
@@ -243,7 +232,6 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
     }
 
     return {
-      completeAttendance,
       pages,
     };
   };
@@ -263,14 +251,10 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
     if (!student) return null;
 
     // Get attendance data and pages
-    const { completeAttendance, pages } = processAttendanceRecords(
-      leaveRecords,
-      batch
-    );
+    const { pages } = processAttendanceRecords(leaveRecords, batch);
 
     // Create default data structure
     const defaultData = {
-      attendance: completeAttendance,
       pages: pages,
       stipend: "Yes",
       casualLeaveRecords: [],
@@ -284,7 +268,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
   const data = processStudentData(student, leaveRecords, batch);
   return (
     <Document>
-      {data.pages.map((pageData) => (
+      {data?.pages?.map((pageData) => (
         <Page size="LEGAL" style={styles.page}>
           {/* Header Section */}
           <View style={styles.headerContainer}>
@@ -378,11 +362,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
                         : [styles.tableCell, { width: "7%" }]
                     }
                   >
-                    <Text>
-                      {data.attendance[month]
-                        ? data.attendance[month].possibleDays
-                        : ""}
-                    </Text>
+                    <Text>{pageData?.data[month]?.possibleDays || ""}</Text>
                   </View>
                 ))}
               </View>
@@ -401,11 +381,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
                         : [styles.tableCell, { width: "7%" }]
                     }
                   >
-                    <Text>
-                      {data.attendance[month]
-                        ? data.attendance[month].presentDays
-                        : ""}
-                    </Text>
+                    <Text>{pageData?.data[month]?.presentDays || ""}</Text>
                   </View>
                 ))}
               </View>
@@ -424,11 +400,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
                         : [styles.tableCell, { width: "7%" }]
                     }
                   >
-                    <Text>
-                      {data.attendance[month]
-                        ? data.attendance[month].sickLeave
-                        : ""}
-                    </Text>
+                    <Text>{pageData?.data[month]?.sickLeave}</Text>
                   </View>
                 ))}
               </View>
@@ -447,11 +419,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
                         : [styles.tableCell, { width: "7%" }]
                     }
                   >
-                    <Text>
-                      {data.attendance[month]
-                        ? data.attendance[month].casualLeave
-                        : ""}
-                    </Text>
+                    <Text>{pageData?.data[month]?.casualLeave}</Text>
                   </View>
                 ))}
               </View>
@@ -470,7 +438,7 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
                         : [styles.tableCell, { width: "7%" }]
                     }
                   >
-                    <Text>{calculatePercentage(data.attendance[month])}</Text>
+                    <Text>{calculatePercentage(pageData?.data[month])}</Text>
                   </View>
                 ))}
               </View>
