@@ -4,10 +4,19 @@ import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
+import { getMonthsArray } from "../util/util";
 
-const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
+import EditProgressCard from "./EditProgressCard";
+
+const ProgressCard = ({
+  studentProfiles = [],
+  stats,
+  batchData,
+  setBatchData,
+}) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [progressData, setProgressData] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
@@ -18,25 +27,63 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
     batchData.tradeId
   );
 
+  useEffect(() => {
+    if (!selectedStudent || !batchData || stats.length === 0) {
+      setProgressData(null);
+      return;
+    }
+
+    const studentMarks = batchData.batchMarks.find(({ marks, userId }) => {
+      return userId === selectedStudent.userId;
+    });
+
+    const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
+    const monthlyRecords =
+      stats.find((item) => item.userId === selectedStudent.userId)
+        ?.monthlyAttendance || {};
+
+    const quarterlyTests =
+      selectedStudent.quarterlyTests || new Array(3).fill({});
+
+    const allMonths = getMonthsArray(
+      batchData.start_date,
+      batchData.end_date,
+      "MMMM yyyy"
+    );
+
+    const completeRecords = {};
+
+    allMonths.forEach((monthKey) => {
+      completeRecords[monthKey] =
+        { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
+    });
+
+    const monthlyRecordArray = Object.entries(completeRecords);
+    // Create pages with max 12 months per page
+    let pages = [];
+    const monthsPerPage = 12;
+
+    // Create pages with chunks of data
+    for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
+      pages.push(monthlyRecordArray.slice(i, i + monthsPerPage));
+    }
+
+    setProgressData({ ...selectedStudent, quarterlyTests, pages });
+  }, [selectedStudent, batchData, stats]);
+
   const generatePreview = async () => {
-    if (!selectedStudent) {
+    // Only generate if we have valid progressData
+    if (
+      !progressData ||
+      !progressData.pages ||
+      progressData.pages.length === 0
+    ) {
       setPdfUrl("");
       return;
     }
+
     try {
-      const blob = await pdf(
-        <ProgressCardPDF
-          batch={batchData}
-          student={selectedStudent}
-          monthlyRecords={
-            stats.find((item) => item.userId === selectedStudent.userId)
-              ?.monthlyAttendance || {}
-          }
-          quarterlyTests={
-            selectedStudent.quarterlyTests || new Array(3).fill({})
-          }
-        />
-      ).toBlob();
+      const blob = await pdf(<ProgressCardPDF data={progressData} />).toBlob();
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
     } catch (error) {
@@ -46,18 +93,34 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
   };
 
   useEffect(() => {
-    generatePreview();
+    if (progressData) {
+      generatePreview();
+    }
+
     return () => {
       if (pdfUrl) {
         URL.revokeObjectURL(pdfUrl);
       }
     };
-  }, [selectedStudent, stats]);
+  }, [progressData]);
 
   if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
 
   return (
-    <div className="w-full max-w-4xl mx-auto  ">
+    <div className="w-full max-w-4xl mx-auto relative  ">
+      {editMode && (
+        <div
+          className={`bg-gray-50 w-full h-full absolute top-14 border-red-500 z-10 rounded-md`}
+        >
+          <EditProgressCard
+            progressData={progressData}
+            setProgressdata={setProgressData}
+            setEditMode={setEditMode}
+            batchData={batchData}
+            setBatchData={setBatchData}
+          />
+        </div>
+      )}
       <div className="mb-4 flex justify-between items-center ">
         <div className="relative">
           <button
@@ -100,22 +163,19 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
           )}
         </div>
 
-        {selectedStudent && (
+        {progressData && (
+          <div
+            onClick={() => setEditMode((prev) => !prev)}
+            className="bg-blue-600 p-2 rounded-md text-white"
+          >
+            {editMode ? "Close Edit" : "Open Edit"}
+          </div>
+        )}
+
+        {progressData && (
           <PDFDownloadLink
-            document={
-              <ProgressCardPDF
-                batch={batchData}
-                student={selectedStudent}
-                monthlyRecords={
-                  stats.find((item) => item.userId === selectedStudent.userId)
-                    ?.monthlyAttendance || {}
-                }
-                quarterlyTests={
-                  selectedStudent.quarterlyTests || new Array(3).fill({})
-                }
-              />
-            }
-            fileName={`progress-card-${selectedStudent.userName}.pdf`}
+            document={<ProgressCardPDF data={progressData} />}
+            fileName={`progress-card-${progressData.userName}.pdf`}
             className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             {({ loading }) => (
@@ -127,9 +187,8 @@ const ProgressCard = ({ studentProfiles = [], stats, batchData }) => {
           </PDFDownloadLink>
         )}
       </div>
-
       <div className="overflow-hidden border rounded-lg shadow-sm">
-        {selectedStudent ? (
+        {progressData ? (
           pdfUrl ? (
             <>
               <iframe

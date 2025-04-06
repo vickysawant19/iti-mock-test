@@ -5,9 +5,12 @@ import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
+import { getMonthsArray } from "../util/util";
+import { addMonths, differenceInMonths, format } from "date-fns";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [leaveData, setLeaveData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
 
@@ -19,21 +22,127 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   );
 
   useEffect(() => {
+    if (!selectedStudent) return;
+
+    const processAttendanceRecords = (leaveRecords, batch) => {
+      // Convert monthly attendance into a structured format
+      let attendanceMap = {};
+
+      if (leaveRecords?.monthlyAttendance) {
+        Object.entries(leaveRecords.monthlyAttendance).forEach(
+          ([dateStr, data]) => {
+            try {
+              // Format the month key
+              const month = format(new Date(dateStr), "MMM yyyy");
+              attendanceMap[month] = {
+                possibleDays: data.absentDays + data.presentDays,
+                presentDays: data.presentDays,
+                sickLeave: 0,
+                casualLeave: 0,
+              };
+            } catch (error) {
+              console.error(`Error processing date: ${dateStr}`, error);
+            }
+          }
+        );
+      }
+
+      // Get all months from batch start to end date
+      const allMonths = getMonthsArray(
+        batch.start_date,
+        batch.end_date,
+        "MMM yyyy"
+      );
+
+      // Create complete attendance object with all months (including empty ones)
+      const completeAttendance = allMonths.reduce((acc, month) => {
+        acc[month] = attendanceMap[month] || {
+          possibleDays: "",
+          presentDays: "",
+          sickLeave: "",
+          casualLeave: "",
+          percent: "",
+        };
+        return acc;
+      }, {});
+
+      // Create pages with 12 months per page
+      const monthsPerPage = 12;
+      const pages = [];
+
+      for (let i = 0; i < allMonths.length; i += monthsPerPage) {
+        const pageMonths = allMonths.slice(i, i + monthsPerPage);
+        const pageData = {};
+
+        pageMonths.forEach((month) => {
+          pageData[month] = completeAttendance[month];
+        });
+
+        pages.push({
+          months: pageMonths,
+          data: pageData,
+          yearRange: `${format(
+            addMonths(new Date(batch.start_date), i),
+            "MMMM yyyy"
+          )} to ${format(
+            addMonths(
+              new Date(batch.start_date),
+              Math.min(
+                i + 11,
+                differenceInMonths(
+                  new Date(batch.end_date),
+                  new Date(batch.start_date)
+                )
+              )
+            ),
+            "MMMM yyyy"
+          )}`,
+        });
+      }
+
+      return {
+        pages,
+      };
+    };
+
+    // Usage example
+    const processStudentData = (student, leaveRecords, batch) => {
+      // Get attendance data and pages
+      const { pages } = processAttendanceRecords(leaveRecords, batch);
+
+      // Create default data structure
+      const defaultData = {
+        pages: pages,
+        stipend: "Yes",
+        casualLeaveRecords: [],
+        medicalLeaveRecords: [],
+        parentMeetings: [],
+      };
+
+      // Merge with provided data or use defaults
+      return { ...student, ...defaultData };
+    };
+
+    const studentStats = stats.find(
+      (stat) => stat.userId === selectedStudent.userId
+    );
+
+    const data = processStudentData(selectedStudent, studentStats, batchData);
+    setLeaveData(data);
+  }, [selectedStudent, stats, batchData]);
+
+  useEffect(() => {
     let currentUrl = "";
+
     const generatePreview = async () => {
-      if (!selectedStudent) {
+      if (!leaveData) {
         setPdfUrl("");
         return;
       }
+
       try {
         const blob = await pdf(
-          <TraineeLeaveRecordPDF
-            batch={batchData}
-            student={selectedStudent}
-            leaveRecords={stats.find(
-              (i) => i.userId === selectedStudent.userId
-            )}
-          />
+          <TraineeLeaveRecordPDF data={leaveData} />
         ).toBlob();
         currentUrl = URL.createObjectURL(blob);
         setPdfUrl(currentUrl);
@@ -48,7 +157,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         URL.revokeObjectURL(currentUrl);
       }
     };
-  }, [selectedStudent]);
+  }, [selectedStudent, leaveData]);
 
   if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
 
@@ -97,18 +206,10 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         </div>
 
         <div className="flex gap-2">
-          {selectedStudent && (
+          {leaveData && (
             <PDFDownloadLink
-              document={
-                <TraineeLeaveRecordPDF
-                  batch={batchData}
-                  student={selectedStudent}
-                  leaveRecords={stats.find(
-                    (i) => i.userId === selectedStudent.userId
-                  )}
-                />
-              }
-              fileName={`leave-record-${selectedStudent.userName}.pdf`}
+              document={<TraineeLeaveRecordPDF data={leaveData} />}
+              fileName={`leave-record-${leaveData.userName}.pdf`}
               className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               {({ loading }) => (
@@ -123,16 +224,10 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
       </div>
 
       <div className="overflow-hidden border rounded-lg shadow-sm">
-        {selectedStudent ? (
+        {leaveData ? (
           pdfUrl ? (
             <PDFViewer width="100%" height="842px">
-              <TraineeLeaveRecordPDF
-                batch={batchData}
-                student={selectedStudent}
-                leaveRecords={stats.find(
-                  (i) => i.userId === selectedStudent.userId
-                )}
-              />
+              <TraineeLeaveRecordPDF data={leaveData} />
             </PDFViewer>
           ) : (
             <div className="w-full h-[842px] flex items-center justify-center">

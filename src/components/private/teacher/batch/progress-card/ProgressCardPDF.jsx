@@ -8,11 +8,9 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
-import { addMonths, format, isAfter } from "date-fns";
-
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
-import { getMonthsArray } from "../util/util";
+import { format } from "date-fns";
 
 // Register fonts for PDF
 Font.register({
@@ -203,35 +201,8 @@ const styles = StyleSheet.create({
   },
 });
 
-const ProgressCardPDF = ({
-  student,
-  monthlyRecords = {},
-  quarterlyTests = [],
-  batch,
-}) => {
-  if (!student) return null;
-
-  const allMonths = getMonthsArray(
-    batch.start_date,
-    batch.end_date,
-    "MMMM yyyy"
-  );
-
-  const completeRecords = {};
-
-  allMonths.forEach((monthKey) => {
-    completeRecords[monthKey] = monthlyRecords[monthKey] || {};
-  });
-
-  const monthlyRecordArray = Object.entries(completeRecords);
-  // Create pages with max 12 months per page
-  let pages = [];
-  const monthsPerPage = 12;
-
-  // Create pages with chunks of data
-  for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
-    pages.push(monthlyRecordArray.slice(i, i + monthsPerPage));
-  }
+const ProgressCardPDF = ({ data }) => {
+  if (!data) return <Document></Document>;
 
   // Calculate total attendance percentage across all available months
   const calculateTotalAttendance = (monthlyRecordArray) => {
@@ -274,7 +245,7 @@ const ProgressCardPDF = ({
 
   return (
     <Document>
-      {pages.map((sortedMonthlyRecords, index) => (
+      {data?.pages.map((allRecords, index) => (
         <Page size="A4" style={styles.page} key={index}>
           {/* Header Section with logos properly positioned */}
           <View style={styles.headerContainer}>
@@ -289,7 +260,7 @@ const ProgressCardPDF = ({
               DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING
             </Text> */}
               <Text style={[styles.headerTitle]}>
-                {student?.collageName || ""}
+                {data?.collageName || ""}
               </Text>
               <Text style={styles.progressTitle}>PROGRESS CARD</Text>
             </View>
@@ -306,37 +277,37 @@ const ProgressCardPDF = ({
               <View style={styles.gridItem}>
                 <Text>
                   <Text style={styles.labelTop}>Name of Trainee:</Text>
-                  {student.userName || "-"}
+                  {data?.userName || "-"}
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>Date of Birth:</Text>
-                  <Text>{student.DOB ? formatDate(student.DOB) : "-"}</Text>
+                  <Text>{data?.DOB ? formatDate(data?.DOB) : "-"}</Text>
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>Trade:</Text>
-                  {student.tradeName || "-"}
+                  {data?.tradeName || "-"}
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>Edu. Qual.:</Text>
-                  {student.educationQualification || "-"}
+                  {data?.educationQualification || "-"}
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>Stipend:</Text>
-                  {student.stipend ? "YES" : "YES"}
+                  {data?.stipend ? "YES" : "YES"}
                 </Text>
               </View>
               <View style={styles.gridItem}>
                 <Text>
                   <Text style={styles.labelTop}>Trainee Code:</Text>
-                  {student.registerId || "-"}
+                  {data?.registerId || "-"}
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>CMD Rec. No.:</Text>
-                  {student.cmdRecordNumber || "-"}
+                  {data?.cmdRecordNumber || "-"}
                 </Text>
                 <Text>
                   <Text style={styles.labelTop}>Permanent Address:</Text>
-                  {student.address || "-"}
+                  {data?.address || "-"}
                 </Text>
               </View>
             </View>
@@ -374,7 +345,7 @@ const ProgressCardPDF = ({
                     <Text>Possible Days</Text>
                   </View>
                   <View style={styles.lastSubCell}>
-                    <Text>Present</Text>
+                    <Text>Present Days</Text>
                   </View>
                 </View>
               </View>
@@ -399,7 +370,7 @@ const ProgressCardPDF = ({
               </View>
             </View>
 
-            {sortedMonthlyRecords.map(([month, record], index) => (
+            {allRecords.map(([month, record], index) => (
               <View key={index} style={styles.tableRow}>
                 <View style={[styles.tableCell, { width: "5%" }]}>
                   <Text>{index + 1}</Text>
@@ -408,12 +379,10 @@ const ProgressCardPDF = ({
                   <Text>{format(month, "MMM-yyyy")}</Text>
                 </View>
                 <View style={[styles.tableCell, { width: "10%" }]}>
-                  <Text>{record.theory ? `${record.theory}/100` : "-"}</Text>
+                  <Text>{record.theory ? `${record.theory}` : "-"}</Text>
                 </View>
                 <View style={[styles.tableCell, { width: "10%" }]}>
-                  <Text>
-                    {record.practical ? `${record.practical}/250` : "-"}
-                  </Text>
+                  <Text>{record.practical ? `${record.practical}` : "-"}</Text>
                 </View>
                 <View
                   style={[
@@ -496,7 +465,7 @@ const ProgressCardPDF = ({
                 </View>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text>{calculateTotalAttendance(sortedMonthlyRecords)}</Text>
+                <Text>{calculateTotalAttendance(allRecords)}</Text>
               </View>
               <View
                 style={[
@@ -561,7 +530,7 @@ const ProgressCardPDF = ({
               </View>
             </View>
 
-            {quarterlyTests.map((test, index) => (
+            {data?.quarterlyTests.map((test, index) => (
               <View key={index} style={styles.tableRow}>
                 <View style={[styles.tableCell, { width: "10%" }]}>
                   <Text>Q{test.quarter || index + 1}</Text>
@@ -620,36 +589,36 @@ const ProgressCardPDF = ({
               >
                 <View style={styles.subCell}>
                   <Text>
-                    {quarterlyTests.length > 0
+                    {data?.quarterlyTests.length > 0
                       ? (
-                          quarterlyTests.reduce(
+                          data?.quarterlyTests.reduce(
                             (sum, test) => sum + (test.practical || 0),
                             0
-                          ) / quarterlyTests.length
+                          ) / data?.quarterlyTests.length
                         ).toFixed(2)
                       : "-"}
                   </Text>
                 </View>
                 <View style={styles.subCell}>
                   <Text>
-                    {quarterlyTests.length > 0
+                    {data?.quarterlyTests.length > 0
                       ? (
-                          quarterlyTests.reduce(
+                          data?.quarterlyTests.reduce(
                             (sum, test) => sum + (test.theory || 0),
                             0
-                          ) / quarterlyTests.length
+                          ) / data?.quarterlyTests.length
                         ).toFixed(2)
                       : "-"}
                   </Text>
                 </View>
                 <View style={styles.lastSubCell}>
                   <Text>
-                    {quarterlyTests.length > 0
+                    {data?.quarterlyTests.length > 0
                       ? (
-                          quarterlyTests.reduce(
+                          data?.quarterlyTests.reduce(
                             (sum, test) => sum + (test.skills || 0),
                             0
-                          ) / quarterlyTests.length
+                          ) / data?.quarterlyTests.length
                         ).toFixed(2)
                       : "-"}
                   </Text>

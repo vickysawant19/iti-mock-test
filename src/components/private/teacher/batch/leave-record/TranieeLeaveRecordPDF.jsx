@@ -8,11 +8,8 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
-import { addMonths, differenceInMonths, format } from "date-fns";
-
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
-import { getMonthsArray } from "../util/util";
 
 // Register fonts for PDF
 Font.register({
@@ -153,89 +150,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
-  // Process monthly attendance records
-  const processAttendanceRecords = (leaveRecords, batch) => {
-    // Convert monthly attendance into a structured format
-    let attendanceMap = {};
-
-    if (leaveRecords?.monthlyAttendance) {
-      Object.entries(leaveRecords.monthlyAttendance).forEach(
-        ([dateStr, data]) => {
-          try {
-            // Format the month key
-            const month = format(new Date(dateStr), "MMM yyyy");
-            attendanceMap[month] = {
-              possibleDays: data.absentDays + data.presentDays,
-              presentDays: data.presentDays,
-              sickLeave: 0,
-              casualLeave: 0,
-            };
-          } catch (error) {
-            console.error(`Error processing date: ${dateStr}`, error);
-          }
-        }
-      );
-    }
-
-    // Get all months from batch start to end date
-    const allMonths = getMonthsArray(
-      batch.start_date,
-      batch.end_date,
-      "MMM yyyy"
-    );
-
-    // Create complete attendance object with all months (including empty ones)
-    const completeAttendance = allMonths.reduce((acc, month) => {
-      acc[month] = attendanceMap[month] || {
-        possibleDays: "",
-        presentDays: "",
-        sickLeave: "",
-        casualLeave: "",
-        percent: "",
-      };
-      return acc;
-    }, {});
-
-    // Create pages with 12 months per page
-    const monthsPerPage = 12;
-    const pages = [];
-
-    for (let i = 0; i < allMonths.length; i += monthsPerPage) {
-      const pageMonths = allMonths.slice(i, i + monthsPerPage);
-      const pageData = {};
-
-      pageMonths.forEach((month) => {
-        pageData[month] = completeAttendance[month];
-      });
-
-      pages.push({
-        months: pageMonths,
-        data: pageData,
-        yearRange: `${format(
-          addMonths(new Date(batch.start_date), i),
-          "MMMM yyyy"
-        )} to ${format(
-          addMonths(
-            new Date(batch.start_date),
-            Math.min(
-              i + 11,
-              differenceInMonths(
-                new Date(batch.end_date),
-                new Date(batch.start_date)
-              )
-            )
-          ),
-          "MMMM yyyy"
-        )}`,
-      });
-    }
-
-    return {
-      pages,
-    };
-  };
-
+const TraineeLeaveRecordPDF = ({ data }) => {
   // Calculate percentage for a specific month
   const calculatePercentage = (attendanceData) => {
     if (!attendanceData || attendanceData.possibleDays === 0) {
@@ -246,30 +161,10 @@ const TraineeLeaveRecordPDF = ({ batch, student, leaveRecords }) => {
     return isNaN(percentage) ? "-" : `${Math.round(percentage)}%`;
   };
 
-  // Usage example
-  const processStudentData = (student, leaveRecords, batch) => {
-    if (!student) return null;
-
-    // Get attendance data and pages
-    const { pages } = processAttendanceRecords(leaveRecords, batch);
-
-    // Create default data structure
-    const defaultData = {
-      pages: pages,
-      stipend: "Yes",
-      casualLeaveRecords: [],
-      medicalLeaveRecords: [],
-      parentMeetings: [],
-    };
-
-    // Merge with provided data or use defaults
-    return { ...student, ...defaultData };
-  };
-  const data = processStudentData(student, leaveRecords, batch);
   return (
     <Document>
-      {data?.pages?.map((pageData) => (
-        <Page size="LEGAL" style={styles.page}>
+      {data?.pages?.map((pageData, index) => (
+        <Page key={index} size="LEGAL" style={styles.page}>
           {/* Header Section */}
           <View style={styles.headerContainer}>
             {/* Left Logo (DVET) */}

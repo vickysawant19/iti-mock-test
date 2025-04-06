@@ -271,6 +271,7 @@ const ViewBatch = () => {
             studentProfiles={students}
             stats={attendanceStats}
             batchData={selectedBatchData}
+            setBatchData={setSelectedBatchData}
             isLoading={attendanceLoading}
           />
         );
