@@ -181,8 +181,6 @@ const ViewBatch = () => {
         };
       });
 
-      console.log("attendace 2 ", studentsWithStudentIds);
-
       setStudentsAttendance(studentsWithStudentIds);
       setAttendanceStats(
         studentsWithStudentIds

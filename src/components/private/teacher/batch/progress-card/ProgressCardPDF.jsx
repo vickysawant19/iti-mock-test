@@ -209,6 +209,7 @@ const ProgressCardPDF = ({
   batch,
 }) => {
   if (!student) return null;
+
   const formatDate = (dateString) => {
     try {
       return format(new Date(dateString), "dd/MM/yyyy");
@@ -216,209 +217,314 @@ const ProgressCardPDF = ({
       return "-";
     }
   };
-  const endDate = addMonths(batch.start_date, 11);
-  let currentDate = new Date(batch.start_date);
+
+  // Initialize variables
+  let startDate = new Date(batch.start_date);
+  const endDate = new Date(batch.end_date);
   const completeRecords = {};
-  while (!isAfter(currentDate, endDate)) {
-    const monthKey = format(currentDate, "MMMM yyyy");
+
+  // Fill in complete records for all months between start and end dates
+  while (startDate <= endDate) {
+    const monthKey = format(startDate, "MMMM yyyy");
     completeRecords[monthKey] = monthlyRecords[monthKey] || {}; // Keep existing or add empty
-    currentDate = addMonths(currentDate, 1);
+    startDate = addMonths(startDate, 1);
   }
-  // Extract months from monthlyRecords object and sort them chronologically
+
+  // Define months order for sorting
+  const monthsOrder = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // Sort months chronologically
   const sortedMonthlyRecords = Object.entries(completeRecords).sort((a, b) => {
-    const monthsOrder = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthA = a[0].split("-")[0];
-    const monthB = b[0].split("-")[0];
+    const [monthA, yearA] = a[0].split(" ");
+    const [monthB, yearB] = b[0].split(" ");
+
+    // First compare years
+    if (yearA !== yearB) {
+      return parseInt(yearA) - parseInt(yearB);
+    }
+
+    // Then compare months
     return monthsOrder.indexOf(monthA) - monthsOrder.indexOf(monthB);
   });
 
+  // Create pages with max 12 months per page
+  let pages = [];
+  const monthsPerPage = 12;
+
+  // Create pages with chunks of data
+  for (let i = 0; i < sortedMonthlyRecords.length; i += monthsPerPage) {
+    pages.push(sortedMonthlyRecords.slice(i, i + monthsPerPage));
+  }
+
+  // Calculate total attendance percentage across all available months
+  const calculateTotalAttendance = (sortedMonthlyRecords) => {
+    if (!sortedMonthlyRecords || sortedMonthlyRecords.length === 0) {
+      return "-";
+    }
+
+    let totalPresentDays = 0;
+    let totalDays = 0;
+
+    // Loop through all month records and accumulate the days
+    sortedMonthlyRecords.forEach(([month, record]) => {
+      // Only count months where record exists and has attendance data
+      if (
+        record &&
+        typeof record.presentDays === "number" &&
+        typeof record.absentDays === "number"
+      ) {
+        totalPresentDays += record.presentDays;
+        totalDays += record.presentDays + record.absentDays;
+      }
+    });
+
+    // Calculate overall percentage if we have any days to count
+    if (totalDays === 0) {
+      return "-"; // No attendance data available
+    }
+
+    const overallPercentage = (totalPresentDays / totalDays) * 100;
+    return overallPercentage.toFixed(2) + "%";
+  };
+
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header Section with logos properly positioned */}
-        <View style={styles.headerContainer}>
-          {/* Left Logo (DVET) */}
-          <View style={styles.logoContainer}>
-            <Image style={styles.logo} src={devtLogo} />
-          </View>
+      {pages.map((sortedMonthlyRecords, index) => (
+        <Page size="A4" style={styles.page} key={index}>
+          {/* Header Section with logos properly positioned */}
+          <View style={styles.headerContainer}>
+            {/* Left Logo (DVET) */}
+            <View style={styles.logoContainer}>
+              <Image style={styles.logo} src={devtLogo} />
+            </View>
 
-          {/* Center Text */}
-          <View style={styles.header}>
-            {/* <Text style={styles.headerTitle}>
+            {/* Center Text */}
+            <View style={styles.header}>
+              {/* <Text style={styles.headerTitle}>
               DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING
             </Text> */}
-            <Text style={[styles.headerTitle]}>
-              {student?.collageName || ""}
+              <Text style={[styles.headerTitle]}>
+                {student?.collageName || ""}
+              </Text>
+              <Text style={styles.progressTitle}>PROGRESS CARD</Text>
+            </View>
+
+            {/* Right Logo (Bodh Chinha) */}
+            <View style={styles.logoContainer}>
+              <Image style={styles.logo} src={bodhChinha} />
+            </View>
+          </View>
+
+          {/* Student Details Section */}
+          <View style={styles.section}>
+            <View style={styles.grid}>
+              <View style={styles.gridItem}>
+                <Text>
+                  <Text style={styles.labelTop}>Name of Trainee:</Text>
+                  {student.userName || "-"}
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>Date of Birth:</Text>
+                  <Text>{student.DOB ? formatDate(student.DOB) : "-"}</Text>
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>Trade:</Text>
+                  {student.tradeName || "-"}
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>Edu. Qual.:</Text>
+                  {student.educationQualification || "-"}
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>Stipend:</Text>
+                  {student.stipend ? "YES" : "YES"}
+                </Text>
+              </View>
+              <View style={styles.gridItem}>
+                <Text>
+                  <Text style={styles.labelTop}>Trainee Code:</Text>
+                  {student.registerId || "-"}
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>CMD Rec. No.:</Text>
+                  {student.cmdRecordNumber || "-"}
+                </Text>
+                <Text>
+                  <Text style={styles.labelTop}>Permanent Address:</Text>
+                  {student.address || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Monthly Record Table */}
+          <View style={styles.table}>
+            <Text
+              style={[
+                styles.label,
+                { marginBottom: 5, marginLeft: 4, textAlign: "center" },
+              ]}
+            >
+              Monthly Record
             </Text>
-            <Text style={styles.progressTitle}>PROGRESS CARD</Text>
-          </View>
-
-          {/* Right Logo (Bodh Chinha) */}
-          <View style={styles.logoContainer}>
-            <Image style={styles.logo} src={bodhChinha} />
-          </View>
-        </View>
-
-        {/* Student Details Section */}
-        <View style={styles.section}>
-          <View style={styles.grid}>
-            <View style={styles.gridItem}>
-              <Text>
-                <Text style={styles.labelTop}>Name of Trainee:</Text>
-                {student.userName || "-"}
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>Date of Birth:</Text>
-                <Text>{student.DOB ? formatDate(student.DOB) : "-"}</Text>
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>Trade:</Text>
-                {student.tradeName || "-"}
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>Edu. Qual.:</Text>
-                {student.educationQualification || "-"}
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>Stipend:</Text>
-                {student.stipend ? "YES" : "YES"}
-              </Text>
-            </View>
-            <View style={styles.gridItem}>
-              <Text>
-                <Text style={styles.labelTop}>Trainee Code:</Text>
-                {student.registerId || "-"}
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>CMD Rec. No.:</Text>
-                {student.cmdRecordNumber || "-"}
-              </Text>
-              <Text>
-                <Text style={styles.labelTop}>Permanent Address:</Text>
-                {student.address || "-"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Monthly Record Table */}
-        <View style={styles.table}>
-          <Text
-            style={[
-              styles.label,
-              { marginBottom: 5, marginLeft: 4, textAlign: "center" },
-            ]}
-          >
-            Monthly Record
-          </Text>
-          <View style={styles.tableHeader}>
-            <View style={[styles.tableCellHeader, { width: "5%" }]}>
-              <Text>Sr. No.</Text>
-            </View>
-            <View style={[styles.tableCellHeader, { width: "10%" }]}>
-              <Text>Month</Text>
-            </View>
-            <View style={[styles.tableCellHeader, { width: "10%" }]}>
-              <Text>Theory (100)</Text>
-            </View>
-            <View style={[styles.tableCellHeader, { width: "10%" }]}>
-              <Text>Practical (250)</Text>
-            </View>
-            <View style={[styles.nestedColumn, { width: "15%" }]}>
-              <View style={styles.nestedHeader}>
-                <Text>Attendance</Text>
+            <View style={styles.tableHeader}>
+              <View style={[styles.tableCellHeader, { width: "5%" }]}>
+                <Text>Sr. No.</Text>
               </View>
-              <View style={styles.nestedContent}>
-                <View style={[styles.subCell, {}]}>
-                  <Text>Possible Days</Text>
+              <View style={[styles.tableCellHeader, { width: "10%" }]}>
+                <Text>Month</Text>
+              </View>
+              <View style={[styles.tableCellHeader, { width: "10%" }]}>
+                <Text>Theory (100)</Text>
+              </View>
+              <View style={[styles.tableCellHeader, { width: "10%" }]}>
+                <Text>Practical (250)</Text>
+              </View>
+              <View style={[styles.nestedColumn, { width: "15%" }]}>
+                <View style={styles.nestedHeader}>
+                  <Text>Attendance</Text>
                 </View>
-                <View style={styles.lastSubCell}>
-                  <Text>Present</Text>
+                <View style={styles.nestedContent}>
+                  <View style={[styles.subCell, {}]}>
+                    <Text>Possible Days</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>Present</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-            <View style={[styles.tableCellHeader, { width: "10%" }]}>
-              <Text>Progress %</Text>
-            </View>
-            <View style={[styles.nestedColumn, { width: "20%" }]}>
-              <View style={styles.nestedHeader}>
-                <Text>Signature</Text>
+              <View style={[styles.tableCellHeader, { width: "10%" }]}>
+                <Text>Progress %</Text>
               </View>
-              <View style={styles.nestedContent}>
-                <View style={styles.subCell}>
-                  <Text>Trade Instructor</Text>
+              <View style={[styles.nestedColumn, { width: "20%" }]}>
+                <View style={styles.nestedHeader}>
+                  <Text>Signature</Text>
                 </View>
-                <View style={styles.lastSubCell}>
-                  <Text>Group Instructor</Text>
+                <View style={styles.nestedContent}>
+                  <View style={styles.subCell}>
+                    <Text>Trade Instructor</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>Group Instructor</Text>
+                  </View>
                 </View>
               </View>
+              <View style={[styles.tableCellHeaderLast, { width: "20%" }]}>
+                <Text>Remarks</Text>
+              </View>
             </View>
-            <View style={[styles.tableCellHeaderLast, { width: "20%" }]}>
-              <Text>Remarks</Text>
-            </View>
-          </View>
 
-          {sortedMonthlyRecords.map(([month, record], index) => (
-            <View key={index} style={styles.tableRow}>
+            {sortedMonthlyRecords.map(([month, record], index) => (
+              <View key={index} style={styles.tableRow}>
+                <View style={[styles.tableCell, { width: "5%" }]}>
+                  <Text>{index + 1}</Text>
+                </View>
+                <View style={[styles.tableCell, { width: "10%" }]}>
+                  <Text>{format(month, "MMM-yyyy")}</Text>
+                </View>
+                <View style={[styles.tableCell, { width: "10%" }]}>
+                  <Text>{record.theory ? `${record.theory}/100` : "-"}</Text>
+                </View>
+                <View style={[styles.tableCell, { width: "10%" }]}>
+                  <Text>
+                    {record.practical ? `${record.practical}/250` : "-"}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.tableCell,
+                    {
+                      width: "15%",
+                      borderRightWidth: 1,
+                      flexDirection: "row",
+                    },
+                  ]}
+                >
+                  <View style={[styles.subCell, { borderRightWidth: 1 }]}>
+                    <Text>{record.presentDays + record.absentDays || "-"}</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>{record.presentDays || "-"}</Text>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { width: "10%", textAlign: "center" },
+                  ]}
+                >
+                  <Text>
+                    {record.presentDays &&
+                    record.presentDays + record.absentDays
+                      ? (
+                          (record.presentDays /
+                            (record.presentDays + record.absentDays)) *
+                          100
+                        ).toFixed(2)
+                      : "-"}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { width: "20%", flexDirection: "row" },
+                  ]}
+                >
+                  <View style={styles.subCell}>
+                    <Text>{}</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>{}</Text>
+                  </View>
+                </View>
+                <View style={[styles.tableCellLast, { width: "10%" }]}>
+                  <Text>{record.remarks || "-"}</Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Average Row */}
+            <View style={styles.tableRow}>
               <View style={[styles.tableCell, { width: "5%" }]}>
-                <Text>{index + 1}</Text>
+                <Text></Text>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text>{format(month, "MMM-yyyy")}</Text>
+                <Text>Average</Text>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text>{record.theory ? `${record.theory}/100` : "-"}</Text>
+                <Text></Text>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text>
-                  {record.practical ? `${record.practical}/250` : "-"}
-                </Text>
+                <Text></Text>
               </View>
               <View
                 style={[
                   styles.tableCell,
-                  {
-                    width: "15%",
-                    borderRightWidth: 1,
-                    flexDirection: "row",
-                  },
+                  { width: "15%", flexDirection: "row" },
                 ]}
               >
-                <View style={[styles.subCell, { borderRightWidth: 1 }]}>
-                  <Text>{record.presentDays + record.absentDays || "-"}</Text>
+                <View style={styles.subCell}>
+                  <Text></Text>
                 </View>
                 <View style={styles.lastSubCell}>
-                  <Text>{record.presentDays || "-"}</Text>
+                  <Text></Text>
                 </View>
               </View>
-              <View
-                style={[
-                  styles.tableCell,
-                  { width: "10%", textAlign: "center" },
-                ]}
-              >
-                <Text>
-                  {record.presentDays && record.presentDays + record.absentDays
-                    ? (
-                        (record.presentDays /
-                          (record.presentDays + record.absentDays)) *
-                        100
-                      ).toFixed(2)
-                    : "-"}
-                </Text>
+              <View style={[styles.tableCell, { width: "10%" }]}>
+                <Text>{calculateTotalAttendance(sortedMonthlyRecords)}</Text>
               </View>
               <View
                 style={[
@@ -426,128 +532,113 @@ const ProgressCardPDF = ({
                   { width: "20%", flexDirection: "row" },
                 ]}
               >
-                <View style={styles.subCell}>
-                  <Text>{}</Text>
-                </View>
-                <View style={styles.lastSubCell}>
-                  <Text>{}</Text>
-                </View>
+                <View style={styles.subCell}></View>
+                <View style={styles.lastSubCell}></View>
               </View>
-              <View style={[styles.tableCellLast, { width: "10%" }]}>
-                <Text>{record.remarks || "-"}</Text>
-              </View>
-            </View>
-          ))}
 
-          {/* Average Row */}
-          <View style={styles.tableRow}>
-            <View style={[styles.tableCell, { width: "5%" }]}>
-              <Text></Text>
-            </View>
-            <View style={[styles.tableCell, { width: "10%" }]}>
-              <Text>Average</Text>
-            </View>
-            <View style={[styles.tableCell, { width: "10%" }]}>
-              <Text></Text>
-            </View>
-            <View style={[styles.tableCell, { width: "10%" }]}>
-              <Text></Text>
-            </View>
-            <View
-              style={[styles.tableCell, { width: "15%", flexDirection: "row" }]}
-            >
-              <View style={styles.subCell}>
-                <Text></Text>
-              </View>
-              <View style={styles.lastSubCell}>
-                <Text></Text>
-              </View>
-            </View>
-            <View style={[styles.tableCell, { width: "10%" }]}>
-              <Text>
-                {Object.entries(monthlyRecords).length > 0
-                  ? (
-                      Object.entries(monthlyRecords).reduce(
-                        (sum, [_, record]) => {
-                          const progress =
-                            record.presentDays &&
-                            record.presentDays + record.absentDays
-                              ? (record.presentDays /
-                                  (record.presentDays + record.absentDays)) *
-                                100
-                              : 0;
-                          return sum + progress;
-                        },
-                        0
-                      ) / Object.entries(monthlyRecords).length
-                    ).toFixed(2)
-                  : "-"}
-              </Text>
-            </View>
-            <View
-              style={[styles.tableCell, { width: "20%", flexDirection: "row" }]}
-            >
-              <View style={styles.subCell}></View>
-              <View style={styles.lastSubCell}></View>
-            </View>
-
-            <View style={[styles.tableCellLast, { width: "10%" }]}></View>
-          </View>
-        </View>
-
-        {/* Quarterly Tests Table */}
-        <View style={styles.table}>
-          <Text style={[styles.label, { marginBottom: 5, marginLeft: 4 }]}>
-            QUARTERLY TESTS
-          </Text>
-          <View style={styles.tableHeader}>
-            <View style={[styles.tableCellHeader, { width: "10%" }]}>
-              <Text>Quart. No.</Text>
-            </View>
-            <View style={[styles.nestedColumn, { width: "30%" }]}>
-              <View style={[styles.nestedHeader]}>
-                <Text>Marks</Text>
-              </View>
-              <View style={styles.nestedContent}>
-                <View style={styles.subCell}>
-                  <Text>Practical</Text>
-                </View>
-                <View style={styles.subCell}>
-                  <Text>Theory</Text>
-                </View>
-                <View style={styles.lastSubCell}>
-                  <Text>Empl. Skills</Text>
-                </View>
-              </View>
-            </View>
-            <View style={[styles.tableCellHeader, { width: "15%" }]}>
-              <Text>Character & Communication</Text>
-            </View>
-            <View style={[styles.nestedColumn, { width: "30%" }]}>
-              <View style={[styles.nestedHeader]}>
-                <Text>Signature</Text>
-              </View>
-              <View style={styles.nestedContent}>
-                <View style={styles.subCell}>
-                  <Text>Trade Instructor</Text>
-                </View>
-                <View style={styles.subCell}>
-                  <Text>Group Instructor</Text>
-                </View>
-                <View style={styles.lastSubCell}>
-                  <Text>Principal</Text>
-                </View>
-              </View>
-            </View>
-            <View style={[styles.tableCellHeaderLast, { width: "15%" }]}>
-              <Text>Remarks</Text>
+              <View style={[styles.tableCellLast, { width: "10%" }]}></View>
             </View>
           </View>
 
-          {quarterlyTests.map((test, index) => (
-            <View key={index} style={styles.tableRow}>
+          {/* Quarterly Tests Table */}
+          <View style={styles.table}>
+            <Text style={[styles.label, { marginBottom: 5, marginLeft: 4 }]}>
+              QUARTERLY TESTS
+            </Text>
+            <View style={styles.tableHeader}>
+              <View style={[styles.tableCellHeader, { width: "10%" }]}>
+                <Text>Quart. No.</Text>
+              </View>
+              <View style={[styles.nestedColumn, { width: "30%" }]}>
+                <View style={[styles.nestedHeader]}>
+                  <Text>Marks</Text>
+                </View>
+                <View style={styles.nestedContent}>
+                  <View style={styles.subCell}>
+                    <Text>Practical</Text>
+                  </View>
+                  <View style={styles.subCell}>
+                    <Text>Theory</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>Empl. Skills</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={[styles.tableCellHeader, { width: "15%" }]}>
+                <Text>Character & Communication</Text>
+              </View>
+              <View style={[styles.nestedColumn, { width: "30%" }]}>
+                <View style={[styles.nestedHeader]}>
+                  <Text>Signature</Text>
+                </View>
+                <View style={styles.nestedContent}>
+                  <View style={styles.subCell}>
+                    <Text>Trade Instructor</Text>
+                  </View>
+                  <View style={styles.subCell}>
+                    <Text>Group Instructor</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>Principal</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={[styles.tableCellHeaderLast, { width: "15%" }]}>
+                <Text>Remarks</Text>
+              </View>
+            </View>
+
+            {quarterlyTests.map((test, index) => (
+              <View key={index} style={styles.tableRow}>
+                <View style={[styles.tableCell, { width: "10%" }]}>
+                  <Text>Q{test.quarter || index + 1}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { width: "30%", flexDirection: "row" },
+                  ]}
+                >
+                  <View style={styles.subCell}>
+                    <Text>{test.practical || "-"}</Text>
+                  </View>
+                  <View style={styles.subCell}>
+                    <Text>{test.theory || "-"}</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>{test.skills || "-"}</Text>
+                  </View>
+                </View>
+                <View style={[styles.tableCell, { width: "15%" }]}>
+                  <Text>{test.characterCom || "-"}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { width: "30%", flexDirection: "row" },
+                  ]}
+                >
+                  <View style={styles.subCell}>
+                    <Text>{test.signature || "-"}</Text>
+                  </View>
+                  <View style={styles.subCell}>
+                    <Text>-</Text>
+                  </View>
+                  <View style={styles.lastSubCell}>
+                    <Text>-</Text>
+                  </View>
+                </View>
+                <View style={[styles.tableCellLast, { width: "15%" }]}>
+                  <Text>{test.remarks || "-"}</Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Average Row for Quarterly Tests */}
+            <View style={styles.tableRow}>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text>Q{test.quarter || index + 1}</Text>
+                <Text>Average</Text>
               </View>
               <View
                 style={[
@@ -556,17 +647,44 @@ const ProgressCardPDF = ({
                 ]}
               >
                 <View style={styles.subCell}>
-                  <Text>{test.practical || "-"}</Text>
+                  <Text>
+                    {quarterlyTests.length > 0
+                      ? (
+                          quarterlyTests.reduce(
+                            (sum, test) => sum + (test.practical || 0),
+                            0
+                          ) / quarterlyTests.length
+                        ).toFixed(2)
+                      : "-"}
+                  </Text>
                 </View>
                 <View style={styles.subCell}>
-                  <Text>{test.theory || "-"}</Text>
+                  <Text>
+                    {quarterlyTests.length > 0
+                      ? (
+                          quarterlyTests.reduce(
+                            (sum, test) => sum + (test.theory || 0),
+                            0
+                          ) / quarterlyTests.length
+                        ).toFixed(2)
+                      : "-"}
+                  </Text>
                 </View>
                 <View style={styles.lastSubCell}>
-                  <Text>{test.skills || "-"}</Text>
+                  <Text>
+                    {quarterlyTests.length > 0
+                      ? (
+                          quarterlyTests.reduce(
+                            (sum, test) => sum + (test.skills || 0),
+                            0
+                          ) / quarterlyTests.length
+                        ).toFixed(2)
+                      : "-"}
+                  </Text>
                 </View>
               </View>
               <View style={[styles.tableCell, { width: "15%" }]}>
-                <Text>{test.characterCom || "-"}</Text>
+                <Text></Text>
               </View>
               <View
                 style={[
@@ -575,88 +693,22 @@ const ProgressCardPDF = ({
                 ]}
               >
                 <View style={styles.subCell}>
-                  <Text>{test.signature || "-"}</Text>
+                  <Text></Text>
                 </View>
                 <View style={styles.subCell}>
-                  <Text>-</Text>
+                  <Text></Text>
                 </View>
                 <View style={styles.lastSubCell}>
-                  <Text>-</Text>
+                  <Text></Text>
                 </View>
               </View>
               <View style={[styles.tableCellLast, { width: "15%" }]}>
-                <Text>{test.remarks || "-"}</Text>
-              </View>
-            </View>
-          ))}
-
-          {/* Average Row for Quarterly Tests */}
-          <View style={styles.tableRow}>
-            <View style={[styles.tableCell, { width: "10%" }]}>
-              <Text>Average</Text>
-            </View>
-            <View
-              style={[styles.tableCell, { width: "30%", flexDirection: "row" }]}
-            >
-              <View style={styles.subCell}>
-                <Text>
-                  {quarterlyTests.length > 0
-                    ? (
-                        quarterlyTests.reduce(
-                          (sum, test) => sum + (test.practical || 0),
-                          0
-                        ) / quarterlyTests.length
-                      ).toFixed(2)
-                    : "-"}
-                </Text>
-              </View>
-              <View style={styles.subCell}>
-                <Text>
-                  {quarterlyTests.length > 0
-                    ? (
-                        quarterlyTests.reduce(
-                          (sum, test) => sum + (test.theory || 0),
-                          0
-                        ) / quarterlyTests.length
-                      ).toFixed(2)
-                    : "-"}
-                </Text>
-              </View>
-              <View style={styles.lastSubCell}>
-                <Text>
-                  {quarterlyTests.length > 0
-                    ? (
-                        quarterlyTests.reduce(
-                          (sum, test) => sum + (test.skills || 0),
-                          0
-                        ) / quarterlyTests.length
-                      ).toFixed(2)
-                    : "-"}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.tableCell, { width: "15%" }]}>
-              <Text></Text>
-            </View>
-            <View
-              style={[styles.tableCell, { width: "30%", flexDirection: "row" }]}
-            >
-              <View style={styles.subCell}>
                 <Text></Text>
               </View>
-              <View style={styles.subCell}>
-                <Text></Text>
-              </View>
-              <View style={styles.lastSubCell}>
-                <Text></Text>
-              </View>
-            </View>
-            <View style={[styles.tableCellLast, { width: "15%" }]}>
-              <Text></Text>
             </View>
           </View>
-        </View>
-      </Page>
+        </Page>
+      ))}
     </Document>
   );
 };
