@@ -151,24 +151,8 @@ const EditProgressCard = ({
         batchMarks: stringifiedBatchMarks,
       });
 
-      // Parse the JSON response and update local batch data state
-      let parsedBatchMarks = [];
-      if (updatedBatch.batchMarks) {
-        try {
-          parsedBatchMarks = updatedBatch.batchMarks.map((item) =>
-            typeof item === "string" ? JSON.parse(item) : item
-          );
-        } catch (e) {
-          console.log("Error parsing updated batchMarks:", e);
-          parsedBatchMarks = [];
-        }
-      }
-
-      // Update local batch data state with parsed marks
-      setBatchData({
-        ...updatedBatch,
-        batchMarks: parsedBatchMarks,
-      });
+      // Update local batch data state with marks
+      setBatchData(updatedBatch);
 
       // Exit edit mode
       setEditMode(false);

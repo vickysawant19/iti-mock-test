@@ -11,6 +11,7 @@ import {
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
 import { format } from "date-fns";
+import { calculateAverage, calculateTotalAttendance, formatDate } from "./util";
 
 // Register fonts for PDF
 Font.register({
@@ -203,45 +204,6 @@ const styles = StyleSheet.create({
 
 const ProgressCardPDF = ({ data }) => {
   if (!data) return <Document></Document>;
-
-  // Calculate total attendance percentage across all available months
-  const calculateTotalAttendance = (monthlyRecordArray) => {
-    if (!monthlyRecordArray || monthlyRecordArray.length === 0) {
-      return "-";
-    }
-
-    let totalPresentDays = 0;
-    let totalDays = 0;
-
-    // Loop through all month records and accumulate the days
-    monthlyRecordArray.forEach(([month, record]) => {
-      // Only count months where record exists and has attendance data
-      if (
-        record &&
-        typeof record.presentDays === "number" &&
-        typeof record.absentDays === "number"
-      ) {
-        totalPresentDays += record.presentDays;
-        totalDays += record.presentDays + record.absentDays;
-      }
-    });
-
-    // Calculate overall percentage if we have any days to count
-    if (totalDays === 0) {
-      return "-"; // No attendance data available
-    }
-
-    const overallPercentage = (totalPresentDays / totalDays) * 100;
-    return overallPercentage.toFixed(2) + "%";
-  };
-
-  const formatDate = (dateString) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy");
-    } catch {
-      return "-";
-    }
-  };
 
   return (
     <Document>
@@ -446,10 +408,10 @@ const ProgressCardPDF = ({ data }) => {
                 <Text>Average</Text>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text></Text>
+                <Text>{calculateAverage(allRecords, "theory", 100)}</Text>
               </View>
               <View style={[styles.tableCell, { width: "10%" }]}>
-                <Text></Text>
+                <Text>{calculateAverage(allRecords, "practical", 250)}</Text>
               </View>
               <View
                 style={[

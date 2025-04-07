@@ -33,11 +33,16 @@ const ProgressCard = ({
       return;
     }
 
-    const studentMarks = batchData.batchMarks.find(({ marks, userId }) => {
+    const batchMarksParsed = batchData.batchMarks.map((item) =>
+      typeof item === "string" ? JSON.parse(item) : item
+    );
+
+    const studentMarks = batchMarksParsed.find(({ marks, userId }) => {
       return userId === selectedStudent.userId;
     });
 
     const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
+
     const monthlyRecords =
       stats.find((item) => item.userId === selectedStudent.userId)
         ?.monthlyAttendance || {};
@@ -108,20 +113,7 @@ const ProgressCard = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto relative  ">
-      {editMode && (
-        <div
-          className={`bg-gray-50 w-full h-full absolute top-14 border-red-500 z-10 rounded-md`}
-        >
-          <EditProgressCard
-            progressData={progressData}
-            setProgressdata={setProgressData}
-            setEditMode={setEditMode}
-            batchData={batchData}
-            setBatchData={setBatchData}
-          />
-        </div>
-      )}
-      <div className="mb-4 flex justify-between items-center ">
+      <div className="mb-4 flex-col md:flex-row justify-start items-start flex md:justify-between md:items-center gap-4 ">
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -164,12 +156,12 @@ const ProgressCard = ({
         </div>
 
         {progressData && (
-          <div
+          <button
             onClick={() => setEditMode((prev) => !prev)}
             className="bg-blue-600 p-2 rounded-md text-white"
           >
             {editMode ? "Close Edit" : "Open Edit"}
-          </div>
+          </button>
         )}
 
         {progressData && (
@@ -187,29 +179,42 @@ const ProgressCard = ({
           </PDFDownloadLink>
         )}
       </div>
-      <div className="overflow-hidden border rounded-lg shadow-sm">
-        {progressData ? (
-          pdfUrl ? (
-            <>
-              <iframe
-                src={pdfUrl}
-                className="w-full h-[842px] border-0"
-                title="Progress Card Preview"
-              />
-            </>
+
+      {editMode ? (
+        <div className="w-full h-full  rounded-md">
+          <EditProgressCard
+            progressData={progressData}
+            setProgressdata={setProgressData}
+            setEditMode={setEditMode}
+            batchData={batchData}
+            setBatchData={setBatchData}
+          />
+        </div>
+      ) : (
+        <div className="overflow-hidden border rounded-lg shadow-sm">
+          {progressData ? (
+            pdfUrl ? (
+              <>
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-[842px] border-0"
+                  title="Progress Card Preview"
+                />
+              </>
+            ) : (
+              <div className="w-full h-[842px] flex items-center justify-center">
+                <p className="text-gray-500">Generating preview...</p>
+              </div>
+            )
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center">
-              <p className="text-gray-500">Generating preview...</p>
+            <div className="w-full h-[842px] flex items-center justify-center bg-white">
+              <p className="text-gray-500">
+                Select a student to view their progress card
+              </p>
             </div>
-          )
-        ) : (
-          <div className="w-full h-[842px] flex items-center justify-center bg-white">
-            <p className="text-gray-500">
-              Select a student to view their progress card
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
