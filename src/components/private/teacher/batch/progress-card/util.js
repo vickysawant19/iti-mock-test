@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export const calculateTotalAttendance = (monthlyRecordArray) => {
   if (!monthlyRecordArray || monthlyRecordArray.length === 0) {
     return "-";

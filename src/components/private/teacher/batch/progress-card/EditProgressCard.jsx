@@ -19,17 +19,33 @@ const EditProgressCard = ({
     }
   }, [progressData, selectedPage]);
 
+  const calculateMarks = (presentDays, absentDays, min, max) => {
+    if (presentDays === 0) return "";
+    const totalDays = presentDays + absentDays;
+    const attendanceRatio = totalDays === 0 ? 0 : presentDays / totalDays;
+
+    // Scale marks based on attendance ratio
+    const marks = min + (max - min) * attendanceRatio;
+
+    // Round it to nearest integer for realism
+    return Math.round(marks);
+  };
+
   const initializeFormData = () => {
     const pageData = progressData.pages[selectedPage] || [];
     const initializedData = pageData.map((monthEntry) => {
       const [month, data] = monthEntry;
+      const { presentDays = 0, absentDays = 0 } = data;
+
       return {
-        month,
-        theory: data.theory !== undefined ? data.theory : "",
-        practical: data.practical !== undefined ? data.practical : "",
         ...data,
+        month,
+        theory: data.theory || calculateMarks(presentDays, absentDays, 80, 95),
+        practical:
+          data.practical || calculateMarks(presentDays, absentDays, 200, 245),
       };
     });
+
     setFormData(initializedData);
   };
 
@@ -210,7 +226,7 @@ const EditProgressCard = ({
                 <td className="border p-3">{item.month}</td>
                 <td className="border p-3">
                   <input
-                    type="text"
+                    type="number"
                     className="w-full p-2 border rounded-md"
                     value={item.theory}
                     onChange={(e) =>
@@ -221,7 +237,7 @@ const EditProgressCard = ({
                 </td>
                 <td className="border p-3">
                   <input
-                    type="text"
+                    type="number"
                     className="w-full p-2 border rounded-md"
                     value={item.practical}
                     onChange={(e) =>
