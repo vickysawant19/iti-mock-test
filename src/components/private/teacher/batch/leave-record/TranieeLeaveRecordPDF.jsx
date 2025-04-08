@@ -1,15 +1,8 @@
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  StyleSheet,
-  Font,
-  Image,
-} from "@react-pdf/renderer";
+import { Document, Page, View, Text, Font } from "@react-pdf/renderer";
 
-import devtLogo from "../../../../../assets/dvet-logo.png";
-import bodhChinha from "../../../../../assets/bodh-chinha.png";
+import PdfHeader from "../components/PdfHeader";
+import { styles } from "./Styles";
+import PdfStudentInfo from "../components/PdfStudentInfo";
 
 // Register fonts for PDF
 Font.register({
@@ -29,127 +22,6 @@ Font.registerHyphenationCallback((word) => {
   return [word];
 });
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 30,
-    fontFamily: "Roboto",
-    fontSize: 10,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    paddingVertical: 5,
-  },
-  logoContainer: {
-    width: 70,
-    height: 70,
-  },
-  logo: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-  },
-  header: {
-    textAlign: "center",
-    maxWidth: "70%",
-  },
-  headerTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    textAlign: "center",
-    fontSize: 12,
-    fontWeight: "bold",
-    width: "100%",
-  },
-  section: {
-    marginBottom: 10,
-  },
-  studentDetailsSection: {
-    paddingVertical: 5,
-  },
-  grid: {
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-  gridItem: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  labelTop: {
-    fontWeight: "bold",
-    marginRight: 5,
-  },
-  valueText: {
-    marginLeft: 5,
-  },
-  boldText: {
-    fontWeight: "bold",
-  },
-  table: {
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  tableHeader: {
-    backgroundColor: "#f3f4f6",
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#000",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#000",
-    minHeight: 25,
-  },
-  tableRowLast: {
-    flexDirection: "row",
-    minHeight: 25,
-  },
-  tableCell: {
-    borderRightWidth: 1,
-    borderColor: "#000",
-    padding: 4,
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  tableCellHeader: {
-    padding: 4,
-    borderRightWidth: 1,
-    borderColor: "#000",
-    fontWeight: "bold",
-    backgroundColor: "#f3f4f6",
-    textAlign: "center",
-  },
-  tableCellHeaderLast: {
-    padding: 4,
-    fontWeight: "bold",
-    backgroundColor: "#f3f4f6",
-    textAlign: "center",
-  },
-  tableCellLast: {
-    padding: 4,
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    marginBottom: 5,
-    textAlign: "center",
-  },
-  percentageRow: {
-    backgroundColor: "#f3f4f6",
-    fontWeight: "bold",
-  },
-});
-
 const TraineeLeaveRecordPDF = ({ data }) => {
   // Calculate percentage for a specific month
   const calculatePercentage = (attendanceData) => {
@@ -166,59 +38,14 @@ const TraineeLeaveRecordPDF = ({ data }) => {
       {data?.pages?.map((pageData, index) => (
         <Page key={index} size="LEGAL" style={styles.page}>
           {/* Header Section */}
-          <View style={styles.headerContainer}>
-            {/* Left Logo (DVET) */}
-            <View style={styles.logoContainer}>
-              <Image style={styles.logo} src={devtLogo} />
-            </View>
-
-            {/* Center Text */}
-            <View style={styles.header}>
-              <Text style={[styles.headerTitle, { textAlign: "center" }]}>
-                {data.collageName}
-              </Text>
-              <Text style={styles.headerSubtitle}>TRAINEE LEAVE RECORD</Text>
-            </View>
-
-            {/* Right Logo (Bodh Chinha) */}
-            <View style={styles.logoContainer}>
-              <Image style={styles.logo} src={bodhChinha} />
-            </View>
-          </View>
+          <PdfHeader
+            collageName={data.collageName}
+            heading={"TRAINEE LEAVE RECORD"}
+            styles={styles}
+          />
 
           {/* Student Details Section */}
-          <View style={styles.studentDetailsSection}>
-            <View style={styles.grid}>
-              <View style={styles.gridItem}>
-                <Text>
-                  <Text style={styles.boldText}>Trainee Name: </Text>
-                  {data.userName}
-                </Text>
-                <Text>
-                  <Text style={styles.boldText}>Trade: </Text>
-                  {data.tradeName}
-                </Text>
-                <Text>
-                  <Text style={styles.boldText}>Exam Seat No.: </Text>
-                  {data.registerId}
-                </Text>
-              </View>
-              <View style={styles.gridItem}>
-                <Text>
-                  <Text style={styles.boldText}>Year: </Text>
-                  {pageData.yearRange}
-                </Text>
-                <Text>
-                  <Text style={styles.boldText}>Address: </Text>
-                  {data.address}
-                </Text>
-                <Text>
-                  <Text style={styles.boldText}>Stipend: </Text>
-                  {data.stipend}/No
-                </Text>
-              </View>
-            </View>
-          </View>
+          <PdfStudentInfo data={data} yearRange={pageData.yearRange} />
 
           {/* Attendance Details Table */}
           <View style={styles.section}>

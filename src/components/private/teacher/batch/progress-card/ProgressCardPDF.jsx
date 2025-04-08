@@ -1,17 +1,12 @@
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  StyleSheet,
-  Font,
-  Image,
-} from "@react-pdf/renderer";
+import { Document, Page, View, Text, Font, Image } from "@react-pdf/renderer";
 
 import devtLogo from "../../../../../assets/dvet-logo.png";
 import bodhChinha from "../../../../../assets/bodh-chinha.png";
 import { format } from "date-fns";
 import { calculateAverage, calculateTotalAttendance, formatDate } from "./util";
+import { styles } from "./styles";
+import PdfHeader from "../components/PdfHeader";
+import PdfStudentInfo from "../components/PdfStudentInfo";
 
 // Register fonts for PDF
 Font.register({
@@ -31,249 +26,22 @@ Font.registerHyphenationCallback((word) => {
   return [word];
 });
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 30,
-    fontFamily: "Roboto",
-    fontSize: 10,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    paddingBottom: 5,
-  },
-  logoContainer: {
-    width: 70,
-    height: 70,
-  },
-  logo: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-  },
-  header: {
-    flex: 1,
-    textAlign: "center",
-    maxWidth: "70%",
-  },
-  headerTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 10,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    width: "100%",
-    alignSelf: "center",
-  },
-  progressTitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    marginTop: 10,
-    textAlign: "center",
-  },
-
-  section: {
-    paddingVertical: 5,
-  },
-  grid: {
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-  gridItem: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  labelTop: {
-    fontWeight: "bold",
-    marginRight: 5,
-  },
-  label: {
-    fontWeight: "bold",
-    marginRight: 5,
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  table: {
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  tableHeader: {
-    backgroundColor: "#f3f4f6",
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#000",
-    height: "6rem",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#000",
-    minHeight: 25,
-  },
-  tableCell: {
-    borderRightWidth: 1,
-    textAlign: "center",
-    borderColor: "#000",
-    justifyContent: "center",
-  },
-  tableCellLast: {
-    padding: 4,
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  tableCellHeader: {
-    padding: 4,
-    borderRightWidth: 1,
-    borderTopWidth: 1,
-    borderColor: "#000",
-    fontWeight: "bold",
-    backgroundColor: "#f3f4f6",
-  },
-  tableCellHeaderLast: {
-    padding: 4,
-    fontWeight: "bold",
-    backgroundColor: "#f3f4f6",
-    borderTopWidth: 1,
-  },
-  subHeaderContainer: {
-    borderRightWidth: 1,
-    borderColor: "#000",
-  },
-  subHeaderRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#000",
-  },
-  subCell: {
-    borderRightWidth: 1,
-    borderColor: "#000",
-    padding: 3,
-    flex: 1,
-    textAlign: "center",
-  },
-  lastSubCell: {
-    padding: 3,
-    flex: 1,
-    textAlign: "center",
-  },
-
-  // Modified styles for nested headers
-  nestedColumn: {
-    borderRightWidth: 1,
-    borderColor: "#000",
-    fontWeight: "bold",
-  },
-  nestedColumnLast: {
-    borderRightWidth: 0,
-  },
-  nestedHeader: {
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderColor: "#000",
-    padding: 4,
-    backgroundColor: "#f3f4f6",
-    textAlign: "center",
-  },
-  nestedContent: {
-    flexDirection: "row",
-    flex: 1,
-  },
-  nestedCell: {
-    flex: 1,
-    padding: 4,
-    borderRightWidth: 1,
-    borderColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  nestedCellLast: {
-    flex: 1,
-    padding: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
-
 const ProgressCardPDF = ({ data }) => {
   if (!data) return <Document></Document>;
 
   return (
     <Document>
-      {data?.pages.map((allRecords, index) => (
+      {data?.pages.map(({ data: allRecords, yearRange }, index) => (
         <Page size="A4" style={styles.page} key={index}>
           {/* Header Section with logos properly positioned */}
-          <View style={styles.headerContainer}>
-            {/* Left Logo (DVET) */}
-            <View style={styles.logoContainer}>
-              <Image style={styles.logo} src={devtLogo} />
-            </View>
-
-            {/* Center Text */}
-            <View style={styles.header}>
-              {/* <Text style={styles.headerTitle}>
-              DIRECTORATE OF VOCATIONAL EDUCATION & TRAINING
-            </Text> */}
-              <Text style={[styles.headerTitle]}>
-                {data?.collageName || ""}
-              </Text>
-              <Text style={styles.progressTitle}>PROGRESS CARD</Text>
-            </View>
-
-            {/* Right Logo (Bodh Chinha) */}
-            <View style={styles.logoContainer}>
-              <Image style={styles.logo} src={bodhChinha} />
-            </View>
-          </View>
+          <PdfHeader
+            collageName={data.collageName}
+            heading={"PROGRESS CARD"}
+            styles={styles}
+          />
 
           {/* Student Details Section */}
-          <View style={styles.section}>
-            <View style={styles.grid}>
-              <View style={styles.gridItem}>
-                <Text>
-                  <Text style={styles.labelTop}>Name of Trainee:</Text>
-                  {data?.userName || "-"}
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>Date of Birth:</Text>
-                  <Text>{data?.DOB ? formatDate(data?.DOB) : "-"}</Text>
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>Trade:</Text>
-                  {data?.tradeName || "-"}
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>Edu. Qual.:</Text>
-                  {data?.educationQualification || "-"}
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>Stipend:</Text>
-                  {data?.stipend ? "YES" : "YES"}
-                </Text>
-              </View>
-              <View style={styles.gridItem}>
-                <Text>
-                  <Text style={styles.labelTop}>Trainee Code:</Text>
-                  {data?.registerId || "-"}
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>CMD Rec. No.:</Text>
-                  {data?.cmdRecordNumber || "-"}
-                </Text>
-                <Text>
-                  <Text style={styles.labelTop}>Permanent Address:</Text>
-                  {data?.address || "-"}
-                </Text>
-              </View>
-            </View>
-          </View>
+          <PdfStudentInfo data={data} yearRange={yearRange} />
 
           {/* Monthly Record Table */}
           <View style={styles.table}>
@@ -298,7 +66,7 @@ const ProgressCardPDF = ({ data }) => {
               <View style={[styles.tableCellHeader, { width: "10%" }]}>
                 <Text>Practical (250)</Text>
               </View>
-              <View style={[styles.nestedColumn, { width: "15%" }]}>
+              <View style={[styles.nestedColumn, { width: "20%" }]}>
                 <View style={styles.nestedHeader}>
                   <Text>Attendance</Text>
                 </View>
@@ -314,7 +82,7 @@ const ProgressCardPDF = ({ data }) => {
               <View style={[styles.tableCellHeader, { width: "10%" }]}>
                 <Text>Progress %</Text>
               </View>
-              <View style={[styles.nestedColumn, { width: "20%" }]}>
+              <View style={[styles.nestedColumn, { width: "25%" }]}>
                 <View style={styles.nestedHeader}>
                   <Text>Signature</Text>
                 </View>
@@ -327,7 +95,7 @@ const ProgressCardPDF = ({ data }) => {
                   </View>
                 </View>
               </View>
-              <View style={[styles.tableCellHeaderLast, { width: "20%" }]}>
+              <View style={[styles.tableCellHeaderLast, { width: "10%" }]}>
                 <Text>Remarks</Text>
               </View>
             </View>
@@ -350,7 +118,7 @@ const ProgressCardPDF = ({ data }) => {
                   style={[
                     styles.tableCell,
                     {
-                      width: "15%",
+                      width: "20%",
                       borderRightWidth: 1,
                       flexDirection: "row",
                     },
@@ -383,7 +151,7 @@ const ProgressCardPDF = ({ data }) => {
                 <View
                   style={[
                     styles.tableCell,
-                    { width: "20%", flexDirection: "row" },
+                    { width: "25%", flexDirection: "row" },
                   ]}
                 >
                   <View style={styles.subCell}>
@@ -416,7 +184,7 @@ const ProgressCardPDF = ({ data }) => {
               <View
                 style={[
                   styles.tableCell,
-                  { width: "15%", flexDirection: "row" },
+                  { width: "20%", flexDirection: "row" },
                 ]}
               >
                 <View style={styles.subCell}>
@@ -432,7 +200,7 @@ const ProgressCardPDF = ({ data }) => {
               <View
                 style={[
                   styles.tableCell,
-                  { width: "20%", flexDirection: "row" },
+                  { width: "25%", flexDirection: "row" },
                 ]}
               >
                 <View style={styles.subCell}></View>

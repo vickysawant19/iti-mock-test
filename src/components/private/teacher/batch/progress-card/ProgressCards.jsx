@@ -7,6 +7,7 @@ import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import { getMonthsArray } from "../util/util";
 
 import EditProgressCard from "./EditProgressCard";
+import { addMonths, differenceInMonths, format } from "date-fns";
 
 const ProgressCard = ({
   studentProfiles = [],
@@ -70,7 +71,25 @@ const ProgressCard = ({
 
     // Create pages with chunks of data
     for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
-      pages.push(monthlyRecordArray.slice(i, i + monthsPerPage));
+      pages.push({
+        data: monthlyRecordArray.slice(i, i + monthsPerPage),
+        yearRange: `${format(
+          addMonths(new Date(batchData.start_date), i),
+          "MMMM yyyy"
+        )} to ${format(
+          addMonths(
+            new Date(batchData.start_date),
+            Math.min(
+              i + 11,
+              differenceInMonths(
+                new Date(batchData.end_date),
+                new Date(batchData.start_date)
+              )
+            )
+          ),
+          "MMMM yyyy"
+        )}`,
+      });
     }
 
     setProgressData({ ...selectedStudent, quarterlyTests, pages });
