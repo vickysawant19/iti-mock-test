@@ -23,8 +23,10 @@ import ViewAttendance from "./attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
+import Students from "./profile/Students";
 
 const TABS = [
+  { id: "students", label: "Student", icon: Users },
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
@@ -255,6 +257,8 @@ const ViewBatch = () => {
     }
 
     switch (activeTab) {
+      case "students":
+        return <Students batchId={selectedBatch} />;
       case "profiles":
         return <ViewProfiles students={students} />;
       case "attendance":

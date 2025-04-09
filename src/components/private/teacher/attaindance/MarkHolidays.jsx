@@ -6,6 +6,7 @@ import { X, Loader2 } from "lucide-react";
 import CustomCalendar from "./Calender";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
+import { Query } from "appwrite";
 
 const MarkHolidays = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -20,10 +21,17 @@ const MarkHolidays = () => {
   const fetchBatchData = async () => {
     setIsLoading(true);
     try {
-      const data = await batchService.getBatch(profile.batchId);
-      setAttendanceHolidays(
-        data?.attendanceHolidays.map((item) => JSON.parse(item)) || []
-      );
+      const data = await batchService.listBatches([
+        Query.equal("$id", profile.batchId),
+        Query.select(["attendanceHolidays"]),
+      ]);
+      if (data.total >= 1) {
+        setAttendanceHolidays(
+          data.documents[0]?.attendanceHolidays.map((item) =>
+            JSON.parse(item)
+          ) || []
+        );
+      }
     } catch (error) {
       console.error("Error fetching batch data:", error);
       toast.error("Failed to load holiday data. Please try again.");
@@ -90,6 +98,7 @@ const MarkHolidays = () => {
       const data = await batchService.updateBatch(profile.batchId, {
         attendanceHolidays: stringifyData,
       });
+
       setAttendanceHolidays(
         data.attendanceHolidays.map((item) => JSON.parse(item))
       );
@@ -138,7 +147,9 @@ const MarkHolidays = () => {
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Update Holidays</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Update Holidays
+        </h1>
         <button
           onClick={handleSubmit}
           disabled={isLoading || isSubmitting}
