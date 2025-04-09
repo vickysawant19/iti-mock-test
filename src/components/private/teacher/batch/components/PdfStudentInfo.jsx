@@ -11,13 +11,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: "row",
-    marginBottom: 10,
   },
   gridItem: {
     flex: 1,
-    paddingHorizontal: 10,
   },
   labelTop: {
+    display:"flex",
     fontWeight: "bold",
     marginRight: 5,
   },
@@ -30,14 +29,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   textField: {
+    display:"flex",
     borderBottom: "1px solid #cccccc",
+    maxWidth:"70%",
     paddingBottom: 2,
     fontSize: 10,
   },
   textRow: {
-    marginBottom: 2,
-    display: "flex",
+    display:"flex",
     flexDirection: "row",
+    marginBottom: 2,
   },
   textContainer: {
     display: "flex",
