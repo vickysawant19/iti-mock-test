@@ -16,10 +16,6 @@ const Students = ({ batchId }) => {
   const [loading, setLoading] = useState(true);
   const [classroomView, setClassroomView] = useState(false);
 
-  // Classroom dimensions
-  const rows = 5;
-  const cols = 6;
-
   // Create a map of studentData for efficient access
   const studentDataMap = useMemo(() => {
     const map = {};
@@ -117,60 +113,6 @@ const Students = ({ batchId }) => {
     }
   };
 
-  const updateStudentPosition = async (userId, position) => {
-    try {
-      const updatedBatchStudents = batchStudents.map((student) => {
-        if (student.userId === userId) {
-          return { ...student, position };
-        }
-        return student;
-      });
-
-      setBatchStudents(updatedBatchStudents);
-
-      // Update batch with new positions
-      await batchService.updateBatch(batchId, {
-        studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
-      });
-      toast.success("Seating position updated");
-    } catch (error) {
-      console.error("Error updating student position:", error);
-      toast.error("Failed to update seating position");
-    }
-  };
-
-  const findStudentByPosition = (x, y) => {
-    return batchStudents.find(
-      (student) =>
-        student.position && student.position.x === x && student.position.y === y
-    );
-  };
-
-  const handleSeatClick = (x, y) => {
-    // Check if seat is already occupied
-    const existingStudent = findStudentByPosition(x, y);
-
-    if (existingStudent) {
-      // Clear this position
-      updateStudentPosition(existingStudent.userId, { x: -1, y: -1 });
-    } else {
-      // Find unassigned students
-      const unassignedStudents = batchStudents.filter(
-        (student) =>
-          !student.position ||
-          student.position.x === -1 ||
-          student.position.y === -1
-      );
-
-      if (unassignedStudents.length > 0) {
-        // For simplicity, just assign the first unassigned student
-        updateStudentPosition(unassignedStudents[0].userId, { x, y });
-      } else {
-        toast.info("No unassigned students available");
-      }
-    }
-  };
-
   // Get student details from the map
   const getStudentDetails = (userId) => {
     return studentDataMap[userId] || { userName: "Unknown", studentId: "N/A" };
@@ -208,11 +150,10 @@ const Students = ({ batchId }) => {
 
       {classroomView ? (
         <Classroom
-          rows={rows}
-          cols={cols}
+          batchId={batchId}
           batchStudents={batchStudents}
-          findStudentByPosition={findStudentByPosition}
-          handleSeatClick={handleSeatClick}
+          setBatchStudents={setBatchStudents}
+          studentDataMap={studentDataMap}
           getStudentDetails={getStudentDetails}
         />
       ) : (
