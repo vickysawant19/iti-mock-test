@@ -114,16 +114,17 @@ const ViewBatch = () => {
 
   // Fetch batch students
   const fetchBatchStudent = async () => {
-    if (!selectedBatch) return;
+    if (!selectedBatchData) return;
 
-    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
-      ? selectedBatch
-      : profile.batchId;
+    const studentIds = selectedBatchData.studentIds.map((item) => {
+      const data = JSON.parse(item);
+      return data.userId;
+    });
 
     setStudentLoading(true);
     try {
       const data = await userProfileService.getBatchUserProfile([
-        Query.equal("batchId", batchId),
+        Query.equal("userId", studentIds),
         Query.orderAsc("studentId"),
       ]);
       if (data && Array.isArray(data)) {
@@ -142,11 +143,7 @@ const ViewBatch = () => {
 
   // Fetch student attendance
   const fetchStudentsAttendance = async () => {
-    if (!students || !selectedBatch) return;
-
-    const batchId = teacherBatches.some((batchid) => batchid === selectedBatch)
-      ? selectedBatch
-      : profile.batchId;
+    if (!students) return;
 
     setAttendanceLoading(true);
     try {
@@ -163,7 +160,7 @@ const ViewBatch = () => {
 
       const attendance = await attendanceService.getStudentsAttendance([
         Query.equal("userId", studentsIds),
-        Query.equal("batchId", batchId),
+        Query.equal("batchId", selectedBatchData.$id),
         Query.orderDesc("$updatedAt"),
       ]);
 
@@ -202,14 +199,17 @@ const ViewBatch = () => {
     fetchTeacherBatches();
   }, [profile.userId]); // Added dependency on profile.userId
 
+  useEffect(() => {
+    fetchBatchData(); //fetch seleted batch data
+  }, [selectedBatch]);
+
   // Load students when selected batch changes
   useEffect(() => {
-    if (selectedBatch && teacherBatches.length !== 0) {
-      fetchBatchData(); //fetch seleted batch data
+    if (selectedBatchData && teacherBatches.length !== 0) {
       setStudents(null); // Reset students when batch changes
       fetchBatchStudent();
     }
-  }, [selectedBatch, teacherBatches, profile]);
+  }, [selectedBatchData, teacherBatches, profile]);
 
   // Load attendance stats when needed
   useEffect(() => {
@@ -258,7 +258,12 @@ const ViewBatch = () => {
 
     switch (activeTab) {
       case "students":
-        return <Students batchId={selectedBatch} />;
+        return (
+          <Students
+            selectedBatchData={selectedBatchData}
+            setSelectedBatchData={setSelectedBatchData}
+          />
+        );
       case "profiles":
         return <ViewProfiles students={students} />;
       case "attendance":

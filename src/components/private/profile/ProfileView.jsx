@@ -10,6 +10,7 @@ import userProfileService from "../../../appwrite/userProfileService";
 import authService from "../../../appwrite/auth";
 import { useGetCollegeQuery } from "../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../store/api/tradeApi";
+import { Query } from "appwrite";
 
 const ProfileView = ({ profileProps }) => {
   const [batches, setBatches] = useState([]);
@@ -17,17 +18,14 @@ const ProfileView = ({ profileProps }) => {
   const [profile, setProfile] = useState(null);
   const { userId } = useParams();
 
-  
-  const {
-    data: college,
-    isLoading: collegeDataLoading,
-  } = useGetCollegeQuery(profile?.collegeId , { skip: !profile?.collegeId });
-  const {
-    data: trade,
-    isLoading: tradeDataLoading,
-  } = useGetTradeQuery(profile?.tradeId , { skip: !profile?.tradeId });
-
-
+  const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
+    profile?.collegeId,
+    { skip: !profile?.collegeId }
+  );
+  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
+    profile?.tradeId,
+    { skip: !profile?.tradeId }
+  );
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -48,8 +46,10 @@ const ProfileView = ({ profileProps }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [ batchesRes ] = await Promise.all([
-        batchService.getBatch(profile.batchId),
+      const [batchesRes] = await Promise.all([
+        batchService.getBatch(profile.batchId, [
+          Query.select(["$id", "BatchName"]),
+        ]),
       ]);
       setBatches(batchesRes);
     } catch (error) {
@@ -81,7 +81,6 @@ const ProfileView = ({ profileProps }) => {
       console.log(error);
     }
   };
-
 
   if (isLoading || collegeDataLoading || tradeDataLoading) {
     return (
@@ -172,12 +171,7 @@ const ProfileView = ({ profileProps }) => {
               >
                 Change Password
               </Link>
-              <button
-                
-                className="text-red-600 hover:underline"
-              >
-                Logout
-              </button>
+              <button className="text-red-600 hover:underline">Logout</button>
             </div>
           )}
         </div>

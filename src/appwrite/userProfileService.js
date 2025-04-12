@@ -29,6 +29,7 @@ export class UserProfileService {
     tradeId,
     userId,
     userName,
+    allBatchIds,
   }) {
     try {
       const userProfile = {
@@ -51,14 +52,19 @@ export class UserProfileService {
         tradeId: tradeId || null,
         userId: userId || null,
         userName: userName || null,
+        allBatchIds: allBatchIds || [],
       };
 
-      return await this.database.createDocument(
+      const response = await this.database.createDocument(
         conf.databaseId,
         conf.userProfilesCollectionId,
         "unique()",
         userProfile
       );
+      return {
+        ...response,
+        allBatchIds: response.allBatchIds.map((itm) => JSON.parse(itm)),
+      };
     } catch (error) {
       console.error("Appwrite error: creating user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -85,7 +91,8 @@ export class UserProfileService {
       tradeId,
       userName,
       role,
-      registerId
+      registerId,
+      allBatchIds,
     } = data;
 
     const updatedData = {
@@ -107,16 +114,22 @@ export class UserProfileService {
       tradeId: tradeId || null,
       userName: userName || null,
       role: role || null,
-      registerId: registerId || null
+      registerId: registerId || null,
+      allBatchIds: allBatchIds || [],
     };
-  
+
     try {
-      return await this.database.updateDocument(
+      const response = await this.database.updateDocument(
         conf.databaseId,
         conf.userProfilesCollectionId,
         profileId,
         updatedData
       );
+
+      return {
+        ...response,
+        allBatchIds: response?.allBatchIds?.map((itm) => JSON.parse(itm)),
+      };
     } catch (error) {
       console.error("Appwrite error: updating user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -167,7 +180,12 @@ export class UserProfileService {
         throw new Error("User profile not found.");
       }
 
-      return userProfile.documents[0]; // Assuming user profile is unique per userId
+      const profile = userProfile.documents[0];
+
+      return {
+        ...profile,
+        allBatchIds: profile.allBatchIds.map((itm) => JSON.parse(itm)),
+      }; // Assuming user profile is unique per userId
     } catch (error) {
       console.log("Appwrite error: get user profile:", error);
       return false;

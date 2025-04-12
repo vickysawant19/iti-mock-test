@@ -8,8 +8,7 @@ import userProfileService from "../../../../../appwrite/userProfileService";
 import { Query } from "appwrite";
 import Classroom from "./Classroom"; // Import the new Classroom component
 
-const Students = ({ batchId }) => {
-  const profile = useSelector(selectProfile);
+const Students = ({ selectedBatchData, setSelectedBatchData }) => {
   const [studentsData, setStudentsData] = useState([]);
   const [students, setStudents] = useState([]);
   const [batchStudents, setBatchStudents] = useState([]);
@@ -31,13 +30,13 @@ const Students = ({ batchId }) => {
         setLoading(true);
         // Fetch all students and batch details
         const allStudents = await userProfileService.getBatchUserProfile([
-          Query.equal("batchId", batchId),
+          Query.equal("batchId", selectedBatchData.$id),
         ]);
 
         setStudentsData(allStudents);
-        const batchDetails = await batchService.getBatch(batchId);
+        // const batchDetails = await batchService.getBatch(batchId);
 
-        const batchStudentsParsed = batchDetails.studentIds.map((itm) =>
+        const batchStudentsParsed = selectedBatchData.studentIds.map((itm) =>
           JSON.parse(itm)
         );
 
@@ -60,7 +59,7 @@ const Students = ({ batchId }) => {
     };
 
     fetchData();
-  }, [batchId]);
+  }, [selectedBatchData.$id]);
 
   const addStudentToBatch = async (student) => {
     try {
@@ -78,9 +77,14 @@ const Students = ({ batchId }) => {
       setStudents(students.filter((s) => s.userId !== student.userId));
 
       // Update batch with new student list
-      await batchService.updateBatch(batchId, {
-        studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
-      });
+      const updatedBatchData = await batchService.updateBatch(
+        selectedBatchData.$id,
+        {
+          studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
+        }
+      );
+
+      setSelectedBatchData(updatedBatchData);
       toast.success(`${student.userName} added to batch`);
     } catch (error) {
       console.error("Error adding student to batch:", error);
@@ -103,9 +107,14 @@ const Students = ({ batchId }) => {
       }
 
       // Update batch with new student list
-      await batchService.updateBatch(batchId, {
-        studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
-      });
+      const updatedBatchData = await batchService.updateBatch(
+        selectedBatchData.$id,
+        {
+          studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
+        }
+      );
+
+      setSelectedBatchData(updatedBatchData);
       toast.success("Student removed from batch");
     } catch (error) {
       console.error("Error removing student from batch:", error);
@@ -150,7 +159,7 @@ const Students = ({ batchId }) => {
 
       {classroomView ? (
         <Classroom
-          batchId={batchId}
+          batchId={selectedBatchData.$id}
           batchStudents={batchStudents}
           setBatchStudents={setBatchStudents}
           studentDataMap={studentDataMap}

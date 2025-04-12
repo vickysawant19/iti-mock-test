@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { FormProvider, useForm } from "react-hook-form";
+import { json, useNavigate, useParams } from "react-router-dom";
+import { Query } from "appwrite";
+import { ArrowLeft, Save } from "lucide-react";
 
 import tradeService from "../../../appwrite/tradedetails";
 import batchService from "../../../appwrite/batchService";
 import userProfileService from "../../../appwrite/userProfileService";
 import collegeService from "../../../appwrite/collageService";
-import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
 import { selectUser } from "../../../store/userSlice";
 import { addProfile, selectProfile } from "../../../store/profileSlice";
-import { Query } from "appwrite";
-import CustomInput from "../../components/CustomInput";
+
+import BatchManagementSection from "./BatchManagementSection";
+import AcademicInformationSection from "./AcadamicInformationSection";
+import PersonalDetailsSection from "./PersonalDetailsSection";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);
   const [tradeData, setTradeData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmiting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [othersProfile, setOthersProfile] = useState(null);
-
   const [error, setError] = useState("");
+  const [formMode, setFormMode] = useState("create"); // "create" or "edit"
+
   const dispatch = useDispatch();
-  const { register, handleSubmit, reset, setValue, watch } = useForm();
+  const methods = useForm();
   const navigate = useNavigate();
 
   const { userId } = useParams();
@@ -31,7 +36,10 @@ const ProfileForm = () => {
 
   const isTeacher = user.labels.includes("Teacher");
   const isStudent = !isTeacher;
+
   const isUserProfile = userId !== undefined;
+  const isEditingOwnProfile = !isUserProfile && existingProfile;
+  const isEditingStudentProfile = isTeacher && isUserProfile;
 
   // Define which fields students can edit
   const studentEditableFields = [
@@ -49,23 +57,28 @@ const ProfileForm = () => {
   ];
 
   const isFieldEditable = (fieldName) => {
-    if (!existingProfile) return true; // Allow all fields for new profiles
-    if (isTeacher) return true; // Teachers can edit everything
-    return studentEditableFields.includes(fieldName); // Students can only edit specific fields
+    if (formMode === "create") return true; // All fields editable in create mode
+    if (isTeacher) return true; // Teachers can edit everything in edit mode
+    // Students in edit mode can only edit specific fields
+    return studentEditableFields.includes(fieldName);
   };
 
-  const fetchFeildData = async () => {
+  const fetchBatchData = async () => {
     try {
-      if (watch("tradeId") && watch("collegeId")) {
+      if (methods.watch("tradeId") && methods.watch("collegeId")) {
         const queryFilters = [
-          Query.equal("collegeId", watch("collegeId")),
-          Query.equal("tradeId", watch("tradeId")),
+          Query.select(["$id", "BatchName"]),
+          Query.equal("collegeId", methods.watch("collegeId")),
+          Query.equal("tradeId", methods.watch("tradeId")),
           Query.equal("isActive", true),
         ];
         if (isTeacher && !isUserProfile) {
-          queryFilters.push(Query.equal("teacherId", existingProfile.userId));
+          queryFilters.push(
+            Query.equal("teacherId", existingProfile?.userId || user.$id)
+          );
         }
         const response = await batchService.listBatches(queryFilters);
+
         setBatchesData(response.documents);
         const batchExists = response.documents.some(
           (doc) =>
@@ -74,16 +87,16 @@ const ProfileForm = () => {
         const batchId = batchExists
           ? existingProfile?.batchId || othersProfile?.batchId
           : "";
-        setValue("batchId", batchId);
+        methods.setValue("batchId", batchId);
       }
     } catch (error) {
-      console.error("Error fetching trades:", error);
+      console.error("Error fetching batches:", error);
     }
   };
 
   useEffect(() => {
-    fetchFeildData();
-  }, [watch("tradeId"), watch("collegeId")]);
+    fetchBatchData();
+  }, [methods.watch("tradeId"), methods.watch("collegeId")]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -105,13 +118,16 @@ const ProfileForm = () => {
           // Scenario 1: Editing another user's profile (admin/teacher function)
           const userProfile = await userProfileService.getUserProfile(userId);
           setOthersProfile(userProfile);
-
           profileData = userProfile;
+          setFormMode("edit");
         } else if (existingProfile) {
           // Scenario 2: Editing current user's profile
           profileData = existingProfile;
+          setFormMode("edit");
+        } else {
+          // Scenario 3: Creating new profile
+          setFormMode("create");
         }
-        // Scenario 3: Creating new profile (handled by default form state)
 
         if (profileData) {
           // Format dates for the form
@@ -122,10 +138,9 @@ const ProfileForm = () => {
               ? profileData.enrolledAt.split("T")[0]
               : "",
           };
-          reset(formattedData);
+          methods.reset(formattedData);
         } else {
-          console.log("Welcome New User");
-          reset({
+          methods.reset({
             userId: isTeacher && isUserProfile ? "" : user.$id,
             userName: isTeacher && isUserProfile ? "" : user.name,
             email: isTeacher && isUserProfile ? "" : user.email,
@@ -141,15 +156,18 @@ const ProfileForm = () => {
     };
 
     fetchInitialData();
-  }, [reset, userId, existingProfile]);
+  }, [methods.reset, userId, existingProfile]);
 
   const handleProfileSubmit = async (data) => {
     try {
       setIsSubmitting(true);
       let updatedProfile;
       let newBatchData;
+
+      data.allBatchIds = data.allBatchIds.map((itm) => JSON.stringify(itm));
+
       if (
-        data.batchName !== "" &&
+        data.BatchName &&
         data.batchId === "" &&
         isTeacher &&
         !isUserProfile
@@ -158,7 +176,7 @@ const ProfileForm = () => {
           BatchName: data.BatchName,
           teacherId: user.$id,
           teacherName: data.userName,
-          isActive: data.isActive,
+          isActive: data.isActive ?? true,
           collegeId: data.collegeId,
           tradeId: data.tradeId,
           start_date: data.start_date,
@@ -167,6 +185,7 @@ const ProfileForm = () => {
         data.batchId = newBatchData.$id;
         setBatchesData((prev) => [...prev, newBatchData]);
       }
+
       if (isUserProfile) {
         // Updating another user's profile
         updatedProfile = await userProfileService.updateUserProfile(
@@ -216,231 +235,89 @@ const ProfileForm = () => {
   }
 
   return (
-    <div className=" mx-auto bg-gray-50 p-6 rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-        {existingProfile ? "Edit Your Profile" : "Create Your Profile"}
-      </h1>
-      {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+    <div className="max-w-5xl mx-auto bg-gray-50 p-6 rounded-lg">
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-blue-500 hover:text-blue-700"
+        >
+          <ArrowLeft size={18} className="mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800 text-center">
+          {formMode === "edit" ? "Edit Profile" : "Create Profile"}
+          {isEditingStudentProfile && " (Student)"}
+        </h1>
+        <div className="w-20"></div> {/* Spacer for alignment */}
+      </div>
 
-      <form onSubmit={handleSubmit(handleProfileSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <CustomInput
-            label={"Full Name"}
-            extraclass={"md:col-span-2 lg:col-span-3"}
-            required={true}
-            type="text"
-            {...register("userName", { required: true })}
-            disabled={!isFieldEditable("userName")}
-          />
-          {/* Personal Information */}
-          <CustomInput
-            label={"Date of Birth"}
-            required={true}
-            type="date"
-            {...register("DOB", { required: true })}
-            disabled={!isFieldEditable("DOB")}
-          />
-          <CustomInput
-            label={"Email"}
-            type="email"
-            required={true}
-            {...register("email", { required: true })}
-            disabled={!isFieldEditable("email")}
-          />
-          <CustomInput
-            label={"Phone"}
-            type="number"
-            required={true}
-            {...register("phone", { required: true })}
-            disabled={!isFieldEditable("phone")}
-          />
-          <CustomInput
-            label={"Parent Contact"}
-            type="number"
-            required={true}
-            {...register("parentContact", { required: true })}
-            disabled={!isFieldEditable("parentContact")}
-          />
-          <div className="md:col-span-2">
-            <label className="block text-gray-600">
-              Address <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              {...register("address", { required: true })}
-              disabled={!isFieldEditable("address")}
-              rows={3}
-              className="mt-1  block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-            />
-          </div>
-          {/* Academic Information */}
-          <CustomInput
-            label={"Student ID/Roll Number"}
-            type="number"
-            {...register("studentId")}
-            disabled={!isFieldEditable("studentId")}
-          />
-          <CustomInput
-            label={"Registration ID"}
-            type="text"
-            {...register("registerId")}
-            disabled={!isFieldEditable("registerId")}
-          />
-          <div className="md:col-span-2">
-            <label className="block text-gray-600">
-              College <span className="text-red-500">*</span>
-            </label>
-            <select
-              {...register("collegeId", { required: true })}
-              disabled={!isFieldEditable("collegeId")}
-              className="mt-1  block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-            >
-              <option value="">Select College</option>
-              {collegeData.map((college) => (
-                <option key={college.$id} value={college.$id}>
-                  {college.collageName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-gray-600">
-              Trade <span className="text-red-500">*</span>
-            </label>
-            <select
-              {...register("tradeId", { required: true })}
-              disabled={!isFieldEditable("tradeId")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-            >
-              <option value="">Select Trade</option>
-              {tradeData.map((trade) => (
-                <option key={trade.$id} value={trade.$id}>
-                  {trade.tradeName}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* /* Batch Selection and Creation Section */}
-          <div className="">
-            <label className="block text-gray-600">
-              Batch
-              {isStudent ? (
-                <span className="text-red-500">*</span>
-              ) : (
-                <div className="text-gray-500 italic text-sm">
-                  (If Your batch Not available. Please create a batch.)
-                </div>
-              )}
-            </label>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
 
-            <select
-              {...register("batchId", {
-                required: isStudent,
-              })}
-              disabled={!isFieldEditable("batchId")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-              value={watch("batchId") || ""}
-              onChange={(e) => setValue("batchId", e.target.value)}
-            >
-              <option value="">Select Batch</option>
-              {batchesData.length > 0 &&
-                batchesData.map((batch) => (
-                  <option key={batch.$id} value={batch.$id}>
-                    {batch.BatchName}
-                  </option>
-                ))}
-            </select>
-          </div>
-          {/* Batch Creation Section - Only visible for teachers when no batch is selected */}
-          {isTeacher && !watch("batchId") && !isUserProfile && (
-            <div className="bg-gray-200 p-4 rounded-lg mt-4 md:col-span-2">
-              <h3 className="font-medium mb-3">Create New Batch</h3>
-              <div className="space-y-3">
-                <CustomInput
-                  label={"Batch Name"}
-                  type="text"
-                  {...register("BatchName")}
-                  placeholder="Enter batch name e.g: 2022-2023 - Your Name -"
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <CustomInput
-                    label={"Start Date"}
-                    type="date"
-                    {...register("start_date")}
-                  />
-
-                  <CustomInput
-                    label={"End Date"}
-                    type="date"
-                    {...register("end_date")}
-                  />
-                </div>
-                <div>
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input
-                      {...register("isActive")}
-                      type="checkbox"
-                      className="sr-only peer"
-                    />
-                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    <span className="ms-3 text-sm font-medium text-gray-600">
-                      Batch Status
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-          <CustomInput
-            required={true}
-            label={"Enrollment Date"}
-            type="date"
-            {...register("enrolledAt", { required: true })}
-            disabled={!isFieldEditable("enrolledAt")}
-          />
-          <div>
-            <label className="block text-gray-600">
-              Enrollment Status <span className="text-red-500">*</span>
-            </label>
-            <select
-              {...register("enrollmentStatus", { required: true })}
-              disabled={!isFieldEditable("enrollmentStatus")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Pending">Pending</option>
-              <option value="Graduated">Graduated</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-gray-600">
-              Status <span className="text-red-500">*</span>
-            </label>
-            <select
-              {...register("status", { required: true })}
-              disabled={!isFieldEditable("status")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Suspended">Suspended</option>
-            </select>
-          </div>
-          <CustomInput
-            label={"Profile Image URL"}
-            type="text"
-            {...register("profileImage")}
-          />
+      {/* Role Badge */}
+      <div className="flex mb-6 items-center">
+        <div
+          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+            isTeacher
+              ? "bg-purple-100 text-purple-800"
+              : "bg-green-100 text-green-800"
+          }`}
+        >
+          {isTeacher ? "Teacher" : "Student"}
         </div>
 
-        <button
-          disabled={isSubmiting}
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200 mt-6 disabled:bg-gray-500 disabled:cursor-not-allowed"
-        >
-          {existingProfile ? "Update Profile" : "Create Profile"}
-        </button>
-      </form>
+        {formMode === "edit" && (
+          <span className="ml-3 text-gray-500 text-sm">
+            {isEditingOwnProfile
+              ? "Editing your own profile"
+              : isEditingStudentProfile
+              ? "Editing student profile"
+              : "Editing profile"}
+          </span>
+        )}
+      </div>
+
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(handleProfileSubmit)}>
+          <PersonalDetailsSection
+            isFieldEditable={isFieldEditable}
+            formMode={formMode}
+          />
+
+          <AcademicInformationSection
+            collegeData={collegeData}
+            tradeData={tradeData}
+            isFieldEditable={isFieldEditable}
+            formMode={formMode}
+          />
+
+          <BatchManagementSection
+            batchesData={batchesData}
+            isTeacher={isTeacher}
+            isStudent={isStudent}
+            isUserProfile={isUserProfile}
+            isFieldEditable={isFieldEditable}
+            formMode={formMode}
+            fetchBatchData={fetchBatchData}
+          />
+
+          <button
+            disabled={isSubmitting}
+            type="submit"
+            className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition duration-200 flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <Save size={20} className="mr-2" />
+            {isSubmitting
+              ? "Processing..."
+              : formMode === "edit"
+              ? "Update Profile"
+              : "Create Profile"}
+          </button>
+        </form>
+      </FormProvider>
     </div>
   );
 };
