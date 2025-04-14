@@ -10,18 +10,14 @@ import {
   BookOpen,
   Award,
 } from "lucide-react";
-
 import { selectProfile } from "../../../../store/profileSlice";
 import { calculateStats } from "../attaindance/CalculateStats";
 import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
-
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
 import BatchSelector from "./components/BatchSelector";
-
-// Component imports
 import ViewProfiles from "./profile/ViewProfiles";
 import ViewAttendance from "./attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
@@ -43,15 +39,12 @@ const TABS = [
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
-
-  // State management
   const [loadingStates, setLoadingStates] = useState({
     batches: false,
     batchData: false,
     students: false,
     attendance: false,
   });
-
   const [data, setData] = useState({
     teacherBatches: [],
     selectedBatchData: null,
@@ -59,51 +52,35 @@ const ViewBatch = () => {
     studentsAttendance: [],
     attendanceStats: [],
   });
-
   const [selectedBatch, setSelectedBatch] = useState(
     searchParams.get("batchid") || ""
   );
-
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );
-
-  // Ref to prevent duplicate fetches for batch students
   const fetchedStudentsRef = useRef(false);
 
-  // Reset fetchedStudentsRef when selected batch changes
   useEffect(() => {
     fetchedStudentsRef.current = false;
-    // Also clear previously loaded students data if any
     setData((prev) => ({ ...prev, students: null }));
   }, [selectedBatch]);
 
-  // Helper function to update loading state
   const setLoading = (key, value) => {
     setLoadingStates((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Update search params when navigation changes
   useEffect(() => {
     const batchId = data.teacherBatches.some(
       (batch) => batch.$id === selectedBatch
     )
       ? selectedBatch
       : profile.batchId;
-
     setSearchParams({
       batchid: batchId,
       active: activeTab,
     });
-  }, [
-    selectedBatch,
-    activeTab,
-    setSearchParams,
-    data.teacherBatches,
-    profile.batchId,
-  ]);
+  }, [selectedBatch, activeTab, data.teacherBatches, profile.batchId]);
 
-  // Fetch teachers' batches
   const fetchTeacherBatches = useCallback(async () => {
     setLoading("batches", true);
     try {
@@ -111,14 +88,10 @@ const ViewBatch = () => {
         Query.equal("teacherId", profile.userId),
         Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
       ]);
-
       const batchesArray = Array.isArray(result.documents)
         ? result.documents
         : [result.documents];
-
       setData((prev) => ({ ...prev, teacherBatches: batchesArray }));
-
-      // Initialize selectedBatch if it's empty and we have batches
       if (!selectedBatch && batchesArray.length > 0) {
         setSelectedBatch(batchesArray[0].$id);
       }
@@ -127,34 +100,24 @@ const ViewBatch = () => {
     } finally {
       setLoading("batches", false);
     }
-  }, [profile.userId, selectedBatch]);
+  }, [profile.userId]);
 
-  // Fetch batch data
   const fetchBatchData = useCallback(async () => {
     if (!selectedBatch) return;
-
-    const batchId = data.teacherBatches.some(
-      (batch) => batch.$id === selectedBatch
-    )
-      ? selectedBatch
-      : profile.batchId;
-
     setLoading("batchData", true);
     try {
-      const result = await batchService.getBatch(batchId);
+      const result = await batchService.getBatch(selectedBatch);
       setData((prev) => ({ ...prev, selectedBatchData: result }));
     } catch (error) {
       console.error("Error fetching batch data:", error);
     } finally {
       setLoading("batchData", false);
     }
-  }, [selectedBatch, data.teacherBatches, profile.batchId]);
+  }, [selectedBatch]);
 
-  // Fetch batch students
   const fetchBatchStudents = useCallback(async () => {
     if (!data.selectedBatchData) return;
 
-    // Parse student IDs from batch data
     const studentIds = data.selectedBatchData.studentIds
       .map((item) => {
         try {
@@ -176,70 +139,54 @@ const ViewBatch = () => {
         Query.equal("userId", studentIds),
         Query.orderAsc("studentId"),
       ]);
-
-      if (result && Array.isArray(result)) {
-        const sortedStudents = result.sort(
-          (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
-        );
-        setData((prev) => ({ ...prev, students: sortedStudents }));
-      } else {
-        setData((prev) => ({ ...prev, students: [] }));
-      }
+      const sortedStudents = result.sort(
+        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+      );
+      setData((prev) => ({ ...prev, students: sortedStudents }));
     } catch (error) {
       console.error("Error fetching batch students:", error);
       setData((prev) => ({ ...prev, students: [] }));
     } finally {
       setLoading("students", false);
+      fetchedStudentsRef.current = true;
     }
   }, [data.selectedBatchData]);
 
-  // Fetch students' attendance
   const fetchStudentsAttendance = useCallback(async () => {
     if (!data.students || !data.selectedBatchData) return;
-    console.log("fetching attendance");
     setLoading("attendance", true);
     try {
       const activeStudents = data.students.filter(
         (student) => student.status === "Active"
       );
       const studentIds = activeStudents.map((student) => student.userId);
-
       if (studentIds.length <= 0) {
         setData((prev) => ({ ...prev, attendanceStats: [] }));
         return;
       }
-
       const attendance = await attendanceService.getStudentsAttendance([
         Query.equal("userId", studentIds),
         Query.equal("batchId", data.selectedBatchData.$id),
         Query.orderDesc("$updatedAt"),
       ]);
-
-      // Create a map for quick student lookups
       const studentMap = new Map();
       data.students.forEach((student) => {
         studentMap.set(student.userId, student);
       });
-
-      // Combine attendance with student info
-      const enrichedAttendance = attendance.map((record) => {
-        const student = studentMap.get(record.userId);
-        return {
-          ...record,
-          studentId: student?.studentId || "NA",
-          userName: student ? student.userName : record?.userName || "Unknown",
-        };
-      });
-
-      // Sort by student ID and calculate stats
+      const enrichedAttendance = attendance.map((record) => ({
+        ...record,
+        studentId: studentMap.get(record.userId)?.studentId || "NA",
+        userName:
+          studentMap.get(record.userId)?.userName ||
+          record?.userName ||
+          "Unknown",
+      }));
       const sortedAttendance = enrichedAttendance.sort(
         (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
       );
-
       const stats = sortedAttendance.map((item) =>
         calculateStats({ data: item })
       );
-
       setData((prev) => ({
         ...prev,
         studentsAttendance: sortedAttendance,
@@ -253,25 +200,23 @@ const ViewBatch = () => {
     }
   }, [data.students, data.selectedBatchData]);
 
-  // Initial load of teacher batches
   useEffect(() => {
     fetchTeacherBatches();
-  }, [fetchTeacherBatches]);
+  }, []);
 
-  // Load batch data when selected batch changes
   useEffect(() => {
-    fetchBatchData();
-  }, [fetchBatchData]);
+    if (selectedBatch) {
+      fetchBatchData();
+    }
+  }, [selectedBatch]);
 
-  // Load students when batch data changes — using ref to control duplicate fetches
   useEffect(() => {
     if (data.selectedBatchData) {
-      // fetchedStudentsRef.current = true;
+      console.log("fetch batch studentss");
       fetchBatchStudents();
     }
-  }, [data.selectedBatchData, fetchBatchStudents]);
+  }, [data.selectedBatchData]);
 
-  // Load attendance when needed
   useEffect(() => {
     const needsAttendance = [
       "attendance",
@@ -280,7 +225,6 @@ const ViewBatch = () => {
       "job-evaluation",
       "students",
     ].includes(activeTab);
-
     if (
       data.students &&
       selectedBatch &&
@@ -299,7 +243,6 @@ const ViewBatch = () => {
     loadingStates.attendance,
   ]);
 
-  // Render the appropriate content based on active tab
   const renderContent = () => {
     const isContentLoading =
       loadingStates.students ||
@@ -311,11 +254,9 @@ const ViewBatch = () => {
         "students",
       ].includes(activeTab) &&
         loadingStates.attendance);
-
     if (isContentLoading) {
       return <LoadingState size={40} />;
     }
-
     switch (activeTab) {
       case "students":
         return (
@@ -369,18 +310,22 @@ const ViewBatch = () => {
           />
         );
       case "assignments":
-        return (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-            <BookOpen className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-            <h3 className="text-xl font-medium">Assignments Coming Soon</h3>
-            <p className="mt-2">This feature is under development.</p>
-          </div>
-        );
       case "achievements":
         return (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-            <Award className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-            <h3 className="text-xl font-medium">Achievements Coming Soon</h3>
+            {activeTab === "assignments" ? (
+              <>
+                <BookOpen className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                <h3 className="text-xl font-medium">Assignments Coming Soon</h3>
+              </>
+            ) : (
+              <>
+                <Award className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                <h3 className="text-xl font-medium">
+                  Achievements Coming Soon
+                </h3>
+              </>
+            )}
             <p className="mt-2">This feature is under development.</p>
           </div>
         );
@@ -389,7 +334,6 @@ const ViewBatch = () => {
     }
   };
 
-  // Main UI rendering
   return (
     <div className="container mx-auto p-4 space-y-6">
       <BatchSelector
@@ -398,7 +342,6 @@ const ViewBatch = () => {
         batches={data.teacherBatches}
         isLoading={loadingStates.batches}
       />
-
       {data.selectedBatchData && (
         <TabNavigation
           tabs={TABS}
@@ -406,9 +349,7 @@ const ViewBatch = () => {
           setActiveTab={setActiveTab}
         />
       )}
-
       {loadingStates.batchData && <LoadingState size={50} fullPage />}
-
       {!loadingStates.batchData &&
         (data.selectedBatchData ? (
           renderContent()

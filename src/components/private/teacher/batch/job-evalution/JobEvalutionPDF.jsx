@@ -7,7 +7,7 @@ import {
   Font,
   Image,
 } from "@react-pdf/renderer";
-import { isAfter, addDays, format } from 'date-fns';
+import { isAfter, addDays, format } from "date-fns";
 
 // Register fonts (using Roboto as an example)
 Font.register({
@@ -185,24 +185,24 @@ const styles = StyleSheet.create({
 const generateStudentData = (studentsMap, moduleData, studentAttendance) => {
   return Array.from({ length: 24 }, (_, i) => {
     const student = studentsMap.get(i + 1);
-  
+
     // Use only the startDate from the current module
     const startDate = moduleData?.startDate;
     const referenceDate = startDate ? new Date(startDate) : null;
-  
+
     // Check attendance for the next 7 days starting from the startDate.
     let isPresentInAnyDay = false;
     if (student && referenceDate) {
       for (let j = 0; j < 7; j++) {
         const checkDate = addDays(referenceDate, j);
-        const dateKey = format(checkDate, 'yyyy-MM-dd'); // Format the date as "YYYY-MM-DD"
+        const dateKey = format(checkDate, "yyyy-MM-dd"); // Format the date as "YYYY-MM-DD"
         if (studentAttendance?.[student.userId]?.[dateKey] === "Present") {
           isPresentInAnyDay = true;
           break;
         }
       }
     }
-  
+
     let a, b, c, d, e, total;
     if (isPresentInAnyDay) {
       // If the student is present on any day, assign random marks.
@@ -217,7 +217,7 @@ const generateStudentData = (studentsMap, moduleData, studentAttendance) => {
       a = b = c = d = e = 0;
       total = "AB";
     }
-  
+
     return {
       srNo: (i + 1).toString(),
       name: student?.userName || "-",
@@ -251,9 +251,18 @@ const getImageLayout = (count) => {
 };
 
 // Component for a single module page
-const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => {
-  const studentData = generateStudentData(studentsMap, moduleData, studentAttendance);
-  
+const ModulePage = ({
+  moduleData,
+  studentsMap,
+  college,
+  studentAttendance,
+}) => {
+  const studentData = generateStudentData(
+    studentsMap,
+    moduleData,
+    studentAttendance
+  );
+
   const images = moduleData?.images || [];
   const { columns, rows } = getImageLayout(images.length);
   const imageWidthPercent = `${100 / rows}%`;
@@ -270,7 +279,9 @@ const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => 
         <View style={styles.headerRow}>
           <View style={{ display: "flex", flexDirection: "row" }}>
             <Text style={{ fontWeight: "bold" }}>Job No.: </Text>
-            <Text>{`${moduleData.moduleId ? moduleData.moduleId.slice(1) : "________"}`}</Text>
+            <Text>{`${
+              moduleData.moduleId ? moduleData.moduleId.slice(1) : "________"
+            }`}</Text>
           </View>
           <View style={{ display: "flex", flexDirection: "row", gap: 5 }}>
             <Text style={{ fontWeight: "bold" }}>Date of Starting:</Text>
@@ -422,12 +433,8 @@ const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => 
         <View style={styles.rightColumn}>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
-                Sr. No.
-              </Text>
-              <Text style={[styles.tableCell, { minWidth: "40%" }]}>
-                Name
-              </Text>
+              <Text style={[styles.tableCell, { width: "15%" }]}>Sr. No.</Text>
+              <Text style={[styles.tableCell, { minWidth: "40%" }]}>Name</Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>A</Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>B</Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>C</Text>
@@ -447,7 +454,12 @@ const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => 
                 <Text style={[styles.tableCell, { width: "15%" }]}>
                   {row.srNo}
                 </Text>
-                <Text style={[styles.tableCell, { minWidth: "40%", textTransform: "uppercase" }]}>
+                <Text
+                  style={[
+                    styles.tableCell,
+                    { minWidth: "40%", textTransform: "uppercase" },
+                  ]}
+                >
                   {row.name}
                 </Text>
                 <Text style={[styles.tableCell, { width: "15%" }]}>
@@ -494,20 +506,16 @@ const ModulePage = ({ moduleData, studentsMap, college, studentAttendance }) => 
 };
 
 const JobEvaluationReportPDF = ({
-  batch = {},
   studentsMap,
   college,
-  trade,
   selectedModule,
   allModules,
   studentAttendance,
 }) => {
-
-
-const modulesToRender =
-  Array.isArray(allModules) && allModules.length > 0
-    ? allModules
-    : [selectedModule];
+  const modulesToRender =
+    Array.isArray(allModules) && allModules.length > 0
+      ? allModules
+      : [selectedModule];
 
   return (
     <Document>
@@ -520,7 +528,6 @@ const modulesToRender =
           studentAttendance={studentAttendance}
         />
       ))}
-      
     </Document>
   );
 };

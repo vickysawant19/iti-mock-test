@@ -7,6 +7,7 @@ import batchService from "../../../../../appwrite/batchService";
 import userProfileService from "../../../../../appwrite/userProfileService";
 import { Query } from "appwrite";
 import Classroom from "./Classroom"; // Import the new Classroom component
+import ListView from "./ListView";
 
 const Students = ({ selectedBatchData, setSelectedBatchData }) => {
   const [studentsData, setStudentsData] = useState([]);
@@ -29,14 +30,20 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
       try {
         setLoading(true);
         // Fetch all students and batch details
-        const allStudents = await userProfileService.getBatchUserProfile([
+        const students = await userProfileService.getBatchUserProfile([
           Query.equal("batchId", selectedBatchData.$id),
+          Query.orderAsc("studentId"),
         ]);
+
+        const allStudents = students.sort(
+          (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+        );
 
         setStudentsData(allStudents);
 
         let batchStudentsParsed = [];
 
+        // Parse student IDs from the batch
         selectedBatchData.studentIds.forEach((itm) => {
           try {
             const data = JSON.parse(itm);
@@ -44,7 +51,17 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
           } catch (error) {}
         });
 
-        setBatchStudents(batchStudentsParsed);
+        // Create a map for O(1) lookups by studentId
+        const studentMap = new Map(
+          batchStudentsParsed.map((student) => [student.userId, student])
+        );
+
+        // Reorder batchStudentsParsed to match allStudents' order
+        const orderedBatchStudents = allStudents
+          .map((student) => studentMap.get(student.userId)) // Get matching student from the map
+          .filter(Boolean); // Remove undefined entries (if any)
+
+        setBatchStudents(orderedBatchStudents);
 
         if (allStudents) {
           // Filter out students that are already in the batch
@@ -69,6 +86,7 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
     try {
       // Add student to batch with default position (0,0)
       const newBatchStudent = {
+        studentId: student.stduentId,
         userId: student.userId,
         status: "Active",
         position: { x: 0, y: 0 },
@@ -170,108 +188,13 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
           getStudentDetails={getStudentDetails}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Current Batch Students */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Batch Students</h2>
-            {batchStudents.length === 0 ? (
-              <p className="text-gray-500 italic">
-                No students in this batch yet
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {batchStudents.map((batchStudent, index) => {
-                  const studentDetails = getStudentDetails(batchStudent.userId);
-
-                  return (
-                    <div
-                      key={batchStudent.userId || index}
-                      className="bg-white rounded-xl shadow-md overflow-hidden"
-                    >
-                      <div className="flex p-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-lg font-bold text-blue-700 mr-4">
-                          {studentDetails.userName?.charAt(0) || "U"}
-                        </div>
-                        <div className="flex-grow">
-                          <h3 className="text-lg font-semibold">
-                            {studentDetails.userName}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {studentDetails.email}
-                          </p>
-                          <div className="flex items-center mt-1">
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mr-2">
-                              {batchStudent.status}
-                            </span>
-                            {batchStudent.position &&
-                            batchStudent.position.x >= 0 ? (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                Seat: Row {batchStudent.position.y + 1}, Col{" "}
-                                {batchStudent.position.x + 1}
-                              </span>
-                            ) : (
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                                Not seated
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() =>
-                            removeStudentFromBatch(batchStudent.userId)
-                          }
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <AiOutlineClose size={20} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Pending Students */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Available Students</h2>
-            {students.length === 0 ? (
-              <p className="text-gray-500 italic">
-                No more students available to add
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {students.map((student, index) => (
-                  <div
-                    key={student.userId || index}
-                    className="bg-white rounded-xl shadow-md overflow-hidden"
-                  >
-                    <div className="flex p-4">
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-lg font-bold text-gray-700 mr-4">
-                        {student.userName?.charAt(0) || "U"}
-                      </div>
-                      <div className="flex-grow">
-                        <h3 className="text-lg font-semibold">
-                          {student.userName}
-                        </h3>
-                        <p className="text-sm text-gray-500">{student.email}</p>
-                        <p className="text-sm text-gray-500">
-                          Student ID: {student.studentId || "N/A"}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => addStudentToBatch(student)}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        <AiOutlineUserAdd size={20} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ListView
+          batchStudents={batchStudents}
+          getStudentDetails={getStudentDetails}
+          removeStudentFromBatch={removeStudentFromBatch}
+          addStudentToBatch={addStudentToBatch}
+          students={students}
+        />
       )}
     </div>
   );

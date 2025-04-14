@@ -34,9 +34,9 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
-  const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
-    batchData.tradeId
-  );
+  // const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
+  //   batchData.tradeId
+  // );
 
   const { scrollToItem, itemRefs } = useScrollToItem(
     modules?.syllabus || [],
@@ -80,8 +80,6 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       const blob = await pdf(
         <JobEvaluationReportPDF
           college={college}
-          trade={trade}
-          batch={batchData}
           studentsMap={studentsMap}
           selectedModule={selectedModule}
           studentAttendance={studentAttendance}
@@ -312,11 +310,8 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
             document={
               <JobEvaluationReportPDF
                 college={college}
-                trade={trade}
-                batch={batchData}
                 studentsMap={studentsMap}
                 selectedModule={selectedModule}
-                // allModules={modules.syllabus}
                 studentAttendance={studentAttendance}
               />
             }
