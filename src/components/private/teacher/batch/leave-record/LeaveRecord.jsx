@@ -9,6 +9,14 @@ import { getMonthsArray } from "../util/util";
 import { addMonths, differenceInMonths, format } from "date-fns";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
+  if (!stats || !stats.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No students found in this batch
+      </div>
+    );
+  }
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [leaveData, setLeaveData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

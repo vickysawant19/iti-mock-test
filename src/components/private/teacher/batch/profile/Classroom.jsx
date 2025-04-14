@@ -20,7 +20,7 @@ const Classroom = ({
         }
         return student;
       });
-
+      console.log("upadting batch data seat pos");
       setBatchStudents(updatedBatchStudents);
 
       // Update batch with new positions

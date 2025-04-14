@@ -12,6 +12,13 @@ import moduleServices from "../../../../../appwrite/moduleServices";
 import useScrollToItem from "../../../../../utils/useScrollToItem";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
+  if (!studentProfiles.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No students found in this batch
+      </div>
+    );
+  }
   const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [modules, setModules] = useState(null);
@@ -298,33 +305,35 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         </div>
       </div>
 
-      {Array.isArray(modules?.syllabus) && modules.syllabus.length > 0 && selectedModule && (
-        <PDFDownloadLink
-          document={
-            <JobEvaluationReportPDF
-              college={college}
-              trade={trade}
-              batch={batchData}
-              studentsMap={studentsMap}
-              selectedModule={selectedModule}
-              // allModules={modules.syllabus}
-              studentAttendance={studentAttendance}
-            />
-          }
-          fileName={`job-evaluation-${selectedModule?.moduleName
-            .slice(0, 40)
-            .split(" ")
-            .join("-")}.pdf`}
-          className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          {({ loading }) => (
-            <>
-              <Printer className="h-4  min-w-16" />
-              {loading ? "Generating PDF" : "Download PDF"}
-            </>
-          )}
-        </PDFDownloadLink>
-      )}
+      {Array.isArray(modules?.syllabus) &&
+        modules.syllabus.length > 0 &&
+        selectedModule && (
+          <PDFDownloadLink
+            document={
+              <JobEvaluationReportPDF
+                college={college}
+                trade={trade}
+                batch={batchData}
+                studentsMap={studentsMap}
+                selectedModule={selectedModule}
+                // allModules={modules.syllabus}
+                studentAttendance={studentAttendance}
+              />
+            }
+            fileName={`job-evaluation-${selectedModule?.moduleName
+              .slice(0, 40)
+              .split(" ")
+              .join("-")}.pdf`}
+            className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            {({ loading }) => (
+              <>
+                <Printer className="h-4  min-w-16" />
+                {loading ? "Generating PDF" : "Download PDF"}
+              </>
+            )}
+          </PDFDownloadLink>
+        )}
 
       <div className="overflow-hidden border rounded-lg shadow-sm mt-4">
         {selectedModule ? (

@@ -11,7 +11,7 @@ import tradeservice from "../../../../appwrite/tradedetails";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
-import { Watch } from "lucide-react";
+
 import LocationPicker from "../components/LocationPicker";
 
 const BatchForm = ({ onClose }) => {
@@ -162,9 +162,6 @@ const BatchForm = ({ onClose }) => {
         teacherName: profile.userName,
         isActive: data.isActive,
         circleRadius: parseInt(data.circleRadius),
-        studentIds: data.studentIds
-          ? data.studentIds.split(",").map((id) => id.trim())
-          : [],
         // canEditAttendance: data.canEditAttendance,
         attendanceTime: JSON.stringify({
           start: data.attendanceTime.start,

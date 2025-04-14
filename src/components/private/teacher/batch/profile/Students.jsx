@@ -34,11 +34,15 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
         ]);
 
         setStudentsData(allStudents);
-        // const batchDetails = await batchService.getBatch(batchId);
 
-        const batchStudentsParsed = selectedBatchData.studentIds.map((itm) =>
-          JSON.parse(itm)
-        );
+        let batchStudentsParsed = [];
+
+        selectedBatchData.studentIds.forEach((itm) => {
+          try {
+            const data = JSON.parse(itm);
+            batchStudentsParsed.push(data);
+          } catch (error) {}
+        });
 
         setBatchStudents(batchStudentsParsed);
 
@@ -83,7 +87,7 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
           studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
         }
       );
-
+      console.log("updating batch data students");
       setSelectedBatchData(updatedBatchData);
       toast.success(`${student.userName} added to batch`);
     } catch (error) {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectProfile } from "../../../../../store/profileSlice";
@@ -7,8 +7,19 @@ import { format } from "date-fns";
 
 const ViewProfiles = ({ students }) => {
   const profile = useSelector(selectProfile);
+
+  if (!students || !students.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No students found in this batch
+      </div>
+    );
+  }
+
   // Filter out the current user's profile
-  const filteredStudents = students.filter((student) => student.userId !== profile.userId);
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => student.userId !== profile.userId);
+  }, [students, profile.userId]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -64,7 +75,9 @@ const ViewProfiles = ({ students }) => {
                 <span className="font-medium">Status:</span>{" "}
                 <span
                   className={
-                    student.status === "Active" ? "text-green-600" : "text-gray-600"
+                    student.status === "Active"
+                      ? "text-green-600"
+                      : "text-gray-600"
                   }
                 >
                   {student.status}

@@ -12,6 +12,14 @@ import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../../store/profileSlice";
 
 const ViewAttendance = ({ isLoading, stats }) => {
+  if (!stats || !stats.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No students found in this batch
+      </div>
+    );
+  }
+
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "MMMM yyyy")
   );

@@ -15,6 +15,13 @@ const ProgressCard = ({
   batchData,
   setBatchData,
 }) => {
+  if (!stats || !stats.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No students found in this batch
+      </div>
+    );
+  }
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [progressData, setProgressData] = useState(null);
   const [editMode, setEditMode] = useState(false);
