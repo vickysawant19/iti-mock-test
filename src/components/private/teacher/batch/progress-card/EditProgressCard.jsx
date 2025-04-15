@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import batchService from "../../../../../appwrite/batchService";
+import LoadingState from "../components/LoadingState";
 
 const EditProgressCard = ({
   progressData,
@@ -33,7 +34,8 @@ const EditProgressCard = ({
 
   const initializeFormData = () => {
     const pageData = progressData.pages[selectedPage] || [];
-    const initializedData = pageData.map((monthEntry) => {
+
+    const initializedData = pageData?.data?.map((monthEntry) => {
       const [month, data] = monthEntry;
       const { presentDays = 0, absentDays = 0 } = data;
 
@@ -70,7 +72,7 @@ const EditProgressCard = ({
       const updatedProgressData = { ...progressData };
 
       // Update only the selected page with new form data
-      updatedProgressData.pages[selectedPage] = formData.map((item) => {
+      updatedProgressData.pages[selectedPage].data = formData.map((item) => {
         // Create a new object without month property for storing in the array
         const dataObj = { ...item };
         delete dataObj.month;
@@ -182,7 +184,7 @@ const EditProgressCard = ({
 
   // If progressData is not available yet, show loading
   if (!progressData || !progressData.pages) {
-    return <div className="p-4">Loading progress data...</div>;
+    return <LoadingState />;
   }
 
   return (

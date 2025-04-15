@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Printer } from "lucide-react";
+import { Edit2, Printer } from "lucide-react";
 import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
@@ -8,6 +8,8 @@ import { getMonthsArray } from "../util/util";
 
 import EditProgressCard from "./EditProgressCard";
 import { addMonths, differenceInMonths, format } from "date-fns";
+import LoadingState from "../components/LoadingState";
+import { useSearchParams } from "react-router-dom";
 
 const ProgressCard = ({
   studentProfiles = [],
@@ -22,6 +24,7 @@ const ProgressCard = ({
       </div>
     );
   }
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [progressData, setProgressData] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -35,6 +38,37 @@ const ProgressCard = ({
     batchData.tradeId
   );
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Update search params when a student is selected.
+  useEffect(() => {
+    if (selectedStudent) {
+      setSearchParams((prevData) => {
+        const data = Object.fromEntries(prevData);
+        return { ...data, userId: selectedStudent.userId }; // ensure consistent key
+      });
+    }
+  }, [selectedStudent, setSearchParams]);
+
+  // New Effect: Check URL for a userId and update the selected student accordingly.
+  useEffect(() => {
+    if (selectedStudent) return;
+    const userIdFromUrl = searchParams.get("userId");
+    if (userIdFromUrl && studentProfiles.length > 0) {
+      const foundStudent = studentProfiles.find(
+        (student) => student.userId === userIdFromUrl
+      );
+      if (
+        foundStudent &&
+        (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
+      ) {
+        // Merge with college and trade details as in your dropdown onClick.
+        setSelectedStudent({ ...foundStudent, ...college, ...trade });
+      }
+    }
+  }, [studentProfiles]);
+
+  // Effect for preparing the progress data.
   useEffect(() => {
     if (!selectedStudent || !batchData || stats.length === 0) {
       setProgressData(null);
@@ -67,16 +101,15 @@ const ProgressCard = ({
     const completeRecords = {};
 
     allMonths.forEach((monthKey) => {
+      // Merge marks and monthlyRecords if available.
       completeRecords[monthKey] =
         { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
     });
 
     const monthlyRecordArray = Object.entries(completeRecords);
-    // Create pages with max 12 months per page
     let pages = [];
     const monthsPerPage = 12;
 
-    // Create pages with chunks of data
     for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
       pages.push({
         data: monthlyRecordArray.slice(i, i + monthsPerPage),
@@ -103,7 +136,6 @@ const ProgressCard = ({
   }, [selectedStudent, batchData, stats]);
 
   const generatePreview = async () => {
-    // Only generate if we have valid progressData
     if (
       !progressData ||
       !progressData.pages ||
@@ -135,11 +167,11 @@ const ProgressCard = ({
     };
   }, [progressData]);
 
-  if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
+  if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto relative  ">
-      <div className="mb-4 flex-col md:flex-row justify-start items-start flex md:justify-between md:items-center gap-4 ">
+    <div className="w-full max-w-4xl mx-auto relative">
+      <div className="mb-4 flex-col md:flex-row justify-start items-start flex md:justify-between md:items-center gap-4">
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -181,33 +213,35 @@ const ProgressCard = ({
           )}
         </div>
 
-        {progressData && (
-          <button
-            onClick={() => setEditMode((prev) => !prev)}
-            className="bg-blue-600 p-2 rounded-md text-white"
-          >
-            {editMode ? "Close Edit" : "Open Edit"}
-          </button>
-        )}
+        <div className="flex justify-center items-center gap-4">
+          {progressData && (
+            <button
+              onClick={() => setEditMode((prev) => !prev)}
+              className="bg-blue-600 p-2 rounded-md text-white flex items-center gap-2 px-2 py-2"
+            >
+              <Edit2 className="h-4" /> {editMode ? "Close Edit" : "Open Edit"}
+            </button>
+          )}
 
-        {progressData && (
-          <PDFDownloadLink
-            document={<ProgressCardPDF data={progressData} />}
-            fileName={`progress-card-${progressData.userName}.pdf`}
-            className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            {({ loading }) => (
-              <>
-                <Printer className="h-4" />
-                {loading ? "Generating PDF..." : "Download PDF"}
-              </>
-            )}
-          </PDFDownloadLink>
-        )}
+          {progressData && (
+            <PDFDownloadLink
+              document={<ProgressCardPDF data={progressData} />}
+              fileName={`progress-card-${progressData.userName}.pdf`}
+              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              {({ loading }) => (
+                <>
+                  <Printer className="h-4" />
+                  {loading ? "Generating PDF..." : "Download PDF"}
+                </>
+              )}
+            </PDFDownloadLink>
+          )}
+        </div>
       </div>
 
       {editMode ? (
-        <div className="w-full h-full  rounded-md">
+        <div className="w-full h-full rounded-md">
           <EditProgressCard
             progressData={progressData}
             setProgressdata={setProgressData}
@@ -220,13 +254,11 @@ const ProgressCard = ({
         <div className="overflow-hidden border rounded-lg shadow-sm">
           {progressData ? (
             pdfUrl ? (
-              <>
-                <iframe
-                  src={pdfUrl}
-                  className="w-full h-[842px] border-0"
-                  title="Progress Card Preview"
-                />
-              </>
+              <iframe
+                src={pdfUrl}
+                className="w-full h-[842px] border-0"
+                title="Progress Card Preview"
+              />
             ) : (
               <div className="w-full h-[842px] flex items-center justify-center">
                 <p className="text-gray-500">Generating preview...</p>

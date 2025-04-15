@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Printer } from "lucide-react";
 import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
-
 import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import { getMonthsArray } from "../util/util";
 import { addMonths, differenceInMonths, format } from "date-fns";
+import LoadingState from "../components/LoadingState";
+import { useSearchParams } from "react-router-dom";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   if (!stats || !stats.length) {
@@ -29,18 +30,46 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     batchData.tradeId
   );
 
+  // Add search parameters logic for auto-selecting student via userId query param.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Update search params when a student is selected.
+  useEffect(() => {
+    if (selectedStudent) {
+      setSearchParams((prevData) => {
+        const data = Object.fromEntries(prevData);
+        return { ...data, userId: selectedStudent.userId }; // ensure consistent key
+      });
+    }
+  }, [selectedStudent, setSearchParams]);
+
+  useEffect(() => {
+    if (selectedStudent) return;
+    const userIdFromUrl = searchParams.get("userId");
+    if (userIdFromUrl && studentProfiles.length > 0) {
+      const foundStudent = studentProfiles.find(
+        (student) => student.userId === userIdFromUrl
+      );
+      if (
+        foundStudent &&
+        (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
+      ) {
+        setSelectedStudent({ ...foundStudent, ...college, ...trade });
+      }
+    }
+    // You can include setSearchParams in the dependency array if you plan to update it.
+  }, [studentProfiles, college, trade]);
+
   useEffect(() => {
     if (!selectedStudent) return;
 
     const processAttendanceRecords = (leaveRecords, batch) => {
-      // Convert monthly attendance into a structured format
       let attendanceMap = {};
 
       if (leaveRecords?.monthlyAttendance) {
         Object.entries(leaveRecords.monthlyAttendance).forEach(
           ([dateStr, data]) => {
             try {
-              // Format the month key
               const month = format(new Date(dateStr), "MMM yyyy");
               attendanceMap[month] = {
                 possibleDays: data.absentDays + data.presentDays,
@@ -55,14 +84,12 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         );
       }
 
-      // Get all months from batch start to end date
       const allMonths = getMonthsArray(
         batch.start_date,
         batch.end_date,
         "MMM yyyy"
       );
 
-      // Create complete attendance object with all months (including empty ones)
       const completeAttendance = allMonths.reduce((acc, month) => {
         acc[month] = attendanceMap[month] || {
           possibleDays: "",
@@ -74,7 +101,6 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         return acc;
       }, {});
 
-      // Create pages with 12 months per page
       const monthsPerPage = 12;
       const pages = [];
 
@@ -108,26 +134,18 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         });
       }
 
-      return {
-        pages,
-      };
+      return { pages };
     };
 
-    // Usage example
     const processStudentData = (student, leaveRecords, batch) => {
-      // Get attendance data and pages
       const { pages } = processAttendanceRecords(leaveRecords, batch);
-
-      // Create default data structure
       const defaultData = {
-        pages: pages,
+        pages,
         stipend: "Yes",
         casualLeaveRecords: [],
         medicalLeaveRecords: [],
         parentMeetings: [],
       };
-
-      // Merge with provided data or use defaults
       return { ...student, ...defaultData };
     };
 
@@ -167,7 +185,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     };
   }, [selectedStudent, leaveData]);
 
-  if (collegeDataLoading || tradeDataLoading) return <div>Loading...</div>;
+  if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
     <div className="w-full max-w-4xl mx-auto">

@@ -100,7 +100,7 @@ const ProgressCardPDF = ({ data }) => {
               </View>
             </View>
 
-            {allRecords.map(([month, record], index) => (
+            {allRecords?.map(([month, record], index) => (
               <View key={index} style={styles.tableRow}>
                 <View style={[styles.tableCell, { width: "5%" }]}>
                   <Text>{index + 1}</Text>

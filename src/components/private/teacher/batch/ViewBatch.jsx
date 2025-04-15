@@ -75,9 +75,9 @@ const ViewBatch = () => {
     )
       ? selectedBatch
       : profile.batchId;
-    setSearchParams({
-      batchid: batchId,
-      active: activeTab,
+    setSearchParams((prevData) => {
+      const data = Object.fromEntries(prevData);
+      return { ...data, batchid: batchId, active: activeTab };
     });
   }, [selectedBatch, activeTab, data.teacherBatches, profile.batchId]);
 
@@ -261,7 +261,6 @@ const ViewBatch = () => {
       case "students":
         return (
           <Students
-        
             selectedBatchData={data.selectedBatchData}
             setSelectedBatchData={(newData) =>
               setData((prev) => ({ ...prev, selectedBatchData: newData }))
