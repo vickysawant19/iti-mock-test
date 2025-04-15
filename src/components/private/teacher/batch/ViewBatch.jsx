@@ -212,7 +212,6 @@ const ViewBatch = () => {
 
   useEffect(() => {
     if (data.selectedBatchData) {
-      console.log("fetch batch studentss");
       fetchBatchStudents();
     }
   }, [data.selectedBatchData]);

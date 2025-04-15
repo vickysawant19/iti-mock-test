@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Edit2, Printer } from "lucide-react";
 import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import ProgressCardPDF from "./ProgressCardPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import { getMonthsArray } from "../util/util";
-
 import EditProgressCard from "./EditProgressCard";
 import { addMonths, differenceInMonths, format } from "date-fns";
 import LoadingState from "../components/LoadingState";
@@ -17,6 +16,7 @@ const ProgressCard = ({
   batchData,
   setBatchData,
 }) => {
+  // Early check for missing data
   if (!stats || !stats.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -30,7 +30,9 @@ const ProgressCard = ({
   const [editMode, setEditMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  // Get college and trade data
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
@@ -38,103 +40,124 @@ const ProgressCard = ({
     batchData.tradeId
   );
 
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Update search params when a student is selected.
+  // Update search params when a student is selected
   useEffect(() => {
     if (selectedStudent) {
       setSearchParams((prevData) => {
         const data = Object.fromEntries(prevData);
-        return { ...data, userId: selectedStudent.userId }; // ensure consistent key
+        return { ...data, userId: selectedStudent.userId };
       });
     }
   }, [selectedStudent, setSearchParams]);
 
-  // New Effect: Check URL for a userId and update the selected student accordingly.
+  // Handle student selection from URL
   useEffect(() => {
     if (selectedStudent) return;
-    const userIdFromUrl = searchParams.get("userId");
-    if (userIdFromUrl && studentProfiles.length > 0) {
-      const foundStudent = studentProfiles.find(
-        (student) => student.userId === userIdFromUrl
-      );
-      if (
-        foundStudent &&
-        (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
-      ) {
-        // Merge with college and trade details as in your dropdown onClick.
-        setSelectedStudent({ ...foundStudent, ...college, ...trade });
-      }
-    }
-  }, [studentProfiles]);
 
-  // Effect for preparing the progress data.
+    const userIdFromUrl = searchParams.get("userId");
+    if (!userIdFromUrl || !studentProfiles.length || !college || !trade) return;
+
+    const foundStudent = studentProfiles.find(
+      (student) => student.userId === userIdFromUrl
+    );
+
+    if (
+      foundStudent &&
+      (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
+    ) {
+      // Create a structured object with the student data
+      const newSelectedStudent = {
+        ...foundStudent,
+        collageName: college.collageName,
+        tradeName: trade.tradeName,
+      };
+
+      setSelectedStudent(newSelectedStudent);
+    }
+  }, [studentProfiles, college, trade, searchParams, selectedStudent]);
+
+  // Process progress data for selected student
+  const processProgressData = useMemo(() => {
+    return (student, batch, studentStats) => {
+      if (!student || !batch || !studentStats.length) return null;
+
+      // Parse batch marks data
+      const batchMarksParsed = batch.batchMarks.map((item) =>
+        typeof item === "string" ? JSON.parse(item) : item
+      );
+
+      // Find student's marks
+      const studentMarks = batchMarksParsed.find(
+        ({ userId }) => userId === student.userId
+      );
+
+      const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
+
+      // Get monthly attendance records for the student
+      const monthlyRecords =
+        studentStats.find((item) => item.userId === student.userId)
+          ?.monthlyAttendance || {};
+
+      // Get quarterly tests data
+      const quarterlyTests = student.quarterlyTests || new Array(3).fill({});
+
+      // Get all months in the batch duration
+      const allMonths = getMonthsArray(
+        batch.start_date,
+        batch.end_date,
+        "MMMM yyyy"
+      );
+
+      // Merge marks and attendance records
+      const completeRecords = {};
+      allMonths.forEach((monthKey) => {
+        completeRecords[monthKey] =
+          { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
+      });
+
+      // Organize data into pages
+      const monthlyRecordArray = Object.entries(completeRecords);
+      let pages = [];
+      const monthsPerPage = 12;
+
+      for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
+        pages.push({
+          data: monthlyRecordArray.slice(i, i + monthsPerPage),
+          yearRange: `${format(
+            addMonths(new Date(batch.start_date), i),
+            "MMMM yyyy"
+          )} to ${format(
+            addMonths(
+              new Date(batch.start_date),
+              Math.min(
+                i + 11,
+                differenceInMonths(
+                  new Date(batch.end_date),
+                  new Date(batch.start_date)
+                )
+              )
+            ),
+            "MMMM yyyy"
+          )}`,
+        });
+      }
+
+      return { ...student, quarterlyTests, pages };
+    };
+  }, []);
+
+  // Update progress data when selected student changes
   useEffect(() => {
-    if (!selectedStudent || !batchData || stats.length === 0) {
+    if (!selectedStudent || !batchData || !stats || stats.length === 0) {
       setProgressData(null);
       return;
     }
 
-    const batchMarksParsed = batchData.batchMarks.map((item) =>
-      typeof item === "string" ? JSON.parse(item) : item
-    );
+    const data = processProgressData(selectedStudent, batchData, stats);
+    setProgressData(data);
+  }, [selectedStudent, batchData, stats, processProgressData]);
 
-    const studentMarks = batchMarksParsed.find(({ marks, userId }) => {
-      return userId === selectedStudent.userId;
-    });
-
-    const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
-
-    const monthlyRecords =
-      stats.find((item) => item.userId === selectedStudent.userId)
-        ?.monthlyAttendance || {};
-
-    const quarterlyTests =
-      selectedStudent.quarterlyTests || new Array(3).fill({});
-
-    const allMonths = getMonthsArray(
-      batchData.start_date,
-      batchData.end_date,
-      "MMMM yyyy"
-    );
-
-    const completeRecords = {};
-
-    allMonths.forEach((monthKey) => {
-      // Merge marks and monthlyRecords if available.
-      completeRecords[monthKey] =
-        { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
-    });
-
-    const monthlyRecordArray = Object.entries(completeRecords);
-    let pages = [];
-    const monthsPerPage = 12;
-
-    for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
-      pages.push({
-        data: monthlyRecordArray.slice(i, i + monthsPerPage),
-        yearRange: `${format(
-          addMonths(new Date(batchData.start_date), i),
-          "MMMM yyyy"
-        )} to ${format(
-          addMonths(
-            new Date(batchData.start_date),
-            Math.min(
-              i + 11,
-              differenceInMonths(
-                new Date(batchData.end_date),
-                new Date(batchData.start_date)
-              )
-            )
-          ),
-          "MMMM yyyy"
-        )}`,
-      });
-    }
-
-    setProgressData({ ...selectedStudent, quarterlyTests, pages });
-  }, [selectedStudent, batchData, stats]);
-
+  // Generate PDF preview
   const generatePreview = async () => {
     if (
       !progressData ||
@@ -155,7 +178,10 @@ const ProgressCard = ({
     }
   };
 
+  // Update PDF preview when progress data changes
   useEffect(() => {
+    let url = "";
+
     if (progressData) {
       generatePreview();
     }
@@ -167,6 +193,21 @@ const ProgressCard = ({
     };
   }, [progressData]);
 
+  // Handle student selection
+  const handleStudentSelect = (student) => {
+    if (!college || !trade) return;
+
+    const newSelectedStudent = {
+      ...student,
+      collageName: college.collageName,
+      tradeName: trade.tradeName,
+    };
+
+    setSelectedStudent(newSelectedStudent);
+    setIsDropdownOpen(false);
+  };
+
+  // Display loading state
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
@@ -201,10 +242,7 @@ const ProgressCard = ({
                 <div
                   key={student.userId}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setSelectedStudent({ ...student, ...college, ...trade });
-                    setIsDropdownOpen(false);
-                  }}
+                  onClick={() => handleStudentSelect(student)}
                 >
                   {student.userName}
                 </div>

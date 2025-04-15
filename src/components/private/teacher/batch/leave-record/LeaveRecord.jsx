@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Printer } from "lucide-react";
 import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
@@ -10,6 +10,7 @@ import LoadingState from "../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
+  // Early check for missing data
   if (!stats || !stats.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -22,7 +23,9 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [leaveData, setLeaveData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  // Get college and trade data
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
@@ -30,115 +33,102 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     batchData.tradeId
   );
 
-  // Add search parameters logic for auto-selecting student via userId query param.
-  const [searchParams, setSearchParams] = useSearchParams();
+  // Process data when a student is selected
+  const processStudentData = useMemo(() => {
+    return (student, leaveRecords, batch) => {
+      // Skip processing if any data is missing
+      if (!student || !leaveRecords || !batch) return null;
 
-  // Update search params when a student is selected.
-  useEffect(() => {
-    if (selectedStudent) {
-      setSearchParams((prevData) => {
-        const data = Object.fromEntries(prevData);
-        return { ...data, userId: selectedStudent.userId }; // ensure consistent key
-      });
-    }
-  }, [selectedStudent, setSearchParams]);
+      // Process attendance records
+      const processAttendanceRecords = () => {
+        let attendanceMap = {};
 
-  useEffect(() => {
-    if (selectedStudent) return;
-    const userIdFromUrl = searchParams.get("userId");
-    if (userIdFromUrl && studentProfiles.length > 0) {
-      const foundStudent = studentProfiles.find(
-        (student) => student.userId === userIdFromUrl
-      );
-      if (
-        foundStudent &&
-        (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
-      ) {
-        setSelectedStudent({ ...foundStudent, ...college, ...trade });
-      }
-    }
-    // You can include setSearchParams in the dependency array if you plan to update it.
-  }, [studentProfiles, college, trade]);
-
-  useEffect(() => {
-    if (!selectedStudent) return;
-
-    const processAttendanceRecords = (leaveRecords, batch) => {
-      let attendanceMap = {};
-
-      if (leaveRecords?.monthlyAttendance) {
-        Object.entries(leaveRecords.monthlyAttendance).forEach(
-          ([dateStr, data]) => {
-            try {
-              const month = format(new Date(dateStr), "MMM yyyy");
-              attendanceMap[month] = {
-                possibleDays: data.absentDays + data.presentDays,
-                presentDays: data.presentDays,
-                sickLeave: 0,
-                casualLeave: 0,
-              };
-            } catch (error) {
-              console.error(`Error processing date: ${dateStr}`, error);
+        if (leaveRecords?.monthlyAttendance) {
+          Object.entries(leaveRecords.monthlyAttendance).forEach(
+            ([dateStr, data]) => {
+              try {
+                const month = format(new Date(dateStr), "MMM yyyy");
+                attendanceMap[month] = {
+                  possibleDays: data.absentDays + data.presentDays,
+                  presentDays: data.presentDays,
+                  sickLeave: 0,
+                  casualLeave: 0,
+                };
+              } catch (error) {
+                console.error(`Error processing date: ${dateStr}`, error);
+              }
             }
-          }
+          );
+        }
+
+        const allMonths = getMonthsArray(
+          batch.start_date,
+          batch.end_date,
+          "MMM yyyy"
         );
-      }
 
-      const allMonths = getMonthsArray(
-        batch.start_date,
-        batch.end_date,
-        "MMM yyyy"
-      );
+        const completeAttendance = allMonths.reduce((acc, month) => {
+          acc[month] = attendanceMap[month] || {
+            possibleDays: "",
+            presentDays: "",
+            sickLeave: "",
+            casualLeave: "",
+            percent: "",
+          };
+          return acc;
+        }, {});
 
-      const completeAttendance = allMonths.reduce((acc, month) => {
-        acc[month] = attendanceMap[month] || {
-          possibleDays: "",
-          presentDays: "",
-          sickLeave: "",
-          casualLeave: "",
-          percent: "",
-        };
-        return acc;
-      }, {});
+        const monthsPerPage = 12;
+        const pages = [];
 
-      const monthsPerPage = 12;
-      const pages = [];
+        for (let i = 0; i < allMonths.length; i += monthsPerPage) {
+          const pageMonths = allMonths.slice(i, i + monthsPerPage);
+          const pageData = {};
 
-      for (let i = 0; i < allMonths.length; i += monthsPerPage) {
-        const pageMonths = allMonths.slice(i, i + monthsPerPage);
-        const pageData = {};
+          pageMonths.forEach((month) => {
+            pageData[month] = completeAttendance[month];
+          });
 
-        pageMonths.forEach((month) => {
-          pageData[month] = completeAttendance[month];
-        });
-
-        pages.push({
-          months: pageMonths,
-          data: pageData,
-          yearRange: `${format(
-            addMonths(new Date(batch.start_date), i),
-            "MMMM yyyy"
-          )} to ${format(
-            addMonths(
-              new Date(batch.start_date),
-              Math.min(
-                i + 11,
-                differenceInMonths(
-                  new Date(batch.end_date),
-                  new Date(batch.start_date)
+          pages.push({
+            months: pageMonths,
+            data: pageData,
+            yearRange: `${format(
+              addMonths(new Date(batch.start_date), i),
+              "MMMM yyyy"
+            )} to ${format(
+              addMonths(
+                new Date(batch.start_date),
+                Math.min(
+                  i + 11,
+                  differenceInMonths(
+                    new Date(batch.end_date),
+                    new Date(batch.start_date)
+                  )
                 )
-              )
-            ),
-            "MMMM yyyy"
-          )}`,
-        });
-      }
+              ),
+              "MMMM yyyy"
+            )}`,
+          });
+        }
 
-      return { pages };
-    };
+        return { pages };
+      };
 
-    const processStudentData = (student, leaveRecords, batch) => {
-      const { pages } = processAttendanceRecords(leaveRecords, batch);
+      const { pages } = processAttendanceRecords();
+
+      // Ensure we're explicitly capturing the college and trade information
+      const collegeInfo = college
+        ? {
+            collageName: college.collageName,
+          }
+        : {};
+
+      const tradeInfo = trade
+        ? {
+            tradeName: trade.name || trade.tradeName,
+          }
+        : {};
+
       const defaultData = {
         pages,
         stipend: "Yes",
@@ -146,17 +136,69 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         medicalLeaveRecords: [],
         parentMeetings: [],
       };
-      return { ...student, ...defaultData };
+
+      // Create a structured data object with explicit properties
+      return {
+        ...student,
+        ...collegeInfo,
+        ...tradeInfo,
+        ...defaultData,
+      };
     };
+  }, [college, trade]);
+
+  // Update URL when a student is selected
+  useEffect(() => {
+    if (selectedStudent) {
+      setSearchParams((prevData) => {
+        const data = Object.fromEntries(prevData);
+        return { ...data, userId: selectedStudent.userId };
+      });
+    }
+  }, [selectedStudent, setSearchParams]);
+
+  // Handle student selection from URL
+  useEffect(() => {
+    if (selectedStudent) return;
+
+    const userIdFromUrl = searchParams.get("userId");
+    if (!userIdFromUrl || !studentProfiles.length || !college || !trade) return;
+
+    const foundStudent = studentProfiles.find(
+      (student) => student.userId === userIdFromUrl
+    );
+
+    if (
+      foundStudent &&
+      (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
+    ) {
+      // Create a structured object with the student data
+      const newSelectedStudent = {
+        ...foundStudent,
+        collageName: college?.collageName,
+
+        tradeName: trade?.tradeName,
+      };
+
+      setSelectedStudent(newSelectedStudent);
+    }
+  }, [studentProfiles, college, trade, searchParams, selectedStudent]);
+
+  // Process leave data when student is selected
+  useEffect(() => {
+    if (!selectedStudent) return;
 
     const studentStats = stats.find(
       (stat) => stat.userId === selectedStudent.userId
     );
 
+    if (!studentStats) return;
+
     const data = processStudentData(selectedStudent, studentStats, batchData);
     setLeaveData(data);
-  }, [selectedStudent, stats, batchData]);
+  }, [selectedStudent, stats, batchData, processStudentData]);
 
+  // Generate PDF preview
   useEffect(() => {
     let currentUrl = "";
 
@@ -177,15 +219,30 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         setPdfUrl("");
       }
     };
+
     generatePreview();
+
     return () => {
       if (currentUrl) {
         URL.revokeObjectURL(currentUrl);
       }
     };
-  }, [selectedStudent, leaveData]);
+  }, [leaveData]);
 
+  // Display loading state
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
+
+  // Handle student selection
+  const handleStudentSelect = (student) => {
+    const newSelectedStudent = {
+      ...student,
+      collageName: college?.collageName,
+      tradeName: trade?.tradeName,
+    };
+
+    setSelectedStudent(newSelectedStudent);
+    setIsDropdownOpen(false);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -219,10 +276,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
                 <div
                   key={student.userId}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setSelectedStudent({ ...student, ...college, ...trade });
-                    setIsDropdownOpen(false);
-                  }}
+                  onClick={() => handleStudentSelect(student)}
                 >
                   {student.userName}
                 </div>
