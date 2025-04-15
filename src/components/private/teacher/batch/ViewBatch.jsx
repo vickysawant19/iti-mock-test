@@ -261,6 +261,7 @@ const ViewBatch = () => {
       case "students":
         return (
           <Students
+        
             selectedBatchData={data.selectedBatchData}
             setSelectedBatchData={(newData) =>
               setData((prev) => ({ ...prev, selectedBatchData: newData }))
@@ -301,7 +302,7 @@ const ViewBatch = () => {
         return (
           <JobEvaluation
             studentProfiles={
-              data.students?.filter((item) => item.role.includes("Student")) ||
+              data.students?.filter((item) => item.role?.includes("Student")) ||
               []
             }
             stats={data.attendanceStats}

@@ -184,7 +184,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     fetchModules();
   }, [selectedYear, batchData.tradeId]);
 
-  if (isLoading || collegeDataLoading || tradeDataLoading) {
+  if (isLoading || collegeDataLoading ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ClipLoader size={50} color={"#123abc"} loading={isLoading} />

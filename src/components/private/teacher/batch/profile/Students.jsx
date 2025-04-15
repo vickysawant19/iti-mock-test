@@ -9,7 +9,7 @@ import { Query } from "appwrite";
 import Classroom from "./Classroom"; // Import the new Classroom component
 import ListView from "./ListView";
 
-const Students = ({ selectedBatchData, setSelectedBatchData }) => {
+const Students = ({   selectedBatchData, setSelectedBatchData }) => {
   const [studentsData, setStudentsData] = useState([]);
   const [students, setStudents] = useState([]);
   const [batchStudents, setBatchStudents] = useState([]);
@@ -32,6 +32,7 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
         // Fetch all students and batch details
         const students = await userProfileService.getBatchUserProfile([
           Query.equal("batchId", selectedBatchData.$id),
+          Query.notEqual("batchId",[""] ),
           Query.orderAsc("studentId"),
         ]);
 
