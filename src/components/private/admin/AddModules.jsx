@@ -21,6 +21,7 @@ import { IKImage } from "imagekitio-react";
 import { FaMagic } from "react-icons/fa";
 import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
 import { appwriteService } from "../../../appwrite/appwriteConfig";
+import { generatePaperId } from "./util";
 
 const AddModules = ({
   setShow,
@@ -63,20 +64,6 @@ const AddModules = ({
     setFocus,
   } = useForm();
   const assessmentPaperId = watch("assessmentPaperId");
-
-  // Helper to generate a unique 10-character paper ID.
-  // Here we generate 4 random letters and append a 12-digit timestamp.
-  // Note: This produces a 16-character string. Adjust numbers if you want exactly 10 characters.
-  const generatePaperId = () => {
-    const randomChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let initials = randomChar
-      .split("")
-      .sort(() => Math.random() - 0.5)
-      .join("")
-      .slice(0, 4);
-    const timestamp = format(new Date(), "yyMMddHHmmss");
-    return initials + timestamp;
-  };
 
   // Function to generate a new paper and open the modal to preview it.
   const createNewPaper = async () => {
@@ -177,7 +164,7 @@ const AddModules = ({
         hours: "",
         topics: [],
       });
-      setImages([])
+      setImages([]);
       setEvalPoints([]);
     }
     scrollToItem(moduleId);
@@ -199,7 +186,7 @@ const AddModules = ({
       if (!res?.responseBody) throw new Error("Empty response from server");
 
       const result = JSON.parse(res.responseBody);
-      
+
       if (result.success || result.error.includes("file does not exist")) {
         setImages((prevImages) =>
           prevImages.filter((img) => img.id !== fileId)
@@ -207,13 +194,12 @@ const AddModules = ({
         setValue("images", (prevImages) =>
           prevImages.filter((img) => img.id !== fileId)
         );
-        
+
         toast.success("Image deleted successfully!");
         const formData = getValues();
 
         await handleAddModules(formData);
       } else {
-        
         throw new Error(result.error || "Unknown error");
       }
     } catch (error) {
