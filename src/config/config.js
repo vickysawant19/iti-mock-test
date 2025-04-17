@@ -23,6 +23,7 @@ const conf = {
   studentAttendanceCollectionId: String(
     import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID
   ),
+  faceAttendanceCollectionId: String("6800d3c9000712f842e3")
 };
 
 export default conf;
