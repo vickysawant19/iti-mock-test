@@ -4,13 +4,7 @@ import { generateBinaryHash } from "./util/generateBinaryHash";
 import { generateHashArray, generateHashQuery } from "./util/hash";
 import { Query } from "appwrite";
 
-const AddFaceMode = ({
-  captureFace,
-  captureLoading,
-  captureError,
-  faceDetected,
-  clearCanvas,
-}) => {
+const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   const [samples, setSamples] = useState([]);
   const [registrationName, setRegistrationName] = useState("");
   const [resultMessage, setResultMessage] = useState("");

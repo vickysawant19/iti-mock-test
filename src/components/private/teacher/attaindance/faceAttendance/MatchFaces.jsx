@@ -1,11 +1,22 @@
 import { Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
-import { drawCanvas } from "./util/drawCanvas";
 import { generateBinaryHash } from "./util/generateBinaryHash";
 import { faceService } from "../../../../../appwrite/faceService";
+import {
+  UserCheck,
+  UserX,
+  Database,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 
-const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
-  const [resultMessage, setResultMessage] = useState("");
+const MatchFaceMode = ({
+  faceapi,
+  detectFace,
+  resultMessage,
+  setResultMessage,
+}) => {
+  const [matchStatus, setMatchStatus] = useState(null); // 'matched', 'unknown', 'loading', null
   // Cache for detected faces
   const [faceCache, setFaceCache] = useState(new Map());
   // Cache for database responses
@@ -17,6 +28,8 @@ const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
   const dbResponseCacheRef = useRef(new Map());
   // Track total API calls
   const [apiCallCount, setApiCallCount] = useState(0);
+  // Track if we're analyzing a face
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Update the refs whenever cache states change
   useEffect(() => {
@@ -111,130 +124,173 @@ const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
       return null;
     }
 
-    const detectedHash = generateBinaryHash(detection.descriptor);
-    // Create an array of hash chunks (3 chunks of 20 bits each)
-    const hashArray = (detectedHash.match(/.{1,20}/g) || []).slice(0, 3);
-    const currentFaceCache = faceCacheRef.current;
+    setAnalyzing(true);
 
-    // STEP 1: Check if the face is already in the face cache
-    console.log("Total keys in face cache:", currentFaceCache.size);
+    try {
+      const detectedHash = generateBinaryHash(detection.descriptor);
+      // Create an array of hash chunks (3 chunks of 20 bits each)
+      const hashArray = (detectedHash.match(/.{1,20}/g) || []).slice(0, 3);
+      const currentFaceCache = faceCacheRef.current;
 
-    // Try to find an exact hash match first (most efficient)
-    if (currentFaceCache.has(detectedHash)) {
-      const cachedEntry = currentFaceCache.get(detectedHash);
-      console.log("Exact hash match found in face cache");
+      // STEP 1: Check if the face is already in the face cache
+      console.log("Total keys in face cache:", currentFaceCache.size);
 
-      // If already matched, return the cached result
-      if (cachedEntry.isMatched) {
-        return cachedEntry.message;
-      } else {
-        // If not matched, check with DB cache again
-        console.log("Face previously unmatched, checking DB cache again");
-        // Continue to DB cache checking (don't return here)
-      }
-    }
-
-    // Try to find a partial hash match
-    let partialMatchFound = false;
-    for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
-      if (hashArray.some((hash) => cacheHash.includes(hash))) {
-        console.log("Partial hash match found in face cache");
+      // Try to find an exact hash match first (most efficient)
+      if (currentFaceCache.has(detectedHash)) {
+        const cachedEntry = currentFaceCache.get(detectedHash);
+        console.log("Exact hash match found in face cache");
 
         // If already matched, return the cached result
-        if (cacheEntry.isMatched) {
-          partialMatchFound = true;
-          return cacheEntry.message;
+        if (cachedEntry.isMatched) {
+          setMatchStatus("matched");
+          return cachedEntry.message;
         } else {
-          // If not matched, we'll continue to DB checking
-          partialMatchFound = true;
-          console.log("Face previously unmatched, continuing to DB check");
-          break;
+          // If not matched, check with DB cache again
+          console.log("Face previously unmatched, checking DB cache again");
+          // Continue to DB cache checking (don't return here)
         }
       }
-    }
 
-    if (!partialMatchFound) {
-      console.log("No match in face cache, checking DB cache");
-    }
+      // Try to find a partial hash match
+      let partialMatchFound = false;
+      for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
+        if (hashArray.some((hash) => cacheHash.includes(hash))) {
+          console.log("Partial hash match found in face cache");
 
-    // STEP 2: Check if we have matching documents in the DB cache
-    const cachedDocuments = checkDbCache(hashArray);
-
-    if (cachedDocuments && cachedDocuments.length > 0) {
-      console.log(
-        `Found ${cachedDocuments.length} documents in DB cache, attempting to match`
-      );
-      const matchFound = matchWithDocuments(detection, cachedDocuments);
-
-      if (matchFound) {
-        console.log("Match found in DB cache for:", matchFound.name);
-
-        // Create and store the match in face cache
-        const matchInfo = {
-          name: matchFound.name,
-          distance: matchFound.distance,
-          document: matchFound.document,
-          source: "db_cache",
-        };
-        return matchInfo;
-      } else {
-        console.log("Documents found in DB cache but no face match");
-        return { name: "Unknown", distance: 1 };
+          // If already matched, return the cached result
+          if (cacheEntry.isMatched) {
+            partialMatchFound = true;
+            setMatchStatus("matched");
+            return cacheEntry.message;
+          } else {
+            // If not matched, we'll continue to DB checking
+            partialMatchFound = true;
+            console.log("Face previously unmatched, continuing to DB check");
+            break;
+          }
+        }
       }
-    }
 
-    console.log(
-      "No matching documents in DB cache; preparing to query database"
-    );
+      if (!partialMatchFound) {
+        console.log("No match in face cache, checking DB cache");
+      }
 
-    // STEP 3: Don't call API if a call is already in progress
-    if (apiCallInProgressRef.current) {
-      console.log("API call already in progress; skipping this attempt");
-      return null;
-    }
+      // STEP 2: Check if we have matching documents in the DB cache
+      const cachedDocuments = checkDbCache(hashArray);
 
-    // Mark API call as in progress
-    apiCallInProgressRef.current = true;
-
-    // Build query from hash chunks
-    const queries = hashArray.map((chunk) => Query.contains("hash", chunk));
-    try {
-      // Increment API call counter
-      setApiCallCount((prevCount) => prevCount + 1);
-
-      const response = await faceService.getMatches([
-        Query.or(queries),
-        Query.limit(10), // Increased limit to get more potential matches
-      ]);
-
-      if (response.total > 0 && Array.isArray(response.documents)) {
-        // Store all documents in DB cache for future use
-        storeInDbCache(response.documents);
-
-        const matchFound = matchWithDocuments(detection, response.documents);
+      if (cachedDocuments && cachedDocuments.length > 0) {
+        console.log(
+          `Found ${cachedDocuments.length} documents in DB cache, attempting to match`
+        );
+        const matchFound = matchWithDocuments(detection, cachedDocuments);
 
         if (matchFound) {
-          console.log("Match found from API for:", matchFound.name);
+          console.log("Match found in DB cache for:", matchFound.name);
 
-          // Create and store match
+          // Create and store the match in face cache
           const matchInfo = {
             name: matchFound.name,
             distance: matchFound.distance,
             document: matchFound.document,
-            source: "api_call",
+            source: "db_cache",
           };
 
+          // Update face cache with the new match
           const newEntry = createFaceCacheEntry(detectedHash, true, matchInfo);
-
           const newFaceCache = new Map(currentFaceCache);
           newFaceCache.set(detectedHash, newEntry);
           setFaceCache(newFaceCache);
           faceCacheRef.current = newFaceCache;
 
+          setMatchStatus("matched");
           return matchInfo;
         } else {
-          // No match was found despite getting documents from DB
-          console.log("Documents found from API but no face match");
+          console.log("Documents found in DB cache but no face match");
+
+          // Store as unmatched
+          const newEntry = createFaceCacheEntry(detectedHash, false);
+          const newFaceCache = new Map(currentFaceCache);
+          newFaceCache.set(detectedHash, newEntry);
+          setFaceCache(newFaceCache);
+          faceCacheRef.current = newFaceCache;
+
+          setMatchStatus("unknown");
+          return { name: "Unknown", distance: 1 };
+        }
+      }
+
+      console.log(
+        "No matching documents in DB cache; preparing to query database"
+      );
+
+      // STEP 3: Don't call API if a call is already in progress
+      if (apiCallInProgressRef.current) {
+        console.log("API call already in progress; skipping this attempt");
+        return null;
+      }
+
+      // Mark API call as in progress
+      apiCallInProgressRef.current = true;
+      setMatchStatus("loading");
+
+      // Build query from hash chunks
+      const queries = hashArray.map((chunk) => Query.contains("hash", chunk));
+      try {
+        // Increment API call counter
+        setApiCallCount((prevCount) => prevCount + 1);
+
+        const response = await faceService.getMatches([
+          Query.or(queries),
+          Query.limit(10), // Increased limit to get more potential matches
+        ]);
+
+        if (response.total > 0 && Array.isArray(response.documents)) {
+          // Store all documents in DB cache for future use
+          storeInDbCache(response.documents);
+
+          const matchFound = matchWithDocuments(detection, response.documents);
+
+          if (matchFound) {
+            console.log("Match found from API for:", matchFound.name);
+
+            // Create and store match
+            const matchInfo = {
+              name: matchFound.name,
+              distance: matchFound.distance,
+              document: matchFound.document,
+              source: "api_call",
+            };
+
+            const newEntry = createFaceCacheEntry(
+              detectedHash,
+              true,
+              matchInfo
+            );
+
+            const newFaceCache = new Map(currentFaceCache);
+            newFaceCache.set(detectedHash, newEntry);
+            setFaceCache(newFaceCache);
+            faceCacheRef.current = newFaceCache;
+
+            setMatchStatus("matched");
+            return matchInfo;
+          } else {
+            // No match was found despite getting documents from DB
+            console.log("Documents found from API but no face match");
+
+            const newEntry = createFaceCacheEntry(detectedHash, false);
+
+            const newFaceCache = new Map(currentFaceCache);
+            newFaceCache.set(detectedHash, newEntry);
+            setFaceCache(newFaceCache);
+            faceCacheRef.current = newFaceCache;
+
+            setMatchStatus("unknown");
+            return { name: "Unknown", distance: 0 };
+          }
+        } else {
+          // No documents found in DB
+          console.log("No documents found in database - storing as unknown");
 
           const newEntry = createFaceCacheEntry(detectedHash, false);
 
@@ -243,27 +299,19 @@ const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
           setFaceCache(newFaceCache);
           faceCacheRef.current = newFaceCache;
 
+          setMatchStatus("unknown");
           return { name: "Unknown", distance: 0 };
         }
-      } else {
-        // No documents found in DB
-        console.log("No documents found in database - storing as unknown");
-
-        const newEntry = createFaceCacheEntry(detectedHash, false);
-
-        const newFaceCache = new Map(currentFaceCache);
-        newFaceCache.set(detectedHash, newEntry);
-        setFaceCache(newFaceCache);
-        faceCacheRef.current = newFaceCache;
-
-        return { name: "Unknown", distance: 0 };
+      } catch (error) {
+        console.error("Error matching face:", error);
+        setMatchStatus(null);
+        return null;
+      } finally {
+        // Reset the API call flag once the call is complete
+        apiCallInProgressRef.current = false;
       }
-    } catch (error) {
-      console.error("Error matching face:", error);
-      return null;
     } finally {
-      // Reset the API call flag once the call is complete
-      apiCallInProgressRef.current = false;
+      setAnalyzing(false);
     }
   };
 
@@ -334,34 +382,111 @@ const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
     return false;
   };
 
-  // Overlay logic: detect face and, if matched, draw a card with the student name.
+  // Function to reset caches
+  const resetCaches = () => {
+    setFaceCache(new Map());
+    setDbResponseCache(new Map());
+    faceCacheRef.current = new Map();
+    dbResponseCacheRef.current = new Map();
+    setApiCallCount(0);
+    setMatchStatus(null);
+    setResultMessage("");
+  };
+
+  // Set up detection interval that uses the integrated face detection
   useEffect(() => {
     let intervalId;
 
-    // Update overlay every 500ms
+    // Update detection every 500ms with match attempt integration
     intervalId = setInterval(async () => {
-      await drawCanvas({
-        webcamRef,
-        canvasRef,
-        faceapi,
-        attemptMatch,
-        setResultMessage,
-      });
+      await detectFace(attemptMatch);
     }, 500);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [webcamRef, canvasRef, faceapi]); // Removed faceCache dependency to prevent extra re-renders
+  }, [detectFace]); // Remove unnecessary dependencies
+
+  // Determine status color based on match status
+  const getStatusColor = () => {
+    switch (matchStatus) {
+      case "matched":
+        return "text-green-500";
+      case "unknown":
+        return "text-red-500";
+      case "loading":
+        return "text-blue-500";
+      default:
+        return "text-gray-500";
+    }
+  };
 
   return (
-    <div className="controls match-face">
-      <h2>Match Face</h2>
-      {resultMessage && <p className="result-message">{resultMessage}</p>}
-      <div className="stats">
-        <h3>Face Cache: {faceCache.size}</h3>
-        <h3>DB Cache: {dbResponseCache.size}</h3>
-        <h3>API Calls: {apiCallCount}</h3>
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Face Recognition</h2>
+        <button
+          onClick={resetCaches}
+          className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm"
+        >
+          <RefreshCw size={16} className="mr-1" />
+          Reset
+        </button>
+      </div>
+
+      {/* Status message */}
+      {resultMessage && (
+        <div
+          className={`flex items-center p-3 mb-4 rounded-md bg-gray-50 ${getStatusColor()}`}
+        >
+          {matchStatus === "matched" && (
+            <UserCheck size={20} className="mr-2" />
+          )}
+          {matchStatus === "unknown" && <UserX size={20} className="mr-2" />}
+          {matchStatus === "loading" && (
+            <RefreshCw size={20} className="mr-2 animate-spin" />
+          )}
+          {!matchStatus && <AlertCircle size={20} className="mr-2" />}
+          <p className="text-sm font-medium">{resultMessage}</p>
+        </div>
+      )}
+
+      {/* Statistics grid */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="bg-gray-50 p-3 rounded-md">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">Face Cache</p>
+            <span className="text-sm font-semibold">{faceCache.size}</span>
+          </div>
+        </div>
+        <div className="bg-gray-50 p-3 rounded-md">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">DB Cache</p>
+            <span className="text-sm font-semibold">
+              {dbResponseCache.size}
+            </span>
+          </div>
+        </div>
+        <div className="bg-gray-50 p-3 rounded-md">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">API Calls</p>
+            <span className="text-sm font-semibold">{apiCallCount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Processing indicator */}
+      {analyzing && (
+        <div className="flex items-center justify-center p-2 mb-4">
+          <RefreshCw size={16} className="text-blue-500 animate-spin mr-2" />
+          <span className="text-sm text-blue-500">Processing...</span>
+        </div>
+      )}
+
+      {/* Database info */}
+      <div className="flex items-center text-xs text-gray-500 mt-2">
+        <Database size={14} className="mr-1" />
+        <span>Face recognition powered by Appwrite</span>
       </div>
     </div>
   );
