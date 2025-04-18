@@ -1,6 +1,6 @@
 import { Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
-import { generateBinaryHash } from "./util/generateBinaryHash";
+import { generateBinaryHash } from "./util";
 import { faceService } from "../../../../../appwrite/faceService";
 import {
   UserCheck,

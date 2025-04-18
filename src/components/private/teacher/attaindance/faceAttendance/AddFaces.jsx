@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { faceService } from "../../../../../appwrite/faceService";
-import { generateBinaryHash } from "./util/generateBinaryHash";
-import { generateHashArray, generateHashQuery } from "./util/hash";
 import { Query } from "appwrite";
+
+import { faceService } from "../../../../../appwrite/faceService";
+import {
+  generateBinaryHash,
+  generateHashQuery,
+  generateHashArray,
+} from "./util";
 
 const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   const [samples, setSamples] = useState([]);
@@ -144,7 +148,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   // Remove the useEffect that was previously running face detection at intervals
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-6">
       <div className="text-center">
         <h2 className="text-xl font-bold text-gray-800 mb-2">
           Register New Face

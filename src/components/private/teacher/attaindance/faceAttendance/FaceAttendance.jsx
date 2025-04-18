@@ -254,7 +254,7 @@ const FaceAttendance = () => {
 
           {/* Right Column - Form Section */}
           <div className="w-full lg:w-1/2 bg-slate-100 rounded-xl shadow-sm">
-            <div className="p-6 rounded-xl h-full bg-slate-200">
+            <div className=" rounded-xl h-full bg-slate-200">
               {mode === "add" ? (
                 <AddFaceMode
                   captureFace={captureFace}
