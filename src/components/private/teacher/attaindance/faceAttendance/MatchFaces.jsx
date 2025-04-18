@@ -1,8 +1,8 @@
 import { Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
-import { appwriteService } from "../appwrite/appwriteService";
 import { drawCanvas } from "./util/drawCanvas";
 import { generateBinaryHash } from "./util/generateBinaryHash";
+import { faceService } from "../../../../../appwrite/faceService";
 
 const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
   const [resultMessage, setResultMessage] = useState("");
@@ -202,7 +202,7 @@ const MatchFaceMode = ({ faceapi, webcamRef, canvasRef }) => {
       // Increment API call counter
       setApiCallCount((prevCount) => prevCount + 1);
 
-      const response = await appwriteService.getMatches([
+      const response = await faceService.getMatches([
         Query.or(queries),
         Query.limit(10), // Increased limit to get more potential matches
       ]);

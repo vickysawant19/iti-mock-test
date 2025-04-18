@@ -17,6 +17,7 @@
     "appwrite": "^16.1.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.7",
+    "face-api.js": "^0.22.2",
     "framer-motion": "^12.4.7",
     "imagekit": "^6.0.0",
     "imagekitio-react": "^4.3.0",
@@ -37,6 +38,7 @@
     "react-router-dom": "^6.23.1",
     "react-spinners": "^0.14.0",
     "react-toastify": "^10.0.5",
+    "react-webcam": "^7.2.0",
     "recharts": "^2.13.0-alpha.4",
     "uuid": "^10.0.0"
   },
