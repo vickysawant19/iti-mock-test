@@ -50,7 +50,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           faceData.documents.find((user) => user.userId === student.userId) !==
           undefined,
       }));
-      console.log("new data", newData);
+  
       setStudentsProfile(newData);
     } catch (error) {
       console.log(error);

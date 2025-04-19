@@ -9,6 +9,11 @@ import {
   RefreshCw,
   AlertCircle,
 } from "lucide-react";
+import attendanceService from "../../../../../appwrite/attaindanceService";
+import { useSelector } from "react-redux";
+import { selectProfile } from "../../../../../store/profileSlice";
+import { selectUser } from "../../../../../store/userSlice";
+import { format } from "date-fns";
 
 const MatchFaceMode = ({
   faceapi,
@@ -16,6 +21,10 @@ const MatchFaceMode = ({
   resultMessage,
   setResultMessage,
 }) => {
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
+  const isTeacher = user.labels.includes("Teacher");
+
   const [matchStatus, setMatchStatus] = useState(null); // 'matched', 'unknown', 'loading', null
   // Cache for detected faces
   const [faceCache, setFaceCache] = useState(new Map());
@@ -40,6 +49,43 @@ const MatchFaceMode = ({
     dbResponseCacheRef.current = dbResponseCache;
   }, [dbResponseCache]);
 
+  const checkFaceCache = (hashArray) => {
+    const currentFaceCache = faceCacheRef.current;
+
+    // STEP 1: Check if the face is already in the face cache
+    console.log("Total keys in face cache:", currentFaceCache.size);
+
+    // Try to find a partial hash match
+    let partialMatchFound = false;
+    for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
+      if (hashArray.some((hash) => cacheHash.includes(hash))) {
+        console.log("Partial hash match found in face cache");
+
+        // If already matched, return the cached result
+        if (cacheEntry.isMatched) {
+          partialMatchFound = true;
+          setMatchStatus("matched");
+          return cacheEntry.message;
+        } else {
+          partialMatchFound = true;
+          setMatchStatus("unknown");
+          return cacheEntry.message;
+        }
+        //  else {
+        //   // If not matched, we'll continue to DB checking
+        //   partialMatchFound = true;
+        //   console.log("Face previously unmatched, continuing to DB check");
+        //   break;
+        // }
+      }
+    }
+
+    if (!partialMatchFound) {
+      console.log("No match in face cache, checking DB cache");
+      return false;
+    }
+  };
+
   // Standardized function to create face cache entry
   const createFaceCacheEntry = (hash, isMatched, matchInfo = null) => {
     return {
@@ -51,7 +97,6 @@ const MatchFaceMode = ({
             name: matchInfo.name,
             distance: matchInfo.distance,
             matchSource: matchInfo.source || "unknown",
-            document: matchInfo.document || null,
           }
         : { name: "Unknown", distance: 1 },
     };
@@ -133,47 +178,8 @@ const MatchFaceMode = ({
       const currentFaceCache = faceCacheRef.current;
 
       // STEP 1: Check if the face is already in the face cache
-      console.log("Total keys in face cache:", currentFaceCache.size);
-
-      // Try to find an exact hash match first (most efficient)
-      if (currentFaceCache.has(detectedHash)) {
-        const cachedEntry = currentFaceCache.get(detectedHash);
-        console.log("Exact hash match found in face cache");
-
-        // If already matched, return the cached result
-        if (cachedEntry.isMatched) {
-          setMatchStatus("matched");
-          return cachedEntry.message;
-        } else {
-          // If not matched, check with DB cache again
-          console.log("Face previously unmatched, checking DB cache again");
-          // Continue to DB cache checking (don't return here)
-        }
-      }
-
-      // Try to find a partial hash match
-      let partialMatchFound = false;
-      for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
-        if (hashArray.some((hash) => cacheHash.includes(hash))) {
-          console.log("Partial hash match found in face cache");
-
-          // If already matched, return the cached result
-          if (cacheEntry.isMatched) {
-            partialMatchFound = true;
-            setMatchStatus("matched");
-            return cacheEntry.message;
-          } else {
-            // If not matched, we'll continue to DB checking
-            partialMatchFound = true;
-            console.log("Face previously unmatched, continuing to DB check");
-            break;
-          }
-        }
-      }
-
-      if (!partialMatchFound) {
-        console.log("No match in face cache, checking DB cache");
-      }
+      const cacheResult = checkFaceCache(hashArray);
+      if (cacheResult) return cacheResult;
 
       // STEP 2: Check if we have matching documents in the DB cache
       const cachedDocuments = checkDbCache(hashArray);
@@ -249,9 +255,13 @@ const MatchFaceMode = ({
           storeInDbCache(response.documents);
 
           const matchFound = matchWithDocuments(detection, response.documents);
+          console.log("match found ", matchFound);
 
           if (matchFound) {
             console.log("Match found from API for:", matchFound.name);
+
+            //try marking todays attendace
+            await markAttendance(matchFound.document.userId);
 
             // Create and store match
             const matchInfo = {
@@ -364,22 +374,56 @@ const MatchFaceMode = ({
   };
 
   // Function to mark attendance
-  const markAttendance = (faceHash) => {
-    if (faceCacheRef.current.has(faceHash)) {
-      const newCache = new Map(faceCacheRef.current);
-      const faceData = { ...newCache.get(faceHash) };
+  const markAttendance = async (userId) => {
+    try {
+      // Get current user's formatted date
+      const formattedTodaysDate = format(new Date(), "yyyy-MM-dd");
 
-      // Update the attendance field
-      faceData.attendanceMarked = true;
-      newCache.set(faceHash, faceData);
+      // Fetch current attendance record for the user
+      const data = await attendanceService.getUserAttendance(
+        userId,
+        profile.batchId
+      );
 
-      // Update both state and ref
-      setFaceCache(newCache);
-      faceCacheRef.current = newCache;
+      // Check if user already has attendance for today
+      const attendanceRecords = data?.attendanceRecords || [];
+      const todaysAttendance = attendanceRecords.find(
+        (record) => record.date === formattedTodaysDate
+      );
 
+      // If attendance is already marked for today, return success
+      if (todaysAttendance) {
+        console.log("Attendance already marked for today");
+        return true;
+      }
+
+      // Get current time in HH:MM format for attendance record
+      const currentTime = format(new Date(), "HH:mm");
+
+      // Create attendance record object with current time
+      const record = {
+        userId,
+        batchId: profile.batchId,
+        attendanceRecords: [
+          {
+            date: formattedTodaysDate,
+            attendanceStatus: "Present",
+            inTime: currentTime,
+            // For outTime, we'll use the current time as well, or you could set a default end time
+            outTime: "17:00",
+          },
+        ],
+      };
+
+      // Mark attendance with the attendance service
+      const result = await attendanceService.markUserAttendance(record);
+
+      console.log("Attendance marked successfully:", result);
       return true;
+    } catch (error) {
+      console.error("Attendance marking error:", error);
+      return false;
     }
-    return false;
   };
 
   // Function to reset caches
@@ -396,11 +440,10 @@ const MatchFaceMode = ({
   // Set up detection interval that uses the integrated face detection
   useEffect(() => {
     let intervalId;
-
     // Update detection every 500ms with match attempt integration
     intervalId = setInterval(async () => {
       await detectFace(attemptMatch);
-    }, 500);
+    }, 1000);
 
     return () => {
       clearInterval(intervalId);
