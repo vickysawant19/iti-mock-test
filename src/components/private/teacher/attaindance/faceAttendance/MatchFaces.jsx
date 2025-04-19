@@ -8,12 +8,17 @@ import {
   Database,
   RefreshCw,
   AlertCircle,
+  Clock,
+  Calendar,
+  CheckCircle,
 } from "lucide-react";
 import attendanceService from "../../../../../appwrite/attaindanceService";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../../store/profileSlice";
 import { selectUser } from "../../../../../store/userSlice";
 import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
 
 const MatchFaceMode = ({
   faceapi,
@@ -39,6 +44,10 @@ const MatchFaceMode = ({
   const [apiCallCount, setApiCallCount] = useState(0);
   // Track if we're analyzing a face
   const [analyzing, setAnalyzing] = useState(false);
+  // Recent attendance records
+  const [recentAttendance, setRecentAttendance] = useState([]);
+  // Animation state for attendance marking
+  const [attendanceMarking, setAttendanceMarking] = useState(false);
 
   // Update the refs whenever cache states change
   useEffect(() => {
@@ -51,16 +60,14 @@ const MatchFaceMode = ({
 
   const checkFaceCache = (hashArray) => {
     const currentFaceCache = faceCacheRef.current;
+    // console.log("Total keys in face cache:", currentFaceCache.size);
 
     // STEP 1: Check if the face is already in the face cache
-    console.log("Total keys in face cache:", currentFaceCache.size);
-
     // Try to find a partial hash match
     let partialMatchFound = false;
     for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
       if (hashArray.some((hash) => cacheHash.includes(hash))) {
-        console.log("Partial hash match found in face cache");
-
+        // console.log("Partial hash match found in face cache");
         // If already matched, return the cached result
         if (cacheEntry.isMatched) {
           partialMatchFound = true;
@@ -71,17 +78,11 @@ const MatchFaceMode = ({
           setMatchStatus("unknown");
           return cacheEntry.message;
         }
-        //  else {
-        //   // If not matched, we'll continue to DB checking
-        //   partialMatchFound = true;
-        //   console.log("Face previously unmatched, continuing to DB check");
-        //   break;
-        // }
       }
     }
 
     if (!partialMatchFound) {
-      console.log("No match in face cache, checking DB cache");
+      // console.log("No match in face cache, checking DB cache");
       return false;
     }
   };
@@ -105,7 +106,7 @@ const MatchFaceMode = ({
   // Check if face is in DB response cache - optimized to return all matching documents at once
   const checkDbCache = (hashArray) => {
     const currentDbCache = dbResponseCacheRef.current;
-    console.log("Checking DB cache with hash chunks:", hashArray);
+    // console.log("Checking DB cache with hash chunks:", hashArray);
 
     // Collect all matching documents
     const matchingDocuments = new Set();
@@ -122,11 +123,10 @@ const MatchFaceMode = ({
     }
 
     if (matchingDocuments.size === 0) {
-      console.log("No match found in DB cache");
+      // console.log("No match found in DB cache");
       return null;
     }
 
-    console.log(`Found ${matchingDocuments.size} unique documents in DB cache`);
     return Array.from(matchingDocuments);
   };
 
@@ -135,7 +135,7 @@ const MatchFaceMode = ({
     if (!documents || !Array.isArray(documents) || documents.length === 0)
       return;
 
-    console.log(`Storing ${documents.length} documents in DB cache`);
+    // console.log(`Storing ${documents.length} documents in DB cache`);
     const currentDbCache = new Map(dbResponseCacheRef.current);
 
     documents.forEach((doc) => {
@@ -150,9 +150,6 @@ const MatchFaceMode = ({
             currentDbCache.set(hashKey, [...existingDocs, doc]);
           }
         });
-        console.log(
-          `Cached document "${doc.name}" with ${doc.hash.length} hash entries`
-        );
       }
     });
 
@@ -185,9 +182,9 @@ const MatchFaceMode = ({
       const cachedDocuments = checkDbCache(hashArray);
 
       if (cachedDocuments && cachedDocuments.length > 0) {
-        console.log(
-          `Found ${cachedDocuments.length} documents in DB cache, attempting to match`
-        );
+        // console.log(
+        //   `Found ${cachedDocuments.length} documents in DB cache, attempting to match`
+        // );
         const matchFound = matchWithDocuments(detection, cachedDocuments);
 
         if (matchFound) {
@@ -225,9 +222,9 @@ const MatchFaceMode = ({
         }
       }
 
-      console.log(
-        "No matching documents in DB cache; preparing to query database"
-      );
+      // console.log(
+      //   "No matching documents in DB cache; preparing to query database"
+      // );
 
       // STEP 3: Don't call API if a call is already in progress
       if (apiCallInProgressRef.current) {
@@ -255,13 +252,52 @@ const MatchFaceMode = ({
           storeInDbCache(response.documents);
 
           const matchFound = matchWithDocuments(detection, response.documents);
-          console.log("match found ", matchFound);
 
           if (matchFound) {
             console.log("Match found from API for:", matchFound.name);
 
-            //try marking todays attendace
-            await markAttendance(matchFound.document.userId);
+            // Trigger animation state
+            setAttendanceMarking(true);
+
+            //try marking todays attendance
+            const result = await markAttendance(matchFound.document.userId);
+
+            // Add to recent attendance records
+            if (result.attendanceMarked) {
+              // Create a new record
+              const newRecord = {
+                name: matchFound.name,
+                time: result.inTime || result.outTime,
+                date: result.date,
+                status: result.attendanceStatus,
+                type: result.inTime && !result.outTime ? "in" : "out",
+                timestamp: new Date(),
+              };
+
+              // Show toast notification
+              toast.success(
+                `Attendance ${
+                  newRecord.type === "in" ? "check-in" : "check-out"
+                } marked for ${matchFound.name}`
+              );
+
+              // Update recent attendance records
+              setRecentAttendance((prev) => {
+                const withoutDuplicate = prev.filter(
+                  (r) =>
+                    !(
+                      r.name === newRecord.name &&
+                      r.date === result.date &&
+                      r.type === newRecord.type
+                    )
+                );
+                return [newRecord, ...withoutDuplicate].slice(0, 10); // Keep last 10 records
+              });
+            } else if (result.error) {
+              toast.error(`Failed to mark attendance: ${result.error}`);
+            }
+
+            setTimeout(() => setAttendanceMarking(false), 1500);
 
             // Create and store match
             const matchInfo = {
@@ -286,7 +322,9 @@ const MatchFaceMode = ({
             return matchInfo;
           } else {
             // No match was found despite getting documents from DB
-            console.log("Documents found from API but no face match");
+            // console.log("Documents found from API but no face match");
+
+            toast.error("Face not recognized in our system");
 
             const newEntry = createFaceCacheEntry(detectedHash, false);
 
@@ -300,7 +338,9 @@ const MatchFaceMode = ({
           }
         } else {
           // No documents found in DB
-          console.log("No documents found in database - storing as unknown");
+          // console.log("No documents found in database - storing as unknown");
+
+          toast.error("No matching face found in database");
 
           const newEntry = createFaceCacheEntry(detectedHash, false);
 
@@ -314,6 +354,7 @@ const MatchFaceMode = ({
         }
       } catch (error) {
         console.error("Error matching face:", error);
+        toast.error(`Error: ${error.message || "Failed to match face"}`);
         setMatchStatus(null);
         return null;
       } finally {
@@ -373,56 +414,84 @@ const MatchFaceMode = ({
     return bestMatch;
   };
 
-  // Function to mark attendance
   const markAttendance = async (userId) => {
     try {
-      // Get current user's formatted date
-      const formattedTodaysDate = format(new Date(), "yyyy-MM-dd");
+      const now = new Date();
+      const formattedTodaysDate = format(now, "yyyy-MM-dd");
+      const currentTime = format(now, "HH:mm");
 
-      // Fetch current attendance record for the user
+      // Determine if it's time to mark outTime (after 13:00)
+      const isAfter1PM = now.getHours() >= 13;
+
+      // Fetch current attendance data in one call
       const data = await attendanceService.getUserAttendance(
         userId,
         profile.batchId
       );
-
-      // Check if user already has attendance for today
       const attendanceRecords = data?.attendanceRecords || [];
       const todaysAttendance = attendanceRecords.find(
         (record) => record.date === formattedTodaysDate
       );
 
-      // If attendance is already marked for today, return success
+      // If attendance exists for today
       if (todaysAttendance) {
+        // If after 1:00 PM and outTime is not set, update the outTime
+        if (isAfter1PM && !todaysAttendance.outTime) {
+          const updatedRecord = {
+            ...todaysAttendance,
+            outTime: currentTime,
+          };
+
+          // Update the existing record with outTime
+          await attendanceService.markUserAttendance({
+            userId,
+            batchId: profile.batchId,
+            attendanceRecords: [updatedRecord],
+          });
+
+          console.log("Out-time marked successfully");
+          return {
+            ...updatedRecord,
+            attendanceMarked: true,
+          };
+        }
+
         console.log("Attendance already marked for today");
-        return true;
+        return {
+          ...todaysAttendance,
+          attendanceMarked: true,
+        };
       }
 
-      // Get current time in HH:MM format for attendance record
-      const currentTime = format(new Date(), "HH:mm");
+      // Create new attendance record
+      const newRecord = {
+        date: formattedTodaysDate,
+        attendanceStatus: "Present",
+        inTime: currentTime,
+        outTime: isAfter1PM ? currentTime : "", // Set outTime immediately if after 1:00 PM
+      };
 
-      // Create attendance record object with current time
+      // Structure for the complete record
       const record = {
         userId,
         batchId: profile.batchId,
-        attendanceRecords: [
-          {
-            date: formattedTodaysDate,
-            attendanceStatus: "Present",
-            inTime: currentTime,
-            // For outTime, we'll use the current time as well, or you could set a default end time
-            outTime: "17:00",
-          },
-        ],
+        attendanceRecords: [newRecord], //PUSH THIS NEW RECORD
       };
 
-      // Mark attendance with the attendance service
-      const result = await attendanceService.markUserAttendance(record);
+      // Mark attendance
+      await attendanceService.markUserAttendance(record);
 
-      console.log("Attendance marked successfully:", result);
-      return true;
+      console.log("Attendance marked successfully");
+      return {
+        ...newRecord,
+        attendanceMarked: true,
+      };
     } catch (error) {
       console.error("Attendance marking error:", error);
-      return false;
+      return {
+        attendanceMarked: false,
+        error: error.message,
+      };
     }
   };
 
@@ -435,6 +504,13 @@ const MatchFaceMode = ({
     setApiCallCount(0);
     setMatchStatus(null);
     setResultMessage("");
+    toast.success("Recognition system reset successfully");
+  };
+
+  // Clear recent attendance records
+  const clearAttendanceLog = () => {
+    setRecentAttendance([]);
+    toast.success("Attendance log cleared");
   };
 
   // Set up detection interval that uses the integrated face detection
@@ -464,72 +540,229 @@ const MatchFaceMode = ({
     }
   };
 
+  // Format time for display
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return "Unknown";
+
+    const minutesAgo = Math.floor(
+      (new Date() - new Date(timestamp)) / (1000 * 60)
+    );
+
+    if (minutesAgo < 1) return "Just now";
+    if (minutesAgo === 1) return "1 minute ago";
+    if (minutesAgo < 60) return `${minutesAgo} minutes ago`;
+
+    const hoursAgo = Math.floor(minutesAgo / 60);
+    if (hoursAgo === 1) return "1 hour ago";
+    if (hoursAgo < 24) return `${hoursAgo} hours ago`;
+
+    return format(new Date(timestamp), "MMM dd, HH:mm");
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-md p-4 max-w-full ">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-3">
         <h2 className="text-xl font-bold text-gray-800">Face Recognition</h2>
-        <button
-          onClick={resetCaches}
-          className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm"
-        >
-          <RefreshCw size={16} className="mr-1" />
-          Reset
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={resetCaches}
+            className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+          >
+            <RefreshCw size={16} className="mr-1" />
+            Reset
+          </button>
+          <button
+            onClick={clearAttendanceLog}
+            className="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md text-sm transition-colors duration-200"
+          >
+            <Clock size={16} className="mr-1" />
+            Clear Log
+          </button>
+        </div>
       </div>
 
-      {/* Status message */}
-      {resultMessage && (
-        <div
-          className={`flex items-center p-3 mb-4 rounded-md bg-gray-50 ${getStatusColor()}`}
-        >
-          {matchStatus === "matched" && (
-            <UserCheck size={20} className="mr-2" />
-          )}
-          {matchStatus === "unknown" && <UserX size={20} className="mr-2" />}
-          {matchStatus === "loading" && (
-            <RefreshCw size={20} className="mr-2 animate-spin" />
-          )}
-          {!matchStatus && <AlertCircle size={20} className="mr-2" />}
-          <p className="text-sm font-medium">{resultMessage}</p>
-        </div>
-      )}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Left column - Recognition */}
+        <div>
+          {/* Status message */}
+          <AnimatePresence>
+            {resultMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className={`flex items-center p-3 mb-4 rounded-md bg-gray-50 ${getStatusColor()}`}
+              >
+                {matchStatus === "matched" && (
+                  <UserCheck size={20} className="mr-2" />
+                )}
+                {matchStatus === "unknown" && (
+                  <UserX size={20} className="mr-2" />
+                )}
+                {matchStatus === "loading" && (
+                  <RefreshCw size={20} className="mr-2 animate-spin" />
+                )}
+                {!matchStatus && <AlertCircle size={20} className="mr-2" />}
+                <p className="text-sm font-medium">{resultMessage}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-      {/* Statistics grid */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-gray-50 p-3 rounded-md">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">Face Cache</p>
-            <span className="text-sm font-semibold">{faceCache.size}</span>
+          {/* Processing indicator */}
+          <AnimatePresence>
+            {analyzing && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center p-2 mb-4 bg-blue-50 rounded-md"
+              >
+                <RefreshCw
+                  size={16}
+                  className="text-blue-500 animate-spin mr-2"
+                />
+                <span className="text-sm text-blue-500">Processing...</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Attendance marking animation */}
+          <AnimatePresence>
+            {attendanceMarking && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4 flex items-center justify-center"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: 1 }}
+                  className="bg-green-500 text-white rounded-full p-2 mr-3"
+                >
+                  <CheckCircle size={24} />
+                </motion.div>
+                <div>
+                  <h3 className="text-green-700 font-semibold">
+                    Marking Attendance
+                  </h3>
+                  <p className="text-green-600 text-sm">Please wait...</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Statistics grid */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-gray-50 p-3 rounded-md transition-all duration-300 hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">Face Cache</p>
+                <motion.span
+                  key={faceCache.size}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className="text-sm font-semibold"
+                >
+                  {faceCache.size}
+                </motion.span>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-md transition-all duration-300 hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">DB Cache</p>
+                <motion.span
+                  key={dbResponseCache.size}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className="text-sm font-semibold"
+                >
+                  {dbResponseCache.size}
+                </motion.span>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-md transition-all duration-300 hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">API Calls</p>
+                <motion.span
+                  key={apiCallCount}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className="text-sm font-semibold"
+                >
+                  {apiCallCount}
+                </motion.span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-gray-50 p-3 rounded-md">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">DB Cache</p>
-            <span className="text-sm font-semibold">
-              {dbResponseCache.size}
+
+        {/* Right column - Attendance Log */}
+        <div className="bg-gray-50 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-md font-semibold text-gray-700 flex items-center">
+              <Calendar size={16} className="mr-2" />
+              Recent Attendance
+            </h3>
+            <span className="text-xs text-gray-500">
+              {recentAttendance.length} records
             </span>
           </div>
-        </div>
-        <div className="bg-gray-50 p-3 rounded-md">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">API Calls</p>
-            <span className="text-sm font-semibold">{apiCallCount}</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Processing indicator */}
-      {analyzing && (
-        <div className="flex items-center justify-center p-2 mb-4">
-          <RefreshCw size={16} className="text-blue-500 animate-spin mr-2" />
-          <span className="text-sm text-blue-500">Processing...</span>
+          {recentAttendance.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Clock size={24} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No attendance records yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              <AnimatePresence>
+                {recentAttendance.map((record, index) => (
+                  <motion.div
+                    key={`${record.name}-${record.date}-${record.type}-${index}`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`flex items-center justify-between p-2 rounded-md ${
+                      record.type === "in" ? "bg-green-50" : "bg-blue-50"
+                    } border-l-4 ${
+                      record.type === "in"
+                        ? "border-green-500"
+                        : "border-blue-500"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`p-1.5 rounded-full mr-3 ${
+                          record.type === "in"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-blue-100 text-blue-600"
+                        }`}
+                      >
+                        {record.type === "in" ? (
+                          <UserCheck size={16} />
+                        ) : (
+                          <Clock size={16} />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{record.name}</p>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <span>{record.date}</span>
+                          <span className="mx-1">•</span>
+                          <span>{record.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {formatTimeAgo(record.timestamp)}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Database info */}
-      <div className="flex items-center text-xs text-gray-500 mt-2">
-        <Database size={14} className="mr-1" />
-        <span>Face recognition powered by Appwrite</span>
       </div>
     </div>
   );

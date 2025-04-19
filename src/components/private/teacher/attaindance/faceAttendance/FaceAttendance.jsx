@@ -150,7 +150,7 @@ const FaceAttendance = () => {
 
       {/* Main UI */}
       {!modelsLoading && !isInitializing && cameraEnabled && (
-        <div className=" bg-white p-4 rounded-lg mt-4 flex flex-col justify-center items-center lg:flex-row gap-6  ">
+        <div className=" bg-white p-4 rounded-lg mt-4 flex flex-col justify-center  lg:flex-row gap-6  ">
           {/* Left Column - Camera Section */}
           <div className="w-full lg:w-1/2 ">
             <div className="rounded-md p-3 w-full max-w-md">
@@ -253,8 +253,8 @@ const FaceAttendance = () => {
           </div>
 
           {/* Right Column - Form Section */}
-          <div className="w-full lg:w-1/2 bg-slate-100 rounded-xl shadow-sm">
-            <div className=" rounded-xl h-full bg-slate-200">
+          <div className="w-full lg:w-1/2  rounded-xl shadow-sm border h-full">
+            <div className="w-full rounded-xl h-full bg-slate-200">
               {mode === "add" ? (
                 <AddFaceMode
                   captureFace={captureFace}
