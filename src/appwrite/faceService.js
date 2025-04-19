@@ -24,7 +24,6 @@ class FaceService {
   }
 
   async storeFaces(data) {
-    console.log("data", data);
     try {
       return this.database.createDocument(
         conf.databaseId,

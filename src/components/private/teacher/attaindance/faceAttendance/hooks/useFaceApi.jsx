@@ -49,7 +49,7 @@ const useFaceApi = ({ webcamRef, canvasRef, cameraEnabled }) => {
     loadModels();
   }, []);
 
-  // 8. Improved canvas clearing
+  // 2. Improved canvas clearing
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -64,7 +64,7 @@ const useFaceApi = ({ webcamRef, canvasRef, cameraEnabled }) => {
     }
   }, [canvasRef]);
 
-  // 2. Improved canvas resize function with error handling
+  // 3. Improved canvas resize function with error handling
   const resizeCanvas = useCallback(() => {
     const video = webcamRef.current?.video;
     const canvas = canvasRef.current;
@@ -103,135 +103,68 @@ const useFaceApi = ({ webcamRef, canvasRef, cameraEnabled }) => {
     }
   }, [webcamRef, canvasRef]);
 
-  // 3. Anti-flickering draw function with double buffering technique
-  const drawDetectionResults = useCallback(
-    (detection, matchResult = null) => {
-      // Cancel any pending animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+   // 4. Draw detection results on canvas
+   const drawDetectionResults = useCallback((detection, matchResult = null) => {
+    const canvas = canvasRef.current;
+    const video = webcamRef.current?.video;
+    
+    if (!canvas || !video) return;
+    
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!detection) return;
+    
+    const displaySize = { 
+      width: video.videoWidth, 
+      height: video.videoHeight 
+    };
+    
+    // Resize detection results to match display size
+    const resizedDetection = faceapi.resizeResults(detection, displaySize);
+    
+    // Draw standard faceapi detection box
+    faceapi.draw.drawDetections(canvas, [resizedDetection]);
+    
+    // Draw additional info if we have match results
+    if (matchResult) {
+      const { x, y, width, height } = resizedDetection.detection.box;
+      const isMatched = matchResult.name !== "Unknown";
+      
+      // Draw colored box based on match status
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = isMatched ? "#10B981" : "#EF4444"; // green for match, red for unknown
+      ctx.strokeRect(x, y, width, height);
+      
+      // Calculate info box position (above face)
+      const boxY = Math.max(y - 50, 10);
+      const boxHeight = 40;
+      
+      // Draw semi-transparent background for text
+      ctx.fillStyle = isMatched
+        ? "rgba(16, 185, 129, 0.8)" // green with opacity
+        : "rgba(239, 68, 68, 0.8)"; // red with opacity
+      ctx.fillRect(x, boxY, width, boxHeight);
+      
+      // Draw text
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(matchResult.name, x + 5, boxY + 25);
+      
+      // Set result message
+      if (isMatched) {
+        const confidenceScore = Math.round((1 - matchResult.distance) * 100);
+        setResultMessage(`Matched: ${matchResult.name} (${confidenceScore}% confidence)`);
+      } else {
+        setResultMessage("Unknown face detected");
       }
+    } else if (detection) {
+      setResultMessage("Processing face...");
+    }
+  }, [canvasRef, webcamRef]);
 
-      // Store the current match result for comparison
-      const currentMatchResult = matchResult ? { ...matchResult } : null;
 
-      // Use requestAnimationFrame for smoother rendering
-      animationFrameRef.current = requestAnimationFrame(() => {
-        const canvas = canvasRef.current;
-        const video = webcamRef.current?.video;
-
-        if (!canvas || !video) return;
-
-        // Get canvas context
-        const ctx = canvas.getContext("2d");
-
-        // First check if we have something to draw
-        if (!detection) {
-          // If no detection, clear canvas
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          setResultMessage("");
-          lastMatchResultRef.current = null;
-          return;
-        }
-
-        // Make sure canvas dimensions match the video
-        const displaySize = {
-          width: video.videoWidth,
-          height: video.videoHeight,
-        };
-
-        // Set canvas dimensions if they don't match
-        if (
-          canvas.width !== displaySize.width ||
-          canvas.height !== displaySize.height
-        ) {
-          canvas.width = displaySize.width;
-          canvas.height = displaySize.height;
-          faceapi.matchDimensions(canvas, displaySize);
-        }
-
-        // Double buffering technique to reduce flickering
-        // Create an off-screen canvas for drawing
-        const offScreenCanvas = document.createElement("canvas");
-        offScreenCanvas.width = canvas.width;
-        offScreenCanvas.height = canvas.height;
-        const offCtx = offScreenCanvas.getContext("2d");
-
-        // Resize detection results to match display size
-        const resizedDetection = faceapi.resizeResults(detection, displaySize);
-
-        // Clear the off-screen canvas first
-        offCtx.clearRect(0, 0, offScreenCanvas.width, offScreenCanvas.height);
-
-        // Draw on off-screen canvas
-        // Draw standard faceapi detection box
-        faceapi.draw.drawDetections(offScreenCanvas, [resizedDetection]);
-
-        // Draw additional info if we have match results
-        if (matchResult) {
-          const { x, y, width, height } = resizedDetection.detection.box;
-          const isMatched = matchResult.name !== "Unknown";
-
-          // Draw colored box based on match status
-          offCtx.lineWidth = 2;
-          offCtx.strokeStyle = isMatched ? "#10B981" : "#EF4444"; // green for match, red for unknown
-          offCtx.strokeRect(x, y, width, height);
-
-          // Calculate info box position (above face)
-          const boxY = Math.max(y - 50, 10);
-          const boxHeight = 40;
-
-          // Draw semi-transparent background for text
-          offCtx.fillStyle = isMatched
-            ? "rgba(16, 185, 129, 0.8)" // green with opacity
-            : "rgba(239, 68, 68, 0.8)"; // red with opacity
-          offCtx.fillRect(x, boxY, width, boxHeight);
-
-          // Draw text
-          offCtx.font = "bold 14px sans-serif";
-          offCtx.fillStyle = "#FFFFFF";
-          offCtx.fillText(matchResult.name, x + 5, boxY + 25);
-
-          // Set result message only if it changed
-          const prevName = lastMatchResultRef.current?.name;
-          const currentName = matchResult.name;
-
-          if (isMatched) {
-            const confidenceScore = Math.round(
-              (1 - matchResult.distance) * 100
-            );
-
-            // Only update the message if the name or confidence changed significantly
-            if (
-              prevName !== currentName ||
-              !lastMatchResultRef.current?.distance ||
-              Math.abs(
-                (1 - lastMatchResultRef.current.distance) * 100 -
-                  confidenceScore
-              ) > 3
-            ) {
-              setResultMessage(
-                `Matched: ${matchResult.name} (${confidenceScore}% confidence)`
-              );
-            }
-          } else if (prevName !== currentName) {
-            setResultMessage("Unknown face detected");
-          }
-        } else if (detection) {
-          setResultMessage("Processing face...");
-        }
-
-        // Now copy the off-screen canvas to the visible canvas (reduces flickering)
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(offScreenCanvas, 0, 0);
-
-        // Save current match result for next comparison
-        lastMatchResultRef.current = currentMatchResult;
-      });
-    },
-    [canvasRef, webcamRef]
-  );
-
-  // 4. Optimized face detection with improved performance
+  // 5. Optimized face detection with improved performance
   const detectFace = useCallback(
     async (attemptMatchCallback = null) => {
       // Skip if elements not ready or models still loading
@@ -252,9 +185,9 @@ const useFaceApi = ({ webcamRef, canvasRef, cameraEnabled }) => {
         return null;
       }
 
-      // Throttle detections (don't run if less than 200ms since last detection)
+      // Throttle detections (don't run if less than 1000ms since last detection)
       const now = Date.now();
-      if (lastDetectionRef.current && now - lastDetectionRef.current < 200) {
+      if (lastDetectionRef.current && now - lastDetectionRef.current < 1000) {
         return detectionResult;
       }
 

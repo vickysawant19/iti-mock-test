@@ -7,13 +7,61 @@ import {
   generateHashQuery,
   generateHashArray,
 } from "./util";
+import { useSelector } from "react-redux";
+import { selectProfile } from "../../../../../store/profileSlice";
+import { selectUser } from "../../../../../store/userSlice";
+import userProfileService from "../../../../../appwrite/userProfileService";
+import CustomSelectData from "../../../../components/customSelectData";
+import { User, UserCheck } from "lucide-react";
 
 const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   const [samples, setSamples] = useState([]);
-  const [registrationName, setRegistrationName] = useState("");
   const [resultMessage, setResultMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // "success", "error", "info"
   const [isVerifying, setIsVerifying] = useState(false);
+
+  const [studentsProfile, setStudentsProfile] = useState(null);
+  const [isProfilesLoading, setIsProfilesLoading] = useState(false);
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
+
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
+  const isTeacher = user.labels?.includes("Teacher");
+
+  const fetchStudentsProfiles = async () => {
+    if (!profile?.batchId) return;
+    setIsProfilesLoading(true);
+    try {
+      const data = await userProfileService.getBatchUserProfile([
+        Query.equal("batchId", profile.batchId),
+        Query.select(["userId", "userName", "studentId"]),
+        Query.equal("status", "Active"),
+      ]);
+
+      const studentIds = data.map((student) => student.userId);
+      const faceData = await faceService.getMatches([
+        Query.equal("userId", studentIds),
+        Query.select(["userId"]),
+      ]);
+
+      const newData = data.map((student) => ({
+        ...student,
+        isFaceDataAvailable:
+          faceData.documents.find((user) => user.userId === student.userId) !==
+          undefined,
+      }));
+      console.log("new data", newData);
+      setStudentsProfile(newData);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsProfilesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudentsProfiles();
+  }, [isTeacher, user]);
 
   // Check if face hash already exists in database
   const checkFaceExists = async (hash) => {
@@ -24,10 +72,10 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
       const existingFaces = await faceService.getMatches([
         query,
         Query.limit(1),
-        Query.select("name"),
+        Query.select(["name"]),
       ]);
 
-      return existingFaces.documents.length > 0;
+      return existingFaces.documents[0];
     } catch (error) {
       console.error("Error checking face existence:", error);
       return false;
@@ -60,7 +108,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
       if (faceExists) {
         setResultMessage(
-          "This face is already registered in the system. Try a different angle."
+          `This face of ${faceExists.name} is already registered in the system. Try a different angle.`
         );
         setMessageType("error");
         return;
@@ -90,12 +138,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
   const handleSaveRegistration = async () => {
     setResultMessage("");
-
-    if (!registrationName.trim()) {
-      setResultMessage("Please enter a unique name.");
-      setMessageType("error");
-      return;
-    }
+    if (!selectedStudentProfile) return;
 
     if (samples.length !== 5) {
       setResultMessage("Please add exactly 5 face samples before saving.");
@@ -110,33 +153,39 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
         JSON.stringify(sample.descriptor)
       );
 
-      // Check if name already exists
-      const nameExists = await faceService.getMatches([
-        Query.equal("name", registrationName),
+      // Check if faceData already exists
+      const faceDataExists = await faceService.getMatches([
+        Query.equal("userId", selectedStudentProfile.userId),
         Query.limit(1),
       ]);
 
-      if (nameExists.documents.length > 0) {
+      if (faceDataExists.documents.length > 0) {
         setResultMessage(
-          "This name is already registered. Please use a different name."
+          "This face is already registered. Please use a different stduent."
         );
         setMessageType("error");
         return;
       }
 
+      const name = selectedStudentProfile.userName
+        .split(" ")
+        .map((n, i) => (i === 0 ? n : n[0]))
+        .join(" ");
+
       // Store face data in Appwrite
       await faceService.storeFaces({
-        name: registrationName.trim(),
+        name,
+        userId: selectedStudentProfile.userId,
+        userName: selectedStudentProfile.userName,
+        batchId: profile.batchId, // Teacher batchId assosited with the student
         hash: hashes,
         descriptor: stringDescriptors,
       });
 
       setResultMessage("Face registered successfully!");
       setMessageType("success");
-
       // Reset the fields
       setSamples([]);
-      setRegistrationName("");
     } catch (error) {
       console.error("Error saving face data:", error);
       setResultMessage("Error saving face data. Please try again.");
@@ -144,8 +193,11 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
     }
   };
 
-  // We don't need the detectFace function here anymore as we're using the faceDetected prop
-  // Remove the useEffect that was previously running face detection at intervals
+  const handleSelectedStudent = (student) => {
+    setResultMessage("")
+    setSelectedStudentProfile(student);
+    setSamples([]);
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -158,92 +210,102 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
         </p>
       </div>
 
-      {/* Registration form */}
-      <div className="space-y-4">
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Registration Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter unique name"
-            value={registrationName}
-            onChange={(e) => setRegistrationName(e.target.value)}
-          />
-        </div>
-
-        {/* Samples progress */}
-        <div className="bg-gray-100 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Face Samples
-            </span>
-            <span className="text-sm font-medium text-gray-700">
-              {samples.length} / 5
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(samples.length / 5) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Result message */}
-        {resultMessage && (
-          <div
-            className={`p-3 rounded-lg ${
-              messageType === "success"
-                ? "bg-green-100 text-green-800"
-                : messageType === "error"
-                ? "bg-red-100 text-red-800"
-                : "bg-blue-100 text-blue-800"
-            }`}
-          >
-            {resultMessage}
+      <CustomSelectData
+        value={selectedStudentProfile}
+        valueKey="userId"
+        labelKey="userName"
+        options={studentsProfile || []}
+        renderOptionLabel={(option) => (
+          <div className="flex justify-between items-center w-full gap-4">
+            <span>{option.userName}</span>
+            {option.isFaceDataAvailable ? (
+              <UserCheck size={18} className="text-green-500" />
+            ) : (
+              <User size={18} className="text-gray-400" />
+            )}
           </div>
         )}
-      </div>
+        label="Student"
+        placeholder="Select student"
+        disabled={isProfilesLoading}
+        onChange={handleSelectedStudent}
+      />
 
-      {/* Action buttons */}
-      <div className="flex flex-wrap gap-4 mt-2">
-        <button
-          className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
-            isVerifying || samples.length >= 5 || captureLoading
-              ? "bg-gray-400 cursor-not-allowed"
-              : faceDetected
-              ? "bg-blue-500 hover:bg-blue-600"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-          onClick={handleAddFace}
-          disabled={
-            samples.length >= 5 ||
-            isVerifying ||
-            !faceDetected ||
-            captureLoading
-          }
-        >
-          {isVerifying || captureLoading ? "Processing..." : "Add Face Sample"}
-        </button>
+      {selectedStudentProfile && (
+        <div>
+          {/* Registration form */}
+          <div className="space-y-4 mb-4">
+            {/* Samples progress */}
+            <div className="bg-gray-100 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Face Samples
+                </span>
+                <span className="text-sm font-medium text-gray-700">
+                  {samples.length} / 5
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(samples.length / 5) * 100}%` }}
+                ></div>
+              </div>
+            </div>
 
-        <button
-          className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
-            samples.length === 5
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-          onClick={handleSaveRegistration}
-          disabled={samples.length !== 5}
-        >
-          Save Registration
-        </button>
-      </div>
+            {/* Result message */}
+            {resultMessage && (
+              <div
+                className={`p-3 rounded-lg ${
+                  messageType === "success"
+                    ? "bg-green-100 text-green-800"
+                    : messageType === "error"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}
+              >
+                {resultMessage}
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-4 mt-2">
+            <button
+              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
+                isVerifying || samples.length >= 5 || captureLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : faceDetected
+                  ? "bg-blue-500 hover:bg-blue-600"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+              onClick={handleAddFace}
+              disabled={
+                samples.length >= 5 ||
+                isVerifying ||
+                !faceDetected ||
+                captureLoading
+              }
+            >
+              {isVerifying || captureLoading
+                ? "Processing..."
+                : "Add Face Sample"}
+            </button>
+
+            <button
+              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
+                samples.length === 5
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+              onClick={handleSaveRegistration}
+              disabled={samples.length !== 5}
+            >
+              Save Registration
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
