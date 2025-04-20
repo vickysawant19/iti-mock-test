@@ -4,12 +4,15 @@ import conf from "../config/config";
 
 class FaceService {
   constructor() {
-    this.database = appwriteService.getDatabases()
+    this.database = appwriteService.getDatabases();
   }
 
   async getFaces() {
     try {
-      return this.database.listDocuments(conf.databaseId, conf.faceAttendanceCollectionId);
+      return this.database.listDocuments(
+        conf.databaseId,
+        conf.faceAttendanceCollectionId
+      );
     } catch (error) {
       throw Error("get faces:", error);
     }
@@ -17,7 +20,11 @@ class FaceService {
 
   async getMatches(queries = []) {
     try {
-      return this.database.listDocuments(conf.databaseId, conf.faceAttendanceCollectionId, queries);
+      return this.database.listDocuments(
+        conf.databaseId,
+        conf.faceAttendanceCollectionId,
+        queries
+      );
     } catch (error) {
       throw Error("get match", error);
     }
@@ -33,6 +40,18 @@ class FaceService {
       );
     } catch (error) {
       throw Error("get match", error);
+    }
+  }
+
+  async deleteFaceData(documentId) {
+    try {
+      return this.database.deleteDocument(
+        conf.databaseId,
+        conf.faceAttendanceCollectionId,
+        documentId
+      );
+    } catch (error) {
+      throw Error("Delete Error", error);
     }
   }
 }

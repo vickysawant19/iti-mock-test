@@ -8,11 +8,12 @@ const AttendanceStatus = ({
   batchData,
   currentTime = new Date(),
 }) => {
+  if (!batchData) return;
   const currentTimeStr = format(currentTime, "HH:mm");
   const isWithinTimeWindow =
     currentTimeStr >= batchData?.attendanceTime?.start &&
     currentTimeStr <= batchData?.attendanceTime?.end;
-  const isWithinRadius = distance <= batchData.circleRadius;
+  const isWithinRadius = distance <= batchData?.circleRadius;
   const canMarkAttendance = isWithinRadius && isWithinTimeWindow;
 
   const StatusIcon = ({ isValid }) =>

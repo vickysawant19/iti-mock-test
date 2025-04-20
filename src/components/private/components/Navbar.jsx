@@ -29,7 +29,8 @@ import logo from "../../../assets/logo.jpeg";
 import authService from "../../../appwrite/auth";
 import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
-import { ClipboardList, Menu, X } from "lucide-react";
+import { Camera, ClipboardList, Menu, UserCircle, X } from "lucide-react";
+import { menuConfig, pathToHeading } from "./navMenu";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector((state) => state.user);
@@ -43,33 +44,6 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  // This object maps current paths to headings
-  const pathToHeading = {
-    "/": "Home",
-    "/home": "Home",
-    "/dash": "Dashboard",
-    "/profile": "Profile",
-    "/manage-batch/create": "Create/Update Batch",
-    "/manage-batch/view": "View Batch Students",
-    "/create-question": "Create Question",
-    "/manage-questions": "Manage Questions",
-    "/mock-exam": "Create Mock Exam",
-    "/all-mock-tests": "My Mock Tests",
-    "/attain-test": "Attain Test",
-    "/daily-dairy": "Daily Diary",
-    "/attaindance/mark-holidays": "Mark Holidays",
-    "/attaindance/mark-attendance": "Mark Daywise Attendance",
-    "/attaindance/mark-student-attendance": isTeacher
-      ? "Mark Student Attendance"
-      : "Mark My Attendance",
-    "/attaindance/check-attendance": isTeacher
-      ? "Check Attendance"
-      : "Check My Attendance",
-    "/about": "About",
-    "/login": "Login",
-    "/signup": "SignUp",
-  };
 
   const currentHeading = pathToHeading[location.pathname] || "";
 
@@ -149,128 +123,6 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       return false;
     });
   };
-
-  // Define a configuration object for all the menu links
-  const menuConfig = [
-    {
-      // Admin-only group
-      group: "Admin",
-      roles: ["admin"],
-      icon: FaUserSecret,
-      groupKey: "admin",
-      children: [
-        { label: "View modules", path: "/add-modules", icon: MdAddCard },
-      ],
-    },
-    {
-      // Non-group items available to all logged-in users (or public)
-      items: [
-        { label: "Home", path: "/home", icon: FaHome },
-        {
-          label: "Dashboard",
-          path: "/dash",
-          icon: FaDashcube,
-          requiresAuth: true,
-        },
-      ],
-    },
-    {
-      // Teacher-only group for batch management
-      group: "Batch",
-      roles: ["teacher"],
-      icon: FaLayerGroup,
-      groupKey: "manageBatch",
-      children: [
-        {
-          label: "Students",
-          path: "/manage-batch/students",
-          icon: FaUserPlus,
-        },
-        {
-          label: "Manage Batch",
-          path: "/manage-batch/create",
-          icon: FaUserPlus,
-        },
-        { label: "View Batch", path: "/manage-batch/view", icon: FaUserPlus },
-      ],
-    },
-    {
-      //assessment for students
-      group: "Assessment",
-      icon: ClipboardList,
-      groupKey: "assessment",
-      children: [
-        { label: "Show Assessment", path: "/assessment", icon: MdAddCard },
-      ],
-    },
-    {
-      // Mock Tests group – some items only for teachers
-      group: "Mock Tests",
-      icon: FaBook,
-      groupKey: "mockTests",
-      children: [
-        {
-          label: "Create Question",
-          path: "/create-question",
-          icon: FaQuestionCircle,
-          roles: ["teacher"],
-        },
-        {
-          label: "Manage Questions",
-          path: "/manage-questions",
-          icon: FaList,
-          roles: ["teacher"],
-        },
-        {
-          label: "Create Mock Exam",
-          path: "/mock-exam",
-          icon: FaBook,
-          roles: ["teacher"],
-        },
-        { label: "My Mock Tests", path: "/all-mock-tests", icon: FaFileAlt },
-        { label: "Attain Test", path: "/attain-test", icon: FaKey },
-      ],
-    },
-    {
-      // Attendance group – with alternate labels based on role.
-      group: "Attendance",
-      icon: FaCalendarCheck,
-      groupKey: "attendance",
-      children: [
-        { label: "Daily Diary", path: "/daily-dairy", icon: FaBookReader },
-        {
-          label: "Mark Holidays",
-          path: "/attaindance/mark-holidays",
-          icon: FaBookReader,
-          roles: ["teacher"],
-        },
-        {
-          label: "Mark Daywise Attendance",
-          path: "/attaindance/mark-attendance",
-          icon: FaCalendarCheck,
-          roles: ["teacher"],
-        },
-        {
-          teacherLabel: "Mark Student Attendance",
-          studentLabel: "Mark My Attendance",
-          path: "/attaindance/mark-student-attendance",
-          icon: FaCalendarCheck,
-          roles: ["teacher", "student"],
-        },
-        {
-          teacherLabel: "Check Attendance",
-          studentLabel: "Check My Attendance",
-          path: "/attaindance/check-attendance",
-          icon: FaCalendarAlt,
-          roles: ["teacher", "student"],
-        },
-      ],
-    },
-    {
-      // Public items (or available for all users)
-      items: [{ label: "About", path: "/about", icon: FaInfoCircle }],
-    },
-  ];
 
   return (
     <>

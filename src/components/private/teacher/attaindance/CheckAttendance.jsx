@@ -12,6 +12,7 @@ import batchService from "../../../../appwrite/batchService";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Query } from "appwrite";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +42,9 @@ const CheckAttendance = () => {
 
   const fetchBatchData = async (batchId) => {
     try {
-      const data = await batchService.getBatch(batchId);
+      const data = await batchService.getBatch(batchId, [
+        Query.select(["attendanceHolidays"]),
+      ]);
       const parsedData = data?.attendanceHolidays.map((item) =>
         JSON.parse(item)
       );

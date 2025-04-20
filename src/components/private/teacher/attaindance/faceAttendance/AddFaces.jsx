@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Query } from "appwrite";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { faceService } from "../../../../../appwrite/faceService";
 import {
   generateBinaryHash,
@@ -12,13 +12,16 @@ import { selectProfile } from "../../../../../store/profileSlice";
 import { selectUser } from "../../../../../store/userSlice";
 import userProfileService from "../../../../../appwrite/userProfileService";
 import CustomSelectData from "../../../../components/customSelectData";
-import { User, UserCheck } from "lucide-react";
+import { User, UserCheck, RefreshCw, Trash2, Camera } from "lucide-react";
 
 const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   const [samples, setSamples] = useState([]);
   const [resultMessage, setResultMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // "success", "error", "info"
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [mode, setMode] = useState("add"); // "add" or "update"
 
   const [studentsProfile, setStudentsProfile] = useState(null);
   const [isProfilesLoading, setIsProfilesLoading] = useState(false);
@@ -28,6 +31,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   const profile = useSelector(selectProfile);
   const isTeacher = user.labels?.includes("Teacher");
 
+  // Memoize student data fetch to prevent unnecessary re-fetches
   const fetchStudentsProfiles = async () => {
     if (!profile?.batchId) return;
     setIsProfilesLoading(true);
@@ -41,16 +45,16 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
       const studentIds = data.map((student) => student.userId);
       const faceData = await faceService.getMatches([
         Query.equal("userId", studentIds),
-        Query.select(["userId"]),
+        Query.select(["$id", "userId", "name"]),
       ]);
 
       const newData = data.map((student) => ({
         ...student,
-        isFaceDataAvailable:
-          faceData.documents.find((user) => user.userId === student.userId) !==
-          undefined,
+        faceData: faceData.documents.find(
+          (user) => user.userId === student.userId
+        ),
       }));
-  
+
       setStudentsProfile(newData);
     } catch (error) {
       console.log(error);
@@ -64,17 +68,22 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   }, [isTeacher, user]);
 
   // Check if face hash already exists in database
-  const checkFaceExists = async (hash) => {
+  const checkFaceExists = async (hash, extraQueries) => {
     const hashArray = generateHashArray(hash);
     const query = generateHashQuery(hashArray);
 
-    try {
-      const existingFaces = await faceService.getMatches([
-        query,
-        Query.limit(1),
-        Query.select(["name"]),
-      ]);
+    let queries = [
+      query,
+      Query.limit(1),
+      Query.select(["$id", "userId", "name"]),
+    ];
 
+    if (extraQueries) {
+      queries.push(...extraQueries);
+    }
+
+    try {
+      const existingFaces = await faceService.getMatches(queries);
       return existingFaces.documents[0];
     } catch (error) {
       console.error("Error checking face existence:", error);
@@ -102,11 +111,16 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
       // Generate hash for the captured face
       const hash = generateBinaryHash(detection.descriptor);
-
+      console.log(selectedStudentProfile);
       // Check if this face already exists
-      const faceExists = await checkFaceExists(hash);
+      const faceExists = await checkFaceExists(
+        hash,
+        mode === "add"
+          ? undefined
+          : [Query.notEqual("userId", selectedStudentProfile.userId)]
+      );
 
-      if (faceExists) {
+      if (faceExists && faceExists.userId !== selectedStudentProfile.userId) {
         setResultMessage(
           `This face of ${faceExists.name} is already registered in the system. Try a different angle.`
         );
@@ -114,7 +128,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
         return;
       }
 
-      // Face not in database, add to samples
+      // Face not in database or in update mode, add to samples
       setSamples((prev) => [
         ...prev,
         {
@@ -146,6 +160,8 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
       return;
     }
 
+    setIsSaving(true);
+
     try {
       // Extract hashes and descriptors from samples
       const hashes = samples.map((sample) => sample.hash);
@@ -153,86 +169,186 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
         JSON.stringify(sample.descriptor)
       );
 
-      // Check if faceData already exists
-      const faceDataExists = await faceService.getMatches([
-        Query.equal("userId", selectedStudentProfile.userId),
-        Query.limit(1),
-      ]);
-
-      if (faceDataExists.documents.length > 0) {
-        setResultMessage(
-          "This face is already registered. Please use a different stduent."
-        );
-        setMessageType("error");
-        return;
-      }
-
       const name = selectedStudentProfile.userName
         .split(" ")
         .map((n, i) => (i === 0 ? n : n[0]))
         .join(" ");
 
-      // Store face data in Appwrite
-      await faceService.storeFaces({
-        name,
-        userId: selectedStudentProfile.userId,
-        userName: selectedStudentProfile.userName,
-        batchId: profile.batchId, // Teacher batchId assosited with the student
-        hash: hashes,
-        descriptor: stringDescriptors,
-      });
+      let response = null;
 
-      setResultMessage("Face registered successfully!");
+      if (mode === "update" && selectedStudentProfile.faceData) {
+        // Update existing face data
+        response = await faceService.updateFaces(
+          selectedStudentProfile.faceData.$id,
+          {
+            name,
+            hash: hashes,
+            descriptor: stringDescriptors,
+          }
+        );
+        setResultMessage("Face data updated successfully!");
+      } else {
+        // Store new face data in Appwrite
+        response = await faceService.storeFaces({
+          name,
+          userId: selectedStudentProfile.userId,
+          userName: selectedStudentProfile.userName,
+          batchId: profile.batchId, // Teacher batchId associated with the student
+          hash: hashes,
+          descriptor: stringDescriptors,
+        });
+        setResultMessage("Face registered successfully!");
+      }
+
+      setSelectedStudentProfile((prev) => ({ ...prev, faceData: response }));
       setMessageType("success");
       // Reset the fields
       setSamples([]);
+      // Refresh the student profiles to update UI
+      await fetchStudentsProfiles();
     } catch (error) {
       console.error("Error saving face data:", error);
       setResultMessage("Error saving face data. Please try again.");
       setMessageType("error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteFaceData = async () => {
+    if (!selectedStudentProfile?.faceData?.$id) {
+      setResultMessage("No face data to delete.");
+      setMessageType("error");
+      return;
+    }
+
+    setIsDeleting(true);
+    setResultMessage("");
+
+    try {
+      await faceService.deleteFaceData(selectedStudentProfile.faceData.$id);
+      setResultMessage("Face data deleted successfully!");
+      setSelectedStudentProfile((prev) => ({ ...prev, faceData: null }));
+      setMessageType("success");
+      setSamples([]);
+      setMode("add");
+
+      // Refresh the student profiles to update UI
+      await fetchStudentsProfiles();
+    } catch (error) {
+      console.error("Error deleting face data:", error);
+      setResultMessage("Error deleting face data. Please try again.");
+      setMessageType("error");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleSelectedStudent = (student) => {
-    setResultMessage("")
+    setResultMessage("");
     setSelectedStudentProfile(student);
     setSamples([]);
+
+    // If student has face data, offer update mode
+    if (student?.faceData) {
+      setMode("update");
+    } else {
+      setMode("add");
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 300 },
+    },
+  };
+
+  const buttonVariants = {
+    hover: { scale: 1.05 },
+    tap: { scale: 0.95 },
   };
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="text-center">
         <h2 className="text-xl font-bold text-gray-800 mb-2">
-          Register New Face
+          {mode === "update" ? "Update Face Data" : "Register New Face"}
         </h2>
         <p className="text-gray-600">
-          Take 5 different angles of your face to register
+          Take 5 different angles of Selected User face to{" "}
+          {mode === "update" ? "update" : "register"}
         </p>
       </div>
 
-      <CustomSelectData
-        value={selectedStudentProfile}
-        valueKey="userId"
-        labelKey="userName"
-        options={studentsProfile || []}
-        renderOptionLabel={(option) => (
-          <div className="flex justify-between items-center w-full gap-4">
-            <span>{option.userName}</span>
-            {option.isFaceDataAvailable ? (
-              <UserCheck size={18} className="text-green-500" />
-            ) : (
-              <User size={18} className="text-gray-400" />
-            )}
-          </div>
-        )}
-        label="Student"
-        placeholder="Select student"
-        disabled={isProfilesLoading}
-        onChange={handleSelectedStudent}
-      />
+      <div>
+        <CustomSelectData
+          value={selectedStudentProfile}
+          valueKey="userId"
+          labelKey="userName"
+          options={studentsProfile || []}
+          renderOptionLabel={(option) => (
+            <div className="flex justify-between items-center w-full gap-4">
+              <span>{option.userName}</span>
+              {option.faceData ? (
+                <UserCheck size={18} className="text-green-500" />
+              ) : (
+                <User size={18} className="text-gray-400" />
+              )}
+            </div>
+          )}
+          label="User"
+          placeholder="Select User"
+          disabled={isProfilesLoading}
+          onChange={handleSelectedStudent}
+        />
+      </div>
 
       {selectedStudentProfile && (
-        <div>
+        <div className="space-y-4">
+          {/* Mode toggle if face data exists */}
+          {selectedStudentProfile.faceData && (
+            <div className="flex items-center justify-between mb-4 bg-blue-50 p-4 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-blue-800">
+                  Face data already exists for this student
+                </p>
+                <p className="text-xs text-blue-600">
+                  You can update or delete the existing face data
+                </p>
+              </div>
+              <button
+                className="p-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition-colors"
+                onClick={handleDeleteFaceData}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw size={16} className="animate-spin" />
+                    Deleting...
+                  </span>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    <span>Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Registration form */}
           <div className="space-y-4 mb-4">
             {/* Samples progress */}
@@ -245,9 +361,9 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
                   {samples.length} / 5
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2 rounded-full"
                   style={{ width: `${(samples.length / 5) * 100}%` }}
                 ></div>
               </div>
@@ -270,9 +386,9 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-4 mt-2">
+          <div className="flex flex-wrap gap-4">
             <button
-              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
+              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 flex items-center justify-center gap-2 ${
                 isVerifying || samples.length >= 5 || captureLoading
                   ? "bg-gray-400 cursor-not-allowed"
                   : faceDetected
@@ -287,21 +403,43 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
                 captureLoading
               }
             >
-              {isVerifying || captureLoading
-                ? "Processing..."
-                : "Add Face Sample"}
+              {isVerifying || captureLoading ? (
+                <>
+                  <RefreshCw size={18} className="animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Camera size={18} />
+                  <span>Add Face Sample</span>
+                </>
+              )}
             </button>
 
             <button
-              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 ${
+              className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 flex items-center justify-center gap-2 ${
                 samples.length === 5
                   ? "bg-green-500 hover:bg-green-600"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
               onClick={handleSaveRegistration}
-              disabled={samples.length !== 5}
+              disabled={samples.length !== 5 || isSaving}
             >
-              Save Registration
+              {isSaving ? (
+                <>
+                  <RefreshCw size={18} className="animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck size={18} />
+                  <span>
+                    {mode === "update"
+                      ? "Update Registration"
+                      : "Save Registration"}
+                  </span>
+                </>
+              )}
             </button>
           </div>
         </div>

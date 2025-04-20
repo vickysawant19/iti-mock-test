@@ -1,7 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  Hash,
+  Loader2,
+  MapPin,
+  MapPinOff,
+  User,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
@@ -16,14 +25,17 @@ import AttendanceStatus from "./AttendanceStatus";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
-import { haversineDistance } from "./calculateDistance";
 import { ClipLoader } from "react-spinners";
+
+import CustomSelectData from "../../../components/customSelectData";
+import useLocationManager from "./hook/useLocationManager";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   const [batchStudents, setBatchStudents] = useState([]);
   const [batchData, setBatchData] = useState(null);
@@ -35,12 +47,6 @@ const MarkStudentAttendance = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
 
-  const [deviceLocation, setDeviceLocation] = useState({
-    lat: 0,
-    lon: 0,
-  });
-
-  const [distance, setDistance] = useState(Infinity);
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
     presentDays: 0,
@@ -74,38 +80,19 @@ const MarkStudentAttendance = () => {
 
   const isTeacher = user.labels.includes("Teacher");
 
-  const [locationText, setLocationText] = React.useState({
-    device: "",
-    batch: "",
+  const {
+    deviceLocation,
+    locationText,
+    distance,
+    loading,
+    error,
+    getDeviceLocation, // Method to manually refresh location
+  } = useLocationManager({
+    isTeacher,
+    batchData,
   });
 
-  React.useEffect(() => {
-    if (!isTeacher && deviceLocation && batchData?.location) {
-      const fetchLocationText = async () => {
-        try {
-          const device = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${deviceLocation.lat}&longitude=${deviceLocation.lon}&localityLanguage=en`
-          );
-          const batch = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${batchData?.location.lat}&longitude=${batchData?.location.lon}&localityLanguage=en`
-          );
-          const data1 = await device.json();
-          const data2 = await batch.json();
-
-          setLocationText({
-            device: data1.locality || data1.city || "Unknown location",
-            batch: data2.locality || data2.city || "Unknown location",
-          });
-        } catch (error) {
-          console.error("Error fetching location text:", error);
-          setLocationText("Error fetching location");
-        }
-      };
-      fetchLocationText();
-      const dist = haversineDistance(deviceLocation, batchData.location);
-      setDistance(dist);
-    }
-  }, [deviceLocation]);
+  console.log(loading);
 
   const fetchBatchData = async (batchId) => {
     try {
@@ -211,29 +198,6 @@ const MarkStudentAttendance = () => {
   }, [batchData]);
 
   useEffect(() => {
-    if (isTeacher) return;
-
-    // Get current location and watch for changes
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        setDeviceLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        });
-      },
-      (error) => {
-        console.error("Error getting location", error);
-      },
-      { enableHighAccuracy: true }
-    );
-
-    // Cleanup function to clear the watch when the component unmounts
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
-  }, []);
-
-  useEffect(() => {
     const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
       presentDays: 0,
       absentDays: 0,
@@ -271,7 +235,7 @@ const MarkStudentAttendance = () => {
 
   const markAttendance = async () => {
     try {
-      const data = await attendanceService.markUserAttendance({
+      await attendanceService.markUserAttendance({
         ...studentAttendance,
         attendanceRecords: [modalData],
       });
@@ -324,9 +288,10 @@ const MarkStudentAttendance = () => {
     setIsModalOpen(false);
   };
 
-  const handleSelectChange = (e) => {
-    fetchStudentAttendance(e.target.value);
-  };
+  useEffect(() => {
+    if (!selectedStudent) return;
+    fetchStudentAttendance(selectedStudent.userId);
+  }, [selectedStudent]);
 
   const markUserAttendance = async () => {
     setIsLoading(true);
@@ -402,7 +367,6 @@ const MarkStudentAttendance = () => {
   };
 
   if (!isTeacher && profile.batchId === "") {
-    console.log("here");
     return (
       <div>
         No profile Found. Add Batch to view this page <Link to={"/profile"} />
@@ -410,41 +374,55 @@ const MarkStudentAttendance = () => {
     );
   }
 
+  function getStatusColor(status) {
+    switch (status) {
+      case "Present":
+        return "text-green-600";
+      case "Absent":
+        return "text-red-600";
+      case "Late":
+        return "text-amber-600";
+      default:
+        return "text-gray-600";
+    }
+  }
+
   return (
     <div className="w-full  mx-auto px-4 py-6">
       {/* Top Actions Bar */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-md p-5 mb-6">
         {isTeacher ? (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            {/* Student Select and Details */}
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <label className="block text-sm font-medium text-gray-700">
-                Select Student
-              </label>
-              <select
-                className="p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={handleSelectChange}
-                disabled={isLoading}
-              >
-                <option value="">Select User</option>
-                {batchStudents.map((item) => (
-                  <option key={item.userId} value={item.userId}>
-                    {item.studentId?.toString().padStart(2, "0") || "00"} -{" "}
-                    {item.userName}
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
+            {/* Student Select with improved width handling */}
+            <div className="w-full sm:w-1/3">
+              <CustomSelectData
+                label="Select Student"
+                placeholder="Select student"
+                labelKey="userName"
+                valueKey="$id"
+                value={selectedStudent}
+                onChange={setSelectedStudent}
+                options={batchStudents}
+              />
             </div>
 
-            {/* Student Details (conditionally rendered when a student is selected) */}
+            {/* Student Details Card */}
             {studentAttendance && (
-              <div className="flex flex-col gap-1 p-2 border rounded-md bg-gray-50 w-full sm:w-auto min-w-60">
-                <p className="text-sm font-semibold">
-                  Name: {studentAttendance.userName}
-                </p>
-                <p className="text-sm">
-                  Roll number: {studentAttendance.studentId}
-                </p>
+              <div className="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-sm">
+                <div className="flex flex-col">
+                  <div className="flex items-center mb-1">
+                    <User size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm font-medium text-gray-800">
+                      {studentAttendance.userName}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <Hash size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm text-gray-600">
+                      Roll number: {studentAttendance.studentId}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -453,53 +431,100 @@ const MarkStudentAttendance = () => {
               <button
                 onClick={markUserAttendance}
                 disabled={isLoading}
-                className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-md p-2 text-sm transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
-                  <Loader2 className="animate-spin mx-auto" />
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Processing...</span>
+                  </>
                 ) : (
-                  "Mark Attendance"
+                  <>
+                    <CheckCircle size={18} />
+                    <span>Mark Attendance</span>
+                  </>
                 )}
               </button>
             )}
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-            {/* Student Details (conditionally rendered when a student is selected) */}
+          <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
+            {/* Student Details Card */}
             {profile && (
-              <div className="flex flex-col gap-1 p-2 border rounded-md bg-gray-50 w-full sm:w-auto min-w-60">
-                <p className="text-sm font-semibold">
-                  Name: {profile.userName}
-                </p>
-                <p className="text-sm">Roll number: {profile.studentId}</p>
-                <p className="text-sm">
-                  Selected date: {format(selectedDate, "dd-MM-yyyy")}
-                </p>
-                <p className="text-sm">
-                  Attendance status:
-                  {workingDays.get(format(selectedDate, "yyyy-MM-dd"))
-                    ?.attendanceStatus || "Not Marked"}
-                </p>
+              <div className="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="flex items-center">
+                    <User size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm font-medium text-gray-800">
+                      {profile.userName}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <Hash size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm text-gray-600">
+                      Roll number: {profile.studentId}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm text-gray-600">
+                      Date: {format(selectedDate, "dd-MM-yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock size={16} className="text-gray-500 mr-2" />
+                    <p className="text-sm text-gray-600">
+                      Status:{" "}
+                      <span
+                        className={`font-medium ${getStatusColor(
+                          workingDays.get(format(selectedDate, "yyyy-MM-dd"))
+                            ?.attendanceStatus
+                        )}`}
+                      >
+                        {workingDays.get(format(selectedDate, "yyyy-MM-dd"))
+                          ?.attendanceStatus || "Not Marked"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="flex gap-4">
+            {/* Action Buttons */}
+            <div className="flex flex-col xs:flex-row gap-3">
               <button
                 onClick={() => setIsShowMap((prev) => !prev)}
-                className="min-w-[160px] bg-teal-500 hover:bg-teal-600 text-white rounded-md p-2 text-sm transition-colors"
+                className="w-full xs:w-auto min-w-32 bg-teal-500 hover:bg-teal-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors flex items-center justify-center gap-2"
               >
-                {!isShowMap ? "Show Map" : "Hide Map"}
+                {!isShowMap ? (
+                  <>
+                    <MapPin size={18} />
+                    <span>Show Map</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPinOff size={18} />
+                    <span>Hide Map</span>
+                  </>
+                )}
               </button>
+
               {distance < batchData?.circleRadius && studentAttendance && (
                 <button
                   onClick={markUserAttendance}
                   disabled={isLoading}
-                  className="min-w-[160px] bg-blue-500 hover:bg-blue-600 text-white rounded-md p-2 text-sm transition-colors disabled:opacity-50"
+                  className="w-full xs:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
-                    <Loader2 className="animate-spin mx-auto" />
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>Processing...</span>
+                    </>
                   ) : (
-                    "Mark Attendance"
+                    <>
+                      <CheckCircle size={18} />
+                      <span>Mark Attendance</span>
+                    </>
                   )}
                 </button>
               )}
