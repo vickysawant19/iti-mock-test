@@ -7,6 +7,7 @@ import CustomCalendar from "./Calender";
 import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { Query } from "appwrite";
+import LoadingState from "../batch/components/LoadingState";
 
 const MarkHolidays = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -144,9 +145,13 @@ const MarkHolidays = () => {
     return `relative ${holiday ? "holiday-tile" : null}`;
   };
 
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+    <div className="p-4  mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white p-4 rounded-lg">
         <h1 className="text-2xl font-semibold text-gray-800">
           Update Holidays
         </h1>

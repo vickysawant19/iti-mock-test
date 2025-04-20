@@ -88,11 +88,16 @@ const MatchFaceMode = ({
   };
 
   // Standardized function to create face cache entry
-  const createFaceCacheEntry = (hash, isMatched, matchInfo = null) => {
+  const createFaceCacheEntry = (
+    hash,
+    isMatched,
+    matchInfo = null,
+    attendanceMarked = false
+  ) => {
     return {
       detectedHash: hash,
       isMatched: isMatched,
-      attendanceMarked: false,
+      attendanceMarked,
       message: isMatched
         ? {
             name: matchInfo.name,
@@ -305,12 +310,14 @@ const MatchFaceMode = ({
               distance: matchFound.distance,
               document: matchFound.document,
               source: "api_call",
+              attendance: result,
             };
 
             const newEntry = createFaceCacheEntry(
               detectedHash,
               true,
-              matchInfo
+              matchInfo,
+              result.attendanceMarked
             );
 
             const newFaceCache = new Map(currentFaceCache);
@@ -490,6 +497,7 @@ const MatchFaceMode = ({
       console.error("Attendance marking error:", error);
       return {
         attendanceMarked: false,
+        userId,
         error: error.message,
       };
     }

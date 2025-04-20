@@ -33,7 +33,6 @@ import Home from "./components/private/pages/Home.jsx";
 import About from "./components/private/pages/About.jsx";
 import ForgetPass from "./components/Auth/ForgetPass.jsx";
 
-import MarkAttaindance from "./components/private/teacher/attaindance/MarkAttaindance.jsx";
 import CheckAttendance from "./components/private/teacher/attaindance/CheckAttendance.jsx";
 import MarkStudentAttendance from "./components/private/teacher/attaindance/MarkStudentAttendance.jsx";
 
@@ -57,6 +56,7 @@ import Assessment from "./components/private/assessment/Assessment.jsx";
 import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
 import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
 import FaceAttendance from "./components/private/teacher/attaindance/faceAttendance/FaceAttendance.jsx";
+import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -109,13 +109,13 @@ const router = (
           <Route path="assessment">
             <Route path="" element={<Assessment />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
-            <Route path="mark-attendance" element={<MarkAttaindance />} />
+            <Route path="mark-attendance" element={<MarkAttendance />} />
           </Route>
           <Route path="attendance">
             <Route path="face" element={<FaceAttendance />} />
             <Route path="mark-today" element={<MarkTodaysAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
-            <Route path="mark-attendance" element={<MarkAttaindance />} />
+            <Route path="mark-attendance" element={<MarkAttendance />} />
             <Route
               path="mark-student-attendance"
               element={<MarkStudentAttendance />}

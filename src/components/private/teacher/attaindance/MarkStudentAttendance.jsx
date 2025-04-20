@@ -92,8 +92,6 @@ const MarkStudentAttendance = () => {
     batchData,
   });
 
-  console.log(loading);
-
   const fetchBatchData = async (batchId) => {
     try {
       const data = await batchService.getBatch(batchId);

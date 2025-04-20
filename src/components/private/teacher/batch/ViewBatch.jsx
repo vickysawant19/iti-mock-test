@@ -9,6 +9,8 @@ import {
   Calendar,
   BookOpen,
   Award,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { selectProfile } from "../../../../store/profileSlice";
 import { calculateStats } from "../attaindance/CalculateStats";
@@ -17,13 +19,13 @@ import batchService from "../../../../appwrite/batchService";
 import attendanceService from "../../../../appwrite/attaindanceService";
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
-import BatchSelector from "./components/BatchSelector";
 import ViewProfiles from "./profile/ViewProfiles";
 import ViewAttendance from "./attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
 import Students from "./profile/Students";
+import CustomSelector from "../../../components/CustomSelector";
 
 const TABS = [
   { id: "students", label: "Student", icon: Users },
@@ -35,6 +37,24 @@ const TABS = [
   { id: "assignments", label: "Assignments", icon: BookOpen },
   { id: "achievements", label: "Achievements", icon: Award },
 ];
+
+// Empty state component for better UX
+const EmptyState = ({ icon: Icon, title, description }) => (
+  <div className="bg-white rounded-lg shadow-sm p-8 md:p-12 text-center">
+    <Icon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300" />
+    <h3 className="text-lg md:text-xl font-medium text-gray-500">{title}</h3>
+    {description && <p className="mt-2 text-gray-400">{description}</p>}
+  </div>
+);
+
+// Feature placeholder component
+const FeaturePlaceholder = ({ icon: Icon, title }) => (
+  <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
+    <Icon className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+    <h3 className="text-xl font-medium">{title}</h3>
+    <p className="mt-2">This feature is under development.</p>
+  </div>
+);
 
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,6 +80,7 @@ const ViewBatch = () => {
   );
   const fetchedStudentsRef = useRef(false);
 
+  // Reset students data when batch changes
   useEffect(() => {
     fetchedStudentsRef.current = false;
     setData((prev) => ({ ...prev, students: null }));
@@ -69,18 +90,21 @@ const ViewBatch = () => {
     setLoadingStates((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Update URL params when batch or tab changes
   useEffect(() => {
     const batchId = data.teacherBatches.some(
       (batch) => batch.$id === selectedBatch
     )
       ? selectedBatch
-      : profile.batchId;
+      : data.teacherBatches[0]?.$id || "";
+
     setSearchParams((prevData) => {
       const data = Object.fromEntries(prevData);
       return { ...data, batchid: batchId, active: activeTab };
     });
-  }, [selectedBatch, activeTab, data.teacherBatches, profile.batchId]);
+  }, [selectedBatch, activeTab, data.teacherBatches, setSearchParams]);
 
+  // Fetch teacher's batches
   const fetchTeacherBatches = useCallback(async () => {
     setLoading("batches", true);
     try {
@@ -92,6 +116,8 @@ const ViewBatch = () => {
         ? result.documents
         : [result.documents];
       setData((prev) => ({ ...prev, teacherBatches: batchesArray }));
+
+      // Auto-select first batch if none selected
       if (!selectedBatch && batchesArray.length > 0) {
         setSelectedBatch(batchesArray[0].$id);
       }
@@ -100,8 +126,9 @@ const ViewBatch = () => {
     } finally {
       setLoading("batches", false);
     }
-  }, [profile.userId]);
+  }, [profile.userId, selectedBatch]);
 
+  // Fetch batch data
   const fetchBatchData = useCallback(async () => {
     if (!selectedBatch) return;
     setLoading("batchData", true);
@@ -115,6 +142,7 @@ const ViewBatch = () => {
     }
   }, [selectedBatch]);
 
+  // Fetch batch students
   const fetchBatchStudents = useCallback(async () => {
     if (!data.selectedBatchData) return;
 
@@ -152,6 +180,7 @@ const ViewBatch = () => {
     }
   }, [data.selectedBatchData]);
 
+  // Fetch students attendance
   const fetchStudentsAttendance = useCallback(async () => {
     if (!data.students || !data.selectedBatchData) return;
     setLoading("attendance", true);
@@ -169,10 +198,14 @@ const ViewBatch = () => {
         Query.equal("batchId", data.selectedBatchData.$id),
         Query.orderDesc("$updatedAt"),
       ]);
+
+      // Create student lookup map
       const studentMap = new Map();
       data.students.forEach((student) => {
         studentMap.set(student.userId, student);
       });
+
+      // Enrich attendance data with student info
       const enrichedAttendance = attendance.map((record) => ({
         ...record,
         studentId: studentMap.get(record.userId)?.studentId || "NA",
@@ -181,12 +214,17 @@ const ViewBatch = () => {
           record?.userName ||
           "Unknown",
       }));
+
+      // Sort by student ID
       const sortedAttendance = enrichedAttendance.sort(
         (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
       );
+
+      // Calculate stats for each student
       const stats = sortedAttendance.map((item) =>
         calculateStats({ data: item })
       );
+
       setData((prev) => ({
         ...prev,
         studentsAttendance: sortedAttendance,
@@ -200,22 +238,26 @@ const ViewBatch = () => {
     }
   }, [data.students, data.selectedBatchData]);
 
+  // Initial fetch for teacher batches
   useEffect(() => {
     fetchTeacherBatches();
-  }, []);
+  }, [fetchTeacherBatches]);
 
+  // Fetch batch data when selected batch changes
   useEffect(() => {
     if (selectedBatch) {
       fetchBatchData();
     }
-  }, [selectedBatch]);
+  }, [selectedBatch, fetchBatchData]);
 
+  // Fetch students when batch data is available
   useEffect(() => {
     if (data.selectedBatchData) {
       fetchBatchStudents();
     }
-  }, [data.selectedBatchData]);
+  }, [data.selectedBatchData, fetchBatchStudents]);
 
+  // Fetch attendance when needed for specific tabs
   useEffect(() => {
     const needsAttendance = [
       "attendance",
@@ -224,6 +266,7 @@ const ViewBatch = () => {
       "job-evaluation",
       "students",
     ].includes(activeTab);
+
     if (
       data.students &&
       selectedBatch &&
@@ -242,6 +285,7 @@ const ViewBatch = () => {
     loadingStates.attendance,
   ]);
 
+  // Render content based on active tab
   const renderContent = () => {
     const isContentLoading =
       loadingStates.students ||
@@ -253,9 +297,11 @@ const ViewBatch = () => {
         "students",
       ].includes(activeTab) &&
         loadingStates.attendance);
+
     if (isContentLoading) {
       return <LoadingState size={40} />;
     }
+
     switch (activeTab) {
       case "students":
         return (
@@ -309,24 +355,12 @@ const ViewBatch = () => {
           />
         );
       case "assignments":
+        return (
+          <FeaturePlaceholder icon={BookOpen} title="Assignments Coming Soon" />
+        );
       case "achievements":
         return (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-            {activeTab === "assignments" ? (
-              <>
-                <BookOpen className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                <h3 className="text-xl font-medium">Assignments Coming Soon</h3>
-              </>
-            ) : (
-              <>
-                <Award className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                <h3 className="text-xl font-medium">
-                  Achievements Coming Soon
-                </h3>
-              </>
-            )}
-            <p className="mt-2">This feature is under development.</p>
-          </div>
+          <FeaturePlaceholder icon={Award} title="Achievements Coming Soon" />
         );
       default:
         return null;
@@ -334,35 +368,48 @@ const ViewBatch = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <BatchSelector
-        selectedBatch={selectedBatch}
-        setSelectedBatch={setSelectedBatch}
-        batches={data.teacherBatches}
-        isLoading={loadingStates.batches}
-      />
+    <div className="container mx-auto px-4 py-6 space-y-4 text-sm">
+      <div className="bg-white p-4 rounded-xl shadow-sm">
+        {/* New Enhanced Batch Selector */}
+        <h1 className="mb-2 text-gray-500">Select Batch</h1>
+        <CustomSelector
+          onValueChange={setSelectedBatch}
+          valueKey="$id"
+          displayKey="BatchName"
+          selectedValue={selectedBatch}
+          isLoading={loadingStates.batches}
+          options={data.teacherBatches}
+          disabled={loadingStates.batchData}
+          icon={Users}
+          placeholder="Select Batch"
+        />
+      </div>
+
       {data.selectedBatchData && (
-        <TabNavigation
-          tabs={TABS}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
+        <div className="bg-white rounded-xl shadow-sm  overflow-x-auto">
+          <TabNavigation
+            tabs={TABS}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
+        </div>
+      )}
+
+      {loadingStates.batchData && <LoadingState size={50} fullPage />}
+
+      {!loadingStates.batchData && !data.selectedBatchData && (
+        <EmptyState
+          icon={Users}
+          title="Please select a batch to view details"
+          description="No batch data currently available"
         />
       )}
-      {loadingStates.batchData && <LoadingState size={50} fullPage />}
-      {!loadingStates.batchData &&
-        (data.selectedBatchData ? (
-          renderContent()
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-medium text-gray-500">
-              Please select a batch to view details
-            </h3>
-            <p className="mt-2 text-gray-400">
-              No batch data currently available
-            </p>
-          </div>
-        ))}
+
+      {!loadingStates.batchData && data.selectedBatchData && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden p-4">
+          {renderContent()}
+        </div>
+      )}
     </div>
   );
 };
