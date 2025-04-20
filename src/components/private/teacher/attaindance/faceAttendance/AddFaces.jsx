@@ -111,7 +111,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
       // Generate hash for the captured face
       const hash = generateBinaryHash(detection.descriptor);
-      console.log(selectedStudentProfile);
+
       // Check if this face already exists
       const faceExists = await checkFaceExists(
         hash,

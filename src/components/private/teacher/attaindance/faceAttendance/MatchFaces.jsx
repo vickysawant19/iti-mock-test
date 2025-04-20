@@ -1,6 +1,6 @@
 import { Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
-import { generateBinaryHash } from "./util";
+import { generateBinaryHash, generateHashArray } from "./util";
 import { faceService } from "../../../../../appwrite/faceService";
 import {
   UserCheck,
@@ -48,6 +48,26 @@ const MatchFaceMode = ({
   const [recentAttendance, setRecentAttendance] = useState([]);
   // Animation state for attendance marking
   const [attendanceMarking, setAttendanceMarking] = useState(false);
+
+  // Add this new state to track users whose attendance has been marked
+  const [markedAttendanceUsers, setMarkedAttendanceUsers] = useState(new Set());
+  // Reference for checking marked attendance without triggering re-renders
+  const markedAttendanceUsersRef = useRef(new Set());
+
+  useEffect(() => {
+    markedAttendanceUsersRef.current = markedAttendanceUsers;
+  }, [markedAttendanceUsers]);
+
+  const isAttendanceAlreadyMarked = (userId) => {
+    return markedAttendanceUsersRef.current.has(userId);
+  };
+
+  const addToMarkedAttendanceUsers = (userId) => {
+    const updatedSet = new Set(markedAttendanceUsersRef.current);
+    updatedSet.add(userId);
+    setMarkedAttendanceUsers(updatedSet);
+    markedAttendanceUsersRef.current = updatedSet;
+  };
 
   // Update the refs whenever cache states change
   useEffect(() => {
@@ -171,104 +191,54 @@ const MatchFaceMode = ({
       return null;
     }
 
+    // Skip processing if an API call is already in progress
+    if (apiCallInProgressRef.current) {
+      console.log(
+        "API call or processing already in progress; skipping this attempt"
+      );
+      return null;
+    }
+
     setAnalyzing(true);
+    // Set flag to prevent concurrent processing
+    apiCallInProgressRef.current = true;
 
     try {
       const detectedHash = generateBinaryHash(detection.descriptor);
       // Create an array of hash chunks (3 chunks of 20 bits each)
-      const hashArray = (detectedHash.match(/.{1,20}/g) || []).slice(0, 3);
+      const hashArray = generateHashArray(detectedHash);
+
       const currentFaceCache = faceCacheRef.current;
 
       // STEP 1: Check if the face is already in the face cache
       const cacheResult = checkFaceCache(hashArray);
-      if (cacheResult) return cacheResult;
+      if (cacheResult) {
+        apiCallInProgressRef.current = false;
+        return cacheResult;
+      }
 
       // STEP 2: Check if we have matching documents in the DB cache
       const cachedDocuments = checkDbCache(hashArray);
 
       if (cachedDocuments && cachedDocuments.length > 0) {
-        // console.log(
-        //   `Found ${cachedDocuments.length} documents in DB cache, attempting to match`
-        // );
         const matchFound = matchWithDocuments(detection, cachedDocuments);
 
         if (matchFound) {
           console.log("Match found in DB cache for:", matchFound.name);
+          const userId = matchFound.document.userId;
 
-          // Create and store the match in face cache
-          const matchInfo = {
-            name: matchFound.name,
-            distance: matchFound.distance,
-            document: matchFound.document,
-            source: "db_cache",
-          };
-
-          // Update face cache with the new match
-          const newEntry = createFaceCacheEntry(detectedHash, true, matchInfo);
-          const newFaceCache = new Map(currentFaceCache);
-          newFaceCache.set(detectedHash, newEntry);
-          setFaceCache(newFaceCache);
-          faceCacheRef.current = newFaceCache;
-
-          setMatchStatus("matched");
-          return matchInfo;
-        } else {
-          console.log("Documents found in DB cache but no face match");
-
-          // Store as unmatched
-          const newEntry = createFaceCacheEntry(detectedHash, false);
-          const newFaceCache = new Map(currentFaceCache);
-          newFaceCache.set(detectedHash, newEntry);
-          setFaceCache(newFaceCache);
-          faceCacheRef.current = newFaceCache;
-
-          setMatchStatus("unknown");
-          return { name: "Unknown", distance: 1 };
-        }
-      }
-
-      // console.log(
-      //   "No matching documents in DB cache; preparing to query database"
-      // );
-
-      // STEP 3: Don't call API if a call is already in progress
-      if (apiCallInProgressRef.current) {
-        console.log("API call already in progress; skipping this attempt");
-        return null;
-      }
-
-      // Mark API call as in progress
-      apiCallInProgressRef.current = true;
-      setMatchStatus("loading");
-
-      // Build query from hash chunks
-      const queries = hashArray.map((chunk) => Query.contains("hash", chunk));
-      try {
-        // Increment API call counter
-        setApiCallCount((prevCount) => prevCount + 1);
-
-        const response = await faceService.getMatches([
-          Query.or(queries),
-          Query.limit(10), // Increased limit to get more potential matches
-        ]);
-
-        if (response.total > 0 && Array.isArray(response.documents)) {
-          // Store all documents in DB cache for future use
-          storeInDbCache(response.documents);
-
-          const matchFound = matchWithDocuments(detection, response.documents);
-
-          if (matchFound) {
-            console.log("Match found from API for:", matchFound.name);
-
+          // Check if attendance is already marked for this user
+          if (!isAttendanceAlreadyMarked(userId)) {
             // Trigger animation state
             setAttendanceMarking(true);
 
-            //try marking todays attendance
-            const result = await markAttendance(matchFound.document.userId);
+            // Try marking today's attendance
+            const result = await markAttendance(userId);
 
-            // Add to recent attendance records
+            // Add user to marked attendance list if successful
             if (result.attendanceMarked) {
+              addToMarkedAttendanceUsers(userId);
+
               // Create a new record
               const newRecord = {
                 name: matchFound.name,
@@ -303,6 +273,130 @@ const MatchFaceMode = ({
             }
 
             setTimeout(() => setAttendanceMarking(false), 1500);
+          } else {
+            console.log(
+              `Attendance already marked for ${matchFound.name}, skipping`
+            );
+          }
+
+          // Create and store the match in face cache
+          const matchInfo = {
+            name: matchFound.name,
+            distance: matchFound.distance,
+            document: matchFound.document,
+            source: "db_cache",
+            attendance: isAttendanceAlreadyMarked(userId)
+              ? { attendanceMarked: true }
+              : null,
+          };
+
+          // Update face cache with the new match
+          const newEntry = createFaceCacheEntry(
+            detectedHash,
+            true,
+            matchInfo,
+            isAttendanceAlreadyMarked(userId)
+          );
+
+          const newFaceCache = new Map(currentFaceCache);
+          newFaceCache.set(detectedHash, newEntry);
+          setFaceCache(newFaceCache);
+          faceCacheRef.current = newFaceCache;
+
+          setMatchStatus("matched");
+          apiCallInProgressRef.current = false;
+          return matchInfo;
+        } else {
+          console.log("Documents found in DB cache but no face match");
+
+          // Store as unmatched
+          const newEntry = createFaceCacheEntry(detectedHash, false);
+          const newFaceCache = new Map(currentFaceCache);
+          newFaceCache.set(detectedHash, newEntry);
+          setFaceCache(newFaceCache);
+          faceCacheRef.current = newFaceCache;
+
+          setMatchStatus("unknown");
+          apiCallInProgressRef.current = false;
+          return { name: "Unknown", distance: 1 };
+        }
+      }
+
+      // STEP 3: Call API to find matches
+      setMatchStatus("loading");
+
+      // Build query from hash chunks
+      const queries = hashArray.map((chunk) => Query.contains("hash", chunk));
+      try {
+        // Increment API call counter
+        setApiCallCount((prevCount) => prevCount + 1);
+
+        const response = await faceService.getMatches([
+          Query.or(queries),
+          Query.limit(10), // Increased limit to get more potential matches
+        ]);
+
+        if (response.total > 0 && Array.isArray(response.documents)) {
+          // Store all documents in DB cache for future use
+          storeInDbCache(response.documents);
+
+          const matchFound = matchWithDocuments(detection, response.documents);
+
+          if (matchFound) {
+            console.log("Match found from API for:", matchFound.name);
+            const userId = matchFound.document.userId;
+
+            // Check if attendance is already marked for this user
+            if (!isAttendanceAlreadyMarked(userId)) {
+              // Trigger animation state
+              setAttendanceMarking(true);
+
+              // Try marking today's attendance
+              const result = await markAttendance(userId);
+
+              // Add user to marked attendance list if successful
+              if (result.attendanceMarked) {
+                addToMarkedAttendanceUsers(userId);
+
+                // Create a new record
+                const newRecord = {
+                  name: matchFound.name,
+                  time: result.inTime || result.outTime,
+                  date: result.date,
+                  status: result.attendanceStatus,
+                  type: result.inTime && !result.outTime ? "in" : "out",
+                  timestamp: new Date(),
+                };
+
+                // Show toast notification
+                toast.success(
+                  `Attendance ${
+                    newRecord.type === "in" ? "check-in" : "check-out"
+                  } marked for ${matchFound.name}`
+                );
+
+                // Update recent attendance records
+                setRecentAttendance((prev) => {
+                  const withoutDuplicate = prev.filter(
+                    (r) =>
+                      !(
+                        r.name === newRecord.name &&
+                        r.date === result.date &&
+                        r.type === newRecord.type
+                      )
+                  );
+                  return [newRecord, ...withoutDuplicate].slice(0, 10); // Keep last 10 records
+                });
+              } else if (result.error) {
+                toast.error(`Failed to mark attendance: ${result.error}`);
+              }
+
+              setTimeout(() => setAttendanceMarking(false), 1500);
+            } else {
+              console.log(
+                `Attendance already marked for ${matchFound.name}, skipping`
+              );
+            }
 
             // Create and store match
             const matchInfo = {
@@ -310,14 +404,16 @@ const MatchFaceMode = ({
               distance: matchFound.distance,
               document: matchFound.document,
               source: "api_call",
-              attendance: result,
+              attendance: isAttendanceAlreadyMarked(userId)
+                ? { attendanceMarked: true }
+                : null,
             };
 
             const newEntry = createFaceCacheEntry(
               detectedHash,
               true,
               matchInfo,
-              result.attendanceMarked
+              isAttendanceAlreadyMarked(userId)
             );
 
             const newFaceCache = new Map(currentFaceCache);
@@ -329,8 +425,6 @@ const MatchFaceMode = ({
             return matchInfo;
           } else {
             // No match was found despite getting documents from DB
-            // console.log("Documents found from API but no face match");
-
             toast.error("Face not recognized in our system");
 
             const newEntry = createFaceCacheEntry(detectedHash, false);
@@ -345,8 +439,6 @@ const MatchFaceMode = ({
           }
         } else {
           // No documents found in DB
-          // console.log("No documents found in database - storing as unknown");
-
           toast.error("No matching face found in database");
 
           const newEntry = createFaceCacheEntry(detectedHash, false);
@@ -368,8 +460,13 @@ const MatchFaceMode = ({
         // Reset the API call flag once the call is complete
         apiCallInProgressRef.current = false;
       }
+    } catch (error) {
+      console.error("Error in face matching process:", error);
+      apiCallInProgressRef.current = false;
+      return null;
     } finally {
       setAnalyzing(false);
+      apiCallInProgressRef.current = false;
     }
   };
 
@@ -503,12 +600,14 @@ const MatchFaceMode = ({
     }
   };
 
-  // Function to reset caches
+  // Also update the resetCaches function to clear the marked attendance users
   const resetCaches = () => {
     setFaceCache(new Map());
     setDbResponseCache(new Map());
+    setMarkedAttendanceUsers(new Set());
     faceCacheRef.current = new Map();
     dbResponseCacheRef.current = new Map();
+    markedAttendanceUsersRef.current = new Set();
     setApiCallCount(0);
     setMatchStatus(null);
     setResultMessage("");

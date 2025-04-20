@@ -7,7 +7,7 @@ export const generateBinaryHash = (descriptor) =>
     .substring(0, 128);
 
 export const generateHashArray = (hash) => {
-  return (hash.match(/.{1,20}/g) || []).slice(0, 3);
+  return (hash.match(/.{1,20}/g) || []).slice(0, 4);
 };
 
 export const generateHashQuery = (hashArray) =>
