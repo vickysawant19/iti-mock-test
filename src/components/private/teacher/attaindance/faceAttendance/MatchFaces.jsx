@@ -1,11 +1,10 @@
 import { Query } from "appwrite";
 import { useEffect, useRef, useState } from "react";
-import { generateBinaryHash, generateHashArray } from "./util";
+import { generateBinaryHash, generateHashArrayForMatch } from "./util";
 import { faceService } from "../../../../../appwrite/faceService";
 import {
   UserCheck,
   UserX,
-  Database,
   RefreshCw,
   AlertCircle,
   Clock,
@@ -17,8 +16,8 @@ import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../../store/profileSlice";
 import { selectUser } from "../../../../../store/userSlice";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import { distance } from "framer-motion";
 
 const MatchFaceMode = ({
   faceapi,
@@ -53,6 +52,7 @@ const MatchFaceMode = ({
   const [markedAttendanceUsers, setMarkedAttendanceUsers] = useState(new Set());
   // Reference for checking marked attendance without triggering re-renders
   const markedAttendanceUsersRef = useRef(new Set());
+  const cacheOperationInProgressRef = useRef(false);
 
   useEffect(() => {
     markedAttendanceUsersRef.current = markedAttendanceUsers;
@@ -78,56 +78,88 @@ const MatchFaceMode = ({
     dbResponseCacheRef.current = dbResponseCache;
   }, [dbResponseCache]);
 
-  const checkFaceCache = (hashArray) => {
+  const checkFaceCache = (hashArray, detection) => {
     const currentFaceCache = faceCacheRef.current;
-    // console.log("Total keys in face cache:", currentFaceCache.size);
-
-    // STEP 1: Check if the face is already in the face cache
+    const DISTANCE_THRESHOLD = 0.6; // 60% threshold for face match confidence
+    
     // Try to find a partial hash match
     let partialMatchFound = false;
+    
     for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
+      // Check if any hash in the array is included in a cached hash
       if (hashArray.some((hash) => cacheHash.includes(hash))) {
-        // console.log("Partial hash match found in face cache");
-        // If already matched, return the cached result
+        partialMatchFound = true;
+        
+        // If there's a detection object and the cache entry was previously matched
+        if (detection && cacheEntry.isMatched && cacheEntry.descriptor) {
+          // Calculate new distance between current detection and cached descriptor
+          const currentDistance = faceapi.euclideanDistance(detection.descriptor, cacheEntry.descriptor);
+          
+          // Only return as matched if the distance is below threshold (more similar)
+          if (currentDistance <= DISTANCE_THRESHOLD) {
+            setMatchStatus("matched");
+            return {
+              ...cacheEntry.message,
+              distance: currentDistance,
+              confidence: ((1 - currentDistance) * 100).toFixed(1) + '%'
+            };
+          } else {
+            // The face has drifted too much from cached version
+            setMatchStatus("unknown");
+            return { 
+              name: "Unknown", 
+              distance: currentDistance,
+              note: "Face detected but similarity too low"
+            };
+          }
+        } 
+        
+        // If no detection object or no descriptor in cache entry
+        // fall back to original cached result
         if (cacheEntry.isMatched) {
-          partialMatchFound = true;
           setMatchStatus("matched");
           return cacheEntry.message;
         } else {
-          partialMatchFound = true;
           setMatchStatus("unknown");
           return cacheEntry.message;
         }
       }
     }
-
+  
+    // No match in cache
     if (!partialMatchFound) {
-      // console.log("No match in face cache, checking DB cache");
       return false;
     }
   };
 
   // Standardized function to create face cache entry
-  const createFaceCacheEntry = (
+  const createFaceCacheEntry = ({
     hash,
     isMatched,
     matchInfo = null,
-    attendanceMarked = false
-  ) => {
+    attendanceMarked = false,
+    descriptor,
+  }) => {
+    // if (cacheOperationInProgressRef.current) {
+    //   return; // Skip if another operation is in progress
+    // }
+
     return {
       detectedHash: hash,
       isMatched: isMatched,
       attendanceMarked,
+      descriptor,
+      timestamp: Date.now(), // Add timestamp
       message: isMatched
         ? {
             name: matchInfo.name,
             distance: matchInfo.distance,
+            confidence: ((1 - matchInfo.distance) * 100).toFixed(1) + '%',
             matchSource: matchInfo.source || "unknown",
           }
         : { name: "Unknown", distance: 1 },
     };
   };
-
   // Check if face is in DB response cache - optimized to return all matching documents at once
   const checkDbCache = (hashArray) => {
     const currentDbCache = dbResponseCacheRef.current;
@@ -206,12 +238,12 @@ const MatchFaceMode = ({
     try {
       const detectedHash = generateBinaryHash(detection.descriptor);
       // Create an array of hash chunks (3 chunks of 20 bits each)
-      const hashArray = generateHashArray(detectedHash);
+      const hashArray = generateHashArrayForMatch(detectedHash);
 
       const currentFaceCache = faceCacheRef.current;
 
       // STEP 1: Check if the face is already in the face cache
-      const cacheResult = checkFaceCache(hashArray);
+      const cacheResult = checkFaceCache(hashArray, detection);
       if (cacheResult) {
         apiCallInProgressRef.current = false;
         return cacheResult;
@@ -291,12 +323,13 @@ const MatchFaceMode = ({
           };
 
           // Update face cache with the new match
-          const newEntry = createFaceCacheEntry(
-            detectedHash,
-            true,
+          const newEntry = createFaceCacheEntry({
+            hash: detectedHash,
+            isMatched: true,
             matchInfo,
-            isAttendanceAlreadyMarked(userId)
-          );
+            attendanceMarked: isAttendanceAlreadyMarked(userId),
+            descriptor: matchFound.descriptor,
+          });
 
           const newFaceCache = new Map(currentFaceCache);
           newFaceCache.set(detectedHash, newEntry);
@@ -310,7 +343,11 @@ const MatchFaceMode = ({
           console.log("Documents found in DB cache but no face match");
 
           // Store as unmatched
-          const newEntry = createFaceCacheEntry(detectedHash, false);
+          
+          const newEntry = createFaceCacheEntry({
+            hash: detectedHash,
+            isMatched: false,
+          });
           const newFaceCache = new Map(currentFaceCache);
           newFaceCache.set(detectedHash, newEntry);
           setFaceCache(newFaceCache);
@@ -409,12 +446,13 @@ const MatchFaceMode = ({
                 : null,
             };
 
-            const newEntry = createFaceCacheEntry(
-              detectedHash,
-              true,
+            const newEntry = createFaceCacheEntry({
+              hash: detectedHash,
+              isMatched: true,
               matchInfo,
-              isAttendanceAlreadyMarked(userId)
-            );
+              attendanceMarked: isAttendanceAlreadyMarked(userId),
+              descriptor: matchFound.descriptor,
+            });
 
             const newFaceCache = new Map(currentFaceCache);
             newFaceCache.set(detectedHash, newEntry);
@@ -427,7 +465,10 @@ const MatchFaceMode = ({
             // No match was found despite getting documents from DB
             toast.error("Face not recognized in our system");
 
-            const newEntry = createFaceCacheEntry(detectedHash, false);
+            const newEntry = createFaceCacheEntry({
+              hash: detectedHash,
+              isMatched: false,
+            });
 
             const newFaceCache = new Map(currentFaceCache);
             newFaceCache.set(detectedHash, newEntry);
@@ -441,7 +482,10 @@ const MatchFaceMode = ({
           // No documents found in DB
           toast.error("No matching face found in database");
 
-          const newEntry = createFaceCacheEntry(detectedHash, false);
+          const newEntry = createFaceCacheEntry({
+            hash: detectedHash,
+            isMatched: false,
+          });
 
           const newFaceCache = new Map(currentFaceCache);
           newFaceCache.set(detectedHash, newEntry);
@@ -508,6 +552,7 @@ const MatchFaceMode = ({
           bestMatch = {
             name: doc.name,
             distance,
+            descriptor: storedDesc,
             document: doc, // Store the entire document for reference
           };
           bestDistance = distance;

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Query } from "appwrite";
-import { motion, AnimatePresence } from "framer-motion";
 import { faceService } from "../../../../../appwrite/faceService";
 import {
   generateBinaryHash,
+  generateHashArrayForAdd,
   generateHashQuery,
-  generateHashArray,
 } from "./util";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../../../store/profileSlice";
@@ -69,7 +68,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
   // Check if face hash already exists in database
   const checkFaceExists = async (hash, extraQueries) => {
-    const hashArray = generateHashArray(hash);
+    const hashArray = generateHashArrayForAdd(hash);
     const query = generateHashQuery(hashArray);
 
     let queries = [
@@ -178,7 +177,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
       if (mode === "update" && selectedStudentProfile.faceData) {
         // Update existing face data
-        response = await faceService.updateFaces(
+        response = await faceService.updateFaceData(
           selectedStudentProfile.faceData.$id,
           {
             name,

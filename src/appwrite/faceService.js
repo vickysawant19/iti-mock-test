@@ -43,6 +43,18 @@ class FaceService {
     }
   }
 
+  async updateFaceData(documentId, newFaceData) {
+    try {
+      return this.database.updateDocument(
+        conf.databaseId,
+        conf.faceAttendanceCollectionId,
+        documentId, newFaceData
+      );
+    } catch (error) {
+      throw Error("Delete Error", error);
+    }
+  }
+
   async deleteFaceData(documentId) {
     try {
       return this.database.deleteDocument(
