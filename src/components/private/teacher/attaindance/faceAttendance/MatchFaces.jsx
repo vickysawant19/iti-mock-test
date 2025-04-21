@@ -18,6 +18,8 @@ import { selectUser } from "../../../../../store/userSlice";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { distance } from "framer-motion";
+import useFaceCache from "./hooks/useFaceCache";
+import useDbFaceCache from "./hooks/useDbFaceCache";
 
 const MatchFaceMode = ({
   faceapi,
@@ -29,16 +31,9 @@ const MatchFaceMode = ({
   const profile = useSelector(selectProfile);
   const isTeacher = user.labels.includes("Teacher");
 
-  const [matchStatus, setMatchStatus] = useState(null); // 'matched', 'unknown', 'loading', null
-  // Cache for detected faces
-  const [faceCache, setFaceCache] = useState(new Map());
-  // Cache for database responses
-  const [dbResponseCache, setDbResponseCache] = useState(new Map());
+  const [matchStatus, setMatchStatus] = useState(null); // {'matched', 'unknown', 'loading', null}
   // Ref to track if an API call is currently in progress
   const apiCallInProgressRef = useRef(false);
-  // Use refs to access the latest cache values without re-rendering
-  const faceCacheRef = useRef(new Map());
-  const dbResponseCacheRef = useRef(new Map());
   // Track total API calls
   const [apiCallCount, setApiCallCount] = useState(0);
   // Track if we're analyzing a face
@@ -52,7 +47,27 @@ const MatchFaceMode = ({
   const [markedAttendanceUsers, setMarkedAttendanceUsers] = useState(new Set());
   // Reference for checking marked attendance without triggering re-renders
   const markedAttendanceUsersRef = useRef(new Set());
-  const cacheOperationInProgressRef = useRef(false);
+
+  // Initialize the face cache hook
+  const {
+    checkFaceCache,
+    addToFaceCache,
+    createFaceCacheEntry,
+    resetCache,
+    getCacheStats,
+  } = useFaceCache({
+    maxCacheSize: 100,
+    expiryTimeMs: 30 * 60 * 1000,
+    distanceThreshold: 0.6,
+    faceapi,
+  });
+
+  // Initialize the DB cache hook
+  const { checkDbCache, storeInDbCache, resetDbCache, getDbCacheStats } =
+    useDbFaceCache({
+      maxCacheSize: 500,
+      expiryTimeMs: 60 * 60 * 1000, // 1 hour
+    });
 
   useEffect(() => {
     markedAttendanceUsersRef.current = markedAttendanceUsers;
@@ -69,151 +84,6 @@ const MatchFaceMode = ({
     markedAttendanceUsersRef.current = updatedSet;
   };
 
-  // Update the refs whenever cache states change
-  useEffect(() => {
-    faceCacheRef.current = faceCache;
-  }, [faceCache]);
-
-  useEffect(() => {
-    dbResponseCacheRef.current = dbResponseCache;
-  }, [dbResponseCache]);
-
-  const checkFaceCache = (hashArray, detection) => {
-    const currentFaceCache = faceCacheRef.current;
-    const DISTANCE_THRESHOLD = 0.6; // 60% threshold for face match confidence
-    
-    // Try to find a partial hash match
-    let partialMatchFound = false;
-    
-    for (const [cacheHash, cacheEntry] of currentFaceCache.entries()) {
-      // Check if any hash in the array is included in a cached hash
-      if (hashArray.some((hash) => cacheHash.includes(hash))) {
-        partialMatchFound = true;
-        
-        // If there's a detection object and the cache entry was previously matched
-        if (detection && cacheEntry.isMatched && cacheEntry.descriptor) {
-          // Calculate new distance between current detection and cached descriptor
-          const currentDistance = faceapi.euclideanDistance(detection.descriptor, cacheEntry.descriptor);
-          
-          // Only return as matched if the distance is below threshold (more similar)
-          if (currentDistance <= DISTANCE_THRESHOLD) {
-            setMatchStatus("matched");
-            return {
-              ...cacheEntry.message,
-              distance: currentDistance,
-              confidence: ((1 - currentDistance) * 100).toFixed(1) + '%'
-            };
-          } else {
-            // The face has drifted too much from cached version
-            setMatchStatus("unknown");
-            return { 
-              name: "Unknown", 
-              distance: currentDistance,
-              note: "Face detected but similarity too low"
-            };
-          }
-        } 
-        
-        // If no detection object or no descriptor in cache entry
-        // fall back to original cached result
-        if (cacheEntry.isMatched) {
-          setMatchStatus("matched");
-          return cacheEntry.message;
-        } else {
-          setMatchStatus("unknown");
-          return cacheEntry.message;
-        }
-      }
-    }
-  
-    // No match in cache
-    if (!partialMatchFound) {
-      return false;
-    }
-  };
-
-  // Standardized function to create face cache entry
-  const createFaceCacheEntry = ({
-    hash,
-    isMatched,
-    matchInfo = null,
-    attendanceMarked = false,
-    descriptor,
-  }) => {
-    // if (cacheOperationInProgressRef.current) {
-    //   return; // Skip if another operation is in progress
-    // }
-
-    return {
-      detectedHash: hash,
-      isMatched: isMatched,
-      attendanceMarked,
-      descriptor,
-      timestamp: Date.now(), // Add timestamp
-      message: isMatched
-        ? {
-            name: matchInfo.name,
-            distance: matchInfo.distance,
-            confidence: ((1 - matchInfo.distance) * 100).toFixed(1) + '%',
-            matchSource: matchInfo.source || "unknown",
-          }
-        : { name: "Unknown", distance: 1 },
-    };
-  };
-  // Check if face is in DB response cache - optimized to return all matching documents at once
-  const checkDbCache = (hashArray) => {
-    const currentDbCache = dbResponseCacheRef.current;
-    // console.log("Checking DB cache with hash chunks:", hashArray);
-
-    // Collect all matching documents
-    const matchingDocuments = new Set();
-
-    for (const dbHash of currentDbCache.keys()) {
-      for (const hash of hashArray) {
-        if (dbHash.includes(hash)) {
-          const documents = currentDbCache.get(dbHash);
-          if (Array.isArray(documents)) {
-            documents.forEach((doc) => matchingDocuments.add(doc));
-          }
-        }
-      }
-    }
-
-    if (matchingDocuments.size === 0) {
-      // console.log("No match found in DB cache");
-      return null;
-    }
-
-    return Array.from(matchingDocuments);
-  };
-
-  // Store documents in DB cache - optimized to avoid duplicates
-  const storeInDbCache = (documents) => {
-    if (!documents || !Array.isArray(documents) || documents.length === 0)
-      return;
-
-    // console.log(`Storing ${documents.length} documents in DB cache`);
-    const currentDbCache = new Map(dbResponseCacheRef.current);
-
-    documents.forEach((doc) => {
-      if (doc.hash && Array.isArray(doc.hash)) {
-        // For each hash in the document, store the entire document list
-        doc.hash.forEach((hashKey) => {
-          const existingDocs = currentDbCache.get(hashKey) || [];
-          // Add document if not already in the list
-          if (
-            !existingDocs.some((existingDoc) => existingDoc.$id === doc.$id)
-          ) {
-            currentDbCache.set(hashKey, [...existingDocs, doc]);
-          }
-        });
-      }
-    });
-
-    // Update both state and ref
-    setDbResponseCache(currentDbCache);
-    dbResponseCacheRef.current = currentDbCache;
-  };
 
   // This function attempts a match, first checking the face cache,
   // then DB cache, and finally calling the API if needed.
@@ -240,10 +110,8 @@ const MatchFaceMode = ({
       // Create an array of hash chunks (3 chunks of 20 bits each)
       const hashArray = generateHashArrayForMatch(detectedHash);
 
-      const currentFaceCache = faceCacheRef.current;
-
       // STEP 1: Check if the face is already in the face cache
-      const cacheResult = checkFaceCache(hashArray, detection);
+      const cacheResult = checkFaceCache(hashArray, detection, setMatchStatus);
       if (cacheResult) {
         apiCallInProgressRef.current = false;
         return cacheResult;
@@ -331,11 +199,7 @@ const MatchFaceMode = ({
             descriptor: matchFound.descriptor,
           });
 
-          const newFaceCache = new Map(currentFaceCache);
-          newFaceCache.set(detectedHash, newEntry);
-          setFaceCache(newFaceCache);
-          faceCacheRef.current = newFaceCache;
-
+          addToFaceCache(detectedHash, newEntry);
           setMatchStatus("matched");
           apiCallInProgressRef.current = false;
           return matchInfo;
@@ -343,16 +207,13 @@ const MatchFaceMode = ({
           console.log("Documents found in DB cache but no face match");
 
           // Store as unmatched
-          
+
           const newEntry = createFaceCacheEntry({
             hash: detectedHash,
             isMatched: false,
           });
-          const newFaceCache = new Map(currentFaceCache);
-          newFaceCache.set(detectedHash, newEntry);
-          setFaceCache(newFaceCache);
-          faceCacheRef.current = newFaceCache;
 
+          addToFaceCache(detectedHash, newEntry);
           setMatchStatus("unknown");
           apiCallInProgressRef.current = false;
           return { name: "Unknown", distance: 1 };
@@ -370,7 +231,8 @@ const MatchFaceMode = ({
 
         const response = await faceService.getMatches([
           Query.or(queries),
-          Query.limit(10), // Increased limit to get more potential matches
+          Query.select("batchId", profile.batchId),
+          Query.limit(2), // Increased limit to get more potential matches
         ]);
 
         if (response.total > 0 && Array.isArray(response.documents)) {
@@ -454,10 +316,7 @@ const MatchFaceMode = ({
               descriptor: matchFound.descriptor,
             });
 
-            const newFaceCache = new Map(currentFaceCache);
-            newFaceCache.set(detectedHash, newEntry);
-            setFaceCache(newFaceCache);
-            faceCacheRef.current = newFaceCache;
+            addToFaceCache(detectedHash, newEntry);
 
             setMatchStatus("matched");
             return matchInfo;
@@ -470,10 +329,7 @@ const MatchFaceMode = ({
               isMatched: false,
             });
 
-            const newFaceCache = new Map(currentFaceCache);
-            newFaceCache.set(detectedHash, newEntry);
-            setFaceCache(newFaceCache);
-            faceCacheRef.current = newFaceCache;
+            addToFaceCache(detectedHash, newEntry);
 
             setMatchStatus("unknown");
             return { name: "Unknown", distance: 0 };
@@ -487,10 +343,7 @@ const MatchFaceMode = ({
             isMatched: false,
           });
 
-          const newFaceCache = new Map(currentFaceCache);
-          newFaceCache.set(detectedHash, newEntry);
-          setFaceCache(newFaceCache);
-          faceCacheRef.current = newFaceCache;
+          addToFaceCache(detectedHash, newEntry);
 
           setMatchStatus("unknown");
           return { name: "Unknown", distance: 0 };
@@ -647,11 +500,9 @@ const MatchFaceMode = ({
 
   // Also update the resetCaches function to clear the marked attendance users
   const resetCaches = () => {
-    setFaceCache(new Map());
-    setDbResponseCache(new Map());
+    resetCache(); // Reset face cache
+    resetDbCache(); //Reset Db Cache
     setMarkedAttendanceUsers(new Set());
-    faceCacheRef.current = new Map();
-    dbResponseCacheRef.current = new Map();
     markedAttendanceUsersRef.current = new Set();
     setApiCallCount(0);
     setMatchStatus(null);
@@ -710,6 +561,10 @@ const MatchFaceMode = ({
 
     return format(new Date(timestamp), "MMM dd, HH:mm");
   };
+
+  const cacheStats = getCacheStats();
+  // Use cache stats for display
+  const dbCacheStats = getDbCacheStats();
 
   return (
     <div className="flex flex-col gap-6 bg-white  rounded-lg">
@@ -838,15 +693,20 @@ const MatchFaceMode = ({
           <div className="bg-white p-3 rounded-md transition-all duration-300 hover:shadow-md">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">Face Cache</p>
-              <span className="text-sm font-semibold">{faceCache.size}</span>
+              <span className="text-sm font-semibold">{cacheStats.size}</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              Hit Rate: {cacheStats.hitRate}
             </div>
           </div>
           <div className="bg-white p-3 rounded-md transition-all duration-300 hover:shadow-md">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">DB Cache</p>
-              <span className="text-sm font-semibold">
-                {dbResponseCache.size}
-              </span>
+              <span className="text-sm font-semibold">{dbCacheStats.size}</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+               Hit Rate:{" "}
+              {dbCacheStats.hitRate}
             </div>
           </div>
           <div className="bg-gray-50 p-3 rounded-md transition-all duration-300 hover:shadow-md">
