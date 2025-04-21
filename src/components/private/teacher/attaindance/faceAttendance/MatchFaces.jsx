@@ -231,7 +231,7 @@ const MatchFaceMode = ({
 
         const response = await faceService.getMatches([
           Query.or(queries),
-          Query.select("batchId", profile.batchId),
+          Query.equal("batchId", profile.batchId),
           Query.limit(2), // Increased limit to get more potential matches
         ]);
 
