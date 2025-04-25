@@ -12,8 +12,8 @@ import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
-import ScrollToTop from "./utils/ScrollToTop.Jsx";
-import { Button } from "./components/ui/button";
+import ScrollToTop from "./utils/ScrollToTop.jsx";
+import { ThemeProvider } from "./ThemeProvider";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -27,22 +27,23 @@ function App() {
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
-        if (!user) {
-          const res = await authService.getCurrentUser();
-          if (res) {
-            dispatch(addUser(res));
-            const profileRes = await userProfileService.getUserProfile(res.$id);
-            if (!profileRes) {
+        const currentUser = await authService.getCurrentUser();
+        
+        if (currentUser) {
+          dispatch(addUser(currentUser));
+          
+          if (!profile) {
+            const profileRes = await userProfileService.getUserProfile(currentUser.$id);
+            
+            if (profileRes) {
+              dispatch(addProfile(profileRes));
+              
+              if (window.location.pathname === "/") {
+                navigate("/home");
+              }
+            } else {
               navigate("/profile");
             }
-            dispatch(addProfile(profileRes));
-            if (window.location.pathname === "/") {
-              navigate("/home");
-            }
-          }
-        } else {
-          if (!profile) {
-            navigate("/profile");
           }
         }
       } catch (error) {
@@ -51,8 +52,9 @@ function App() {
         setIsLoading(false);
       }
     };
+    
     checkUserStatus();
-  }, [navigate, dispatch]);
+  }, [navigate, dispatch, profile]);
 
   if (isLoading) {
     return (
@@ -63,17 +65,19 @@ function App() {
   }
 
   return (
-    <div className="bg-gray-100 w-full min-h-screen ">
-       
-      <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
-      <div className="md:ml-60">
-        <div className={`pt-10 bg-gray-100 w-full mx-auto`}>
+    <ThemeProvider defaultTheme="light" storageKey="app-theme">
+      <ScrollToTop />
+      <div className="bg-gray-100 w-full min-h-screen">
+        <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
+        
+        <div className="bg-gray-100 w-full mx-auto">
           <Outlet />
           <ToastContainer />
         </div>
+        
+        <Analytics />
       </div>
-      <Analytics />
-    </div>
+    </ThemeProvider>
   );
 }
 
