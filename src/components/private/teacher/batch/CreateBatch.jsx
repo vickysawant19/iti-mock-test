@@ -268,7 +268,7 @@ const BatchForm = ({ onClose }) => {
                 required: "Batch name is required",
               })}
               placeholder="Enter batch name"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               disabled={isBatchDataLoading}
             />
           </div>
@@ -279,7 +279,7 @@ const BatchForm = ({ onClose }) => {
               {...register("start_date", {
                 required: "Start date is required",
               })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               disabled={isBatchDataLoading}
             />
           </div>
@@ -288,7 +288,7 @@ const BatchForm = ({ onClose }) => {
             <input
               type="date"
               {...register("end_date", { required: "End date is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               disabled={isBatchDataLoading}
             />
           </div>
@@ -296,7 +296,7 @@ const BatchForm = ({ onClose }) => {
             <label className="block text-gray-600">College</label>
             <select
               {...register("collegeId", { required: "College is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               disabled={isBatchDataLoading}
             >
               <option value="">Select a college</option>
@@ -311,7 +311,7 @@ const BatchForm = ({ onClose }) => {
             <label className="block text-gray-600">Trade</label>
             <select
               {...register("tradeId", { required: "Trade is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               disabled={isBatchDataLoading}
             >
               <option value="">Select a trade</option>
@@ -333,7 +333,7 @@ const BatchForm = ({ onClose }) => {
                 type="checkbox"
                 className="sr-only peer"
               />
-              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:rtl:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
             </label>
           </div>
 
@@ -389,7 +389,7 @@ const BatchForm = ({ onClose }) => {
             </div>
 
             <div
-              className={`border mt-4 overflow-hidden rounded w-full transition-all ease-in-out duration-300 top-0 z-[2] ${
+              className={`border mt-4 overflow-hidden rounded w-full transition-all ease-in-out duration-300 top-0 z-2 ${
                 showMaps ? "h-80" : "h-0"
               }`}
             >
@@ -438,7 +438,7 @@ const BatchForm = ({ onClose }) => {
               id="canMarkPrevious"
               type="checkbox"
               {...register("canMarkPrevious")}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500"
             />
             <label htmlFor="canMarkPrevious" className="text-gray-600">
               Allow Students to mark previous attendance

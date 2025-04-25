@@ -406,7 +406,7 @@ const MarkStudentAttendance = () => {
 
             {/* Student Details Card */}
             {studentAttendance && (
-              <div className="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-sm">
+              <div className="grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-xs">
                 <div className="flex flex-col">
                   <div className="flex items-center mb-1">
                     <User size={16} className="text-gray-500 mr-2" />
@@ -449,7 +449,7 @@ const MarkStudentAttendance = () => {
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Details Card */}
             {profile && (
-              <div className="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-sm">
+              <div className="grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="flex items-center">
                     <User size={16} className="text-gray-500 mr-2" />
@@ -538,7 +538,7 @@ const MarkStudentAttendance = () => {
         }`}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white  rounded-lg shadow-sm overflow-hidden h-fit lg:h-80 ">
+          <div className="bg-white  rounded-lg shadow-xs overflow-hidden h-fit lg:h-80 ">
             {isShowMap && (
               <AttendanceStatus
                 batchData={batchData}
@@ -547,7 +547,7 @@ const MarkStudentAttendance = () => {
               />
             )}
           </div>
-          <div className="bg-white md:col-span-2 rounded-lg shadow-sm overflow-hidden h-80">
+          <div className="bg-white md:col-span-2 rounded-lg shadow-xs overflow-hidden h-80">
             {isShowMap && (
               <LocationPicker
                 deviceLocation={deviceLocation}

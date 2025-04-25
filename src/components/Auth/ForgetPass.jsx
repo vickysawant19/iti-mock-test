@@ -31,7 +31,7 @@ const ForgetPass = () => {
       >
         <FaArrowLeft />
       </div>
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-sm shadow-md">
         <h2 className="text-2xl font-bold text-center">Forgot Password</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex flex-col">
@@ -41,7 +41,7 @@ const ForgetPass = () => {
             <input
               type="email"
               id="email"
-              className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border rounded-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -49,7 +49,7 @@ const ForgetPass = () => {
           </div>
           <button
             type="submit"
-            className="w-full py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full py-2 text-white bg-blue-500 rounded-sm hover:bg-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
           >
             Reset Password
           </button>

@@ -39,7 +39,7 @@ const ResetPass = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded shadow-md">
+      <div className="w-full max-w-md p-8 bg-white rounded-sm shadow-md">
         <h2 className="mb-6 text-2xl font-bold text-center">Reset Password</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -51,7 +51,7 @@ const ResetPass = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded shadow appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="mb-4">
@@ -63,13 +63,13 @@ const ResetPass = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded shadow appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <button
             disabled={isLoading}
             type="submit"
-            className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-sm hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
           >
             {isLoading ? (
               <ClipLoader size={20} color={"#ffffff"} />

@@ -103,19 +103,19 @@ const ShowMockTest = () => {
         </h1>
         {/* Header Skeleton */}
         <div className="p-1 max-w-md  bg-white animate-pulse">
-          <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2"></div>
         </div>
 
         {/* Question Skeleton */}
-        <div className="h-20 bg-gray-300 rounded w-full mb-4 mt-6 p-4"></div>
+        <div className="h-20 bg-gray-300 rounded-sm w-full mb-4 mt-6 p-4"></div>
 
         {/* Options Skeleton */}
         {[...Array(2)].map((_, sectionIndex) => (
@@ -123,7 +123,7 @@ const ShowMockTest = () => {
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
-                className="h-10 bg-gray-300 rounded w-full"
+                className="h-10 bg-gray-300 rounded-sm w-full"
               ></div>
             ))}
           </div>

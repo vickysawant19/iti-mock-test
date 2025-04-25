@@ -229,7 +229,7 @@ const AddModules = ({
       <div className="p-6">
         {/* Display error if present */}
         {isError && error && (
-          <div className="bg-red-100 text-red-700 p-2 rounded mb-4">
+          <div className="bg-red-100 text-red-700 p-2 rounded-sm mb-4">
             {error}
           </div>
         )}
@@ -257,7 +257,7 @@ const AddModules = ({
                   //   );
                   // },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter module ID"
               />
               {errors.moduleId && (
@@ -278,7 +278,7 @@ const AddModules = ({
                 {...register("moduleName", {
                   required: "Module name is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter module name"
               />
               {errors.moduleName && (
@@ -301,7 +301,7 @@ const AddModules = ({
                   required: "Duration is required",
                   min: { value: 1, message: "Minimum 1 hour required" },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter duration in hours"
               />
               {errors.moduleDuration && (
@@ -322,7 +322,7 @@ const AddModules = ({
                 {...register("assessmentCriteria", {
                   required: "Assessment criteria is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter assessment criteria"
               />
               {errors.assessmentCriteria && (
@@ -343,7 +343,7 @@ const AddModules = ({
                 {...register("moduleDescription", {
                   required: "Description is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 rows="3"
                 placeholder="Enter module description"
               />
@@ -365,7 +365,7 @@ const AddModules = ({
                 {...register("learningOutcome", {
                   required: "Learning outcome is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 rows="2"
                 placeholder="Enter learning outcomes"
               />
@@ -404,7 +404,7 @@ const AddModules = ({
                             setValue("evalutionPoints", updatedPoints);
                             setEvalPoints(updatedPoints);
                           }}
-                          className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                         />
                         <input
                           type="number"
@@ -418,7 +418,7 @@ const AddModules = ({
                             };
                             setEvalPoints(updatedPoints);
                           }}
-                          className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                          className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                         />
                       </div>
                     ))
@@ -482,7 +482,7 @@ const AddModules = ({
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   Generated Paper ID:
                 </label>
-                <p className="p-2 bg-gray-100 rounded">{assessmentPaperId}</p>
+                <p className="p-2 bg-gray-100 rounded-sm">{assessmentPaperId}</p>
               </div>
             )}
           </div>
@@ -623,14 +623,14 @@ const AddModules = ({
             <div className="mt-4 flex justify-end gap-4">
               <button
                 onClick={() => setShowPaperModal(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
+                className="px-4 py-2 bg-gray-500 text-white rounded-sm"
               >
                 Close
               </button>
               <button
                 type="button"
                 onClick={saveNewPaper}
-                className="px-4 py-2 bg-teal-600 text-white rounded"
+                className="px-4 py-2 bg-teal-600 text-white rounded-sm"
               >
                 {isLoading ? "Saving..." : "Save Paper"}
               </button>

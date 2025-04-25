@@ -16,7 +16,7 @@ const CustomSelect = ({ icon, options, value, onChangeFunc }) => {
     <div className="relative rounded-xl mr-2">
       <button
         type="button"
-        className="mb-4 p-2 border rounded bg-white flex gap-2 items-center justify-between w-full text-left capitalize px-4"
+        className="mb-4 p-2 border rounded-sm bg-white flex gap-2 items-center justify-between w-full text-left capitalize px-4"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="text-gray-500">{icon}</span>
@@ -30,7 +30,7 @@ const CustomSelect = ({ icon, options, value, onChangeFunc }) => {
         </span>
       </button>
       {isOpen && (
-        <ul className="absolute bg-white border rounded w-full mt-1 z-10 capitalize">
+        <ul className="absolute bg-white border rounded-sm w-full mt-1 z-10 capitalize">
           {options.map((option) => (
             <li
               key={option}

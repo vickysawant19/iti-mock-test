@@ -250,7 +250,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
           >
             <span className="text-gray-700">
               {selectedStudent ? selectedStudent.userName : "Select student"}
@@ -303,7 +303,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         </div>
       </div>
 
-      <div className="overflow-hidden border rounded-lg shadow-sm">
+      <div className="overflow-hidden border rounded-lg shadow-xs">
         {leaveData ? (
           pdfUrl ? (
             <PDFViewer width="100%" height="842px">

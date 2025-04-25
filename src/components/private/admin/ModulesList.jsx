@@ -37,7 +37,7 @@ const ModuleList = ({
               className={`border rounded-lg transition-all duration-200 ${
                 moduleId === module.moduleId
                   ? "border-blue-300 shadow-md bg-blue-50"
-                  : "border-gray-200 hover:border-blue-200 hover:shadow-sm"
+                  : "border-gray-200 hover:border-blue-200 hover:shadow-xs"
               }`}
             >
               {/* Module Header */}

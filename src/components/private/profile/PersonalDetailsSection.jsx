@@ -7,7 +7,7 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode }) => {
   const { register } = useFormContext();
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow-sm mb-6">
+    <div className="bg-white p-5 rounded-lg shadow-xs mb-6">
       <div className="flex items-center mb-4 border-b pb-2">
         <User className="mr-2 text-blue-500" size={20} />
         <h2 className="text-lg font-semibold text-gray-700">
@@ -80,14 +80,14 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode }) => {
             {...register("address", { required: true })}
             disabled={!isFieldEditable("address")}
             rows={3}
-            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
           />
         </div>
       </div>
 
       {/* Conditional help text for edit mode */}
       {formMode === "edit" && !isFieldEditable("userName") && (
-        <div className="mt-4 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+        <div className="mt-4 text-sm text-gray-500 bg-gray-50 p-2 rounded-sm">
           <p>
             Some fields are not editable in your current role. Please contact
             your administrator for changes.

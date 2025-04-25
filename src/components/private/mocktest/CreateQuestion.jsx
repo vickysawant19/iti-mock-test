@@ -233,7 +233,7 @@ const CreateQuestion = () => {
                 id="tradeId"
                 {...register("tradeId", { required: "Trade is required" })}
                 onChange={handleTradeChange}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               >
                 <option value="">Select Trade</option>
                 {trades.map((trade) => (
@@ -258,7 +258,7 @@ const CreateQuestion = () => {
                 <select
                   id="year"
                   {...register("year", { required: "Year is required" })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
                 >
                   <option value="">Select Year</option>
                   {new Array(selectedTrade.duration)
@@ -292,7 +292,7 @@ const CreateQuestion = () => {
                   {...register("subjectId", {
                     required: "Subject is required",
                   })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
                 >
                   <option value="">Select Subject</option>
                   {subjects.map((sub) => (
@@ -320,7 +320,7 @@ const CreateQuestion = () => {
                   {...register("moduleId", {
                     required: "Module is required",
                   })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
                 >
                   <option value="">Select Module</option>
                   {modules.syllabus.map((m) => (
@@ -349,7 +349,7 @@ const CreateQuestion = () => {
                 spellCheck={true}
                 id="question"
                 {...register("question", { required: "Question is required" })}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
                 rows="3"
                 onPaste={handleQuestionPaste}
               ></textarea>
@@ -400,7 +400,7 @@ const CreateQuestion = () => {
                     {...register(`options.${index}`, {
                       required: "Option is required",
                     })}
-                    className="ml-2 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+                    className="ml-2 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
                     rows="2"
                   ></textarea>
                 </div>

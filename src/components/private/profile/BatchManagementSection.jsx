@@ -102,7 +102,7 @@ const BatchManagementSection = ({
   );
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow-sm mb-6">
+    <div className="bg-white p-5 rounded-lg shadow-xs mb-6">
       <div className="flex items-center mb-4 border-b pb-2">
         <Users className="mr-2 text-blue-500" size={20} />
         <h2 className="text-lg font-semibold text-gray-700">Batch & Status</h2>
@@ -124,7 +124,7 @@ const BatchManagementSection = ({
                 required: isStudent,
               })}
               disabled={!isFieldEditable("batchId")}
-              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+              className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
               value={watch("batchId") || ""}
               onChange={(e) => setValue("batchId", e.target.value)}
             >
@@ -163,7 +163,7 @@ const BatchManagementSection = ({
             </div>
             <div className="flex items-center">
               <select
-                className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                 onChange={(e) => {
                   if (e.target.value) {
                     addBatchToList(e.target.value);
@@ -204,7 +204,7 @@ const BatchManagementSection = ({
           <select
             {...register("enrollmentStatus", { required: true })}
             disabled={!isFieldEditable("enrollmentStatus")}
-            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
           >
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
@@ -222,7 +222,7 @@ const BatchManagementSection = ({
             <select
               {...register("status", { required: true })}
               disabled={!isFieldEditable("status")}
-              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+              className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -272,7 +272,7 @@ const BatchManagementSection = ({
                     className="sr-only peer"
                     defaultChecked={true}
                   />
-                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:rtl:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   <span className="ms-3 text-sm font-medium text-gray-600">
                     Batch Active
                   </span>
@@ -285,7 +285,7 @@ const BatchManagementSection = ({
                   <button
                     type="button"
                     onClick={handleToggleBatchForm}
-                    className="mr-2 bg-gray-100 text-gray-600 py-2 px-4 rounded hover:bg-gray-200 transition duration-200 flex items-center"
+                    className="mr-2 bg-gray-100 text-gray-600 py-2 px-4 rounded-sm hover:bg-gray-200 transition duration-200 flex items-center"
                   >
                     <X size={16} className="mr-1" />
                     Cancel
@@ -307,7 +307,7 @@ const BatchManagementSection = ({
                       await fetchBatchData();
                       handleToggleBatchForm();
                     }}
-                    className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-200 flex items-center"
+                    className="bg-green-600 text-white py-2 px-4 rounded-sm hover:bg-green-700 transition duration-200 flex items-center"
                   >
                     <Check size={16} className="mr-1" />
                     Save Batch

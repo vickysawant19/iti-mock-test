@@ -190,7 +190,7 @@ function CustomSelectData({
             <div className="sticky top-0 p-2 bg-white border-b border-gray-100">
               <input
                 type="text"
-                className="w-full p-2 text-sm border border-gray-300 rounded"
+                className="w-full p-2 text-sm border border-gray-300 rounded-sm"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

@@ -9,7 +9,7 @@ const PaperGeneratedNotification = ({
   return (
     <div className="w-full bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded-md shadow-md mb-6">
       <div className="flex items-start">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <FileCheck className="h-5 w-5 text-yellow-600" />
         </div>
         <div className="ml-3">
@@ -39,7 +39,7 @@ const PaperGeneratedNotification = ({
         <button
           onClick={saveNewPaper}
           type="button"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-800 transition ease-in-out duration-150"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-hidden focus:border-green-700 focus:shadow-outline-green active:bg-green-800 transition ease-in-out duration-150"
         >
           Save Paper
         </button>

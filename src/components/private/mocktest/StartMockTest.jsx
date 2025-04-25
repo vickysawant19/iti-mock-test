@@ -276,7 +276,7 @@ const StartMockTest = () => {
           className="space-y-6 p-4"
         >
           {timeWarning && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative flex items-center gap-2">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm relative flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <p>Warning: Less than 5 minutes remaining!</p>
             </div>

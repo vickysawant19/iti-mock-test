@@ -363,7 +363,7 @@ const MarkAttendance = () => {
     };
 
     return (
-      <div className={`${bgColor} ${borderColor} p-2 rounded-md shadow-sm`}>
+      <div className={`${bgColor} ${borderColor} p-2 rounded-md shadow-xs`}>
         <div className="flex items-center justify-between mb-1">
           <h3 className={`${textColor} font-medium text-xs`}>{title}</h3>
           {getIcon()}
@@ -390,7 +390,7 @@ const MarkAttendance = () => {
         {/* Calendar Section */}
         <div className="lg:col-span-3 row-span-1">
           {/* Stats Cards Row */}
-          <div className="grid lg:grid-cols-5 grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md shadow-sm">
+          <div className="grid lg:grid-cols-5 grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md shadow-xs">
             <StatCard
               title="Total"
               value={attendance?.stats?.totalCount ?? "-"}
@@ -437,14 +437,14 @@ const MarkAttendance = () => {
               borderColor="border-l-2 border-rose-400"
             />
           </div>
-          <div className="bg-white rounded-lg shadow-sm mt-5">
+          <div className="bg-white rounded-lg shadow-xs mt-5">
             <div className="p-2 border-b flex justify-between items-center">
               <h2 className="text-lg font-medium">
                 Date: {format(selectedDate, "dd MMMM yyyy")}
               </h2>
               <Linkto
                 to="/attaindance/mark-holidays"
-                className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-sm text-center"
+                className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-xs text-center"
               >
                 Edit Holidays
               </Linkto>
@@ -468,7 +468,7 @@ const MarkAttendance = () => {
         {/* Attendance List Section */}
         {!isHoliday && (
           <div className="lg:col-span-2 row-span-1">
-            <div className="bg-white rounded-lg shadow-sm  ">
+            <div className="bg-white rounded-lg shadow-xs  ">
               <div className="p-2 border-b flex justify-between items-center">
                 <h2 className="text-lg font-medium">Student List</h2>
               </div>

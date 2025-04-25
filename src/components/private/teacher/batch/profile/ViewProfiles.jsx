@@ -33,7 +33,7 @@ const ViewProfiles = ({ students }) => {
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-700 mr-4">
               {student.userName?.charAt(0) || "U"}
             </div>
-            <div className="flex-grow">
+            <div className="grow">
               <h2 className="text-lg font-semibold">{student.userName}</h2>
               <p className="text-sm text-gray-500">{student.email}</p>
               <p className="text-sm text-gray-500">
@@ -52,20 +52,20 @@ const ViewProfiles = ({ students }) => {
             <div className="flex flex-wrap gap-2 mb-4">
               <Link
                 to={`${student.userId}`}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                className="px-4 py-2 bg-blue-500 text-white rounded-sm hover:bg-blue-600 transition-colors text-sm"
               >
                 View Profile
               </Link>
               <Link
                 to={`/manage-batch/edit/${student.userId}`}
-                className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm"
+                className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-sm hover:bg-gray-200 transition-colors text-sm"
               >
                 <AiOutlineEdit size={20} />
                 <span>Edit</span>
               </Link>
               <a
                 href={`tel:${student.phone}`}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
+                className="px-4 py-2 bg-green-500 text-white rounded-sm hover:bg-green-600 transition-colors text-sm"
               >
                 Call
               </a>

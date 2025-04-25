@@ -70,7 +70,7 @@ const Signup = () => {
               type="text"
               id="name"
               name="name"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
               {...register("name", { required: "Name is required" })}
             />
@@ -87,7 +87,7 @@ const Signup = () => {
               type="email"
               id="email"
               name="email"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
               {...register("email", { required: "Email is required" })}
             />
@@ -106,7 +106,7 @@ const Signup = () => {
               type={showPassword ? "text" : "password"}
               id="password"
               name="password"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
               {...register("password", {
                 required: "Password is required",
@@ -142,7 +142,7 @@ const Signup = () => {
               type={showConfirmPassword ? "text" : "password"}
               id="cpassword"
               name="cpassword"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
               {...register("cpassword", {
                 required: "Please confirm your password",

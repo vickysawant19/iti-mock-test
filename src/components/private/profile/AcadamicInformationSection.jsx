@@ -12,7 +12,7 @@ const AcademicInformationSection = ({
   const { register, watch } = useFormContext();
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow-sm mb-6">
+    <div className="bg-white p-5 rounded-lg shadow-xs mb-6">
       <div className="flex items-center mb-4 border-b pb-2">
         <BookOpen className="mr-2 text-blue-500" size={20} />
         <h2 className="text-lg font-semibold text-gray-700">
@@ -31,7 +31,7 @@ const AcademicInformationSection = ({
           <select
             {...register("collegeId", { required: true })}
             disabled={!isFieldEditable("collegeId")}
-            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
           >
             <option value="">Select College</option>
             {collegeData.map((college) => (
@@ -52,7 +52,7 @@ const AcademicInformationSection = ({
           <select
             {...register("tradeId", { required: true })}
             disabled={!isFieldEditable("tradeId")}
-            className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
           >
             <option value="">Select Trade</option>
             {tradeData.map((trade) => (

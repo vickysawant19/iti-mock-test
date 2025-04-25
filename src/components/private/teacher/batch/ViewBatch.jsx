@@ -40,7 +40,7 @@ const TABS = [
 
 // Empty state component for better UX
 const EmptyState = ({ icon: Icon, title, description }) => (
-  <div className="bg-white rounded-lg shadow-sm p-8 md:p-12 text-center">
+  <div className="bg-white rounded-lg shadow-xs p-8 md:p-12 text-center">
     <Icon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300" />
     <h3 className="text-lg md:text-xl font-medium text-gray-500">{title}</h3>
     {description && <p className="mt-2 text-gray-400">{description}</p>}
@@ -49,7 +49,7 @@ const EmptyState = ({ icon: Icon, title, description }) => (
 
 // Feature placeholder component
 const FeaturePlaceholder = ({ icon: Icon, title }) => (
-  <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
+  <div className="bg-white rounded-lg shadow-xs p-8 text-center text-gray-500">
     <Icon className="w-12 h-12 mx-auto mb-4 text-blue-500" />
     <h3 className="text-xl font-medium">{title}</h3>
     <p className="mt-2">This feature is under development.</p>
@@ -369,7 +369,7 @@ const ViewBatch = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4 text-sm">
-      <div className="bg-white p-4 rounded-xl shadow-sm">
+      <div className="bg-white p-4 rounded-xl shadow-xs">
         {/* New Enhanced Batch Selector */}
         <h1 className="mb-2 text-gray-500">Select Batch</h1>
         <CustomSelector
@@ -386,7 +386,7 @@ const ViewBatch = () => {
       </div>
 
       {data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-sm  overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-xs  overflow-x-auto">
           <TabNavigation
             tabs={TABS}
             activeTab={activeTab}
@@ -406,7 +406,7 @@ const ViewBatch = () => {
       )}
 
       {!loadingStates.batchData && data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden p-4">
+        <div className="bg-white rounded-xl shadow-xs overflow-hidden p-4">
           {renderContent()}
         </div>
       )}

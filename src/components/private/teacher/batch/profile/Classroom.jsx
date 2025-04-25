@@ -80,7 +80,7 @@ const Classroom = ({
         Classroom Seating Arrangement
       </h2>
       <div className="bg-gray-100 p-6 rounded-lg">
-        <div className="mb-2 p-2 bg-blue-200 text-center rounded">
+        <div className="mb-2 p-2 bg-blue-200 text-center rounded-sm">
           Teacher's Desk
         </div>
         <div
@@ -138,7 +138,7 @@ const Classroom = ({
               return (
                 <div
                   key={student.userId}
-                  className="bg-yellow-50 p-3 rounded border border-yellow-200"
+                  className="bg-yellow-50 p-3 rounded-sm border border-yellow-200"
                 >
                   <div className="font-medium">{studentDetails.userName}</div>
                   <div className="text-sm text-gray-600">

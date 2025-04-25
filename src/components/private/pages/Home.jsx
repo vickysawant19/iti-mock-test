@@ -23,7 +23,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white">
+      <div className="relative overflow-hidden bg-linear-to-b from-blue-50 to-white">
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
           <div className="absolute top-40 right-20 w-32 h-32 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-300"></div>
@@ -38,7 +38,7 @@ const LandingPage = () => {
                 Revolutionizing Education for Students & Teachers
               </span>
             </div>
-            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-6xl font-bold mb-6 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Empower Your Learning Journey
             </h1>
             <p className="text-xl text-gray-600 mb-12 leading-relaxed">
@@ -213,7 +213,7 @@ const LandingPage = () => {
       </div>
 
       {/* Final CTA */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 py-20">
+      <div className="bg-linear-to-br from-blue-600 to-indigo-600 py-20">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-white mb-8">
             Join the Future of Education

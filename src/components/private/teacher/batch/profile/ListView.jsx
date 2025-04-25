@@ -29,7 +29,7 @@ const ListView = ({
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-lg font-bold text-blue-700 mr-4">
                       {studentDetails.userName?.charAt(0) || "U"}
                     </div>
-                    <div className="flex-grow">
+                    <div className="grow">
                       <h3 className="text-lg font-semibold ">
                         {studentDetails.userName}
                       </h3>
@@ -40,17 +40,17 @@ const ListView = ({
                         {studentDetails.email}
                       </p>
                       <div className="flex items-center mt-1">
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded mr-2">
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-sm mr-2">
                           {batchStudent.status}
                         </span>
                         {batchStudent.position &&
                         batchStudent.position.x >= 0 ? (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-sm">
                             Seat: Row {batchStudent.position.y + 1}, Col{" "}
                             {batchStudent.position.x + 1}
                           </span>
                         ) : (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-sm">
                             Not seated
                           </span>
                         )}
@@ -90,7 +90,7 @@ const ListView = ({
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-lg font-bold text-gray-700 mr-4">
                     {student.userName?.charAt(0) || "U"}
                   </div>
-                  <div className="flex-grow">
+                  <div className="grow">
                     <h3 className="text-lg font-semibold">
                       {student.userName}
                     </h3>

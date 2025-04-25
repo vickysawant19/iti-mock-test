@@ -124,18 +124,18 @@ const MockTestResults = () => {
         <input
           type="text"
           placeholder="Search by name..."
-          className="border p-2 rounded w-full mb-4"
+          className="border p-2 rounded-sm w-full mb-4"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
         <button
           onClick={exportCSV}
-          className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+          className="bg-blue-500 text-white px-4 py-2 rounded-sm mb-4"
         >
           Export CSV
         </button>
 
-        <div className="overflow-x-auto bg-white shadow rounded-lg ">
+        <div className="overflow-x-auto bg-white shadow-sm rounded-lg ">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b">

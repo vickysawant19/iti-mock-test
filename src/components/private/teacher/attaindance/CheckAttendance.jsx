@@ -157,7 +157,7 @@ const CheckAttendance = () => {
   return (
     <div className="w-full  mx-auto px-4 py-6">
       {/* Profile Info */}
-      <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
+      <div className="mb-6 bg-white rounded-lg p-4 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm text-gray-600">
@@ -181,7 +181,7 @@ const CheckAttendance = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Calendar Section - Takes up 7 columns on desktop */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-lg shadow-sm">
+          <div className="bg-white rounded-lg shadow-xs">
             <CustomCalendar
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
@@ -195,7 +195,7 @@ const CheckAttendance = () => {
         {/* Stats Section - Takes up 5 columns on desktop */}
         <div className="lg:col-span-5 space-y-6">
           {/* Monthly Stats */}
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-lg p-4 shadow-xs">
             <ShowStats
               attendance={currentMonthData}
               label={`Month Attendance - ${currentMonth}`}
@@ -203,7 +203,7 @@ const CheckAttendance = () => {
           </div>
 
           {/* Total Stats */}
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-lg p-4 shadow-xs">
             <ShowStats attendance={attendanceStats} label="Total Attendance" />
           </div>
         </div>

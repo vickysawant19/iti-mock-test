@@ -111,7 +111,7 @@ const ProfileView = ({ profileProps }) => {
     <div className="min-h-screen bg-gray-50 py-8 w-full">
       <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="bg-white rounded-xl shadow-sm mb-6 p-6 relative">
+        <div className="bg-white rounded-xl shadow-xs mb-6 p-6 relative">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             {profile.profileImage ? (
               <img
@@ -180,7 +180,7 @@ const ProfileView = ({ profileProps }) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Personal Information */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-xs p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Personal Information
               </h2>
@@ -200,7 +200,7 @@ const ProfileView = ({ profileProps }) => {
 
           {/* Academic Information */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-xs p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Academic Information
               </h2>
@@ -224,7 +224,7 @@ const ProfileView = ({ profileProps }) => {
 
             {/* Teacher-specific Information */}
             {profile.role.includes("Teacher") && (
-              <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
+              <div className="bg-white rounded-xl shadow-xs p-6 mt-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Teaching Information
                 </h2>
@@ -239,25 +239,25 @@ const ProfileView = ({ profileProps }) => {
 
         {/* Statistics/Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-xs p-6">
             <div className="text-sm text-gray-500">Enrollment Duration</div>
             <div className="mt-2 text-xl font-semibold text-gray-900">
               {format(new Date(profile.enrolledAt), "MMM yyyy")} - Present
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-xs p-6">
             <div className="text-sm text-gray-500">Profile Status</div>
             <div className="mt-2 text-xl font-semibold text-gray-900">
               {profile.status}
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-xs p-6">
             <div className="text-sm text-gray-500">Role</div>
             <div className="mt-2 text-xl font-semibold text-gray-900">
               {profile.role.join(", ")}
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-xs p-6">
             <div className="text-sm text-gray-500">Last Updated</div>
             <div className="mt-2 text-xl font-semibold text-gray-900">
               {format(new Date(), "dd MMM yyyy")}

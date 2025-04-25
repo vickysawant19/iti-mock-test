@@ -190,7 +190,7 @@ const EditQuestion = () => {
         </header>
 
         {/* Main Form Card */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-xs p-6 mb-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Trade Selection */}
             <div className="grid md:grid-cols-2 gap-6">

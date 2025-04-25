@@ -110,7 +110,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                     e.target.value = e.target.value.toUpperCase(); // Transform to uppercase
                   },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter topic ID"
               />
               {errors.topicId && (
@@ -131,7 +131,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                 {...register("topicName", {
                   required: "Topic name is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter topic name"
               />
               {errors.topicName && (
@@ -154,7 +154,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                   required: "Hours are required",
                   min: { value: 1, message: "Minimum 1 hour required" },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter hours"
               />
               {errors.topicHours && (
@@ -175,7 +175,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                 {...register("topicResource", {
                   required: "Resource is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 placeholder="Enter resource details"
               />
               {errors.topicResource && (
@@ -196,7 +196,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
                 {...register("topicAssessment", {
                   required: "Assessment details are required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
                 rows="3"
                 placeholder="Enter assessment details"
               />

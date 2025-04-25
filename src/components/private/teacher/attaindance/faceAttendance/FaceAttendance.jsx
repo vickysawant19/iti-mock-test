@@ -253,7 +253,7 @@ const FaceAttendance = () => {
           </div>
 
           {/* Right Column - Form Section */}
-          <div className="w-full lg:w-1/2  rounded-xl shadow-sm  h-full">
+          <div className="w-full lg:w-1/2  rounded-xl shadow-xs  h-full">
             <div className="w-full rounded-xl h-full bg-slate-200">
               {mode === "add" ? (
                 <AddFaceMode

@@ -162,14 +162,14 @@ const Assessment = () => {
         </div>
       </div>
       {/* Filters */}
-      <div className="bg-white shadow-sm p-4 mb-4">
+      <div className="bg-white shadow-xs p-4 mb-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="w-full md:w-1/2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Year
             </label>
             <select
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               value={selectedTradeYear}
               onChange={(e) => setSelectedTradeYear(e.target.value)}
             >
@@ -185,7 +185,7 @@ const Assessment = () => {
               Select Subject
             </label>
             <select
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
               value={selectedSubject?.$id || ""}
               onChange={(e) => {
                 const subject = subjectsData.find(

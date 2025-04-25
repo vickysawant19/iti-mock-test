@@ -38,7 +38,7 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
                 }`}
               >
                 <span
-                  className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-sm font-medium ${
+                  className={`shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-sm font-medium ${
                     getOptionIndex(question.correctAnswer) === index
                       ? "bg-green-100 text-green-700"
                       : "bg-gray-200 text-gray-600"

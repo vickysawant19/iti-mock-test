@@ -160,7 +160,7 @@ const ShowModules = ({ module, setShow, handleDeleteModule }) => {
           }}
         />
       <button
-        className="absolute top-2 right-2 p-2 bg-red-50 rounded-full hover:bg-red-100 focus:outline-none"
+        className="absolute top-2 right-2 p-2 bg-red-50 rounded-full hover:bg-red-100 focus:outline-hidden"
         type="button"
         onClick={() => setPreviewImage(null)}
       >

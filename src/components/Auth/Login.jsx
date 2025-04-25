@@ -82,7 +82,7 @@ const Login = () => {
               {...register("email", { required: "Email is required" })}
               id="email"
               name="email"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
             />
             {errors.email && (
@@ -100,7 +100,7 @@ const Login = () => {
               type={showPassword ? "text" : "password"}
               id="password"
               name="password"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
               autoComplete="off"
               {...register("password", {
                 required: "Password is required",

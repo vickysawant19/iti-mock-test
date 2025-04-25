@@ -126,7 +126,7 @@ const MarkHolidays = () => {
         className="w-full h-full min-h-[60px] p-1  cursor-pointer"
       >
         {holiday && (
-          <div className="bg-red-100 p-1 rounded text-xs text-red-800 break-words">
+          <div className="bg-red-100 p-1 rounded-sm text-xs text-red-800 break-words">
             {holiday.holidayText}
           </div>
         )}

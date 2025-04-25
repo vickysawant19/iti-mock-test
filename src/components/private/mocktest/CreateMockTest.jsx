@@ -31,7 +31,7 @@ const Select = ({ label, error, icon: Icon, register, ...props }) => (
     <select
       {...register}
       {...props}
-      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
+      className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
         ${error ? "border-red-500 focus:ring-red-500" : "border-gray-300"}`}
     >
       {props.children}
@@ -293,7 +293,7 @@ const CreateMockTest = () => {
                     validate: (value) =>
                       !isNaN(value) || "Please enter a valid number",
                   })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
                         ${
                           errors.quesCount
                             ? "border-red-500 focus:ring-red-500"
@@ -327,7 +327,7 @@ const CreateMockTest = () => {
                     validate: (value) =>
                       !isNaN(value) || "Please enter a valid number",
                   })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
                         ${
                           errors.totalMinutes
                             ? "border-red-500 focus:ring-red-500"

@@ -312,7 +312,7 @@ const AddStudents = () => {
             onSubmit={handleSubmitSearch(onSearchUser)}
             className="flex items-end space-x-4"
           >
-            <div className="flex-grow">
+            <div className="grow">
               <label className="block text-gray-600 mb-1">
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -321,7 +321,7 @@ const AddStudents = () => {
                 <input
                   type="email"
                   placeholder="Enter email address"
-                  className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                  className="pl-10 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                   {...registerSearch("searchEmail", {
                     required: "Email is required",
                     pattern: {
@@ -398,7 +398,7 @@ const AddStudents = () => {
                   <input
                     type="text"
                     placeholder="Enter full name"
-                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                     {...registerCreate("name", {
                       required: "Name is required",
                     })}
@@ -420,7 +420,7 @@ const AddStudents = () => {
                   <input
                     type="email"
                     placeholder="Enter email address"
-                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                     {...registerCreate("email", {
                       required: "Email is required",
                       pattern: {
@@ -446,7 +446,7 @@ const AddStudents = () => {
                   <input
                     type="tel"
                     placeholder="Enter phone number"
-                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                     {...registerCreate("phone", {
                       required: "Phone is required",
                     })}
@@ -466,7 +466,7 @@ const AddStudents = () => {
                 <input
                   type="password"
                   placeholder="Enter password"
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                  className="block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                   {...registerCreate("password", {
                     required: "Password is required",
                     minLength: {
@@ -596,7 +596,7 @@ const AddStudents = () => {
                       required: "Address is required",
                     })}
                     rows={3}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                   />
                   {errors.address && (
                     <p className="mt-1 text-red-500 text-sm">
@@ -628,7 +628,7 @@ const AddStudents = () => {
                     {...register("collegeId", {
                       required: "College is required",
                     })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                   >
                     <option value="">Select College</option>
                     {collegeData.map((college) => (
@@ -650,7 +650,7 @@ const AddStudents = () => {
                   </label>
                   <select
                     {...register("tradeId", { required: "Trade is required" })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                   >
                     <option value="">Select Trade</option>
                     {tradeData.map((trade) => (
@@ -676,7 +676,7 @@ const AddStudents = () => {
                   </div>
                   <select
                     {...register("batchId", { required: "Batch is required" })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
                     disabled={isLoadingBatches}
                   >
                     <option value="">

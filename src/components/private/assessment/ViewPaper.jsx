@@ -100,7 +100,7 @@ const ViewPaper = ({ paperId, showPaper }) => {
 
   if (!paperData) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
+      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-sm shadow-sm">
         <div className="flex items-center">
           <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
           <p className="text-red-700">
@@ -228,11 +228,11 @@ const ViewPaper = ({ paperId, showPaper }) => {
                           }
                         `}
                       >
-                        <div className="w-6 flex-shrink-0 text-center mr-3">
+                        <div className="w-6 shrink-0 text-center mr-3">
                           {optionLetter}.
                         </div>
-                        <div className="flex-grow">{option}</div>
-                        <div className="flex-shrink-0 ml-2">
+                        <div className="grow">{option}</div>
+                        <div className="shrink-0 ml-2">
                           {isSelected && isCorrectOption && (
                             <CheckCircle className="h-5 w-5 text-green-600" />
                           )}

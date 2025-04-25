@@ -238,7 +238,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             </div>
           )}
 
-          <div className="flex-grow space-y-2">
+          <div className="grow space-y-2">
             {menuConfig.map((configItem, index) => {
               // Check if the entire group/item has a roles restriction
               if (configItem.roles && !hasRole(configItem.roles)) return null;
@@ -320,7 +320,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       {/* Overlay */}
       {isNavOpen && (
         <div
-          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-[5] md:hidden"
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-5 md:hidden"
           onClick={toggleMenu}
         ></div>
       )}

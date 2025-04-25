@@ -2,7 +2,7 @@ import React from "react";
 
 const TabNavigation = ({ tabs, activeTab, setActiveTab }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="bg-white rounded-lg shadow-xs">
       <div className="overflow-x-auto">
         <div className="flex space-x-1 p-2 min-w-max">
           {tabs.map(({ id, label, icon: Icon }) => (

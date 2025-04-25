@@ -569,7 +569,7 @@ const MatchFaceMode = ({
   return (
     <div className="flex flex-col gap-6 bg-white  rounded-lg">
       {/* Top Section - Header and Attendance List */}
-      <div className="bg-gray-200  rounded-lg shadow-sm  p-4">
+      <div className="bg-gray-200  rounded-lg shadow-xs  p-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-3">
           <h2 className="text-xl font-bold text-gray-800">Face Recognition</h2>
           <div className="flex flex-wrap gap-2">
@@ -685,7 +685,7 @@ const MatchFaceMode = ({
       </div>
 
       {/* Bottom Section - Statistics */}
-      <div className="bg-gray-200 rounded-lg shadow-sm p-4">
+      <div className="bg-gray-200 rounded-lg shadow-xs p-4">
         <h3 className="text-md font-semibold text-gray-700 mb-3">
           System Statistics
         </h3>
@@ -720,7 +720,7 @@ const MatchFaceMode = ({
 
       {/* Absolute positioned attendance marking animation */}
       {attendanceMarking && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-xs z-50">
           <div className="bg-white rounded-lg p-6 shadow-xl">
             <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-center justify-center">
               <div className="bg-green-500 text-white rounded-full p-2 mr-3">

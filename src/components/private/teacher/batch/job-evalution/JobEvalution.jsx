@@ -194,7 +194,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 text-sm">
-      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-sm mb-4">
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-4">
         <ul className="list-disc ml-6 space-y-2">
           <li>Add students attendance to ensure accurate evaluations.</li>
           <li>
@@ -211,7 +211,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           <h1>Select Year:</h1>
           <button
             onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-            className="w-[150px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            className="w-[150px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
           >
             <span className="text-gray-700">{selectedYear}</span>
             <svg
@@ -252,7 +252,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           <h1>Select Job:</h1>
           <button
             onClick={() => setIsModuleDropdownOpen(!isModuleDropdownOpen)}
-            className=" flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            className=" flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
           >
             <span className="text-gray-700">
               {selectedModule
@@ -330,7 +330,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           </PDFDownloadLink>
         )}
 
-      <div className="overflow-hidden border rounded-lg shadow-sm mt-4">
+      <div className="overflow-hidden border rounded-lg shadow-xs mt-4">
         {selectedModule ? (
           pdfUrl ? (
             <iframe

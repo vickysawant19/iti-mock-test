@@ -86,7 +86,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                           {isSubmitted && (
                             <Check
                               size={16}
-                              className="text-green-500 mr-1 flex-shrink-0"
+                              className="text-green-500 mr-1 shrink-0"
                             />
                           )}
                           <span
@@ -107,7 +107,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                       </div>
                       <ChevronRight
                         size={18}
-                        className="text-gray-400 flex-shrink-0"
+                        className="text-gray-400 shrink-0"
                       />
                     </div>
                   </div>
@@ -168,7 +168,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                         {isSubmitted && (
                           <Check
                             size={16}
-                            className="text-green-500 mr-1 flex-shrink-0"
+                            className="text-green-500 mr-1 shrink-0"
                           />
                         )}
                         <span
@@ -189,12 +189,12 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                     {isExpanded ? (
                       <ChevronDown
                         size={18}
-                        className="text-gray-400 flex-shrink-0"
+                        className="text-gray-400 shrink-0"
                       />
                     ) : (
                       <ChevronRight
                         size={18}
-                        className="text-gray-400 flex-shrink-0"
+                        className="text-gray-400 shrink-0"
                       />
                     )}
                   </div>

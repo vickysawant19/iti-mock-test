@@ -73,7 +73,7 @@ const AttainTest = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         <div className="max-w-md mx-auto">
           {/* Paper ID Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -130,7 +130,7 @@ const AttainTest = () => {
           </div>
 
           {/* Instructions Card */}
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="mt-6 bg-white rounded-lg shadow-xs border border-gray-200 p-6">
             <h3 className="text-sm font-medium text-gray-900 mb-3">
               Instructions
             </h3>

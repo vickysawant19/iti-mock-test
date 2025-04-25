@@ -16,7 +16,7 @@ const TodaysTestsPopup = ({ isOpen, onClose, data, timePeriod = "Day" }) => {
         <h2 className="text-xl font-bold mb-4 capitalize text-slate-600">
           {timePeriod} Tests Counts
         </h2>
-        <table className="min-w-full bg-white border border-gray-300 rounded">
+        <table className="min-w-full bg-white border border-gray-300 rounded-sm">
           <thead>
             <tr className="bg-gray-100 border-b">
               <th className="py-2 px-4 text-left">Sr.No</th>

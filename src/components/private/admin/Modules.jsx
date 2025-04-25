@@ -175,7 +175,7 @@ const Modules = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 py-6 shadow-md">
+      <header className="bg-linear-to-r from-blue-100 to-blue-200 text-blue-900 py-6 shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">

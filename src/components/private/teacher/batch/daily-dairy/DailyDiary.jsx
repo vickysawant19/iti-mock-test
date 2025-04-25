@@ -335,7 +335,7 @@ function DailyDiary() {
                         onChange={(e) =>
                           updateDiaryField(dateKey, "theory", e.target.value)
                         }
-                        className="w-full min-w-40 p-2 border border-gray-300 rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="w-full min-w-40 p-2 border border-gray-300 rounded-sm min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                         placeholder="Add theory notes..."
                       />
                     ) : (
@@ -362,7 +362,7 @@ function DailyDiary() {
                         }
                         className={`w-full min-w-40 p-2  ${
                           isHoliday ? "border-none" : "border border-gray-300"
-                        }   rounded min-h-20 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                        }   rounded min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50`}
                         placeholder="Add practical notes..."
                       />
                     ) : (
@@ -391,7 +391,7 @@ function DailyDiary() {
                             e.target.value
                           )
                         }
-                        className="w-full p-2 border border-gray-300 rounded focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="w-full p-2 border border-gray-300 rounded-sm focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                         placeholder="#"
                       />
                     ) : (
@@ -412,7 +412,7 @@ function DailyDiary() {
                             <button
                               disabled={isSubmitting}
                               onClick={() => toggleEditing(dateKey)}
-                              className="flex items-center justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                             >
                               <Save size={16} className="mr-1" />
                               Save
@@ -421,7 +421,7 @@ function DailyDiary() {
                             <button
                               disabled={isSubmitting}
                               onClick={() => toggleEditing(dateKey)}
-                              className="flex items-center justify-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                             >
                               <Edit size={16} className="mr-1" />
                               Edit

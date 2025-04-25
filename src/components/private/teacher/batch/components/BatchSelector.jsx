@@ -8,8 +8,8 @@ const BatchSelector = ({
   isLoading,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center">
-      <div className="flex-grow">
+    <div className="bg-white rounded-lg shadow-xs p-4 mb-6 flex items-center">
+      <div className="grow">
         <label
           htmlFor="batch-select"
           className="block text-sm font-medium text-gray-700 mb-1"
@@ -19,7 +19,7 @@ const BatchSelector = ({
         <div className="relative">
           <select
             id="batch-select"
-            className="w-full md:w-64 p-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            className="w-full md:w-64 p-3 rounded-lg border border-gray-300 shadow-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             value={selectedBatch}
             onChange={(e) => setSelectedBatch(e.target.value)}
             disabled={isLoading || batches.length === 0}

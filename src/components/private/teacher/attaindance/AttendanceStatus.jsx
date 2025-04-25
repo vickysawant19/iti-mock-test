@@ -29,7 +29,7 @@ const AttendanceStatus = ({
 
       <div className="space-y-2">
         {/* Location Check */}
-        <div className="bg-gray-50 p-2 rounded">
+        <div className="bg-gray-50 p-2 rounded-sm">
           <div className="flex items-center gap-2 mb-1">
             <StatusIcon isValid={isWithinRadius} />
             <span className="text-xs font-medium">Location Check</span>
@@ -45,7 +45,7 @@ const AttendanceStatus = ({
         </div>
 
         {/* Time Check */}
-        <div className="bg-gray-50 p-2 rounded">
+        <div className="bg-gray-50 p-2 rounded-sm">
           <div className="flex items-center gap-2 mb-1">
             <StatusIcon isValid={isWithinTimeWindow} />
             <span className="text-xs font-medium">Time Check</span>

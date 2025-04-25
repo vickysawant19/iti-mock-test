@@ -45,7 +45,7 @@ const CustomSelector = ({
     <div className="flex items-center gap-3 w-full">
       {Icon && (
         <Icon
-          className={`w-4 h-4 flex-shrink-0 ${
+          className={`w-4 h-4 shrink-0 ${
             isSelected ? "text-blue-600" : "text-gray-500"
           }`}
         />
@@ -61,22 +61,22 @@ const CustomSelector = ({
         disabled={isLoading || disabled}
         className={`flex items-center justify-between w-full ${maxWidth} p-3 px-4 bg-white border border-gray-200 rounded-lg shadow-sm 
           ${disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-50"} 
-          transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          transition-all focus:outline-hidden focus:ring-2 focus:ring-blue-500`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         type="button"
       >
         <div className="flex items-center gap-3 w-full overflow-hidden">
-          {Icon && <Icon className="w-5 h-5 text-blue-600 flex-shrink-0" />}
+          {Icon && <Icon className="w-5 h-5 text-blue-600 shrink-0" />}
           <span className="font-medium text-gray-800 truncate">
             {getSelectedDisplayText()}
           </span>
         </div>
         {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin text-blue-500 flex-shrink-0 ml-2" />
+          <Loader2 className="w-4 h-4 animate-spin text-blue-500 shrink-0 ml-2" />
         ) : (
           <ChevronDown
-            className={`w-5 h-5 text-gray-500 transition-transform flex-shrink-0 ml-2 ${
+            className={`w-5 h-5 text-gray-500 transition-transform shrink-0 ml-2 ${
               isOpen ? "transform rotate-180" : ""
             }`}
           />

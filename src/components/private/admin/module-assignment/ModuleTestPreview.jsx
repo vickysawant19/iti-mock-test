@@ -70,13 +70,13 @@ const PaperPreview = ({ paperData, setPaperData }) => {
           <div>
             <button
               onClick={handleSave}
-              className="mr-2 px-4 py-2 bg-blue-500 text-white rounded"
+              className="mr-2 px-4 py-2 bg-blue-500 text-white rounded-sm"
             >
               Save
             </button>
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-gray-500 text-white rounded"
+              className="px-4 py-2 bg-gray-500 text-white rounded-sm"
             >
               Cancel
             </button>
@@ -84,7 +84,7 @@ const PaperPreview = ({ paperData, setPaperData }) => {
         ) : (
           <button
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            className="px-4 py-2 bg-green-500 text-white rounded-sm"
           >
             Edit
           </button>
@@ -102,7 +102,7 @@ const PaperPreview = ({ paperData, setPaperData }) => {
               type="text"
               value={q.question}
               onChange={(e) => handleQuestionChange(index, e.target.value)}
-              className="mb-4 p-2 border rounded w-full"
+              className="mb-4 p-2 border rounded-sm w-full"
             />
           ) : (
             <p className="mb-4">{q.question}</p>
@@ -124,7 +124,7 @@ const PaperPreview = ({ paperData, setPaperData }) => {
                     onChange={(e) =>
                       handleOptionChange(index, key, e.target.value)
                     }
-                    className="ml-2 p-1 border rounded w-full"
+                    className="ml-2 p-1 border rounded-sm w-full"
                   />
                 ) : (
                   ` ${option}`
@@ -140,7 +140,7 @@ const PaperPreview = ({ paperData, setPaperData }) => {
                 onChange={(e) =>
                   handleCorrectAnswerChange(index, e.target.value)
                 }
-                className="p-1 border rounded"
+                className="p-1 border rounded-sm"
               >
                 {Object.values(keys).map((optionKey) => (
                   <option key={optionKey} value={optionKey}>
