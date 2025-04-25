@@ -13,6 +13,7 @@ import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
 import ScrollToTop from "./utils/ScrollToTop.Jsx";
+import { Button } from "./components/ui/button";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +64,7 @@ function App() {
 
   return (
     <div className="bg-gray-100 w-full min-h-screen ">
+       
       <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
       <div className="md:ml-60">
         <div className={`pt-10 bg-gray-100 w-full mx-auto`}>

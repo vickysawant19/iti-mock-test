@@ -12,217 +12,301 @@ import {
   BarChart,
   Edit,
   Eye,
+  ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
-import img from '../../../assets/teachers.jpg'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
+const fadeIn = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const LandingPage = () => {
-  const [activeRole, setActiveRole] = useState("student");
+  const studentFeatures = [
+    {
+      icon: <Calendar className="w-6 h-6 text-blue-500" />,
+      title: "Attendance Tracking",
+      desc: "View and mark your attendance seamlessly."
+    },
+    {
+      icon: <Target className="w-6 h-6 text-blue-500" />,
+      title: "Mock Tests",
+      desc: "Take mock tests and track your progress."
+    },
+    {
+      icon: <BarChart className="w-6 h-6 text-blue-500" />,
+      title: "Performance Analytics",
+      desc: "Get insights into your learning journey."
+    }
+  ];
+
+  const teacherFeatures = [
+    {
+      icon: <Edit className="w-6 h-6 text-indigo-500" />,
+      title: "Create Mock Tests",
+      desc: "Design and share mock tests with ease."
+    },
+    {
+      icon: <Eye className="w-6 h-6 text-indigo-500" />,
+      title: "View Results",
+      desc: "Analyze student performance in real-time."
+    },
+    {
+      icon: <Users className="w-6 h-6 text-indigo-500" />,
+      title: "Batch Management",
+      desc: "Manage attendance and student records."
+    }
+  ];
+
+  const steps = [
+    {
+      title: "Sign Up",
+      icon: <Users className="w-6 h-6" />,
+      desc: "Create your account in minutes."
+    },
+    {
+      title: "Set Up Profile",
+      icon: <GraduationCap className="w-6 h-6" />,
+      desc: "Choose your role and preferences."
+    },
+    {
+      title: "Explore Features",
+      icon: <BookOpen className="w-6 h-6" />,
+      desc: "Access tools tailored to your needs."
+    },
+    {
+      title: "Track Progress",
+      icon: <BarChart className="w-6 h-6" />,
+      desc: "Monitor growth and achievements."
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-linear-to-b from-blue-50 to-white">
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-32 h-32 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-300"></div>
-          <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-purple-200 rounded-full opacity-20 animate-pulse delay-700"></div>
-        </div>
-
-        <div className="container mx-auto px-4 pt-24 pb-20 relative">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center bg-white rounded-full px-4 py-2 mb-6 shadow-md">
-              <Sparkles className="w-5 h-5 text-blue-500 mr-2" />
-              <span className="text-gray-600">
-                Revolutionizing Education for Students & Teachers
-              </span>
-            </div>
-            <h1 className="text-6xl font-bold mb-6 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Empower Your Learning Journey
-            </h1>
-            <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-              A comprehensive LMS platform for attendance, mock tests, batch
-              management, and more. Designed for students and teachers to thrive.
-            </p>
-            <button className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg">
-              Get Started
-            </button>
-          </div>
-
-          {/* AI-Generated Image Placeholder */}
-          <div className="mt-12">
-            <img
-              src={img}
-              alt="AI Generated Education Image"
-              className="rounded-lg shadow-lg mx-auto"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Feature Showcase */}
-      <div className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Features Tailored for You
-          </h2>
-          <div className="flex justify-center mb-8">
-            <button
-              className={`px-6 py-2 rounded-l-lg ${
-                activeRole === "student"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-600"
-              }`}
-              onClick={() => setActiveRole("student")}
-            >
-              Students
-            </button>
-            <button
-              className={`px-6 py-2 rounded-r-lg ${
-                activeRole === "teacher"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-600"
-              }`}
-              onClick={() => setActiveRole("teacher")}
-            >
-              Teachers
-            </button>
-          </div>
-
-          <motion.div
-            key={activeRole}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={fadeIn}
+        transition={{ duration: 0.6 }}
+        className="container mx-auto px-4 pt-20 pb-16 relative"
+      >
+        <div className="text-center max-w-3xl mx-auto">
+          <Badge variant="outline" className="mb-4 px-4 py-1.5 bg-white shadow-sm">
+            <Sparkles className="w-4 h-4 text-blue-500 mr-2" />
+            <span className="text-sm font-medium">Revolutionizing Education</span>
+          </Badge>
+          
+          <motion.h1 
+            variants={fadeIn}
+            transition={{ delay: 0.2 }}
+            className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
           >
-            {activeRole === "student" && (
-              <>
-                {[
-                  {
-                    icon: <Calendar className="w-8 h-8 text-blue-500" />,
-                    title: "Attendance Tracking",
-                    desc: "View and mark your attendance seamlessly.",
-                  },
-                  {
-                    icon: <Target className="w-8 h-8 text-blue-500" />,
-                    title: "Mock Tests",
-                    desc: "Take mock tests and track your progress.",
-                  },
-                  {
-                    icon: <BarChart className="w-8 h-8 text-blue-500" />,
-                    title: "Performance Analytics",
-                    desc: "Get insights into your learning journey.",
-                  },
-                ].map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                  >
-                    <div className="mb-4">{feature.icon}</div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600">{feature.desc}</p>
-                  </div>
-                ))}
-              </>
-            )}
-            {activeRole === "teacher" && (
-              <>
-                {[
-                  {
-                    icon: <Edit className="w-8 h-8 text-indigo-500" />,
-                    title: "Create Mock Tests",
-                    desc: "Design and share mock tests with ease.",
-                  },
-                  {
-                    icon: <Eye className="w-8 h-8 text-indigo-500" />,
-                    title: "View Results",
-                    desc: "Analyze student performance in real-time.",
-                  },
-                  {
-                    icon: <Users className="w-8 h-8 text-indigo-500" />,
-                    title: "Batch Management",
-                    desc: "Manage attendance and student records.",
-                  },
-                ].map((feature, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                  >
-                    <div className="mb-4">{feature.icon}</div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600">{feature.desc}</p>
-                  </div>
-                ))}
-              </>
-            )}
+            Empower Your Learning Journey
+          </motion.h1>
+          
+          <motion.p 
+            variants={fadeIn}
+            transition={{ delay: 0.3 }}
+            className="text-lg text-gray-600 mb-8 leading-relaxed"
+          >
+            A comprehensive LMS platform for attendance, mock tests, batch management, and more. 
+            Designed for students and teachers to thrive.
+          </motion.p>
+          
+          <motion.div
+            variants={fadeIn}
+            transition={{ delay: 0.4 }}
+          >
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-6 rounded-lg text-lg shadow-lg">
+              Get Started <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
           </motion.div>
+        </div>
+
+        {/* Hero Image */}
+        <motion.div 
+          variants={fadeIn}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="mt-12 relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl"></div>
+          <img
+            src=""
+            alt="Education Platform"
+            className="rounded-xl shadow-xl mx-auto w-full object-cover"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* Feature Showcase */}
+      <div className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <motion.h2 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-bold text-center mb-12"
+          >
+            Features Tailored for You
+          </motion.h2>
+
+          <Tabs defaultValue="student" className="w-full max-w-4xl mx-auto">
+            <div className="flex justify-center mb-8">
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="student">For Students</TabsTrigger>
+                <TabsTrigger value="teacher">For Teachers</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="student">
+              <motion.div 
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              >
+                {studentFeatures.map((feature, idx) => (
+                  <motion.div key={idx} variants={fadeIn}>
+                    <Card className="h-full hover:shadow-md transition-all duration-300 border-l-4 border-l-blue-500">
+                      <CardContent className="pt-6">
+                        <div className="mb-4 p-2 bg-blue-50 rounded-full w-12 h-12 flex items-center justify-center">
+                          {feature.icon}
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                        <p className="text-gray-600">{feature.desc}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="teacher">
+              <motion.div 
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              >
+                {teacherFeatures.map((feature, idx) => (
+                  <motion.div key={idx} variants={fadeIn}>
+                    <Card className="h-full hover:shadow-md transition-all duration-300 border-l-4 border-l-indigo-500">
+                      <CardContent className="pt-6">
+                        <div className="mb-4 p-2 bg-indigo-50 rounded-full w-12 h-12 flex items-center justify-center">
+                          {feature.icon}
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                        <p className="text-gray-600">{feature.desc}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
       {/* How It Works */}
-      <div className="py-20">
+      <div className="py-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">
+          <motion.h2 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-bold text-center mb-12"
+          >
             How It Works
-          </h2>
-          <div className="relative">
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-blue-100"></div>
-            <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
-              {[
-                {
-                  title: "Sign Up",
-                  icon: <Users className="w-8 h-8" />,
-                  desc: "Create your account in minutes.",
-                },
-                {
-                  title: "Set Up Profile",
-                  icon: <GraduationCap className="w-8 h-8" />,
-                  desc: "Choose your role and preferences.",
-                },
-                {
-                  title: "Explore Features",
-                  icon: <BookOpen className="w-8 h-8" />,
-                  desc: "Access tools tailored to your needs.",
-                },
-                {
-                  title: "Track Progress",
-                  icon: <BarChart className="w-8 h-8" />,
-                  desc: "Monitor growth and achievements.",
-                },
-              ].map((step, idx) => (
-                <div
+          </motion.h2>
+
+          <div className="relative max-w-5xl mx-auto">
+            {/* Connecting Line */}
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-blue-100 hidden md:block"></div>
+            
+            <motion.div 
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-4 gap-8"
+            >
+              {steps.map((step, idx) => (
+                <motion.div
                   key={idx}
-                  className="relative bg-white rounded-xl p-6 text-center shadow-lg"
+                  variants={fadeIn}
+                  className="relative"
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 >
-                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white mx-auto mb-4">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-600">{step.desc}</p>
-                </div>
+                  <Card className="relative bg-white rounded-xl p-6 text-center shadow h-full">
+                    <CardContent className="pt-6 flex flex-col items-center">
+                      <div className="relative z-10 mb-4">
+                        <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                          {step.icon}
+                        </div>
+                        <div className="absolute -top-1 -left-1 w-16 h-16 bg-blue-400 rounded-full opacity-30 animate-pulse"></div>
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                      <p className="text-gray-600">{step.desc}</p>
+                      
+                      <div className="mt-4 rounded-full bg-blue-50 px-2 py-1 text-xs font-medium">
+                        Step {idx + 1}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
       {/* Final CTA */}
-      <div className="bg-linear-to-br from-blue-600 to-indigo-600 py-20">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="bg-gradient-to-br from-blue-600 to-indigo-600 py-16"
+      >
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold text-white mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
             Join the Future of Education
           </h2>
-          <button className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg">
-            Sign Up Now
-          </button>
+          
+          <Alert className="max-w-xl mx-auto mb-8 bg-white/10 text-white border-white/20">
+            <AlertTitle className="text-white">Get Early Access</AlertTitle>
+            <AlertDescription className="text-white/80">
+              Sign up now and receive 3 months free access to premium features.
+            </AlertDescription>
+          </Alert>
+          
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button variant="secondary" size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-6 text-lg font-medium">
+              Sign Up Now <ChevronRight className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
