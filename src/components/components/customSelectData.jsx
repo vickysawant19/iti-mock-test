@@ -6,11 +6,11 @@ import React, {
   useCallback,
 } from "react";
 import { ChevronDown, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils"; // Assuming shadcn's utility function is available
 
 /**
- * CustomSelectData
+ * CustomSelectData with shadcn styling and dark mode support
  * @param {Object} props
- * // ...props JSDoc omitted for brevity
  */
 function CustomSelectData({
   label,
@@ -98,23 +98,33 @@ function CustomSelectData({
                 key={opt[valueKey]}
                 role="option"
                 aria-selected={isSelected}
-                className={`flex items-center px-3 py-2 cursor-pointer ${
-                  isSelected ? "bg-blue-50 text-blue-700" : "hover:bg-gray-100"
-                }`}
+                className={cn(
+                  "flex items-center px-3 py-2 cursor-pointer",
+                  isSelected
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted text-foreground hover:text-foreground",
+                  "dark:text-slate-200 dark:hover:bg-slate-800"
+                )}
                 onClick={() => handleSelectOption(opt)}
               >
                 <div className="flex items-center flex-1">
                   {opt[iconKey] && (
-                    <span className="mr-2 text-gray-500">{opt[iconKey]}</span>
+                    <span className="mr-2 text-muted-foreground dark:text-slate-400">
+                      {opt[iconKey]}
+                    </span>
                   )}
                   {getOptionLabel(opt)}
                 </div>
-                {isSelected && <Check size={16} className="text-blue-600" />}
+                {isSelected && (
+                  <Check size={16} className="text-primary dark:text-primary" />
+                )}
               </li>
             );
           })
         ) : (
-          <li className="px-3 py-2 text-sm text-gray-500">No options found</li>
+          <li className="px-3 py-2 text-sm text-muted-foreground dark:text-slate-400">
+            No options found
+          </li>
         )}
       </ul>
     ),
@@ -129,19 +139,26 @@ function CustomSelectData({
   );
 
   return (
-    <div className={`relative w-full ${className}`} ref={selectRef}>
+    <div className={cn("relative w-full", className)} ref={selectRef}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-foreground dark:text-slate-200 mb-1">
           {label}
         </label>
       )}
 
       <div
-        className={`flex items-center justify-between w-full p-2.5 px-3 bg-white border rounded-md cursor-pointer ${
-          disabled ? "bg-gray-100 cursor-not-allowed" : "hover:border-blue-500"
-        } ${error ? "border-red-500" : "border-gray-300"} ${
-          isOpen ? "border-blue-500 ring-2 ring-blue-100" : ""
-        }`}
+        className={cn(
+          "flex items-center justify-between w-full p-2.5 px-3 rounded-md cursor-pointer",
+          "border transition-colors",
+          "bg-background dark:bg-slate-900",
+          disabled
+            ? "bg-muted cursor-not-allowed dark:bg-slate-800"
+            : "hover:border-primary/50 dark:hover:border-primary/50",
+          error ? "border-destructive" : "border-input dark:border-slate-700",
+          isOpen
+            ? "border-primary ring-2 ring-primary/20 dark:ring-primary/20"
+            : ""
+        )}
         onClick={toggleDropdown}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -151,14 +168,18 @@ function CustomSelectData({
           {selectedOption ? (
             <>
               {selectedOption[iconKey] && (
-                <span className="mr-2 text-gray-500">
+                <span className="mr-2 text-muted-foreground dark:text-slate-400">
                   {selectedOption[iconKey]}
                 </span>
               )}
-              <span className="truncate">{getOptionLabel(selectedOption)}</span>
+              <span className="truncate dark:text-slate-200">
+                {getOptionLabel(selectedOption)}
+              </span>
             </>
           ) : (
-            <span className="text-gray-400">{placeholder}</span>
+            <span className="text-muted-foreground dark:text-slate-400">
+              {placeholder}
+            </span>
           )}
         </div>
 
@@ -166,7 +187,7 @@ function CustomSelectData({
           {clearable && selectedOption && (
             <button
               type="button"
-              className="p-1 mr-1 text-gray-400 hover:text-gray-600"
+              className="p-1 mr-1 text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-slate-200"
               onClick={handleClear}
               aria-label="Clear selection"
             >
@@ -175,22 +196,27 @@ function CustomSelectData({
           )}
           <ChevronDown
             size={18}
-            className={`text-gray-400 transition-transform duration-200 ${
+            className={cn(
+              "text-muted-foreground dark:text-slate-400 transition-transform duration-200",
               isOpen ? "transform rotate-180" : ""
-            }`}
+            )}
           />
         </div>
       </div>
 
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="mt-1 text-sm text-destructive dark:text-red-400">
+          {error}
+        </p>
+      )}
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="absolute z-10 w-full mt-1 rounded-md shadow-lg border border-input bg-popover dark:bg-slate-900 dark:border-slate-700">
           {options.length > 8 && (
-            <div className="sticky top-0 p-2 bg-white border-b border-gray-100">
+            <div className="sticky top-0 p-2 bg-background dark:bg-slate-900 border-b border-input dark:border-slate-700">
               <input
                 type="text"
-                className="w-full p-2 text-sm border border-gray-300 rounded-sm"
+                className="w-full p-2 text-sm rounded-sm bg-background dark:bg-slate-800 border border-input dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

@@ -40,19 +40,27 @@ const TABS = [
 
 // Empty state component for better UX
 const EmptyState = ({ icon: Icon, title, description }) => (
-  <div className="bg-white rounded-lg shadow-xs p-8 md:p-12 text-center">
-    <Icon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300" />
-    <h3 className="text-lg md:text-xl font-medium text-gray-500">{title}</h3>
-    {description && <p className="mt-2 text-gray-400">{description}</p>}
+  <div className="bg-white rounded-lg shadow-xs p-8 md:p-12 text-center dark:bg-gray-800 dark:border dark:border-gray-700">
+    <Icon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300 dark:text-gray-500" />
+    <h3 className="text-lg md:text-xl font-medium text-gray-500 dark:text-gray-300">
+      {title}
+    </h3>
+    {description && (
+      <p className="mt-2 text-gray-400 dark:text-gray-400">{description}</p>
+    )}
   </div>
 );
 
 // Feature placeholder component
 const FeaturePlaceholder = ({ icon: Icon, title }) => (
-  <div className="bg-white rounded-lg shadow-xs p-8 text-center text-gray-500">
-    <Icon className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-    <h3 className="text-xl font-medium">{title}</h3>
-    <p className="mt-2">This feature is under development.</p>
+  <div className="bg-white rounded-lg shadow-xs p-8 text-center text-gray-500 dark:bg-gray-800 dark:border dark:border-gray-700 dark:text-gray-400">
+    <Icon className="w-12 h-12 mx-auto mb-4 text-blue-500 dark:text-blue-400" />
+    <h3 className="text-xl font-medium text-gray-700 dark:text-white">
+      {title}
+    </h3>
+    <p className="mt-2 text-gray-500 dark:text-gray-400">
+      This feature is under development.
+    </p>
   </div>
 );
 
@@ -368,10 +376,10 @@ const ViewBatch = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-4 text-sm">
-      <div className="bg-white p-4 rounded-xl shadow-xs">
+    <div className="mx-auto px-4 py-6 space-y-4 text-sm text-black dark:text-white dark:bg-gray-900">
+      <div className="bg-white  p-4 rounded-xl shadow-xs dark:bg-gray-800 dark:border dark:border-gray-700">
         {/* New Enhanced Batch Selector */}
-        <h1 className="mb-2 text-gray-500">Select Batch</h1>
+        <h1 className="mb-2 text-gray-500 dark:text-gray-300">Select Batch</h1>
         <CustomSelector
           onValueChange={setSelectedBatch}
           valueKey="$id"
@@ -382,31 +390,40 @@ const ViewBatch = () => {
           disabled={loadingStates.batchData}
           icon={Users}
           placeholder="Select Batch"
+          className="dark:bg-gray-800 dark:text-white dark:border-gray-600"
         />
       </div>
 
       {data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-xs  overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-xs overflow-x-auto dark:bg-gray-800 dark:border dark:border-gray-700">
           <TabNavigation
             tabs={TABS}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            className="dark:bg-gray-800 dark:text-white"
           />
         </div>
       )}
 
-      {loadingStates.batchData && <LoadingState size={50} fullPage />}
+      {loadingStates.batchData && (
+        <LoadingState
+          size={50}
+          fullPage
+          className="dark:bg-gray-900 dark:text-white"
+        />
+      )}
 
       {!loadingStates.batchData && !data.selectedBatchData && (
         <EmptyState
           icon={Users}
           title="Please select a batch to view details"
           description="No batch data currently available"
+          className="dark:bg-gray-800 dark:text-white dark:border dark:border-gray-700"
         />
       )}
 
       {!loadingStates.batchData && data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-xs overflow-hidden p-4">
+        <div className="bg-white rounded-xl shadow-xs overflow-hidden p-4 dark:bg-gray-900 dark:border dark:border-gray-700 dark:text-white">
           {renderContent()}
         </div>
       )}

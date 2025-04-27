@@ -386,9 +386,9 @@ const MarkStudentAttendance = () => {
   }
 
   return (
-    <div className="w-full  mx-auto px-4 py-6">
+    <div className="w-full h-screen mx-auto px-4 py-6 dark:bg-gray-900">
       {/* Top Actions Bar */}
-      <div className="bg-white rounded-lg shadow-md p-5 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 mb-6">
         {isTeacher ? (
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Select with improved width handling */}
@@ -406,17 +406,23 @@ const MarkStudentAttendance = () => {
 
             {/* Student Details Card */}
             {studentAttendance && (
-              <div className="grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
                 <div className="flex flex-col">
                   <div className="flex items-center mb-1">
-                    <User size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm font-medium text-gray-800">
+                    <User
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       {studentAttendance.userName}
                     </p>
                   </div>
                   <div className="flex items-center">
-                    <Hash size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm text-gray-600">
+                    <Hash
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Roll number: {studentAttendance.studentId}
                     </p>
                   </div>
@@ -429,7 +435,7 @@ const MarkStudentAttendance = () => {
               <button
                 onClick={markUserAttendance}
                 disabled={isLoading}
-                className="w-full sm:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full sm:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
@@ -449,29 +455,41 @@ const MarkStudentAttendance = () => {
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Details Card */}
             {profile && (
-              <div className="grow bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="flex items-center">
-                    <User size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm font-medium text-gray-800">
+                    <User
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       {profile.userName}
                     </p>
                   </div>
                   <div className="flex items-center">
-                    <Hash size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm text-gray-600">
+                    <Hash
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Roll number: {profile.studentId}
                     </p>
                   </div>
                   <div className="flex items-center">
-                    <Calendar size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm text-gray-600">
+                    <Calendar
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Date: {format(selectedDate, "dd-MM-yyyy")}
                     </p>
                   </div>
                   <div className="flex items-center">
-                    <Clock size={16} className="text-gray-500 mr-2" />
-                    <p className="text-sm text-gray-600">
+                    <Clock
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400 mr-2"
+                    />
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Status:{" "}
                       <span
                         className={`font-medium ${getStatusColor(
@@ -492,7 +510,7 @@ const MarkStudentAttendance = () => {
             <div className="flex flex-col xs:flex-row gap-3">
               <button
                 onClick={() => setIsShowMap((prev) => !prev)}
-                className="w-full xs:w-auto min-w-32 bg-teal-500 hover:bg-teal-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full xs:w-auto min-w-32 bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors flex items-center justify-center gap-2"
               >
                 {!isShowMap ? (
                   <>
@@ -511,7 +529,7 @@ const MarkStudentAttendance = () => {
                 <button
                   onClick={markUserAttendance}
                   disabled={isLoading}
-                  className="w-full xs:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full xs:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -538,7 +556,7 @@ const MarkStudentAttendance = () => {
         }`}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white  rounded-lg shadow-xs overflow-hidden h-fit lg:h-80 ">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xs overflow-hidden h-fit lg:h-80">
             {isShowMap && (
               <AttendanceStatus
                 batchData={batchData}
@@ -547,7 +565,7 @@ const MarkStudentAttendance = () => {
               />
             )}
           </div>
-          <div className="bg-white md:col-span-2 rounded-lg shadow-xs overflow-hidden h-80">
+          <div className="bg-white dark:bg-gray-800 md:col-span-2 rounded-lg shadow-xs overflow-hidden h-80">
             {isShowMap && (
               <LocationPicker
                 deviceLocation={deviceLocation}
@@ -572,7 +590,7 @@ const MarkStudentAttendance = () => {
           </div>
         ) : (
           studentAttendance && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 ">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7">
                 <CustomCalendar
                   selectedDate={selectedDate}
@@ -591,13 +609,13 @@ const MarkStudentAttendance = () => {
                 />
               </div>
               <div className="lg:col-span-5 space-y-6">
-                <div className="bg-white p-4 rounded-lg">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
                   <ShowStats
                     attendance={currentMonthData}
                     label={`Month Attendance - ${currentMonth}`}
                   />
                 </div>
-                <div className="bg-white p-4 rounded-lg">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
                   <ShowStats
                     attendance={attendanceStats}
                     label="Total Attendance"
@@ -611,9 +629,9 @@ const MarkStudentAttendance = () => {
 
       {/* Attendance Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">
               {modalData.isMarked ? "Edit Attendance" : "Mark Attendance"}
             </h2>
 
@@ -634,7 +652,7 @@ const MarkStudentAttendance = () => {
                   className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                     modalData.attendanceStatus === "Present"
                       ? "bg-green-500 text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
                   }`}
                 >
                   Present
@@ -653,7 +671,7 @@ const MarkStudentAttendance = () => {
                   className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                     modalData.attendanceStatus === "Absent"
                       ? "bg-red-500 text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
                   }`}
                 >
                   Absent
@@ -664,7 +682,7 @@ const MarkStudentAttendance = () => {
               {modalData.attendanceStatus === "Present" && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
                       In Time:
                     </label>
                     <input
@@ -677,11 +695,11 @@ const MarkStudentAttendance = () => {
                           inTime: e.target.value,
                         }))
                       }
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
                       Out Time:
                     </label>
                     <input
@@ -693,16 +711,16 @@ const MarkStudentAttendance = () => {
                           outTime: e.target.value,
                         }))
                       }
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Reason  Text Input */}
+              {/* Reason Text Input */}
               {modalData.attendanceStatus === "Absent" && (
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium mb-1 dark:text-gray-200">
                     Absent Type:
                   </label>
                   <div className="grid grid-cols-3 gap-4">
@@ -710,7 +728,7 @@ const MarkStudentAttendance = () => {
                       className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                         modalData.type === "CL"
                           ? "bg-purple-500 text-white"
-                          : "bg-gray-100 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
                       }`}
                       onClick={() =>
                         setModalData((prev) => ({
@@ -725,7 +743,7 @@ const MarkStudentAttendance = () => {
                       className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                         modalData.type === "SL"
                           ? "bg-purple-500 text-white"
-                          : "bg-gray-100 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
                       }`}
                       onClick={() =>
                         setModalData((prev) => ({
@@ -740,7 +758,7 @@ const MarkStudentAttendance = () => {
                       className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
                         modalData.type === "Excess"
                           ? "bg-purple-500 text-white"
-                          : "bg-gray-100 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
                       }`}
                       onClick={() =>
                         setModalData((prev) => ({
@@ -754,7 +772,7 @@ const MarkStudentAttendance = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
                       Reason:
                     </label>
                     <textarea
@@ -765,7 +783,7 @@ const MarkStudentAttendance = () => {
                           reason: e.target.value,
                         }))
                       }
-                      className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                       rows={3}
                     />
                   </div>
@@ -775,19 +793,19 @@ const MarkStudentAttendance = () => {
               <div className="grid grid-cols-2 gap-3 mt-6">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2.5 bg-red-100 hover:bg-red-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={removeAttendance}
-                  className="p-2.5 bg-purple-100 hover:bg-purple-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
                 >
                   Undo marking
                 </button>
                 <button
                   onClick={saveAttendance}
-                  className="p-2.5 bg-blue-500 col-span-2 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="p-2.5 bg-blue-500 dark:bg-blue-600 col-span-2 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Save
                 </button>

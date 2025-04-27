@@ -53,11 +53,11 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
   ).toFixed(2);
 
   return (
-    <div className="px-4 md:px-6 py-4 bg-gray-50 min-h-screen">
+    <div className="px-4 md:px-6 py-4 bg-gray-50 min-h-screen dark:bg-gray-900">
       {/* Desktop View */}
       <div className="hidden md:flex flex-row gap-6">
         {/* Module List */}
-        <div className="w-1/3 bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="w-1/3 bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-800 dark:border dark:border-gray-700">
           <AssessmentHeader progress={progress} />
           <div className="max-h-[600px] overflow-y-auto">
             {modulesData && modulesData.length > 0 ? (
@@ -68,29 +68,28 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                 return (
                   <div
                     key={module.moduleId}
-                    className={`p-4 cursor-pointer hover:bg-blue-50 transition-colors border-l-4 ${
+                    className={`p-4 cursor-pointer hover:bg-blue-50 transition-colors border-l-4 dark:hover:bg-gray-700 ${
                       isSubmitted
-                        ? "border-l-green-500 opacity-80"
-                        : "border-l-yellow-100"
+                        ? "border-l-green-500 opacity-80 dark:border-l-green-600"
+                        : "border-l-yellow-100 dark:border-l-yellow-200"
                     } ${
                       selectedModule &&
                       selectedModule.moduleId === module.moduleId
-                        ? "bg-blue-100"
+                        ? "bg-blue-100 dark:bg-gray-700"
                         : ""
                     }`}
                     onClick={() => handleModuleClick(module)}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800 flex items-center">
+                        <div className="font-medium text-gray-800 flex items-center dark:text-gray-200">
                           {isSubmitted && (
                             <Check
                               size={16}
-                              className="text-green-500 mr-1 shrink-0"
+                              className="text-green-500 mr-1 shrink-0 dark:text-green-400"
                             />
                           )}
                           <span
-                            // Fix: Assign ref when NOT in mobile view
                             ref={(elm) =>
                               !isMobileView &&
                               (itemRefs.current[module.assessmentPaperId] = elm)
@@ -100,22 +99,28 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                             {module.moduleId}: {module.moduleName}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1 flex items-center">
-                          <Clock size={14} className="mr-1" />
+                        <div className="text-sm text-gray-500 mt-1 flex items-center dark:text-gray-400">
+                          <Clock
+                            size={14}
+                            className="mr-1 dark:text-gray-500"
+                          />
                           {module.moduleDuration} hours
                         </div>
                       </div>
                       <ChevronRight
                         size={18}
-                        className="text-gray-400 shrink-0"
+                        className="text-gray-400 shrink-0 dark:text-gray-500"
                       />
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="p-6 text-center text-gray-500">
-                <AlertCircle className="mx-auto mb-2" size={24} />
+              <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+                <AlertCircle
+                  className="mx-auto mb-2 dark:text-gray-500"
+                  size={24}
+                />
                 No assessments available
               </div>
             )}
@@ -132,8 +137,11 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
               redirect={redirect}
             />
           ) : (
-            <div className="bg-white rounded-lg shadow-md p-10 text-center text-gray-500 h-full flex flex-col items-center justify-center">
-              <ClipboardList size={48} className="text-gray-300 mb-4" />
+            <div className="bg-white rounded-lg shadow-md p-10 text-center text-gray-500 h-full flex flex-col items-center justify-center dark:bg-gray-800 dark:border dark:border-gray-700 dark:text-gray-400">
+              <ClipboardList
+                size={48}
+                className="text-gray-300 mb-4 dark:text-gray-500"
+              />
               <p>Select an assessment from the list to view details</p>
             </div>
           )}
@@ -152,23 +160,23 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
             return (
               <div
                 key={module.moduleId}
-                className="bg-white rounded-lg shadow-md overflow-hidden text-ellipsis"
+                className="bg-white rounded-lg shadow-md overflow-hidden text-ellipsis dark:bg-gray-800 dark:border dark:border-gray-700"
               >
                 <div
-                  className={`p-4 cursor-pointer border-l-4 ${
+                  className={`p-4 cursor-pointer border-l-4 dark:hover:bg-gray-700 ${
                     isSubmitted
-                      ? "border-l-green-500 opacity-80"
-                      : "border-l-yellow-200"
+                      ? "border-l-green-500 opacity-80 dark:border-l-green-600"
+                      : "border-l-yellow-200 dark:border-l-yellow-200"
                   }`}
                   onClick={() => handleModuleClick(module)}
                 >
-                  <div className="flex justify-between items-center ">
+                  <div className="flex justify-between items-center">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-800 flex items-center">
+                      <div className="font-medium text-gray-800 flex items-center dark:text-gray-200">
                         {isSubmitted && (
                           <Check
                             size={16}
-                            className="text-green-500 mr-1 shrink-0"
+                            className="text-green-500 mr-1 shrink-0 dark:text-green-400"
                           />
                         )}
                         <span
@@ -181,20 +189,20 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
                           {module.moduleId}: {module.moduleName}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1 flex items-center">
-                        <Clock size={14} className="mr-1" />
+                      <div className="text-sm text-gray-500 mt-1 flex items-center dark:text-gray-400">
+                        <Clock size={14} className="mr-1 dark:text-gray-500" />
                         {module.moduleDuration} hours
                       </div>
                     </div>
                     {isExpanded ? (
                       <ChevronDown
                         size={18}
-                        className="text-gray-400 shrink-0"
+                        className="text-gray-400 shrink-0 dark:text-gray-500"
                       />
                     ) : (
                       <ChevronRight
                         size={18}
-                        className="text-gray-400 shrink-0"
+                        className="text-gray-400 shrink-0 dark:text-gray-500"
                       />
                     )}
                   </div>
@@ -202,7 +210,7 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
 
                 {/* Expandable content */}
                 {isExpanded && (
-                  <div className="border-t border-gray-100">
+                  <div className="border-t border-gray-100 dark:border-gray-700">
                     <RenderModule
                       key={module.moduleId}
                       module={module}
@@ -215,8 +223,11 @@ const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
             );
           })
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-            <AlertCircle className="mx-auto mb-2" size={24} />
+          <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500 dark:bg-gray-800 dark:border dark:border-gray-700 dark:text-gray-400">
+            <AlertCircle
+              className="mx-auto mb-2 dark:text-gray-500"
+              size={24}
+            />
             No assessments available
           </div>
         )}

@@ -8,11 +8,17 @@ import {
 import { ClipLoader } from "react-spinners";
 import { Timer, AlertCircle, Check } from "lucide-react";
 import { differenceInMinutes, differenceInSeconds, format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import MockTestGreet from "./components/MockTestGreet";
 import questionpaperservice from "../../../appwrite/mockTest";
 import { toast } from "react-toastify";
 import { Query } from "appwrite";
+import Loader from "@/components/components/Loader";
 
 const StartMockTest = () => {
   const { paperId } = useParams();
@@ -95,7 +101,7 @@ const StartMockTest = () => {
         ]);
 
         const userTest = userTestResponse[0];
-        
+
         if (!userTest) {
           toast.error("Mock test not found!");
           navigate(`/all-mock-tests`);
@@ -253,15 +259,11 @@ const StartMockTest = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <ClipLoader size={150} color={"#123abc"} loading={isLoading} />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
       {!isGreetShown ? (
         <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
@@ -276,18 +278,22 @@ const StartMockTest = () => {
           className="space-y-6 p-4"
         >
           {timeWarning && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm relative flex items-center gap-2">
+            <Alert variant="destructive" className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
-              <p>Warning: Less than 5 minutes remaining!</p>
-            </div>
+              <AlertDescription>
+                Warning: Less than 5 minutes remaining!
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="mt-4 flex justify-between items-center">
-            <div className="flex items-center gap-2 text-lg font-semibold">
+            <div className="flex items-center gap-2 text-lg font-semibold dark:text-gray-200">
               <Timer className="h-6 w-6" />
               <span
                 className={`${
-                  remainingSeconds <= 300 ? "text-red-600" : ""
+                  remainingSeconds <= 300
+                    ? "text-red-600 dark:text-red-400"
+                    : ""
                 } font-mono`}
               >
                 {formatTime(remainingSeconds)}
@@ -295,152 +301,114 @@ const StartMockTest = () => {
             </div>
 
             {!submitted && (
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitLoading}
-                className="block bg-red-500 disabled:bg-gray-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md"
+                variant="destructive"
               >
                 Submit Exam
-              </button>
+              </Button>
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Question {currentQuestionIndex + 1} of{" "}
-                {mockTest.questions.length}
-              </h2>
-              {mockTest.questions[currentQuestionIndex].userName && (
-                <h6 className="text-xs font-thin text-slate-400">
-                  Created by:{" "}
-                  {mockTest.questions[currentQuestionIndex].userName}
-                </h6>
-              )}
-            </div>
+          <Card className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                  Question {currentQuestionIndex + 1} of{" "}
+                  {mockTest.questions.length}
+                </h2>
+                {mockTest.questions[currentQuestionIndex].userName && (
+                  <h6 className="text-xs font-thin text-slate-400 dark:text-slate-500">
+                    Created by:{" "}
+                    {mockTest.questions[currentQuestionIndex].userName}
+                  </h6>
+                )}
+              </div>
 
-            <p className="text-gray-600 mb-6 font-semibold">
-              {mockTest.questions[currentQuestionIndex].question}
-            </p>
-            <div className="flex gap-2 m-2">
-   
-              {mockTest.questions[currentQuestionIndex]?.images?.map((img) => {
-                const image = JSON.parse(img);
-                return (
-                  <img
-                    className="min-h-32 max-h-60"
-                    key={image.id}
-                    src={image.url}
-                    alt={image.name}
-                  />
-                );
-              })}
-            </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 font-semibold">
+                {mockTest.questions[currentQuestionIndex].question}
+              </p>
 
-            <div className="space-y-3">
-              {mockTest.questions[currentQuestionIndex].options.map(
-                (option, index) => {
-                  const isSelected =
-                    mockTest.questions[currentQuestionIndex].response ===
-                    String.fromCharCode(65 + index);
-
-                  return (
-                    <label
-                      key={index}
-                      className={`
-                  block text-gray-700 cursor-pointer
-                  p-2 rounded-lg border-2 transition-all duration-200
-                  ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+              <div className="flex gap-2 m-2">
+                {mockTest.questions[currentQuestionIndex]?.images?.map(
+                  (img) => {
+                    const image = JSON.parse(img);
+                    return (
+                      <img
+                        className="min-h-32 max-h-60"
+                        key={image.id}
+                        src={image.url}
+                        alt={image.name}
+                      />
+                    );
                   }
-                `}
-                    >
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name={`question-${currentQuestionIndex}`}
-                          value={String.fromCharCode(65 + index)}
-                          onChange={() =>
-                            handleOptionChange(
-                              mockTest.questions[currentQuestionIndex].$id,
-                              String.fromCharCode(65 + index)
-                            )
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {mockTest.questions[currentQuestionIndex].options.map(
+                  (option, index) => {
+                    const isSelected =
+                      mockTest.questions[currentQuestionIndex].response ===
+                      String.fromCharCode(65 + index);
+
+                    return (
+                      <Label
+                        key={index}
+                        className={`
+                          block text-gray-700 dark:text-gray-200 cursor-pointer
+                          p-2 rounded-lg border-2 transition-all duration-200
+                          ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900 dark:border-blue-600"
+                              : "border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-gray-50 dark:hover:bg-gray-800"
                           }
-                          checked={isSelected}
-                          className="hidden"
-                        />
+                        `}
+                      >
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            name={`question-${currentQuestionIndex}`}
+                            value={String.fromCharCode(65 + index)}
+                            onChange={() =>
+                              handleOptionChange(
+                                mockTest.questions[currentQuestionIndex].$id,
+                                String.fromCharCode(65 + index)
+                              )
+                            }
+                            checked={isSelected}
+                            className="hidden"
+                          />
 
-                        <div
-                          className={`
-                    w-8 h-8 flex items-center p-2 justify-center rounded-full border-2
-                    ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-500 text-white"
-                        : "border-gray-300 text-gray-500"
-                    }
-                  `}
-                        >
-                          {isSelected ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <span className="font-medium">
-                              {String.fromCharCode(65 + index)}
-                            </span>
-                          )}
+                          <div
+                            className={`
+                              w-8 h-8 flex items-center p-2 justify-center rounded-full border-2
+                              ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-500 text-white dark:border-blue-600 dark:bg-blue-600"
+                                  : "border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                              }
+                            `}
+                          >
+                            {isSelected ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <span className="font-medium">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="ml-4">{option}</span>
                         </div>
-
-                        <span className="ml-4">{option}</span>
-                      </div>
-                    </label>
-                  );
-                }
-              )}
-            </div>
-          </div>
-          {/* <div className="bg-white p-4 rounded-lg shadow-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Question {currentQuestionIndex + 1} of{" "}
-                {mockTest.questions.length}
-              </h2>
-              {mockTest.questions[currentQuestionIndex].userName && (
-                <h6 className="text-xs font-thin text-slate-400">
-                  Created by:{" "}
-                  {mockTest.questions[currentQuestionIndex].userName}
-                </h6>
-              )}
-            </div>
-            <p className="text-gray-600 mb-4 font-semibold">
-              {mockTest.questions[currentQuestionIndex].question}
-            </p>
-            <div className="space-y-2">
-              {mockTest.questions[currentQuestionIndex].options.map(
-                (option, index) => (
-                  <label key={index} className="block text-gray-700">
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestionIndex}`}
-                      value={String.fromCharCode(65 + index)}
-                      onChange={() =>
-                        handleOptionChange(
-                          mockTest.questions[currentQuestionIndex].$id,
-                          String.fromCharCode(65 + index)
-                        )
-                      }
-                      className="mr-2"
-                      checked={
-                        mockTest.questions[currentQuestionIndex].response ===
-                        String.fromCharCode(65 + index)
-                      }
-                    />
-                    {String.fromCharCode(65 + index)}. {option}
-                  </label>
-                )
-              )}
-            </div>
-          </div> */}
+                      </Label>
+                    );
+                  }
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           <div
             className={`flex ${
@@ -448,37 +416,43 @@ const StartMockTest = () => {
             }`}
           >
             {currentQuestionIndex > 0 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => handleNavigation(-1)}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md"
+                variant="secondary"
+                className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
               >
                 Previous
-              </button>
+              </Button>
             )}
             {currentQuestionIndex < mockTest.questions.length - 1 && (
-              <button
+              <Button
                 type="button"
                 onClick={() => handleNavigation(1)}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+                className="dark:bg-blue-700 dark:hover:bg-blue-600"
               >
                 Next
-              </button>
+              </Button>
             )}
           </div>
 
-          <div className="flex flex-wrap mt-4 border justify-center">
+          <div className="flex flex-wrap mt-4 border dark:border-gray-700 justify-center p-2 rounded-md">
             {mockTest.questions.map((ques, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => setCurrentQuestionIndex(index)}
-                className={`m-1 size-10 p-2 border rounded-md ${
-                  currentQuestionIndex === index
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-800"
-                }
-                ${ques.response ? "bg-green-400 " : ""}
+                className={`m-1 size-10 p-2 border rounded-md transition-colors
+                  ${
+                    currentQuestionIndex === index
+                      ? "bg-blue-500 dark:bg-blue-600 text-white"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                  }
+                  ${
+                    ques.response
+                      ? "bg-green-400 dark:bg-green-700 text-white"
+                      : ""
+                  }
                 `}
               >
                 {index + 1}

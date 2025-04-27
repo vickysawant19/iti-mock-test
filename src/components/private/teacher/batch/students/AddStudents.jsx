@@ -265,8 +265,10 @@ const AddStudents = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Add Student</h1>
+    <div className="p-6 bg-white  shadow-md max-w-6xl mx-auto text-black h-screen dark:bg-gray-900">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 dark:text-white">
+        Add Student
+      </h1>
 
       {/* Search/Create Toggle */}
       <div className="flex space-x-4 mb-6">

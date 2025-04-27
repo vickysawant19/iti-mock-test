@@ -166,7 +166,7 @@ const ImageUploader = ({
               type="button"
               onClick={() => ikUploadRef.current?.click()}
               disabled={isUploading}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-gray-600"
             >
               <Upload className="mr-2 h-5 w-5" />
               {isUploading ? "Uploading..." : "Upload Images"}
@@ -181,7 +181,7 @@ const ImageUploader = ({
                     resetUploadState();
                   }
                 }}
-                className="flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                className="flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors dark:bg-red-600 dark:hover:bg-red-700"
               >
                 <XCircle className="mr-2 h-5 w-5" />
                 Cancel
@@ -193,14 +193,14 @@ const ImageUploader = ({
           {isUploading && (
             <div className="mt-4">
               <div className="flex items-center mb-1">
-                <LoaderCircle className="animate-spin mr-2 h-5 w-5 text-blue-500" />
-                <span className="text-sm font-medium text-gray-700">
+                <LoaderCircle className="animate-spin mr-2 h-5 w-5 text-blue-500 dark:text-blue-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Uploading: {progress}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 dark:bg-blue-500"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -211,18 +211,19 @@ const ImageUploader = ({
         {/* Image previews */}
         {/* {previews.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-medium mb-3">Uploaded Images</h3>
+            <h3 className="text-lg font-medium mb-3 dark:text-gray-200">
+              Uploaded Images
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {previews.map((image, index) => (
                 <div key={index} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center dark:bg-gray-800 dark:border-gray-700">
                     <IKImage
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
                       path={image.url.split("/").slice(-2).join("/")}
                       transformation={[
                         { height: 300, width: 300, cropMode: "pad_resize" },
                       ]}
-                      // loading="lazy"
                       lqip={{ active: true }}
                       className="object-cover w-full h-full"
                       alt={image.name}
@@ -231,27 +232,29 @@ const ImageUploader = ({
                   <button
                     type="button"
                     onClick={() => handleRemovePreview(index)}
-                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity dark:bg-gray-700 dark:text-red-400"
                     title="Remove from preview"
                   >
                     <X className="h-4 w-4 text-red-500" />
                   </button>
-                  <p className="text-sm truncate mt-1">{image.name}</p>
+                  <p className="text-sm truncate mt-1 dark:text-gray-300">
+                    {image.name}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         )} */}
 
-        {/* No images placeholder
+        {/* No images placeholder */}
         {previews.length === 0 && !isUploading && (
-          <div className="mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-            <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-gray-500 text-center">
+          <div className="mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+            <ImageIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-3" />
+            <p className="text-gray-500 text-center dark:text-gray-400">
               No images uploaded yet. Click the upload button to add images.
             </p>
           </div>
-        )} */}
+        )}
       </IKContext>
     </div>
   );

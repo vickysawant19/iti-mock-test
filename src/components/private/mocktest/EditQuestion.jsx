@@ -28,8 +28,9 @@ import ImageUploader from "./components/ImageUpload";
 
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
-    <div className="h-10 bg-gray-200 rounded-lg w-full mb-4"></div>
-    {/* <div className="h-10 bg-gray-200 rounded-lg w-3/4"></div> */}
+    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-full mb-4"></div>
+    {/* Uncomment if needed */}
+    {/* <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4"></div> */}
   </div>
 );
 
@@ -41,12 +42,12 @@ const EditQuestion = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [modules, setModules] = useState(null);
-  const [images, setImages] = useState([])
+  const [images, setImages] = useState([]);
 
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const questionsStore = useSelector(selectQuestions);
-  const isTeacher = user.labels.includes("Teacher")
+  const isTeacher = user.labels.includes("Teacher");
 
   const { register, handleSubmit, setValue, watch, reset, getValues, control } =
     useForm();
@@ -80,24 +81,21 @@ const EditQuestion = () => {
   const fetchTradesAndQuestion = async () => {
     setIsLoading(true);
     try {
-
       const [trades, subjects] = await Promise.all([
         tradeservice.listTrades(),
-        subjectService.listSubjects()
-      ])
+        subjectService.listSubjects(),
+      ]);
 
       setTrades(trades.documents);
       setSubjects(subjects.documents);
 
       const question = await quesdbservice.getQuestion(quesId);
 
-      const trade = trades.documents.find(
-        (tr) => tr.$id === question.tradeId
-      );
-      const images = question.images.map(img => JSON.parse(img))
+      const trade = trades.documents.find((tr) => tr.$id === question.tradeId);
+      const images = question.images.map((img) => JSON.parse(img));
       setSelectedTrade(trade);
-      setImages(images)
-  
+      setImages(images);
+
       reset({
         question: question.question,
         tradeId: question.tradeId,
@@ -105,8 +103,8 @@ const EditQuestion = () => {
         subjectId: question.subjectId,
         moduleId: String(question.moduleId),
         options: question.options,
-        correctAnswer: question.correctAnswer,  
-        images: images
+        correctAnswer: question.correctAnswer,
+        images: images,
       });
     } catch (error) {
       console.log(error.message);
@@ -117,8 +115,8 @@ const EditQuestion = () => {
   };
 
   useEffect(() => {
-    if(!isTeacher) {
-      toast.error("You are not Authorized")
+    if (!isTeacher) {
+      toast.error("You are not Authorized");
     }
     fetchTradesAndQuestion();
   }, [quesId, isTeacher]);
@@ -138,14 +136,14 @@ const EditQuestion = () => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-   
+
     if (!data.correctAnswer) {
       toast.error("Correct answer is required");
       setIsSubmitting(false);
       return;
     }
-    
-    data.images = images.map(img => JSON.stringify(img))
+
+    data.images = images.map((img) => JSON.stringify(img));
     data.userId = user.$id;
     try {
       await quesdbservice.updateQuestion(quesId, data);
@@ -161,27 +159,27 @@ const EditQuestion = () => {
   const currentIndex = questionsStore?.findIndex((item) => item.$id === quesId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="hidden md:inline">Back</span>
             </button>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
               Edit Question
             </h1>
           </div>
 
-          {questionsStore &&  questionsStore[currentIndex + 1] && (
+          {questionsStore && questionsStore[currentIndex + 1] && (
             <Link
               to={`/edit/${questionsStore[currentIndex + 1].$id}`}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
               <span className="hidden md:inline">Next</span>
               <ArrowRight className="w-5 h-5" />
@@ -190,13 +188,13 @@ const EditQuestion = () => {
         </header>
 
         {/* Main Form Card */}
-        <div className="bg-white rounded-lg shadow-xs p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-xs p-6 mb-6 dark:bg-gray-800 dark:border dark:border-gray-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Trade Selection */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <GraduationCap className="w-4 h-4" />
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                  <GraduationCap className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   Trade
                 </label>
                 {isLoading ? (
@@ -205,7 +203,7 @@ const EditQuestion = () => {
                   <select
                     {...register("tradeId")}
                     onChange={onTradeChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                   >
                     <option value="">Select Trade</option>
                     {trades.map((trade) => (
@@ -219,8 +217,8 @@ const EditQuestion = () => {
 
               {selectedTrade && (
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <CalendarDays className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                    <CalendarDays className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     Year
                   </label>
                   {isLoading ? (
@@ -228,7 +226,7 @@ const EditQuestion = () => {
                   ) : (
                     <select
                       {...register("year")}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                     >
                       <option value="">Select Year</option>
                       {new Array(selectedTrade.duration)
@@ -250,8 +248,8 @@ const EditQuestion = () => {
             {selectedTrade && (
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <BookOpen className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                    <BookOpen className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     Subject
                   </label>
                   {isLoading ? (
@@ -259,7 +257,7 @@ const EditQuestion = () => {
                   ) : (
                     <select
                       {...register("subjectId")}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                     >
                       <option value="">Select Subject</option>
                       {subjects.map((sub) => (
@@ -272,8 +270,8 @@ const EditQuestion = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Layout className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                    <Layout className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     Module
                   </label>
                   {isLoading ? (
@@ -286,7 +284,7 @@ const EditQuestion = () => {
                       render={({ field }) => (
                         <select
                           {...field}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                         >
                           <option value="">Select Module</option>
                           {modules?.syllabus.map((m) => (
@@ -304,37 +302,37 @@ const EditQuestion = () => {
 
             {/* Question Input */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <HelpCircle className="w-4 h-4" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <HelpCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Question
               </label>
               {isLoading ? (
                 <div className="animate-pulse">
-                  <div className="h-32 bg-gray-200 rounded-lg w-full"></div>
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
                 </div>
               ) : (
                 <textarea
                   {...register("question")}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                   rows="3"
                 />
               )}
             </div>
+
             {/* Images */}
             <div className="col-span-full">
-
-            <ImageUploader images={images} setImages={setImages} />
+              <ImageUploader images={images} setImages={setImages} />
             </div>
 
             {/* Options */}
             <div className="space-y-4">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 Options
               </label>
               {["A", "B", "C", "D"].map((value, index) => (
                 <div
                   key={index}
-                  className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50 rounded-lg"
+                  className="flex flex-col md:flex-row gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
                 >
                   <div className="flex items-center gap-2">
                     <input
@@ -342,23 +340,23 @@ const EditQuestion = () => {
                       id={`option-${value}`}
                       value={value}
                       {...register("correctAnswer")}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-blue-600 dark:text-blue-400"
                     />
                     <label
                       htmlFor={`option-${value}`}
-                      className="text-sm font-medium"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-200"
                     >
                       Option {value}
                     </label>
                   </div>
                   {isLoading ? (
                     <div className="animate-pulse">
-                      <div className="h-20 bg-gray-200 rounded-lg w-full"></div>
+                      <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg w-full"></div>
                     </div>
                   ) : (
                     <textarea
                       {...register(`options.${index}`)}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                       rows="2"
                     />
                   )}
@@ -370,7 +368,7 @@ const EditQuestion = () => {
             <button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white px-4 py-2 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

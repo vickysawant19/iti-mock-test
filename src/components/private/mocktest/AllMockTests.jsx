@@ -6,12 +6,21 @@ import { Query } from "appwrite";
 import Pagination from "./components/Pagination";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const ITEMS_PER_PAGE = 10;
 
 const AllMockTests = () => {
   const [mockTests, setMockTests] = useState([]);
-  const cachedMockTests = useRef(new Map()); // Use useRef for caching
+  const cachedMockTests = useRef(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,7 +33,7 @@ const AllMockTests = () => {
     setError(null);
     try {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-      // Check if data is already cached
+
       if (cachedMockTests.current.has(currentPage)) {
         const cachedData = cachedMockTests.current.get(currentPage);
         setMockTests(cachedData.documents);
@@ -32,6 +41,7 @@ const AllMockTests = () => {
         setLoading(false);
         return;
       }
+
       const response = await questionpaperservice.getQuestionPaperByUserId(
         user.$id,
         [
@@ -60,7 +70,6 @@ const AllMockTests = () => {
 
       if (response) {
         const totalPages = Math.ceil(response.total / ITEMS_PER_PAGE);
-        // Cache the fetched data
         cachedMockTests.current.set(currentPage, {
           documents: response.documents,
           totalPages,
@@ -95,11 +104,9 @@ const AllMockTests = () => {
 
     try {
       await questionpaperservice.deleteQuestionPaper(paperId);
-      // Remove the deleted item from state
       setMockTests((prevMockTests) =>
         prevMockTests.filter((test) => test.$id !== paperId)
       );
-      // Update cache by removing the deleted item
       if (cachedMockTests.current.has(currentPage)) {
         const cachedData = cachedMockTests.current.get(currentPage);
         const updatedDocuments = cachedData.documents.filter(
@@ -121,46 +128,55 @@ const AllMockTests = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-2">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          All Mock Tests
-        </h1>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+    <div className="min-h-screen bg-background text-foreground dark:bg-gray-900 dark:text-white p-4">
+      <Card className="w-full max-w-6xl mx-auto shadow-md dark:bg-gray-800 dark:border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-center dark:text-white">
+            All Mock Tests
+          </CardTitle>
+          <CardDescription className="text-center text-gray-500 dark:text-gray-400">
+            View and manage all your mock tests here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
 
-        {error && (
-          <div className="text-center w-full text-white p-4  rounded-md mb-6">
-            {error}
-          </div>
-        )}
-        {loading ? (
-          <div className="flex items-center justify-center min-h-screen">
-                  <ClipLoader size={50} color={"#123abc"} loading={loading} />
-                </div>
-        ) : mockTests.length === 0 ? (
-          <div className="text-center w-full p-8 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
-            <p className="text-gray-600">No mock tests generated yet!</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {mockTests.map((test) => (
-              <MockTestCard
-                key={test.$id}
-                test={test}
-                user={user}
-                fetchMockTests={fetchMockTests}
-                handleDelete={handleDelete}
-                isDeleting={isDeleting}
-                setMockTests={setMockTests}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {error && (
+            <Alert variant="destructive" className="my-4">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[300px]">
+              <ClipLoader size={50} color={"#123abc"} loading={loading} />
+            </div>
+          ) : mockTests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center min-h-[300px] text-gray-500 dark:text-gray-400">
+              <p>No mock tests generated yet!</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {mockTests.map((test) => (
+                <MockTestCard
+                  key={test.$id}
+                  test={test}
+                  user={user}
+                  fetchMockTests={fetchMockTests}
+                  handleDelete={handleDelete}
+                  isDeleting={isDeleting}
+                  setMockTests={setMockTests}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -75,12 +75,12 @@ const Classroom = ({
   );
 
   return (
-    <div className="mb-10">
-      <h2 className="text-xl font-semibold mb-4">
+    <div className="mb-10 bg-white dark:bg-gray-900">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
         Classroom Seating Arrangement
       </h2>
-      <div className="bg-gray-100 p-6 rounded-lg">
-        <div className="mb-2 p-2 bg-blue-200 text-center rounded-sm">
+      <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg">
+        <div className="mb-2 p-2 bg-blue-200 dark:bg-blue-900 text-center rounded-sm text-gray-800 dark:text-gray-200">
           Teacher's Desk
         </div>
         <div
@@ -101,21 +101,23 @@ const Classroom = ({
                     onClick={() => handleSeatClick(colIndex, rowIndex)}
                     className={`w-20 h-20 rounded-lg flex items-center justify-center cursor-pointer border-2 ${
                       student
-                        ? "bg-green-100 border-green-500"
-                        : "bg-white border-gray-300"
+                        ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400"
+                        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
                     }`}
                   >
                     {student ? (
                       <div className="text-center">
-                        <div className="font-bold text-sm">
+                        <div className="font-bold text-sm text-gray-800 dark:text-gray-200">
                           {studentDetails?.userName?.charAt(0) || "?"}
                         </div>
-                        <div className="text-xs">
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
                           Seat {rowIndex + 1}-{colIndex + 1}
                         </div>
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-500">Empty</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        Empty
+                      </div>
                     )}
                   </div>
                 );
@@ -126,9 +128,11 @@ const Classroom = ({
       </div>
 
       <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-2">Unassigned Students</h3>
+        <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+          Unassigned Students
+        </h3>
         {unassignedStudents.length === 0 ? (
-          <p className="text-gray-500 italic">
+          <p className="text-gray-500 dark:text-gray-400 italic">
             All students are assigned to seats
           </p>
         ) : (
@@ -138,13 +142,15 @@ const Classroom = ({
               return (
                 <div
                   key={student.userId}
-                  className="bg-yellow-50 p-3 rounded-sm border border-yellow-200"
+                  className="bg-yellow-50 dark:bg-yellow-900 p-3 rounded-sm border border-yellow-200 dark:border-yellow-800"
                 >
-                  <div className="font-medium">{studentDetails.userName}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="font-medium text-gray-800 dark:text-gray-200">
+                    {studentDetails.userName}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     {studentDetails.studentId}
                   </div>
-                  <div className="text-xs italic mt-1">
+                  <div className="text-xs italic mt-1 text-gray-600 dark:text-gray-400">
                     Click on an empty seat to assign
                   </div>
                 </div>

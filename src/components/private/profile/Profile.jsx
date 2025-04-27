@@ -33,9 +33,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen flex items-center justify-center pb-20 relative">
-      {profile ? <ProfileView profileProps={profile} /> : <ProfileForm />}
-    </div>
+    <>{profile ? <ProfileView profileProps={profile} /> : <ProfileForm />}</>
   );
 };
 

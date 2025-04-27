@@ -24,19 +24,26 @@ import moduleServices from "../../../appwrite/moduleServices";
 
 const Select = ({ label, error, icon: Icon, register, ...props }) => (
   <div className="space-y-2">
-    <label className="text-sm font-medium flex items-center gap-2">
-      {Icon && <Icon className="h-4 w-4" />}
+    {/* Label */}
+    <label className="text-sm font-medium flex items-center gap-2 text-gray-900 dark:text-gray-100">
+      {Icon && <Icon className="h-4 w-4 text-gray-700 dark:text-gray-300" />}
       {label}
     </label>
+
+    {/* Select Input */}
     <select
       {...register}
       {...props}
-      className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
+      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100
         ${error ? "border-red-500 focus:ring-red-500" : "border-gray-300"}`}
     >
       {props.children}
     </select>
-    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+
+    {/* Error Message */}
+    {error && (
+      <p className="text-red-500 dark:text-red-400 text-sm mt-1">{error}</p>
+    )}
   </div>
 );
 
@@ -45,9 +52,12 @@ const Checkbox = ({ checked, onChange, label, className = "" }) => (
     onClick={() => onChange(!checked)}
     className={`flex items-center space-x-2 cursor-pointer ${className}`}
   >
+    {/* Checkbox Box */}
     <div
       className={`w-4 h-4 border rounded flex items-center justify-center ${
-        checked ? "bg-blue-500 border-blue-500" : "border-gray-300"
+        checked
+          ? "bg-blue-500 border-blue-500"
+          : "border-gray-300 dark:border-gray-600"
       }`}
     >
       {checked && (
@@ -62,7 +72,9 @@ const Checkbox = ({ checked, onChange, label, className = "" }) => (
         </svg>
       )}
     </div>
-    <span className="text-sm">{label}</span>
+
+    {/* Label */}
+    <span className="text-sm text-gray-900 dark:text-gray-100">{label}</span>
   </div>
 );
 
@@ -207,11 +219,11 @@ const CreateMockTest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 flex justify-center items-start pt-20">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <BookOpen className="h-6 w-6" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 flex justify-center items-start pt-20">
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="p-6 border-b dark:border-gray-700">
+          <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <BookOpen className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             Create Mock Test
           </h2>
         </div>
@@ -225,6 +237,7 @@ const CreateMockTest = () => {
                 register={register("tradeId", {
                   required: "Trade is required",
                 })}
+                className="text-gray-900 dark:text-gray-100"
               >
                 <option value="">Select Trade</option>
                 {trades.map((trade) => (
@@ -242,6 +255,7 @@ const CreateMockTest = () => {
                   register={register("year", {
                     required: "Year is required",
                   })}
+                  className="text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select Year</option>
                   {new Array(selectedTrade.duration)
@@ -264,6 +278,7 @@ const CreateMockTest = () => {
                 register={register("subjectId", {
                   required: "Subject is required",
                 })}
+                className="text-gray-900 dark:text-gray-100"
               >
                 <option value="">Select Subject</option>
                 {subjects.map((subject) => (
@@ -274,8 +289,9 @@ const CreateMockTest = () => {
               </Select>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Questions Count
+                <label className="text-sm font-medium flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                  <Clock className="h-4 w-4 text-gray-700 dark:text-gray-300" />{" "}
+                  Questions Count
                 </label>
                 <input
                   type="number"
@@ -293,23 +309,23 @@ const CreateMockTest = () => {
                     validate: (value) =>
                       !isNaN(value) || "Please enter a valid number",
                   })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
-                        ${
-                          errors.quesCount
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300"
-                        }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
+                    errors.quesCount
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
                 {errors.quesCount && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 dark:text-red-400 text-sm mt-1">
                     {errors.quesCount?.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Exam Time (Minutes)
+                <label className="text-sm font-medium flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                  <Clock className="h-4 w-4 text-gray-700 dark:text-gray-300" />{" "}
+                  Exam Time (Minutes)
                 </label>
                 <input
                   type="number"
@@ -327,15 +343,14 @@ const CreateMockTest = () => {
                     validate: (value) =>
                       !isNaN(value) || "Please enter a valid number",
                   })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white
-                        ${
-                          errors.totalMinutes
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300"
-                        }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
+                    errors.totalMinutes
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
                 {errors.totalMinutes && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 dark:text-red-400 text-sm mt-1">
                     {errors.totalMinutes?.message}
                   </p>
                 )}
@@ -343,22 +358,24 @@ const CreateMockTest = () => {
             </div>
 
             {modules && (
-              <div className="border rounded-lg">
+              <div className="border rounded-lg dark:border-gray-700">
                 <button
                   type="button"
                   onClick={() => setIsModulesOpen(!isModulesOpen)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  <span className="font-medium">Select Modules</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    Select Modules
+                  </span>
                   <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-200 ${
+                    className={`h-4 w-4 transition-transform duration-200 text-gray-700 dark:text-gray-300 ${
                       isModulesOpen ? "transform rotate-180" : ""
                     }`}
                   />
                 </button>
 
                 {isModulesOpen && (
-                  <div className="p-4 border-t">
+                  <div className="p-4 border-t dark:border-gray-700">
                     <Controller
                       name="selectedModules"
                       control={control}
@@ -371,7 +388,7 @@ const CreateMockTest = () => {
                             }
                             onChange={handleSelectAllModules}
                             label="Select All Modules"
-                            className="mb-4"
+                            className="mb-4 text-gray-900 dark:text-gray-100"
                           />
 
                           <div className="max-h-64 overflow-y-auto pr-2">
@@ -393,12 +410,13 @@ const CreateMockTest = () => {
                                     field.onChange(newValue);
                                   }}
                                   label={module.moduleName}
+                                  className="text-gray-900 dark:text-gray-100"
                                 />
                               ))}
                             </div>
                           </div>
                           {errors.selectedModules && (
-                            <p className="text-red-500 text-sm mt-2">
+                            <p className="text-red-500 dark:text-red-400 text-sm mt-2">
                               {errors.selectedModules.message}
                             </p>
                           )}
@@ -421,7 +439,7 @@ const CreateMockTest = () => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
                   Creating...
                 </>
               ) : (

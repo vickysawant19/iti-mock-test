@@ -188,16 +188,21 @@ const EditProgressCard = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 dark:bg-gray-900 dark:shadow-none">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Edit Progress</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          Edit Progress
+        </h2>
         <div className="flex items-center">
-          <label htmlFor="pageSelect" className="mr-2 text-gray-700">
+          <label
+            htmlFor="pageSelect"
+            className="mr-2 text-gray-700 dark:text-gray-400"
+          >
             Select Page:
           </label>
           <select
             id="pageSelect"
-            className="border rounded-md p-2 bg-white text-gray-800"
+            className="border rounded-md p-2 bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
             value={selectedPage}
             onChange={handlePageChange}
           >
@@ -213,23 +218,35 @@ const EditProgressCard = ({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-3 text-left">Month</th>
-              <th className="border p-3 text-left">Theory Marks</th>
-              <th className="border p-3 text-left">Practical Marks</th>
+            <tr className="bg-gray-100 dark:bg-gray-800">
+              <th className="border p-3 text-left text-gray-800 dark:text-gray-300">
+                Month
+              </th>
+              <th className="border p-3 text-left text-gray-800 dark:text-gray-300">
+                Theory Marks
+              </th>
+              <th className="border p-3 text-left text-gray-800 dark:text-gray-300">
+                Practical Marks
+              </th>
             </tr>
           </thead>
           <tbody>
             {formData.map((item, index) => (
               <tr
                 key={index}
-                className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                className={
+                  index % 2 === 0
+                    ? "bg-gray-50 dark:bg-gray-800"
+                    : "bg-white dark:bg-gray-900"
+                }
               >
-                <td className="border p-3">{item.month}</td>
+                <td className="border p-3 text-gray-800 dark:text-gray-300">
+                  {item.month}
+                </td>
                 <td className="border p-3">
                   <input
                     type="number"
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border rounded-md bg-gray-50 focus:bg-white dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                     value={item.theory}
                     onChange={(e) =>
                       handleInputChange(index, "theory", e.target.value)
@@ -240,7 +257,7 @@ const EditProgressCard = ({
                 <td className="border p-3">
                   <input
                     type="number"
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border rounded-md bg-gray-50 focus:bg-white dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                     value={item.practical}
                     onChange={(e) =>
                       handleInputChange(index, "practical", e.target.value)
@@ -257,7 +274,7 @@ const EditProgressCard = ({
       <div className="mt-6 flex justify-end">
         <button
           disabled={isSaving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
           onClick={handleSave}
         >
           {isSaving ? "Saving... " : "Save Changes"}

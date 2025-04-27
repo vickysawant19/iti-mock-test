@@ -9,7 +9,7 @@ import { Query } from "appwrite";
 import Classroom from "./Classroom"; // Import the new Classroom component
 import ListView from "./ListView";
 
-const Students = ({   selectedBatchData, setSelectedBatchData }) => {
+const Students = ({ selectedBatchData, setSelectedBatchData }) => {
   const [studentsData, setStudentsData] = useState([]);
   const [students, setStudents] = useState([]);
   const [batchStudents, setBatchStudents] = useState([]);
@@ -32,7 +32,7 @@ const Students = ({   selectedBatchData, setSelectedBatchData }) => {
         // Fetch all students and batch details
         const students = await userProfileService.getBatchUserProfile([
           Query.equal("batchId", selectedBatchData.$id),
-          Query.notEqual("batchId",[""] ),
+          Query.notEqual("batchId", [""]),
           Query.orderAsc("studentId"),
         ]);
 
@@ -157,14 +157,18 @@ const Students = ({   selectedBatchData, setSelectedBatchData }) => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-white dark:bg-gray-900">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Batch Students Management</h1>
+        <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+          Batch Students Management
+        </h1>
         <div className="flex gap-4 mb-4">
           <button
             onClick={() => setClassroomView(false)}
             className={`px-4 py-2 rounded ${
-              !classroomView ? "bg-blue-500 text-white" : "bg-gray-200"
+              !classroomView
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
             }`}
           >
             List View
@@ -172,7 +176,9 @@ const Students = ({   selectedBatchData, setSelectedBatchData }) => {
           <button
             onClick={() => setClassroomView(true)}
             className={`px-4 py-2 rounded ${
-              classroomView ? "bg-blue-500 text-white" : "bg-gray-200"
+              classroomView
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
             }`}
           >
             Classroom View

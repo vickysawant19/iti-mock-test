@@ -84,7 +84,6 @@ const MatchFaceMode = ({
     markedAttendanceUsersRef.current = updatedSet;
   };
 
-
   // This function attempts a match, first checking the face cache,
   // then DB cache, and finally calling the API if needed.
   const attemptMatch = async (detection) => {
@@ -567,22 +566,24 @@ const MatchFaceMode = ({
   const dbCacheStats = getDbCacheStats();
 
   return (
-    <div className="flex flex-col gap-6 bg-white  rounded-lg">
+    <div className="flex flex-col gap-6 rounded-lg ">
       {/* Top Section - Header and Attendance List */}
-      <div className="bg-gray-200  rounded-lg shadow-xs  p-4">
+      <div className="bg-gray-200 dark:bg-gray-700 rounded-lg shadow-xs p-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-3">
-          <h2 className="text-xl font-bold text-gray-800">Face Recognition</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+            Face Recognition
+          </h2>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={resetCaches}
-              className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+              className="flex items-center bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
             >
               <RefreshCw size={16} className="mr-1" />
               Reset
             </button>
             <button
               onClick={clearAttendanceLog}
-              className="flex items-center bg-white hover:bg-white text-gray-700 px-3 py-1 rounded-md text-sm transition-colors duration-200"
+              className="flex items-center bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm transition-colors duration-200"
             >
               <Clock size={16} className="mr-1" />
               Clear Log
@@ -594,48 +595,72 @@ const MatchFaceMode = ({
         <div className="mb-4">
           {resultMessage && (
             <div
-              className={`flex items-center p-3 mb-2 rounded-md bg-gray-50 ${getStatusColor()}`}
+              className={`flex items-center p-3 mb-2 rounded-md bg-gray-50 dark:bg-gray-800 ${getStatusColor()}`}
             >
               {matchStatus === "matched" && (
-                <UserCheck size={20} className="mr-2" />
+                <UserCheck
+                  size={20}
+                  className="mr-2 text-green-500 dark:text-green-400"
+                />
               )}
               {matchStatus === "unknown" && (
-                <UserX size={20} className="mr-2" />
+                <UserX
+                  size={20}
+                  className="mr-2 text-red-500 dark:text-red-400"
+                />
               )}
               {matchStatus === "loading" && (
-                <RefreshCw size={20} className="mr-2 animate-spin" />
+                <RefreshCw
+                  size={20}
+                  className="mr-2 animate-spin text-blue-500 dark:text-blue-400"
+                />
               )}
-              {!matchStatus && <AlertCircle size={20} className="mr-2" />}
-              <p className="text-sm font-medium">{resultMessage}</p>
+              {!matchStatus && (
+                <AlertCircle
+                  size={20}
+                  className="mr-2 text-yellow-500 dark:text-yellow-400"
+                />
+              )}
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                {resultMessage}
+              </p>
             </div>
           )}
 
           {analyzing && (
-            <div className="flex items-center justify-center p-2 bg-blue-50 rounded-md">
+            <div className="flex items-center justify-center p-2 bg-blue-50 dark:bg-gray-800 rounded-md">
               <RefreshCw
                 size={16}
-                className="text-blue-500 animate-spin mr-2"
+                className="text-blue-500 dark:text-blue-400 animate-spin mr-2"
               />
-              <span className="text-sm text-blue-500">Processing...</span>
+              <span className="text-sm text-blue-500 dark:text-blue-400">
+                Processing...
+              </span>
             </div>
           )}
         </div>
 
         {/* Attendance Log */}
-        <div className="bg-gray-50 rounded-lg p-3">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-md font-semibold text-gray-700 flex items-center">
-              <Calendar size={16} className="mr-2" />
+            <h3 className="text-md font-semibold text-gray-700 dark:text-gray-100 flex items-center">
+              <Calendar
+                size={16}
+                className="mr-2 text-gray-700 dark:text-gray-400"
+              />
               Recent Attendance
             </h3>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {recentAttendance.length} records
             </span>
           </div>
 
           {recentAttendance.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <Clock size={24} className="mx-auto mb-2 opacity-50" />
+            <div className="text-center py-8 text-gray-400 dark:text-gray-500">
+              <Clock
+                size={24}
+                className="mx-auto mb-2 opacity-50 text-gray-400 dark:text-gray-500"
+              />
               <p className="text-sm">No attendance records yet</p>
             </div>
           ) : (
@@ -644,19 +669,21 @@ const MatchFaceMode = ({
                 <div
                   key={`${record.name}-${record.date}-${record.type}-${index}`}
                   className={`flex items-center justify-between p-2 rounded-md ${
-                    record.type === "in" ? "bg-green-50" : "bg-blue-50"
+                    record.type === "in"
+                      ? "bg-green-50 dark:bg-green-900"
+                      : "bg-blue-50 dark:bg-blue-900"
                   } border-l-4 ${
                     record.type === "in"
-                      ? "border-green-500"
-                      : "border-blue-500"
+                      ? "border-green-500 dark:border-green-400"
+                      : "border-blue-500 dark:border-blue-400"
                   }`}
                 >
                   <div className="flex items-center">
                     <div
                       className={`p-1.5 rounded-full mr-3 ${
                         record.type === "in"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-blue-100 text-blue-600"
+                          ? "bg-green-100 text-green-600 dark:bg-green-700 dark:text-green-300"
+                          : "bg-blue-100 text-blue-600 dark:bg-blue-700 dark:text-blue-300"
                       }`}
                     >
                       {record.type === "in" ? (
@@ -666,15 +693,17 @@ const MatchFaceMode = ({
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{record.name}</p>
-                      <div className="flex items-center text-xs text-gray-500">
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-100">
+                        {record.name}
+                      </p>
+                      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                         <span>{record.date}</span>
                         <span className="mx-1">•</span>
                         <span>{record.time}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {formatTimeAgo(record.timestamp)}
                   </div>
                 </div>
@@ -685,34 +714,45 @@ const MatchFaceMode = ({
       </div>
 
       {/* Bottom Section - Statistics */}
-      <div className="bg-gray-200 rounded-lg shadow-xs p-4">
-        <h3 className="text-md font-semibold text-gray-700 mb-3">
+      <div className="bg-gray-200 dark:bg-gray-700 rounded-lg shadow-xs p-4">
+        <h3 className="text-md font-semibold text-gray-700 dark:text-gray-100 mb-3">
           System Statistics
         </h3>
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white p-3 rounded-md transition-all duration-300 hover:shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-3 rounded-md transition-all duration-300 hover:shadow-md">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">Face Cache</p>
-              <span className="text-sm font-semibold">{cacheStats.size}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Face Cache
+              </p>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                {cacheStats.size}
+              </span>
             </div>
-            <div className="text-xs text-gray-400 mt-1">
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               Hit Rate: {cacheStats.hitRate}
             </div>
           </div>
-          <div className="bg-white p-3 rounded-md transition-all duration-300 hover:shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-3 rounded-md transition-all duration-300 hover:shadow-md">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">DB Cache</p>
-              <span className="text-sm font-semibold">{dbCacheStats.size}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                DB Cache
+              </p>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                {dbCacheStats.size}
+              </span>
             </div>
-            <div className="text-xs text-gray-400 mt-1">
-               Hit Rate:{" "}
-              {dbCacheStats.hitRate}
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Hit Rate: {dbCacheStats.hitRate}
             </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-md transition-all duration-300 hover:shadow-md">
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md transition-all duration-300 hover:shadow-md">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">API Calls</p>
-              <span className="text-sm font-semibold">{apiCallCount}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                API Calls
+              </p>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                {apiCallCount}
+              </span>
             </div>
           </div>
         </div>
@@ -721,16 +761,18 @@ const MatchFaceMode = ({
       {/* Absolute positioned attendance marking animation */}
       {attendanceMarking && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-xs z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl">
-            <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-center justify-center">
-              <div className="bg-green-500 text-white rounded-full p-2 mr-3">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
+            <div className="bg-green-50 dark:bg-green-900 border border-green-100 dark:border-green-400 rounded-lg p-4 flex items-center justify-center">
+              <div className="bg-green-500 dark:bg-green-400 text-white rounded-full p-2 mr-3">
                 <CheckCircle size={24} />
               </div>
               <div>
-                <h3 className="text-green-700 font-semibold">
+                <h3 className="text-green-700 dark:text-green-300 font-semibold">
                   Marking Attendance
                 </h3>
-                <p className="text-green-600 text-sm">Please wait...</p>
+                <p className="text-green-600 dark:text-green-300 text-sm">
+                  Please wait...
+                </p>
               </div>
             </div>
           </div>

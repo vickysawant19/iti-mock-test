@@ -206,26 +206,30 @@ const CreateQuestion = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-gray-100 min-h-screen dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
-        <header className="py-6 flex gap-6 ml-3 ">
-          <button onClick={() => navigate(-1)} className="text-2xl">
+        <header className="py-6 flex gap-6 ml-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-2xl text-gray-800 dark:text-gray-100"
+          >
             <FaArrowLeft />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800 text-center">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-center">
             Create New Question
           </h1>
         </header>
 
-        <main className="mt-8 bg-white shadow-md rounded-lg p-6  ">
+        <main className="mt-8 bg-white shadow-md rounded-lg p-6 dark:bg-gray-800 dark:border dark:border-gray-700">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="lg:grid lg:grid-cols-3 gap-3"
           >
-            <div className="mb-6  lg:col-span-2 ">
+            {/* Trade */}
+            <div className="mb-6 lg:col-span-2">
               <label
                 htmlFor="tradeName"
-                className="block text-gray-800 font-semibold mb-2"
+                className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
               >
                 Trade
               </label>
@@ -233,7 +237,7 @@ const CreateQuestion = () => {
                 id="tradeId"
                 {...register("tradeId", { required: "Trade is required" })}
                 onChange={handleTradeChange}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Select Trade</option>
                 {trades.map((trade) => (
@@ -243,22 +247,25 @@ const CreateQuestion = () => {
                 ))}
               </select>
               {errors.tradeId && (
-                <p className="text-red-500">{errors.tradeId.message}</p>
+                <p className="text-red-500 dark:text-red-400">
+                  {errors.tradeId.message}
+                </p>
               )}
             </div>
+
+            {/* Trade Year */}
             {selectedTrade && (
-              <div className="mb-6  lg:col-span-1 ">
+              <div className="mb-6 lg:col-span-1">
                 <label
                   htmlFor="year"
-                  className="block text-gray-800 font-semibold mb-2"
+                  className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
                 >
                   Trade Year
                 </label>
-
                 <select
                   id="year"
                   {...register("year", { required: "Year is required" })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Select Year</option>
                   {new Array(selectedTrade.duration)
@@ -273,26 +280,28 @@ const CreateQuestion = () => {
                     ))}
                 </select>
                 {errors.year && (
-                  <p className="text-red-500">{errors.year.message}</p>
+                  <p className="text-red-500 dark:text-red-400">
+                    {errors.year.message}
+                  </p>
                 )}
               </div>
             )}
 
+            {/* Subject */}
             {selectedTrade && (
-              <div className="mb-6   lg:col-span-1">
+              <div className="mb-6 lg:col-span-1">
                 <label
                   htmlFor="subjectId"
-                  className="block text-gray-800 font-semibold mb-2"
+                  className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
                 >
                   Subject
                 </label>
-
                 <select
                   id="subjectId"
                   {...register("subjectId", {
                     required: "Subject is required",
                   })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Select Subject</option>
                   {subjects.map((sub) => (
@@ -302,25 +311,28 @@ const CreateQuestion = () => {
                   ))}
                 </select>
                 {errors.subjectId && (
-                  <p className="text-red-500">{errors.subjectId.message}</p>
+                  <p className="text-red-500 dark:text-red-400">
+                    {errors.subjectId.message}
+                  </p>
                 )}
               </div>
             )}
+
+            {/* Module */}
             {modules && (
-              <div className="mb-6  lg:col-span-2">
+              <div className="mb-6 lg:col-span-2">
                 <label
                   htmlFor="moduleId"
-                  className="block text-gray-800 font-semibold mb-2"
+                  className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
                 >
                   Module
                 </label>
-
                 <select
                   id="moduleId"
                   {...register("moduleId", {
                     required: "Module is required",
                   })}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Select Module</option>
                   {modules.syllabus.map((m) => (
@@ -330,18 +342,21 @@ const CreateQuestion = () => {
                   ))}
                 </select>
                 {errors.moduleId && (
-                  <p className="text-red-500">{errors.moduleId.message}</p>
+                  <p className="text-red-500 dark:text-red-400">
+                    {errors.moduleId.message}
+                  </p>
                 )}
               </div>
             )}
 
-            <div className="mb-6  lg:col-span-full">
+            {/* Question */}
+            <div className="mb-6 lg:col-span-full">
               <label
                 htmlFor="question"
-                className="block text-gray-800 font-semibold mb-2"
+                className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
               >
                 Question{" "}
-                <span className="text-xs italic text-gray-500 font-thin">
+                <span className="text-xs italic text-gray-500 dark:text-gray-400 font-thin">
                   (Copy-paste whole question+options supported)
                 </span>
               </label>
@@ -349,14 +364,18 @@ const CreateQuestion = () => {
                 spellCheck={true}
                 id="question"
                 {...register("question", { required: "Question is required" })}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 rows="3"
                 onPaste={handleQuestionPaste}
               ></textarea>
               {errors.question && (
-                <p className="text-red-500">{errors.question.message}</p>
+                <p className="text-red-500 dark:text-red-400">
+                  {errors.question.message}
+                </p>
               )}
             </div>
+
+            {/* Image Uploader */}
             <div className="col-span-full">
               <ImageUploader
                 folderName={`questions/${
@@ -368,17 +387,15 @@ const CreateQuestion = () => {
               />
             </div>
 
+            {/* Options */}
             <div className="mb-6 col-span-full lg:grid lg:grid-cols-2">
-              <label
-                className="block text-gray-800 font-semibold mb-2 col-span-full
-              "
-              >
+              <label className="block text-gray-800 dark:text-gray-100 font-semibold mb-2 col-span-full ">
                 Options
               </label>
               {["A", "B", "C", "D"].map((value, index) => (
                 <div
                   key={index}
-                  className="flex items-center mb-2 p-2 rounded-md"
+                  className="flex items-center mb-2 mr-2 p-2 rounded-md bg-gray-50 dark:bg-gray-700 "
                 >
                   <input
                     type="radio"
@@ -391,7 +408,7 @@ const CreateQuestion = () => {
                   />
                   <label
                     htmlFor={`option-${value}`}
-                    className="block text-gray-800 text-nowrap m-2"
+                    className="block text-gray-800 dark:text-gray-100 text-nowrap m-2"
                   >
                     Option {value}
                   </label>
@@ -400,18 +417,19 @@ const CreateQuestion = () => {
                     {...register(`options.${index}`, {
                       required: "Option is required",
                     })}
-                    className="ml-2 w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+                    className="ml-2 w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                     rows="2"
                   ></textarea>
                 </div>
               ))}
               {errors.correctAnswer && (
-                <p className="text-red-500 w-full text-center">
+                <p className="text-red-500 dark:text-red-400 w-full text-center">
                   {errors.correctAnswer.message}
                 </p>
               )}
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               className={`hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold rounded-md py-2 px-4 w-full bg-blue-500 col-start-3`}

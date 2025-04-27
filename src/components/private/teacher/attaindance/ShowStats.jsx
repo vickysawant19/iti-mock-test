@@ -1,8 +1,13 @@
 import { Award, CalendarIcon, CheckCircle, XCircle } from "lucide-react";
 import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 const ShowStats = ({ attendance, label = "Attendance" }) => {
   const totalDays = attendance?.presentDays + attendance?.absentDays;
+  const attendancePercentage =
+    totalDays > 0 ? Math.round((attendance?.presentDays / totalDays) * 100) : 0;
 
   return (
     <div className="w-full">
@@ -11,53 +16,113 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
         {label}
       </h2>
 
-      <div className="flex flex-wrap gap-3">
-        {[
-          {
-            icon: <CalendarIcon className="text-blue-500" />,
-            background: "bg-blue-50",
-            label: "Total Days",
-            value: totalDays,
-          },
-          {
-            icon: <CheckCircle className="text-green-500" />,
-            background: "bg-green-50",
-            label: "Present Days",
-            value: attendance?.presentDays,
-          },
-          {
-            icon: <XCircle className="text-red-500" />,
-            background: "bg-red-50",
-            label: "Absent Days",
-            value: attendance?.absentDays,
-          },
-          {
-            icon: <Award className="text-purple-500" />,
-            background: "bg-purple-50",
-            label: "Attendance %",
-            value: `${
-              totalDays > 0
-                ? ((attendance?.presentDays / totalDays) * 100).toFixed(2)
-                : 0
-            }%`,
-          },
-        ].map((stat, index) => (
-          <div
-            key={index}
-            className={`flex-1 min-w-[140px] rounded-lg border border-gray-100 p-3 flex items-center gap-3 hover:shadow-md transition-shadow duration-200 ${stat.background}`}
-          >
-            <div className={`shrink-0 `}>
-              {React.cloneElement(stat.icon, { size: 32 })}
+      {/* Three main stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <CalendarIcon className="mr-2 text-blue-600" size={16} />
+              Total Days
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">{totalDays}</span>
             </div>
-            <div className={`flex flex-col min-w-0 `}>
-              <span className="text-xs text-gray-500 font-medium">
-                {stat.label}
+            <p className="text-xs text-muted-foreground mt-2">
+              Total scheduled days in period
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <CheckCircle className="mr-2 text-green-600" size={16} />
+              Present Days
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">
+                {attendance?.presentDays}
               </span>
-              <span className="text-lg font-bold truncate">{stat.value}</span>
             </div>
-          </div>
-        ))}
+            <p className="text-xs text-muted-foreground mt-2">
+              Days attended of total scheduled
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <XCircle className="mr-2 text-red-600" size={16} />
+              Absent Days
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">
+                {attendance?.absentDays}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Days missed of total scheduled
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Progress card at the bottom */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center">
+            <Award className="mr-2 text-purple-600" size={16} />
+            Attendance Performance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-2xl font-bold">{attendancePercentage}%</span>
+            {attendancePercentage >= 90 ? (
+              <Badge
+                variant="success"
+                className="ml-auto bg-green-100 text-green-800"
+              >
+                Excellent
+              </Badge>
+            ) : attendancePercentage >= 70 ? (
+              <Badge
+                variant="warning"
+                className="ml-auto bg-yellow-100 text-yellow-800"
+              >
+                Good
+              </Badge>
+            ) : (
+              <Badge
+                variant="destructive"
+                className="ml-auto bg-red-100 text-red-800"
+              >
+                Needs Improvement
+              </Badge>
+            )}
+          </div>
+          <Progress
+            value={attendancePercentage}
+            className={`h-2 ${
+              attendancePercentage >= 90
+                ? "bg-green-100 dark:bg-green-950"
+                : attendancePercentage >= 70
+                ? "bg-yellow-100 dark:bg-yellow-950"
+                : "bg-red-100 dark:bg-red-950"
+            }`}
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Overall attendance rate based on present days
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };

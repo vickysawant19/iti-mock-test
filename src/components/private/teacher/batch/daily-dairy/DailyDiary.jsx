@@ -18,6 +18,7 @@ import { selectProfile } from "../../../../../store/profileSlice";
 import { selectUser } from "../../../../../store/userSlice";
 import batchService from "../../../../../appwrite/batchService";
 import attendanceService from "../../../../../appwrite/attaindanceService";
+import Loader from "@/components/components/Loader";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(
@@ -212,11 +213,7 @@ function DailyDiary() {
   );
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
   if (isError) {
@@ -228,14 +225,14 @@ function DailyDiary() {
   }
 
   return (
-    <div className="w-full mx-auto my-6 px-2 md:px-4">
+    <div className="w-full h-screen px-4 py-6 dark:bg-gray-900 ">
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-6 w-full">
         <button
           className={`flex items-center px-3 py-2 text-white rounded-md transition-colors ${
             weekNumber <= 1
               ? "bg-gray-500 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
+              : "bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
           }`}
           onClick={handlePreviousWeek}
           disabled={weekNumber <= 1}
@@ -244,11 +241,11 @@ function DailyDiary() {
           <ChevronLeft size={18} className="mr-1" />
           Previous
         </button>
-        <div className="px-4 py-2 font-bold bg-gray-100 rounded-md border border-gray-300">
+        <div className="px-4 py-2 font-bold bg-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-md border border-gray-300 text-gray-900 dark:text-gray-100">
           Week {weekNumber}
         </div>
         <button
-          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors"
           onClick={handleNextWeek}
           aria-label="Next Week"
         >
@@ -258,27 +255,27 @@ function DailyDiary() {
       </div>
 
       {/* Diary table */}
-      <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200">
+      <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-indigo-700 text-white">
-              <th className="p-2 text-center  border border-indigo-800 w-24">
+            <tr className="bg-indigo-700 text-white dark:bg-indigo-600">
+              <th className="p-2 text-center border border-indigo-800 w-24 dark:border-indigo-700">
                 Date
               </th>
-              <th className="p-2 text-center border border-indigo-800 w-20">
+              <th className="p-2 text-center border border-indigo-800 w-20 dark:border-indigo-700">
                 Day
               </th>
-              <th className="p-2 text-center border border-indigo-800">
+              <th className="p-2 text-center border border-indigo-800 dark:border-indigo-700">
                 Theory
               </th>
-              <th className="p-2 text-center border border-indigo-800">
+              <th className="p-2 text-center border border-indigo-800 dark:border-indigo-700">
                 Practical
               </th>
-              <th className="p-2 text-center border border-indigo-800 w-28">
+              <th className="p-2 text-center border border-indigo-800 w-28 dark:border-indigo-700">
                 Practical #
               </th>
               {isTeacher && (
-                <th className="p-2 text-center border border-indigo-800 w-24">
+                <th className="p-2 text-center border border-indigo-800 w-24 dark:border-indigo-700">
                   Actions
                 </th>
               )}
@@ -306,27 +303,27 @@ function DailyDiary() {
                   className={`
                     ${
                       isHoliday
-                        ? "bg-red-100"
+                        ? "bg-red-100 dark:bg-red-900"
                         : isAbsent
-                        ? "bg-pink-200"
+                        ? "bg-pink-200 dark:bg-pink-900"
                         : isWeekend
-                        ? "bg-gray-50"
-                        : "bg-white"
+                        ? "bg-gray-50 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-800"
                     } 
                      transition-colors
                   `}
                 >
-                  <td className="p-2 border border-gray-300 whitespace-nowrap font-medium text-wrap text-center">
+                  <td className="p-2 border border-gray-300 dark:border-gray-700 whitespace-nowrap font-medium text-wrap text-center text-gray-900 dark:text-gray-100">
                     {format(day, "MMM dd, yyyy")}
                   </td>
-                  <td className="p-2 border border-gray-300 font-medium whitespace-nowrap text-center">
+                  <td className="p-2 border border-gray-300 dark:border-gray-700 font-medium whitespace-nowrap text-center text-gray-900 dark:text-gray-100">
                     {format(day, "EEEE")}
                   </td>
                   <td
                     colSpan={isHoliday ? 3 : 1}
-                    className={`p-2 border border-gray-300 ${
+                    className={`p-2 border border-gray-300 dark:border-gray-700 ${
                       isHoliday ? "text-center" : "text-left"
-                    }`}
+                    } text-gray-900 dark:text-gray-100`}
                   >
                     {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
@@ -335,7 +332,7 @@ function DailyDiary() {
                         onChange={(e) =>
                           updateDiaryField(dateKey, "theory", e.target.value)
                         }
-                        className="w-full min-w-40 p-2 border border-gray-300 rounded-sm min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="w-full min-w-40 p-2 border border-gray-300 dark:border-gray-700 rounded-sm min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100"
                         placeholder="Add theory notes..."
                       />
                     ) : (
@@ -350,8 +347,10 @@ function DailyDiary() {
                   </td>
                   <td
                     className={`${
-                      isHoliday ? "hidden" : "p-2 border border-gray-300"
-                    }`}
+                      isHoliday
+                        ? "hidden"
+                        : "p-2 border border-gray-300 dark:border-gray-700"
+                    } text-gray-900 dark:text-gray-100`}
                   >
                     {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
                       <textarea
@@ -361,8 +360,10 @@ function DailyDiary() {
                           updateDiaryField(dateKey, "practical", e.target.value)
                         }
                         className={`w-full min-w-40 p-2  ${
-                          isHoliday ? "border-none" : "border border-gray-300"
-                        }   rounded min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50`}
+                          isHoliday
+                            ? "border-none"
+                            : "border border-gray-300 dark:border-gray-700"
+                        }   rounded min-h-20 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100`}
                         placeholder="Add practical notes..."
                       />
                     ) : (
@@ -377,7 +378,9 @@ function DailyDiary() {
                   </td>
                   <td
                     className={
-                      isHoliday ? "hidden" : "p-2 border border-gray-300"
+                      isHoliday
+                        ? "hidden"
+                        : "p-2 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
                     }
                   >
                     {!isAbsent && !isHoliday && isTeacher && entry.isEditing ? (
@@ -391,7 +394,7 @@ function DailyDiary() {
                             e.target.value
                           )
                         }
-                        className="w-full p-2 border border-gray-300 rounded-sm focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-sm focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100"
                         placeholder="#"
                       />
                     ) : (
@@ -405,14 +408,14 @@ function DailyDiary() {
                     )}
                   </td>
                   {isTeacher && (
-                    <td className="p-3 border border-gray-300">
+                    <td className="p-3 border border-gray-300 dark:border-gray-700">
                       {!isHoliday && (
                         <div className="flex flex-col gap-2">
                           {entry.isEditing ? (
                             <button
                               disabled={isSubmitting}
                               onClick={() => toggleEditing(dateKey)}
-                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white transition-colors"
                             >
                               <Save size={16} className="mr-1" />
                               Save
@@ -421,7 +424,7 @@ function DailyDiary() {
                             <button
                               disabled={isSubmitting}
                               onClick={() => toggleEditing(dateKey)}
-                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                              className="flex items-center justify-center px-3 py-2 rounded-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white transition-colors"
                             >
                               <Edit size={16} className="mr-1" />
                               Edit
@@ -439,7 +442,7 @@ function DailyDiary() {
       </div>
 
       {/* Mobile helper text */}
-      <div className="md:hidden mt-4 text-sm text-gray-600 text-center">
+      <div className="md:hidden mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
         <p>Swipe left/right to view all columns</p>
       </div>
     </div>

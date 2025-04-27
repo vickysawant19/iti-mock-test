@@ -245,18 +245,19 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto dark:bg-gray-900">
       <div className="mb-4 flex justify-between items-center">
+        {/* Student Selector Dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
+            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700">
+            <span className="text-gray-700 dark:text-white">
               {selectedStudent ? selectedStudent.userName : "Select student"}
             </span>
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -271,11 +272,11 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white">
               {studentProfiles.map((student) => (
                 <div
                   key={student.userId}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white"
                   onClick={() => handleStudentSelect(student)}
                 >
                   {student.userName}
@@ -285,12 +286,13 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
           )}
         </div>
 
+        {/* PDF Download Button */}
         <div className="flex gap-2">
           {leaveData && (
             <PDFDownloadLink
               document={<TraineeLeaveRecordPDF data={leaveData} />}
               fileName={`leave-record-${leaveData.userName}.pdf`}
-              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
               {({ loading }) => (
                 <>
@@ -303,20 +305,23 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         </div>
       </div>
 
-      <div className="overflow-hidden border rounded-lg shadow-xs">
+      {/* Leave Record Preview or Placeholder */}
+      <div className="overflow-hidden border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800">
         {leaveData ? (
           pdfUrl ? (
             <PDFViewer width="100%" height="842px">
               <TraineeLeaveRecordPDF data={leaveData} />
             </PDFViewer>
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center">
-              <p className="text-gray-500">Generating preview...</p>
+            <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400">
+                Generating preview...
+              </p>
             </div>
           )
         ) : (
-          <div className="w-full h-[842px] flex items-center justify-center bg-white">
-            <p className="text-gray-500">
+          <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+            <p className="text-gray-500 dark:text-gray-400">
               Select a student to view their leave record
             </p>
           </div>

@@ -8,6 +8,7 @@ import { selectProfile } from "../../../../store/profileSlice";
 import batchService from "../../../../appwrite/batchService";
 import { Query } from "appwrite";
 import LoadingState from "../batch/components/LoadingState";
+import Loader from "@/components/components/Loader";
 
 const MarkHolidays = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -146,20 +147,20 @@ const MarkHolidays = () => {
   };
 
   if (isLoading) {
-    return <LoadingState />;
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="p-4  mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white p-4 rounded-lg">
-        <h1 className="text-2xl font-semibold text-gray-800">
+    <div className="p-4 mx-auto dark:bg-gray-900">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md dark:shadow-none">
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
           Update Holidays
         </h1>
         <button
           onClick={handleSubmit}
           disabled={isLoading || isSubmitting}
-          className="w-full sm:w-auto px-6 py-2 bg-blue-500 text-white rounded-md shadow-sm
-            hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          className="w-full sm:w-auto px-6 py-2 bg-blue-500 dark:bg-blue-500 text-white rounded-md shadow-sm
+            hover:bg-blue-600 dark:hover:bg-blue-400 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
             disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
         >
           {isSubmitting ? (
@@ -183,28 +184,28 @@ const MarkHolidays = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto dark:bg-opacity-80">
           <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-90 transition-opacity" />
 
-            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+            <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+              <div className="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold leading-6 text-gray-900">
+                  <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100">
                     {modalData.holidayText ? "Edit Holiday" : "Add Holiday"}
                   </h3>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="rounded-full p-1 hover:bg-gray-100 transition-colors duration-200"
+                    className="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                   >
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
 
                 <div className="mb-4">
                   <label
                     htmlFor="holidayText"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Holiday Description
                   </label>
@@ -221,8 +222,8 @@ const MarkHolidays = () => {
                     type="text"
                     id="holidayText"
                     placeholder="Enter holiday description"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100
                       placeholder:text-gray-400 text-sm"
                   />
                 </div>
@@ -231,17 +232,17 @@ const MarkHolidays = () => {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="inline-flex justify-center rounded-md bg-white px-3 py-2 text-sm 
-                      font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 
-                      hover:bg-gray-50"
+                    className="inline-flex justify-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm 
+                      font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 
+                      hover:bg-gray-50 dark:hover:bg-gray-600"
                   >
                     Cancel
                   </button>
                   {modalData.holidayText && (
                     <button
                       onClick={removeModalData}
-                      className="inline-flex justify-center rounded-md bg-red-600 px-3 py-2 
-                        text-sm font-semibold text-white shadow-sm hover:bg-red-700 
+                      className="inline-flex justify-center rounded-md bg-red-600 dark:bg-red-500 px-3 py-2 
+                        text-sm font-semibold text-white shadow-sm hover:bg-red-700 dark:hover:bg-red-400 
                         focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     >
                       Remove Holiday
@@ -249,8 +250,8 @@ const MarkHolidays = () => {
                   )}
                   <button
                     onClick={saveModalData}
-                    className="inline-flex justify-center rounded-md bg-blue-600 px-3 py-2 
-                      text-sm font-semibold text-white shadow-sm hover:bg-blue-700 
+                    className="inline-flex justify-center rounded-md bg-blue-600 dark:bg-blue-500 px-3 py-2 
+                      text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:hover:bg-blue-400 
                       focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     {modalData.holidayText ? "Update" : "Add"} Holiday

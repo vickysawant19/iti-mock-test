@@ -10,6 +10,7 @@ import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
 import useScrollToItem from "../../../../../utils/useScrollToItem";
+import Loader from "@/components/components/Loader";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   if (!studentProfiles.length) {
@@ -184,18 +185,15 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     fetchModules();
   }, [selectedYear, batchData.tradeId]);
 
-  if (isLoading || collegeDataLoading ) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-      </div>
-    );
+  if (isLoading || collegeDataLoading) {
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 text-sm">
-      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-4">
-        <ul className="list-disc ml-6 space-y-2">
+    <div className="w-full max-w-4xl mx-auto p-4 text-sm dark:bg-gray-900">
+      {/* Info Box */}
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-blue-300">
+        <ul className="list-disc ml-6 space-y-2 dark:text-gray-300">
           <li>Add students attendance to ensure accurate evaluations.</li>
           <li>
             Include daily diary entries with Practical Number to support a
@@ -208,14 +206,16 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       <div className="mb-4 flex flex-col gap-4">
         {/* Year Dropdown */}
         <div className="relative">
-          <h1>Select Year:</h1>
+          <h1 className="text-gray-700 dark:text-white">Select Year:</h1>
           <button
             onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-            className="w-[150px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
+            className="w-[150px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700">{selectedYear}</span>
+            <span className="text-gray-700 dark:text-white">
+              {selectedYear}
+            </span>
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -229,11 +229,11 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
             </svg>
           </button>
           {isYearDropdownOpen && (
-            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
               {["FIRST", "SECOND"].map((year) => (
                 <div
                   key={year}
-                  className={`px-4 py-2 hover:bg-gray-100 cursor-pointer`}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white"
                   onClick={() => {
                     setIsYearDropdownOpen(false);
                     setSelectedYear(year);
@@ -249,12 +249,12 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
         {/* Module Dropdown */}
         <div className="relative">
-          <h1>Select Job:</h1>
+          <h1 className="text-gray-700 dark:text-white">Select Job:</h1>
           <button
             onClick={() => setIsModuleDropdownOpen(!isModuleDropdownOpen)}
-            className=" flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
+            className="flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700">
+            <span className="text-gray-700 dark:text-white">
               {selectedModule
                 ? selectedModule.moduleId.slice(1) +
                   "-" +
@@ -262,7 +262,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
                 : "Select Module"}
             </span>
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -279,7 +279,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           <div
             className={`${
               isModuleDropdownOpen ? "block" : "hidden"
-            } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto`}
+            } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white`}
           >
             {modules &&
               modules?.syllabus.map((module) => (
@@ -288,9 +288,9 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
                   key={module.moduleId}
                   className={`${
                     selectedModule?.moduleId === module?.moduleId
-                      ? "bg-gray-200"
-                      : "bg-white"
-                  }  px-4 py-2 hover:bg-gray-100 cursor-pointer`}
+                      ? "bg-gray-200 dark:bg-gray-700"
+                      : "bg-white dark:bg-gray-800"
+                  } px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white`}
                   onClick={() => {
                     setSelectedModule(module);
                     setIsModuleDropdownOpen(false);
@@ -303,6 +303,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         </div>
       </div>
 
+      {/* PDF Download Link */}
       {Array.isArray(modules?.syllabus) &&
         modules.syllabus.length > 0 &&
         selectedModule && (
@@ -319,18 +320,19 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
               .slice(0, 40)
               .split(" ")
               .join("-")}.pdf`}
-            className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             {({ loading }) => (
               <>
-                <Printer className="h-4  min-w-16" />
+                <Printer className="h-4 min-w-16" />
                 {loading ? "Generating PDF" : "Download PDF"}
               </>
             )}
           </PDFDownloadLink>
         )}
 
-      <div className="overflow-hidden border rounded-lg shadow-xs mt-4">
+      {/* Preview or Placeholder */}
+      <div className="overflow-hidden border rounded-lg shadow-xs mt-4 dark:border-gray-700 dark:bg-gray-800">
         {selectedModule ? (
           pdfUrl ? (
             <iframe
@@ -339,13 +341,15 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
               title="Job Evaluation Report Preview"
             />
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center">
-              <p className="text-gray-500">Generating preview...</p>
+            <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400">
+                Generating preview...
+              </p>
             </div>
           )
         ) : (
-          <div className="w-full h-[842px] flex items-center justify-center bg-white">
-            <p className="text-gray-500">
+          <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+            <p className="text-gray-500 dark:text-gray-400">
               Select a student to view their job evaluation report
             </p>
           </div>

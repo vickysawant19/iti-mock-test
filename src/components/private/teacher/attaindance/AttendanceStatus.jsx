@@ -24,17 +24,21 @@ const AttendanceStatus = ({
     );
 
   return (
-    <div className="p-3 h-full w-full">
-      <h3 className="text-sm font-semibold mb-2">Attendance Status</h3>
+    <div className="p-3 h-full w-full dark:bg-gray-900">
+      <h3 className="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">
+        Attendance Status
+      </h3>
 
       <div className="space-y-2">
         {/* Location Check */}
-        <div className="bg-gray-50 p-2 rounded-sm">
+        <div className="bg-gray-50 p-2 rounded-sm dark:bg-gray-800 dark:border dark:border-gray-700">
           <div className="flex items-center gap-2 mb-1">
             <StatusIcon isValid={isWithinRadius} />
-            <span className="text-xs font-medium">Location Check</span>
+            <span className="text-xs font-medium text-gray-800 dark:text-gray-100">
+              Location Check
+            </span>
           </div>
-          <p className="text-xs text-gray-600 pl-6">
+          <p className="text-xs text-gray-600 dark:text-gray-400 pl-6">
             {distance > 1000
               ? `${(distance / 1000).toFixed(2)} km`
               : `${distance.toFixed(0)}m`}{" "}
@@ -45,12 +49,14 @@ const AttendanceStatus = ({
         </div>
 
         {/* Time Check */}
-        <div className="bg-gray-50 p-2 rounded-sm">
+        <div className="bg-gray-50 p-2 rounded-sm dark:bg-gray-800 dark:border dark:border-gray-700">
           <div className="flex items-center gap-2 mb-1">
             <StatusIcon isValid={isWithinTimeWindow} />
-            <span className="text-xs font-medium">Time Check</span>
+            <span className="text-xs font-medium text-gray-800 dark:text-gray-100">
+              Time Check
+            </span>
           </div>
-          <p className="text-xs text-gray-600 pl-6">
+          <p className="text-xs text-gray-600 dark:text-gray-400 pl-6">
             Now: {format(currentTime, "HH:mm")}
             <br />
             Window: {batchData?.attendanceTime?.start} -{" "}
@@ -62,8 +68,8 @@ const AttendanceStatus = ({
         <div
           className={`text-xs font-medium p-2 rounded text-center ${
             canMarkAttendance
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
+              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
           }`}
         >
           {canMarkAttendance ? "Ready to Mark ✓" : "Cannot Mark ✗"}

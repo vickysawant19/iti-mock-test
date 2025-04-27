@@ -51,7 +51,6 @@ import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx"
 
 import Modules from "./components/private/admin/Modules.jsx";
 
-import MarkTodaysAttendance from "./components/private/teacher/attaindance/MarkTodaysAttendance.jsx";
 import Assessment from "./components/private/assessment/Assessment.jsx";
 import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
 import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
@@ -113,7 +112,6 @@ const router = (
           </Route>
           <Route path="attendance">
             <Route path="face" element={<FaceAttendance />} />
-            <Route path="mark-today" element={<MarkTodaysAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttendance />} />
             <Route

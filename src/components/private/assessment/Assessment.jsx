@@ -151,25 +151,30 @@ const Assessment = () => {
   }, [selectedTradeYear, selectedSubject]);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-screen dark:bg-gray-900">
       {/* Header */}
-      <div className="w-full bg-blue-600 text-white shadow-lg pt-2">
+      <div className="w-full bg-blue-600 text-white shadow-lg pt-2 dark:bg-blue-700">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-center md:justify-start">
-            <ClipboardList className="mr-2 text-blue-200" size={24} />
+            <ClipboardList
+              className="mr-2 text-blue-200 dark:text-blue-100"
+              size={24}
+            />
             <h1 className="font-bold text-xl md:text-2xl">Assessment Portal</h1>
           </div>
         </div>
       </div>
+
       {/* Filters */}
-      <div className="bg-white shadow-xs p-4 mb-4">
+      <div className="bg-white shadow-xs p-4 mb-4 dark:bg-gray-800 dark:border dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4">
+          {/* Select Year */}
           <div className="w-full md:w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               Select Year
             </label>
             <select
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:ring-blue-400"
               value={selectedTradeYear}
               onChange={(e) => setSelectedTradeYear(e.target.value)}
             >
@@ -180,12 +185,14 @@ const Assessment = () => {
               ))}
             </select>
           </div>
+
+          {/* Select Subject */}
           <div className="w-full md:w-1/2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               Select Subject
             </label>
             <select
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:ring-blue-400"
               value={selectedSubject?.$id || ""}
               onChange={(e) => {
                 const subject = subjectsData.find(
@@ -205,6 +212,7 @@ const Assessment = () => {
         </div>
       </div>
 
+      {/* Assessment List */}
       <AssesmentList
         modulesData={modulesData || []}
         papersData={papersData}

@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
-
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Query } from "appwrite";
+
 import { selectProfile } from "../../../../store/profileSlice";
 import attendanceService from "../../../../appwrite/attaindanceService";
+import batchService from "../../../../appwrite/batchService";
 import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import { calculateStats } from "./CalculateStats";
-import batchService from "../../../../appwrite/batchService";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ClipLoader } from "react-spinners";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-import { Query } from "appwrite";
+import Loader from "@/components/components/Loader";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -45,14 +49,12 @@ const CheckAttendance = () => {
       const data = await batchService.getBatch(batchId, [
         Query.select(["attendanceHolidays"]),
       ]);
-      const parsedData = data?.attendanceHolidays.map((item) =>
-        JSON.parse(item)
-      );
-      const holiday = new Map();
-      parsedData.forEach((item) => holiday.set(item.date, item.holidayText));
-      setHolidays(holiday);
+      const parsed = data?.attendanceHolidays.map((item) => JSON.parse(item));
+      const holidayMap = new Map();
+      parsed.forEach((h) => holidayMap.set(h.date, h.holidayText));
+      setHolidays(holidayMap);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -60,12 +62,12 @@ const CheckAttendance = () => {
     setIsLoading(true);
     try {
       const data = await attendanceService.getUserAttendance(profile.userId);
-      const working = new Map();
-      data?.attendanceRecords.forEach((item) => working.set(item.date, item));
-      setWorkingDays(working);
+      const workMap = new Map();
+      data?.attendanceRecords.forEach((rec) => workMap.set(rec.date, rec));
+      setWorkingDays(workMap);
       calculateStats({ data, setAttendance, setAttendanceStats });
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -73,15 +75,12 @@ const CheckAttendance = () => {
 
   useEffect(() => {
     if (!profile.batchId) {
-      toast.error("You need to Create/Select a batch");
-      // Navigate to create-batch page
+      toast.error("You need to create or select a batch");
       navigate("/profile");
       return;
     }
-    if (profile) {
-      fetchAttendance();
-      fetchBatchData(profile.batchId);
-    }
+    fetchAttendance();
+    fetchBatchData(profile.batchId);
   }, [profile]);
 
   useEffect(() => {
@@ -94,118 +93,123 @@ const CheckAttendance = () => {
   }, [currentMonth, attendanceStats]);
 
   const handleMonthChange = ({ activeStartDate }) => {
-    const newMonth = format(activeStartDate, "MMMM yyyy");
-    setCurrentMonth(newMonth);
+    setCurrentMonth(format(activeStartDate, "MMMM yyyy"));
   };
 
+  // Tile styling with dark mode support
   const tileClassName = ({ date }) => {
-    const formatedDate = format(date, "yyyy-MM-dd");
-    if (holidays.has(formatedDate)) {
-      return "holiday-tile";
-    }
-    const selectedDateData = workingDays.get(formatedDate);
-    if (!selectedDateData) return null;
-    if (selectedDateData.attendanceStatus === "Present") return "present-tile";
-    return "absent-tile";
+    const key = format(date, "yyyy-MM-dd");
+    if (holidays.has(key)) return " holiday-tile ";
+    const rec = workingDays.get(key);
+    if (!rec) return null;
+    return rec.attendanceStatus === "Present" ? "present-tile" : "absent-tile";
   };
 
+  // Tile content with dark mode text
   const tileContent = ({ date }) => {
-    const formatedDate = format(date, "yyyy-MM-dd");
-    if (holidays.has(formatedDate)) {
+    const key = format(date, "yyyy-MM-dd");
+    if (holidays.has(key)) {
       return (
-        <div className="w-full h-full flex flex-col cursor-pointer">
-          <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-            <div className="italic text-red-600 mb-1">
-              {holidays.get(formatedDate) || "Holiday"}
-            </div>
-          </div>
+        <div className="flex items-center justify-center p-1">
+          <span className="text-xs italic text-rose-600 dark:text-rose-400">
+            {holidays.get(key) || "Holiday"}
+          </span>
         </div>
       );
     }
-    const selectedDateData = workingDays.get(formatedDate);
-
-    if (!selectedDateData) return null;
+    const rec = workingDays.get(key);
+    if (!rec) return null;
     return (
-      <div className="w-full h-full flex flex-col">
-        <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-          <div className="italic text-gray-600 mb-1">
-            {selectedDateData.inTime && `In: ${selectedDateData.inTime} `}
-            {selectedDateData.outTime && `Out: ${selectedDateData.outTime}`}
-          </div>
-          <div className="italic text-gray-600">{selectedDateData.reason}</div>
-        </div>
+      <div className="flex flex-col items-center justify-center p-1">
+        {rec.inTime && (
+          <span className="text-xs text-gray-700 dark:text-gray-700">
+            In: {rec.inTime}
+          </span>
+        )}
+        {rec.outTime && (
+          <span className="text-xs text-gray-700 dark:text-gray-700">
+            Out: {rec.outTime}
+          </span>
+        )}
+        {rec.reason && (
+          <span className="text-xs italic text-gray-600 dark:text-gray-400">
+            {rec.reason}
+          </span>
+        )}
       </div>
     );
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
-  if (attendance.length === 0) {
+  if (!attendance.length) {
     return (
-      <div className="flex w-full h-full items-center justify-center pt-10">
-        <p>No attendance records found.</p>
+      <div className="flex items-center justify-center h-full p-10 bg-white dark:bg-gray-900">
+        <Card>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              No attendance records found.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="w-full  mx-auto px-4 py-6">
+    <div className="space-y-6 bg-white dark:bg-gray-900 p-4">
       {/* Profile Info */}
-      <div className="mb-6 bg-white rounded-lg p-4 shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Name:</strong> {profile.userName}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Email:</strong> {profile.email}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <strong>Phone:</strong> {profile.phone}
             </p>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Calendar Section - Takes up 7 columns on desktop */}
+        {/* Calendar Section */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-lg shadow-xs">
-            <CustomCalendar
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              tileClassName={tileClassName}
-              tileContent={tileContent}
-              handleActiveStartDateChange={handleMonthChange}
-            />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance Calendar - {currentMonth}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CustomCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                tileClassName={tileClassName}
+                tileContent={tileContent}
+                handleActiveStartDateChange={handleMonthChange}
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Stats Section - Takes up 5 columns on desktop */}
+        {/* Stats Section */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Monthly Stats */}
-          <div className="bg-white rounded-lg p-4 shadow-xs">
-            <ShowStats
-              attendance={currentMonthData}
-              label={`Month Attendance - ${currentMonth}`}
-            />
-          </div>
-
-          {/* Total Stats */}
-          <div className="bg-white rounded-lg p-4 shadow-xs">
-            <ShowStats attendance={attendanceStats} label="Total Attendance" />
-          </div>
+          <ShowStats
+            attendance={currentMonthData}
+            label={`Month Attendance - ${currentMonth}`}
+          />
+          <ShowStats attendance={attendanceStats} label="Total Attendance" />
         </div>
       </div>
     </div>

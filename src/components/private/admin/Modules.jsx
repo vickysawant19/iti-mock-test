@@ -174,29 +174,31 @@ const Modules = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-linear-to-r from-blue-100 to-blue-200 text-blue-900 py-6 shadow-md">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-blue-900 dark:text-white py-6 shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6" />
+              <BookOpen className="w-6 h-6 text-blue-900 dark:text-white" />
               <h1 className="text-2xl font-bold">Module Management System</h1>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 ">
-        <div className="flex sm:flex-row flex-col flex-wrap gap-4 mb-6 p-6 bg-white shadow-lg rounded-lg">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex sm:flex-row flex-col flex-wrap gap-4 mb-6 p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
           <div className="flex-1 min-w-[200px]">
             <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <label className="text-sm font-medium text-gray-700">Trade</label>
+              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Trade
+              </label>
             </div>
             <select
               value={selectedTradeID}
               onChange={(e) => setSelectedTradeID(e.target.value)}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
               disabled={fetchingData}
             >
               <option value="">Select Trade</option>
@@ -210,13 +212,15 @@ const Modules = () => {
 
           <div className="flex-1 min-w-[200px]">
             <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <label className="text-sm font-medium text-gray-700">Year</label>
+              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Year
+              </label>
             </div>
             <select
               value={selectedTradeYear}
               onChange={(e) => setSelectedTradeYear(e.target.value)}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
               disabled={fetchingData}
             >
               <option value="">Select Year</option>
@@ -235,8 +239,8 @@ const Modules = () => {
 
           <div className="flex-1 min-w-[200px]">
             <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <label className="text-sm font-medium text-gray-700">
+              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Subject
               </label>
             </div>
@@ -248,7 +252,7 @@ const Modules = () => {
                 );
                 setSelectedSubjectID(e.target.value);
               }}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               disabled={!selectedTradeID || fetchingData}
             >
               <option value="">Select Subject</option>
@@ -272,7 +276,7 @@ const Modules = () => {
                     setModuleId("");
                     setTopicId("");
                   }}
-                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                  className="flex items-center gap-2 bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-500"
                 >
                   <PlusCircle className="w-5 h-5" />
                   {loading ? (
@@ -284,7 +288,7 @@ const Modules = () => {
                 <button
                   disabled={loading}
                   onClick={submitModuleData}
-                  className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors disabled:bg-green-300"
+                  className="flex items-center gap-2 bg-green-500 dark:bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-600 dark:hover:bg-green-700 transition-colors disabled:bg-green-300 dark:disabled:bg-green-500"
                 >
                   <Save className="w-5 h-5" />
                   {loading ? (
@@ -298,7 +302,7 @@ const Modules = () => {
               <div className="col-span-1 rounded-xl">
                 {loading ? (
                   <div className="flex justify-center items-center h-40">
-                    <div className="w-10 h-10 border-t-4 border-blue-500 rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-t-4 border-blue-500 dark:border-blue-400 rounded-full animate-spin" />
                   </div>
                 ) : (
                   modules?.syllabus?.length > 0 && (

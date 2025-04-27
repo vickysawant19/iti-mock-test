@@ -21,6 +21,7 @@ import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
 import { ClipLoader } from "react-spinners";
+import Loader from "@/components/components/Loader";
 
 const MarkAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -374,82 +375,77 @@ const MarkAttendance = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 text-black dark:bg-gray-900 dark:text-white p-4">
       {/* Main Content Grid */}
       <div
-        className={` grid grid-cols-1 lg:grid-cols-5 gap-6 text-sm transition-all duration-300`}
+        className={`grid grid-cols-1 lg:grid-cols-5 gap-6 text-sm transition-all duration-300`}
       >
         {/* Calendar Section */}
         <div className="lg:col-span-3 row-span-1">
           {/* Stats Cards Row */}
-          <div className="grid lg:grid-cols-5 grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md shadow-xs">
+          <div className="grid lg:grid-cols-5 grid-cols-2 md:grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md shadow-xs dark:bg-gray-800 dark:border dark:border-gray-700">
             <StatCard
               title="Total"
               value={attendance?.stats?.totalCount ?? "-"}
-              bgColor="bg-blue-50"
+              bgColor="bg-blue-50 dark:bg-blue-900"
               icon="Users"
-              textColor="text-blue-700"
-              valueColor="text-blue-800"
-              borderColor="border-l-2 border-blue-400"
+              textColor="text-blue-700 dark:text-blue-300"
+              valueColor="text-blue-800 dark:text-blue-200"
+              borderColor="border-l-2 border-blue-400 dark:border-blue-500"
             />
             <StatCard
               title="Marked"
               value={attendance?.stats?.markedCount ?? "-"}
-              bgColor="bg-green-50"
+              bgColor="bg-green-50 dark:bg-green-900"
               icon="CheckCircle"
-              textColor="text-green-700"
-              valueColor="text-green-800"
-              borderColor="border-l-2 border-green-400"
+              textColor="text-green-700 dark:text-green-300"
+              valueColor="text-green-800 dark:text-green-200"
+              borderColor="border-l-2 border-green-400 dark:border-green-500"
             />
             <StatCard
               title="Unmarked"
               value={attendance?.stats?.unmarkCount ?? "-"}
-              bgColor="bg-amber-50"
+              bgColor="bg-amber-50 dark:bg-amber-900"
               icon="AlertCircle"
-              textColor="text-amber-700"
-              valueColor="text-amber-800"
-              borderColor="border-l-2 border-amber-400"
+              textColor="text-amber-700 dark:text-amber-300"
+              valueColor="text-amber-800 dark:text-amber-200"
+              borderColor="border-l-2 border-amber-400 dark:border-amber-500"
             />
             <StatCard
               title="Present"
               value={attendance?.stats?.presentCount ?? "-"}
-              bgColor="bg-indigo-50"
+              bgColor="bg-indigo-50 dark:bg-indigo-900"
               icon="UserCheck"
-              textColor="text-indigo-700"
-              valueColor="text-indigo-800"
-              borderColor="border-l-2 border-indigo-400"
+              textColor="text-indigo-700 dark:text-indigo-300"
+              valueColor="text-indigo-800 dark:text-indigo-200"
+              borderColor="border-l-2 border-indigo-400 dark:border-indigo-500"
             />
             <StatCard
               title="Absent"
               value={attendance?.stats?.absentCount ?? "-"}
-              bgColor="bg-rose-50"
+              bgColor="bg-rose-50 dark:bg-rose-900"
               icon="UserX"
-              textColor="text-rose-700"
-              valueColor="text-rose-800"
-              borderColor="border-l-2 border-rose-400"
+              textColor="text-rose-700 dark:text-rose-300"
+              valueColor="text-rose-800 dark:text-rose-200"
+              borderColor="border-l-2 border-rose-400 dark:border-rose-500"
             />
           </div>
-          <div className="bg-white rounded-lg shadow-xs mt-5">
-            <div className="p-2 border-b flex justify-between items-center">
-              <h2 className="text-lg font-medium">
+          <div className="bg-white rounded-lg shadow-xs mt-5 dark:bg-gray-800 dark:border dark:border-gray-700">
+            <div className="p-2 border-b flex justify-between items-center dark:border-gray-700">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                 Date: {format(selectedDate, "dd MMMM yyyy")}
               </h2>
               <Linkto
                 to="/attaindance/mark-holidays"
-                className=" px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-xs text-center"
+                className="px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-xs text-center dark:bg-red-500 dark:hover:bg-red-400"
               >
                 Edit Holidays
               </Linkto>
             </div>
-
             <CustomCalendar
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
@@ -468,9 +464,11 @@ const MarkAttendance = () => {
         {/* Attendance List Section */}
         {!isHoliday && (
           <div className="lg:col-span-2 row-span-1">
-            <div className="bg-white rounded-lg shadow-xs  ">
-              <div className="p-2 border-b flex justify-between items-center">
-                <h2 className="text-lg font-medium">Student List</h2>
+            <div className="bg-white rounded-lg shadow-xs dark:bg-gray-800 dark:border dark:border-gray-700">
+              <div className="p-2 border-b flex justify-between items-center dark:border-gray-700">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Student List
+                </h2>
               </div>
               <div className="p-4 h-[calc(100vh-4rem)] overflow-y-auto">
                 {
@@ -482,30 +480,29 @@ const MarkAttendance = () => {
                       .map((student) => (
                         <div
                           key={student.userId}
-                          className={`border rounded-lg  border-l-4  transition-colors text-sm ${
+                          className={`border rounded-lg border-l-4 transition-colors text-sm ${
                             attendance[student.userId]?.isMarked
                               ? attendance[student.userId]?.attendanceStatus ===
                                 "Present"
-                                ? "border-green-400 hover:border-green-500"
-                                : "border-red-400 hover:border-red-500"
-                              : "border-gray-400 hover:border-gray-500"
-                          }  `}
+                                ? "border-green-400 hover:border-green-500 dark:border-green-500 dark:hover:border-green-400"
+                                : "border-red-400 hover:border-red-500 dark:border-red-500 dark:hover:border-red-400"
+                              : "border-gray-400 hover:border-gray-500 dark:border-gray-500 dark:hover:border-gray-400"
+                          }`}
                         >
-                          <div className="flex flex-col sm:flex-row sm:justify-between w-full p-2  rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between w-full p-2 rounded-lg">
                             {/* Student Name and ID */}
                             <div
                               type={"button"}
                               onClick={() => toggleOptions(student.userId)}
                               className="flex items-center gap-2 mb-2 sm:mb-0"
                             >
-                              <span className="font-bold text-lg text-gray-700">
+                              <span className="font-bold text-lg text-gray-700 dark:text-gray-300">
                                 {student.studentId || 0}
                               </span>
-                              <span className="font-medium text-gray-800">
+                              <span className="font-medium text-gray-800 dark:text-gray-200">
                                 {student.userName}
                               </span>
                             </div>
-
                             {/* Buttons of Attendance Absent and Present */}
                             <div className="flex gap-2 items-center">
                               <button
@@ -517,9 +514,9 @@ const MarkAttendance = () => {
                                   attendance[student.userId]?.isMarked
                                     ? attendance[student.userId]
                                         ?.attendanceStatus === "Present"
-                                      ? "bg-green-400 hover:bg-green-500"
-                                      : "bg-gray-100 hover:bg-gray-200"
-                                    : "bg-green-100 hover:bg-green-200"
+                                      ? "bg-green-400 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400"
+                                      : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                    : "bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
                                 }`}
                               >
                                 Present
@@ -533,20 +530,19 @@ const MarkAttendance = () => {
                                   attendance[student.userId]?.isMarked
                                     ? attendance[student.userId]
                                         ?.attendanceStatus === "Absent"
-                                      ? "bg-red-400 hover:bg-red-500"
-                                      : "bg-gray-100 hover:bg-gray-200"
-                                    : "bg-red-100 hover:bg-red-200"
+                                      ? "bg-red-400 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400"
+                                      : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                    : "bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800"
                                 }`}
                               >
                                 Absent
                               </button>
                             </div>
                           </div>
-
                           {expandedRows[student.userId] && (
                             <div className="mt-4 space-y-4">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                   Reason
                                 </label>
                                 <input
@@ -561,13 +557,13 @@ const MarkAttendance = () => {
                                       e.target.value
                                     )
                                   }
-                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                   placeholder="Optional"
                                 />
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     In Time
                                   </label>
                                   <input
@@ -582,11 +578,11 @@ const MarkAttendance = () => {
                                         e.target.value
                                       )
                                     }
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Out Time
                                   </label>
                                   <input
@@ -601,7 +597,7 @@ const MarkAttendance = () => {
                                         e.target.value
                                       )
                                     }
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                   />
                                 </div>
                               </div>

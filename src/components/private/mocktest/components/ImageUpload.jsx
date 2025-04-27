@@ -2,18 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { IKContext, IKUpload, IKImage } from "imagekitio-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  LoaderCircle,
-  XCircle,
-  Upload,
-  X,
-} from "lucide-react";
+import { LoaderCircle, XCircle, Upload, X } from "lucide-react";
 import { appwriteService } from "../../../../appwrite/appwriteConfig";
 
-const ImageUploader = ({
-  folderName = "img",
-  images, setImages
-}) => {
+const ImageUploader = ({ folderName = "img", images, setImages }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isDeleting, setIsDeleting] = useState({});
@@ -35,7 +27,7 @@ const ImageUploader = ({
       const newImage = {
         id: res.fileId,
         url: res.url,
-        name: res.name || "Uploaded image"
+        name: res.name || "Uploaded image",
       };
       setImages((prev) => {
         const updated = [...prev, newImage];
@@ -68,7 +60,7 @@ const ImageUploader = ({
         "67d3fa29000adc329a4a",
         JSON.stringify({ action: "delete", fileId })
       );
-      
+
       if (!res?.responseBody) throw new Error("Empty response from server");
       const result = JSON.parse(res.responseBody);
       if (result.success) {
@@ -158,9 +150,9 @@ const ImageUploader = ({
               type="button"
               onClick={() => ikUploadRef.current?.click()}
               disabled={isUploading}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 disabled:bg-blue-300 transition-colors"
             >
-              <Upload className="mr-2 h-5 w-5" />
+              <Upload className="mr-2 h-5 w-5 text-white dark:text-gray-100" />
               {isUploading ? "Uploading..." : "Upload Images"}
             </button>
 
@@ -174,9 +166,9 @@ const ImageUploader = ({
                     resetUploadState();
                   }
                 }}
-                className="flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                className="flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400 transition-colors"
               >
-                <XCircle className="mr-2 h-5 w-5" />
+                <XCircle className="mr-2 h-5 w-5 text-white dark:text-gray-100" />
                 Cancel
               </button>
             )}
@@ -186,14 +178,14 @@ const ImageUploader = ({
           {isUploading && (
             <div className="mt-4">
               <div className="flex items-center mb-1">
-                <LoaderCircle className="animate-spin mr-2 h-5 w-5 text-blue-500" />
-                <span className="text-sm font-medium text-gray-700">
+                <LoaderCircle className="animate-spin mr-2 h-5 w-5 text-blue-500 dark:text-blue-300" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   Uploading: {progress}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -207,9 +199,8 @@ const ImageUploader = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {images.map((image) => (
                 <div key={image.id} className="relative group">
-                  
-                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
-                    <IKImage           
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center">
+                    <IKImage
                       path={image.url.split("/").slice(4).join("/")}
                       transformation={[
                         { height: 300, width: 300, cropMode: "pad_resize" },
@@ -223,18 +214,20 @@ const ImageUploader = ({
                     type="button"
                     onClick={() => deleteImage(image.id)}
                     disabled={isDeleting[image.id]}
-                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 bg-white dark:bg-gray-700 rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Delete Image"
                   >
-                    <X className="h-4 w-4 text-red-500" />
+                    <X className="h-4 w-4 text-red-500 dark:text-red-400" />
                   </button>
-                  <p className="text-sm truncate mt-1">{image.name}</p>
+                  <p className="text-sm truncate mt-1 text-gray-700 dark:text-gray-200">
+                    {image.name}
+                  </p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-              <p className="text-gray-500 text-center">
+            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400 text-center">
                 No images uploaded yet. Click the upload button to add images.
               </p>
             </div>

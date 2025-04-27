@@ -7,7 +7,10 @@ import {
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { Functions } from "appwrite";
-import { FileInput, Loader2, ArrowLeft } from "lucide-react";
+import { FileInput, Loader2, ArrowLeft, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 import { appwriteService } from "../../../appwrite/appwriteConfig";
 import conf from "../../../config/config";
@@ -68,22 +71,22 @@ const AttainTest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 ">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         <div className="max-w-md mx-auto">
           {/* Paper ID Card */}
-          <div className="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden">
-            <div className="p-6">
+          <Card className="overflow-hidden border-gray-200 dark:border-gray-800 dark:bg-gray-800">
+            <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <FileInput className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Enter Paper ID
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Please enter the paper ID to generate your test
                   </p>
                 </div>
@@ -93,62 +96,62 @@ const AttainTest = () => {
                 <div className="space-y-2">
                   <label
                     htmlFor="paperId"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     Paper ID
                   </label>
-                  <input
+                  <Input
                     type="text"
                     id="paperId"
                     value={paperId}
                     onChange={(e) => setPaperId(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     placeholder="Enter paper ID"
                     required
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
+                <Button type="submit" disabled={loading} className="w-full">
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       <span>Generating Paper...</span>
                     </>
                   ) : (
                     <>
-                      <FileInput className="w-5 h-5" />
+                      <FileText className="w-5 h-5 mr-2" />
                       <span>Generate Paper</span>
                     </>
                   )}
-                </button>
+                </Button>
               </form>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Instructions Card */}
-          <div className="mt-6 bg-white rounded-lg shadow-xs border border-gray-200 p-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">
-              Instructions
-            </h3>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start gap-2">
-                • Enter the paper ID provided by your instructor
-              </li>
-              <li className="flex items-start gap-2">
-                • Make sure you have a stable internet connection
-              </li>
-              <li className="flex items-start gap-2">
-                • Once generated, the test will start automatically
-              </li>
-              <li className="flex items-start gap-2">
-                • Complete all questions within the given time limit
-              </li>
-            </ul>
-          </div>
+          <Card className="mt-6 dark:bg-gray-800 dark:border-gray-800">
+            <CardHeader className="pb-2">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Instructions
+              </h3>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li className="flex items-start gap-2">
+                  • Enter the paper ID provided by your instructor
+                </li>
+                <li className="flex items-start gap-2">
+                  • Make sure you have a stable internet connection
+                </li>
+                <li className="flex items-start gap-2">
+                  • Once generated, the test will start automatically
+                </li>
+                <li className="flex items-start gap-2">
+                  • Complete all questions within the given time limit
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

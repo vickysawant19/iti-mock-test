@@ -25,7 +25,7 @@ const CustomCalendar = ({
     const today = new Date();
     const adjustedStartDate = new Date(startDate);
     adjustedStartDate.setDate(adjustedStartDate.getDate() - 1);
-  
+
     // Get current time for attendance check
     const attendanceStartTime = new Date(
       `${new Date().toDateString()} ${attendanceTime?.start || "09:00"}`
@@ -33,17 +33,17 @@ const CustomCalendar = ({
     const attendanceEndTime = new Date(
       `${new Date().toDateString()} ${attendanceTime?.end || "17:00"}`
     );
-  
+
     const isWithinAttendanceTime =
       today >= attendanceStartTime && today <= attendanceEndTime;
     const isWithinRange = distance <= circleRadius;
     const isNotToday = date.toDateString() !== today.toDateString();
-  
+
     if (view === "month") {
       // Basic date validation
       if (!enableNextTiles && date > today) return true;
       if (date < adjustedStartDate) return true;
-  
+
       // For non-teachers
       if (!isTeacher) {
         // Disable tile if either distance or time conditions are not met
@@ -52,12 +52,12 @@ const CustomCalendar = ({
         if (!canMarkPrevious && isNotToday) return true;
       }
     }
-  
+
     return false;
   };
 
   return (
-    <div className="flex flex-col justify-center my-2 w-full items-center" >
+    <div className="flex flex-col justify-center my-2 w-full items-center">
       <Calendar
         onChange={setSelectedDate}
         value={selectedDate}
@@ -73,6 +73,7 @@ const CustomCalendar = ({
       />
       <style>{`
                 .react-calendar {
+                color: black;
                     width: 100% !important;
                     border-radius: 0.6rem;
                     border-color: white;
@@ -104,7 +105,7 @@ const CustomCalendar = ({
               }
 
                 .default-tile { background-color: #f9fafb !important; color: #333 !important; }
-                .present-tile { background-color: #d1fae5 !important; color: #064e3b !important; }
+                .present-tile { background-color: #d1fae5 !important; color: #064e3b !important;  }
                 .absent-tile { background-color: #fee2e2 !important; color: #7f1d1d !important; }
                 .holiday-tile { background-color: #fef9c3 !important; color: red !important; }
                 .react-calendar__tile--active {

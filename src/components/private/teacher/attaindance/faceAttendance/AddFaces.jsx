@@ -281,12 +281,12 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-6 dark:bg-gray-900 rounded-lg ">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
           {mode === "update" ? "Update Face Data" : "Register New Face"}
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Take 5 different angles of Selected User face to{" "}
           {mode === "update" ? "update" : "register"}
         </p>
@@ -300,11 +300,16 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           options={studentsProfile || []}
           renderOptionLabel={(option) => (
             <div className="flex justify-between items-center w-full gap-4">
-              <span>{option.userName}</span>
+              <span className="text-gray-800 dark:text-gray-100">
+                {option.userName}
+              </span>
               {option.faceData ? (
-                <UserCheck size={18} className="text-green-500" />
+                <UserCheck
+                  size={18}
+                  className="text-green-500 dark:text-green-400"
+                />
               ) : (
-                <User size={18} className="text-gray-400" />
+                <User size={18} className="text-gray-400 dark:text-gray-500" />
               )}
             </div>
           )}
@@ -319,17 +324,17 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
         <div className="space-y-4">
           {/* Mode toggle if face data exists */}
           {selectedStudentProfile.faceData && (
-            <div className="flex items-center justify-between mb-4 bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-4 bg-blue-50 dark:bg-gray-800 p-4 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-blue-800">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
                   Face data already exists for this student
                 </p>
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
                   You can update or delete the existing face data
                 </p>
               </div>
               <button
-                className="p-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition-colors"
+                className="p-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 dark:hover:bg-red-400 transition-colors"
                 onClick={handleDeleteFaceData}
                 disabled={isDeleting}
               >
@@ -351,18 +356,18 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           {/* Registration form */}
           <div className="space-y-4 mb-4">
             {/* Samples progress */}
-            <div className="bg-gray-100 rounded-lg p-4">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Face Samples
                 </span>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {samples.length} / 5
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2 rounded-full"
+                  className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full"
                   style={{ width: `${(samples.length / 5) * 100}%` }}
                 ></div>
               </div>
@@ -373,10 +378,10 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
               <div
                 className={`p-3 rounded-lg ${
                   messageType === "success"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"
                     : messageType === "error"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-blue-100 text-blue-800"
+                    ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300"
+                    : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"
                 }`}
               >
                 {resultMessage}
@@ -391,7 +396,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
                 isVerifying || samples.length >= 5 || captureLoading
                   ? "bg-gray-400 cursor-not-allowed"
                   : faceDetected
-                  ? "bg-blue-500 hover:bg-blue-600"
+                  ? "bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
               onClick={handleAddFace}
@@ -418,7 +423,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
             <button
               className={`flex-1 px-4 py-3 rounded-lg font-medium text-white transition duration-200 flex items-center justify-center gap-2 ${
                 samples.length === 5
-                  ? "bg-green-500 hover:bg-green-600"
+                  ? "bg-green-500 hover:bg-green-600 dark:bg-green-500 dark:hover:bg-green-400"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
               onClick={handleSaveRegistration}

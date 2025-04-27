@@ -13,6 +13,7 @@ import batchService from "../../../../appwrite/batchService";
 import { selectUser } from "../../../../store/userSlice";
 
 import LocationPicker from "../components/LocationPicker";
+import Loader from "@/components/components/Loader";
 
 const BatchForm = ({ onClose }) => {
   const [collegesData, setCollegesData] = useState([]);
@@ -208,31 +209,29 @@ const BatchForm = ({ onClose }) => {
   };
 
   if (isLoading) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <ClipLoader color="#123abc" size={50} />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="bg-gray-100 pb-10">
-      <div className="w-full bg-sky-200 p-6 shadow-md">
+    <div className="bg-gray-100 pb-10 dark:bg-gray-900">
+      <div className="w-full bg-gary-300 p-6 shadow-md dark:bg-gray-800 dark:text-white">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <h1 className="text-3xl font-bold ">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
             {selectedBatchId ? "Edit Batch" : "Create New Batch"}
           </h1>
-
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex flex-col gap-2">
-              <label htmlFor="batch-select" className="font-medium">
+              <label
+                htmlFor="batch-select"
+                className="font-medium text-gray-700 dark:text-gray-300"
+              >
                 Edit Existing Batch
               </label>
               <select
                 id="batch-select"
                 onChange={handleBatchSelect}
                 value={selectedBatchId}
-                className="border  rounded-md py-2 px-4 min-w-[200px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="border rounded-md py-2 px-4 min-w-[200px] focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               >
                 <option value="">Select Batch</option>
                 {allBatches?.map((item) => (
@@ -242,11 +241,10 @@ const BatchForm = ({ onClose }) => {
                 ))}
               </select>
             </div>
-
             {selectedBatchId && (
               <button
                 onClick={handleDeselectBatch}
-                className="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center gap-2 h-10 mt-6"
+                className="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 transition-colors duration-200 flex items-center gap-2 h-10 mt-6 dark:bg-red-700 dark:hover:bg-red-800"
               >
                 <span>Cancel</span>
               </button>
@@ -254,49 +252,60 @@ const BatchForm = ({ onClose }) => {
           </div>
         </div>
       </div>
-
       <form
         onSubmit={handleSubmit(handleBatchSubmit)}
-        className="space-y-6 px-10  w-full py-10"
+        className="space-y-6 px-10 w-full py-10 dark:bg-gray-900 dark:text-white"
       >
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 relative ">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 relative">
+          {/* Batch Name */}
           <div>
-            <label className="block text-gray-600">Batch Name</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              Batch Name
+            </label>
             <input
               type="text"
               {...register("BatchName", {
                 required: "Batch name is required",
               })}
               placeholder="Enter batch name"
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               disabled={isBatchDataLoading}
             />
           </div>
+          {/* Start Date */}
           <div>
-            <label className="block text-gray-600">Start Date</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              Start Date
+            </label>
             <input
               type="date"
               {...register("start_date", {
                 required: "Start date is required",
               })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               disabled={isBatchDataLoading}
             />
           </div>
+          {/* End Date */}
           <div>
-            <label className="block text-gray-600">End Date</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              End Date
+            </label>
             <input
               type="date"
               {...register("end_date", { required: "End date is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               disabled={isBatchDataLoading}
             />
           </div>
+          {/* College */}
           <div>
-            <label className="block text-gray-600">College</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              College
+            </label>
             <select
               {...register("collegeId", { required: "College is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               disabled={isBatchDataLoading}
             >
               <option value="">Select a college</option>
@@ -307,11 +316,14 @@ const BatchForm = ({ onClose }) => {
               ))}
             </select>
           </div>
+          {/* Trade */}
           <div>
-            <label className="block text-gray-600">Trade</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              Trade
+            </label>
             <select
               {...register("tradeId", { required: "Trade is required" })}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-hidden focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               disabled={isBatchDataLoading}
             >
               <option value="">Select a trade</option>
@@ -322,9 +334,10 @@ const BatchForm = ({ onClose }) => {
               ))}
             </select>
           </div>
+          {/* Batch Status */}
           <div>
             <label className="inline-flex items-center cursor-pointer flex-col">
-              <span className="ms-3 text-sm font-medium text-gray-600 mb-2">
+              <span className="ms-3 text-sm font-medium text-gray-600 mb-2 dark:text-gray-300">
                 Batch Status
               </span>
               <input
@@ -336,11 +349,11 @@ const BatchForm = ({ onClose }) => {
               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:rtl:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
             </label>
           </div>
-
+          {/* Location */}
           <div className="col-span-full relative">
-            <label className="block text-gray-600 mb-2">
+            <label className="block text-gray-600 mb-2 dark:text-gray-300">
               Location
-              <span className="text-xs italic text-gray-500 ml-2">
+              <span className="text-xs italic text-gray-500 ml-2 dark:text-gray-400">
                 (Student can mark attendance from 1km range)
               </span>
             </label>
@@ -349,21 +362,21 @@ const BatchForm = ({ onClose }) => {
                 type="text"
                 value={watch("location.lat") || ""}
                 placeholder="Latitude"
-                className="flex-1 border border-gray-300 rounded-md py-2 px-3"
+                className="flex-1 border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 disabled
               />
               <input
                 type="text"
                 value={watch("location.lon") || ""}
                 placeholder="Longitude"
-                className="flex-1 border border-gray-300 rounded-md py-2 px-3"
+                className="flex-1 border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 disabled
               />
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={handleGetLocation}
-                  className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+                  className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 dark:bg-blue-700 dark:hover:bg-blue-800"
                   disabled={locationLoading}
                 >
                   {locationLoading ? (
@@ -375,7 +388,7 @@ const BatchForm = ({ onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowMaps((prev) => !prev)}
-                  className="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 disabled:bg-gray-400"
+                  className="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 disabled:bg-gray-400 dark:bg-teal-700 dark:hover:bg-teal-800"
                 >
                   {locationLoading ? (
                     <ClipLoader size={20} color="#fff" />
@@ -387,7 +400,6 @@ const BatchForm = ({ onClose }) => {
                 </button>
               </div>
             </div>
-
             <div
               className={`border mt-4 overflow-hidden rounded w-full transition-all ease-in-out duration-300 top-0 z-2 ${
                 showMaps ? "h-80" : "h-0"
@@ -403,52 +415,60 @@ const BatchForm = ({ onClose }) => {
               )}
             </div>
             <div className="mt-5">
-              <label className="block text-gray-600">
-                Attendace Circle Radius : {watch("circleRadius")} meter
+              <label className="block text-gray-600 dark:text-gray-300">
+                Attendance Circle Radius : {watch("circleRadius")} meter
               </label>
-
               <input
                 type="range"
                 min={10}
                 max={1000}
                 {...register("circleRadius", {})}
-                className="w-full border border-gray-300 rounded-md py-2 px-3"
+                className="w-full border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
               />
             </div>
           </div>
+          {/* Attendance Start Time */}
           <div>
-            <label className="block text-gray-600">Attendance Start Time</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              Attendance Start Time
+            </label>
             <input
               type="time"
               {...register("attendanceTime.start", {})}
-              className="w-full border border-gray-300 rounded-md py-2 px-3"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
             />
           </div>
+          {/* Attendance End Time */}
           <div>
-            <label className="block text-gray-600">Attendance End Time</label>
+            <label className="block text-gray-600 dark:text-gray-300">
+              Attendance End Time
+            </label>
             <input
               type="time"
               {...register("attendanceTime.end", {})}
-              className="w-full border border-gray-300 rounded-md py-2 px-3"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
             />
           </div>
-          {/* New Previous Attendance Checkbox */}
+          {/* Allow Previous Attendance Checkbox */}
           <div className="flex items-center gap-2">
             <input
               id="canMarkPrevious"
               type="checkbox"
               {...register("canMarkPrevious")}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:focus:ring-blue-800"
             />
-            <label htmlFor="canMarkPrevious" className="text-gray-600">
+            <label
+              htmlFor="canMarkPrevious"
+              className="text-gray-600 dark:text-gray-300"
+            >
               Allow Students to mark previous attendance
             </label>
           </div>
         </div>
-
+        {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 dark:bg-blue-700 dark:hover:bg-blue-800"
           disabled={isSubmitting || isBatchDataLoading}
         >
           {isSubmitting
@@ -462,13 +482,13 @@ const BatchForm = ({ onClose }) => {
       </form>
       {!selectedBatchId && (
         <div className="mt-6 text-center">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             If you have created a batch, please update the batch in your
             profile.
           </p>
           <button
             onClick={() => navigate("/profile/edit")}
-            className="mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+            className="mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-800"
           >
             Update Profile
           </button>
@@ -476,6 +496,7 @@ const BatchForm = ({ onClose }) => {
       )}
     </div>
   );
+  s;
 };
 
 export default BatchForm;

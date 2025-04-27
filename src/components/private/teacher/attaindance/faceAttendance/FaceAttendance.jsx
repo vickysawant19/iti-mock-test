@@ -96,18 +96,18 @@ const FaceAttendance = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 ">
-      <div className="  bg-white rounded-lg p-4 flex flex-col gap-4 w-full">
+    <div className=" mx-auto px-4 py-6 dark:bg-gray-900 ">
+      <div className="bg-white rounded-lg p-4 flex flex-col gap-4 w-full dark:bg-gray-800 dark:border dark:border-gray-700">
         <div className="flex justify-between flex-wrap gap-4">
-          <h1 className="text-2xl font-bold text-center  text-gray-800">
+          <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
             Face Attendance System
           </h1>
           <button
             onClick={toggleCamera}
-            className={`max-w-xs  py-2 px-4 rounded-lg text-sm font-medium transition duration-200 ${
+            className={`max-w-xs py-2 px-4 rounded-lg text-sm font-medium transition duration-200 ${
               cameraEnabled
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : "bg-green-500 hover:bg-green-600 text-white"
+                ? "bg-red-500 hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-400 text-white"
+                : "bg-green-500 hover:bg-green-600 dark:bg-green-500 dark:hover:bg-green-400 text-white"
             }`}
           >
             {cameraEnabled ? "Disable Camera" : "Enable Camera"}
@@ -118,20 +118,20 @@ const FaceAttendance = () => {
         {modelsLoading && (
           <div className="">
             <div className="flex justify-between mb-1">
-              <span className="text-xs font-medium text-gray-700">
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                 Loading face detection models
               </span>
-              <span className="text-xs font-medium text-gray-700">
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                 {modelLoadingProgress}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+                className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300 ease-in-out"
                 style={{ width: `${modelLoadingProgress}%` }}
               />
             </div>
-            <p className="mt-2 text-xs text-gray-500 text-center">
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
               Please wait while we initialize the face detection system
             </p>
           </div>
@@ -140,8 +140,8 @@ const FaceAttendance = () => {
         {/* Initialization spinner */}
         {!modelsLoading && isInitializing && (
           <div className="mb-6 flex justify-center items-center">
-            <ClipLoader />
-            <span className="text-sm font-medium text-gray-700">
+            <ClipLoader color="#ffffff" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-2">
               Initializing face detection...
             </span>
           </div>
@@ -150,14 +150,14 @@ const FaceAttendance = () => {
 
       {/* Main UI */}
       {!modelsLoading && !isInitializing && cameraEnabled && (
-        <div className=" bg-white p-4 rounded-lg mt-4 flex flex-col justify-center  lg:flex-row gap-6  ">
+        <div className="bg-white p-4 rounded-lg mt-4 flex flex-col justify-center lg:flex-row gap-6 dark:bg-gray-800 dark:border dark:border-gray-700">
           {/* Left Column - Camera Section */}
-          <div className="w-full lg:w-1/2 ">
+          <div className="w-full lg:w-1/2">
             <div className="rounded-md p-3 w-full max-w-md">
-              <div className="relative bg-gray-200 rounded-lg shadow-inner p-2 flex items-stretch gap-2">
+              <div className="relative bg-gray-200 dark:bg-gray-700 rounded-lg shadow-inner p-2 flex items-stretch gap-2">
                 {/* Active background highlight that animates */}
                 <div
-                  className={`absolute top-1 bottom-1 w-1/2 rounded-lg bg-blue-500 shadow-md transition-all duration-300 ease-in-out ${
+                  className={`absolute top-1 bottom-1 w-1/2 rounded-lg bg-blue-500 dark:bg-blue-400 shadow-md transition-all duration-300 ease-in-out ${
                     mode === "add" ? "left-1" : "left-1/2 -ml-1"
                   }`}
                 />
@@ -168,7 +168,7 @@ const FaceAttendance = () => {
                   className={`relative flex-1 py-2 rounded-lg text-sm font-medium transition duration-200 z-10 flex items-center justify-center gap-2 ${
                     mode === "add"
                       ? "text-white"
-                      : "text-gray-700 hover:text-gray-900"
+                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
                   <UserPlus
@@ -192,7 +192,7 @@ const FaceAttendance = () => {
                   className={`relative flex-1 py-2 rounded-lg text-sm font-medium transition duration-200 z-10 flex items-center justify-center gap-2 ${
                     mode === "match"
                       ? "text-white"
-                      : "text-gray-700 hover:text-gray-900"
+                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
                   <UserSearch
@@ -213,12 +213,14 @@ const FaceAttendance = () => {
             </div>
 
             {/* Webcam + Canvas */}
-            <div className="mb-6 flex justify-center items-center s pt-4">
+            <div className="mb-6 flex justify-center items-center pt-4">
               <div className="relative w-full max-w-xs">
                 <div className="relative pb-[100%] overflow-hidden">
                   <div
                     className={`absolute inset-0 rounded-full w-full h-full object-contain border-4 overflow-hidden flex items-center justify-center bg-black ${
-                      faceDetected ? "border-green-400" : "border-slate-300"
+                      faceDetected
+                        ? "border-green-400 dark:border-green-500"
+                        : "border-slate-300 dark:border-gray-600"
                     }`}
                   >
                     {/* Webcam Video Feed */}
@@ -241,8 +243,8 @@ const FaceAttendance = () => {
                   <div
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
                       faceDetected
-                        ? "bg-green-100 text-green-800 border border-green-300"
-                        : "bg-gray-100 text-gray-600 border border-gray-300"
+                        ? "bg-green-100 text-green-800 border border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-500"
+                        : "bg-gray-100 text-gray-600 border border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
                     }`}
                   >
                     {faceDetected ? "Face Detected" : "No Face Detected"}
@@ -253,8 +255,8 @@ const FaceAttendance = () => {
           </div>
 
           {/* Right Column - Form Section */}
-          <div className="w-full lg:w-1/2  rounded-xl shadow-xs  h-full">
-            <div className="w-full rounded-xl h-full bg-slate-200">
+          <div className="w-full lg:w-1/2 rounded-xl shadow-xs h-full">
+            <div className="w-full rounded-xl h-full bg-slate-200 dark:bg-gray-800">
               {mode === "add" ? (
                 <AddFaceMode
                   captureFace={captureFace}

@@ -215,12 +215,12 @@ const AddModules = ({
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden relative">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden relative dark:bg-gray-800 dark:text-white">
       {/* Header */}
-      <div className="border-b border-gray-100 bg-gray-50 p-6">
+      <div className="border-b border-gray-100 bg-gray-50 p-6 dark:bg-gray-700 dark:text-white">
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Module Information
           </h3>
         </div>
@@ -235,10 +235,10 @@ const AddModules = ({
         )}
         <form onSubmit={handleSubmit(handleAddModules)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Module ID */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <LayoutGrid className="w-4 h-4 text-gray-500" />
+              {/* Module ID */}
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <LayoutGrid className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Module ID *
               </label>
               <input
@@ -257,11 +257,11 @@ const AddModules = ({
                   //   );
                   // },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 placeholder="Enter module ID"
               />
               {errors.moduleId && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.moduleId.message}
                 </span>
@@ -270,19 +270,19 @@ const AddModules = ({
 
             {/* Module Name */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <FileText className="w-4 h-4 text-gray-500" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Module Name *
               </label>
               <input
                 {...register("moduleName", {
                   required: "Module name is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 placeholder="Enter module name"
               />
               {errors.moduleName && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.moduleName.message}
                 </span>
@@ -291,8 +291,8 @@ const AddModules = ({
 
             {/* Module Duration */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Clock className="w-4 h-4 text-gray-500" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Module Duration (hours) *
               </label>
               <input
@@ -301,11 +301,11 @@ const AddModules = ({
                   required: "Duration is required",
                   min: { value: 1, message: "Minimum 1 hour required" },
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 placeholder="Enter duration in hours"
               />
               {errors.moduleDuration && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.moduleDuration.message}
                 </span>
@@ -314,19 +314,19 @@ const AddModules = ({
 
             {/* Assessment Criteria */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <ClipboardList className="w-4 h-4 text-gray-500" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <ClipboardList className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Assessment Criteria *
               </label>
               <input
                 {...register("assessmentCriteria", {
                   required: "Assessment criteria is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 placeholder="Enter assessment criteria"
               />
               {errors.assessmentCriteria && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.assessmentCriteria.message}
                 </span>
@@ -335,20 +335,20 @@ const AddModules = ({
 
             {/* Module Description */}
             <div className="md:col-span-2 space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <FileText className="w-4 h-4 text-gray-500" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Module Description *
               </label>
               <textarea
                 {...register("moduleDescription", {
                   required: "Description is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 rows="3"
                 placeholder="Enter module description"
               />
               {errors.moduleDescription && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.moduleDescription.message}
                 </span>
@@ -357,20 +357,20 @@ const AddModules = ({
 
             {/* Learning Outcome */}
             <div className="md:col-span-2 space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Target className="w-4 h-4 text-gray-500" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Target className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Learning Outcome *
               </label>
               <textarea
                 {...register("learningOutcome", {
                   required: "Learning outcome is required",
                 })}
-                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 rows="2"
                 placeholder="Enter learning outcomes"
               />
               {errors.learningOutcome && (
-                <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                   <X className="w-4 h-4" />
                   {errors.learningOutcome.message}
                 </span>
@@ -380,8 +380,8 @@ const AddModules = ({
             {/* Module Evaluations */}
             {isPractical && (
               <div className="md:col-span-2 space-y-2 relative">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <FileText className="w-4 h-4 text-gray-500" />
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   Evaluation Points:
                 </label>
 
@@ -404,7 +404,7 @@ const AddModules = ({
                             setValue("evalutionPoints", updatedPoints);
                             setEvalPoints(updatedPoints);
                           }}
-                          className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                          className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                         />
                         <input
                           type="number"
@@ -418,13 +418,15 @@ const AddModules = ({
                             };
                             setEvalPoints(updatedPoints);
                           }}
-                          className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors"
+                          className="w-20 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                         />
                       </div>
                     ))
                   ) : (
                     // If no evaluation points yet, display a readOnly textarea.
-                    <p>No Evalution Points Found</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No Evaluation Points Found
+                    </p>
                   )}
                 </div>
 
@@ -446,9 +448,9 @@ const AddModules = ({
                       setEvalPoints(generated);
                       setValue("evalutionPoints", generated);
                     }}
-                    className="mt-2 flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit"
+                    className="mt-2 flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit dark:bg-blue-500 dark:hover:bg-blue-600"
                   >
-                    <FaMagic />
+                    <FaMagic className="w-4 h-4" />
                     {loadingEval
                       ? "Generating..."
                       : "Generate Evaluation Points"}
@@ -456,14 +458,14 @@ const AddModules = ({
                 </div>
 
                 {errors.evalutionPoints && (
-                  <span className="text-red-500 text-sm flex items-center gap-1">
+                  <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                     <X className="w-4 h-4" />
                     {errors.evalutionPoints.message}
                   </span>
                 )}
 
                 {errorEval && (
-                  <span className="text-red-500 text-sm flex items-center gap-1">
+                  <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                     <X className="w-4 h-4" />
                     {errorEval}
                   </span>
@@ -479,13 +481,16 @@ const AddModules = ({
             {/* Display the generated Paper ID if available */}
             {assessmentPaperId && (
               <div className="md:col-span-2 space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Generated Paper ID:
                 </label>
-                <p className="p-2 bg-gray-100 rounded-sm">{assessmentPaperId}</p>
+                <p className="p-2 bg-gray-100 rounded-sm dark:bg-gray-800 dark:text-gray-200 dark:border dark:border-gray-700">
+                  {assessmentPaperId}
+                </p>
               </div>
             )}
           </div>
+
           {paperData && paperData.paperId !== assessmentPaperId && (
             <PaperGeneratedNotification
               paperId={paperData.paperId}
@@ -503,9 +508,9 @@ const AddModules = ({
               }
               type="button"
               onClick={createNewPaper}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors m"
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
             >
-              <FaMagic />
+              <FaMagic className="w-4 h-4" />
               {isLoading
                 ? "Generating..."
                 : assessmentPaperId
@@ -514,12 +519,12 @@ const AddModules = ({
             </button>
           </div>
 
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <FileText className="w-4 h-4 text-gray-500" />
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             Upload Images:
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {images && images.length > 0 ? (
               images.map((image, index) => (
                 <div key={index} className="relative group">
@@ -528,7 +533,7 @@ const AddModules = ({
                       isDeleting[image.id]
                         ? "animate-pulse border-2 border-red-700"
                         : "animate-none"
-                    } aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center`}
+                    } aspect-square rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center dark:bg-gray-800 dark:border-gray-700`}
                   >
                     <IKImage
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
@@ -547,17 +552,17 @@ const AddModules = ({
                     onClick={() => {
                       deleteImage({ fileId: image.id });
                     }}
-                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity dark:bg-gray-700 dark:text-red-400"
                     title="Delete Image"
                   >
-                    <X className="h-4 w-4 text-red-500" />
+                    <X className="h-4 w-4 text-red-500 dark:text-red-400" />
                   </button>
                 </div>
               ))
             ) : (
-              <div className="col-span-full mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-                <p className="text-gray-500 text-center">
+              <div className="col-span-full mt-6 flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                <ImageIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-3" />
+                <p className="text-gray-500 text-center dark:text-gray-400">
                   No images uploaded yet. Click the upload button to add images.
                 </p>
               </div>
@@ -578,18 +583,20 @@ const AddModules = ({
           />
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-4 border-t">
+          <div className="flex justify-end gap-4 pt-4 border-t dark:border-gray-700">
+            {/* Cancel Button */}
             <button
               type="button"
               onClick={() => setShow(false)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700"
             >
               <X className="w-4 h-4" />
               Cancel
             </button>
+            {/* Save Module Button */}
             <button
               type="submit"
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               <Save className="w-4 h-4" />
               Save Module
@@ -600,37 +607,44 @@ const AddModules = ({
 
       {/* Modal to show generated paper preview */}
       {showPaperModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pt-10  overflow-hidden">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pt-10 overflow-hidden dark:bg-gray-900">
           {/* Modal overlay */}
           <div
-            className="absolute inset-0 bg-black opacity-50"
+            className="absolute inset-0 bg-black opacity-50 dark:bg-opacity-70"
             onClick={() => setShowPaperModal(false)}
           ></div>
           {/* Modal content */}
-          <div className="bg-white rounded-lg shadow-lg z-50 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto ">
+          <div className="relative bg-white rounded-lg shadow-lg z-50 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto dark:bg-gray-800 dark:border dark:border-gray-700">
+            {/* Close button */}
             <button
               onClick={() => setShowPaperModal(false)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+              className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold mb-4">Generated Paper Preview</h2>
+            <h2 className="text-xl font-bold mb-4 dark:text-gray-200">
+              Generated Paper Preview
+            </h2>
             {paperData ? (
               <PaperPreview paperData={paperData} setPaperData={setPaperData} />
             ) : (
-              <p>No paper data available.</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                No paper data available.
+              </p>
             )}
             <div className="mt-4 flex justify-end gap-4">
+              {/* Close button */}
               <button
                 onClick={() => setShowPaperModal(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-sm"
+                className="px-4 py-2 bg-gray-500 text-white rounded-sm hover:bg-gray-600 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 Close
               </button>
+              {/* Save Paper button */}
               <button
                 type="button"
                 onClick={saveNewPaper}
-                className="px-4 py-2 bg-teal-600 text-white rounded-sm"
+                className="px-4 py-2 bg-teal-600 text-white rounded-sm hover:bg-teal-700 transition-colors dark:bg-teal-500 dark:hover:bg-teal-600"
               >
                 {isLoading ? "Saving..." : "Save Paper"}
               </button>

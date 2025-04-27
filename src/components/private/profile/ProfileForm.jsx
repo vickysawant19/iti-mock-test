@@ -15,6 +15,7 @@ import { addProfile, selectProfile } from "../../../store/profileSlice";
 import BatchManagementSection from "./BatchManagementSection";
 import AcademicInformationSection from "./AcadamicInformationSection";
 import PersonalDetailsSection from "./PersonalDetailsSection";
+import Loader from "@/components/components/Loader";
 
 const ProfileForm = () => {
   const [collegeData, setCollegeData] = useState([]);
@@ -227,24 +228,20 @@ const ProfileForm = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 rounded-full animate-spin border-t-transparent" />
-      </div>
-    );
+    return <Loader isLoading={isLoading} />;
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-gray-50 p-6 rounded-lg">
+    <div className=" bg-gray-50 dark:bg-gray-900 p-6 ">
       <div className="flex justify-between items-center mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-blue-500 hover:text-blue-700"
+          className="flex items-center text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-600"
         >
           <ArrowLeft size={18} className="mr-1" />
           Back
         </button>
-        <h1 className="text-2xl font-bold text-gray-800 text-center">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white text-center">
           {formMode === "edit" ? "Edit Profile" : "Create Profile"}
           {isEditingStudentProfile && " (Student)"}
         </h1>
@@ -252,8 +249,8 @@ const ProfileForm = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900 border-l-4 border-red-500 dark:border-red-400 p-4 mb-6">
+          <p className="text-red-700 dark:text-red-300">{error}</p>
         </div>
       )}
 
@@ -262,15 +259,15 @@ const ProfileForm = () => {
         <div
           className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
             isTeacher
-              ? "bg-purple-100 text-purple-800"
-              : "bg-green-100 text-green-800"
+              ? "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300"
+              : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"
           }`}
         >
           {isTeacher ? "Teacher" : "Student"}
         </div>
 
         {formMode === "edit" && (
-          <span className="ml-3 text-gray-500 text-sm">
+          <span className="ml-3 text-gray-500 dark:text-gray-400 text-sm">
             {isEditingOwnProfile
               ? "Editing your own profile"
               : isEditingStudentProfile
@@ -307,7 +304,7 @@ const ProfileForm = () => {
           <button
             disabled={isSubmitting}
             type="submit"
-            className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition duration-200 flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full bg-blue-500 dark:bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200 flex items-center justify-center disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
           >
             <Save size={20} className="mr-2" />
             {isSubmitting

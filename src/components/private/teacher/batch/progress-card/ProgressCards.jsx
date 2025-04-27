@@ -211,18 +211,19 @@ const ProgressCard = ({
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto relative">
+    <div className="w-full max-w-4xl mx-auto relative dark:bg-gray-900">
       <div className="mb-4 flex-col md:flex-row justify-start items-start flex md:justify-between md:items-center gap-4">
+        {/* Student Selector Dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50"
+            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700">
+            <span className="text-gray-700 dark:text-white">
               {selectedStudent ? selectedStudent.userName : "Select student"}
             </span>
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -237,11 +238,11 @@ const ProgressCard = ({
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white">
               {studentProfiles.map((student) => (
                 <div
                   key={student.userId}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white"
                   onClick={() => handleStudentSelect(student)}
                 >
                   {student.userName}
@@ -251,11 +252,12 @@ const ProgressCard = ({
           )}
         </div>
 
+        {/* Action Buttons */}
         <div className="flex justify-center items-center gap-4">
           {progressData && (
             <button
               onClick={() => setEditMode((prev) => !prev)}
-              className="bg-blue-600 p-2 rounded-md text-white flex items-center gap-2 px-2 py-2"
+              className="bg-blue-600 p-2 rounded-md text-white flex items-center gap-2 px-2 py-2 dark:bg-blue-700 dark:hover:bg-blue-800"
             >
               <Edit2 className="h-4" /> {editMode ? "Close Edit" : "Open Edit"}
             </button>
@@ -265,7 +267,7 @@ const ProgressCard = ({
             <PDFDownloadLink
               document={<ProgressCardPDF data={progressData} />}
               fileName={`progress-card-${progressData.userName}.pdf`}
-              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
               {({ loading }) => (
                 <>
@@ -278,8 +280,9 @@ const ProgressCard = ({
         </div>
       </div>
 
+      {/* Edit Mode or Progress Card Preview */}
       {editMode ? (
-        <div className="w-full h-full rounded-md">
+        <div className="w-full h-full rounded-md dark:bg-gray-800">
           <EditProgressCard
             progressData={progressData}
             setProgressdata={setProgressData}
@@ -289,7 +292,7 @@ const ProgressCard = ({
           />
         </div>
       ) : (
-        <div className="overflow-hidden border rounded-lg shadow-xs">
+        <div className="overflow-hidden border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800">
           {progressData ? (
             pdfUrl ? (
               <iframe
@@ -298,13 +301,15 @@ const ProgressCard = ({
                 title="Progress Card Preview"
               />
             ) : (
-              <div className="w-full h-[842px] flex items-center justify-center">
-                <p className="text-gray-500">Generating preview...</p>
+              <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Generating preview...
+                </p>
               </div>
             )
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center bg-white">
-              <p className="text-gray-500">
+            <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400">
                 Select a student to view their progress card
               </p>
             </div>

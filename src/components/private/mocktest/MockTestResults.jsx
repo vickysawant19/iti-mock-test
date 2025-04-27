@@ -6,6 +6,7 @@ import questionpaperservice from "../../../appwrite/mockTest";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
 import { ClipLoader } from "react-spinners";
+import Loader from "@/components/components/Loader";
 
 const MockTestResults = () => {
   const { paperId } = useParams();
@@ -100,51 +101,68 @@ const MockTestResults = () => {
     }
   };
 
-  if (loading)
+  if (loading) return <Loader isLoading={loading} />;
+
+  if (error)
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ClipLoader size={50} color={"#123abc"} loading={loading} />
+      <div className="text-red-500 text-center bg-gray-50 dark:bg-gray-900">
+        {error}
       </div>
     );
-  if (error) return <div className="text-red-500 text-center">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
       <div className="mx-auto max-w-6xl">
+        {/* Header */}
         <div className="mb-6 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+            className="p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-full"
           >
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-2xl font-bold">Mock Test Results</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Mock Test Results
+          </h1>
         </div>
 
+        {/* Search Input */}
         <input
           type="text"
           placeholder="Search by name..."
-          className="border p-2 rounded-sm w-full mb-4"
+          className="border p-2 rounded-sm w-full mb-4 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
+        {/* Export CSV Button */}
         <button
           onClick={exportCSV}
-          className="bg-blue-500 text-white px-4 py-2 rounded-sm mb-4"
+          className="bg-blue-500 text-white px-4 py-2 rounded-sm mb-4 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400"
         >
           Export CSV
         </button>
 
-        <div className="overflow-x-auto bg-white shadow-sm rounded-lg ">
+        {/* Table */}
+        <div className="overflow-x-auto bg-white shadow-sm rounded-lg dark:bg-gray-800 dark:shadow-none">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="p-4 text-left">Rank</th>
-                <th className="p-4 text-left">Student Name</th>
-                <th className="p-4 text-left">Score</th>
-                <th className="p-4 text-left">Total Minutes</th>
-                <th className="p-4 text-left">Submission Status</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
+              <tr className="bg-gray-50 border-b dark:bg-gray-700 dark:border-gray-600">
+                <th className="p-4 text-left text-gray-700 dark:text-gray-200">
+                  Rank
+                </th>
+                <th className="p-4 text-left text-gray-700 dark:text-gray-200">
+                  Student Name
+                </th>
+                <th className="p-4 text-left text-gray-700 dark:text-gray-200">
+                  Score
+                </th>
+                <th className="p-4 text-left text-gray-700 dark:text-gray-200">
+                  Total Minutes
+                </th>
+                <th className="p-4 text-left text-gray-700 dark:text-gray-200">
+                  Submission Status
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
                   Submitted At
                 </th>
               </tr>
@@ -154,10 +172,12 @@ const MockTestResults = () => {
                 <tr
                   key={index}
                   className={
-                    profile.userId === result.userId ? "bg-blue-50" : ""
+                    profile.userId === result.userId
+                      ? "bg-blue-50 dark:bg-gray-700"
+                      : ""
                   }
                 >
-                  <td className="p-4 flex items-center gap-2">
+                  <td className="p-4 flex items-center gap-2 text-gray-700 dark:text-gray-200">
                     {index + 1}
                     {index < 3 && (
                       <Trophy
@@ -165,13 +185,13 @@ const MockTestResults = () => {
                       />
                     )}
                   </td>
-                  <td className="p-4 font-medium">
+                  <td className="p-4 font-medium text-gray-900 dark:text-gray-100">
                     {formatName(result.userName)}
                   </td>
-                  <td className="p-4 text-blue-800 font-semibold">
+                  <td className="p-4 text-blue-800 dark:text-blue-300 font-semibold">
                     {result.score || "-"}/{result.quesCount || 50}
                   </td>
-                  <td className="p-4 text-gray-600">
+                  <td className="p-4 text-gray-600 dark:text-gray-400">
                     {result.submitted
                       ? `${result.timeTaken} min`
                       : "Not Submitted"}
@@ -180,14 +200,14 @@ const MockTestResults = () => {
                     <span
                       className={`px-3 py-1 rounded-full text-sm ${
                         result.submitted
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100"
+                          : "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100"
                       }`}
                     >
                       {result.submitted ? "Submitted" : "Not Submitted"}
                     </span>
                   </td>
-                  <td className="p-4 text-sm text-gray-600">
+                  <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                     {result.submitted
                       ? format(
                           new Date(result.endTime || result.$updatedAt),

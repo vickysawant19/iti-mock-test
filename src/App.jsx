@@ -12,7 +12,7 @@ import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
-import ScrollToTop from "./utils/ScrollToTop.jsx";
+
 import { ThemeProvider } from "./ThemeProvider";
 
 function App() {
@@ -28,20 +28,25 @@ function App() {
     const checkUserStatus = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
-        
+
         if (currentUser) {
           dispatch(addUser(currentUser));
-          
+
+          // Fetch user profile if it doesn't exist in the Redux store
           if (!profile) {
-            const profileRes = await userProfileService.getUserProfile(currentUser.$id);
-            
+            const profileRes = await userProfileService.getUserProfile(
+              currentUser.$id
+            );
+
             if (profileRes) {
               dispatch(addProfile(profileRes));
-              
+
+              // Redirect to home if the user is on the root path
               if (window.location.pathname === "/") {
                 navigate("/home");
               }
             } else {
+              // Redirect to profile setup if no profile exists
               navigate("/profile");
             }
           }
@@ -52,13 +57,13 @@ function App() {
         setIsLoading(false);
       }
     };
-    
+
     checkUserStatus();
   }, [navigate, dispatch, profile]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
       </div>
     );
@@ -66,15 +71,17 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
-      <ScrollToTop />
-      <div className="bg-gray-100 w-full min-h-screen">
+      <div className="bg-gray-100 w-full min-h-screen dark:bg-gray-900">
+        {/* Navbar */}
         <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
-        
-        <div className="bg-gray-100 w-full mx-auto">
+
+        {/* Main Content */}
+        <div className="mx-auto">
           <Outlet />
           <ToastContainer />
         </div>
-        
+
+        {/* Analytics */}
         <Analytics />
       </div>
     </ThemeProvider>

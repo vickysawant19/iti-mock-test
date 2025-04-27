@@ -97,25 +97,25 @@ const ShowMockTest = () => {
 
   const SkeletonLoader = () => {
     return (
-      <div className="p-4 mx-auto bg-white shadow-md rounded-md animate-pulse">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+      <div className="p-4 mx-auto bg-white shadow-md rounded-md animate-pulse dark:bg-gray-800 dark:shadow-none">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center dark:text-gray-100">
           Mock Test Results
         </h1>
         {/* Header Skeleton */}
-        <div className="p-1 max-w-md  bg-white animate-pulse">
-          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2"></div>
+        <div className="p-1 max-w-md bg-white animate-pulse dark:bg-gray-800">
+          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-full mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/2 mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-3/4 mb-2 dark:bg-gray-700"></div>
+          <div className="h-4 bg-gray-300 rounded-sm w-1/3 mb-2 dark:bg-gray-700"></div>
         </div>
 
         {/* Question Skeleton */}
-        <div className="h-20 bg-gray-300 rounded-sm w-full mb-4 mt-6 p-4"></div>
+        <div className="h-20 bg-gray-300 rounded-sm w-full mb-4 mt-6 p-4 dark:bg-gray-700"></div>
 
         {/* Options Skeleton */}
         {[...Array(2)].map((_, sectionIndex) => (
@@ -123,7 +123,7 @@ const ShowMockTest = () => {
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
-                className="h-10 bg-gray-300 rounded-sm w-full"
+                className="h-10 bg-gray-300 rounded-sm w-full dark:bg-gray-700"
               ></div>
             ))}
           </div>
@@ -133,38 +133,37 @@ const ShowMockTest = () => {
   };
 
   return (
-    <div className=" min-h-screen">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto">
         {isLoading ? (
           <SkeletonLoader />
         ) : mockTest ? (
-          <div className="bg-gray-100 p-4 rounded-lg shadow-lg">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+          <div className="bg-gray-100 p-4 rounded-lg shadow-lg dark:bg-gray-800 dark:shadow-none">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center dark:text-gray-100">
               Mock Test Results
             </h1>
             <div className="mb-6">
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>User Name:</strong> {mockTest.userName || "N/A"}
               </p>
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Trade Name:</strong> {mockTest.tradeName || "N/A"}
               </p>
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Year:</strong> {mockTest.year || "N/A"}
               </p>
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Paper ID:</strong> {mockTest.paperId}
               </p>
-
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Created At:</strong>{" "}
                 {new Date(mockTest.$createdAt).toLocaleString()}
               </p>
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Score:</strong> {mockTest.score}/
                 {mockTest.quesCount || "NA"}
               </p>
-              <p>
+              <p className="text-gray-800 dark:text-gray-200">
                 <strong>Total Questions:</strong> {mockTest.quesCount || "NA"}
               </p>
             </div>
@@ -172,30 +171,30 @@ const ShowMockTest = () => {
               {mockTest.questions.map((question, index) => (
                 <div
                   key={index}
-                  className={`p-6 mb-4 rounded-lg shadow-md bg-white ${
+                  className={`p-6 mb-4 rounded-lg shadow-md bg-white dark:bg-gray-700 ${
                     question.response === question.correctAnswer
-                      ? "border-l-4 border-green-500"
-                      : "border-l-4 border-red-500"
+                      ? "border-l-4 border-green-500 dark:border-green-400"
+                      : "border-l-4 border-red-500 dark:border-red-400"
                   }`}
                 >
-                  <div className=" mb-2 flex justify-between flex-col">
+                  <div className="mb-2 flex justify-between flex-col">
                     {isTeacher ? (
                       <Link
-                        className="text-gray-500 text-xs mb-2 h-fit w-fit"
+                        className="text-gray-500 text-xs mb-2 h-fit w-fit dark:text-gray-300"
                         to={`/edit/${question.$id}`}
                       >
                         {question.$id}
                       </Link>
                     ) : (
-                      <span className="text-gray-500 text-xs bg-red-400">
+                      <span className="text-gray-500 text-xs bg-red-400 dark:bg-red-500 dark:text-gray-100">
                         {question.$id}
                       </span>
                     )}
-                    <h1 className="text-lg font-semibold">
+                    <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                       {index + 1}. {question.question}{" "}
                     </h1>
                   </div>
-                 
+
                   <div className="flex gap-2 m-2">
                     {question?.images?.map((img) => {
                       const image = JSON.parse(img);
@@ -203,7 +202,9 @@ const ShowMockTest = () => {
                         <img
                           className="max-h-32"
                           key={image.id}
-                          src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQysm7d0JnuK4_jPG6U3Fyd1cRzbb78Z_7-4g&s"}
+                          src={
+                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQysm7d0JnuK4_jPG6U3Fyd1cRzbb78Z_7-4g&s"
+                          }
                           alt={image.name}
                         />
                       );
@@ -215,20 +216,20 @@ const ShowMockTest = () => {
                         key={idx}
                         className={`p-2 rounded-md ${
                           idx === getIndex(question.correctAnswer)
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
                             : idx === getIndex(question.response)
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-800"
+                            ? "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
                         }`}
                       >
                         {OPTIONS[idx]}. {option}
                         {idx === getIndex(question.correctAnswer) && (
-                          <span className="ml-2 font-semibold">
+                          <span className="ml-2 font-semibold text-green-800 dark:text-green-100">
                             (Correct Answer)
                           </span>
                         )}
                         {idx === getIndex(question.response) && (
-                          <span className="ml-2 font-semibold">
+                          <span className="ml-2 font-semibold text-red-800 dark:text-red-100">
                             (Selected Answer)
                           </span>
                         )}
@@ -240,7 +241,9 @@ const ShowMockTest = () => {
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-700">Loading...</p>
+          <p className="text-center text-gray-700 dark:text-gray-300">
+            Loading...
+          </p>
         )}
       </div>
     </div>

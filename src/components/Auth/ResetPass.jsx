@@ -38,12 +38,15 @@ const ResetPass = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-sm shadow-md">
-        <h2 className="mb-6 text-2xl font-bold text-center">Reset Password</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-sm shadow-md dark:shadow-lg">
+        <h2 className="mb-6 text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
+          Reset Password
+        </h2>
         <form onSubmit={handleSubmit}>
+          {/* New Password Field */}
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-bold text-gray-700">
+            <label className="block mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">
               New Password:
             </label>
             <input
@@ -51,11 +54,13 @@ const ResetPass = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
+
+          {/* Confirm Password Field */}
           <div className="mb-4">
-            <label className="block mb-2 text-sm font-bold text-gray-700">
+            <label className="block mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">
               Confirm Password:
             </label>
             <input
@@ -63,13 +68,15 @@ const ResetPass = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-sm shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
+
+          {/* Submit Button */}
           <button
             disabled={isLoading}
             type="submit"
-            className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-sm hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 font-bold text-white bg-blue-500 dark:bg-blue-600 rounded-sm hover:bg-blue-700 dark:hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
           >
             {isLoading ? (
               <ClipLoader size={20} color={"#ffffff"} />
@@ -78,7 +85,13 @@ const ResetPass = () => {
             )}
           </button>
         </form>
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
+
+        {/* Error Message */}
+        {message && (
+          <p className="mt-4 text-center text-red-500 dark:text-red-400">
+            {message}
+          </p>
+        )}
       </div>
     </div>
   );

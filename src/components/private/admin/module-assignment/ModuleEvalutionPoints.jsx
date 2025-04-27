@@ -22,7 +22,7 @@ const useModuleEvalutionPoints = () => {
 
     try {
       const result = await geminiService.getEvalutionPoint(practicalName);
-      
+
       if (!result || typeof result !== "string") {
         throw new Error("No evaluation points received.");
       }
@@ -36,11 +36,13 @@ const useModuleEvalutionPoints = () => {
         };
       });
       setData(evalutionPoints);
-      return evalutionPoints
+      return evalutionPoints;
     } catch (err) {
       console.error("Error generating evaluation points:", err);
       setIsError(true);
-      setError(err.message || "An error occurred while generating evaluation points.");
+      setError(
+        err.message || "An error occurred while generating evaluation points."
+      );
     } finally {
       setIsLoading(false);
     }
