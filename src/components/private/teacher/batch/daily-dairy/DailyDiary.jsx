@@ -225,9 +225,9 @@ function DailyDiary() {
   }
 
   return (
-    <div className="w-full h-screen px-4 py-6 dark:bg-gray-900 ">
+    <div className="w-full h-screen px-4 py-6 dark:bg-black ">
       {/* Week navigation */}
-      <div className="flex items-center justify-between mb-6 w-full">
+      <div className="container mx-auto flex items-center justify-between mb-6 w-full">
         <button
           className={`flex items-center px-3 py-2 text-white rounded-md transition-colors ${
             weekNumber <= 1
@@ -255,7 +255,7 @@ function DailyDiary() {
       </div>
 
       {/* Diary table */}
-      <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
+      <div className="container mx-auto overflow-x-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-indigo-700 text-white dark:bg-indigo-600">

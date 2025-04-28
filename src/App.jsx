@@ -14,6 +14,7 @@ import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
 
 import { ThemeProvider } from "./ThemeProvider";
+import Loader from "./components/components/Loader";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -63,15 +64,13 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-        <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-      </div>
+      <Loader isLoading={isLoading } />
     );
   }
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
-      <div className="bg-gray-100 w-full min-h-screen dark:bg-gray-900">
+      <div className="bg-gray-100 w-full min-h-screen dark:bg-black">
         {/* Navbar */}
         <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
 

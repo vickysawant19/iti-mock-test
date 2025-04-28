@@ -379,7 +379,7 @@ const MarkAttendance = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-black dark:bg-gray-900 dark:text-white p-4">
+    <div className="min-h-screen bg-gray-100 text-black dark:bg-black dark:text-white p-4">
       {/* Main Content Grid */}
       <div
         className={`grid grid-cols-1 lg:grid-cols-5 gap-6 text-sm transition-all duration-300`}

@@ -151,8 +151,8 @@ const MarkHolidays = () => {
   }
 
   return (
-    <div className="p-4 mx-auto dark:bg-gray-900">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md dark:shadow-none">
+    <div className="p-4 mx-auto dark:bg-black">
+      <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md dark:shadow-none">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
           Update Holidays
         </h1>
@@ -173,7 +173,7 @@ const MarkHolidays = () => {
           )}
         </button>
       </div>
-
+      <div className="container mx-auto">
       <CustomCalendar
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
@@ -181,6 +181,8 @@ const MarkHolidays = () => {
         tileContent={tileContent}
         tileClassName={tileClassName}
       />
+
+      </div>
 
       {/* Modal */}
       {showModal && (

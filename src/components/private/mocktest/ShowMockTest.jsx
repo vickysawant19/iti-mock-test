@@ -133,12 +133,12 @@ const ShowMockTest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       <div className="container mx-auto">
         {isLoading ? (
           <SkeletonLoader />
         ) : mockTest ? (
-          <div className="bg-gray-100 p-4 rounded-lg shadow-lg dark:bg-gray-800 dark:shadow-none">
+          <div className=" p-4 bg-gray-100 dark:bg-black">
             <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center dark:text-gray-100">
               Mock Test Results
             </h1>
@@ -171,7 +171,7 @@ const ShowMockTest = () => {
               {mockTest.questions.map((question, index) => (
                 <div
                   key={index}
-                  className={`p-6 mb-4 rounded-lg shadow-md bg-white dark:bg-gray-700 ${
+                  className={`p-6 mb-4 rounded-lg shadow-md bg-white dark:bg-gray-800 ${
                     question.response === question.correctAnswer
                       ? "border-l-4 border-green-500 dark:border-green-400"
                       : "border-l-4 border-red-500 dark:border-red-400"

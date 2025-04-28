@@ -111,9 +111,9 @@ const ManageQuestions = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen bg-background text-foreground dark:bg-black dark:text-white">
       <div className="container mx-auto px-4 py-8">
-        <Card className="w-full shadow-md dark:bg-gray-800 dark:border-gray-700">
+        <Card className="w-full shadow-md dark:bg-gray-900 dark:border-gray-700">
           <CardHeader>
             <div className="flex flex-col lg:flex-row w-full justify-between items-center">
               <div className="flex gap-4 items-center mb-4 lg:mb-0">

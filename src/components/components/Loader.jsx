@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const Loader = ({ isLoading = true }) => {
   return (
-    <div className="flex justify-center items-center min-h-screen bg-background text-foreground dark:bg-gray-900 dark:text-white">
+    <div className="flex justify-center items-center min-h-screen bg-background text-foreground dark:bg-black dark:text-white">
       <Card className="w-full max-w-md shadow-md dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="text-center text-xl font-bold dark:text-white">
@@ -15,14 +15,6 @@ const Loader = ({ isLoading = true }) => {
         <CardContent className="flex flex-col items-center justify-center space-y-4">
           {/* Spinner */}
           <ClipLoader size={100} color={"#123abc"} loading={isLoading} />
-
-          {/* Icon Animation */}
-          <div className="animate-pulse">
-            <LucideLoader
-              size={48}
-              className="text-primary dark:text-blue-400"
-            />
-          </div>
 
           {/* Loading Message */}
           <p className="text-sm text-gray-500 dark:text-gray-400">

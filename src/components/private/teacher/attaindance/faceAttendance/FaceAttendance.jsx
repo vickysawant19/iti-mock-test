@@ -67,8 +67,8 @@ const FaceAttendance = () => {
 
   if (modelError) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="p-4 bg-white rounded-lg shadow-lg max-w-md w-full">
+      <div className=" container mx-auto flex items-center justify-center h-screen bg-gray-50 dark:bg-black ">
+        <div className="p-4 bg-white rounded-lg shadow-lg max-w-md w-full dark:bg-gray-900">
           <div className="flex items-center justify-center mb-3 text-red-500">
             <svg
               className="w-10 h-10"
@@ -96,7 +96,7 @@ const FaceAttendance = () => {
   }
 
   return (
-    <div className=" mx-auto px-4 py-6 dark:bg-gray-900 ">
+    <div className="container mx-auto px-4 py-6 dark:bg-gray-900  mt-5 rounded-lg">
       <div className="bg-white rounded-lg p-4 flex flex-col gap-4 w-full dark:bg-gray-800 dark:border dark:border-gray-700">
         <div className="flex justify-between flex-wrap gap-4">
           <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">

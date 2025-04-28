@@ -71,12 +71,12 @@ const AttainTest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         <div className="max-w-md mx-auto">
           {/* Paper ID Card */}
-          <Card className="overflow-hidden border-gray-200 dark:border-gray-800 dark:bg-gray-800">
+          <Card className="overflow-hidden border-gray-200 dark:border-gray-900 dark:bg-gray-800">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">

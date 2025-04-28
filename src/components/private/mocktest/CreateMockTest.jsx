@@ -219,7 +219,7 @@ const CreateMockTest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 flex justify-center items-start pt-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-8 flex justify-center items-start pt-20">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <div className="p-6 border-b dark:border-gray-700">
           <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">

@@ -29,6 +29,7 @@ import { ClipLoader } from "react-spinners";
 
 import CustomSelectData from "../../../components/customSelectData";
 import useLocationManager from "./hook/useLocationManager";
+import { FaCalendar } from "react-icons/fa";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -386,13 +387,13 @@ const MarkStudentAttendance = () => {
   }
 
   return (
-    <div className="w-full h-screen mx-auto px-4 py-6 dark:bg-gray-900">
+    <div className="w-full  mx-auto px-4 py-6 dark:bg-black">
       {/* Top Actions Bar */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 mb-6">
         {isTeacher ? (
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Select with improved width handling */}
-            <div className="w-full sm:w-1/3">
+            <div className="w-full sm:w-1/3 ">
               <CustomSelectData
                 label="Select Student"
                 placeholder="Select student"
@@ -591,7 +592,8 @@ const MarkStudentAttendance = () => {
         ) : (
           studentAttendance && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 rounded-lg">
+                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4"> <FaCalendar /> Attendance Calendar - {currentMonth}</h1>
                 <CustomCalendar
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
@@ -609,18 +611,18 @@ const MarkStudentAttendance = () => {
                 />
               </div>
               <div className="lg:col-span-5 space-y-6">
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                
                   <ShowStats
                     attendance={currentMonthData}
                     label={`Month Attendance - ${currentMonth}`}
                   />
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                
+                
                   <ShowStats
                     attendance={attendanceStats}
                     label="Total Attendance"
                   />
-                </div>
+                
               </div>
             </div>
           )

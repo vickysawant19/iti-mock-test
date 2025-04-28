@@ -128,8 +128,8 @@ const AllMockTests = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground dark:bg-gray-900 dark:text-white p-4">
-      <Card className="w-full max-w-6xl mx-auto shadow-md dark:bg-gray-800 dark:border-gray-700">
+    <div className="min-h-screen bg-background text-foreground dark:bg-black dark:text-white p-4">
+      <Card className="w-full max-w-6xl mx-auto shadow-md dark:bg-gray-900 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center dark:text-white">
             All Mock Tests

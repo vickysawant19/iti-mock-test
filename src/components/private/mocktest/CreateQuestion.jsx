@@ -206,12 +206,12 @@ const CreateQuestion = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen dark:bg-gray-900">
+    <div className="bg-gray-100 min-h-screen dark:bg-black">
       <div className="container mx-auto px-4 py-8">
         <header className="py-6 flex gap-6 ml-3">
           <button
             onClick={() => navigate(-1)}
-            className="text-2xl text-gray-800 dark:text-gray-100"
+            className="text-2xl text-gray-900 dark:text-gray-100"
           >
             <FaArrowLeft />
           </button>
@@ -220,7 +220,7 @@ const CreateQuestion = () => {
           </h1>
         </header>
 
-        <main className="mt-8 bg-white shadow-md rounded-lg p-6 dark:bg-gray-800 dark:border dark:border-gray-700">
+        <main className="mt-8 bg-white shadow-md rounded-lg p-6 dark:bg-gray-900 dark:border dark:border-gray-700">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="lg:grid lg:grid-cols-3 gap-3"

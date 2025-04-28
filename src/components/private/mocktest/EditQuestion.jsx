@@ -159,7 +159,7 @@ const EditQuestion = () => {
   const currentIndex = questionsStore?.findIndex((item) => item.$id === quesId);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       <div className="container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
@@ -188,7 +188,7 @@ const EditQuestion = () => {
         </header>
 
         {/* Main Form Card */}
-        <div className="bg-white rounded-lg shadow-xs p-6 mb-6 dark:bg-gray-800 dark:border dark:border-gray-700">
+        <div className="bg-white rounded-lg shadow-xs p-6 mb-6 dark:bg-gray-900 dark:border dark:border-gray-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Trade Selection */}
             <div className="grid md:grid-cols-2 gap-6">

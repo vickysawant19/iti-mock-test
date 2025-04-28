@@ -146,7 +146,7 @@ const CheckAttendance = () => {
 
   if (!attendance.length) {
     return (
-      <div className="flex items-center justify-center h-full p-10 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-center h-full p-10 bg-white dark:bg-black">
         <Card>
           <CardContent>
             <p className="text-center text-muted-foreground">
@@ -159,9 +159,9 @@ const CheckAttendance = () => {
   }
 
   return (
-    <div className="space-y-6 bg-white dark:bg-gray-900 p-4">
+    <div className="space-y-6 bg-white dark:bg-black p-4">
       {/* Profile Info */}
-      <Card>
+      <Card className={"bg-white dark:bg-gray-800 "}>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
         </CardHeader>
@@ -187,7 +187,7 @@ const CheckAttendance = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Calendar Section */}
         <div className="lg:col-span-7">
-          <Card>
+          <Card className={"bg-white dark:bg-gray-800 "}>
             <CardHeader>
               <CardTitle>Attendance Calendar - {currentMonth}</CardTitle>
             </CardHeader>
@@ -204,7 +204,7 @@ const CheckAttendance = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-6 ">
           <ShowStats
             attendance={currentMonthData}
             label={`Month Attendance - ${currentMonth}`}

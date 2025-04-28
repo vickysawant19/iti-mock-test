@@ -151,9 +151,9 @@ const Assessment = () => {
   }, [selectedTradeYear, selectedSubject]);
 
   return (
-    <div className="bg-gray-50 min-h-screen dark:bg-gray-900">
+    <div className="container mx-auto bg-gray-50 min-h-screen dark:bg-black">
       {/* Header */}
-      <div className="w-full bg-blue-600 text-white shadow-lg pt-2 dark:bg-blue-700">
+      <div className="w-full bg-blue-800 text-white shadow-lg pt-2 dark:bg-blue-900">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-center md:justify-start">
             <ClipboardList
