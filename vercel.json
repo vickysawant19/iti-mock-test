@@ -1,3 +1,16 @@
 {
-  "rewrites": []
+  "rewrites": [
+    [
+    
+      { "handle": "filesystem" },
+  
+    
+      {
+        "src": "/sitemap\\.xml",
+        "dest": "/api/sitemap.xml"
+      },
+  
+      { "src": "/.*", "dest": "/index.html" }
+    ]
+  ]
 }
