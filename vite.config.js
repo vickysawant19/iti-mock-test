@@ -19,10 +19,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      workbox: {
-        maximumFileSizeToCacheInBytes: 5000000, // 5MB limit
-      },
       registerType: "autoUpdate",
+      workbox: {
+        // 5MB cache limit
+        maximumFileSizeToCacheInBytes: 5000000,
+        // default fallback for navigation requests
+        navigateFallback: '/',
+        // do not apply navigation fallback for sitemap.xml
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/],
+      },
       manifest: {
         id: "/",
         name: "ITI Mock Test",
@@ -46,7 +51,7 @@ export default defineConfig({
         ],
       },
     }),
-    // Middleware to serve sitemap.xml from public folder in dev
+    // Dev middleware to serve sitemap.xml
     {
       name: "sitemap-middleware",
       configureServer(server) {
@@ -69,9 +74,5 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  // Optional: configure server options for production on custom server
-  server: {
-    // You can add other dev server options here
   },
 });
