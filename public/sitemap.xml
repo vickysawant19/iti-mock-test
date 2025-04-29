@@ -60,14 +60,6 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Dynamic: replace {paperId} with real test ID -->
-  <url>
-    <loc>https://itimocktest.vercel.app/start-mock-test/{paperId}</loc>
-    <lastmod>2025-04-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <url>
     <loc>https://itimocktest.vercel.app/attain-test</loc>
     <lastmod>2025-04-28</lastmod>
