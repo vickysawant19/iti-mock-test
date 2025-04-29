@@ -6,10 +6,19 @@
       "config": { "distDir": "dist" }
     }
   ],
-
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/sitemap\\.xml", "dest": "/sitemap.xml" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/sitemap\\.xml",
+      "dest": "/sitemap.xml",
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "application/xml"
+      }
+    },
+
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
   ]
 }
