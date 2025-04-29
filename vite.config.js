@@ -23,10 +23,13 @@ export default defineConfig({
       workbox: {
         // 5MB cache limit
         maximumFileSizeToCacheInBytes: 5000000,
-        // default fallback for navigation requests
+        // your normal SPA fallback
         navigateFallback: '/',
-        // do not apply navigation fallback for sitemap.xml
-        navigateFallbackDenylist: [/^\/sitemap\.xml$/],
+        // don’t redirect sitemap.xml or robots.txt to the SPA
+        navigateFallbackDenylist: [
+          /^\/sitemap\.xml$/,
+          /^\/robots\.txt$/
+        ],
       },
       manifest: {
         id: "/",
