@@ -1,4 +1,5 @@
 import path from "path"
+import fs from "fs"
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -45,10 +46,32 @@ export default defineConfig({
         ],
       },
     }),
+    // Middleware to serve sitemap.xml from public folder in dev
+    {
+      name: "sitemap-middleware",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === "/sitemap.xml") {
+            const sitemap = fs.readFileSync(
+              path.resolve(__dirname, "public/sitemap.xml"),
+              "utf-8"
+            );
+            res.setHeader("Content-Type", "application/xml");
+            res.end(sitemap);
+          } else {
+            next();
+          }
+        });
+      },
+    },
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // Optional: configure server options for production on custom server
+  server: {
+    // You can add other dev server options here
   },
 });
