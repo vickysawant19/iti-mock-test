@@ -4,7 +4,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
-import { ClipLoader } from "react-spinners";
 
 import { addUser } from "./store/userSlice";
 import { addProfile } from "./store/profileSlice";
@@ -14,7 +13,6 @@ import Navbar from "./components/private/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
 
 import { ThemeProvider } from "./ThemeProvider";
-import Loader from "./components/components/Loader";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +31,6 @@ function App() {
         if (currentUser) {
           dispatch(addUser(currentUser));
 
-          // Fetch user profile if it doesn't exist in the Redux store
           if (!profile) {
             const profileRes = await userProfileService.getUserProfile(
               currentUser.$id
@@ -41,13 +38,10 @@ function App() {
 
             if (profileRes) {
               dispatch(addProfile(profileRes));
-
-              // Redirect to home if the user is on the root path
               if (window.location.pathname === "/") {
                 navigate("/home");
               }
             } else {
-              // Redirect to profile setup if no profile exists
               navigate("/profile");
             }
           }
@@ -62,25 +56,25 @@ function App() {
     checkUserStatus();
   }, [navigate, dispatch, profile]);
 
+  // If still loading auth/profile, render nothing
   if (isLoading) {
-    return (
-      <Loader isLoading={isLoading } />
-    );
+    return null;
   }
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
       <div className="bg-gray-100 w-full min-h-screen dark:bg-black">
-        {/* Navbar */}
-        <Navbar isNavOpen={isNavOpen} setIsNavOpen={setIsNavOpen} />
+        <Navbar
+          isNavOpen={isNavOpen}
+          setIsNavOpen={setIsNavOpen}
+          isLoading={isLoading}
+        />
 
-        {/* Main Content */}
         <div className="mx-auto">
           <Outlet />
           <ToastContainer />
         </div>
 
-        {/* Analytics */}
         <Analytics />
       </div>
     </ThemeProvider>

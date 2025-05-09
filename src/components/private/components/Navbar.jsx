@@ -27,6 +27,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
 import { Menu, User, LogOut, ChevronRight, Sun, Moon } from "lucide-react";
@@ -38,7 +39,7 @@ import { removeUser } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 import { menuConfig, pathToHeading } from "./navMenu";
 
-const Navbar = ({ isNavOpen, setIsNavOpen }) => {
+const Navbar = ({ isNavOpen, setIsNavOpen, isLoading }) => {
   const user = useSelector((state) => state.user);
   const profile = useSelector(selectProfile);
   const dispatch = useDispatch();
@@ -47,6 +48,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const { theme, setTheme } = useTheme();
 
   const [expandedGroup, setExpandedGroup] = useState("");
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
 
   const isTeacher = user?.labels?.includes("Teacher");
   const isAdmin = user?.labels?.includes("admin");
@@ -55,15 +57,22 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const currentHeading = pathToHeading[location.pathname] || "";
 
   const handleLogout = async () => {
+    if (isLoading || !user) return;
+    
     try {
-      if (user) {
-        await authService.logout();
-        dispatch(removeUser());
-        dispatch(removeProfile());
+      setIsLogoutLoading(true);
+      await authService.logout();
+      dispatch(removeUser());
+      dispatch(removeProfile());
+      
+      // Only redirect when loading completes
+      if (!isLoading) {
         navigate("/login");
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsLogoutLoading(false);
     }
   };
 
@@ -114,23 +123,73 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </Collapsible>
   );
 
-  const MenuItem = ({ to, icon: Icon, children, onClick }) => (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex items-center gap-2 p-2 text-sm rounded-md transition-colors ${
-          isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
-        }`
+  const MenuItem = ({ to, icon: Icon, children, onClick }) => {
+    const handleMenuClick = (e) => {
+      if (isLoading) {
+        e.preventDefault();
+        return;
       }
-      onClick={() => {
-        onClick?.();
-        setIsNavOpen(false);
-      }}
-    >
-      <Icon className="w-4 h-4" />
-      <span>{children}</span>
-    </NavLink>
-  );
+      onClick?.();
+      setIsNavOpen(false);
+    };
+    
+    return (
+      <NavLink
+        to={to}
+        className={({ isActive }) =>
+          `flex items-center gap-2 p-2 text-sm rounded-md transition-colors ${
+            isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+          } ${isLoading ? "pointer-events-none opacity-50" : ""}`
+        }
+        onClick={handleMenuClick}
+      >
+        <Icon className="w-4 h-4" />
+        <span>{children}</span>
+      </NavLink>
+    );
+  };
+
+  // User Profile section with loading state
+  const renderUserProfile = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      );
+    }
+
+    return user ? (
+      <div className="flex items-center gap-3">
+        <Avatar>
+          <AvatarImage src={profile?.profileImage} />
+          <AvatarFallback>
+            {profile?.userName?.charAt(0) || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm font-medium">
+            {profile?.userName || "User"}
+          </p>
+          <NavLink
+            to="/profile"
+            className="text-xs text-primary hover:underline"
+            onClick={() => setIsNavOpen(false)}
+          >
+            View Profile
+          </NavLink>
+        </div>
+      </div>
+    ) : (
+      <div className="text-sm text-muted-foreground">
+        Not logged in
+      </div>
+    );
+  };
 
   const renderNavContent = () => (
     <div className="flex flex-col h-full">
@@ -144,32 +203,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
       </div>
 
-      {user && (
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={profile?.profileImage} />
-              <AvatarFallback>
-                {profile?.userName?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">
-                {profile?.userName || "User"}
-              </p>
-              <NavLink
-                to="/profile"
-                className="text-xs text-primary hover:underline"
-                onClick={() => setIsNavOpen(false)}
-              >
-                View Profile
-              </NavLink>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="p-4 border-b">
+        {renderUserProfile()}
+      </div>
 
-      <ScrollArea className="flex-1 px-2 py-4  h-full overflow-y-auto">
+      <ScrollArea className="flex-1 px-2 py-4 h-full overflow-y-auto">
         {menuConfig.map((configItem, index) => {
           if (configItem.roles && !hasRole(configItem.roles)) return null;
 
@@ -230,18 +268,29 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           {theme === "dark" ? "Light Mode" : "Dark Mode"}
         </Button>
 
-        {user ? (
+        {isLoading ? (
+          <div className="mt-2">
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ) : user ? (
           <Button
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 mt-2 text-destructive hover:bg-destructive/10"
             onClick={() => {
-              handleLogout();
-              setIsNavOpen(false);
+              if (!isLoading) {
+                handleLogout();
+                setIsNavOpen(false);
+              }
             }}
+            disabled={isLogoutLoading || isLoading}
           >
-            <LogOut className="h-4 w-4" />
-            Logout
+            {isLogoutLoading ? (
+              <div className="h-4 w-4 border-2 border-current border-r-transparent rounded-full animate-spin" />
+            ) : (
+              <LogOut className="h-4 w-4" />
+            )}
+            {isLogoutLoading ? "Logging out..." : "Logout"}
           </Button>
         ) : (
           <div className="mt-2 space-y-2">
@@ -250,9 +299,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               size="sm"
               className="w-full justify-start gap-2"
               onClick={() => {
-                navigate("/login");
-                setIsNavOpen(false);
+                if (!isLoading) {
+                  navigate("/login");
+                  setIsNavOpen(false);
+                }
               }}
+              disabled={isLoading}
             >
               <User className="h-4 w-4" />
               Login
@@ -262,9 +314,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               size="sm"
               className="w-full justify-start gap-2"
               onClick={() => {
-                navigate("/signup");
-                setIsNavOpen(false);
+                if (!isLoading) {
+                  navigate("/signup");
+                  setIsNavOpen(false);
+                }
               }}
+              disabled={isLoading}
             >
               <User className="h-4 w-4" />
               SignUp
@@ -275,8 +330,79 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     </div>
   );
 
+  // User menu dropdown in header with loading state
+  const renderUserMenu = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+      );
+    }
+
+    if (user) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.profileImage} />
+                <AvatarFallback>
+                  {profile?.userName?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="flex items-center justify-start gap-2 p-2">
+              <div className="flex flex-col space-y-1 leading-none">
+                {profile?.userName && (
+                  <p className="font-medium">{profile.userName}</p>
+                )}
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <NavLink
+                to="/profile"
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </NavLink>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive cursor-pointer"
+              onClick={handleLogout}
+              disabled={isLogoutLoading}
+            >
+              {isLogoutLoading ? (
+                <div className="h-4 w-4 mr-2 border-2 border-current border-r-transparent rounded-full animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4 mr-2" />
+              )}
+              <span>{isLogoutLoading ? "Logging out..." : "Log out"}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" asChild disabled={isLoading}>
+          <NavLink to="/login">Login</NavLink>
+        </Button>
+        <Button size="sm" asChild disabled={isLoading}>
+          <NavLink to="/signup">SignUp</NavLink>
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <nav className="sticky top-0  z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-2 md:gap-4">
           {/* Mobile Menu Trigger */}
@@ -309,37 +435,16 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           {/* Logo and App Title */}
           <NavLink to="/home" className="flex items-center gap-2">
             <img src={logo} alt="ITI" className="h-6 w-6 rounded-md" />
-            <span className="font-medium text-sm hidden sm:block">
-              {currentHeading || "ITI Dashboard"}
-            </span>
+            {isLoading ? (
+              <Skeleton className="h-4 w-32 hidden sm:block" />
+            ) : (
+              <span className="font-medium text-sm hidden sm:block">
+                {currentHeading || "ITI Dashboard"}
+              </span>
+            )}
           </NavLink>
         </div>
-        {/* Quick Access Links (like Gmail) - Always visible on desktop */}
-        {/* <div className="hidden md:flex items-center space-x-2">
-          {menuConfig.map((configItem) => {
-            if (configItem.items && configItem.items.length <= 3) {
-              return configItem.items.map((item, idx) => {
-                if (item.label === "Home" || item.showInTopNav) {
-                  return (
-                    <NavLink
-                      key={`top-nav-${idx}`}
-                      to={item.path}
-                      className={({ isActive }) =>
-                        `text-sm font-medium transition-colors hover:text-primary ${
-                          isActive ? "text-primary" : "text-muted-foreground"
-                        }`
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  );
-                }
-                return null;
-              });
-            }
-            return null;
-          })}
-        </div> */}
+        
         <div className="flex items-center gap-2">
           {/* Theme Toggle Button */}
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -352,56 +457,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </Button>
 
           {/* User Menu */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.profileImage} />
-                    <AvatarFallback>
-                      {profile?.userName?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center justify-start gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    {profile?.userName && (
-                      <p className="font-medium">{profile.userName}</p>
-                    )}
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <NavLink
-                    to="/profile"
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Profile</span>
-                  </NavLink>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <NavLink to="/login">Login</NavLink>
-              </Button>
-              <Button size="sm" asChild>
-                <NavLink to="/signup">SignUp</NavLink>
-              </Button>
-            </div>
-          )}
+          {renderUserMenu()}
         </div>
       </div>
     </nav>
