@@ -7,7 +7,7 @@ import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 
 import authService from "../../appwrite/auth";
-import { addUser } from "../../store/userSlice";
+import { addUser, selectUser } from "../../store/userSlice";
 import students from "../../assets/students.jpeg";
 import { ClipLoader } from "react-spinners";
 
@@ -24,10 +24,12 @@ const Signup = () => {
   } = useForm();
 
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
   const navigate = useNavigate();
+
   useEffect(() => {
     if (user) {
+      console.log("naviagte to dash")
       navigate("/dash");
     }
   }, [navigate]);

@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
+import { selectUser } from "@/store/userSlice";
+import { selectProfile } from "@/store/profileSlice";
 
 const Select = ({ label, error, icon: Icon, register, ...props }) => (
   <div className="space-y-2">
@@ -105,8 +107,8 @@ const CreateMockTest = () => {
     },
   });
 
-  const user = useSelector((state) => state.user);
-  const profile = useSelector((state) => state.profile);
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
 
   const navigate = useNavigate();
 

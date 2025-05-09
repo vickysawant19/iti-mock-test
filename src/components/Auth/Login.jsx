@@ -7,11 +7,11 @@ import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { ClipLoader } from "react-spinners";
 
-import { addUser } from "../../store/userSlice";
+import { addUser, selectUser } from "../../store/userSlice";
 import students from "../../assets/students.jpeg";
 import authService from "../../appwrite/auth";
 import userProfileService from "../../appwrite/userProfileService";
-import { addProfile } from "../../store/profileSlice";
+import { addProfile, selectProfile } from "../../store/profileSlice";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,8 +23,8 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  const user = useSelector((state) => state.user);
-  const profile = useSelector((state) => state.profile);
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -35,21 +35,22 @@ const Login = () => {
 
   useEffect(() => {
     if (user && user.$id) {
-      navigate("/dash");
+      navigate("/", { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]); // only navigate when user changes
+  
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      // Mock API call
       const user = await authService.login(data);
       dispatch(addUser(user));
+  
       const res = await userProfileService.getUserProfile(user.$id);
       if (res) {
         dispatch(addProfile(res));
         toast.success("Login successful!");
-        navigate(from, { replace: true });
+        navigate("/", { replace: true });  // redirect to root after successful login
       } else {
         navigate("/profile");
       }
@@ -59,6 +60,7 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 flex justify-center items-center h-screen">

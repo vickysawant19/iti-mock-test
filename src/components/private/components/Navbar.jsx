@@ -35,12 +35,13 @@ import logo from "../../../assets/logo.jpeg";
 
 // Import services and store actions
 import authService from "../../../appwrite/auth";
-import { removeUser } from "../../../store/userSlice";
+import { removeUser, selectUser, selectUserLoading } from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 import { menuConfig, pathToHeading } from "./navMenu";
 
-const Navbar = ({ isNavOpen, setIsNavOpen, isLoading }) => {
-  const user = useSelector((state) => state.user);
+const Navbar = ({ isNavOpen, setIsNavOpen }) => {
+  const user = useSelector(selectUser);
+  const isLoading = useSelector(selectUserLoading)
   const profile = useSelector(selectProfile);
   const dispatch = useDispatch();
   const navigate = useNavigate();

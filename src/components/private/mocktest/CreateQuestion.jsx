@@ -12,6 +12,8 @@ import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import { Query } from "appwrite";
 import ImageUploader from "./components/ImageUpload";
+import { selectUser } from "@/store/userSlice";
+import { selectProfile } from "@/store/profileSlice";
 
 const CreateQuestion = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,8 +24,8 @@ const CreateQuestion = () => {
   const [images, setImages] = useState([]);
 
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
-  const profile = useSelector((state) => state.profile);
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
 
   const {
     register,

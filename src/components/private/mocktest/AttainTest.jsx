@@ -14,13 +14,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 import { appwriteService } from "../../../appwrite/appwriteConfig";
 import conf from "../../../config/config";
+import { selectUser } from "@/store/userSlice";
 
 const AttainTest = () => {
   const [paperId, setPaperId] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
   const [searchParams, setSerachParams] = useSearchParams();
 
   const redirect = searchParams.get("redirect");

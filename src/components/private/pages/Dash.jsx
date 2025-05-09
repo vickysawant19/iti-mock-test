@@ -29,6 +29,7 @@ import tradeservice from "../../../appwrite/tradedetails";
 import { selectProfile } from "../../../store/profileSlice";
 import CustomSelect from "../../components/CustomSelect";
 import TodaysTestsPopup from "../popup/TodaysTests";
+import { selectUser } from "@/store/userSlice";
 
 const SkeletonChart = () => (
   <div className="animate-pulse">
@@ -70,7 +71,7 @@ const ChartContainer = ({ title, subtitle, children, rightContent }) => (
 );
 
 const Dashboard = () => {
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
   const [state, setState] = useState({

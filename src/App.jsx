@@ -5,8 +5,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
 
-import { addUser } from "./store/userSlice";
-import { addProfile } from "./store/profileSlice";
+import { addUser, selectUser } from "./store/userSlice";
+import { addProfile, selectProfile } from "./store/profileSlice";
 import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/private/components/Navbar";
@@ -20,16 +20,19 @@ function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const profile = useSelector((state) => state.profile);
-  const user = useSelector((state) => state.user);
+  const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
 
   useEffect(() => {
     const checkUserStatus = async () => {
+      dispatch(addUser({isLoading: true}));
+      dispatch(addProfile({isLoading: true}));
+ 
       try {
         const currentUser = await authService.getCurrentUser();
 
         if (currentUser) {
-          dispatch(addUser(currentUser));
+          dispatch(addUser({data: currentUser, isLoading: false}));
 
           if (!profile) {
             const profileRes = await userProfileService.getUserProfile(
@@ -37,7 +40,7 @@ function App() {
             );
 
             if (profileRes) {
-              dispatch(addProfile(profileRes));
+              dispatch(addProfile({data: profileRes, isLoading: false}));
               if (window.location.pathname === "/") {
                 navigate("/home");
               }
@@ -50,16 +53,13 @@ function App() {
         console.error("Error checking user status: ", error);
       } finally {
         setIsLoading(false);
+        dispatch(addUser({ isLoading: false}));
+        dispatch(addProfile({isLoading: false}));
       }
     };
 
     checkUserStatus();
   }, [navigate, dispatch, profile]);
-
-  // If still loading auth/profile, render nothing
-  if (isLoading) {
-    return null;
-  }
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">

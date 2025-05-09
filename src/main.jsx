@@ -69,7 +69,6 @@ const router = (
   <Router>
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index element={<Navigate to="/login" />} />
         <Route index path="home" element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />

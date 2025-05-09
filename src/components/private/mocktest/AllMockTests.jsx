@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { selectUser } from "@/store/userSlice";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -26,7 +27,7 @@ const AllMockTests = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isDeleting, setIsDeleting] = useState({});
-  const user = useSelector((state) => state.user);
+  const user = useSelector(selectUser);
 
   const fetchMockTests = useCallback(async () => {
     setLoading(true);
