@@ -92,7 +92,7 @@ export const menuConfig = [
         label: "Create Mock Exam",
         path: "/mock-exam",
         icon: FaBook,
-        roles: ["teacher"],
+        roles: ["teacher","student"],
       },
       { label: "My Mock Tests", path: "/all-mock-tests", icon: FaFileAlt },
       { label: "Attain Test", path: "/attain-test", icon: FaKey },
