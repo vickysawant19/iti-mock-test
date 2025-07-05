@@ -207,29 +207,27 @@ const MockTestCard = ({
           <span>Share</span>
         </Button>
 
-        {user.labels.includes("Teacher") && (
+        {test.isOriginal && (
           <>
-            {test.isOriginal && (
-              <Button
-                onClick={() => onToggleProtection(test.$id)}
-                variant="secondary"
-                className="inline-flex sm:w-1/3 md:w-1/3 grow bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : test.isProtected ? (
-                  <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    <span>Protected</span>
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-4 h-4 mr-2" />
-                    <span>Unprotected</span>
-                  </>
-                )}
-              </Button>
-            )}
+            <Button
+              onClick={() => onToggleProtection(test.$id)}
+              variant="secondary"
+              className="inline-flex sm:w-1/3 md:w-1/3 grow bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : test.isProtected ? (
+                <>
+                  <Lock className="w-4 h-4 mr-2" />
+                  <span>Protected</span>
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-4 h-4 mr-2" />
+                  <span>Unprotected</span>
+                </>
+              )}
+            </Button>
             <Button
               disabled={isDeleting[test.$id]}
               onClick={() => handleDelete(test.$id)}
