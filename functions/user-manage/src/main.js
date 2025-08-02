@@ -54,6 +54,7 @@ const validatePassword = (password) => {
 
 export default async ({ req, res, log, error }) => {
   try {
+    
     if (!req.bodyJson) {
       throw new Error('Request body is required');
     }

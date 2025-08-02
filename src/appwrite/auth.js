@@ -1,3 +1,4 @@
+
 import { appwriteService } from "./appwriteConfig";
 import { ID } from "appwrite";
 
@@ -5,19 +6,14 @@ export class AuthService {
   constructor() {
     this.client = appwriteService.getClient();
     this.account = appwriteService.getAccount();
+    this.functions = appwriteService.getFunctions()
   }
 
-  async createAccount({ email, password, name }) {
+  async createAccount({ email, password, name, labels, phone }) {
     try {
-      const userAccount = await this.account.create(
-        ID.unique(),
-        email,
-        password,
-        name
-      );
-      if (userAccount) {
-        return await this.login({ email, password });
-      }
+      const response = await this.functions.createExecution("678e7277002e1d5c9b9b", JSON.stringify({email, password, name, labels, phone, action: "createAccount" }))
+      const result = JSON.parse(response.responseBody)
+      return result
     } catch (error) {
       this.handleError(error);
     }

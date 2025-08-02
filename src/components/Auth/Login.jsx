@@ -44,6 +44,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       const user = await authService.login(data);
+      console.log(user)
       dispatch(addUser(user));
   
       const res = await userProfileService.getUserProfile(user.$id);
