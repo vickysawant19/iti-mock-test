@@ -41,26 +41,30 @@ const Login = () => {
   
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
-    try {
-      const user = await authService.login(data);
-      console.log(user)
-      dispatch(addUser(user));
-  
-      const res = await userProfileService.getUserProfile(user.$id);
-      if (res) {
-        dispatch(addProfile(res));
-        toast.success("Login successful!");
-        navigate("/", { replace: true });  // redirect to root after successful login
-      } else {
-        navigate("/profile");
-      }
-    } catch (error) {
-      toast.error(`Login failed: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  try {
+    // Login and get user
+    const user = await authService.login(data);
+    dispatch(addUser(user));
+
+    // Fetch user profile
+    const res = await userProfileService.getUserProfile(user?.$id);
+    if (res) {
+      dispatch(addProfile(res));
+      toast.success("Login successful!");
+      navigate("/", { replace: true }); // Redirect to root after successful login
+    } else {
+      toast.info("Please complete your profile.");
+      navigate("/profile"); // Redirect to profile page if profile is missing
     }
-  };
+  } catch (error) {
+    console.error("Login Error:", error);
+    toast.error(`Login failed: ${error?.message || "Unknown error"}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
   
 
   return (

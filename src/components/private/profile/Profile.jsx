@@ -30,6 +30,7 @@ const Profile = () => {
     (!user.labels.includes("Teacher") && !user.labels.includes("Student"))
   ) {
     return <SetLabels />;
+    
   }
 
   return (
