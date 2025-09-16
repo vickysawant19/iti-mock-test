@@ -73,9 +73,7 @@ const Signup = () => {
   };
 
   
-  if(!isLoading) {
-    return <LoadingState />
-  }
+  
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 flex justify-center items-center min-h-screen">
