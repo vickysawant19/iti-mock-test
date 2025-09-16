@@ -10,6 +10,7 @@ import authService from "../../appwrite/auth";
 import { addUser, selectUser } from "../../store/userSlice";
 import students from "../../assets/students.jpeg";
 import { ClipLoader } from "react-spinners";
+import LoadingState from "../private/teacher/batch/components/LoadingState";
 
 // Shadcn/ui Toggle Component
 
@@ -39,11 +40,12 @@ const Signup = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("here",user)
     if (user) {
       console.log("navigate to dash");
       navigate("/dash");
     }
-  }, [navigate]);
+  }, [navigate,user]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -69,6 +71,11 @@ const Signup = () => {
     setLabels([type]);
     setValue("labels", [type]);
   };
+
+  
+  if(!isLoading) {
+    return <LoadingState />
+  }
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 flex justify-center items-center min-h-screen">

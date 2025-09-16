@@ -52,6 +52,40 @@ const validatePassword = (password) => {
   }
 };
 
+const validateCountryCode = (countryCode) => {
+  if (!countryCode || typeof countryCode !== 'string') {
+    throw new Error('Invalid country code: must be a non-empty string');
+  }
+  // Remove any leading + if present and validate format (1-3 digits)
+  const cleanCode = countryCode.replace(/^\+/, '');
+  if (!/^[1-9]\d{0,2}$/.test(cleanCode)) {
+    throw new Error('Invalid country code format: must be 1-3 digits');
+  }
+};
+
+const validatePhone = (phone) => {
+  if (!phone || typeof phone !== 'string') {
+    throw new Error('Invalid phone: must be a non-empty string');
+  }
+  // Basic phone validation (digits only, 7-15 characters)
+  if (!/^\d{7,15}$/.test(phone)) {
+    throw new Error('Invalid phone format: must be 7-15 digits');
+  }
+};
+
+const formatPhoneNumber = (countryCode, phone) => {
+  if (!countryCode || !phone) {
+    return '';
+  }
+  
+  // Clean country code (remove + if present)
+  const cleanCountryCode = countryCode.replace(/^\+/, '');
+  // Clean phone number (remove any non-digits)
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  return `+${cleanCountryCode}${cleanPhone}`;
+};
+
 export default async ({ req, res, log, error }) => {
   try {
     
@@ -81,18 +115,37 @@ export default async ({ req, res, log, error }) => {
 
     switch (action) {
       case 'createAccount': {
-        // Expecting userId, email, password, name, phone and labels
-        const { userId, email, password, name, phone, labels } = req.bodyJson;
+        // Expecting userId, email, password, name, countryCode, phone and labels
+        const { userId, email, password, name, countryCode, phone, labels } = req.bodyJson;
+        
         // Validate required fields
         validateEmail(email);
         validatePassword(password);
         validateLabels(labels);
         
+        // Format phone number with country code if both are provided
+        let formattedPhone = '';
+        if (countryCode && phone) {
+          validateCountryCode(countryCode);
+          validatePhone(phone);
+          formattedPhone = formatPhoneNumber(countryCode, phone);
+        } else if (phone) {
+          // If only phone is provided without country code, use it as is (assuming it includes country code)
+          formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+        }
+        
         // Create an account using the provided or a unique ID
-        const newUserResponse = await users.create(userId || ID.unique(), email, phone ? `+${phone}` : "", password, name);
+        const newUserResponse = await users.create(
+          userId || ID.unique(), 
+          email, 
+          formattedPhone, 
+          password, 
+          name
+        );
+        
         // Update labels for the created account
         response = await users.updateLabels(newUserResponse.$id, labels);
-        log(`Account created for user ${newUserResponse.$id}`);
+        log(`Account created for user ${newUserResponse.$id} with phone: ${formattedPhone}`);
         break;
       }
       case 'deleteAccount': {
@@ -144,7 +197,7 @@ export default async ({ req, res, log, error }) => {
         if (userList.total && userList.total > 0 && Array.isArray(userList.users)) {
           // Return the first matching user's id
           const user = userList.users[0];
-          response = { $id: user.$id, name: user.name, email:user.email, phone:user.phone };
+          response = { $id: user.$id, name: user.name, email: user.email, phone: user.phone };
         } else {
           throw new Error('No user found with the given email');
         }
