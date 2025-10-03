@@ -21,37 +21,37 @@ function App() {
   const navigate = useNavigate();
   const profile = useSelector(selectProfile);
 
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      dispatch(addUser({isLoading: true}));
-      dispatch(addProfile({isLoading: true}));
-      try {
-        const currentUser = await authService.getCurrentUser();
-        if (currentUser) {
-          dispatch(addUser({data: currentUser, isLoading: false}));
-          if (!profile) {
-            const profileRes = await userProfileService.getUserProfile(
-              currentUser.$id
-            );
-            if (profileRes) {
-              dispatch(addProfile({data: profileRes, isLoading: false}));
-              if (window.location.pathname === "/") {
-                navigate("/home");
-              }
-            } else {
-              navigate("/profile");
+  const checkUserStatus = async () => {
+    dispatch(addUser({ isLoading: true }));
+    dispatch(addProfile({ isLoading: true }));
+    try {
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        dispatch(addUser({ data: currentUser, isLoading: false }));
+        if (!profile) {
+          const profileRes = await userProfileService.getUserProfile(
+            currentUser.$id
+          );
+          if (profileRes) {
+            dispatch(addProfile({ data: profileRes, isLoading: false }));
+            if (window.location.pathname === "/") {
+              navigate("/");
             }
+          } else {
+            navigate("/profile");
           }
         }
-      } catch (error) {
-        console.error("Error checking user status: ", error);
-      } finally {
-        setIsLoading(false);
-        dispatch(addUser({ isLoading: false}));
-        dispatch(addProfile({isLoading: false}));
       }
-    };
+    } catch (error) {
+      console.error("Error checking user status: ", error);
+    } finally {
+      setIsLoading(false);
+      dispatch(addUser({ isLoading: false }));
+      dispatch(addProfile({ isLoading: false }));
+    }
+  };
 
+  useEffect(() => {
     checkUserStatus();
   }, [navigate, dispatch, profile]);
 
@@ -61,7 +61,7 @@ function App() {
         <Navbar
           isNavOpen={isNavOpen}
           setIsNavOpen={setIsNavOpen}
-          isLoading={isLoading}
+          isLoading={!isLoading}
         />
 
         <div className="mx-auto">

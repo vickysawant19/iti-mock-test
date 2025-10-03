@@ -32,7 +32,7 @@ export const menuConfig = [
   {
     // Non-group items available to all logged-in users (or public)
     items: [
-      { label: "Home", path: "/home", icon: FaHome },
+      { label: "Home", path: "/", icon: FaHome },
       {
         label: "Dashboard",
         path: "/dash",
@@ -92,7 +92,7 @@ export const menuConfig = [
         label: "Create Mock Exam",
         path: "/mock-exam",
         icon: FaBook,
-        roles: ["teacher","student"],
+        roles: ["teacher", "student"],
       },
       { label: "My Mock Tests", path: "/all-mock-tests", icon: FaFileAlt },
       { label: "Attain Test", path: "/attain-test", icon: FaKey },
@@ -150,7 +150,6 @@ export const menuConfig = [
 // This object maps current paths to headings
 export const pathToHeading = {
   "/": "Home",
-  "/home": "Home",
   "/dash": "Dashboard",
   "/profile": "Profile",
   "/manage-batch/create": "Create/Update Batch",

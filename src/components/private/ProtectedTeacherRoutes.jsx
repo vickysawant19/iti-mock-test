@@ -5,8 +5,6 @@ import { selectUser } from "../../store/userSlice";
 
 const ProtectedTeacherRoutes = () => {
   const user = useSelector(selectUser);
-    const userLoading = useSelector(selectUserLoading);
-
   if (!user.labels.includes("Teacher")) {
     toast.error("Access denied. Teacher only");
     return <Navigate to="/" replace />;

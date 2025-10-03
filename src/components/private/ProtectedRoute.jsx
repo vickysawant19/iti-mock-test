@@ -9,11 +9,11 @@ const ProtectedRoute = () => {
   const userLoading = useSelector(selectUserLoading);
   const profile = useSelector(selectProfile);
   const profileLoading = useSelector(selectProfileLoading);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
- 
-  useEffect(() => { 
+
+  useEffect(() => {
     // Only redirect to profile page if:
     // 1. User is authenticated
     // 2. Both user and profile loading have finished
@@ -22,17 +22,17 @@ const ProtectedRoute = () => {
       navigate("/profile");
     }
   }, [user, profile, navigate, userLoading, profileLoading]);
-  
+
   // Only redirect to login if:
   // 1. Loading has finished (both user and profile)
   // 2. User is not authenticated
   if (!userLoading && !profileLoading && !user) {
-    return <Navigate to="/home" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
-  
+
   // Show nothing while determining auth state (either user or profile still loading)
   // Or render the outlet if the user is authenticated
-  return (userLoading || profileLoading) ? null : <Outlet />;
+  return userLoading || profileLoading ? null : <Outlet />;
 };
 
 export default ProtectedRoute;

@@ -70,13 +70,12 @@ const router = (
   <Router>
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index path="home" element={<Home />} />
+        <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="forget-password" element={<ForgetPass />} />
         <Route path="reset-pass" element={<ResetPass />} />
         <Route path="about" element={<About />} />
-
         <Route element={<ProtectedRoute />}>
           <Route path="dash" element={<Dash />} />
           <Route path="change-password" element={<ChangePassword />} />
@@ -119,7 +118,7 @@ const router = (
             />
             <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
-          <Route  element={<ProtectedAdminRoutes />}>
+          <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
           </Route>
         </Route>

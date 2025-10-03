@@ -35,13 +35,18 @@ import logo from "../../../assets/logo.jpeg";
 
 // Import services and store actions
 import authService from "../../../appwrite/auth";
-import { removeUser, selectUser, selectUserLoading } from "../../../store/userSlice";
+import {
+  removeUser,
+  selectUser,
+  selectUserLoading,
+} from "../../../store/userSlice";
 import { removeProfile, selectProfile } from "../../../store/profileSlice";
 import { menuConfig, pathToHeading } from "./navMenu";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);
-  const isLoading = useSelector(selectUserLoading)
+  const isLoading = useSelector(selectUserLoading);
+
   const profile = useSelector(selectProfile);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -59,13 +64,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   const handleLogout = async () => {
     if (isLoading || !user) return;
-    
+
     try {
       setIsLogoutLoading(true);
       await authService.logout();
       dispatch(removeUser());
       dispatch(removeProfile());
-      
+
       // Only redirect when loading completes
       if (!isLoading) {
         navigate("/login");
@@ -133,13 +138,15 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       onClick?.();
       setIsNavOpen(false);
     };
-    
+
     return (
       <NavLink
         to={to}
         className={({ isActive }) =>
           `flex items-center gap-2 p-2 text-sm rounded-md transition-colors ${
-            isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+            isActive
+              ? "bg-primary/10 text-primary font-medium"
+              : "hover:bg-muted"
           } ${isLoading ? "pointer-events-none opacity-50" : ""}`
         }
         onClick={handleMenuClick}
@@ -168,14 +175,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       <div className="flex items-center gap-3">
         <Avatar>
           <AvatarImage src={profile?.profileImage} />
-          <AvatarFallback>
-            {profile?.userName?.charAt(0) || "U"}
-          </AvatarFallback>
+          <AvatarFallback>{profile?.userName?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="text-sm font-medium">
-            {profile?.userName || "User"}
-          </p>
+          <p className="text-sm font-medium">{profile?.userName || "User"}</p>
           <NavLink
             to="/profile"
             className="text-xs text-primary hover:underline"
@@ -186,9 +189,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
       </div>
     ) : (
-      <div className="text-sm text-muted-foreground">
-        Not logged in
-      </div>
+      <div className="text-sm text-muted-foreground">Not logged in</div>
     );
   };
 
@@ -204,9 +205,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
       </div>
 
-      <div className="p-4 border-b">
-        {renderUserProfile()}
-      </div>
+      <div className="p-4 border-b">{renderUserProfile()}</div>
 
       <ScrollArea className="flex-1 px-2 py-4 h-full overflow-y-auto">
         {menuConfig.map((configItem, index) => {
@@ -333,13 +332,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   // User menu dropdown in header with loading state
   const renderUserMenu = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-8 rounded-full" />
-        </div>
-      );
-    }
+    // if (isLoading) {
+    //   return (
+    //     <div className="flex items-center gap-2">
+    //       <Skeleton className="h-8 w-8 rounded-full" />
+    //     </div>
+    //   );
+    // }
 
     if (user) {
       return (
@@ -393,7 +392,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     return (
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild disabled={isLoading}>
-          <NavLink to="/login">Login</NavLink>
+          <NavLink to="/login">Login </NavLink>
         </Button>
         <Button size="sm" asChild disabled={isLoading}>
           <NavLink to="/signup">SignUp</NavLink>
@@ -434,7 +433,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </Sheet>
 
           {/* Logo and App Title */}
-          <NavLink to="/home" className="flex items-center gap-2">
+          <NavLink to="/" className="flex items-center gap-2">
             <img src={logo} alt="ITI" className="h-6 w-6 rounded-md" />
             {isLoading ? (
               <Skeleton className="h-4 w-32 hidden sm:block" />
@@ -445,7 +444,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             )}
           </NavLink>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Theme Toggle Button */}
           <Button variant="ghost" size="icon" onClick={toggleTheme}>

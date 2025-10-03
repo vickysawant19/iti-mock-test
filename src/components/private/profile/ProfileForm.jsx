@@ -209,7 +209,7 @@ const ProfileForm = () => {
           data
         );
         dispatch(addProfile(updatedProfile));
-        navigate("/profile");
+        navigate("/profile/edit");
       } else {
         // Creating new profile
         data.role = user.labels;
@@ -217,7 +217,7 @@ const ProfileForm = () => {
         data.userName = data.userName || user.name;
         updatedProfile = await userProfileService.createUserProfile(data);
         dispatch(addProfile(updatedProfile));
-        navigate("/profile");
+        navigate("/profile/edit");
       }
     } catch (err) {
       console.error("Error saving profile:", err);

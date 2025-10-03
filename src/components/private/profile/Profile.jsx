@@ -30,11 +30,9 @@ const Profile = () => {
     (!user.labels.includes("Teacher") && !user.labels.includes("Student"))
   ) {
     return <SetLabels />;
-    
   }
 
-  return profile ? <ProfileView profileProps={profile} /> : <ProfileForm />
-  
+  return profile ? <ProfileView profileProps={profile} /> : <ProfileForm />;
 };
 
 export default Profile;
