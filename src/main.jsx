@@ -56,6 +56,7 @@ import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiar
 import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
 import FaceAttendance from "./components/private/teacher/attaindance/faceAttendance/FaceAttendance.jsx";
 import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
+import PageNotFound from "./PageNotFound.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -74,13 +75,12 @@ const router = (
         <Route path="signup" element={<Signup />} />
         <Route path="forget-password" element={<ForgetPass />} />
         <Route path="reset-pass" element={<ResetPass />} />
-
         <Route path="about" element={<About />} />
-        <Route path="profile" element={<Profile />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="dash" element={<Dash />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<ProfileForm />} />
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />
@@ -119,19 +119,11 @@ const router = (
             />
             <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
-          <Route path="" element={<ProtectedAdminRoutes />}>
+          <Route  element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
           </Route>
         </Route>
-        <Route
-          path="*"
-          element={
-            <div className="w-full h-screen mt-20  flex justify-center ">
-              404 : Page Not Found
-            </div>
-          }
-        />
-        {/* <Route path="*" element={<Navigate to="/dash" />} /> */}
+        <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
   </Router>

@@ -19,26 +19,20 @@ function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const profile = useSelector(selectProfile);
-  const user = useSelector(selectUser);
 
   useEffect(() => {
     const checkUserStatus = async () => {
       dispatch(addUser({isLoading: true}));
       dispatch(addProfile({isLoading: true}));
- 
       try {
         const currentUser = await authService.getCurrentUser();
-
         if (currentUser) {
           dispatch(addUser({data: currentUser, isLoading: false}));
-
           if (!profile) {
             const profileRes = await userProfileService.getUserProfile(
               currentUser.$id
             );
-
             if (profileRes) {
               dispatch(addProfile({data: profileRes, isLoading: false}));
               if (window.location.pathname === "/") {

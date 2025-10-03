@@ -12,7 +12,7 @@ const ProtectedRoute = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  
+ 
   useEffect(() => { 
     // Only redirect to profile page if:
     // 1. User is authenticated
