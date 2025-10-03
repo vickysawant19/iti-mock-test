@@ -33,9 +33,8 @@ const Profile = () => {
     
   }
 
-  return (
-    <>{profile ? <ProfileView profileProps={profile} /> : <ProfileForm />}</>
-  );
+  return profile ? <ProfileView profileProps={profile} /> : <ProfileForm />
+  
 };
 
 export default Profile;
