@@ -440,7 +440,7 @@ const MarkAttendance = () => {
                 Date: {format(selectedDate, "dd MMMM yyyy")}
               </h2>
               <Linkto
-                to="/attaindance/mark-holidays"
+                to="/attendance/mark-holidays"
                 className="px-6 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all shadow-xs text-center dark:bg-red-500 dark:hover:bg-red-400"
               >
                 Edit Holidays

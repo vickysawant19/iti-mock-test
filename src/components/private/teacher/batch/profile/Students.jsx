@@ -25,72 +25,96 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
     return map;
   }, [studentsData]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch all students and batch details
-        const students = await userProfileService.getBatchUserProfile([
-          Query.equal("batchId", selectedBatchData.$id),
-          Query.notEqual("batchId", [""]),
-          Query.orderAsc("studentId"),
-        ]);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Fetch all students and batch details
+      const students = await userProfileService.getBatchUserProfile([
+        Query.equal("batchId", selectedBatchData.$id),
+        Query.notEqual("batchId", [""]),
+        Query.orderAsc("studentId"),
+      ]);
 
-        const allStudents = students.sort(
-          (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+      const allStudents = students.sort(
+        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+      );
+
+      setStudentsData(allStudents);
+
+      let batchStudentsParsed = [];
+
+      // Parse student IDs from the batch
+      selectedBatchData.studentIds.forEach((itm) => {
+        try {
+          const data = JSON.parse(itm);
+          batchStudentsParsed.push(data);
+        } catch (error) {}
+      });
+
+      // Create a map for O(1) lookups by studentId
+      const studentMap = new Map(
+        batchStudentsParsed.map((student) => [student.userId, student])
+      );
+
+      // Reorder batchStudentsParsed to match allStudents' order
+      const orderedBatchStudents = allStudents
+        .map((student) => studentMap.get(student.userId)) // Get matching student from the map
+        .filter(Boolean); // Remove undefined entries (if any)
+
+      setBatchStudents(orderedBatchStudents);
+
+      if (allStudents) {
+        // Filter out students that are already in the batch
+        const pendingStudents = allStudents.filter(
+          (student) =>
+            !batchStudentsParsed.some((bs) => bs.userId === student.userId)
         );
-
-        setStudentsData(allStudents);
-
-        let batchStudentsParsed = [];
-
-        // Parse student IDs from the batch
-        selectedBatchData.studentIds.forEach((itm) => {
-          try {
-            const data = JSON.parse(itm);
-            batchStudentsParsed.push(data);
-          } catch (error) {}
-        });
-
-        // Create a map for O(1) lookups by studentId
-        const studentMap = new Map(
-          batchStudentsParsed.map((student) => [student.userId, student])
-        );
-
-        // Reorder batchStudentsParsed to match allStudents' order
-        const orderedBatchStudents = allStudents
-          .map((student) => studentMap.get(student.userId)) // Get matching student from the map
-          .filter(Boolean); // Remove undefined entries (if any)
-
-        setBatchStudents(orderedBatchStudents);
-
-        if (allStudents) {
-          // Filter out students that are already in the batch
-          const pendingStudents = allStudents.filter(
-            (student) =>
-              !batchStudentsParsed.some((bs) => bs.userId === student.userId)
-          );
-          setStudents(pendingStudents);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load students");
-      } finally {
-        setLoading(false);
+        setStudents(pendingStudents);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load students");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [selectedBatchData.$id]);
 
   const addStudentToBatch = async (student) => {
     try {
-      // Add student to batch with default position (0,0)
+      // Build a set of occupied positions from existing batchStudents
+      const occupied = new Set(
+        batchStudents.map((b) => {
+          const pos = b.position || { x: 0, y: 0 };
+          return `${pos.x}_${pos.y}`;
+        })
+      );
+
+      // Find first free position in a 5x5 grid (x:0-4, y:0-4)
+      let freePos = null;
+      for (let x = 0; x < 5 && !freePos; x++) {
+        for (let y = 0; y < 5 && !freePos; y++) {
+          const key = `${x}_${y}`;
+          if (!occupied.has(key)) {
+        freePos = { x, y };
+          }
+        }
+      }
+
+      if (!freePos) {
+        toast.error("No available positions in the 5x5 classroom.");
+        return;
+      }
+
       const newBatchStudent = {
-        studentId: student.stduentId,
+        // prefer the correctly spelled studentId, fall back to any existing typo field
+        studentId: student.studentId ?? student.stduentId ?? "",
         userId: student.userId,
         status: "Active",
-        position: { x: 0, y: 0 },
+        position: freePos,
       };
 
       const updatedBatchStudents = [...batchStudents, newBatchStudent];
@@ -106,7 +130,6 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
           studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
         }
       );
-      console.log("updating batch data students");
       setSelectedBatchData(updatedBatchData);
       toast.success(`${student.userName} added to batch`);
     } catch (error) {

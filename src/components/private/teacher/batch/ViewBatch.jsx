@@ -40,7 +40,6 @@ const TABS = [
   { id: "achievements", label: "Achievements", icon: Award },
 ];
 
-
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
@@ -55,7 +54,7 @@ const ViewBatch = () => {
     selectedBatchData: null,
     students: null,
     studentsAttendance: [],
-    attendanceStats: [],
+    attendanceStats: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
     searchParams.get("batchid") || ""
@@ -184,7 +183,6 @@ const ViewBatch = () => {
         Query.orderDesc("$updatedAt"),
       ]);
 
-      console.log("attendace,",attendance)
       // Create student lookup map
       const studentMap = new Map();
       data.students.forEach((student) => {
@@ -201,21 +199,15 @@ const ViewBatch = () => {
           "Unknown",
       }));
 
-      console.log("en attendadce", enrichedAttendance)
-
       // Sort by student ID
       const sortedAttendance = enrichedAttendance.sort(
         (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
       );
 
-      console.log("sorted ", sortedAttendance)
-
       // Calculate stats for each student
       const stats = sortedAttendance.map((item) =>
         calculateStats({ data: item })
       );
-
-      console.log("stats", stats)
 
       setData((prev) => ({
         ...prev,
@@ -227,10 +219,8 @@ const ViewBatch = () => {
       setData((prev) => ({ ...prev, attendanceStats: [] }));
     } finally {
       setLoading("attendance", false);
-      
     }
   }, [data.students, data.selectedBatchData]);
-
 
   // Initial fetch for teacher batches
   useEffect(() => {
@@ -249,7 +239,7 @@ const ViewBatch = () => {
     if (data.selectedBatchData) {
       fetchBatchStudents();
     }
-  }, [data.selectedBatchData, fetchBatchStudents]);
+  }, [data.selectedBatchData]);
 
   // Fetch attendance when needed for specific tabs
   useEffect(() => {
@@ -259,13 +249,12 @@ const ViewBatch = () => {
       "leave-record",
       "job-evaluation",
     ].includes(activeTab);
-
     if (
       data.students &&
       selectedBatch &&
       needsAttendance &&
       !loadingStates.attendance &&
-      !data.attendanceStats.length
+      data.attendanceStats === null
     ) {
       fetchStudentsAttendance();
     }
@@ -273,22 +262,23 @@ const ViewBatch = () => {
     data.students,
     activeTab,
     selectedBatch,
-    data.attendanceStats.length,
-    loadingStates.attendance,
+    data.attendanceStats?.length,
+    // loadingStates.attendance,
   ]);
 
   // Render content based on active tab
   const renderContent = () => {
     const isContentLoading =
-      loadingStates.students ||
-      ([
-        "attendance",
-        "progress-card",
-        "leave-record",
-        "job-evaluation",
-        "students",
-      ].includes(activeTab) &&
-        loadingStates.attendance);
+      activeTab === "students"
+        ? false
+        : loadingStates.students ||
+          ([
+            "attendance",
+            "progress-card",
+            "leave-record",
+            "job-evaluation",
+          ].includes(activeTab) &&
+            loadingStates.attendance);
 
     if (isContentLoading) {
       return <LoadingState size={40} />;
