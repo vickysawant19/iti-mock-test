@@ -90,7 +90,6 @@ const BatchForm = ({ onClose }) => {
         return;
       }
       setBatchData(data);
-
       setValue("BatchName", data.BatchName);
       setValue("start_date", data.start_date?.split("T")[0] || data.start_date);
       setValue("end_date", data.end_date?.split("T")[0] || data.end_date);

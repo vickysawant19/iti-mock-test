@@ -45,6 +45,8 @@ const ViewAttendance = ({ isLoading, stats }) => {
     return new Date(a) - new Date(b);
   });
 
+  console.log("load attendance")
+
   return (
     <div className="text-sm text-gray-800 dark:text-white">
       <div className="w-full mx-auto bg-white rounded-lg overflow-hidden shadow-md dark:bg-gray-900 dark:border dark:border-gray-700">

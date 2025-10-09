@@ -26,6 +26,8 @@ import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
 import Students from "./profile/Students";
 import CustomSelector from "../../../components/CustomSelector";
+import EmptyState from "./components/EmptyState";
+import FeaturePlaceholder from "./components/FeaturePlaceholder";
 
 const TABS = [
   { id: "students", label: "Student", icon: Users },
@@ -38,31 +40,6 @@ const TABS = [
   { id: "achievements", label: "Achievements", icon: Award },
 ];
 
-// Empty state component for better UX
-const EmptyState = ({ icon: Icon, title, description }) => (
-  <div className="bg-white rounded-lg shadow-xs p-8 md:p-12 text-center dark:bg-gray-800 dark:border dark:border-gray-700">
-    <Icon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300 dark:text-gray-500" />
-    <h3 className="text-lg md:text-xl font-medium text-gray-500 dark:text-gray-300">
-      {title}
-    </h3>
-    {description && (
-      <p className="mt-2 text-gray-400 dark:text-gray-400">{description}</p>
-    )}
-  </div>
-);
-
-// Feature placeholder component
-const FeaturePlaceholder = ({ icon: Icon, title }) => (
-  <div className="bg-white rounded-lg shadow-xs p-8 text-center text-gray-500 dark:bg-gray-800 dark:border dark:border-gray-700 dark:text-gray-400">
-    <Icon className="w-12 h-12 mx-auto mb-4 text-blue-500 dark:text-blue-400" />
-    <h3 className="text-xl font-medium text-gray-700 dark:text-white">
-      {title}
-    </h3>
-    <p className="mt-2 text-gray-500 dark:text-gray-400">
-      This feature is under development.
-    </p>
-  </div>
-);
 
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -207,6 +184,7 @@ const ViewBatch = () => {
         Query.orderDesc("$updatedAt"),
       ]);
 
+      console.log("attendace,",attendance)
       // Create student lookup map
       const studentMap = new Map();
       data.students.forEach((student) => {
@@ -223,15 +201,21 @@ const ViewBatch = () => {
           "Unknown",
       }));
 
+      console.log("en attendadce", enrichedAttendance)
+
       // Sort by student ID
       const sortedAttendance = enrichedAttendance.sort(
         (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
       );
 
+      console.log("sorted ", sortedAttendance)
+
       // Calculate stats for each student
       const stats = sortedAttendance.map((item) =>
         calculateStats({ data: item })
       );
+
+      console.log("stats", stats)
 
       setData((prev) => ({
         ...prev,
@@ -243,8 +227,10 @@ const ViewBatch = () => {
       setData((prev) => ({ ...prev, attendanceStats: [] }));
     } finally {
       setLoading("attendance", false);
+      
     }
   }, [data.students, data.selectedBatchData]);
+
 
   // Initial fetch for teacher batches
   useEffect(() => {
@@ -272,7 +258,6 @@ const ViewBatch = () => {
       "progress-card",
       "leave-record",
       "job-evaluation",
-      "students",
     ].includes(activeTab);
 
     if (
@@ -289,7 +274,6 @@ const ViewBatch = () => {
     activeTab,
     selectedBatch,
     data.attendanceStats.length,
-    fetchStudentsAttendance,
     loadingStates.attendance,
   ]);
 
