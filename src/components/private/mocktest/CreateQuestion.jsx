@@ -351,6 +351,56 @@ const CreateQuestion = () => {
               </div>
             )}
 
+            {/* Tags */}
+            <div className="mb-6 lg:col-span-2">
+              <label
+                htmlFor="tags"
+                className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
+              >
+                Tags (Press Enter or Space to add)
+              </label>
+              <div className="flex flex-wrap gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                {watch("tags")?.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-md flex items-center gap-1"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentTags = watch("tags");
+                        setValue(
+                          "tags",
+                          currentTags.filter((_, i) => i !== index)
+                        );
+                      }}
+                      className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  className="outline-none flex-1 bg-transparent dark:text-gray-100"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const tag = e.target.value.trim();
+                      if (tag) {
+                        const currentTags = watch("tags") || [];
+                        if (!currentTags.includes(tag)) {
+                          setValue("tags", [...currentTags, tag]);
+                          e.target.value = "";
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Question */}
             <div className="mb-6 lg:col-span-full">
               <label

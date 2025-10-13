@@ -13,11 +13,11 @@ export class QuesDbService {
     question,
     options,
     correctAnswer,
-    imageId = null,
     userId,
     userName,
     tradeId,
     year,
+    tags,
     subjectId,
     moduleId,
     images
@@ -38,11 +38,11 @@ export class QuesDbService {
         question,
         options,
         correctAnswer,
-        imageId,
         userId,
         userName,
         tradeId,
         year,
+        tags,
         subjectId,
         moduleId,
         images
@@ -68,12 +68,12 @@ export class QuesDbService {
       question,
       options,
       correctAnswer,
-      imageId = null,
       tradeId,
       year,
       subjectId,
       moduleId,
-      images
+      images,
+      tags
     }
   ) {
     try {
@@ -81,12 +81,12 @@ export class QuesDbService {
         question,
         options,
         correctAnswer,
-        imageId,
         tradeId,
         year,
         subjectId,
         moduleId,
-        images
+        images,
+        tags
       };
       return await this.database.updateDocument(
         conf.databaseId,
@@ -96,7 +96,7 @@ export class QuesDbService {
       );
     } catch (error) {
       console.log("Appwrite error: update Question:", error);
-      return false;
+      throw new Error(error)
     }
   }
 
@@ -110,7 +110,7 @@ export class QuesDbService {
       return true;
     } catch (error) {
       console.log("Appwrite error: delete Question:", error);
-      return false;
+      throw new Error(error)
     }
   }
 
