@@ -99,7 +99,7 @@ const CreateMockTest = () => {
       if (searchTags.trim()) {
         setIsLoading(true);
         try {
-          const response = await quesdbservice.getAllTags(searchTags)
+          const response = await quesdbservice.getAllTags(searchTags);
           setTags(response.slice(0, 5));
         } catch (error) {
           console.error("Error fetching tags:", error);
@@ -232,10 +232,8 @@ const CreateMockTest = () => {
     data.userId = user.$id;
     data.tradeName = selectedTrade.tradeName;
     data.action = "generateMockTest";
-    data.tags = tags
+    data.tags = selectedTags;
     try {
-   //todo add tags 
-  
       const functions = new Functions(appwriteService.getClient());
       const res = await functions.createExecution(
         conf.mockTestFunctionId,

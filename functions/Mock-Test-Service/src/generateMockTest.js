@@ -11,7 +11,8 @@ const generateMockTest = async ({
   error,
   database,
   selectedModules,
-  totalMinutes
+  totalMinutes,
+  tags
 }) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
@@ -21,9 +22,13 @@ const generateMockTest = async ({
       Query.equal("tradeId", tradeId),
       Query.equal("subjectId", subjectId),
       Query.equal("year", year),
-      Query.limit(100),
-      Query.select(["$id"])
     ];
+
+    if (Array.isArray(tags) && tags.length > 0) {
+      queries.push(Query.contains("tags", tags));
+    }
+
+    queries.push(Query.limit(100), Query.select(["$id"]));
     
     if (selectedModules.length > 0) {
       queries.push(Query.equal("moduleId", selectedModules));
@@ -88,7 +93,7 @@ const generateMockTest = async ({
         "No Questions available for the specified trade and year."
       );
     }
-
+    
     const randomQuestionIds = getRandomQuestions(questions, quesCount);
 
     const selectedQuestions = await database.listDocuments(
