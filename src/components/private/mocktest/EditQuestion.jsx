@@ -104,7 +104,7 @@ const EditQuestion = () => {
         options: question.options,
         correctAnswer: question.correctAnswer,
         images: images,
-        tags: question.tags
+        tags: question.tags?.split(",") || []
       });
     } catch (error) {
       console.log(error.message);
@@ -145,6 +145,7 @@ const EditQuestion = () => {
 
     data.images = images.map((img) => JSON.stringify(img));
     data.userId = user.$id;
+    data.tags = (data.tags || []).join(',');
     try {
       await quesdbservice.updateQuestion(quesId, data);
       toast.success("Question updated");

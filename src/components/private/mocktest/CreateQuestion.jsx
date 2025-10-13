@@ -98,6 +98,7 @@ const CreateQuestion = () => {
     try {
       data.userId = user.$id;
       data.userName = user.name;
+      data.tags = (data.tags || []).join(',');
       data.images = images.map((item) => JSON.stringify(item)) || [];
       await quesdbservice.createQuestion(data);
       reset({

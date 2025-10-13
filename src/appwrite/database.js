@@ -20,7 +20,7 @@ export class QuesDbService {
     tags,
     subjectId,
     moduleId,
-    images
+    images,
   }) {
     try {
       // Check if the question already exists
@@ -45,7 +45,7 @@ export class QuesDbService {
         tags,
         subjectId,
         moduleId,
-        images
+        images,
       };
 
       return await this.database.createDocument(
@@ -73,7 +73,7 @@ export class QuesDbService {
       subjectId,
       moduleId,
       images,
-      tags
+      tags,
     }
   ) {
     try {
@@ -86,7 +86,7 @@ export class QuesDbService {
         subjectId,
         moduleId,
         images,
-        tags
+        tags,
       };
       return await this.database.updateDocument(
         conf.databaseId,
@@ -96,7 +96,7 @@ export class QuesDbService {
       );
     } catch (error) {
       console.log("Appwrite error: update Question:", error);
-      throw new Error(error)
+      throw new Error(error);
     }
   }
 
@@ -110,7 +110,7 @@ export class QuesDbService {
       return true;
     } catch (error) {
       console.log("Appwrite error: delete Question:", error);
-      throw new Error(error)
+      throw new Error(error);
     }
   }
 
@@ -137,6 +137,48 @@ export class QuesDbService {
     } catch (error) {
       console.log("Appwrite error: get user Question:", error);
       return false;
+    }
+  }
+  async getQuestionsByTags(tags) {
+    try {
+      return await this.database.listDocuments(
+        conf.databaseId,
+        conf.quesCollectionId,
+        [Query.search("tags", tags), Query.orderDesc("$createdAt")]
+      );
+    } catch (error) {
+      console.log("Appwrite error: get questions by tags:", error);
+      return false;
+    }
+  }
+  async getAllTags(tag) {
+    try {
+      const questions = await this.database.listDocuments(
+        conf.databaseId,
+        conf.quesCollectionId,
+        [
+          Query.orderDesc("$createdAt"),
+          tag ? Query.contains("tags", tag) : Query.notEqual("tags", ""),
+          Query.select("tags"),
+          Query.limit(20) // Add limit to prevent performance issues
+        ]
+      );
+
+      // Extract unique tags from all questions
+      const uniqueTags = new Set();
+      questions.documents.forEach((question) => {
+        if (question.tags && typeof question.tags === 'string') {
+          question.tags.split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag.length > 0)
+            .forEach(tag => uniqueTags.add(tag));
+        }
+      });
+      return Array.from(uniqueTags).sort();
+
+    } catch (error) {
+      console.log("Appwrite error: get all tags:", error);
+      return [];  // Return empty array instead of false for consistency
     }
   }
 

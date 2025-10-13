@@ -23,6 +23,7 @@ import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
+import quesdbservice from "@/appwrite/database";
 
 const Select = ({ label, error, icon: Icon, register, ...props }) => (
   <div className="space-y-2">
@@ -88,6 +89,42 @@ const CreateMockTest = () => {
 
   const [modules, setModules] = useState(null);
   const [isModulesOpen, setIsModulesOpen] = useState(true);
+
+  const [searchTags, setSearchTags] = useState("");
+  const [tags, setTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(async () => {
+      if (searchTags.trim()) {
+        setIsLoading(true);
+        try {
+          const response = await quesdbservice.getAllTags(searchTags)
+          setTags(response.slice(0, 5));
+        } catch (error) {
+          console.error("Error fetching tags:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setTags([]);
+      }
+    }, 1000);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchTags]);
+
+  const handleTagSelect = (tag) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags([...selectedTags, tag]);
+    }
+    setSearchTags("");
+    setTags([]);
+  };
+
+  const removeTag = (tagToRemove) => {
+    setSelectedTags(selectedTags.filter((tag) => tag !== tagToRemove));
+  };
 
   const {
     register,
@@ -195,7 +232,10 @@ const CreateMockTest = () => {
     data.userId = user.$id;
     data.tradeName = selectedTrade.tradeName;
     data.action = "generateMockTest";
+    data.tags = tags
     try {
+   //todo add tags 
+  
       const functions = new Functions(appwriteService.getClient());
       const res = await functions.createExecution(
         conf.mockTestFunctionId,
@@ -357,6 +397,53 @@ const CreateMockTest = () => {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="relative space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Tags
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {selectedTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-md text-sm flex items-center"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="ml-1 text-blue-600 dark:text-blue-300 hover:text-blue-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={searchTags}
+                onChange={(e) => setSearchTags(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                placeholder="Search tags..."
+              />
+              {isLoading && (
+                <div className="absolute right-3 top-[38px]">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                </div>
+              )}
+              {tags.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 rounded-md shadow-lg">
+                  {tags.map((tag) => (
+                    <div
+                      key={tag}
+                      onClick={() => handleTagSelect(tag)}
+                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                    >
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {modules && (
