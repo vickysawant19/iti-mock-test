@@ -1,4 +1,7 @@
 export const haversineDistance = (coords1, coords2) => {
+  if (!coords1?.lat || !coords1?.lon || !coords2?.lat || !coords2?.lon) {
+    return 0; // Return 0 if coordinates are invalid
+  }
     const toRad = (x) => (x * Math.PI) / 180;
     const R = 6371e3; // Earth's radius in meters
     const lat1 = toRad(coords1.lat);

@@ -13,6 +13,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { haversineDistance } from "../attaindance/calculateDistance";
 
+
 // Default coordinates for Mumbai, India
 const DEFAULT_LAT = 19.076;
 const DEFAULT_LON = 72.8777;
@@ -47,7 +48,7 @@ const LocationPicker = ({
   circleRadius = 1000,
   zoom = 13,
 }) => {
-  const [location, setLocation] = useState(deviceLocation);
+  const [location, setLocation] = useState(deviceLocation || { lat: DEFAULT_LAT, lon: DEFAULT_LON });
 
   // Memoize distance calculation
   const distance = useMemo(
@@ -57,8 +58,9 @@ const LocationPicker = ({
 
   // Reset location when deviceLocation changes
   useEffect(() => {
-    setLocation(deviceLocation);
+    setLocation(deviceLocation || { lat: DEFAULT_LAT, lon: DEFAULT_LON });
   }, [deviceLocation]);
+  
 
   const LocationMarker = () => {
     useMapEvents({
@@ -85,7 +87,7 @@ const LocationPicker = ({
   const MapCenterUpdater = () => {
     const map = useMap();
     useEffect(() => {
-      if (deviceLocation.lat && deviceLocation.lon) {
+      if (deviceLocation && deviceLocation?.lat && deviceLocation?.lon) {
         map.setView([deviceLocation.lat, deviceLocation.lon]);
       }
     }, [deviceLocation, map]);
@@ -96,7 +98,7 @@ const LocationPicker = ({
     <div className="h-80">
       <MapContainer
         // key={`${deviceLocation.lat}-${deviceLocation.lon}`}
-        center={[deviceLocation.lat, deviceLocation.lon]}
+        center={[deviceLocation?.lat || DEFAULT_LAT, deviceLocation?.lon || DEFAULT_LON]}
         zoom={zoom}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
