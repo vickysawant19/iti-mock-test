@@ -44,6 +44,7 @@ const Signup = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    console.log("data",data)
     try {
       const result = await authService.createAccount(data);
       if (!result.success) {
