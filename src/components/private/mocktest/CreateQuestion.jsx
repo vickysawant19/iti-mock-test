@@ -22,6 +22,9 @@ const CreateQuestion = () => {
   const [modules, setModules] = useState(null);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [images, setImages] = useState([]);
+  const [similarQuestions, setSimilarQuestions] = useState([]);
+
+ 
 
   const navigate = useNavigate();
   const user = useSelector(selectUser);
@@ -37,9 +40,40 @@ const CreateQuestion = () => {
     formState: { errors },
   } = useForm();
 
+
+   
+
+
   const tradeId = useWatch({ control, name: "tradeId" });
   const subjectId = useWatch({ control, name: "subjectId" });
   const year = useWatch({ control, name: "year" });
+
+  useEffect(() => {
+    console.log("here")
+    return
+    const debounceTimer = setTimeout(async () => {
+      if (watch("question").trim()) {
+        setIsLoading(true);
+        try {
+          const response = await quesdbservice.getSimilarQuestions({
+            question:watch("question"), tradeId
+          }
+          );
+
+          console.log("Similar questions:", response);
+          setSimilarQuestions(response);
+        } catch (error) {
+          console.error("Error fetching similar questions:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setSimilarQuestions([]);
+      }
+    }, 2000);
+
+    return () => clearTimeout(debounceTimer);
+  }, [watch("question")]);
 
   const fetchData = async () => {
     try {

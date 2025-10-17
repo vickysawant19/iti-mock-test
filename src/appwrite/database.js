@@ -100,6 +100,80 @@ export class QuesDbService {
     }
   }
 
+
+async getSimilarQuestions({question, tradeId = null}) {
+  try {
+    const STOPWORDS = new Set([
+      "a","an","the","is","are","was","were","in","on","at","for","to",
+      "of","and","or","with","by","from","that","this","it","as","be",
+      "has","have","had","do","does","did","but","not","can","could",
+      "would","should","you","i","we","they","he","she","which","who",
+      "what","when","where","why","how","all","any","both","each","few",
+      "more","most","other","some","such","no","nor","not","only","own",
+    ]);
+
+    const normalize = text =>
+      (text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const tokenize = text =>
+      normalize(text)
+        .split(" ")
+        .filter(w => w && !STOPWORDS.has(w));
+
+    const queryWords = tokenize(question);
+    if (queryWords.length === 0) return [];
+    console.log(queryWords)
+
+    const query =  [
+        // Query.search("question", question),
+        Query.contains("question", queryWords),
+        Query.limit(5),
+        Query.select("question"),
+      ]
+
+    tradeId && query.push(Query.equal("tradeId", tradeId));
+
+    // ---- Appwrite search ----
+    const response = await this.database.listDocuments(
+      conf.databaseId,
+      conf.quesCollectionId,
+     query
+    );
+   console.log(response)
+    const candidates = response.documents || [];
+    if (candidates.length === 0) return [];
+
+    // ---- Local ranking by matched words ----
+    const ranked = candidates.map(doc => {
+      const docWords = new Set(tokenize(doc.question || ""));
+      const commonWords = queryWords.filter(w => docWords.has(w));
+      return {
+        doc,
+        matchCount: commonWords.length,
+        matchedWords: commonWords,
+      };
+    });
+
+    const filtered = ranked
+      .filter(r => r.matchCount >= 3)
+      .sort((a, b) => b.matchCount - a.matchCount);
+
+    return filtered.slice(0, 5).map(r => ({
+      ...r.doc,
+      _matchedWordCount: r.matchCount,
+      _matchedWords: r.matchedWords,
+    }));
+
+  } catch (error) {
+    console.error("Error getting similar questions:", error);
+    throw error;
+  }
+}
+
   async deleteQuestion(id) {
     try {
       await this.database.deleteDocument(
