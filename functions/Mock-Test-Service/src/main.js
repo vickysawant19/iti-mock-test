@@ -1,6 +1,7 @@
-import { Client,Databases } from 'node-appwrite';
+import { Client,Databases  } from 'node-appwrite';
 import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
+import { bulkaddQuestions } from './bulkActions.js';
 
 
 
@@ -31,6 +32,7 @@ export default async ({ req, res, log, error }) => {
     selectedModules,
     totalMinutes,
     tags,
+    questions
   } = req.bodyJson;
   
 
@@ -40,39 +42,41 @@ export default async ({ req, res, log, error }) => {
     .setKey(req.headers['x-appwrite-key'] ?? '');
 
   const database = new Databases(client);
-  let result = {};
-  switch (action) {
-    case "generateMockTest":
-      result = await generateMockTest({
-        userId,
-        userName,
-        tradeName,
-        tradeId,
-        year,
-        quesCount,
-        error,
-        database,
-        selectedModules,
-        subjectId,
-        totalMinutes,
-        tags
-      });
-      break;
 
-    case "createNewMockTest":
-      result = await createNewMockTest({
-        paperId,
-        userId,
-        userName,
-        error,
-        database,
+  
+  try {
+    let result = {};
+    switch (action) {
+      case "generateMockTest":
+        result = await generateMockTest({
+          userId,
+          userName,
+          tradeName,
+          tradeId,
+          year,
+          quesCount,
+          error,
+          database,
+          selectedModules,
+          subjectId,
+          totalMinutes,
+          tags
         
-      });
-      break;
-
-    default:
-      result = { error: "Invalid action" };
-      break;
+        });
+        break;
+      case "createNewMockTest":
+        result = await createNewMockTest({ paperId, userId, userName, error, database });
+        break;
+      case "bulkaddQuestions":
+        result = await bulkaddQuestions({ questions, error, database });
+        break;
+      default:
+        result = { error: "Invalid action" };
+        break;
+    }
+    return res.send(result);
+  } catch (err) {
+    error(err);
+    return res.send({ error: err.message }, 500);
   }
-  return res.send(result);
 };

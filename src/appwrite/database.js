@@ -7,6 +7,23 @@ export class QuesDbService {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getDatabases();
     this.bucket = appwriteService.getStorage();
+    this.functions = appwriteService.getFunctions();
+  }
+
+  async bulkaddQuestions(payload) {
+    try {
+      const response = await this.functions.createExecution(
+        "67a88715003234e3617a",
+        payload
+      );
+      const result = JSON.parse(response.responseBody);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    } catch (err) {
+      throw new Error(`${err.message}`);
+    }
   }
 
   async createQuestion({
@@ -100,79 +117,134 @@ export class QuesDbService {
     }
   }
 
+  async getSimilarQuestions({ question, tradeId = null }) {
+    try {
+      const STOPWORDS = new Set([
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "in",
+        "on",
+        "at",
+        "for",
+        "to",
+        "of",
+        "and",
+        "or",
+        "with",
+        "by",
+        "from",
+        "that",
+        "this",
+        "it",
+        "as",
+        "be",
+        "has",
+        "have",
+        "had",
+        "do",
+        "does",
+        "did",
+        "but",
+        "not",
+        "can",
+        "could",
+        "would",
+        "should",
+        "you",
+        "i",
+        "we",
+        "they",
+        "he",
+        "she",
+        "which",
+        "who",
+        "what",
+        "when",
+        "where",
+        "why",
+        "how",
+        "all",
+        "any",
+        "both",
+        "each",
+        "few",
+        "more",
+        "most",
+        "other",
+        "some",
+        "such",
+        "no",
+        "nor",
+        "not",
+        "only",
+        "own",
+      ]);
 
-async getSimilarQuestions({question, tradeId = null}) {
-  try {
-    const STOPWORDS = new Set([
-      "a","an","the","is","are","was","were","in","on","at","for","to",
-      "of","and","or","with","by","from","that","this","it","as","be",
-      "has","have","had","do","does","did","but","not","can","could",
-      "would","should","you","i","we","they","he","she","which","who",
-      "what","when","where","why","how","all","any","both","each","few",
-      "more","most","other","some","such","no","nor","not","only","own",
-    ]);
+      const normalize = (text) =>
+        (text || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
 
-    const normalize = text =>
-      (text || "")
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+      const tokenize = (text) =>
+        normalize(text)
+          .split(" ")
+          .filter((w) => w && !STOPWORDS.has(w));
 
-    const tokenize = text =>
-      normalize(text)
-        .split(" ")
-        .filter(w => w && !STOPWORDS.has(w));
+      const queryWords = tokenize(question);
+      if (queryWords.length === 0) return [];
+      console.log(queryWords);
 
-    const queryWords = tokenize(question);
-    if (queryWords.length === 0) return [];
-    console.log(queryWords)
-
-    const query =  [
+      const query = [
         // Query.search("question", question),
         Query.contains("question", queryWords),
         Query.limit(5),
         Query.select("question"),
-      ]
+      ];
 
-    tradeId && query.push(Query.equal("tradeId", tradeId));
+      tradeId && query.push(Query.equal("tradeId", tradeId));
 
-    // ---- Appwrite search ----
-    const response = await this.database.listDocuments(
-      conf.databaseId,
-      conf.quesCollectionId,
-     query
-    );
-   console.log(response)
-    const candidates = response.documents || [];
-    if (candidates.length === 0) return [];
+      // ---- Appwrite search ----
+      const response = await this.database.listDocuments(
+        conf.databaseId,
+        conf.quesCollectionId,
+        query
+      );
+      console.log(response);
+      const candidates = response.documents || [];
+      if (candidates.length === 0) return [];
 
-    // ---- Local ranking by matched words ----
-    const ranked = candidates.map(doc => {
-      const docWords = new Set(tokenize(doc.question || ""));
-      const commonWords = queryWords.filter(w => docWords.has(w));
-      return {
-        doc,
-        matchCount: commonWords.length,
-        matchedWords: commonWords,
-      };
-    });
+      // ---- Local ranking by matched words ----
+      const ranked = candidates.map((doc) => {
+        const docWords = new Set(tokenize(doc.question || ""));
+        const commonWords = queryWords.filter((w) => docWords.has(w));
+        return {
+          doc,
+          matchCount: commonWords.length,
+          matchedWords: commonWords,
+        };
+      });
 
-    const filtered = ranked
-      .filter(r => r.matchCount >= 3)
-      .sort((a, b) => b.matchCount - a.matchCount);
+      const filtered = ranked
+        .filter((r) => r.matchCount >= 3)
+        .sort((a, b) => b.matchCount - a.matchCount);
 
-    return filtered.slice(0, 5).map(r => ({
-      ...r.doc,
-      _matchedWordCount: r.matchCount,
-      _matchedWords: r.matchedWords,
-    }));
-
-  } catch (error) {
-    console.error("Error getting similar questions:", error);
-    throw error;
+      return filtered.slice(0, 5).map((r) => ({
+        ...r.doc,
+        _matchedWordCount: r.matchCount,
+        _matchedWords: r.matchedWords,
+      }));
+    } catch (error) {
+      console.error("Error getting similar questions:", error);
+      throw error;
+    }
   }
-}
 
   async deleteQuestion(id) {
     try {
@@ -234,25 +306,25 @@ async getSimilarQuestions({question, tradeId = null}) {
           Query.orderDesc("$createdAt"),
           tag ? Query.contains("tags", tag) : Query.notEqual("tags", ""),
           Query.select("tags"),
-          Query.limit(20) // Add limit to prevent performance issues
+          Query.limit(20), // Add limit to prevent performance issues
         ]
       );
 
       // Extract unique tags from all questions
       const uniqueTags = new Set();
       questions.documents.forEach((question) => {
-        if (question.tags && typeof question.tags === 'string') {
-          question.tags.split(',')
-            .map(tag => tag.trim())
-            .filter(tag => tag.length > 0)
-            .forEach(tag => uniqueTags.add(tag));
+        if (question.tags && typeof question.tags === "string") {
+          question.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag.length > 0)
+            .forEach((tag) => uniqueTags.add(tag));
         }
       });
       return Array.from(uniqueTags).sort();
-
     } catch (error) {
       console.log("Appwrite error: get all tags:", error);
-      return [];  // Return empty array instead of false for consistency
+      return []; // Return empty array instead of false for consistency
     }
   }
 

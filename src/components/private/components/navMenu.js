@@ -1,4 +1,4 @@
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Group } from "lucide-react";
 import {
   FaBook,
   FaBookReader,
@@ -16,7 +16,7 @@ import {
   FaUserPlus,
   FaUserSecret,
 } from "react-icons/fa";
-import { MdAddCard } from "react-icons/md";
+import { MdAddCard, MdGroupAdd, MdOutlineGroupAdd } from "react-icons/md";
 
 export const menuConfig = [
   {
@@ -26,7 +26,8 @@ export const menuConfig = [
     icon: FaUserSecret,
     groupKey: "admin",
     children: [
-      { label: "View modules", path: "/add-modules", icon: MdAddCard },
+      { label: "Modules", path: "/add-modules", icon: MdAddCard },
+      { label: "Questions", path: "/add-bulk-questions", icon: Group},
     ],
   },
   {

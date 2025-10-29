@@ -57,6 +57,7 @@ import AddStudents from "./components/private/teacher/batch/students/AddStudents
 import FaceAttendance from "./components/private/teacher/attaindance/faceAttendance/FaceAttendance.jsx";
 import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
 import PageNotFound from "./PageNotFound.jsx";
+import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -120,6 +121,7 @@ const router = (
           </Route>
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
+            <Route path="add-bulk-questions" element={<AddBulkQuestions />} />
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />
