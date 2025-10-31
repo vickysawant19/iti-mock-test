@@ -83,6 +83,7 @@ const Modules = () => {
         Query.equal("year", selectedTradeYear),
         Query.equal("subjectId", selectedSubjectID),
       ]);
+      console.log(data)
 
       setShow(new Set());
       setModules(

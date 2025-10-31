@@ -91,6 +91,7 @@ export class ModuleServices {
         conf.modulesesCollectionId,
         queries
       );
+      console.log("responce", data)
       if (data.total > 0) {
         return {
           ...data.documents[0],

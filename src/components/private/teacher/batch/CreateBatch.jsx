@@ -150,6 +150,7 @@ const BatchForm = ({ onClose }) => {
   }, [selectedBatchId]);
 
   const handleBatchSubmit = async (data) => {
+
     setIsSubmitting(true);
     try {
       const batchPayload = {
@@ -334,22 +335,20 @@ const BatchForm = ({ onClose }) => {
             </select>
           </div>
           {/* Batch Status */}
-          <div>
-            <label className="inline-flex items-center cursor-pointer flex-col">
-              <span className="ms-3 text-sm font-medium text-gray-600 mb-2 dark:text-gray-300">
-                Batch Status
-              </span>
-              <input
-                {...register("isActive")}
-                disabled={isBatchDataLoading}
-                type="checkbox"
-                className="sr-only peer"
-              />
-              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:rtl:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          <div className="flex items-center gap-2">
+            <input
+              id="isActive"
+              type="checkbox"
+              {...register("isActive")}
+              disabled={isBatchDataLoading}
+              className="w-6 h-6 pt-2 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:focus:ring-blue-800"
+            />
+            <label htmlFor="isActive" className="text-gray-600 dark:text-gray-300">
+              Batch is Active
             </label>
           </div>
           {/* Location */}
-          <div className="col-span-full relative">
+          <div className="col-span-full">
             <label className="block text-gray-600 mb-2 dark:text-gray-300">
               Location
               <span className="text-xs italic text-gray-500 ml-2 dark:text-gray-400">
