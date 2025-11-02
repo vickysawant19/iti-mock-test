@@ -94,6 +94,7 @@ const ViewBatch = () => {
     try {
       const result = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
+        Query.equal("isActive", true),
         Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
       ]);
       const batchesArray = Array.isArray(result.documents)
