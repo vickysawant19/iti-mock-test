@@ -22,11 +22,13 @@ import { FaMagic } from "react-icons/fa";
 import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
 import { appwriteService } from "../../../appwrite/appwriteConfig";
 import { generatePaperId } from "./util";
+import moduleServices from "@/appwrite/moduleServices";
 
 const AddModules = ({
   setShow,
-  setModules,
-  modules,
+  newModules,
+  setNewModules,
+  metaData,
   moduleId,
   moduleTest,
   trade,
@@ -51,6 +53,19 @@ const AddModules = ({
   const [evalPoints, setEvalPoints] = useState(null);
   const [images, setImages] = useState([]);
   const [isDeleting, setIsDeleting] = useState({});
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (moduleId && newModules.length > 0) {
+      const exists = newModules.some(
+        (m) => m.moduleId.toUpperCase() === moduleId.toUpperCase()
+      );
+      setIsEditing(exists);
+    } else {
+      setIsEditing(false);
+    }
+  }, [moduleId, newModules]);
 
   // Setup react-hook-form and watch for assessmentPaperId
   const {
@@ -116,25 +131,43 @@ const AddModules = ({
     //   return;
     // }
     try {
-      setModules((prev) => {
-        let existing = prev.syllabus.find(
-          (m) => m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
-        );
-        return {
-          ...prev,
-          syllabus: existing
-            ? prev.syllabus.map((m) =>
-                m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
-                  ? { ...m, ...formData, topics: m?.topics || [] }
-                  : m
-              )
-            : [...prev.syllabus, { ...formData, topics: [] }],
-        };
-      });
-      scrollToItem(formData.moduleId.toUpperCase());
-      setFocus("moduleId");
+      let existingModule = newModules.find(
+        (m) => m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
+      );
+      if (existingModule) {
+        existingModule = { ...existingModule, ...formData };
 
-      toast.success("Module saved successfully!");
+        const updatedData = await moduleServices.updateNewModulesData(
+          existingModule
+        );
+
+        setNewModules((prev) =>
+          prev.map((m) =>
+            m.moduleId.toUpperCase() === updatedData.moduleId.toUpperCase()
+              ? updatedData
+              : m
+          )
+        );
+        scrollToItem(updatedData.moduleId.toUpperCase());
+        setFocus("moduleId");
+        toast.success("Module updated successfully!");
+      } else {
+        existingModule = { ...metaData, ...formData };
+        const createdData = await moduleServices.createNewModulesData(
+          existingModule
+        );
+        console.log("added new module", createdData);
+        setNewModules((prev) => {
+          return prev.map((m) =>
+            m.moduleId.toUpperCase() === createdData.moduleId.toUpperCase()
+              ? createdData
+              : m
+          );
+        });
+        scrollToItem(createdData.moduleId.toUpperCase());
+        setFocus("moduleId");
+        toast.success("Module added successfully!");
+      }
     } catch (err) {
       console.log("Error saving module:", err);
       toast.error("Error saving module");
@@ -143,8 +176,8 @@ const AddModules = ({
 
   // Reset form fields if moduleId or modules change.
   useEffect(() => {
-    if (moduleId !== "" && modules?.syllabus) {
-      const selectedModule = modules.syllabus.find(
+    if (moduleId !== "" && newModules.length > 0) {
+      const selectedModule = newModules.find(
         (m) => m.moduleId.toUpperCase() === moduleId.toUpperCase()
       );
       reset(selectedModule || {});
@@ -161,14 +194,14 @@ const AddModules = ({
         assessmentPaperId: "",
         evalutionsPoints: [],
         images: [],
-        hours: "",
+        hours: 0,
         topics: [],
       });
       setImages([]);
       setEvalPoints([]);
     }
     scrollToItem(moduleId);
-  }, [moduleId, modules, reset]);
+  }, [moduleId, newModules, reset]);
 
   const deleteImage = async ({ fileId }) => {
     if (!fileId) return toast.error("Invalid file ID");
@@ -191,8 +224,9 @@ const AddModules = ({
         setImages((prevImages) =>
           prevImages.filter((img) => img.id !== fileId)
         );
-        setValue("images", (prevImages) =>
-          prevImages.filter((img) => img.id !== fileId)
+        setValue(
+          "images",
+          images.filter((img) => img.id !== fileId)
         );
 
         toast.success("Image deleted successfully!");
@@ -247,16 +281,21 @@ const AddModules = ({
                   onChange: (e) => {
                     e.target.value = e.target.value.toUpperCase(); // Transform to uppercase
                   },
-                  // validate: (value) => {
-                  //   const upperCaseValue = value.toUpperCase();
-                  //   return (
-                  //     !modules.syllabus.some(
-                  //       (module) =>
-                  //         module.moduleId.toUpperCase() === upperCaseValue
-                  //     ) || "Module ID already exists!"
-                  //   );
-                  // },
+                  validate: (value) => {
+                    const upperCaseValue = value.toUpperCase();
+                    // Only check for duplicates if adding a new module
+                    if (!isEditing) {
+                      return (
+                        !newModules.some(
+                          (module) =>
+                            module.moduleId.toUpperCase() === upperCaseValue
+                        ) || "Module ID already exists!"
+                      );
+                    }
+                    return true;
+                  },
                 })}
+                disabled={isEditing}
                 className="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
                 placeholder="Enter module ID"
               />
@@ -537,13 +576,13 @@ const AddModules = ({
                   >
                     <IKImage
                       urlEndpoint="https://ik.imagekit.io/71amgqe4f"
-                      path={image.url.split("/").slice(-2).join("/")}
+                      path={image?.url.split("/").slice(-2).join("/")}
                       transformation={[
                         { height: 300, width: 300, cropMode: "pad_resize" },
                       ]}
                       lqip={{ active: true }}
                       className="object-cover w-full h-full"
-                      alt={image.name}
+                      alt={image?.name}
                       onError={(e) => console.log("error", e)}
                     />
                   </div>

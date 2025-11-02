@@ -9,8 +9,17 @@ import {
   ClipboardList,
   Library,
 } from "lucide-react";
+import moduleServices from "@/appwrite/moduleServices";
+import { toast } from "react-toastify";
 
-const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
+const AddTopics = ({
+  setNewModules,
+  newModules,
+  moduleId,
+  topicId,
+  setTopicId,
+  setShow,
+}) => {
   const {
     handleSubmit,
     register,
@@ -19,9 +28,13 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
   } = useForm();
 
   useEffect(() => {
+    setShow(new Set().add("AddTopics"));
+  }, [setShow]);
+
+  useEffect(() => {
     if (moduleId && topicId) {
       reset(
-        modules.syllabus
+        newModules
           .find((m) => m.moduleId === moduleId)
           .topics.find((t) => t.topicId === topicId) || {}
       );
@@ -34,52 +47,62 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
         topicResource: "NA",
       });
     }
-  }, [moduleId, subjectId, reset, modules]);
+  }, [moduleId, reset, newModules, topicId]);
 
-  const onSubmit = (formData) => {
-    setModules((prev) => {
-      let existing = prev.syllabus.find((m) => m.moduleId === moduleId);
+  const handleAddTopics = async (formData) => {
+    try {
+      // Find the target module
+      const existingModule = newModules.find((m) => m.moduleId === moduleId);
+      if (!existingModule) {
+        toast.error("Module not found");
+        return;
+      }
+      // Check if topic already exists
+      const existingTopic = existingModule.topics.find(
+        (t) => t.topicId === formData.topicId
+      );
 
-      let existingTopic = existing
-        ? existing?.topics?.find((t) => t.topicId === formData.topicId)
-        : undefined;
+      // Normalize topicResource
+      const topicResource =
+        typeof formData.topicResource === "string"
+          ? formData.topicResource.split(",").map((r) => r.trim())
+          : formData.topicResource || [];
 
-      return {
-        ...prev,
-        syllabus: existing
-          ? prev.syllabus.map((m) =>
-              m.moduleId === moduleId
-                ? {
-                    ...m,
-                    topics: existingTopic
-                      ? m.topics.map((t) =>
-                          t.topicId == formData.topicId
-                            ? {
-                                ...t,
-                                ...formData,
-                                topicResource:
-                                  typeof formData.topicResource === "string"
-                                    ? formData.topicResource.split(",")
-                                    : formData.topicResource || [],
-                              }
-                            : t
-                        )
-                      : [
-                          ...m?.topics,
-                          {
-                            ...formData,
-                            topicResource:
-                              typeof formData.topicResource === "string"
-                                ? formData.topicResource.split(",")
-                                : formData.topicResource || [],
-                          },
-                        ],
-                  }
-                : m
-            )
-          : [...prev.syllabus],
+      // Build updated topics list immutably
+      const updatedTopics = existingTopic
+        ? existingModule.topics.map((t) =>
+            t.topicId === formData.topicId
+              ? { ...t, ...formData, topicResource }
+              : t
+          )
+        : [...existingModule.topics, { ...formData, topicResource }];
+
+      // Create updated module object
+      const updatedModule = {
+        ...existingModule,
+        topics: updatedTopics,
       };
-    });
+
+      // Update in backend
+      const response = await moduleServices.updateNewModulesData(updatedModule);
+
+      // Update local state immutably
+      setNewModules((prev) =>
+        prev.map((m) => (m.moduleId === moduleId ? { ...m, ...response } : m))
+      );
+
+      // Update UI state
+      setTopicId(formData?.topicId);
+      setShow(new Set().add("showTopics"));
+      toast.success(
+        existingTopic
+          ? "Topic Updated Successfully"
+          : "Topic Added Successfully"
+      );
+    } catch (error) {
+      console.error("Error Adding Topics:", error);
+      toast.error("Error Adding Topics");
+    }
   };
 
   return (
@@ -95,7 +118,7 @@ const AddTopics = ({ moduleId, topicId, subjectId, modules, setModules }) => {
       </div>
 
       <div className="p-6 dark:bg-gray-800">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleAddTopics)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Topic ID */}
             <div className="space-y-2">

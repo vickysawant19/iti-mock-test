@@ -6,7 +6,6 @@ class GeminiService {
     this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   }
 
-  
   async getEvalutionPoint(practicalName) {
     const prompt = `
   You are an expert evaluator. A practical exam is scored out of 100 points.
@@ -18,7 +17,7 @@ class GeminiService {
   Replace the labels with appropriate short phrases that capture key evaluation aspects for the practical exam.
   Output only the comma-separated criteria with their points, with no additional text.
     `.trim();
-  
+
     try {
       const result = await this.model.generateContent(prompt, {
         maxOutputTokens: 2048,
@@ -30,7 +29,6 @@ class GeminiService {
       throw error;
     }
   }
-  
 
   // Method to generate the raw JSON string from the Gemini API
   async getRawJSON(practicalName, numberOfQuestions = 5) {

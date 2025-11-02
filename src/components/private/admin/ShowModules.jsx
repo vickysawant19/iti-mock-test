@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Clock,
   Edit2,
@@ -9,9 +9,34 @@ import {
   X,
 } from "lucide-react";
 import { IKImage } from "imagekitio-react";
+import { toast } from "react-toastify";
+import moduleServices from "@/appwrite/moduleServices";
 
-const ShowModules = ({ module, setShow, handleDeleteModule }) => {
+const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
+  const [module, setModule] = useState(
+    newModules.find((m) => m.moduleId === moduleId) || {}
+  );
+
+  useEffect(() => {
+    setModule(newModules.find((m) => m.moduleId === moduleId) || {});
+  }, [newModules, moduleId]);
+
   const [previewImage, setPreviewImage] = useState();
+
+  const handleDeleteModule = async () => {
+    if (!moduleId) return;
+    if (!confirm("Deleteing Module with Module Id:", moduleId)) return;
+    try {
+      const response = await moduleServices.deleteNewModulesData(module.$id);
+      setNewModules((prev) => prev.filter((m) => m.moduleId !== moduleId));
+      setModule(null);
+      setShow(new Set());
+      toast.success("Module deleted successfully!");
+    } catch (error) {
+      console.log("Module Delete Error", error);
+    }
+  };
+
   if (!module) return null;
 
   return (

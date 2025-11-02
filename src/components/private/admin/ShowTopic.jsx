@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Clock,
   Book,
@@ -8,8 +8,47 @@ import {
   LucideDelete,
   Delete,
 } from "lucide-react";
+import { use } from "react";
+import moduleServices from "@/appwrite/moduleServices";
 
-const ShowTopic = ({ topic, setShow, handleDeleteTopic }) => {
+const ShowTopic = ({
+  setShow,
+  setNewModules,
+  newModules,
+  moduleId,
+  topicId,
+}) => {
+  const [topic, setTopic] = useState(
+    newModules
+      .find((m) => m.moduleId === moduleId)
+      .topics.find((t) => t.topicId === topicId) || {}
+  );
+
+  useEffect(() => {
+    setTopic(
+      newModules
+        .find((m) => m.moduleId === moduleId)
+        .topics.find((t) => t.topicId === topicId) || {}
+    );
+  }, [newModules, moduleId, topicId]);
+
+  const handleDeleteTopic = async () => {
+    if (!moduleId || !topicId) return;
+    if (!confirm("Deleteing Topic with Topic Id:", topicId)) return;
+    try {
+      const moduleToUpdate = newModules.find((m) => m.moduleId === moduleId);
+      const response = await moduleServices.updateNewModulesData({
+        ...moduleToUpdate,
+        topics: moduleToUpdate.topics.filter((t) => t.topicId !== topicId),
+      });
+      setNewModules((prev) => {
+        return prev.map((m) => (m.moduleId === moduleId ? response : m));
+      });
+      setTopic(null);
+      setShow(new Set().add("showModules"));
+    } catch (error) {}
+  };
+
   if (!topic) {
     return null;
   }

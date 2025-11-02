@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
-import { PlusCircle, Save, BookOpen, Filter } from "lucide-react";
+import { PlusCircle, Save, BookOpen, Filter, Images } from "lucide-react";
 import { Query } from "appwrite";
 
 import ModulesList from "./ModulesList";
@@ -24,14 +24,13 @@ const Modules = () => {
   const [selectedSubjectID, setSelectedSubjectID] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTradeYear, setSelectedTradeYear] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
+
   const [moduleId, setModuleId] = useState("");
   const [topicId, setTopicId] = useState("");
-  const [modules, setModules] = useState({
-    tradeId: selectedTradeID,
-    subjectId: selectedSubjectID,
-  });
+  const [newModules, setNewModules] = useState([]);
   const [show, setShow] = useState(new Set());
   const profile = useSelector(selectProfile);
 
@@ -47,7 +46,7 @@ const Modules = () => {
     selectedSubject && selectedSubject.subjectName.includes("PRACTICAL");
 
   const { scrollToItem, itemRefs } = useScrollToItem(
-    modules?.syllabus || [],
+    newModules || [],
     "moduleId"
   );
 
@@ -78,31 +77,14 @@ const Modules = () => {
   const fetchModules = async () => {
     try {
       setLoading(true);
-      const data = await moduleServices.listModules([
-        Query.equal("tradeId", selectedTradeID),
-        Query.equal("year", selectedTradeYear),
-        Query.equal("subjectId", selectedSubjectID),
-      ]);
-
-      setShow(new Set());
-      setModules(
-        data
-          ? {
-              ...data,
-              subjectName:
-                subjectData.find((item) => item.$id == selectedSubjectID)
-                  ?.subjectName || null,
-            }
-          : {
-              tradeId: selectedTradeID,
-              subjectId: selectedSubjectID,
-              subjectName:
-                subjectData.find((item) => item.$id == selectedSubjectID)
-                  ?.subjectName || null,
-              year: selectedTradeYear,
-              syllabus: [],
-            }
+      const newModulesData = await moduleServices.getNewModulesData(
+        selectedTradeID,
+        selectedSubjectID,
+        selectedTradeYear
       );
+
+      setNewModules(newModulesData);
+      setShow(new Set());
     } catch (error) {
       console.error("Error fetching modules:", error);
     } finally {
@@ -128,50 +110,6 @@ const Modules = () => {
       setSelectedTrade(tradeData.find((item) => item.$id === selectedTradeID));
     }
   }, [selectedTradeID]);
-
-  const submitModuleData = async () => {
-    setLoading(true);
-    try {
-      if (modules.$id) {
-        const res = await moduleServices.updateModules(modules.$id, modules);
-        setModules(res);
-      } else {
-        const res = await moduleServices.createModules(modules);
-        setModules(res);
-      }
-    } catch (error) {
-      console.log("module error", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteModule = () => {
-    if (!moduleId) return;
-    if (!confirm("Deleteing Module with Module Id:", moduleId)) return;
-    setModules((prev) => {
-      return {
-        ...prev,
-        syllabus: prev.syllabus.filter((m) => m.moduleId !== moduleId),
-      };
-    });
-  };
-
-  const handleDeleteTopic = () => {
-    if (!moduleId || !topicId) return;
-    if (!confirm("Deleteing Topic with Topic Id:", topicId)) return;
-
-    setModules((prev) => {
-      return {
-        ...prev,
-        syllabus: prev.syllabus.map((m) =>
-          m.moduleId === moduleId
-            ? { ...m, topics: m.topics.filter((t) => t.topicId !== topicId) }
-            : m
-        ),
-      };
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -268,51 +206,22 @@ const Modules = () => {
         {selectedTradeID && selectedSubjectID && (
           <div className="mb-6 sticky top-20">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="col-span-full flex justify-end gap-4">
-                <button
-                  disabled={loading}
-                  onClick={() => {
-                    setShow(new Set().add("AddModules"));
-                    setModuleId("");
-                    setTopicId("");
-                  }}
-                  className="flex items-center gap-2 bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-500"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  {loading ? (
-                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
-                  ) : (
-                    "Add New Module"
-                  )}
-                </button>
-                <button
-                  disabled={loading}
-                  onClick={submitModuleData}
-                  className="flex items-center gap-2 bg-green-500 dark:bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-600 dark:hover:bg-green-700 transition-colors disabled:bg-green-300 dark:disabled:bg-green-500"
-                >
-                  <Save className="w-5 h-5" />
-                  {loading ? (
-                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
-              </div>
-
               <div className="col-span-1 rounded-xl">
                 {loading ? (
                   <div className="flex justify-center items-center h-40">
                     <div className="w-10 h-10 border-t-4 border-blue-500 dark:border-blue-400 rounded-full animate-spin" />
                   </div>
                 ) : (
-                  modules?.syllabus?.length > 0 && (
+                  newModules &&
+                  newModules.length > 0 && (
                     <ModulesList
-                      syllabus={modules?.syllabus}
+                      syllabus={newModules}
                       setModuleId={setModuleId}
+                      moduleId={moduleId}
                       setTopicId={setTopicId}
                       topicId={topicId}
-                      moduleId={moduleId}
                       setShow={setShow}
+                      loading={loading}
                       itemRefs={itemRefs}
                     />
                   )
@@ -323,8 +232,14 @@ const Modules = () => {
                 <div className="flex-1 overflow-y-auto scroll-smooth">
                   {show.has("AddModules") && (
                     <AddModules
-                      setModules={setModules}
-                      modules={modules}
+                      setNewModules={setNewModules}
+                      newModules={newModules}
+                      metaData={{
+                        tradeId: selectedTradeID,
+                        subjectId: selectedSubjectID,
+                        subjectName: selectedSubject?.subjectName,
+                        year: selectedTradeYear,
+                      }}
                       moduleId={moduleId}
                       setShow={setShow}
                       moduleTest={moduleTest}
@@ -335,29 +250,29 @@ const Modules = () => {
                   )}
                   {show.has("AddTopics") && (
                     <AddTopics
-                      setModules={setModules}
-                      modules={modules}
+                      setNewModules={setNewModules}
+                      newModules={newModules}
                       moduleId={moduleId}
                       topicId={topicId}
+                      setTopicId={setTopicId}
                       setShow={setShow}
                     />
                   )}
                   {show.has("showModules") && (
                     <ShowModules
                       setShow={setShow}
-                      handleDeleteModule={handleDeleteModule}
-                      module={modules.syllabus.find(
-                        (item) => item.moduleId === moduleId
-                      )}
+                      newModules={newModules}
+                      setNewModules={setNewModules}
+                      moduleId={moduleId}
                     />
                   )}
                   {show.has("showTopics") && (
                     <ShowTopic
                       setShow={setShow}
-                      handleDeleteTopic={handleDeleteTopic}
-                      topic={modules.syllabus
-                        .find((item) => item.moduleId === moduleId)
-                        ?.topics.find((item) => item.topicId === topicId)}
+                      setNewModules={setNewModules}
+                      newModules={newModules}
+                      moduleId={moduleId}
+                      topicId={topicId}
                     />
                   )}
                 </div>
