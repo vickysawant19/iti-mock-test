@@ -64,6 +64,30 @@ export class SubjectService {
     }
   }
 
+  async listAllSubjects(queries = []) {
+    let limit = 100;
+    let offset = 0;
+    let allDocuments = [];
+    try {
+      while (true) {
+        const data = await this.database.listDocuments(
+          conf.databaseId,
+          conf.subjectsCollectionId,
+          [...queries, Query.limit(limit), Query.offset(offset)]
+        );
+        allDocuments = allDocuments.concat(data.documents);
+        if (data.documents.length < limit) {
+          break;
+        }
+        offset += limit;
+      }
+      return allDocuments;
+    } catch (error) {
+      console.error("Appwrite error: fetching subjects", error);
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
   async listSubjects(queries = [Query.orderAsc("$createdAt")]) {
     try {
       return await this.database.listDocuments(

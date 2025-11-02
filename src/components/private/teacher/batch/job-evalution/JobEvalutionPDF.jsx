@@ -358,8 +358,8 @@ const ModulePage = ({
                   Score
                 </Text>
               </View>
-              {moduleData?.evalutionPoints
-                ? moduleData.evalutionPoints.map((item, idx) => (
+              {moduleData?.evalutionsPoints
+                ? moduleData.evalutionsPoints.map((item, idx) => (
                     <View key={idx} style={styles.evalTableRow}>
                       <Text
                         style={[

@@ -11,6 +11,7 @@ import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
 import useScrollToItem from "../../../../../utils/useScrollToItem";
 import Loader from "@/components/components/Loader";
+import subjectService from "@/appwrite/subjectService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   if (!studentProfiles.length) {
@@ -39,10 +40,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   //   batchData.tradeId
   // );
 
-  const { scrollToItem, itemRefs } = useScrollToItem(
-    modules?.syllabus || [],
-    "moduleId"
-  );
+  const { scrollToItem, itemRefs } = useScrollToItem(modules || [], "moduleId");
 
   useEffect(() => {
     if (!attendance || attendance.length === 0) return;
@@ -104,15 +102,28 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     };
   }, [selectedModule]);
 
+  const fetchSubject = async () => {
+    try {
+      const res = await subjectService.listAllSubjects([
+        Query.equal("subjectName", "TRADE PRACTICAL"),
+      ]);
+
+      return res[0];
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // Fetch modules based on selected subject and year
   const fetchModules = async () => {
     try {
       if (!selectedYear) return;
-      const data = await moduleServices.listModules([
-        Query.equal("tradeId", batchData.tradeId),
-        Query.contains("subjectName", "PRACTICAL"),
-        Query.equal("year", selectedYear),
-      ]);
+      const subject = await fetchSubject();
+      const data = await moduleServices.getNewModulesData(
+        batchData.tradeId,
+        subject.$id,
+        selectedYear
+      );
 
       const practicalDates = Array.isArray(batchData?.dailyDairy) // Ensure dailyDairyd is an array
         ? batchData.dailyDairy
@@ -151,37 +162,42 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
             }, {})
         : {}; // Ensure practicalDates is an object even if dailyDairyd is missing
 
-      const newSyllabus = data?.syllabus?.map((item) => {
-        const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
-        const rawDates = practicalDates[moduleIdNumber] || [];
+      const newSyllabus = data
+        ?.sort(
+          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0]
+        )
+        .map((item) => {
+          const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
+          const rawDates = practicalDates[moduleIdNumber] || [];
 
-        // Validate and parse dates
-        const dateObjects = rawDates
-          .map((date) => (date ? parseISO(date) : null))
-          .filter((date) => date instanceof Date && !isNaN(date));
+          // Validate and parse dates
+          const dateObjects = rawDates
+            .map((date) => (date ? parseISO(date) : null))
+            .filter((date) => date instanceof Date && !isNaN(date));
 
-        // Ensure valid min/max dates
-        const minDate = dateObjects.length
-          ? format(min(dateObjects), "yyyy-MM-dd")
-          : null;
-        const maxDate = dateObjects.length
-          ? format(max(dateObjects), "yyyy-MM-dd")
-          : null;
+          // Ensure valid min/max dates
+          const minDate = dateObjects.length
+            ? format(min(dateObjects), "yyyy-MM-dd")
+            : null;
+          const maxDate = dateObjects.length
+            ? format(max(dateObjects), "yyyy-MM-dd")
+            : null;
 
-        return {
-          ...item,
-          startDate: minDate,
-          endDate: maxDate,
-        };
-      });
+          return {
+            ...item,
+            startDate: minDate,
+            endDate: maxDate,
+          };
+        });
 
-      setModules({ ...data, syllabus: newSyllabus ? newSyllabus : [] });
+      setModules(newSyllabus);
     } catch (error) {
       console.error("Error fetching modules:", error);
     }
   };
 
   useEffect(() => {
+    setModules([]);
     fetchModules();
   }, [selectedYear, batchData.tradeId]);
 
@@ -282,7 +298,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
             } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white`}
           >
             {modules &&
-              modules?.syllabus.map((module) => (
+              modules?.map((module) => (
                 <div
                   ref={(el) => (itemRefs.current[module.moduleId] = el)}
                   key={module.moduleId}

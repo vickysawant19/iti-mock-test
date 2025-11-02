@@ -174,13 +174,22 @@ const CreateMockTest = () => {
   const fetchModules = async () => {
     if (!tradeId || !subjectId || !year) return;
     try {
-      const response = await moduleServices.listModules([
-        Query.equal("tradeId", tradeId),
-        Query.equal("subjectId", subjectId),
-        Query.equal("year", year),
-      ]);
+      const response = await moduleServices.getNewModulesData(
+        tradeId,
+        subjectId,
+        year
+      );
 
-      setModules(response);
+      setModules(
+        response.sort(
+          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0]
+        )
+      );
+      // Set selectedModules to all module IDs by default
+      setValue(
+        "selectedModules",
+        response.map((module) => module.moduleId)
+      );
     } catch (error) {
       console.log(error);
       toast.error("Failed to fetch Modules");
@@ -470,9 +479,7 @@ const CreateMockTest = () => {
                       render={({ field }) => (
                         <div>
                           <Checkbox
-                            checked={
-                              field.value.length === modules.syllabus.length
-                            }
+                            checked={field.value.length === modules.length}
                             onChange={handleSelectAllModules}
                             label="Select All Modules"
                             className="mb-4 text-gray-900 dark:text-gray-100"
@@ -480,7 +487,7 @@ const CreateMockTest = () => {
 
                           <div className="max-h-64 overflow-y-auto pr-2">
                             <div className="space-y-2">
-                              {modules.syllabus.map((module) => (
+                              {modules.map((module) => (
                                 <Checkbox
                                   key={module.moduleId}
                                   checked={field.value.includes(
@@ -496,7 +503,9 @@ const CreateMockTest = () => {
                                       : [...field.value, module.moduleId];
                                     field.onChange(newValue);
                                   }}
-                                  label={module.moduleName}
+                                  label={
+                                    module.moduleId + " - " + module.moduleName
+                                  }
                                   className="text-gray-900 dark:text-gray-100"
                                 />
                               ))}

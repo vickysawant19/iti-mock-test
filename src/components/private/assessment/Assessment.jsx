@@ -11,6 +11,7 @@ import { ClipboardList } from "lucide-react";
 
 const Assessment = () => {
   const [isLoading, setIsLoading] = useState(false);
+
   const [modulesData, setModulesData] = useState([]);
   const [subjectsData, setSubjectsData] = useState(null);
   const [papersData, setPapersData] = useState(new Map());
@@ -21,8 +22,8 @@ const Assessment = () => {
   const [selectedTradeYear, setSelectedTradeYear] = useState(
     searchParams.get("year") || "FIRST"
   );
-  const redirect = `/assessment?${searchParams.toString()}`;
 
+  const redirect = `/assessment?${searchParams.toString()}`;
   const profile = useSelector(selectProfile);
 
   // Update search params when filters change
@@ -68,6 +69,7 @@ const Assessment = () => {
         setPapersData(null);
         return;
       }
+
       const paperMap = new Map();
       let progress = { total: paperIds.length, submitted: 0 };
       results?.flat()?.forEach((paper) => {
@@ -104,16 +106,16 @@ const Assessment = () => {
   const fetchModules = async () => {
     setIsLoading(true);
     try {
-      const data = await moduleServices.listModules([
-        Query.equal("tradeId", profile.tradeId),
-        Query.equal("subjectId", selectedSubject.$id),
-        Query.equal("year", selectedTradeYear),
-      ]);
+      const data = await moduleServices.getNewModulesData(
+        profile.tradeId,
+        selectedSubject.$id,
+        selectedTradeYear
+      );
 
       if (data) {
         // Filter modules with assessmentPaperId and sort by moduleId
 
-        const sortedModules = data.syllabus.sort((a, b) => {
+        const sortedModules = data.sort((a, b) => {
           const moduleIdA = a.moduleId || "";
           const moduleIdB = b.moduleId || "";
           return moduleIdA.localeCompare(moduleIdB, undefined, {
