@@ -233,15 +233,25 @@ class QuestionPaperService {
   }
 
   async listQuestions(queries = []) {
+    let limit = 100;
+    let offset = 0;
+    let allDocuments = [];
     try {
+      while (true) {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        queries
+        [...queries, Query.limit(limit), Query.offset(offset)]
       );
-      return response.documents;
+      allDocuments = allDocuments.concat(response.documents);
+      if (response.documents.length < limit) {
+        break;
+      }
+      offset += limit;
+    }
+      return allDocuments;
     } catch (error) {
-      console.error("Error getting user results:", error);
+      console.error("Error getting Questions", error);
     }
   }
 
@@ -319,4 +329,5 @@ class QuestionPaperService {
 }
 
 const questionpaperservice = new QuestionPaperService();
+
 export default questionpaperservice;

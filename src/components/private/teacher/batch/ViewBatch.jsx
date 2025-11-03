@@ -28,6 +28,7 @@ import Students from "./profile/Students";
 import CustomSelector from "../../../components/CustomSelector";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
+import Assignment from "./assignment/Assignment";
 
 const TABS = [
   { id: "students", label: "Student", icon: Users },
@@ -339,7 +340,14 @@ const ViewBatch = () => {
         );
       case "assignments":
         return (
-          <FeaturePlaceholder icon={BookOpen} title="Assignments Coming Soon" />
+          <Assignment
+          studentProfiles={
+              data.students?.filter((item) => item.role?.includes("Student")) ||
+              []
+            }
+          batchData={data.selectedBatchData}
+          students= {data.students}
+          />
         );
       case "achievements":
         return (
