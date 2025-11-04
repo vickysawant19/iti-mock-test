@@ -65,13 +65,19 @@ const MarkAttendance = () => {
   };
 
   const fetchBatchStudents = async () => {
+    if(!batchData?.studentIds) return
     setIsLoading(true);
     try {
+
+      const studentIds = batchData?.studentIds.map((student) =>
+        JSON.parse(student)?.userId
+      );
+      
       const batchStudentsProfiles =
         await userProfileService.getBatchUserProfile([
-          Query.equal("batchId", profile.batchId),
+          Query.equal("userId", studentIds),
+          Query.orderDesc("studentId"),
           Query.equal("status", "Active"),
-          Query.notEqual("userId", profile.userId),
         ]);
 
       const profileIds = batchStudentsProfiles.map((student) => student.userId);
@@ -122,8 +128,13 @@ const MarkAttendance = () => {
       return;
     }
     fetchBatchData(profile.batchId);
-    fetchBatchStudents();
   }, []);
+
+  useEffect(() => {
+    if (isTeacher) {
+      fetchBatchStudents();
+    }
+  }, [batchData])
 
   const updateInitialData = () => {
     const formattedDate = format(selectedDate, "yyyy-MM-dd");

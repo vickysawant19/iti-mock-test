@@ -113,7 +113,8 @@ function CustomSelectData({
                       {opt[iconKey]}
                     </span>
                   )}
-                  {getOptionLabel(opt)}
+                 
+                 { getOptionLabel(opt)}
                 </div>
                 {isSelected && (
                   <Check size={16} className="text-primary dark:text-primary" />
@@ -173,7 +174,7 @@ function CustomSelectData({
                 </span>
               )}
               <span className="truncate dark:text-slate-200">
-                {getOptionLabel(selectedOption)}
+               {getOptionLabel(selectedOption)}
               </span>
             </>
           ) : (

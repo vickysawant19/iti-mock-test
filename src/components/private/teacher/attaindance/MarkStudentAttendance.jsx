@@ -96,6 +96,7 @@ const MarkStudentAttendance = () => {
   const fetchBatchData = async (batchId) => {
     try {
       const data = await batchService.getBatch(batchId);
+      console.log("batch data ", data);
       const parsedData = data?.attendanceHolidays.map((item) =>
         JSON.parse(item)
       );
@@ -109,10 +110,17 @@ const MarkStudentAttendance = () => {
   };
 
   const fetchBatchStudents = async () => {
+    if (!batchData?.studentIds) return;
     setIsLoading(true);
-    try {
+    try { 
+      let studentIds = batchData?.studentIds.map((student) =>
+        JSON.parse(student)?.userId
+      );
+      studentIds.push(profile?.userId);
+
       const data = await userProfileService.getBatchUserProfile([
-        Query.equal("batchId", profile.batchId),
+        // Query.equal("batchId", profile.batchId),
+        Query.equal("userId", studentIds),
         Query.orderDesc("studentId"),
         Query.equal("status", "Active"),
       ]);
@@ -187,14 +195,17 @@ const MarkStudentAttendance = () => {
     }
     if (!batchData) {
       fetchBatchData(profile.batchId);
-    } else {
-      if (isTeacher) {
-        fetchBatchStudents();
-      } else {
-        fetchStudentAttendance(profile.userId);
-      }
-    }
+    } 
   }, [batchData]);
+
+
+  useEffect(() => {
+    if (isTeacher) {
+      fetchBatchStudents();
+    } else {
+      fetchStudentAttendance(profile.userId);
+    }
+  }, [batchData, profile, isTeacher]);
 
   useEffect(() => {
     const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
@@ -402,6 +413,7 @@ const MarkStudentAttendance = () => {
                 value={selectedStudent}
                 onChange={setSelectedStudent}
                 options={batchStudents}
+                renderOptionLabel={(option) => ( option.studentId + "-" +  option.userName)}
               />
             </div>
 
@@ -415,7 +427,7 @@ const MarkStudentAttendance = () => {
                       className="text-gray-500 dark:text-gray-400 mr-2"
                     />
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {studentAttendance.userName}
+                     {studentAttendance.userName}
                     </p>
                   </div>
                   <div className="flex items-center">
@@ -593,7 +605,10 @@ const MarkStudentAttendance = () => {
           studentAttendance && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 rounded-lg">
-                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4"> <FaCalendar /> Attendance Calendar - {currentMonth}</h1>
+                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4">
+                  {" "}
+                  <FaCalendar /> Attendance Calendar - {currentMonth}
+                </h1>
                 <CustomCalendar
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
@@ -611,18 +626,15 @@ const MarkStudentAttendance = () => {
                 />
               </div>
               <div className="lg:col-span-5 space-y-6">
-                
-                  <ShowStats
-                    attendance={currentMonthData}
-                    label={`Month Attendance - ${currentMonth}`}
-                  />
-                
-                
-                  <ShowStats
-                    attendance={attendanceStats}
-                    label="Total Attendance"
-                  />
-                
+                <ShowStats
+                  attendance={currentMonthData}
+                  label={`Month Attendance - ${currentMonth}`}
+                />
+
+                <ShowStats
+                  attendance={attendanceStats}
+                  label="Total Attendance"
+                />
               </div>
             </div>
           )

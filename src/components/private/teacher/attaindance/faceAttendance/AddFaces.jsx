@@ -317,6 +317,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           placeholder="Select User"
           disabled={isProfilesLoading}
           onChange={handleSelectedStudent}
+          
         />
       </div>
 
