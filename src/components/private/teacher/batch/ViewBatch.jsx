@@ -341,12 +341,12 @@ const ViewBatch = () => {
       case "assignments":
         return (
           <Assignment
-          studentProfiles={
+            studentProfiles={
               data.students?.filter((item) => item.role?.includes("Student")) ||
               []
             }
-          batchData={data.selectedBatchData}
-          students= {data.students}
+            batchData={data.selectedBatchData}
+            students={data.students}
           />
         );
       case "achievements":
@@ -359,8 +359,8 @@ const ViewBatch = () => {
   };
 
   return (
-    <div className="mx-auto px-4 py-6 space-y-4 text-sm text-black dark:text-white dark:bg-gray-900">
-      <div className="bg-white  p-4 rounded-xl shadow-xs dark:bg-gray-800 dark:border dark:border-gray-700">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-sm text-black dark:text-white dark:bg-gray-900">
+      <div className="bg-white p-4 rounded-xl shadow-sm dark:bg-gray-800 dark:border dark:border-gray-700">
         {/* New Enhanced Batch Selector */}
         <h1 className="mb-2 text-gray-500 dark:text-gray-300">Select Batch</h1>
         <CustomSelector
@@ -378,7 +378,7 @@ const ViewBatch = () => {
       </div>
 
       {data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-xs overflow-x-auto dark:bg-gray-800 dark:border dark:border-gray-700">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto dark:bg-gray-800 dark:border dark:border-gray-700">
           <TabNavigation
             tabs={TABS}
             activeTab={activeTab}
@@ -406,7 +406,7 @@ const ViewBatch = () => {
       )}
 
       {!loadingStates.batchData && data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-xs overflow-hidden p-4 dark:bg-gray-900 dark:border dark:border-gray-700 dark:text-white">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden  dark:bg-gray-900 dark:border dark:border-gray-700 dark:text-white">
           {renderContent()}
         </div>
       )}

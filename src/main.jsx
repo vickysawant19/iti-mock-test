@@ -61,6 +61,7 @@ import FaceAttendance from "./components/private/teacher/attaindance/faceAttenda
 import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
+import AttendanceTracer from "./components/private/teacher/attaindance/attaindanceTracer/AttendanceTracer.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -113,6 +114,7 @@ const router = (
             <Route path="mark-attendance" element={<MarkAttendance />} />
           </Route>
           <Route path="attendance">
+            <Route path="attendace-tracer" element={<AttendanceTracer />} />
             <Route path="face" element={<FaceAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttendance />} />

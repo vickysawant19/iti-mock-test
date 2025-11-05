@@ -45,13 +45,13 @@ const ViewAttendance = ({ isLoading, stats }) => {
     return new Date(a) - new Date(b);
   });
 
-  console.log("load attendance")
+  console.log("load attendance");
 
   return (
-    <div className="text-sm text-gray-800 dark:text-white">
+    <div className="p-4 sm:p-6 text-sm text-gray-800 dark:text-white">
       <div className="w-full mx-auto bg-white rounded-lg overflow-hidden shadow-md dark:bg-gray-900 dark:border dark:border-gray-700">
         {/* Month Selector */}
-        <div className="p-2 bg-gray-50 flex w-full justify-end dark:bg-gray-900">
+        <div className="p-4 bg-gray-50 flex w-full justify-end dark:bg-gray-900">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -65,12 +65,12 @@ const ViewAttendance = ({ isLoading, stats }) => {
           </select>
         </div>
         {/* Monthly Stats for All Students */}
-        <div className="p-2 border-b dark:border-gray-700">
+        <div className="p-4 border-b dark:border-gray-700">
           <h3 className="font-semibold text-gray-800 dark:text-white">
             Monthly Statistics - {selectedMonth}
           </h3>
           {stats.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               {/* Calculate aggregated stats for selected month */}
               {(() => {
                 const totalStats = stats.reduce(
@@ -98,23 +98,23 @@ const ViewAttendance = ({ isLoading, stats }) => {
                     : 0;
                 return (
                   <>
-                    <div className="p-2 bg-green-100 rounded-lg dark:bg-green-900 dark:text-white">
+                    <div className="p-3 bg-green-100 rounded-lg dark:bg-green-900 dark:text-white">
                       <div className="font-medium">Average Present</div>
                       <div className="text-xl">
                         {(totalStats.present / stats.length).toFixed(1)} days
                       </div>
                     </div>
-                    <div className="p-2 bg-red-100 rounded-lg dark:bg-red-900 dark:text-white">
+                    <div className="p-3 bg-red-100 rounded-lg dark:bg-red-900 dark:text-white">
                       <div className="font-medium">Average Absent</div>
                       <div className="text-xl">
                         {(totalStats.absent / stats.length).toFixed(1)} days
                       </div>
                     </div>
-                    <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-900 dark:text-white">
+                    <div className="p-3 bg-blue-100 rounded-lg dark:bg-blue-900 dark:text-white">
                       <div className="font-medium">Total Students</div>
                       <div className="text-xl">{stats.length}</div>
                     </div>
-                    <div className="p-2 bg-purple-100 rounded-lg dark:bg-purple-900 dark:text-white">
+                    <div className="p-3 bg-purple-100 rounded-lg dark:bg-purple-900 dark:text-white">
                       <div className="font-medium">Average Attendance</div>
                       <div className="text-xl">{averageAttendance}%</div>
                     </div>
@@ -130,13 +130,13 @@ const ViewAttendance = ({ isLoading, stats }) => {
               <tr>
                 <th
                   rowSpan={2}
-                  className="p-2 row-span-2 text-center text-sm font-semibold text-gray-600 dark:text-white"
+                  className="p-3 row-span-2 text-center text-sm font-semibold text-gray-600 dark:text-white"
                 >
                   Student Id
                 </th>
                 <th
                   rowSpan={2}
-                  className="px-4 py-2 text-center text-sm font-semibold text-gray-600 dark:text-white"
+                  className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-white"
                 >
                   Student
                 </th>
@@ -149,7 +149,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
                 </th>
                 {/* Overall Attendance Group */}
                 <th
-                  className="px-4 py-2 text-center text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white"
+                  className="px-4 py-3 text-center text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white"
                   colSpan="4"
                 >
                   Overall Attendance
@@ -157,29 +157,29 @@ const ViewAttendance = ({ isLoading, stats }) => {
               </tr>
               <tr>
                 {/* Monthly Attendance Subheaders */}
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
                   Present
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
                   Absent
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
                   Total Days
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-blue-50 dark:bg-blue-900 dark:text-white">
                   Percentage
                 </th>
                 {/* Overall Attendance Subheaders */}
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
                   Total Present
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
                   Total Absent
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
                   Total Days
                 </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600 bg-green-50 dark:bg-green-900 dark:text-white">
                   Percentage
                 </th>
               </tr>
@@ -207,29 +207,29 @@ const ViewAttendance = ({ isLoading, stats }) => {
                     key={student.userId}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 border-t-2 dark:border-gray-700"
                   >
-                    <td className="px-2 text-center dark:text-white">
+                    <td className="px-3 text-center dark:text-white">
                       <span>{student.studentId}</span>
                     </td>
-                    <td className="px-4 py-2 dark:text-white">
+                    <td className="px-4 py-3 dark:text-white">
                       <div className="flex items-center space-x-3">
                         <LuUser className="text-gray-500 dark:text-gray-400" />
                         <span>{student.userName}</span>
                       </div>
                     </td>
                     {/* Monthly Attendance Data */}
-                    <td className="px-4 py-2 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                    <td className="px-4 py-3 bg-blue-50 dark:bg-blue-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendarCheck className="text-green-500 dark:text-green-400" />
                         <span>{monthData.presentDays}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                    <td className="px-4 py-3 bg-blue-50 dark:bg-blue-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendarX className="text-red-500 dark:text-red-400" />
                         <span>{monthData.absentDays}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                    <td className="px-4 py-3 bg-blue-50 dark:bg-blue-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendar className="text-blue-500 dark:text-blue-400" />
                         <span>
@@ -237,32 +237,32 @@ const ViewAttendance = ({ isLoading, stats }) => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-blue-50 dark:bg-blue-900 dark:text-white">
+                    <td className="px-4 py-3 bg-blue-50 dark:bg-blue-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuPercent className="text-purple-500 dark:text-purple-400" />
                         <span>{monthData.attendancePercentage}%</span>
                       </div>
                     </td>
                     {/* Overall Attendance Data */}
-                    <td className="px-4 py-2 bg-green-50 dark:bg-green-900 dark:text-white">
+                    <td className="px-4 py-3 bg-green-50 dark:bg-green-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendarCheck className="text-green-500 dark:text-green-400" />
                         <span>{student.presentDays}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-green-50 dark:bg-green-900 dark:text-white">
+                    <td className="px-4 py-3 bg-green-50 dark:bg-green-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendarX className="text-red-500 dark:text-red-400" />
                         <span>{student.absentDays}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-green-50 dark:bg-green-900 dark:text-white">
+                    <td className="px-4 py-3 bg-green-50 dark:bg-green-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuCalendar className="text-blue-500 dark:text-blue-400" />
                         <span>{student.totalDays}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 bg-green-50 dark:bg-green-900 dark:text-white">
+                    <td className="px-4 py-3 bg-green-50 dark:bg-green-900 dark:text-white">
                       <div className="flex items-center space-x-2">
                         <LuPercent className="text-purple-500 dark:text-purple-400" />
                         <span>{student.attendancePercentage}%</span>

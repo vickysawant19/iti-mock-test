@@ -211,15 +211,15 @@ const ProgressCard = ({
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto relative dark:bg-gray-900">
-      <div className="mb-4 flex-col md:flex-row justify-start items-start flex md:justify-between md:items-center gap-4">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 relative dark:bg-gray-900">
+      <div className="mb-6 flex flex-col md:flex-row justify-start items-start md:justify-between md:items-center gap-4">
         {/* Student Selector Dropdown */}
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full md:w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700 dark:text-white">
+            <span className="text-gray-700 dark:text-white truncate">
               {selectedStudent ? selectedStudent.userName : "Select student"}
             </span>
             <svg
@@ -253,13 +253,14 @@ const ProgressCard = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center items-center gap-4">
+        <div className="flex justify-center items-center gap-4 w-full md:w-auto">
           {progressData && (
             <button
               onClick={() => setEditMode((prev) => !prev)}
-              className="bg-blue-600 p-2 rounded-md text-white flex items-center gap-2 px-2 py-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="flex-1 md:flex-none bg-blue-600 p-2 rounded-md text-white flex items-center justify-center gap-2 px-4 py-2 dark:bg-blue-700 dark:hover:bg-blue-800"
             >
-              <Edit2 className="h-4" /> {editMode ? "Close Edit" : "Open Edit"}
+              <Edit2 className="h-4 w-4" />{" "}
+              {editMode ? "Close Edit" : "Open Edit"}
             </button>
           )}
 
@@ -267,12 +268,12 @@ const ProgressCard = ({
             <PDFDownloadLink
               document={<ProgressCardPDF data={progressData} />}
               fileName={`progress-card-${progressData.userName}.pdf`}
-              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
               {({ loading }) => (
                 <>
-                  <Printer className="h-4" />
-                  {loading ? "Generating PDF..." : "Download PDF"}
+                  <Printer className="h-4 w-4" />
+                  {loading ? "Generating..." : "Download"}
                 </>
               )}
             </PDFDownloadLink>
@@ -297,18 +298,18 @@ const ProgressCard = ({
             pdfUrl ? (
               <iframe
                 src={pdfUrl}
-                className="w-full h-[842px] border-0"
+                className="w-full h-[600px] sm:h-[842px] border-0"
                 title="Progress Card Preview"
               />
             ) : (
-              <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+              <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
                 <p className="text-gray-500 dark:text-gray-400">
                   Generating preview...
                 </p>
               </div>
             )
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-400">
                 Select a student to view their progress card
               </p>

@@ -245,15 +245,15 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto dark:bg-gray-900">
-      <div className="mb-4 flex justify-between items-center">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 dark:bg-gray-900">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         {/* Student Selector Dropdown */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full sm:w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700 dark:text-white">
+            <span className="text-gray-700 dark:text-white truncate">
               {selectedStudent ? selectedStudent.userName : "Select student"}
             </span>
             <svg
@@ -287,17 +287,17 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
         </div>
 
         {/* PDF Download Button */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {leaveData && (
             <PDFDownloadLink
               document={<TraineeLeaveRecordPDF data={leaveData} />}
               fileName={`leave-record-${leaveData.userName}.pdf`}
-              className="flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
               {({ loading }) => (
                 <>
                   <Printer className="h-4 w-4" />
-                  {loading ? "Generating PDF..." : "Download PDF"}
+                  {loading ? "Generating..." : "Download"}
                 </>
               )}
             </PDFDownloadLink>
@@ -313,14 +313,14 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
               <TraineeLeaveRecordPDF data={leaveData} />
             </PDFViewer>
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-400">
                 Generating preview...
               </p>
             </div>
           )
         ) : (
-          <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+          <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-400">
               Select a student to view their leave record
             </p>

@@ -22,7 +22,7 @@ const ViewProfiles = ({ students }) => {
   }, [students, profile.userId]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 dark:bg-gray-900">
+    <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 dark:bg-gray-900">
       {filteredStudents.map((student, index) => (
         <div
           key={student.userId || index}

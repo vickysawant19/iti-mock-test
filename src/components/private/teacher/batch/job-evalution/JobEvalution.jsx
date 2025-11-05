@@ -206,9 +206,9 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 text-sm dark:bg-gray-900">
+    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 text-sm dark:bg-gray-900">
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-blue-300">
+      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-6 dark:bg-gray-800 dark:border-gray-700 dark:text-blue-300">
         <ul className="list-disc ml-6 space-y-2 dark:text-gray-300">
           <li>Add students attendance to ensure accurate evaluations.</li>
           <li>
@@ -219,13 +219,13 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       </div>
 
       {/* Dropdowns for Subject, Year, Module, and Student */}
-      <div className="mb-4 flex flex-col gap-4">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Year Dropdown */}
         <div className="relative">
-          <h1 className="text-gray-700 dark:text-white">Select Year:</h1>
+          <h1 className="text-gray-700 dark:text-white mb-1">Select Year:</h1>
           <button
             onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-            className="w-[150px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
             <span className="text-gray-700 dark:text-white">
               {selectedYear}
@@ -265,12 +265,12 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
         {/* Module Dropdown */}
         <div className="relative">
-          <h1 className="text-gray-700 dark:text-white">Select Job:</h1>
+          <h1 className="text-gray-700 dark:text-white mb-1">Select Job:</h1>
           <button
             onClick={() => setIsModuleDropdownOpen(!isModuleDropdownOpen)}
-            className="flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
-            <span className="text-gray-700 dark:text-white">
+            <span className="text-gray-700 dark:text-white truncate">
               {selectedModule
                 ? selectedModule.moduleId.slice(1) +
                   "-" +
@@ -320,53 +320,51 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       </div>
 
       {/* PDF Download Link */}
-      {Array.isArray(modules?.syllabus) &&
-        modules.syllabus.length > 0 &&
-        selectedModule && (
-          <PDFDownloadLink
-            document={
-              <JobEvaluationReportPDF
-                college={college}
-                studentsMap={studentsMap}
-                selectedModule={selectedModule}
-                studentAttendance={studentAttendance}
-              />
-            }
-            fileName={`job-evaluation-${selectedModule?.moduleName
-              .slice(0, 40)
-              .split(" ")
-              .join("-")}.pdf`}
-            className="w-64 flex items-center gap-2 px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
-          >
-            {({ loading }) => (
-              <>
-                <Printer className="h-4 min-w-16" />
-                {loading ? "Generating PDF" : "Download PDF"}
-              </>
-            )}
-          </PDFDownloadLink>
-        )}
+      {Array.isArray(modules) && selectedModule && (
+        <PDFDownloadLink
+          document={
+            <JobEvaluationReportPDF
+              college={college}
+              studentsMap={studentsMap}
+              selectedModule={selectedModule}
+              studentAttendance={studentAttendance}
+            />
+          }
+          fileName={`job-evaluation-${selectedModule?.moduleName
+            .slice(0, 40)
+            .split(" ")
+            .join("-")}.pdf`}
+          className="w-full sm:w-64 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
+        >
+          {({ loading }) => (
+            <>
+              <Printer className="h-5 w-5" />
+              {loading ? "Generating PDF..." : "Download PDF"}
+            </>
+          )}
+        </PDFDownloadLink>
+      )}
 
       {/* Preview or Placeholder */}
-      <div className="overflow-hidden border rounded-lg shadow-xs mt-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="overflow-hidden border rounded-lg shadow-xs mt-6 dark:border-gray-700 dark:bg-gray-800">
         {selectedModule ? (
           pdfUrl ? (
             <iframe
               src={pdfUrl}
-              className="w-full h-[842px] border-0"
+              className="w-full h-[600px] sm:h-[842px] border-0"
               title="Job Evaluation Report Preview"
             />
           ) : (
-            <div className="w-full h-[842px] flex items-center justify-center dark:bg-gray-800">
+            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-400">
                 Generating preview...
               </p>
             </div>
           )
         ) : (
-          <div className="w-full h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+          <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-400">
-              Select a student to view their job evaluation report
+              Select a module to view the job evaluation report.
             </p>
           </div>
         )}
