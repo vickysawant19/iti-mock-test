@@ -12,6 +12,7 @@ const AttendanceTable = ({
   calculatePreviousMonthsData,
   formatDate,
   getDaysInMonth,
+  onMarkAttendance,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -24,6 +25,7 @@ const AttendanceTable = ({
           selectedMonth={selectedMonth}
           holidays={holidays}
           formatDate={formatDate}
+          onMarkAttendance={onMarkAttendance}
         />
         <AttendanceTableBody
           students={students}

@@ -5,6 +5,7 @@ const AttendanceTableHead = ({
   selectedMonth,
   holidays,
   formatDate,
+  onMarkAttendance,
 }) => {
   return (
     <thead className="bg-linear-to-r from-indigo-600 to-indigo-700 text-white">
@@ -60,6 +61,40 @@ const AttendanceTableHead = ({
         <th className="py-3 px-3 border border-indigo-500 bg-green-700 font-semibold w-24 min-w-24 max-w-24">
           Total %
         </th>
+      </tr>
+      <tr className="bg-gray-100">
+        <td className="py-2 px-4 border border-gray-300 sticky left-0 bg-gray-100 z-10 font-medium text-black">
+          Mark Attendance
+        </td>
+        {monthDates.map((date) => {
+          const fullDate = formatDate(
+            new Date(
+              selectedMonth.getFullYear(),
+              selectedMonth.getMonth(),
+              date
+            ),
+            "yyyy-MM-dd"
+          );
+          const isHoliday = holidays.has(fullDate);
+          return (
+            <td
+              key={`mark-${date}`}
+              className={`py-2 px-2 border border-gray-300 text-center ${
+                isHoliday ? "bg-red-100 " : ""
+              }`}
+            >
+              {!isHoliday && (
+                <button
+                  onClick={() => onMarkAttendance(fullDate)}
+                  className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                >
+                  Mark
+                </button>
+              )}
+            </td>
+          );
+        })}
+        <td colSpan="8" className="py-2 px-3 border border-gray-300"></td>
       </tr>
     </thead>
   );

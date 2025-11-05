@@ -87,7 +87,7 @@ const AttendanceTableBody = ({
                   return (
                     <td
                       key={date}
-                      rowSpan={students.length}
+                      rowSpan={students.length + 3}
                       className="py-3 px-2 border border-gray-300 text-center relative bg-red-100 w-12 min-w-12 max-w-12"
                     >
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">

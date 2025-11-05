@@ -13,11 +13,6 @@ const AttendanceHeader = ({
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-        <Calendar className="h-8 w-8 text-indigo-600" />
-        Attendance Tracer
-      </h1>
-
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
         <div className="flex-1">
           <label

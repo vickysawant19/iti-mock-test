@@ -24,7 +24,7 @@ export class AttendanceService {
     } catch (error) {
       console.error("Appwrite error: fetching batch attendance:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
-}
+    }
   }
 
   async getBatchAttendance(batchId, queries = []) {

@@ -20,6 +20,8 @@ import {
   parseISO,
 } from "date-fns";
 
+import MarkAttendanceModal from "./components/MarkAttendanceModal";
+
 const AttendanceTracer = () => {
   const profile = useSelector(selectProfile);
   const [batches, setBatches] = useState([]);
@@ -29,6 +31,53 @@ const AttendanceTracer = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [holidays, setHolidays] = useState(new Map());
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const handleOpenModal = (date) => {
+    setSelectedDate(date);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedDate(null);
+  };
+
+  const handleSaveAttendance = async (statuses) => {
+    const promises = Object.entries(statuses).map(async ([userId, status]) => {
+      const student = students.find((s) => s.userId === userId);
+      const record = {
+        userId,
+        userName: student.userName,
+        batchId: selectedBatch,
+        attendanceRecords: [
+          {
+            date: selectedDate,
+            attendanceStatus: status,
+            inTime: "09:30", // Default in-time
+            outTime: "17:00", // Default out-time
+            isMarked: true,
+          },
+        ],
+      };
+      return attendanceService.markUserAttendance(record);
+    });
+
+    await Promise.all(promises);
+
+    // Refresh attendance data
+    const attendanceResponse = await attendanceService.getStudentsAttendance([
+      Query.equal("batchId", selectedBatch),
+      Query.equal(
+        "userId",
+        students.map((s) => s.userId)
+      ),
+      Query.orderDesc("$updatedAt"),
+      Query.select(["$id", "userId", "attendanceRecords"]),
+    ]);
+    setAttendance(attendanceResponse);
+  };
 
   useEffect(() => {
     const fetchBatches = async () => {
@@ -189,8 +238,18 @@ const AttendanceTracer = () => {
             calculatePreviousMonthsData={calculatePreviousMonthsData}
             formatDate={format}
             getDaysInMonth={getDaysInMonth}
+            onMarkAttendance={handleOpenModal}
           />
         )}
+        <MarkAttendanceModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          students={students}
+          date={selectedDate}
+          batchId={selectedBatch}
+          onSave={handleSaveAttendance}
+          existingAttendance={attendance}
+        />
       </div>
     </div>
   );
