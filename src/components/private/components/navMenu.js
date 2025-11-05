@@ -27,7 +27,7 @@ export const menuConfig = [
     groupKey: "admin",
     children: [
       { label: "Modules", path: "/add-modules", icon: MdAddCard },
-      { label: "Questions", path: "/add-bulk-questions", icon: Group},
+      { label: "Questions", path: "/add-bulk-questions", icon: Group },
     ],
   },
   {
@@ -132,7 +132,12 @@ export const menuConfig = [
         icon: FaCalendarCheck,
         roles: ["teacher", "student"],
       },
-
+      {
+        label: "Attendance Register",
+        path: "/attendance/tracer",
+        icon: FaCalendarAlt,
+        roles: ["teacher"],
+      },
       {
         teacherLabel: "Check Attendance",
         studentLabel: "Check My Attendance",
@@ -165,6 +170,7 @@ export const pathToHeading = {
   "/attendance/mark-holidays": "Mark Holidays",
   "/attendance/mark-attendance": "Mark Daywise Attendance",
   "/attendance/mark-student-attendance": "Mark My Attendance",
+  "/attendance/tracer": "Attendance Register",
   "/attendance/check-attendance": "Check My Attendance",
   "/about": "About",
   "/login": "Login",
