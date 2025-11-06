@@ -13,6 +13,11 @@ const AttendanceTable = ({
   formatDate,
   getDaysInMonth,
   onMarkAttendance,
+  setEditStudentId,
+  editStudentId,
+  onAttendanceStatusChange, // New prop
+  updatingAttendance, // New prop
+  isStudentUpdating, // New prop
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -36,6 +41,11 @@ const AttendanceTable = ({
           calculatePreviousMonthsData={calculatePreviousMonthsData}
           formatDate={formatDate}
           getDaysInMonth={getDaysInMonth}
+          setEditStudentId={setEditStudentId}
+          editStudentId={editStudentId}
+          onAttendanceStatusChange={onAttendanceStatusChange} // Pass new prop
+          updatingAttendance={updatingAttendance} // Pass new prop
+          isStudentUpdating={isStudentUpdating} // Pass new prop
         />
         <AttendanceTableFooter
           students={students}

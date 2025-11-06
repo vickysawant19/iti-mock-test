@@ -134,7 +134,7 @@ export const menuConfig = [
       },
       {
         label: "Attendance Register",
-        path: "/attendance/tracer",
+        path: "/attendance/register",
         icon: FaCalendarAlt,
         roles: ["teacher"],
       },

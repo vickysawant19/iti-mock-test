@@ -114,7 +114,7 @@ const router = (
             <Route path="mark-attendance" element={<MarkAttendance />} />
           </Route>
           <Route path="attendance">
-            <Route path="tracer" element={<AttendanceTracer />} />
+            <Route path="register" element={<AttendanceTracer />} />
             <Route path="face" element={<FaceAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route path="mark-attendance" element={<MarkAttendance />} />

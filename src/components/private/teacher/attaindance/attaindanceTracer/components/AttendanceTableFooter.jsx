@@ -14,6 +14,7 @@ const AttendanceTableFooter = ({
         <td className="sticky left-0 py-3 px-4 border border-gray-300 text-indigo-700 bg-gray-100 z-10 w-48 min-w-48 max-w-48">
           Present Students
         </td>
+        <td className="sticky left-48 py-3 px-4 border  border-gray-300 text-indigo-700 bg-gray-100 z-10 "></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -51,6 +52,7 @@ const AttendanceTableFooter = ({
         <td className="sticky left-0 py-3 px-4 border border-gray-300 text-indigo-700 bg-gray-100 z-10 w-48 min-w-48 max-w-48">
           Absent Students
         </td>
+        <td className="sticky left-48 py-3 px-4 border border-gray-300 text-indigo-700 bg-gray-100 z-10 "></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -88,6 +90,7 @@ const AttendanceTableFooter = ({
         <td className="sticky left-0 py-3 px-4 border border-gray-300 text-indigo-700 bg-gray-100 z-10 w-48 min-w-48 max-w-48">
           Total Students
         </td>
+        <td className="sticky left-48 py-3 px-4 border border-gray-300 text-indigo-700 bg-gray-100 z-10 "></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(

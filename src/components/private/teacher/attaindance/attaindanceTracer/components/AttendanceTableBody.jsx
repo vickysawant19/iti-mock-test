@@ -1,4 +1,7 @@
 import React from "react";
+import Loader from "@/components/components/Loader"; // Import the Loader component
+import LoadingSpinner from "./LoadingSpinner";
+import { LoaderCircle } from "lucide-react";
 
 const AttendanceTableBody = ({
   students,
@@ -9,6 +12,11 @@ const AttendanceTableBody = ({
   calculatePreviousMonthsData,
   formatDate,
   getDaysInMonth,
+  setEditStudentId,
+  editStudentId,
+  onAttendanceStatusChange,
+  updatingAttendance, // New prop
+  isStudentUpdating, // New prop
 }) => {
   return (
     <tbody className="divide-y divide-gray-200">
@@ -59,7 +67,7 @@ const AttendanceTableBody = ({
             key={student.userId}
             className={`hover:bg-indigo-50 transition-colors ${
               idx % 2 === 0 ? "bg-gray-50" : "bg-white"
-            }`}
+            } ${editStudentId === student.userId ? "bg-yellow-100" : ""}`}
           >
             <td className="py-3 px-4 border border-gray-300 sticky left-0 bg-inherit z-10 font-medium text-gray-900 w-48 min-w-48 max-w-48">
               <div className="flex flex-col">
@@ -67,6 +75,23 @@ const AttendanceTableBody = ({
                 <span className="text-xs text-gray-500">
                   ID: {student.studentId}
                 </span>
+              </div>
+            </td>
+            <td className="py-3 px-4 border border-gray-300 sticky left-48 bg-inherit z-10 font-medium text-gray-900 w-16 min-w-16 max-w-16">
+              <div className="flex flex-col">
+                <button
+                  onClick={() => {
+                    // Handle edit button click
+                    if (editStudentId === student.userId) {
+                      setEditStudentId(null);
+                      return;
+                    }
+                    setEditStudentId(student.userId);
+                  }}
+                  className={`px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600`}
+                >
+                  {editStudentId === student.userId ? "Close" : "Edit"}
+                </button>
               </div>
             </td>
             {monthDates.map((date) => {
@@ -111,9 +136,41 @@ const AttendanceTableBody = ({
               return (
                 <td
                   key={date}
-                  className="py-3 px-2 border border-gray-300 text-center w-16 min-w-16 max-w-16"
+                  className={`py-3 px-2 border border-gray-300 text-center w-16 min-w-16 max-w-16  ${
+                    editStudentId === student.userId && !isHoliday
+                      ? "bg-yellow-50"
+                      : ""
+                  }`}
                 >
-                  {status ? (
+                  {editStudentId === student.userId && !isHoliday ? (
+                    updatingAttendance.get(`${student.userId}-${fullDate}`) ? (
+                      <div className="flex justify-center items-center">
+                        <LoaderCircle className="animate-spin text-indigo-500" />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          onAttendanceStatusChange(
+                            student.userId,
+                            fullDate,
+                            status === "Present" ? "Absent" : "Present"
+                          )
+                        }
+                        disabled={isStudentUpdating(student.userId)} // Disable button if any attendance for this student is loading
+                        className={`px-2 py-1 text-xs rounded ${
+                          status === "Present"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"
+                        }`}
+                      >
+                        {status === "Present"
+                          ? "P"
+                          : status === "Absent"
+                          ? "A"
+                          : "-"}
+                      </button>
+                    )
+                  ) : status ? (
                     status === "Present" ? (
                       <span className="text-green-600 font-bold text-sm">
                         P

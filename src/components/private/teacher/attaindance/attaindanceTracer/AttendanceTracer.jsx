@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
 import batchService from "@/appwrite/batchService";
 import attendanceService from "@/appwrite/attaindanceService";
@@ -18,6 +18,7 @@ import {
   subMonths,
   isBefore,
   parseISO,
+  set,
 } from "date-fns";
 
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
@@ -33,6 +34,8 @@ const AttendanceTracer = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [editStudentId, setEditStudentId] = useState(null);
+  const [updatingAttendance, setUpdatingAttendance] = useState(new Map()); // New state for loading spinner
 
   const handleOpenModal = (date) => {
     setSelectedDate(date);
@@ -42,6 +45,100 @@ const AttendanceTracer = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedDate(null);
+  };
+
+  // Handle attendance status change
+  const onAttendanceStatusChange = async (userId, date, newStatus) => {
+    setUpdatingAttendance((prev) =>
+      new Map(prev).set(`${userId}-${date}`, true)
+    );
+    try {
+      const existingAttendanceRecord = attendance.find(
+        (att) => att.userId === userId
+      );
+
+      if (existingAttendanceRecord) {
+        const updatedRecords = existingAttendanceRecord.attendanceRecords.map(
+          (record) =>
+            record.date.split("T")[0] === date
+              ? { ...record, attendanceStatus: newStatus }
+              : record
+        );
+
+        // If the date doesn't exist, add a new record
+        if (
+          !updatedRecords.some((record) => record.date.split("T")[0] === date)
+        ) {
+          updatedRecords.push({
+            date: date,
+            attendanceStatus: newStatus,
+            inTime: "09:30", // Default in-time
+            outTime: "17:00", // Default out-time
+            isMarked: true,
+          });
+        }
+        // Update the attendance record in the database
+        const attendanceResponse = await attendanceService.markUserAttendance({
+          userId,
+          userName: existingAttendanceRecord.userName,
+          batchId: selectedBatch,
+          attendanceRecords: updatedRecords,
+        });
+
+        // Update the attendance state with the new record
+        setAttendance((prev) =>
+          prev.map((att) =>
+            att.userId === userId
+              ? {
+                  ...att,
+                  attendanceRecords: attendanceResponse.attendanceRecords,
+                }
+              : att
+          )
+        );
+      } else {
+        // Create a new attendance record if none exists for the student
+        const student = students.find((s) => s.userId === userId);
+        const newRecord = {
+          userId,
+          userName: student.userName,
+          batchId: selectedBatch,
+          attendanceRecords: [
+            {
+              date: date,
+              attendanceStatus: newStatus,
+              inTime: "09:30", // Default in-time
+              outTime: "17:00", // Default out-time
+              isMarked: true,
+            },
+          ],
+        };
+        const response = await attendanceService.markUserAttendance(newRecord);
+        setAttendance((prev) => [...prev, response]);
+      }
+
+      // After updating a single student's attendance, we need to re-fetch all students' attendance
+      // for the current batch to ensure the attendanceMap is up-to-date.
+      const updatedAttendanceData =
+        await attendanceService.getStudentsAttendance([
+          Query.equal("batchId", selectedBatch),
+          Query.equal(
+            "userId",
+            students.map((s) => s.userId)
+          ),
+          Query.orderDesc("$updatedAt"),
+          Query.select(["$id", "userId", "attendanceRecords"]),
+        ]);
+      setAttendance(updatedAttendanceData);
+    } catch (error) {
+      console.error("Error updating attendance:", error);
+    } finally {
+      setUpdatingAttendance((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(`${userId}-${date}`);
+        return newMap;
+      });
+    }
   };
 
   const handleSaveAttendance = async (statuses) => {
@@ -212,6 +309,19 @@ const AttendanceTracer = () => {
     setSelectedMonth(new Date(event.target.value));
   };
 
+  // Helper function to check if any attendance for a student is currently updating
+  const isStudentUpdating = useCallback(
+    (studentId) => {
+      for (const key of updatingAttendance.keys()) {
+        if (key.startsWith(`${studentId}-`)) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [updatingAttendance]
+  );
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-indigo-50 p-4 sm:p-6">
       <div className="max-w-full mx-auto">
@@ -239,6 +349,11 @@ const AttendanceTracer = () => {
             formatDate={format}
             getDaysInMonth={getDaysInMonth}
             onMarkAttendance={handleOpenModal}
+            setEditStudentId={setEditStudentId}
+            editStudentId={editStudentId}
+            onAttendanceStatusChange={onAttendanceStatusChange} // Pass new prop
+            updatingAttendance={updatingAttendance} // Pass new prop
+            isStudentUpdating={isStudentUpdating} // Pass new prop
           />
         )}
         <MarkAttendanceModal

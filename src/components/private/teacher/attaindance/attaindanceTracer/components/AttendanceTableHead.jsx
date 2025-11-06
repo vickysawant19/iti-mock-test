@@ -13,6 +13,9 @@ const AttendanceTableHead = ({
         <th className="py-3 px-4 border border-indigo-500 sticky left-0 bg-indigo-600 z-20 font-semibold text-left w-48 min-w-48 max-w-48">
           Student Name
         </th>
+        <th className="py-3 px-4 border border-indigo-500 sticky left-48 bg-indigo-600 z-20 font-semibold text-left w-16 min-w-16 max-w-16">
+          Action
+        </th>
         {monthDates.map((date) => {
           const currentDate = new Date(
             selectedMonth.getFullYear(),
@@ -63,9 +66,10 @@ const AttendanceTableHead = ({
         </th>
       </tr>
       <tr className="bg-gray-100">
-        <td className="py-2 px-4 border border-gray-300 sticky left-0 bg-gray-100 z-10 font-medium text-black">
+        <td className="py-2 px-4 border font-bold border-gray-300 sticky left-0 bg-gray-100 z-10 text-black">
           Mark Attendance
         </td>
+        <td className="py-2 px-4 border font-bold border-gray-300 sticky left-48 bg-gray-100 z-10 text-black"></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
