@@ -23,7 +23,7 @@ import {
 
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
 
-const AttendanceTracer = () => {
+const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
@@ -370,4 +370,4 @@ const AttendanceTracer = () => {
   );
 };
 
-export default AttendanceTracer;
+export default AttendanceRegister;

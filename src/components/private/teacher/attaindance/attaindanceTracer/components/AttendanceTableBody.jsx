@@ -1,7 +1,7 @@
 import React from "react";
 import Loader from "@/components/components/Loader"; // Import the Loader component
 import LoadingSpinner from "./LoadingSpinner";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, Pencil, Check } from "lucide-react";
 
 const AttendanceTableBody = ({
   students,
@@ -90,7 +90,11 @@ const AttendanceTableBody = ({
                   }}
                   className={`px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600`}
                 >
-                  {editStudentId === student.userId ? "Close" : "Edit"}
+                  {editStudentId === student.userId ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </td>
@@ -112,8 +116,8 @@ const AttendanceTableBody = ({
                   return (
                     <td
                       key={date}
-                      rowSpan={students.length + 3}
-                      className="py-3 px-2 border border-gray-300 text-center relative bg-red-100 w-12 min-w-12 max-w-12"
+                      rowSpan={students.length}
+                      className="py-3 px-2 border border-gray-300 text-center relative bg-red-100 w-12 min-w-12 max-w-12 "
                     >
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                         <div

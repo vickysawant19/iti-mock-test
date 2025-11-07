@@ -9,7 +9,7 @@ const AttendanceTableHead = ({
 }) => {
   return (
     <thead className="bg-linear-to-r from-indigo-600 to-indigo-700 text-white">
-      <tr>
+      <tr className="sticky top-0 z-30">
         <th className="py-3 px-4 border border-indigo-500 sticky left-0 bg-indigo-600 z-20 font-semibold text-left w-48 min-w-48 max-w-48">
           Student Name
         </th>
@@ -29,8 +29,10 @@ const AttendanceTableHead = ({
           return (
             <th
               key={date}
-              className={`py-3 px-2 border ${
-                isHoliday ? "bg-red-600 border-red-500" : "border-indigo-500"
+              className={`py-3 px-2 border sticky top-0 z-10 ${
+                isHoliday
+                  ? "bg-red-600 border-red-500"
+                  : " bg-blue-500 border-indigo-500"
               } w-16 min-w-16 max-w-16`}
             >
               <div className={`text-center ${isHoliday ? "text-white" : ""}`}>
@@ -40,13 +42,13 @@ const AttendanceTableHead = ({
             </th>
           );
         })}
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
           Working Days
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
           Present
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
           Absent
         </th>
         <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24">
@@ -65,7 +67,7 @@ const AttendanceTableHead = ({
           Total %
         </th>
       </tr>
-      <tr className="bg-gray-100">
+      <tr className="bg-gray-100 sticky top-14 z-30">
         <td className="py-2 px-4 border font-bold border-gray-300 sticky left-0 bg-gray-100 z-10 text-black">
           Mark Attendance
         </td>
@@ -98,7 +100,7 @@ const AttendanceTableHead = ({
             </td>
           );
         })}
-        <td colSpan="8" className="py-2 px-3 border border-gray-300"></td>
+        <td colSpan="8" className="py-2 px-3 border border-gray-300 "></td>
       </tr>
     </thead>
   );

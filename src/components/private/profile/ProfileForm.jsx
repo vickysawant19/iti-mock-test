@@ -55,6 +55,7 @@ const ProfileForm = () => {
     "collegeId",
     "batchId",
     "tradeId",
+    "allBatchIds",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -206,11 +207,14 @@ const ProfileForm = () => {
         }
         updatedProfile = await userProfileService.updateUserProfile(
           existingProfile.$id,
-          data
+          {
+            ...data,
+          }
         );
         dispatch(addProfile(updatedProfile));
         navigate("/profile/edit");
       } else {
+        console.log("create new profile");
         // Creating new profile
         data.role = user.labels;
         data.userId = user.$id;
