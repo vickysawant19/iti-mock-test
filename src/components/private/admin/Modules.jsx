@@ -204,52 +204,78 @@ const Modules = () => {
         </div>
 
         {selectedTradeID && selectedSubjectID && (
-          <div className="mb-6 sticky top-20">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mb-6">
+            {/* Add Module Button - Positioned above the grid */}
+            <div className="mb-4">
+              <button
+                disabled={loading}
+                onClick={() => {
+                  setShow(new Set().add("AddModules"));
+                  setModuleId("");
+                  setTopicId("");
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white px-4 py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="font-medium">Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="w-4 h-4" />
+                    <span className="font-medium">New Module</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Modules List - Left Side */}
               <div className="col-span-1 rounded-xl">
                 {loading ? (
                   <div className="flex justify-center items-center h-40">
                     <div className="w-10 h-10 border-t-4 border-blue-500 dark:border-blue-400 rounded-full animate-spin" />
                   </div>
+                ) : newModules && newModules.length > 0 ? (
+                  <ModulesList
+                    syllabus={newModules}
+                    setModuleId={setModuleId}
+                    moduleId={moduleId}
+                    setTopicId={setTopicId}
+                    topicId={topicId}
+                    setShow={setShow}
+                    loading={loading}
+                    itemRefs={itemRefs}
+                  />
                 ) : (
-                  newModules &&
-                  newModules.length > 0 && (
-                    <ModulesList
-                      syllabus={newModules}
-                      setModuleId={setModuleId}
-                      moduleId={moduleId}
-                      setTopicId={setTopicId}
-                      topicId={topicId}
-                      setShow={setShow}
-                      loading={loading}
-                      itemRefs={itemRefs}
-                    />
-                  )
-                )}
-                {newModules.length === 0 && (
                   <div className="flex justify-center items-center h-40 text-gray-500 dark:text-gray-400">
                     No modules available.
                   </div>
                 )}
               </div>
 
-              <div className="lg:col-span-2 md:col-span-1 h-screen flex flex-col rounded-lg overflow-hidden shadow-lg">
-                <AddModules
-                  setNewModules={setNewModules}
-                  newModules={newModules}
-                  metaData={{
-                    tradeId: selectedTradeID,
-                    subjectId: selectedSubjectID,
-                    subjectName: selectedSubject?.subjectName,
-                    year: selectedTradeYear,
-                  }}
-                  moduleId={moduleId}
-                  setShow={setShow}
-                  moduleTest={moduleTest}
-                  trade={selectedTrade}
-                  isPractical={isPractical}
-                  scrollToItem={scrollToItem}
-                />
+              {/* Content Area - Right Side */}
+              <div className="lg:col-span-2 col-span-1 rounded-lg overflow-hidden shadow-lg bg-white dark:bg-gray-800">
+                {show.has("AddModules") && (
+                  <AddModules
+                    setNewModules={setNewModules}
+                    newModules={newModules}
+                    metaData={{
+                      tradeId: selectedTradeID,
+                      subjectId: selectedSubjectID,
+                      subjectName: selectedSubject?.subjectName,
+                      year: selectedTradeYear,
+                    }}
+                    moduleId={moduleId}
+                    setShow={setShow}
+                    moduleTest={moduleTest}
+                    trade={selectedTrade}
+                    isPractical={isPractical}
+                    scrollToItem={scrollToItem}
+                  />
+                )}
                 {show.has("AddTopics") && (
                   <AddTopics
                     setNewModules={setNewModules}

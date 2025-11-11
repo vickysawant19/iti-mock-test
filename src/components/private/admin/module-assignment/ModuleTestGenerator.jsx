@@ -1,6 +1,7 @@
 import { useState } from "react";
 import questionpaperservice from "../../../../appwrite/mockTest";
 import geminiService from "../../../../geminiAi/geminiService";
+import geminiServiceV2 from "@/geminiAi/geminiServiceV2";
 
 const useModuleTestGenerator = ({
   tradeId,
@@ -32,7 +33,7 @@ const useModuleTestGenerator = ({
       // Validate props before proceeding
       validateProps();
       // Get questions from GeminiService (limit to at most 5 questions)
-      const questions = await geminiService.getJSONObject(practicalName, 5);
+      const questions = await geminiServiceV2.getQuestions(practicalName, 5);
       if (!questions) {
         throw new Error("No questions generated.");
       }

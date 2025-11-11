@@ -129,7 +129,7 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
               Job Evaluation Points:
             </h3>
             <ol>
-              {module?.evalutionPoints?.map((item) => (
+              {module?.evalutionsPoints?.map((item) => (
                 <li key={item.id}>
                   <p className="text-gray-600 dark:text-gray-400">
                     {item.id}. {item.evaluation} - {item.points}

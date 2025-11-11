@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import geminiService from "../../../../geminiAi/geminiService";
+import geminiServiceV2 from "@/geminiAi/geminiServiceV2";
 
 const useModuleEvalutionPoints = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +21,7 @@ const useModuleEvalutionPoints = () => {
     setError("");
 
     try {
-      const result = await geminiService.getEvalutionPoint(practicalName);
+      const result = await geminiServiceV2.getEvaluationPoints(practicalName);
 
       if (!result || typeof result !== "string") {
         throw new Error("No evaluation points received.");

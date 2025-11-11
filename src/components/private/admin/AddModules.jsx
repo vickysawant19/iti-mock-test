@@ -130,6 +130,8 @@ const AddModules = ({
     //   );
     //   return;
     // }
+    console.log("form data", formData);
+
     try {
       let existingModule = newModules.find(
         (m) => m.moduleId.toUpperCase() === formData.moduleId.toUpperCase()
@@ -181,7 +183,7 @@ const AddModules = ({
         (m) => m.moduleId.toUpperCase() === moduleId.toUpperCase()
       );
       reset(selectedModule || {});
-      isPractical && setEvalPoints(selectedModule?.evalutionPoints || []);
+      isPractical && setEvalPoints(selectedModule?.evalutionsPoints || []);
       setImages(selectedModule?.images || []);
     } else {
       reset({
@@ -249,7 +251,7 @@ const AddModules = ({
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden relative dark:bg-gray-800 dark:text-white">
+    <div className="bg-white shadow-lg rounded-lg overflow-y-scroll  relative dark:bg-gray-800 dark:text-white scroll-auto">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6 dark:bg-gray-700 dark:text-white">
         <div className="flex items-center gap-3">
@@ -421,7 +423,7 @@ const AddModules = ({
               <div className="md:col-span-2 space-y-2 relative">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  Evaluation Points:
+                  Evaluations Points:
                 </label>
 
                 {/* If evaluation points exist, show each in an editable field */}
@@ -440,7 +442,7 @@ const AddModules = ({
                               ...updatedPoints[index],
                               evaluation: newLabel,
                             };
-                            setValue("evalutionPoints", updatedPoints);
+                            setValue("evalutionsPoints", updatedPoints);
                             setEvalPoints(updatedPoints);
                           }}
                           className="flex-1 p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden transition-colors dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:focus:bg-gray-700"
@@ -485,7 +487,7 @@ const AddModules = ({
                         practicalName,
                       });
                       setEvalPoints(generated);
-                      setValue("evalutionPoints", generated);
+                      setValue("evalutionsPoints", generated);
                     }}
                     className="mt-2 flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors h-fit dark:bg-blue-500 dark:hover:bg-blue-600"
                   >
@@ -496,10 +498,10 @@ const AddModules = ({
                   </button>
                 </div>
 
-                {errors.evalutionPoints && (
+                {errors.evalutionsPoints && (
                   <span className="text-red-500 text-sm flex items-center gap-1 dark:text-red-400">
                     <X className="w-4 h-4" />
-                    {errors.evalutionPoints.message}
+                    {errors.evalutionsPoints.message}
                   </span>
                 )}
 
