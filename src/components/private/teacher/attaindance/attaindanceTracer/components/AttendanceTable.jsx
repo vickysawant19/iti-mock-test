@@ -23,9 +23,9 @@ const AttendanceTable = ({
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="relative overflow-x-auto shadow-lg rounded-lg border border-gray-300">
+    <div className="relative overflow-x-auto shadow-lg rounded-lg border border-gray-300 dark:border-gray-700">
       <div className="max-h-[80vh] overflow-y-auto">
-        <table className="min-w-full bg-white text-xs border-collapse">
+        <table className="min-w-full bg-white dark:bg-gray-800 text-xs border-collapse">
           <AttendanceTableHead
             monthDates={monthDates}
             selectedMonth={selectedMonth}

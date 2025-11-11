@@ -12,7 +12,7 @@ const AttendanceHeader = ({
   handleMonthChange,
 }) => {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
         <div className="flex-1">
           <label

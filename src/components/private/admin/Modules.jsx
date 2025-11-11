@@ -226,56 +226,57 @@ const Modules = () => {
                     />
                   )
                 )}
+                {newModules.length === 0 && (
+                  <div className="flex justify-center items-center h-40 text-gray-500 dark:text-gray-400">
+                    No modules available.
+                  </div>
+                )}
               </div>
 
               <div className="lg:col-span-2 md:col-span-1 h-screen flex flex-col rounded-lg overflow-hidden shadow-lg">
-                <div className="flex-1 overflow-y-auto scroll-smooth">
-                  {show.has("AddModules") && (
-                    <AddModules
-                      setNewModules={setNewModules}
-                      newModules={newModules}
-                      metaData={{
-                        tradeId: selectedTradeID,
-                        subjectId: selectedSubjectID,
-                        subjectName: selectedSubject?.subjectName,
-                        year: selectedTradeYear,
-                      }}
-                      moduleId={moduleId}
-                      setShow={setShow}
-                      moduleTest={moduleTest}
-                      trade={selectedTrade}
-                      isPractical={isPractical}
-                      scrollToItem={scrollToItem}
-                    />
-                  )}
-                  {show.has("AddTopics") && (
-                    <AddTopics
-                      setNewModules={setNewModules}
-                      newModules={newModules}
-                      moduleId={moduleId}
-                      topicId={topicId}
-                      setTopicId={setTopicId}
-                      setShow={setShow}
-                    />
-                  )}
-                  {show.has("showModules") && (
-                    <ShowModules
-                      setShow={setShow}
-                      newModules={newModules}
-                      setNewModules={setNewModules}
-                      moduleId={moduleId}
-                    />
-                  )}
-                  {show.has("showTopics") && (
-                    <ShowTopic
-                      setShow={setShow}
-                      setNewModules={setNewModules}
-                      newModules={newModules}
-                      moduleId={moduleId}
-                      topicId={topicId}
-                    />
-                  )}
-                </div>
+                <AddModules
+                  setNewModules={setNewModules}
+                  newModules={newModules}
+                  metaData={{
+                    tradeId: selectedTradeID,
+                    subjectId: selectedSubjectID,
+                    subjectName: selectedSubject?.subjectName,
+                    year: selectedTradeYear,
+                  }}
+                  moduleId={moduleId}
+                  setShow={setShow}
+                  moduleTest={moduleTest}
+                  trade={selectedTrade}
+                  isPractical={isPractical}
+                  scrollToItem={scrollToItem}
+                />
+                {show.has("AddTopics") && (
+                  <AddTopics
+                    setNewModules={setNewModules}
+                    newModules={newModules}
+                    moduleId={moduleId}
+                    topicId={topicId}
+                    setTopicId={setTopicId}
+                    setShow={setShow}
+                  />
+                )}
+                {show.has("showModules") && (
+                  <ShowModules
+                    setShow={setShow}
+                    newModules={newModules}
+                    setNewModules={setNewModules}
+                    moduleId={moduleId}
+                  />
+                )}
+                {show.has("showTopics") && (
+                  <ShowTopic
+                    setShow={setShow}
+                    setNewModules={setNewModules}
+                    newModules={newModules}
+                    moduleId={moduleId}
+                    topicId={topicId}
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -8,12 +8,12 @@ const AttendanceTableHead = ({
   onMarkAttendance,
 }) => {
   return (
-    <thead className="bg-linear-to-r from-indigo-600 to-indigo-700 text-white">
+    <thead className="bg-linear-to-r from-indigo-600 to-indigo-700 text-white dark:from-indigo-800 dark:to-indigo-900">
       <tr className="sticky top-0 z-30">
-        <th className="py-3 px-4 border border-indigo-500 sticky left-0 bg-indigo-600 z-20 font-semibold text-left w-48 min-w-48 max-w-48">
+        <th className="py-3 px-4 border border-indigo-500 dark:border-indigo-700 sticky left-0 bg-indigo-600 dark:bg-indigo-800 z-20 font-semibold text-left w-48 min-w-48 max-w-48">
           Student Name
         </th>
-        <th className="py-3 px-4 border border-indigo-500 sticky left-48 bg-indigo-600 z-20 font-semibold text-left w-16 min-w-16 max-w-16">
+        <th className="py-3 px-4 border border-indigo-500 dark:border-indigo-700 sticky left-48 bg-indigo-600 dark:bg-indigo-800 z-20 font-semibold text-left w-16 min-w-16 max-w-16">
           Action
         </th>
         {monthDates.map((date) => {
@@ -31,47 +31,47 @@ const AttendanceTableHead = ({
               key={date}
               className={`py-3 px-2 border sticky top-0 z-10 ${
                 isHoliday
-                  ? "bg-red-600 border-red-500"
-                  : " bg-blue-500 border-indigo-500"
+                  ? "bg-red-600 border-red-500 dark:bg-red-800 dark:border-red-700"
+                  : " bg-blue-500 border-indigo-500 dark:bg-blue-700 dark:border-indigo-700"
               } w-16 min-w-16 max-w-16`}
             >
-              <div className={`text-center ${isHoliday ? "text-white" : ""}`}>
+              <div className={`text-center ${isHoliday ? "text-white" : "dark:text-gray-100"}`}>
                 <div className="font-bold">{date}</div>
                 <div className="text-xs font-normal">{day}</div>
               </div>
             </th>
           );
         })}
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-blue-700 dark:bg-blue-900 font-semibold w-24 min-w-24 max-w-24 ">
           Working Days
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-blue-700 dark:bg-blue-900 font-semibold w-24 min-w-24 max-w-24 ">
           Present
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24 ">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-blue-700 dark:bg-blue-900 font-semibold w-24 min-w-24 max-w-24 ">
           Absent
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-blue-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-blue-700 dark:bg-blue-900 font-semibold w-24 min-w-24 max-w-24">
           %
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-green-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-green-700 dark:bg-green-900 font-semibold w-24 min-w-24 max-w-24">
           Prev Working
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-green-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-green-700 dark:bg-green-900 font-semibold w-24 min-w-24 max-w-24">
           Prev Present
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-green-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-green-700 dark:bg-green-900 font-semibold w-24 min-w-24 max-w-24">
           Prev Absent
         </th>
-        <th className="py-3 px-3 border border-indigo-500 bg-green-700 font-semibold w-24 min-w-24 max-w-24">
+        <th className="py-3 px-3 border border-indigo-500 dark:border-indigo-700 bg-green-700 dark:bg-green-900 font-semibold w-24 min-w-24 max-w-24">
           Total %
         </th>
       </tr>
-      <tr className="bg-gray-100 sticky top-14 z-30">
-        <td className="py-2 px-4 border font-bold border-gray-300 sticky left-0 bg-gray-100 z-10 text-black">
+      <tr className="bg-gray-100 dark:bg-gray-700 sticky top-14 z-30">
+        <td className="py-2 px-4 border font-bold border-gray-300 dark:border-gray-600 sticky left-0 bg-gray-100 dark:bg-gray-700 z-10 text-black dark:text-gray-100">
           Mark Attendance
         </td>
-        <td className="py-2 px-4 border font-bold border-gray-300 sticky left-48 bg-gray-100 z-10 text-black"></td>
+        <td className="py-2 px-4 border font-bold border-gray-300 dark:border-gray-600 sticky left-48 bg-gray-100 dark:bg-gray-700 z-10 text-black dark:text-gray-100"></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -85,14 +85,14 @@ const AttendanceTableHead = ({
           return (
             <td
               key={`mark-${date}`}
-              className={`py-2 px-2 border border-gray-300 text-center ${
-                isHoliday ? "bg-red-100 " : ""
+              className={`py-2 px-2 border border-gray-300 dark:border-gray-600 text-center ${
+                isHoliday ? "bg-red-100 dark:bg-red-900" : ""
               }`}
             >
               {!isHoliday && (
                 <button
                   onClick={() => onMarkAttendance(fullDate)}
-                  className="px-2 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                  className="px-2 py-1 text-xs bg-indigo-500 dark:bg-indigo-700 text-white rounded hover:bg-indigo-600 dark:hover:bg-indigo-800"
                 >
                   Mark
                 </button>
@@ -100,7 +100,7 @@ const AttendanceTableHead = ({
             </td>
           );
         })}
-        <td colSpan="8" className="py-2 px-3 border border-gray-300 "></td>
+        <td colSpan="8" className="py-2 px-3 border border-gray-300 dark:border-gray-600 "></td>
       </tr>
     </thead>
   );

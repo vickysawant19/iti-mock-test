@@ -323,7 +323,7 @@ const AttendanceRegister = () => {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-indigo-50 p-4 sm:p-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6">
       <div className="max-w-full mx-auto">
         <AttendanceHeader
           selectedBatch={selectedBatch}
