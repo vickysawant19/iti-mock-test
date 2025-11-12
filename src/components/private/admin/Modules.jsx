@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "../../../store/profileSlice";
-import { PlusCircle, Save, BookOpen, Filter, Images } from "lucide-react";
-import { Query } from "appwrite";
+import { PlusCircle, BookOpen, Filter, ChevronRight } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 import ModulesList from "./ModulesList";
 import AddTopics from "./AddTopics";
@@ -32,6 +37,7 @@ const Modules = () => {
   const [topicId, setTopicId] = useState("");
   const [newModules, setNewModules] = useState([]);
   const [show, setShow] = useState(new Set());
+  const [showModulesList, setShowModulesList] = useState(true);
   const profile = useSelector(selectProfile);
 
   const moduleTest = useModuleTestGenerator({
@@ -111,203 +117,357 @@ const Modules = () => {
     }
   }, [selectedTradeID]);
 
+  const hasActiveView = show.size > 0;
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-blue-900 dark:text-white py-6 shadow-md">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-blue-900 dark:text-white" />
-              <h1 className="text-2xl font-bold">Module Management System</h1>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center px-6">
+          <div className="flex items-center gap-3">
+            <BookOpen className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-semibold">Module Manager</h1>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex sm:flex-row flex-col flex-wrap gap-4 mb-6 p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Trade
-              </label>
-            </div>
-            <select
-              value={selectedTradeID}
-              onChange={(e) => setSelectedTradeID(e.target.value)}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+      {/* Mobile Filters */}
+      <div className="lg:hidden border-b bg-background">
+        <div className="container px-4 py-4 space-y-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-xs">
+              <Filter className="h-3.5 w-3.5 text-primary" />
+              Trade
+            </Label>
+            <Select 
+              value={selectedTradeID} 
+              onValueChange={setSelectedTradeID}
               disabled={fetchingData}
             >
-              <option value="">Select Trade</option>
-              {tradeData.map((trade) => (
-                <option key={trade.$id} value={trade.$id}>
-                  {trade.tradeName}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Year
-              </label>
-            </div>
-            <select
-              value={selectedTradeYear}
-              onChange={(e) => setSelectedTradeYear(e.target.value)}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
-              disabled={fetchingData}
-            >
-              <option value="">Select Year</option>
-              {selectedTradeID &&
-                Array.from({
-                  length: tradeData.find(
-                    (trade) => trade.$id === selectedTradeID
-                  ).duration,
-                }).map((_, idx) => (
-                  <option key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
-                    {idx === 0 ? "FIRST" : "SECOND"}
-                  </option>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Trade" />
+              </SelectTrigger>
+              <SelectContent>
+                {tradeData.map((trade) => (
+                  <SelectItem key={trade.$id} value={trade.$id}>
+                    {trade.tradeName}
+                  </SelectItem>
                 ))}
-            </select>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Subject
-              </label>
-            </div>
-            <select
-              value={selectedSubjectID}
-              onChange={(e) => {
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-xs">
+              <Filter className="h-3.5 w-3.5 text-primary" />
+              Year
+            </Label>
+            <Select 
+              value={selectedTradeYear} 
+              onValueChange={setSelectedTradeYear}
+              disabled={fetchingData}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedTradeID &&
+                  Array.from({
+                    length: tradeData.find((trade) => trade.$id === selectedTradeID)
+                      ?.duration || 0,
+                  }).map((_, idx) => (
+                    <SelectItem key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
+                      {idx === 0 ? "FIRST" : "SECOND"}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-xs">
+              <Filter className="h-3.5 w-3.5 text-primary" />
+              Subject
+            </Label>
+            <Select 
+              value={selectedSubjectID} 
+              onValueChange={(value) => {
                 setSelectedSubject(
-                  subjectData.find((item) => item.$id === e.target.value)
+                  subjectData.find((item) => item.$id === value)
                 );
-                setSelectedSubjectID(e.target.value);
+                setSelectedSubjectID(value);
               }}
-              className="w-full p-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
               disabled={!selectedTradeID || fetchingData}
             >
-              <option value="">Select Subject</option>
-              {subjectData.map((subject) => (
-                <option key={subject.$id} value={subject.$id}>
-                  {subject.subjectName}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjectData.map((subject) => (
+                  <SelectItem key={subject.$id} value={subject.$id}>
+                    {subject.subjectName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+      </div>
 
-        {selectedTradeID && selectedSubjectID && (
-          <div className="mb-6">
-            {/* Add Module Button - Positioned above the grid */}
-            <div className="mb-4">
-              <button
-                disabled={loading}
-                onClick={() => {
-                  setShow(new Set().add("AddModules"));
-                  setModuleId("");
-                  setTopicId("");
-                }}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white px-4 py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+      {/* Desktop Filters */}
+      <div className="hidden lg:block sticky top-16 z-30 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="container px-6 py-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-xs">
+                <Filter className="h-3.5 w-3.5 text-primary" />
+                Trade
+              </Label>
+              <Select 
+                value={selectedTradeID} 
+                onValueChange={setSelectedTradeID}
+                disabled={fetchingData}
               >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span className="font-medium">Adding...</span>
-                  </>
-                ) : (
-                  <>
-                    <PlusCircle className="w-4 h-4" />
-                    <span className="font-medium">New Module</span>
-                  </>
-                )}
-              </button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Trade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tradeData.map((trade) => (
+                    <SelectItem key={trade.$id} value={trade.$id}>
+                      {trade.tradeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Modules List - Left Side */}
-              <div className="col-span-1 rounded-xl">
-                {loading ? (
-                  <div className="flex justify-center items-center h-40">
-                    <div className="w-10 h-10 border-t-4 border-blue-500 dark:border-blue-400 rounded-full animate-spin" />
-                  </div>
-                ) : newModules && newModules.length > 0 ? (
-                  <ModulesList
-                    syllabus={newModules}
-                    setModuleId={setModuleId}
-                    moduleId={moduleId}
-                    setTopicId={setTopicId}
-                    topicId={topicId}
-                    setShow={setShow}
-                    loading={loading}
-                    itemRefs={itemRefs}
-                  />
-                ) : (
-                  <div className="flex justify-center items-center h-40 text-gray-500 dark:text-gray-400">
-                    No modules available.
-                  </div>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-xs">
+                <Filter className="h-3.5 w-3.5 text-primary" />
+                Year
+              </Label>
+              <Select 
+                value={selectedTradeYear} 
+                onValueChange={setSelectedTradeYear}
+                disabled={fetchingData}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedTradeID &&
+                    Array.from({
+                      length: tradeData.find((trade) => trade.$id === selectedTradeID)
+                        ?.duration || 0,
+                    }).map((_, idx) => (
+                      <SelectItem key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
+                        {idx === 0 ? "FIRST" : "SECOND"}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Content Area - Right Side */}
-              <div className="lg:col-span-2 col-span-1 rounded-lg overflow-hidden shadow-lg bg-white dark:bg-gray-800">
-                {show.has("AddModules") && (
-                  <AddModules
-                    setNewModules={setNewModules}
-                    newModules={newModules}
-                    metaData={{
-                      tradeId: selectedTradeID,
-                      subjectId: selectedSubjectID,
-                      subjectName: selectedSubject?.subjectName,
-                      year: selectedTradeYear,
-                    }}
-                    moduleId={moduleId}
-                    setShow={setShow}
-                    moduleTest={moduleTest}
-                    trade={selectedTrade}
-                    isPractical={isPractical}
-                    scrollToItem={scrollToItem}
-                  />
-                )}
-                {show.has("AddTopics") && (
-                  <AddTopics
-                    setNewModules={setNewModules}
-                    newModules={newModules}
-                    moduleId={moduleId}
-                    topicId={topicId}
-                    setTopicId={setTopicId}
-                    setShow={setShow}
-                  />
-                )}
-                {show.has("showModules") && (
-                  <ShowModules
-                    setShow={setShow}
-                    newModules={newModules}
-                    setNewModules={setNewModules}
-                    moduleId={moduleId}
-                  />
-                )}
-                {show.has("showTopics") && (
-                  <ShowTopic
-                    setShow={setShow}
-                    setNewModules={setNewModules}
-                    newModules={newModules}
-                    moduleId={moduleId}
-                    topicId={topicId}
-                  />
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-xs">
+                <Filter className="h-3.5 w-3.5 text-primary" />
+                Subject
+              </Label>
+              <Select 
+                value={selectedSubjectID} 
+                onValueChange={(value) => {
+                  setSelectedSubject(
+                    subjectData.find((item) => item.$id === value)
+                  );
+                  setSelectedSubjectID(value);
+                }}
+                disabled={!selectedTradeID || fetchingData}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjectData.map((subject) => (
+                    <SelectItem key={subject.$id} value={subject.$id}>
+                      {subject.subjectName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Main Content */}
+      {selectedTradeID && selectedSubjectID && (
+        <div className="container px-6 py-6">
+          {/* Add Module Button */}
+          <div className="mb-6">
+            <Button
+              disabled={loading}
+              onClick={() => {
+                setShow(new Set().add("AddModules"));
+                setModuleId("");
+                setTopicId("");
+                setShowModulesList(false);
+              }}
+              className="w-full sm:w-auto gap-2"
+              size="lg"
+            >
+              {loading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                  <span>Adding...</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="h-5 w-5" />
+                  <span>New Module</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Responsive Layout */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Modules List Sidebar */}
+            <div
+              className={`${
+                hasActiveView && !showModulesList ? "hidden lg:block" : "block"
+              } w-full lg:w-80 flex-shrink-0`}
+            >
+              <Card>
+                <CardContent className="p-0">
+                  {loading ? (
+                    <div className="flex justify-center items-center h-48 p-6">
+                      <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+                    </div>
+                  ) : newModules && newModules.length > 0 ? (
+                    <ModulesList
+                      syllabus={newModules}
+                      setModuleId={(id) => {
+                        setModuleId(id);
+                        setShowModulesList(false);
+                      }}
+                      moduleId={moduleId}
+                      setTopicId={(id) => {
+                        setTopicId(id);
+                        setShowModulesList(false);
+                      }}
+                      topicId={topicId}
+                      setShow={setShow}
+                      loading={loading}
+                      itemRefs={itemRefs}
+                    />
+                  ) : (
+                    <div className="flex flex-col justify-center items-center h-48 text-muted-foreground p-6 text-center">
+                      <BookOpen className="h-10 w-10 mb-3 opacity-50" />
+                      <p className="text-sm">No modules available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Content Area */}
+            <div
+              className={`${
+                hasActiveView && !showModulesList ? "block" : "hidden lg:block"
+              } flex-1 min-w-0`}
+            >
+              {hasActiveView && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowModulesList(true)}
+                  className="lg:hidden mb-4 gap-1.5 px-2"
+                  size="sm"
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                  Back to Modules
+                </Button>
+              )}
+              
+              <Card>
+                <CardContent className="p-0">
+                  {show.has("AddModules") && (
+                    <AddModules
+                      setNewModules={setNewModules}
+                      newModules={newModules}
+                      metaData={{
+                        tradeId: selectedTradeID,
+                        subjectId: selectedSubjectID,
+                        subjectName: selectedSubject?.subjectName,
+                        year: selectedTradeYear,
+                      }}
+                      moduleId={moduleId}
+                      setShow={(newShow) => {
+                        setShow(newShow);
+                        if (newShow.size === 0) setShowModulesList(true);
+                      }}
+                      moduleTest={moduleTest}
+                      trade={selectedTrade}
+                      isPractical={isPractical}
+                      scrollToItem={scrollToItem}
+                    />
+                  )}
+                  {show.has("AddTopics") && (
+                    <AddTopics
+                      setNewModules={setNewModules}
+                      newModules={newModules}
+                      moduleId={moduleId}
+                      topicId={topicId}
+                      setTopicId={setTopicId}
+                      setShow={(newShow) => {
+                        setShow(newShow);
+                        if (newShow.size === 0) setShowModulesList(true);
+                      }}
+                    />
+                  )}
+                  {show.has("showModules") && (
+                    <ShowModules
+                      setShow={(newShow) => {
+                        setShow(newShow);
+                        if (newShow.size === 0) setShowModulesList(true);
+                      }}
+                      newModules={newModules}
+                      setNewModules={setNewModules}
+                      moduleId={moduleId}
+                    />
+                  )}
+                  {show.has("showTopics") && (
+                    <ShowTopic
+                      setShow={(newShow) => {
+                        setShow(newShow);
+                        if (newShow.size === 0) setShowModulesList(true);
+                      }}
+                      setNewModules={setNewModules}
+                      newModules={newModules}
+                      moduleId={moduleId}
+                      topicId={topicId}
+                    />
+                  )}
+                  {!hasActiveView && (
+                    <div className="flex flex-col justify-center items-center h-64 text-muted-foreground p-8 text-center">
+                      <BookOpen className="h-12 w-12 mb-4 opacity-40" />
+                      <p className="text-sm">Select a module or create a new one to get started</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {(!selectedTradeID || !selectedSubjectID) && (
+        <div className="flex flex-col justify-center items-center h-[calc(100vh-200px)] text-muted-foreground p-8 text-center">
+          <Filter className="h-16 w-16 mb-4 opacity-30" />
+          <p className="text-base font-medium mb-2">Get Started</p>
+          <p className="text-sm">Select a trade, year, and subject to view modules</p>
+        </div>
+      )}
     </div>
   );
 };

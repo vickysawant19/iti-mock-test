@@ -40,7 +40,7 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
   if (!module) return null;
 
   return (
-    <div className="bg-blue-50 dark:bg-gray-800 h-screen shadow-xl overflow-y-scroll relative">
+    <div className="bg-blue-50 dark:bg-gray-800 h-screen  overflow-y-scroll relative">
       {/* Header */}
       <div className="border-b border-gray-100 dark:border-gray-800 bg-blue-100 dark:bg-gray-700 p-6">
         <div className="flex justify-between items-start">

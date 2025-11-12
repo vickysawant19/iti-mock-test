@@ -54,7 +54,7 @@ const ShowTopic = ({
   }
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden dark:bg-gray-800 dark:shadow-none">
+    <div className="bg-white  rounded-lg overflow-hidden dark:bg-gray-800 dark:shadow-none">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-700">
         <div className="flex justify-between items-start">

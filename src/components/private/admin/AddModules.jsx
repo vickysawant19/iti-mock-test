@@ -251,7 +251,7 @@ const AddModules = ({
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-y-scroll  relative dark:bg-gray-800 dark:text-white scroll-auto">
+    <div className="bg-white  rounded-lg overflow-y-scroll  relative dark:bg-gray-800 dark:text-white scroll-auto max-h-screen">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6 dark:bg-gray-700 dark:text-white">
         <div className="flex items-center gap-3">
@@ -628,7 +628,7 @@ const AddModules = ({
             {/* Cancel Button */}
             <button
               type="button"
-              onClick={() => setShow(false)}
+              onClick={() => setShow(new Set())}
               className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700"
             >
               <X className="w-4 h-4" />

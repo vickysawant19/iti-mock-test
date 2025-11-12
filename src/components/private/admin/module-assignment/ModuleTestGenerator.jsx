@@ -1,6 +1,6 @@
 import { useState } from "react";
 import questionpaperservice from "../../../../appwrite/mockTest";
-import geminiService from "../../../../geminiAi/geminiService";
+
 import geminiServiceV2 from "@/geminiAi/geminiServiceV2";
 
 const useModuleTestGenerator = ({
