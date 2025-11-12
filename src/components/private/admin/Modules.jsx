@@ -122,7 +122,7 @@ const Modules = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-16 items-center px-6">
           <div className="flex items-center gap-3">
             <BookOpen className="h-6 w-6 text-primary" />
@@ -132,7 +132,7 @@ const Modules = () => {
       </header>
 
       {/* Mobile Filters */}
-      <div className="lg:hidden border-b bg-background">
+      <div className="lg:hidden border-b bg-background ">
         <div className="container px-4 py-4 space-y-4">
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs">
@@ -215,9 +215,9 @@ const Modules = () => {
       </div>
 
       {/* Desktop Filters */}
-      <div className="hidden lg:block sticky top-16 z-30 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container px-6 py-4">
-          <div className="grid grid-cols-3 gap-4">
+      <div className="hidden lg:block sticky top-16 z-30 mx-auto  border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="container mx-auto px-6 py-4">
+          <div className="grid grid-cols-3 items-center gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-xs">
                 <Filter className="h-3.5 w-3.5 text-primary" />
@@ -301,7 +301,7 @@ const Modules = () => {
 
       {/* Main Content */}
       {selectedTradeID && selectedSubjectID && (
-        <div className="container px-6 py-6">
+        <div className="container px-6 py-6  overflow-y-auto mx-auto ">
           {/* Add Module Button */}
           <div className="mb-6">
             <Button
@@ -330,14 +330,14 @@ const Modules = () => {
           </div>
 
           {/* Responsive Layout */}
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 ">
             {/* Modules List Sidebar */}
             <div
               className={`${
                 hasActiveView && !showModulesList ? "hidden lg:block" : "block"
               } w-full lg:w-80 flex-shrink-0`}
             >
-              <Card>
+              <Card className="overflow-hidden py-0">
                 <CardContent className="p-0">
                   {loading ? (
                     <div className="flex justify-center items-center h-48 p-6">
@@ -374,7 +374,7 @@ const Modules = () => {
             <div
               className={`${
                 hasActiveView && !showModulesList ? "block" : "hidden lg:block"
-              } flex-1 min-w-0`}
+              } flex-1  `}
             >
               {hasActiveView && (
                 <Button
@@ -388,8 +388,8 @@ const Modules = () => {
                 </Button>
               )}
               
-              <Card>
-                <CardContent className="p-0">
+              <Card className="p-0 w-full overflow-hidden">
+                <CardContent className="w-full px-0  ">
                   {show.has("AddModules") && (
                     <AddModules
                       setNewModules={setNewModules}

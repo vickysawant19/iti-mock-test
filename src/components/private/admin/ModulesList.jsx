@@ -70,7 +70,7 @@ const ModuleList = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-screen">
+    <div className="flex flex-col  ">
       {/* Header */}
       <div className="shrink-0 border-b bg-card px-6 py-5">
         <div className="flex items-center justify-between">
@@ -91,7 +91,7 @@ const ModuleList = ({
       </div>
 
       {/* Module List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto max-h-[calc(80vh)]">
         <div className="px-6 py-4 space-y-3">
           {sortedSyllabus.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

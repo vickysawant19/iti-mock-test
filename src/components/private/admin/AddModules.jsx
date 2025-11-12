@@ -251,7 +251,7 @@ const AddModules = ({
   };
 
   return (
-    <div className="bg-white  rounded-lg overflow-y-scroll  relative dark:bg-gray-800 dark:text-white scroll-auto max-h-screen">
+    <div className="bg-white  rounded-lg  relative dark:bg-gray-800 dark:text-white ">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 p-6 dark:bg-gray-700 dark:text-white">
         <div className="flex items-center gap-3">
@@ -262,14 +262,14 @@ const AddModules = ({
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 overflow-y-scroll scroll-auto max-h-[calc(80vh)] ">
         {/* Display error if present */}
         {isError && error && (
           <div className="bg-red-100 text-red-700 p-2 rounded-sm mb-4">
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit(handleAddModules)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleAddModules)} className="space-y-6 ">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               {/* Module ID */}

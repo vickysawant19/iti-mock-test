@@ -40,9 +40,9 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
   if (!module) return null;
 
   return (
-    <div className="bg-blue-50 dark:bg-gray-800 h-screen  overflow-y-scroll relative">
+    <div className="bg-blue-50 dark:bg-gray-800 max-h-[calc(100vh)]   relative w-full">
       {/* Header */}
-      <div className="border-b border-gray-100 dark:border-gray-800 bg-blue-100 dark:bg-gray-700 p-6">
+      <div className="border-b border-gray-100 dark:border-gray-800 bg-blue-100 dark:bg-gray-700 p-6 w-full">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
@@ -68,7 +68,7 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-y-scroll">
         {/* Module Info */}
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
@@ -128,15 +128,36 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
             <h3 className="text-gray-900 dark:text-white font-medium mb-2">
               Job Evaluation Points:
             </h3>
-            <ol>
-              {module?.evalutionsPoints?.map((item) => (
-                <li key={item.id}>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {item.id}. {item.evaluation} - {item.points}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            {module?.evalutionsPoints && module.evalutionsPoints.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                        #
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                        Evaluation
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                        Points
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    {module.evalutionsPoints.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{item.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{item.evaluation}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{item.points}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-600 dark:text-gray-400">No evaluation points available.</p>
+            )}
           </div>
         </div>
 
