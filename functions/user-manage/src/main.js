@@ -1,4 +1,4 @@
-import { Client, Users, ID, Query } from 'node-appwrite';
+import { Client, Users, ID, Query, Databases } from 'node-appwrite';
 
 // Validation functions
 const validateUserId = (userId) => {
@@ -85,6 +85,8 @@ const formatPhoneNumber = (countryCode, phone) => {
   
   return `+${cleanCountryCode}${cleanPhone}`;
 };
+
+import migrateAttendance from './migrateAttendance.js';
 
 export default async ({ req, res, log, error }) => {
   try {
@@ -183,6 +185,11 @@ export default async ({ req, res, log, error }) => {
         log(`Labels added for user ${userId}`);
         break;
       }
+      case 'migrateAttendance': {
+        const database = new Databases(client);
+        response = await migrateAttendance(database, log, error);
+        break;
+      }
       case 'getUserIdByEmail': {
         // Expecting an email in the request
         const { email } = req.bodyJson;
@@ -214,7 +221,7 @@ export default async ({ req, res, log, error }) => {
     });
     
   } catch (err) {
-    error(`Error performing action: ${err.message}`);
+    error(`Error performing action: ${err}`);
     return res.json({
       success: false,
       error: err.message
