@@ -17,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClipLoader } from "react-spinners";
 import Loader from "@/components/components/Loader";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const CheckAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -61,9 +62,13 @@ const CheckAttendance = () => {
   const fetchAttendance = async () => {
     setIsLoading(true);
     try {
-      const data = await attendanceService.getUserAttendance(profile.userId);
+      const data = await newAttendanceService.getStudentAttendance(
+        profile.userId,
+        profile.batchId
+      );
+      console.log("new attendance", data);
       const workMap = new Map();
-      data?.attendanceRecords.forEach((rec) => workMap.set(rec.date, rec));
+      data.forEach((rec) => workMap.set(rec.date, rec));
       setWorkingDays(workMap);
       calculateStats({ data, setAttendance, setAttendanceStats });
     } catch (error) {
@@ -102,7 +107,7 @@ const CheckAttendance = () => {
     if (holidays.has(key)) return " holiday-tile ";
     const rec = workingDays.get(key);
     if (!rec) return null;
-    return rec.attendanceStatus === "Present" ? "present-tile" : "absent-tile";
+    return rec.status === "present" ? "present-tile" : "absent-tile";
   };
 
   // Tile content with dark mode text
@@ -123,17 +128,17 @@ const CheckAttendance = () => {
       <div className="flex flex-col items-center justify-center p-1">
         {rec.inTime && (
           <span className="text-xs text-gray-700 dark:text-gray-700">
-            In: {rec.inTime}
+            In: {rec?.markedAt}
           </span>
         )}
         {rec.outTime && (
           <span className="text-xs text-gray-700 dark:text-gray-700">
-            Out: {rec.outTime}
+            Out: {rec?.markedBy}
           </span>
         )}
         {rec.reason && (
           <span className="text-xs italic text-gray-600 dark:text-gray-400">
-            {rec.reason}
+            {rec?.remarks}
           </span>
         )}
       </div>

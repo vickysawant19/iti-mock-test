@@ -10,6 +10,9 @@ import {
   MapPin,
   MapPinOff,
   User,
+  X, // Added
+  XCircle, // Added
+  Trash2, // Added
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,22 +21,23 @@ import { Query } from "appwrite";
 import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import userProfileService from "../../../../appwrite/userProfileService";
-import attendanceService from "../../../../appwrite/attaindanceService";
+// import attendanceService from "../../../../appwrite/attaindanceService"; // Unused import
 import batchService from "../../../../appwrite/batchService";
 import LocationPicker from "../components/LocationPicker";
 import AttendanceStatus from "./AttendanceStatus";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
-import { ClipLoader } from "react-spinners";
-
+// import { ClipLoader } from "react-spinners"; // Replaced with Loader2
 import CustomSelectData from "../../../components/customSelectData";
 import useLocationManager from "./hook/useLocationManager";
 import { FaCalendar } from "react-icons/fa";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [isModalLoading, setIsModalLoading] = useState(false); // For modal actions
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -56,26 +60,26 @@ const MarkStudentAttendance = () => {
     attendancePercentage: 0,
     monthlyAttendance: {},
   });
+
+  const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
+
   const [modalData, setModalData] = useState({
     date: "",
-    attendanceStatus: "Present", // Default status
-    inTime: format(new Date(), "HH:mm"),
-    outTime: "17:00",
-    reason: "",
-    type: "",
-    isMarked: false,
+    status: "present",
+
+    markedBy: profile.userId,
+    remarks: "",
   });
   const [currentMonthData, setCurrentMonthData] = useState({
     presentDays: 0,
     absentDays: 0,
     holidayDays: 0,
   });
+
   const [currentMonth, setCurrentMonth] = useState(
     format(new Date(), "MMMM yyyy")
   );
-
-  const profile = useSelector(selectProfile);
-  const user = useSelector(selectUser);
 
   const navigate = useNavigate();
 
@@ -85,18 +89,19 @@ const MarkStudentAttendance = () => {
     deviceLocation,
     locationText,
     distance,
-    loading,
+    loading, // This is from the hook, not the component's loader
     error,
-    getDeviceLocation, // Method to manually refresh location
+    getDeviceLocation,
   } = useLocationManager({
     isTeacher,
     batchData,
   });
 
+  const isMarkingAllowed = distance < batchData?.circleRadius || isTeacher;
+
   const fetchBatchData = async (batchId) => {
     try {
       const data = await batchService.getBatch(batchId);
-      console.log("batch data ", data);
       const parsedData = data?.attendanceHolidays.map((item) =>
         JSON.parse(item)
       );
@@ -112,20 +117,17 @@ const MarkStudentAttendance = () => {
   const fetchBatchStudents = async () => {
     if (!batchData?.studentIds) return;
     setIsLoading(true);
-    try { 
-      let studentIds = batchData?.studentIds.map((student) =>
-        JSON.parse(student)?.userId
+    try {
+      let studentIds = batchData?.studentIds.map(
+        (student) => JSON.parse(student)?.userId
       );
-      studentIds.push(profile?.userId);
-
+      // BUG FIX: Removed teacher's ID from student list
+      // studentIds.push(profile?.userId);
       const data = await userProfileService.getBatchUserProfile([
-        // Query.equal("batchId", profile.batchId),
         Query.equal("userId", studentIds),
         Query.orderDesc("studentId"),
         Query.equal("status", "Active"),
       ]);
-
-      // Convert string numbers to integers and sort
       setBatchStudents(
         data.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
       );
@@ -137,75 +139,108 @@ const MarkStudentAttendance = () => {
   };
 
   const fetchStudentAttendance = async (userId) => {
+    if (!profile.batchId) return;
     setIsLoadingAttendance(true);
+    setStudentAttendance(null); // Clear previous student's data
+    setWorkingDays(new Map()); // Clear previous working days
     try {
-      const data = await attendanceService.getUserAttendance(
+      const data = await newAttendanceService.getStudentAttendance(
         userId,
-        profile?.batchId
+        profile.batchId
       );
 
-      const selectedStudent = batchStudents?.find(
-        (item) => item.userId === userId
-      );
+      // Get student profile details (needed for both cases)
+      let studentProfile;
+      if (isTeacher) {
+        studentProfile = batchStudents?.find((item) => item.userId === userId);
+      } else {
+        studentProfile = profile; // Student is the profile
+      }
 
-      if (
-        !data ||
-        !data.attendanceRecords ||
-        data.attendanceRecords.length === 0
-      ) {
-        // Set dummy fields if no attendance records are found
+      if (!studentProfile) {
+        // This can happen if batchStudents isn't loaded yet when selectedStudent is set
+        // Or if student isn't the profile (which shouldn't happen)
+        console.warn("Student profile not found, retrying...");
+        // This might be optimistic. A better solution might be to ensure batchStudents is loaded first.
+        // For now, let's just use the profile for the student's own view.
+        if (!isTeacher) studentProfile = profile;
+        else {
+          // If teacher is viewing and profile not found, fetch it directly (edge case)
+          const fallbackProfile = await userProfileService.getUserProfile(
+            userId
+          );
+          studentProfile = fallbackProfile;
+        }
+      }
+
+      if (!data || data.length === 0) {
+        // No attendance records found
         setStudentAttendance({
-          userId,
-          userName: !isTeacher ? profile.userName : selectedStudent?.userName,
-          batchId: profile.batchId,
-          attendanceRecords: [],
+          ...studentProfile, // Spread the whole profile
+          attendanceRecords: [], // Empty array
+          batchId: profile.batchId, // Ensure batchId is from the context
         });
       } else {
+        // Records found
         const newMap = new Map();
-        data.attendanceRecords.forEach((item) => newMap.set(item.date, item));
+        data.forEach((item) => newMap.set(item.date, item));
         setWorkingDays(newMap);
 
         setStudentAttendance({
-          ...data,
-          attendanceRecords: data.attendanceRecords,
-          userName: selectedStudent?.userName,
-        });
-        calculateStats({
-          data: {
-            ...data,
-            attendanceRecords: data.attendanceRecords,
-            userName: selectedStudent?.userName,
-          },
-          setAttendanceStats,
+          ...studentProfile, // Spread the whole profile
+          attendanceRecords: data, // Just the array
+          batchId: profile.batchId, // Ensure batchId is from the context
         });
       }
     } catch (error) {
       console.log(error);
+      toast.error("Failed to fetch attendance.");
+      setStudentAttendance(null);
     } finally {
       setIsLoadingAttendance(false);
     }
   };
 
   useEffect(() => {
+    if (studentAttendance && studentAttendance.attendanceRecords) {
+      calculateStats({
+        data: studentAttendance.attendanceRecords,
+        setAttendanceStats,
+      });
+    } else {
+      // Reset stats if no student is selected or has no data
+      setAttendanceStats({
+        totalDays: 0,
+        presentDays: 0,
+        absentDays: 0,
+        holidayDays: 0,
+        attendancePercentage: 0,
+        monthlyAttendance: {},
+      });
+    }
+  }, [studentAttendance]);
+
+  useEffect(() => {
     if (!profile.batchId) {
       toast.error("You need to Create/Select a batch");
-      // Navigate to create-batch page
       navigate("/profile");
       return;
     }
     if (!batchData) {
       fetchBatchData(profile.batchId);
-    } 
-  }, [batchData]);
-
+    }
+  }, [batchData, profile.batchId, navigate]);
 
   useEffect(() => {
     if (isTeacher) {
       fetchBatchStudents();
     } else {
-      fetchStudentAttendance(profile.userId);
+      // Only fetch if batchData is loaded
+      if (batchData) {
+        fetchStudentAttendance(profile.userId);
+      }
     }
-  }, [batchData, profile, isTeacher]);
+  }, [batchData, profile, isTeacher]); // Dependency on batchData is important for student view
 
   useEffect(() => {
     const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
@@ -215,6 +250,13 @@ const MarkStudentAttendance = () => {
     };
     setCurrentMonthData(monthData);
   }, [currentMonth, attendanceStats]);
+
+  // Refetch attendance when teacher selects a new student
+  useEffect(() => {
+    if (isTeacher && selectedStudent) {
+      fetchStudentAttendance(selectedStudent.userId);
+    }
+  }, [selectedStudent, isTeacher]);
 
   const handleMonthChange = ({ activeStartDate }) => {
     const newMonth = format(activeStartDate, "MMMM yyyy");
@@ -226,104 +268,108 @@ const MarkStudentAttendance = () => {
     let existingRecord = studentAttendance?.attendanceRecords?.find(
       (record) => record.date === formattedDate
     );
-
-    if (existingRecord) {
-      existingRecord = { ...existingRecord, isMarked: true };
-    } else {
+    if (!existingRecord) {
       existingRecord = {
         date: formattedDate,
-        attendanceStatus: "Present", // Default when attendance isn't marked
-        inTime: format(new Date(), "HH:mm"),
-        outTime: "17:00",
-        reason: "",
-        type: "",
+        status: "present", // Default when attendance isn't marked
+
+        markedBy: profile.userId,
+        remarks: "",
       };
     }
     setModalData(existingRecord);
     setIsModalOpen(true);
   };
 
-  const markAttendance = async () => {
+  const saveAttendance = async () => {
+    setIsModalLoading(true); // Start loading
     try {
-      await attendanceService.markUserAttendance({
-        ...studentAttendance,
-        attendanceRecords: [modalData],
-      });
-      toast.success("Attendace saved successfully!");
-    } catch (error) {
-      console.log("mark attendace error:", error);
-      toast.error("Attendance mark failed");
-    }
-  };
-
-  const saveAttendance = () => {
-    setStudentAttendance((prev) => {
-      const updatedRecords = prev.attendanceRecords.some(
+      const alreadyMarked = studentAttendance?.attendanceRecords?.find(
         (record) => record.date === modalData.date
-      )
-        ? prev.attendanceRecords.map((record) =>
-            record.date === modalData.date ? modalData : record
-          )
-        : [...prev.attendanceRecords, modalData];
+      );
+      let markedRes = null;
+      if (alreadyMarked) {
+        markedRes = await newAttendanceService.updateAttendance(
+          alreadyMarked.$id,
+          modalData
+        );
+        toast.success("Attendance updated successfully!");
+      } else {
+        // CRITICAL BUG FIX: Use studentAttendance.userId, not profile.userId
+        markedRes = await newAttendanceService.createAttendance({
+          userId: studentAttendance.userId,
+          batchId: studentAttendance.batchId,
+          tradeId: studentAttendance.tradeId,
+          date: modalData.date,
+          status: modalData.status,
+          remarks: modalData.remarks,
+          markedBy: profile.userId, // "markedBy" is correct (the current user)
+        });
+        toast.success("Attendance marked successfully!");
+      }
 
-      return {
-        ...prev,
-        attendanceRecords: updatedRecords,
-      };
-    });
-    setWorkingDays((prevMap) => prevMap.set(modalData.date, modalData));
-    setIsModalOpen(false);
-
-    if (new Date(selectedDate).toDateString() === new Date().toDateString()) {
-      markAttendance();
+      setStudentAttendance((prev) => {
+        const updatedRecords = prev.attendanceRecords.some(
+          (record) => record.date === modalData.date
+        )
+          ? prev.attendanceRecords.map((record) =>
+              record.date === modalData.date ? markedRes : record
+            )
+          : [...prev.attendanceRecords, markedRes];
+        return {
+          ...prev,
+          attendanceRecords: updatedRecords,
+        };
+      });
+      setWorkingDays((prevMap) =>
+        new Map(prevMap).set(markedRes.date, markedRes)
+      );
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      toast.error("Failed to save attendance.");
+    } finally {
+      setIsModalLoading(false); // Stop loading
     }
   };
 
-  const removeAttendance = () => {
-    setStudentAttendance((prev) => {
-      const updatedRecords = prev.attendanceRecords.filter(
-        (record) => record.date !== modalData.date
-      );
-
-      return {
-        ...prev,
-        attendanceRecords: updatedRecords,
-      };
-    });
-    setWorkingDays((prevMap) => {
-      const newMap = new Map(prevMap);
-      newMap.delete(modalData.date);
-      return newMap;
-    });
-    setIsModalOpen(false);
-  };
-
-  useEffect(() => {
-    if (!selectedStudent) return;
-    fetchStudentAttendance(selectedStudent.userId);
-  }, [selectedStudent]);
-
-  const markUserAttendance = async () => {
-    setIsLoading(true);
-    const filterOutHolidays = studentAttendance.attendanceRecords.filter(
-      (item) => typeof item === "object" && !holidays.has(item.date)
+  const removeAttendance = async () => {
+    // Find the record to delete
+    const recordToDelete = studentAttendance.attendanceRecords.find(
+      (record) => record.date === modalData.date
     );
+
+    if (!recordToDelete || !recordToDelete.$id) {
+      toast.error("Cannot remove an unsaved record.");
+      return;
+    }
+
+    setIsModalLoading(true); // Start loading
     try {
-      const data = await attendanceService.markUserAttendance(
-        {
-          ...studentAttendance,
-          attendanceRecords: filterOutHolidays,
-        },
-        false
-      );
-      setStudentAttendance(data || []);
-      calculateStats({ data, setAttendanceStats });
-      toast.success("Attendance marked successfully!");
+      await newAttendanceService.deleteAttendance(recordToDelete.$id);
+
+      toast.success("Attendance removed successfully!");
+      setStudentAttendance((prev) => {
+        const updatedRecords = prev.attendanceRecords.filter(
+          (record) => record.date !== modalData.date
+        );
+
+        return {
+          ...prev,
+          attendanceRecords: updatedRecords,
+        };
+      });
+      setWorkingDays((prevMap) => {
+        const newMap = new Map(prevMap);
+        newMap.delete(modalData.date);
+        return newMap;
+      });
+      setIsModalOpen(false);
     } catch (error) {
-      console.error("Error marking attendance", error);
-      toast.error("Failed to mark attendance.");
+      console.error("Error removing attendance:", error);
+      toast.error("Failed to remove attendance.");
     } finally {
-      setIsLoading(false);
+      setIsModalLoading(false); // Stop loading
     }
   };
 
@@ -343,20 +389,38 @@ const MarkStudentAttendance = () => {
     }
     const selectedDateData = workingDays.get(formattedDate);
 
+    // Don't show anything if data exists but it's not a teacher
+    // Only teachers can see the details in the tile
+    if (!isMarkingAllowed) {
+      return null;
+    }
+
     return (
       <div
         className="w-full h-full flex flex-col cursor-pointer"
         onDoubleClick={() => openModal(date)}
       >
         <div className="flex flex-col justify-center items-center text-center text-xs p-1">
-          {selectedDateData?.inTime && (
+          {selectedDateData?.markedAt ? (
             <div className="italic text-gray-600 mb-1">
-              {`In: ${selectedDateData.inTime} Out: ${selectedDateData.outTime}`}
+              {`Marked At: ${format(
+                new Date(selectedDateData.markedAt),
+                "hh:mm a"
+              )}`}
+            </div>
+          ) : (
+            <div className="italic text-gray-600 mb-1">
+              {selectedDateData
+                ? `Marked At: ${format(
+                    new Date(selectedDateData.$updatedAt),
+                    "hh:mm a"
+                  )}`
+                : "-"}
             </div>
           )}
-          {selectedDateData?.reason && (
+          {selectedDateData?.remarks && (
             <div className="italic text-gray-600">
-              {selectedDateData.reason}
+              {selectedDateData.remarks}
             </div>
           )}
         </div>
@@ -372,7 +436,7 @@ const MarkStudentAttendance = () => {
     }
     const selectedDateData = workingDays.get(formattedDate);
     if (!selectedDateData) return null;
-    if (selectedDateData.attendanceStatus === "Present") return "present-tile";
+    if (selectedDateData.status === "present") return "present-tile";
     return "absent-tile";
   };
 
@@ -386,11 +450,11 @@ const MarkStudentAttendance = () => {
 
   function getStatusColor(status) {
     switch (status) {
-      case "Present":
+      case "present":
         return "text-green-600";
-      case "Absent":
+      case "absent":
         return "text-red-600";
-      case "Late":
+      case "late":
         return "text-amber-600";
       default:
         return "text-gray-600";
@@ -407,13 +471,18 @@ const MarkStudentAttendance = () => {
             <div className="w-full sm:w-1/3 ">
               <CustomSelectData
                 label="Select Student"
-                placeholder="Select student"
+                placeholder={
+                  isLoading ? "Loading students..." : "Select student"
+                }
                 labelKey="userName"
-                valueKey="$id"
+                valueKey="$id" // Using $id as value key, but onChange gets the whole object
                 value={selectedStudent}
                 onChange={setSelectedStudent}
                 options={batchStudents}
-                renderOptionLabel={(option) => ( option.studentId + "-" +  option.userName)}
+                renderOptionLabel={(option) =>
+                  option.studentId + "-" + option.userName
+                }
+                disabled={isLoading}
               />
             </div>
 
@@ -427,7 +496,7 @@ const MarkStudentAttendance = () => {
                       className="text-gray-500 dark:text-gray-400 mr-2"
                     />
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                     {studentAttendance.userName}
+                      {studentAttendance.userName}
                     </p>
                   </div>
                   <div className="flex items-center">
@@ -441,27 +510,6 @@ const MarkStudentAttendance = () => {
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Mark Attendance Button */}
-            {studentAttendance && (
-              <button
-                onClick={markUserAttendance}
-                disabled={isLoading}
-                className="w-full sm:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle size={18} />
-                    <span>Mark Attendance</span>
-                  </>
-                )}
-              </button>
             )}
           </div>
         ) : (
@@ -507,11 +555,11 @@ const MarkStudentAttendance = () => {
                       <span
                         className={`font-medium ${getStatusColor(
                           workingDays.get(format(selectedDate, "yyyy-MM-dd"))
-                            ?.attendanceStatus
+                            ?.status
                         )}`}
                       >
                         {workingDays.get(format(selectedDate, "yyyy-MM-dd"))
-                          ?.attendanceStatus || "Not Marked"}
+                          ?.status || "Not Marked"}
                       </span>
                     </p>
                   </div>
@@ -537,26 +585,6 @@ const MarkStudentAttendance = () => {
                   </>
                 )}
               </button>
-
-              {distance < batchData?.circleRadius && studentAttendance && (
-                <button
-                  onClick={markUserAttendance}
-                  disabled={isLoading}
-                  className="w-full xs:w-auto min-w-40 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={18} />
-                      <span>Mark Attendance</span>
-                    </>
-                  )}
-                </button>
-              )}
             </div>
           </div>
         )}
@@ -594,18 +622,14 @@ const MarkStudentAttendance = () => {
       {/* Attendance Section */}
       <div className="">
         {isLoadingAttendance ? (
-          <div className="flex items-center justify-center min-h-screen">
-            <ClipLoader
-              size={50}
-              color={"#123abc"}
-              loading={isLoadingAttendance}
-            />
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 size={50} className="text-blue-500 animate-spin" />
           </div>
         ) : (
           studentAttendance && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 rounded-lg">
-                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4">
+              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4 font-semibold text-lg">
                   {" "}
                   <FaCalendar /> Attendance Calendar - {currentMonth}
                 </h1>
@@ -618,8 +642,9 @@ const MarkStudentAttendance = () => {
                     !isTeacher ? new Date(profile.enrolledAt) : undefined
                   }
                   handleActiveStartDateChange={handleMonthChange}
+                  openModal={openModal} // Pass openModal to calendar
                   distance={distance}
-                  canMarkPrevious={batchData.canMarkPrevious}
+                  canMarkPrevious={!batchData.canMarkPrevious}
                   enableNextTiles={isTeacher}
                   attendanceTime={batchData.attendanceTime}
                   circleRadius={batchData.circleRadius}
@@ -639,189 +664,154 @@ const MarkStudentAttendance = () => {
             </div>
           )
         )}
+        {isTeacher && !studentAttendance && !isLoadingAttendance && (
+          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-md">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">
+              Please select a student to view their attendance.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Attendance Modal */}
+      {/* Attendance Modal (IMPROVED) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold mb-4 dark:text-white">
-              {modalData.isMarked ? "Edit Attendance" : "Mark Attendance"}
-            </h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <h2 className="text-xl font-semibold dark:text-white">
+                {modalData.$id ? "Edit Attendance" : "Mark Attendance"}
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                disabled={isModalLoading}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-            <div className="space-y-3">
-              {/* Attendance Type Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      inTime: format(new Date(), "HH:mm"),
-                      outTime: "17:00",
-                      attendanceStatus: "Present",
-                      type: "",
-                      isMarked: true,
-                    }))
-                  }
-                  className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    modalData.attendanceStatus === "Present"
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                  }`}
-                >
-                  Present
-                </button>
-                <button
-                  onClick={() =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      inTime: "",
-                      outTime: "",
-                      attendanceStatus: "Absent",
-                      type: "CL",
-                      isMarked: true,
-                    }))
-                  }
-                  className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    modalData.attendanceStatus === "Absent"
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                  }`}
-                >
-                  Absent
-                </button>
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              {/* Date Info */}
+              <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <Calendar size={18} className="text-blue-500 mr-3" />
+                <span className="text-md font-medium text-gray-800 dark:text-gray-200">
+                  Date:{" "}
+                  {format(new Date(modalData.date.replace(/-/g, "/")), "PPP")}
+                </span>
               </div>
 
-              {/* Time Inputs */}
-              {modalData.attendanceStatus === "Present" && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
-                      In Time:
-                    </label>
-                    <input
-                      disabled={!isTeacher}
-                      type="time"
-                      value={modalData.inTime}
-                      onChange={(e) =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          inTime: e.target.value,
-                        }))
-                      }
-                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
-                      Out Time:
-                    </label>
-                    <input
-                      type="time"
-                      value={modalData.outTime}
-                      onChange={(e) =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          outTime: e.target.value,
-                        }))
-                      }
-                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+              {/* Status Buttons */}
+              <div>
+                <label className="block text-sm font-medium mb-2 dark:text-gray-200">
+                  Status
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() =>
+                      setModalData((prev) => ({
+                        ...prev,
+
+                        markedBy: profile.userId,
+                        status: "present",
+                      }))
+                    }
+                    disabled={isModalLoading}
+                    className={`p-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                      modalData.status === "present"
+                        ? "bg-green-500 text-white shadow-md ring-2 ring-green-300"
+                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
+                    }`}
+                  >
+                    <CheckCircle size={16} /> Present
+                  </button>
+                  <button
+                    onClick={() =>
+                      setModalData((prev) => ({
+                        ...prev,
+
+                        markedBy: profile.userId,
+                        status: "absent",
+                      }))
+                    }
+                    disabled={isModalLoading}
+                    className={`p-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                      modalData.status === "absent"
+                        ? "bg-red-500 text-white shadow-md ring-2 ring-red-300"
+                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
+                    }`}
+                  >
+                    <XCircle size={16} /> Absent
+                  </button>
                 </div>
+              </div>
+
+              {/* Remarks Text Input */}
+              <div>
+                <label
+                  htmlFor="remarks"
+                  className="block text-sm font-medium mb-1 dark:text-gray-200"
+                >
+                  Remarks (Optional)
+                </label>
+                <textarea
+                  id="remarks"
+                  value={modalData.remarks}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      remarks: e.target.value,
+                    }))
+                  }
+                  disabled={isModalLoading}
+                  className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  rows={3}
+                  placeholder="e.g., Sick leave, half day..."
+                />
+              </div>
+            </div>
+
+            {/* Footer (Action Buttons) */}
+            <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 flex items-center justify-between rounded-b-lg">
+              {/* Delete/Undo Button (Left-aligned) */}
+              {modalData.$id ? (
+                <button
+                  onClick={removeAttendance}
+                  disabled={isModalLoading}
+                  className="p-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {isModalLoading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <>
+                      <Trash2 size={16} /> Delete Entry
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div></div> // Empty div to keep other buttons on the right
               )}
 
-              {/* Reason Text Input */}
-              {modalData.attendanceStatus === "Absent" && (
-                <div>
-                  <label className="block text-sm font-medium mb-1 dark:text-gray-200">
-                    Absent Type:
-                  </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <button
-                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                        modalData.type === "CL"
-                          ? "bg-purple-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                      }`}
-                      onClick={() =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          type: "CL",
-                        }))
-                      }
-                    >
-                      Casual Leave
-                    </button>
-                    <button
-                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                        modalData.type === "SL"
-                          ? "bg-purple-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                      }`}
-                      onClick={() =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          type: "SL",
-                        }))
-                      }
-                    >
-                      Sick Leave
-                    </button>
-                    <button
-                      className={`p-2.5 rounded-lg text-sm font-medium transition-colors ${
-                        modalData.type === "Excess"
-                          ? "bg-purple-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                      }`}
-                      onClick={() =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          type: "Excess",
-                        }))
-                      }
-                    >
-                      Excess
-                    </button>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1 dark:text-gray-200">
-                      Reason:
-                    </label>
-                    <textarea
-                      value={modalData.reason}
-                      onChange={(e) =>
-                        setModalData((prev) => ({
-                          ...prev,
-                          reason: e.target.value,
-                        }))
-                      }
-                      className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              )}
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mt-6">
+              {/* Cancel and Save Buttons (Right-aligned) */}
+              <div className="flex gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
+                  disabled={isModalLoading}
+                  className="p-2.5 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={removeAttendance}
-                  className="p-2.5 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Undo marking
-                </button>
-                <button
                   onClick={saveAttendance}
-                  className="p-2.5 bg-blue-500 dark:bg-blue-600 col-span-2 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  disabled={isModalLoading}
+                  className="p-2.5 px-6 bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center min-w-[100px]"
                 >
-                  Save
+                  {isModalLoading ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    "Save"
+                  )}
                 </button>
               </div>
             </div>

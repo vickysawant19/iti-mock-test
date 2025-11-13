@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 
 export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
-  if (!data || data.attendanceRecords.length === 0) {
+  if (!data || data.length === 0) {
     const stats = {
       userId: data.userId,
       userName: data.userName,
@@ -16,19 +16,13 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
     setAttendanceStats && setAttendanceStats(stats);
     return stats;
   }
-  
-
-  setAttendance && setAttendance(data.attendanceRecords);
-
+  setAttendance && setAttendance(data);
   // Calculate attendance statistics
   let presentDays = 0;
   let absentDays = 0;
   let holidayDays = 0;
   const monthlyAttendance = {};
-
-  
-
-  data.attendanceRecords.forEach((record) => {
+  data.forEach((record) => {
     if (typeof record === "string") return;
     const month = format(new Date(record.date), "MMMM yyyy");
 
@@ -43,10 +37,10 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
     if (record.isHoliday) {
       holidayDays++;
       monthlyAttendance[month].holidayDays++;
-    } else if (record.attendanceStatus === "Present") {
+    } else if (record.status === "present") {
       presentDays++;
       monthlyAttendance[month].presentDays++;
-    } else if (record.attendanceStatus === "Absent") {
+    } else if (record.status === "absent") {
       absentDays++;
       monthlyAttendance[month].absentDays++;
     }

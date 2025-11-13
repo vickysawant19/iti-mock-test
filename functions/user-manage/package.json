@@ -5,10 +5,11 @@
   "main": "src/main.js",
   "type": "module",
   "scripts": {
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "migrate-attendance": "node src/migrateAttendanceScript.js"
   },
   "dependencies": {
-    "node-appwrite": "^14.1.0"
+    "node-appwrite": "^20.3.0"
   },
   "devDependencies": {
     "prettier": "^3.2.5"

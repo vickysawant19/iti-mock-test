@@ -126,8 +126,8 @@ export const menuConfig = [
         roles: ["teacher"],
       },
       {
-        teacherLabel: "Mark Student Attendance",
-        studentLabel: "Mark My Attendance",
+        teacherLabel: "Mark Attendance",
+        studentLabel: "My Attendance",
         path: "/attendance/mark-student-attendance",
         icon: FaCalendarCheck,
         roles: ["teacher", "student"],
@@ -138,13 +138,13 @@ export const menuConfig = [
         icon: FaCalendarAlt,
         roles: ["teacher"],
       },
-      {
-        teacherLabel: "Check Attendance",
-        studentLabel: "Check My Attendance",
-        path: "/attendance/check-attendance",
-        icon: FaCalendarAlt,
-        roles: ["teacher", "student"],
-      },
+      // {
+      //   teacherLabel: "Check Attendance",
+      //   studentLabel: "Check My Attendance",
+      //   path: "/attendance/check-attendance",
+      //   icon: FaCalendarAlt,
+      //   roles: ["teacher", "student"],
+      // },
     ],
   },
   {
