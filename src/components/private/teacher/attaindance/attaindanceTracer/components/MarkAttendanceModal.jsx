@@ -17,14 +17,13 @@ const MarkAttendanceModal = ({
   useEffect(() => {
     const statuses = {};
     students.forEach((student) => {
-      const record = existingAttendance.find(
+      const record = existingAttendance.filter(
         (att) => att.userId === student.userId
       );
-      const dayRecord = record?.attendanceRecords.find(
-        (rec) => rec.date.split("T")[0] === date
-      );
-      statuses[student.userId] = dayRecord?.attendanceStatus || "Absent";
+      const dayRecord = record?.find((rec) => rec.date === date);
+      statuses[student.userId] = dayRecord?.status || "absent";
     });
+
     setAttendanceStatuses(statuses);
   }, [isOpen, students, date, existingAttendance]);
 
@@ -57,24 +56,24 @@ const MarkAttendanceModal = ({
   };
 
   const presentCount = Object.values(attendanceStatuses).filter(
-    (s) => s === "Present"
+    (s) => s === "present"
   ).length;
   const absentCount = Object.values(attendanceStatuses).filter(
-    (s) => s === "Absent"
+    (s) => s === "absent"
   ).length;
 
   const filteredStudents = students.filter((student) => {
     if (filter === "present")
-      return attendanceStatuses[student.userId] === "Present";
+      return attendanceStatuses[student.userId] === "present";
     if (filter === "absent")
-      return attendanceStatuses[student.userId] === "Absent";
+      return attendanceStatuses[student.userId] === "absent";
     return true;
   });
 
   const markAllPresent = () => {
     const newStatuses = {};
     students.forEach((student) => {
-      newStatuses[student.userId] = "Present";
+      newStatuses[student.userId] = "present";
     });
     setAttendanceStatuses(newStatuses);
   };
@@ -82,7 +81,7 @@ const MarkAttendanceModal = ({
   const markAllAbsent = () => {
     const newStatuses = {};
     students.forEach((student) => {
-      newStatuses[student.userId] = "Absent";
+      newStatuses[student.userId] = "absent";
     });
     setAttendanceStatuses(newStatuses);
   };
@@ -91,11 +90,13 @@ const MarkAttendanceModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 animate-fadeIn dark:bg-opacity-80">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 dark:from-indigo-800 dark:to-purple-800">
+        <div className="bg-linear-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 dark:from-indigo-800 dark:to-purple-800">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold">Mark Attendance</h2>
-              <p className="text-indigo-100 text-xs dark:text-indigo-200">{formatDate(date)}</p>
+              <p className="text-indigo-100 text-xs dark:text-indigo-200">
+                {formatDate(date)}
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -111,9 +112,13 @@ const MarkAttendanceModal = ({
           <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Users className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Total</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                Total
+              </span>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{students.length}</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {students.length}
+            </p>
           </div>
           <div className="flex-1 bg-green-50 dark:bg-green-900 rounded-lg px-3 py-2 border border-green-200 dark:border-green-700">
             <div className="flex items-center gap-1.5 mb-0.5">
@@ -122,14 +127,20 @@ const MarkAttendanceModal = ({
                 Present
               </span>
             </div>
-            <p className="text-xl font-bold text-green-700 dark:text-green-200">{presentCount}</p>
+            <p className="text-xl font-bold text-green-700 dark:text-green-200">
+              {presentCount}
+            </p>
           </div>
           <div className="flex-1 bg-red-50 dark:bg-red-900 rounded-lg px-3 py-2 border border-red-200 dark:border-red-700">
             <div className="flex items-center gap-1.5 mb-0.5">
               <UserX className="w-3.5 h-3.5 text-red-600 dark:text-red-300" />
-              <span className="text-xs font-medium text-red-600 dark:text-red-300">Absent</span>
+              <span className="text-xs font-medium text-red-600 dark:text-red-300">
+                Absent
+              </span>
             </div>
-            <p className="text-xl font-bold text-red-700 dark:text-red-200">{absentCount}</p>
+            <p className="text-xl font-bold text-red-700 dark:text-red-200">
+              {absentCount}
+            </p>
           </div>
         </div>
 
@@ -194,7 +205,7 @@ const MarkAttendanceModal = ({
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    <div className="w-9 h-9 bg-linear-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                       {student.userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -209,10 +220,10 @@ const MarkAttendanceModal = ({
                   <div className="flex gap-2">
                     <button
                       onClick={() =>
-                        handleStatusChange(student.userId, "Present")
+                        handleStatusChange(student.userId, "present")
                       }
                       className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        attendanceStatuses[student.userId] === "Present"
+                        attendanceStatuses[student.userId] === "present"
                           ? "bg-green-600 text-white dark:bg-green-800"
                           : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                       }`}
@@ -221,10 +232,10 @@ const MarkAttendanceModal = ({
                     </button>
                     <button
                       onClick={() =>
-                        handleStatusChange(student.userId, "Absent")
+                        handleStatusChange(student.userId, "absent")
                       }
                       className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        attendanceStatuses[student.userId] === "Absent"
+                        attendanceStatuses[student.userId] === "absent"
                           ? "bg-red-600 text-white dark:bg-red-800"
                           : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                       }`}
@@ -251,7 +262,7 @@ const MarkAttendanceModal = ({
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 dark:from-indigo-800 dark:to-purple-800 dark:hover:from-indigo-900 dark:hover:to-purple-900"
+              className="flex-1 px-4 py-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 dark:from-indigo-800 dark:to-purple-800 dark:hover:from-indigo-900 dark:hover:to-purple-900"
             >
               {isLoading ? (
                 <>

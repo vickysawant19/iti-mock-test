@@ -46,8 +46,8 @@ const AttendanceTableBody = ({
           if (!holidays.has(fullDate)) {
             workingDays++;
             const status = studentRecords.get(fullDate);
-            if (status === "Present") presentDays++;
-            else if (status === "Absent") absentDays++;
+            if (status === "present") presentDays++;
+            else if (status === "absent") absentDays++;
           }
         });
 
@@ -66,8 +66,14 @@ const AttendanceTableBody = ({
           <tr
             key={student.userId}
             className={`hover:bg-indigo-50 dark:hover:bg-indigo-900 transition-colors ${
-              idx % 2 === 0 ? "bg-gray-50 dark:bg-gray-800" : "bg-white dark:bg-gray-900"
-            } ${editStudentId === student.userId ? "bg-yellow-100 dark:bg-yellow-900" : ""}`}
+              idx % 2 === 0
+                ? "bg-gray-50 dark:bg-gray-800"
+                : "bg-white dark:bg-gray-900"
+            } ${
+              editStudentId === student.userId
+                ? "bg-yellow-100 dark:bg-yellow-900"
+                : ""
+            }`}
           >
             <td className="py-3 px-4 border border-gray-300 dark:border-gray-700 sticky left-0 bg-inherit z-10 font-medium text-gray-900 dark:text-gray-100 w-48 min-w-48 max-w-48">
               <div className="flex flex-col">
@@ -157,30 +163,32 @@ const AttendanceTableBody = ({
                           onAttendanceStatusChange(
                             student.userId,
                             fullDate,
-                            status === "Present" ? "Absent" : "Present"
+                            status === "present" ? "absent" : "present"
                           )
                         }
                         disabled={isStudentUpdating(student.userId)} // Disable button if any attendance for this student is loading
                         className={`px-2 py-1 text-xs rounded ${
-                          status === "Present"
+                          status === "present"
                             ? "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200"
                             : "bg-red-200 text-red-800 dark:bg-red-700 dark:text-red-200"
                         }`}
                       >
-                        {status === "Present"
+                        {status === "present"
                           ? "P"
-                          : status === "Absent"
+                          : status === "absent"
                           ? "A"
                           : "-"}
                       </button>
                     )
                   ) : status ? (
-                    status === "Present" ? (
+                    status === "present" ? (
                       <span className="text-green-600 font-bold text-sm dark:text-green-400">
                         P
                       </span>
                     ) : (
-                      <span className="text-red-600 font-bold text-sm dark:text-red-400">A</span>
+                      <span className="text-red-600 font-bold text-sm dark:text-red-400">
+                        A
+                      </span>
                     )
                   ) : (
                     <span className="text-gray-300 dark:text-gray-500">-</span>

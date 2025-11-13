@@ -22,6 +22,7 @@ import {
 } from "date-fns";
 
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
@@ -36,6 +37,8 @@ const AttendanceRegister = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [editStudentId, setEditStudentId] = useState(null);
   const [updatingAttendance, setUpdatingAttendance] = useState(new Map()); // New state for loading spinner
+
+  const [newAttendance, setNewAttendance] = useState([]);
 
   const handleOpenModal = (date) => {
     setSelectedDate(date);
@@ -53,83 +56,40 @@ const AttendanceRegister = () => {
       new Map(prev).set(`${userId}-${date}`, true)
     );
     try {
-      const existingAttendanceRecord = attendance.find(
-        (att) => att.userId === userId
+      const existingAttendanceRecord = newAttendance.find(
+        (att) => att.userId === userId && att.date === date
       );
+      console.log("new attaendance", newAttendance);
+
+      console.log("existingAttendanceRecord", existingAttendanceRecord);
+      let attendanceResponse;
 
       if (existingAttendanceRecord) {
-        const updatedRecords = existingAttendanceRecord.attendanceRecords.map(
-          (record) =>
-            record.date.split("T")[0] === date
-              ? { ...record, attendanceStatus: newStatus }
-              : record
-        );
-
-        // If the date doesn't exist, add a new record
-        if (
-          !updatedRecords.some((record) => record.date.split("T")[0] === date)
-        ) {
-          updatedRecords.push({
-            date: date,
-            attendanceStatus: newStatus,
-            inTime: "09:30", // Default in-time
-            outTime: "17:00", // Default out-time
-            isMarked: true,
-          });
-        }
-        // Update the attendance record in the database
-        const attendanceResponse = await attendanceService.markUserAttendance({
-          userId,
-          userName: existingAttendanceRecord.userName,
-          batchId: selectedBatch,
-          attendanceRecords: updatedRecords,
-        });
-
-        // Update the attendance state with the new record
-        setAttendance((prev) =>
-          prev.map((att) =>
-            att.userId === userId
-              ? {
-                  ...att,
-                  attendanceRecords: attendanceResponse.attendanceRecords,
-                }
-              : att
-          )
+        attendanceResponse = await newAttendanceService.updateAttendance(
+          existingAttendanceRecord.$id,
+          {
+            status: newStatus,
+          }
         );
       } else {
-        // Create a new attendance record if none exists for the student
-        const student = students.find((s) => s.userId === userId);
-        const newRecord = {
+        // Update the attendance record in the database
+        attendanceResponse = await newAttendanceService.createAttendance({
           userId,
-          userName: student.userName,
           batchId: selectedBatch,
-          attendanceRecords: [
-            {
-              date: date,
-              attendanceStatus: newStatus,
-              inTime: "09:30", // Default in-time
-              outTime: "17:00", // Default out-time
-              isMarked: true,
-            },
-          ],
-        };
-        const response = await attendanceService.markUserAttendance(newRecord);
-        setAttendance((prev) => [...prev, response]);
+          tradeId: profile.tradeId,
+          date: date,
+          status: newStatus,
+          remarks: null,
+        });
       }
 
-      // After updating a single student's attendance, we need to re-fetch all students' attendance
-      // for the current batch to ensure the attendanceMap is up-to-date.
-      const updatedAttendanceData =
-        await attendanceService.getStudentsAttendance([
-          Query.equal("batchId", selectedBatch),
-          Query.equal(
-            "userId",
-            students.map((s) => s.userId)
-          ),
-          Query.orderDesc("$updatedAt"),
-          Query.select(["$id", "userId", "attendanceRecords"]),
-        ]);
-      setAttendance(updatedAttendanceData);
+      // Update the attendance state with the new record
+      setNewAttendance((prev) => {
+        return [
+          ...prev.filter((att) => att.$id !== attendanceResponse.$id),
+          attendanceResponse,
+        ];
+      });
     } catch (error) {
       console.error("Error updating attendance:", error);
     } finally {
@@ -142,38 +102,41 @@ const AttendanceRegister = () => {
   };
 
   const handleSaveAttendance = async (statuses) => {
-    const promises = Object.entries(statuses).map(async ([userId, status]) => {
-      const student = students.find((s) => s.userId === userId);
-      const record = {
-        userId,
-        userName: student.userName,
-        batchId: selectedBatch,
-        attendanceRecords: [
-          {
-            date: selectedDate,
-            attendanceStatus: status,
-            inTime: "09:30", // Default in-time
-            outTime: "17:00", // Default out-time
-            isMarked: true,
-          },
-        ],
-      };
-      return attendanceService.markUserAttendance(record);
-    });
+    try {
+      const records = Object.entries(statuses).map(([userId, status]) => {
+        const record = {
+          userId,
+          batchId: selectedBatch,
+          tradeId:
+            batches.find((b) => b.$id === selectedBatch)?.tradeId ||
+            profile.tradeId,
+          date: selectedDate,
+          status,
+          marketAt: new Date().toISOString(),
+          remarks: null,
+        };
+        return record;
+      });
 
-    await Promise.all(promises);
+      const response = await newAttendanceService.markBatchAttendance(
+        selectedBatch,
+        selectedDate,
+        records
+      );
 
-    // Refresh attendance data
-    const attendanceResponse = await attendanceService.getStudentsAttendance([
-      Query.equal("batchId", selectedBatch),
-      Query.equal(
-        "userId",
-        students.map((s) => s.userId)
-      ),
-      Query.orderDesc("$updatedAt"),
-      Query.select(["$id", "userId", "attendanceRecords"]),
-    ]);
-    setAttendance(attendanceResponse);
+      setNewAttendance((prev) => {
+        const successIds = new Set(
+          response.success.map((record) => record.$id)
+        );
+        return [
+          ...prev.filter((att) => !successIds.has(att.$id)),
+          ...response.success,
+        ];
+      });
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+    }
   };
 
   useEffect(() => {
@@ -195,7 +158,6 @@ const AttendanceRegister = () => {
 
   useEffect(() => {
     if (!selectedBatch) return;
-
     const fetchStudentsAndAttendance = async () => {
       setLoading(true);
       try {
@@ -245,6 +207,42 @@ const AttendanceRegister = () => {
     };
     fetchStudentsAndAttendance();
   }, [selectedBatch]);
+
+  useEffect(() => {
+    const fetchNewAttendance = async () => {
+      if (!selectedBatch) return;
+      if (!students || students.length === 0) return;
+      const studentIds = students.map((student) => student.userId);
+      try {
+        const newAttendance = await newAttendanceService.getMonthlyAttendance(
+          studentIds,
+          selectedBatch,
+          selectedMonth.getFullYear(),
+          selectedMonth.getMonth() + 1
+        );
+        setNewAttendance(newAttendance.documents);
+      } catch (error) {
+        console.error("Error fetching new attendance:", error);
+      }
+    };
+    fetchNewAttendance();
+  }, [students, selectedMonth]);
+
+  const newAttendanceMap = useMemo(() => {
+    const map = new Map();
+    newAttendance.forEach((att) => {
+      const existedMap = map.get(att.userId);
+      if (existedMap) {
+        existedMap.set(att.date, att.status);
+      } else {
+        const newMap = new Map();
+        newMap.set(att.date, att.status);
+        map.set(att.userId, newMap);
+      }
+    });
+    console.log("new attendance map", map);
+    return map;
+  }, [newAttendance]);
 
   // Memoized attendance map for O(1) lookups
   const attendanceMap = useMemo(() => {
@@ -344,7 +342,7 @@ const AttendanceRegister = () => {
             students={students}
             selectedMonth={selectedMonth}
             holidays={holidays}
-            attendanceMap={attendanceMap}
+            attendanceMap={newAttendanceMap} // Use newAttendanceMap here
             calculatePreviousMonthsData={calculatePreviousMonthsData}
             formatDate={format}
             getDaysInMonth={getDaysInMonth}
@@ -363,7 +361,7 @@ const AttendanceRegister = () => {
           date={selectedDate}
           batchId={selectedBatch}
           onSave={handleSaveAttendance}
-          existingAttendance={attendance}
+          existingAttendance={newAttendance}
         />
       </div>
     </div>

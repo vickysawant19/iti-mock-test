@@ -27,7 +27,7 @@ const AttendanceTableFooter = ({
           let dailyPresent = 0;
           students.forEach((student) => {
             const studentRecords = attendanceMap.get(student.userId);
-            if (studentRecords?.get(fullDate) === "Present") {
+            if (studentRecords?.get(fullDate) === "present") {
               dailyPresent++;
             }
           });
@@ -65,7 +65,7 @@ const AttendanceTableFooter = ({
           let dailyAbsent = 0;
           students.forEach((student) => {
             const studentRecords = attendanceMap.get(student.userId);
-            if (studentRecords?.get(fullDate) === "Absent") {
+            if (studentRecords?.get(fullDate) === "absent") {
               dailyAbsent++;
             }
           });
@@ -104,7 +104,7 @@ const AttendanceTableFooter = ({
           students.forEach((student) => {
             const studentRecords = attendanceMap.get(student.userId);
             const status = studentRecords?.get(fullDate);
-            if (status === "Present" || status === "Absent") {
+            if (status === "present" || status === "absent") {
               dailyTotal++;
             }
           });

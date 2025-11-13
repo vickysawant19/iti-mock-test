@@ -27,12 +27,13 @@ class NewAttendanceService {
         offset += response.documents.length;
 
         // Check if we've fetched all documents
-        hasMore = response.documents.length === limit && offset < response.total;
+        hasMore =
+          response.documents.length === limit && offset < response.total;
       }
 
       return {
         documents: allDocuments,
-        total: allDocuments.length
+        total: allDocuments.length,
       };
     } catch (error) {
       throw error;
@@ -45,7 +46,7 @@ class NewAttendanceService {
       const queries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
-        Query.orderDesc("date")
+        Query.orderDesc("date"),
       ];
 
       return (await this.fetchAllDocuments(queries)).documents;
@@ -62,7 +63,7 @@ class NewAttendanceService {
         Query.equal("batchId", batchId),
         Query.greaterThanEqual("date", this.formatDate(startDate)),
         Query.lessThanEqual("date", this.formatDate(endDate)),
-        Query.orderDesc("date")
+        Query.orderDesc("date"),
       ];
 
       return await this.fetchAllDocuments(queries);
@@ -81,7 +82,7 @@ class NewAttendanceService {
           Query.equal("userId", userId),
           Query.equal("batchId", batchId),
           Query.equal("date", this.formatDate(date)),
-          Query.limit(1)
+          Query.limit(1),
         ]
       );
       return data.documents.length > 0 ? data.documents[0] : null;
@@ -95,7 +96,7 @@ class NewAttendanceService {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.equal("date", this.formatDate(date))
+        Query.equal("date", this.formatDate(date)),
       ];
 
       return await this.fetchAllDocuments(queries);
@@ -114,7 +115,7 @@ class NewAttendanceService {
           Query.equal("batchId", batchId),
           Query.orderDesc("date"),
           Query.limit(limit),
-          Query.offset(offset)
+          Query.offset(offset),
         ]
       );
       return data;
@@ -128,7 +129,7 @@ class NewAttendanceService {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.orderDesc("date")
+        Query.orderDesc("date"),
       ];
 
       return await this.fetchAllDocuments(queries);
@@ -142,11 +143,13 @@ class NewAttendanceService {
     try {
       const queries = [
         Query.equal("tradeId", tradeId),
-        Query.orderDesc("date")
+        Query.orderDesc("date"),
       ];
 
       if (startDate) {
-        queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+        queries.push(
+          Query.greaterThanEqual("date", this.formatDate(startDate))
+        );
       }
       if (endDate) {
         queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
@@ -159,15 +162,22 @@ class NewAttendanceService {
   }
 
   // Get attendance by status
-  async getAttendanceByStatus(batchId, status, startDate = null, endDate = null) {
+  async getAttendanceByStatus(
+    batchId,
+    status,
+    startDate = null,
+    endDate = null
+  ) {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.equal("status", status)
+        Query.equal("status", status),
       ];
 
       if (startDate) {
-        queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+        queries.push(
+          Query.greaterThanEqual("date", this.formatDate(startDate))
+        );
       }
       if (endDate) {
         queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
@@ -182,7 +192,16 @@ class NewAttendanceService {
   }
 
   // Create single attendance record
-  async createAttendance({userId, batchId, tradeId, date, status, remarks = null, markedAt = null, markedBy = null}) {
+  async createAttendance({
+    userId,
+    batchId,
+    tradeId,
+    date,
+    status,
+    remarks = null,
+    markedAt = null,
+    markedBy = null,
+  }) {
     try {
       // Ensure date is in YYYY-MM-DD format (10 characters)
       const formattedDate = this.formatDate(date);
@@ -198,7 +217,7 @@ class NewAttendanceService {
           status,
           remarks: remarks || null,
           markedAt: markedAt || new Date().toISOString(),
-          markedBy: markedBy || null
+          markedBy: markedBy || null,
         }
       );
       return data;
@@ -216,7 +235,7 @@ class NewAttendanceService {
       for (const record of attendanceRecords) {
         try {
           const formattedDate = this.formatDate(record.date);
-          
+
           const data = await this.database.createDocument(
             conf.databaseId,
             conf.newAttendanceCollectionId,
@@ -227,7 +246,7 @@ class NewAttendanceService {
               tradeId: record.tradeId || null,
               date: formattedDate,
               status: record.status,
-              remarks: record.remarks || null
+              remarks: record.remarks || null,
             }
           );
           results.push(data);
@@ -236,7 +255,7 @@ class NewAttendanceService {
           if (error.code !== 409) {
             errors.push({
               record,
-              error: error.message
+              error: error.message,
             });
           }
         }
@@ -247,7 +266,7 @@ class NewAttendanceService {
         errors,
         total: attendanceRecords.length,
         created: results.length,
-        failed: errors.length
+        failed: errors.length,
       };
     } catch (error) {
       throw error;
@@ -309,15 +328,22 @@ class NewAttendanceService {
   }
 
   // Get attendance statistics for a student
-  async getStudentAttendanceStats(userId, batchId, startDate = null, endDate = null) {
+  async getStudentAttendanceStats(
+    userId,
+    batchId,
+    startDate = null,
+    endDate = null
+  ) {
     try {
       const queries = [
         Query.equal("userId", userId),
-        Query.equal("batchId", batchId)
+        Query.equal("batchId", batchId),
       ];
 
       if (startDate) {
-        queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+        queries.push(
+          Query.greaterThanEqual("date", this.formatDate(startDate))
+        );
       }
       if (endDate) {
         queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
@@ -332,10 +358,10 @@ class NewAttendanceService {
         late: 0,
         holiday: 0,
         percentage: 0,
-        workingDays: 0
+        workingDays: 0,
       };
 
-      data.documents.forEach(doc => {
+      data.documents.forEach((doc) => {
         if (doc.status === "present") stats.present++;
         else if (doc.status === "absent") stats.absent++;
         else if (doc.status === "late") stats.late++;
@@ -345,7 +371,7 @@ class NewAttendanceService {
       stats.workingDays = stats.total - stats.holiday;
       if (stats.workingDays > 0) {
         stats.percentage = parseFloat(
-          ((stats.present + stats.late) / stats.workingDays * 100).toFixed(2)
+          (((stats.present + stats.late) / stats.workingDays) * 100).toFixed(2)
         );
       }
 
@@ -359,10 +385,10 @@ class NewAttendanceService {
   async getBatchAttendanceStats(batchId, date) {
     try {
       const formattedDate = this.formatDate(date);
-      
+
       const queries = [
         Query.equal("batchId", batchId),
-        Query.equal("date", formattedDate)
+        Query.equal("date", formattedDate),
       ];
 
       const data = await this.fetchAllDocuments(queries);
@@ -373,10 +399,10 @@ class NewAttendanceService {
         absent: 0,
         late: 0,
         holiday: 0,
-        percentage: 0
+        percentage: 0,
       };
 
-      data.documents.forEach(doc => {
+      data.documents.forEach((doc) => {
         if (doc.status === "present") stats.present++;
         else if (doc.status === "absent") stats.absent++;
         else if (doc.status === "late") stats.late++;
@@ -385,7 +411,7 @@ class NewAttendanceService {
 
       if (stats.total > 0) {
         stats.percentage = parseFloat(
-          ((stats.present + stats.late) / stats.total * 100).toFixed(2)
+          (((stats.present + stats.late) / stats.total) * 100).toFixed(2)
         );
       }
 
@@ -395,15 +421,71 @@ class NewAttendanceService {
     }
   }
 
-  // Mark batch attendance for a specific date (loop approach)
+  // Mark batch attendance for a specific date (optimized approach)
   async markBatchAttendance(batchId, date, attendanceData) {
     try {
       const formattedDate = this.formatDate(date);
+
+      // Validate input
+      if (!attendanceData || attendanceData.length === 0) {
+        return {
+          success: [],
+          errors: [],
+          total: 0,
+          created: 0,
+          updated: 0,
+          failed: 0,
+        };
+      }
+
+      // Fetch existing records once
+      const existingDocs = await this.getBatchAttendanceByDate(
+        batchId,
+        formattedDate
+      );
+
+      // Create a Map for O(1) lookup instead of array.find() in loop
+      const existingRecordsMap = new Map(
+        existingDocs.documents.map((doc) => [doc.userId, doc])
+      );
+
       const results = [];
       const errors = [];
+      let createdCount = 0;
+      let updatedCount = 0;
 
-      for (const record of attendanceData) {
-        try {
+      // Use Promise.allSettled for parallel processing instead of sequential loop
+      const operations = attendanceData.map(async (record) => {
+        const existingRecord = existingRecordsMap.get(record.userId);
+
+        if (existingRecord) {
+          // Check if update is actually needed
+          const needsUpdate =
+            existingRecord.status !== record.status ||
+            existingRecord.remarks !== record.remarks;
+
+          if (needsUpdate) {
+            // Update existing record
+            const data = await this.database.updateDocument(
+              conf.databaseId,
+              conf.newAttendanceCollectionId,
+              existingRecord.$id,
+              {
+                status: record.status,
+                remarks: record.remarks || null,
+              }
+            );
+            return { type: "updated", data, userId: record.userId };
+          } else {
+            // No changes needed, return existing record
+            return {
+              type: "unchanged",
+              data: existingRecord,
+              userId: record.userId,
+            };
+          }
+        } else {
+          // Create new record
           const data = await this.database.createDocument(
             conf.databaseId,
             conf.newAttendanceCollectionId,
@@ -414,29 +496,55 @@ class NewAttendanceService {
               tradeId: record.tradeId || null,
               date: formattedDate,
               status: record.status,
-              remarks: record.remarks || null
+              remarks: record.remarks || null,
             }
           );
+          return { type: "created", data, userId: record.userId };
+        }
+      });
+
+      // Wait for all operations to complete
+      const settledResults = await Promise.allSettled(operations);
+
+      // Process results
+      settledResults.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          const { type, data } = result.value;
           results.push(data);
-        } catch (error) {
+
+          if (type === "created") {
+            createdCount++;
+          } else if (type === "updated") {
+            updatedCount++;
+          }
+        } else {
+          // Handle errors
+          const error = result.reason;
+          const userId = attendanceData[index].userId;
+
+          // Ignore conflict errors (409)
           if (error.code !== 409) {
             errors.push({
-              userId: record.userId,
-              error: error.message
+              userId,
+              error: error.message || "Unknown error",
+              code: error.code,
             });
           }
         }
-      }
+      });
 
       return {
         success: results,
         errors,
         total: attendanceData.length,
-        created: results.length,
-        failed: errors.length
+        created: createdCount,
+        updated: updatedCount,
+        unchanged: results.length - createdCount - updatedCount,
+        failed: errors.length,
       };
     } catch (error) {
-      throw error;
+      console.error("markBatchAttendance error:", error);
+      throw new Error(`Failed to mark batch attendance: ${error.message}`);
     }
   }
 
@@ -444,16 +552,18 @@ class NewAttendanceService {
   async getMonthlyAttendance(userId, batchId, year, month) {
     try {
       // Format dates as YYYY-MM-DD (10 characters)
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
       const lastDay = new Date(year, month, 0).getDate();
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
+        lastDay
+      ).padStart(2, "0")}`;
 
       const queries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
         Query.greaterThanEqual("date", startDate),
         Query.lessThanEqual("date", endDate),
-        Query.orderAsc("date")
+        Query.orderAsc("date"),
       ];
 
       return await this.fetchAllDocuments(queries);
@@ -468,7 +578,9 @@ class NewAttendanceService {
       const queries = [Query.equal("batchId", batchId)];
 
       if (startDate) {
-        queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+        queries.push(
+          Query.greaterThanEqual("date", this.formatDate(startDate))
+        );
       }
       if (endDate) {
         queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
@@ -478,7 +590,7 @@ class NewAttendanceService {
 
       // Group by userId
       const userAttendance = {};
-      data.documents.forEach(doc => {
+      data.documents.forEach((doc) => {
         if (!userAttendance[doc.userId]) {
           userAttendance[doc.userId] = {
             userId: doc.userId,
@@ -486,7 +598,7 @@ class NewAttendanceService {
             present: 0,
             late: 0,
             absent: 0,
-            holiday: 0
+            holiday: 0,
           };
         }
 
@@ -499,14 +611,20 @@ class NewAttendanceService {
 
       // Calculate percentage and filter
       const lowAttendanceStudents = Object.values(userAttendance)
-        .map(student => {
+        .map((student) => {
           const workingDays = student.total - student.holiday;
-          const percentage = workingDays > 0 
-            ? parseFloat(((student.present + student.late) / workingDays * 100).toFixed(2))
-            : 0;
+          const percentage =
+            workingDays > 0
+              ? parseFloat(
+                  (
+                    ((student.present + student.late) / workingDays) *
+                    100
+                  ).toFixed(2)
+                )
+              : 0;
           return { ...student, percentage, workingDays };
         })
-        .filter(student => student.percentage < threshold)
+        .filter((student) => student.percentage < threshold)
         .sort((a, b) => a.percentage - b.percentage);
 
       return lowAttendanceStudents;
@@ -519,7 +637,7 @@ class NewAttendanceService {
   async checkAttendanceExists(userId, batchId, date) {
     try {
       const formattedDate = this.formatDate(date);
-      
+
       const data = await this.database.listDocuments(
         conf.databaseId,
         conf.newAttendanceCollectionId,
@@ -527,7 +645,7 @@ class NewAttendanceService {
           Query.equal("userId", userId),
           Query.equal("batchId", batchId),
           Query.equal("date", formattedDate),
-          Query.limit(1)
+          Query.limit(1),
         ]
       );
       return data.documents.length > 0;
@@ -541,13 +659,16 @@ class NewAttendanceService {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.orderDesc("date")
+        Query.orderDesc("date"),
       ];
 
       const data = await this.fetchAllDocuments(queries);
 
       // Get unique dates
-      const dates = [...new Set(data.documents.map(doc => doc.date))].slice(0, limit);
+      const dates = [...new Set(data.documents.map((doc) => doc.date))].slice(
+        0,
+        limit
+      );
       return dates;
     } catch (error) {
       throw error;
@@ -555,12 +676,17 @@ class NewAttendanceService {
   }
 
   // Get attendance count by date range
-  async getAttendanceCountByDateRange(batchId, startDate, endDate, status = null) {
+  async getAttendanceCountByDateRange(
+    batchId,
+    startDate,
+    endDate,
+    status = null
+  ) {
     try {
       const queries = [
         Query.equal("batchId", batchId),
         Query.greaterThanEqual("date", this.formatDate(startDate)),
-        Query.lessThanEqual("date", this.formatDate(endDate))
+        Query.lessThanEqual("date", this.formatDate(endDate)),
       ];
 
       if (status) {
@@ -577,19 +703,23 @@ class NewAttendanceService {
   // Utility: Format date to YYYY-MM-DD (10 characters)
   formatDate(date) {
     if (!date) return null;
-     console.log(date)
+    console.log(date);
     // If already in correct format
-    if (typeof date === 'string' && date.length === 10 && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    if (
+      typeof date === "string" &&
+      date.length === 10 &&
+      date.match(/^\d{4}-\d{2}-\d{2}$/)
+    ) {
       return date;
     }
-    console.log("here")
+    console.log("here");
 
     // If Date object or other format, convert
     const dateObj = date instanceof Date ? date : new Date(date);
     const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+
     return `${year}-${month}-${day}`;
   }
 
@@ -603,11 +733,13 @@ class NewAttendanceService {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
-    
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
     const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
+      lastDay
+    ).padStart(2, "0")}`;
+
     return { startDate, endDate, year, month };
   }
 }
