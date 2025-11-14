@@ -1,10 +1,17 @@
 import { format } from "date-fns";
 
-export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
+export const calculateStats = ({
+  userId,
+  userName,
+  studentId,
+  data,
+  setAttendance,
+  setAttendanceStats,
+}) => {
   if (!data || data.length === 0) {
     const stats = {
-      userId: data.userId,
-      userName: data.userName,
+      userId,
+      userName,
       totalDays: 0,
       presentDays: 0,
       absentDays: 0,
@@ -22,6 +29,7 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
   let absentDays = 0;
   let holidayDays = 0;
   const monthlyAttendance = {};
+
   data.forEach((record) => {
     if (typeof record === "string") return;
     const month = format(new Date(record.date), "MMMM yyyy");
@@ -46,15 +54,15 @@ export const calculateStats = ({ data, setAttendance, setAttendanceStats }) => {
     }
   });
 
-  let totalDays = presentDays+absentDays;
+  let totalDays = presentDays + absentDays;
 
   const attendancePercentage =
     totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
 
   const stats = {
-    studentId : data.studentId,
-    userName: data.userName,
-    userId: data.userId,
+    studentId,
+    userName,
+    userId,
     totalDays,
     presentDays,
     absentDays,

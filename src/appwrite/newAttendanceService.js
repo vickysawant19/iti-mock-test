@@ -65,7 +65,9 @@ class NewAttendanceService {
         Query.orderDesc("date"),
       ];
 
-      return (await this.fetchAllDocuments(queries)).documents;
+      const result = (await this.fetchAllDocuments(queries)).documents;
+
+      return result;
     } catch (error) {
       throw error;
     }
@@ -413,6 +415,7 @@ class NewAttendanceService {
               )
             : 0,
       };
+
       return stats;
     } catch (error) {
       throw error;

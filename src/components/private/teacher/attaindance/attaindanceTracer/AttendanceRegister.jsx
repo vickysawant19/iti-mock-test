@@ -19,6 +19,7 @@ import {
   isBefore,
   parseISO,
   set,
+  endOfMonth,
 } from "date-fns";
 
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
@@ -71,7 +72,7 @@ const AttendanceRegister = () => {
           student.userId,
           selectedBatch,
           currentBatchStartDate,
-          selectedMonth
+          endOfMonth(subMonths(selectedMonth, 1)).toISOString()
         )
       );
       const allStats = await Promise.all(statsPromises);
@@ -80,12 +81,12 @@ const AttendanceRegister = () => {
       students.forEach((student, index) => {
         statsMap.set(student.userId, allStats[index]);
       });
-      
+
       setStudentStatsMap(statsMap);
     } catch (error) {
       console.log("fetching stats error ", error);
     }
-  }, [students, selectedBatch, batches, profile.batchId, selectedMonth]);
+  }, [students, selectedBatch, selectedMonth]);
 
   // Handle attendance status change
   const onAttendanceStatusChange = async (userId, date, newStatus) => {
