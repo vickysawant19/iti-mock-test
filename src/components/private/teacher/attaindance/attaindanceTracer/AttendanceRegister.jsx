@@ -29,14 +29,21 @@ const AttendanceRegister = () => {
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
   const [students, setStudents] = useState([]);
-  const [attendance, setAttendance] = useState([]);
+
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [holidays, setHolidays] = useState(new Map());
-  const [loading, setLoading] = useState(true);
+
+  // Enhanced loading states
+  const [loading, setLoading] = useState(true); // Initial load
+  const [loadingAttendance, setLoadingAttendance] = useState(false); // Month change
+  const [loadingBatch, setLoadingBatch] = useState(false); // Batch change
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [editStudentId, setEditStudentId] = useState(null);
-  const [updatingAttendance, setUpdatingAttendance] = useState(new Map()); // New state for loading spinner
+  const [updatingAttendance, setUpdatingAttendance] = useState(new Map());
+
+  const [newStudentStatsMap, setStudentStatsMap] = useState(new Map());
 
   const [newAttendance, setNewAttendance] = useState([]);
 
@@ -50,6 +57,36 @@ const AttendanceRegister = () => {
     setSelectedDate(null);
   };
 
+  // Extract stats fetching logic into a separate function
+  const fetchStudentStats = useCallback(async () => {
+    if (students.length === 0) return;
+    const currentBatchStartDate = batches.find(
+      (bt) => bt.$id === selectedBatch
+    )?.start_date;
+    if (!currentBatchStartDate) return;
+    try {
+      // Fetch stats for all students in parallel
+      const statsPromises = students.map((student) =>
+        newAttendanceService.getStudentAttendanceStats(
+          student.userId,
+          selectedBatch,
+          currentBatchStartDate,
+          selectedMonth
+        )
+      );
+      const allStats = await Promise.all(statsPromises);
+      // Create a map of userId to stats for easy lookup
+      const statsMap = new Map();
+      students.forEach((student, index) => {
+        statsMap.set(student.userId, allStats[index]);
+      });
+      
+      setStudentStatsMap(statsMap);
+    } catch (error) {
+      console.log("fetching stats error ", error);
+    }
+  }, [students, selectedBatch, batches, profile.batchId, selectedMonth]);
+
   // Handle attendance status change
   const onAttendanceStatusChange = async (userId, date, newStatus) => {
     setUpdatingAttendance((prev) =>
@@ -59,9 +96,7 @@ const AttendanceRegister = () => {
       const existingAttendanceRecord = newAttendance.find(
         (att) => att.userId === userId && att.date === date
       );
-      console.log("new attaendance", newAttendance);
 
-      console.log("existingAttendanceRecord", existingAttendanceRecord);
       let attendanceResponse;
 
       if (existingAttendanceRecord) {
@@ -72,7 +107,6 @@ const AttendanceRegister = () => {
           }
         );
       } else {
-        // Update the attendance record in the database
         attendanceResponse = await newAttendanceService.createAttendance({
           userId,
           batchId: selectedBatch,
@@ -83,13 +117,15 @@ const AttendanceRegister = () => {
         });
       }
 
-      // Update the attendance state with the new record
       setNewAttendance((prev) => {
         return [
           ...prev.filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
         ];
       });
+
+      // Recalculate stats after successful update
+      await fetchStudentStats();
     } catch (error) {
       console.error("Error updating attendance:", error);
     } finally {
@@ -133,12 +169,17 @@ const AttendanceRegister = () => {
           ...response.success,
         ];
       });
+
       handleCloseModal();
+
+      // Recalculate stats after successful batch save
+      await fetchStudentStats();
     } catch (error) {
       console.error("Error saving attendance:", error);
     }
   };
 
+  // Initial batch fetch
   useEffect(() => {
     const fetchBatches = async () => {
       try {
@@ -146,7 +187,7 @@ const AttendanceRegister = () => {
           Query.equal("teacherId", profile.userId),
         ]);
         setBatches(response.documents);
-        if (response.documents.length > 0) {
+        if (response.documents.reverse().length > 0) {
           setSelectedBatch(response.documents[0].$id);
         }
       } catch (error) {
@@ -156,9 +197,12 @@ const AttendanceRegister = () => {
     fetchBatches();
   }, [profile.userId]);
 
+  // Fetch students and old attendance when batch changes
   useEffect(() => {
     if (!selectedBatch) return;
+
     const fetchStudentsAndAttendance = async () => {
+      setLoadingBatch(true);
       setLoading(true);
       try {
         const batch = await batchService.getBatch(selectedBatch);
@@ -176,8 +220,8 @@ const AttendanceRegister = () => {
 
         if (studentIds.length === 0) {
           setStudents([]);
-          setAttendance([]);
           setLoading(false);
+          setLoadingBatch(false);
           return;
         }
 
@@ -189,30 +233,25 @@ const AttendanceRegister = () => {
         setStudents(
           students.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))
         );
-
-        const attendanceResponse =
-          await attendanceService.getStudentsAttendance([
-            Query.equal("batchId", selectedBatch),
-            Query.equal("userId", studentIds),
-            Query.orderDesc("$updatedAt"),
-            Query.select(["$id", "userId", "attendanceRecords"]),
-          ]);
-
-        setAttendance(attendanceResponse);
       } catch (error) {
         console.error("Error fetching students and attendance:", error);
       } finally {
         setLoading(false);
+        setLoadingBatch(false);
       }
     };
     fetchStudentsAndAttendance();
   }, [selectedBatch]);
 
+  // Fetch new attendance when month changes
   useEffect(() => {
     const fetchNewAttendance = async () => {
       if (!selectedBatch) return;
       if (!students || students.length === 0) return;
+
+      setLoadingAttendance(true);
       const studentIds = students.map((student) => student.userId);
+
       try {
         const newAttendance = await newAttendanceService.getMonthlyAttendance(
           studentIds,
@@ -223,10 +262,12 @@ const AttendanceRegister = () => {
         setNewAttendance(newAttendance.documents);
       } catch (error) {
         console.error("Error fetching new attendance:", error);
+      } finally {
+        setLoadingAttendance(false);
       }
     };
     fetchNewAttendance();
-  }, [students, selectedMonth]);
+  }, [students, selectedMonth, selectedBatch]);
 
   const newAttendanceMap = useMemo(() => {
     const map = new Map();
@@ -240,60 +281,13 @@ const AttendanceRegister = () => {
         map.set(att.userId, newMap);
       }
     });
-    console.log("new attendance map", map);
     return map;
   }, [newAttendance]);
 
-  // Memoized attendance map for O(1) lookups
-  const attendanceMap = useMemo(() => {
-    const map = new Map();
-    attendance.forEach((att) => {
-      const recordMap = new Map();
-      att.attendanceRecords?.forEach((record) => {
-        recordMap.set(record.date.split("T")[0], record.attendanceStatus);
-      });
-      map.set(att.userId, recordMap);
-    });
-    return map;
-  }, [attendance]);
-
-  // Calculate cumulative attendance from all previous months
-  const calculatePreviousMonthsData = useMemo(() => {
-    const currentMonthStart = startOfMonth(selectedMonth);
-    const result = new Map();
-
-    students.forEach((student) => {
-      const studentRecords = attendanceMap.get(student.userId);
-      if (!studentRecords) {
-        result.set(student.userId, {
-          workingDays: 0,
-          presentDays: 0,
-          absentDays: 0,
-        });
-        return;
-      }
-
-      let workingDays = 0;
-      let presentDays = 0;
-      let absentDays = 0;
-
-      // Iterate through all attendance records before current month
-      studentRecords.forEach((status, dateStr) => {
-        const recordDate = parseISO(dateStr);
-        if (isBefore(recordDate, currentMonthStart)) {
-          if (!holidays.has(dateStr)) {
-            workingDays++;
-            if (status === "Present") presentDays++;
-            else if (status === "Absent") absentDays++;
-          }
-        }
-      });
-
-      result.set(student.userId, { workingDays, presentDays, absentDays });
-    });
-
-    return result;
-  }, [students, attendanceMap, selectedMonth, holidays]);
+  // Fetch stats initially and when dependencies change
+  useEffect(() => {
+    fetchStudentStats();
+  }, [fetchStudentStats]);
 
   const handlePrevMonth = () => {
     setSelectedMonth(subMonths(selectedMonth, 1));
@@ -307,7 +301,6 @@ const AttendanceRegister = () => {
     setSelectedMonth(new Date(event.target.value));
   };
 
-  // Helper function to check if any attendance for a student is currently updating
   const isStudentUpdating = useCallback(
     (studentId) => {
       for (const key of updatingAttendance.keys()) {
@@ -332,6 +325,8 @@ const AttendanceRegister = () => {
           handleNextMonth={handleNextMonth}
           handleMonthChange={handleMonthChange}
           formatDate={format}
+          loadingBatch={loadingBatch}
+          loadingAttendance={loadingAttendance}
         />
         {loading ? (
           <LoadingSpinner />
@@ -342,16 +337,17 @@ const AttendanceRegister = () => {
             students={students}
             selectedMonth={selectedMonth}
             holidays={holidays}
-            attendanceMap={newAttendanceMap} // Use newAttendanceMap here
-            calculatePreviousMonthsData={calculatePreviousMonthsData}
+            attendanceMap={newAttendanceMap}
+            calculatePreviousMonthsData={newStudentStatsMap}
             formatDate={format}
             getDaysInMonth={getDaysInMonth}
             onMarkAttendance={handleOpenModal}
             setEditStudentId={setEditStudentId}
             editStudentId={editStudentId}
-            onAttendanceStatusChange={onAttendanceStatusChange} // Pass new prop
-            updatingAttendance={updatingAttendance} // Pass new prop
-            isStudentUpdating={isStudentUpdating} // Pass new prop
+            onAttendanceStatusChange={onAttendanceStatusChange}
+            updatingAttendance={updatingAttendance}
+            isStudentUpdating={isStudentUpdating}
+            loadingAttendance={loadingAttendance}
           />
         )}
         <MarkAttendanceModal

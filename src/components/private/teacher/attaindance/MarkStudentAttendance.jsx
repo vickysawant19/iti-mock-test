@@ -122,7 +122,7 @@ const MarkStudentAttendance = () => {
         (student) => JSON.parse(student)?.userId
       );
       // BUG FIX: Removed teacher's ID from student list
-      // studentIds.push(profile?.userId);
+      studentIds.push(profile?.userId);
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("userId", studentIds),
         Query.orderDesc("studentId"),

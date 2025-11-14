@@ -11,25 +11,42 @@ class NewAttendanceService {
   // Fetch all documents using pagination (handles documents.total automatically)
   async fetchAllDocuments(queries = []) {
     try {
-      let allDocuments = [];
-      let offset = 0;
-      const limit = 100; // Appwrite's max limit per request
-      let hasMore = true;
+      const limit = 100;
 
-      while (hasMore) {
-        const response = await this.database.listDocuments(
+      // Fetch first page with max limit
+      const firstResponse = await this.database.listDocuments(
+        conf.databaseId,
+        conf.newAttendanceCollectionId,
+        [...queries, Query.limit(limit), Query.offset(0)]
+      );
+
+      const total = firstResponse.total;
+      const allDocuments = [...firstResponse.documents];
+
+      // If all documents fetched in first call, return early
+      if (firstResponse.documents.length >= total) {
+        return { documents: allDocuments, total };
+      }
+
+      // Calculate remaining pages needed
+      const remainingPages = Math.ceil((total - limit) / limit);
+
+      // Create promises for remaining pages
+      const fetchPromises = Array.from({ length: remainingPages }, (_, i) =>
+        this.database.listDocuments(
           conf.databaseId,
           conf.newAttendanceCollectionId,
-          [...queries, Query.limit(limit), Query.offset(offset)]
-        );
+          [...queries, Query.limit(limit), Query.offset((i + 1) * limit)]
+        )
+      );
 
-        allDocuments = allDocuments.concat(response.documents);
-        offset += response.documents.length;
+      // Fetch all remaining pages concurrently
+      const responses = await Promise.all(fetchPromises);
 
-        // Check if we've fetched all documents
-        hasMore =
-          response.documents.length === limit && offset < response.total;
-      }
+      // Add remaining documents
+      responses.forEach((response) => {
+        allDocuments.push(...response.documents);
+      });
 
       return {
         documents: allDocuments,
@@ -39,7 +56,6 @@ class NewAttendanceService {
       throw error;
     }
   }
-
   // Get student attendance by userId and batchId
   async getStudentAttendance(userId, batchId) {
     try {
@@ -56,7 +72,13 @@ class NewAttendanceService {
   }
 
   // Get student attendance for a specific date range
-  async getStudentAttendanceByDateRange(userId, batchId, startDate, endDate) {
+  async getStudentAttendanceByDateRange(
+    userId,
+    batchId,
+    startDate,
+    endDate,
+    additionalQueries = []
+  ) {
     try {
       const queries = [
         Query.equal("userId", userId),
@@ -65,7 +87,7 @@ class NewAttendanceService {
         Query.lessThanEqual("date", this.formatDate(endDate)),
         Query.orderDesc("date"),
       ];
-
+      additionalQueries.length !== 0 && queries.push(...additionalQueries);
       return await this.fetchAllDocuments(queries);
     } catch (error) {
       throw error;
@@ -335,46 +357,62 @@ class NewAttendanceService {
     endDate = null
   ) {
     try {
-      const queries = [
+      const baseQueries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
       ];
 
       if (startDate) {
-        queries.push(
+        baseQueries.push(
           Query.greaterThanEqual("date", this.formatDate(startDate))
         );
       }
       if (endDate) {
-        queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+        baseQueries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
       }
 
-      const data = await this.fetchAllDocuments(queries);
+      // Fetch counts for each status in parallel
+      const [presentCount, absentCount, lateCount] = await Promise.all([
+        this.database
+          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
+            ...baseQueries,
+            Query.equal("status", "present"),
+            Query.limit(1),
+          ])
+          .then((res) => res.total),
 
+        this.database
+          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
+            ...baseQueries,
+            Query.equal("status", "absent"),
+            Query.limit(1),
+          ])
+          .then((res) => res.total),
+
+        this.database
+          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
+            ...baseQueries,
+            Query.equal("status", "late"),
+            Query.limit(1),
+          ])
+          .then((res) => res.total),
+      ]);
+
+      const total = presentCount + absentCount + lateCount;
+      const workingDays = total;
       const stats = {
-        total: data.total,
-        present: 0,
-        absent: 0,
-        late: 0,
-        holiday: 0,
-        percentage: 0,
-        workingDays: 0,
+        total,
+        presentDays: presentCount,
+        absentDays: absentCount,
+        lateDays: lateCount,
+        workingDays,
+        percentage:
+          workingDays > 0
+            ? parseFloat(
+                (((presentCount + lateCount) / workingDays) * 100).toFixed(2)
+              )
+            : 0,
       };
-
-      data.documents.forEach((doc) => {
-        if (doc.status === "present") stats.present++;
-        else if (doc.status === "absent") stats.absent++;
-        else if (doc.status === "late") stats.late++;
-        else if (doc.status === "holiday") stats.holiday++;
-      });
-
-      stats.workingDays = stats.total - stats.holiday;
-      if (stats.workingDays > 0) {
-        stats.percentage = parseFloat(
-          (((stats.present + stats.late) / stats.workingDays) * 100).toFixed(2)
-        );
-      }
-
       return stats;
     } catch (error) {
       throw error;
@@ -703,7 +741,6 @@ class NewAttendanceService {
   // Utility: Format date to YYYY-MM-DD (10 characters)
   formatDate(date) {
     if (!date) return null;
-    console.log(date);
     // If already in correct format
     if (
       typeof date === "string" &&
@@ -712,7 +749,6 @@ class NewAttendanceService {
     ) {
       return date;
     }
-    console.log("here");
 
     // If Date object or other format, convert
     const dateObj = date instanceof Date ? date : new Date(date);
