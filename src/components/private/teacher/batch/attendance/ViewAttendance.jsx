@@ -27,6 +27,7 @@ const ViewAttendance = ({ isLoading, stats }) => {
   const profile = useSelector(selectProfile);
 
   stats = stats.filter((item) => item.userId !== profile.userId);
+  console.log(stats)
 
   if (isLoading) return <div>Loading...</div>;
 

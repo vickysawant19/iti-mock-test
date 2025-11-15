@@ -14,6 +14,7 @@ import Loader from "@/components/components/Loader";
 import subjectService from "@/appwrite/subjectService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
+  console.log("attendance ", attendance);
   if (!studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -21,6 +22,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       </div>
     );
   }
+
   const [isLoading, setIsLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [modules, setModules] = useState(null);
@@ -46,12 +48,13 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     if (!attendance || attendance.length === 0) return;
     const dateKeysAttendance = attendance.reduce((acc, doc) => {
       acc[doc.userId] = doc.attendanceRecords.reduce((a, d) => {
-        a[d.date] = !a[d.date] ? d.attendanceStatus : a[d.date];
+        a[d.date] = !a[d.date] ? d.status : a[d.date];
         return a;
       }, {});
 
       return acc;
     }, {});
+    console.log("dateKeysAttendance ", dateKeysAttendance);
 
     setStudentAttendance(dateKeysAttendance);
   }, [attendance]);

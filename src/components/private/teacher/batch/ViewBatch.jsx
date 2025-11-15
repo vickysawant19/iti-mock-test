@@ -29,6 +29,7 @@ import CustomSelector from "../../../components/CustomSelector";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
 import Assignment from "./assignment/Assignment";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const TABS = [
   { id: "students", label: "Student", icon: Users },
@@ -185,35 +186,46 @@ const ViewBatch = () => {
         Query.orderDesc("$updatedAt"),
       ]);
 
+      const newAttendance = data.students.map(async (student) => {
+        return await newAttendanceService.getStudentAttendance(
+          student.userId,
+          data.selectedBatchData.$id
+        );
+      });
+
+      const result = await Promise.all(newAttendance);
       // Create student lookup map
       const studentMap = new Map();
       data.students.forEach((student) => {
         studentMap.set(student.userId, student);
       });
 
-      // Enrich attendance data with student info
-      const enrichedAttendance = attendance.map((record) => ({
-        ...record,
-        studentId: studentMap.get(record.userId)?.studentId || "NA",
-        userName:
-          studentMap.get(record.userId)?.userName ||
-          record?.userName ||
-          "Unknown",
-      }));
+      const newEnrichedAttendance = result.map((student) => {
+        const studentData = studentMap.get(student[0].userId);
 
-      // Sort by student ID
-      const sortedAttendance = enrichedAttendance.sort(
-        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
-      );
+        return {
+          attendanceRecords: student,
+          batchId: data.selectedBatchData.$id,
+          studentId: studentData?.studentId || "NA",
+          userName: studentData?.userName || "Unknown",
+          userId: studentData?.userId || "NA",
+          ...studentData,
+        };
+      });
 
       // Calculate stats for each student
-      const stats = sortedAttendance.map((item) =>
-        calculateStats({ data: item })
-      );
+      const stats = newEnrichedAttendance.map((item) => {
+        return calculateStats({
+          userId: item.userId,
+          studentId: item.studentId,
+          userName: item.userName,
+          data: item.attendanceRecords,
+        });
+      });
 
       setData((prev) => ({
         ...prev,
-        studentsAttendance: sortedAttendance,
+        studentsAttendance: newEnrichedAttendance,
         attendanceStats: stats,
       }));
     } catch (error) {

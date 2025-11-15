@@ -15,10 +15,11 @@ const AttendanceTableBody = ({
   onAttendanceStatusChange,
   updatingAttendance,
   isStudentUpdating,
-  loadingAttendance = false, // New prop
+  loadingAttendance = false,
+  loadingStats = false,
 }) => {
   return (
-    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
       {students.map((student, idx) => {
         const studentRecords = attendanceMap.get(student.userId) || new Map();
         const prevMonthData = calculatePreviousMonthsData.get(
@@ -53,7 +54,6 @@ const AttendanceTableBody = ({
         const percentage =
           workingDays > 0 ? ((presentDays / workingDays) * 100).toFixed(1) : 0;
 
-        // Calculate total percentage including previous months
         const totalWorkingDays = prevMonthData.workingDays + workingDays;
         const totalPresentDays = prevMonthData.presentDays + presentDays;
         const totalPercentage =
@@ -61,59 +61,116 @@ const AttendanceTableBody = ({
             ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
             : 0;
 
-        // Check if this student is currently being updated
         const studentUpdating = isStudentUpdating(student.userId);
 
         return (
           <tr
             key={student.userId}
-            className={`hover:bg-indigo-50 dark:hover:bg-indigo-900 transition-all duration-200 ${
+            className={`hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all duration-200 ${
               idx % 2 === 0
-                ? "bg-gray-50 dark:bg-gray-800"
-                : "bg-white dark:bg-gray-900"
+                ? "bg-white dark:bg-slate-800"
+                : "bg-slate-50 dark:bg-slate-850"
             } ${
               editStudentId === student.userId
-                ? "bg-yellow-100 dark:bg-yellow-900"
+                ? "bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-400 dark:ring-amber-600"
                 : ""
             } ${studentUpdating ? "opacity-60" : ""}`}
           >
-            <td className="py-3 px-4 border border-gray-300 dark:border-gray-700 sticky left-0 bg-inherit z-10 font-medium text-gray-900 dark:text-gray-100 w-48 min-w-48 max-w-48">
+            {/* Previous Month Stats with Loading State */}
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-emerald-50 dark:bg-emerald-900/30 font-semibold text-xs sm:text-sm relative">
+              {loadingStats ? (
+                <div className="flex items-center justify-center">
+                  <LoaderCircle className="h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                </div>
+              ) : (
+                prevMonthData.workingDays
+              )}
+            </td>
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-emerald-50 dark:bg-emerald-900/30 text-green-700 dark:text-green-400 font-semibold text-xs sm:text-sm relative">
+              {loadingStats ? (
+                <div className="flex items-center justify-center">
+                  <LoaderCircle className="h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                </div>
+              ) : (
+                prevMonthData.presentDays
+              )}
+            </td>
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-emerald-50 dark:bg-emerald-900/30 text-red-700 dark:text-red-400 font-semibold text-xs sm:text-sm relative">
+              {loadingStats ? (
+                <div className="flex items-center justify-center">
+                  <LoaderCircle className="h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                </div>
+              ) : (
+                prevMonthData.absentDays
+              )}
+            </td>
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-emerald-50 dark:bg-emerald-900/30 font-bold text-xs sm:text-sm relative">
+              {loadingStats ? (
+                <div className="flex items-center justify-center">
+                  <LoaderCircle className="h-4 w-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                </div>
+              ) : (
+                <span
+                  className={`${
+                    totalPercentage >= 75
+                      ? "text-green-700 dark:text-green-400"
+                      : totalPercentage >= 50
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-red-700 dark:text-red-400"
+                  }`}
+                >
+                  {totalPercentage}%
+                </span>
+              )}
+            </td>
+
+            {/* Student Name */}
+            <td className="py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 sticky left-0 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100">
               <div className="flex items-center gap-2">
-                <div className="flex flex-col flex-1">
-                  <span className="font-semibold">{student.userName}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col flex-1 w-28 sm:w-48 min-w-28 sm:min-w-48">
+                  <span className="font-semibold text-xs sm:text-sm text-wrap">{student.userName}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     ID: {student.studentId}
                   </span>
                 </div>
-                {/* Show spinner if student row is updating */}
                 {studentUpdating && !loadingAttendance && (
                   <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                 )}
               </div>
             </td>
             
-            <td className="py-3 px-4 border border-gray-300 dark:border-gray-700 sticky left-48 bg-inherit z-10 font-medium text-gray-900 dark:text-gray-100 w-16 min-w-16 max-w-16">
-              <div className="flex flex-col">
-                <button
-                  onClick={() => {
-                    if (editStudentId === student.userId) {
-                      setEditStudentId(null);
-                      return;
-                    }
-                    setEditStudentId(student.userId);
-                  }}
-                  disabled={loadingAttendance || studentUpdating}
-                  className={`px-2 py-1 text-xs bg-indigo-500 dark:bg-indigo-700 text-white rounded hover:bg-indigo-600 dark:hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {editStudentId === student.userId ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+            {/* Edit Button */}
+            <td className="py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 sticky left-32 sm:left-48 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100">
+              <button
+                onClick={() => {
+                  if (editStudentId === student.userId) {
+                    setEditStudentId(null);
+                    return;
+                  }
+                  setEditStudentId(student.userId);
+                }}
+                disabled={loadingAttendance || studentUpdating}
+                className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${
+                  editStudentId === student.userId
+                    ? "bg-green-600 hover:bg-green-700 text-white shadow-md"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                }`}
+              >
+                {editStudentId === student.userId ? (
+                  <>
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Done</span>
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </>
+                )}
+              </button>
             </td>
 
+            {/* Daily Attendance Cells */}
             {monthDates.map((date) => {
               const fullDate = formatDate(
                 new Date(
@@ -134,11 +191,11 @@ const AttendanceTableBody = ({
                     <td
                       key={date}
                       rowSpan={students.length}
-                      className="py-3 px-2 border border-gray-300 dark:border-gray-700 text-center relative bg-red-100 dark:bg-red-900 w-12 min-w-12 max-w-12"
+                      className="py-3 px-2 border border-slate-300 dark:border-slate-600 text-center relative bg-rose-100 dark:bg-rose-900/30"
                     >
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                         <div
-                          className="whitespace-nowrap text-[10px] font-semibold text-red-700 dark:text-red-300"
+                          className="whitespace-nowrap text-[10px] font-semibold text-rose-800 dark:text-rose-300"
                           style={{
                             writingMode: "vertical-rl",
                             textOrientation: "mixed",
@@ -157,15 +214,14 @@ const AttendanceTableBody = ({
               return (
                 <td
                   key={date}
-                  className={`py-3 px-2 border border-gray-300 dark:border-gray-700 text-center w-16 min-w-16 max-w-16 relative ${
+                  className={`py-2 sm:py-3 px-1 sm:px-2 border border-slate-300 dark:border-slate-600 text-center relative ${
                     editStudentId === student.userId && !isHoliday
-                      ? "bg-yellow-50 dark:bg-yellow-900"
+                      ? "bg-amber-50 dark:bg-amber-900/20"
                       : ""
-                  } ${cellUpdating ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                  } ${cellUpdating ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
                 >
-                  {/* Cell-specific loading overlay */}
                   {cellUpdating && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-indigo-100/50 dark:bg-indigo-900/50">
+                    <div className="absolute inset-0 flex items-center justify-center bg-indigo-100/70 dark:bg-indigo-900/50 z-10">
                       <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400" />
                     </div>
                   )}
@@ -184,10 +240,12 @@ const AttendanceTableBody = ({
                         studentUpdating || 
                         cellUpdating
                       }
-                      className={`px-2 py-1 text-xs rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`px-2 py-1 text-xs font-bold rounded shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[2rem] ${
                         status === "present"
-                          ? "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200 hover:bg-green-300 dark:hover:bg-green-600"
-                          : "bg-red-200 text-red-800 dark:bg-red-700 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-600"
+                          ? "bg-green-600 text-white hover:bg-green-700 shadow-md"
+                          : status === "absent"
+                          ? "bg-red-600 text-white hover:bg-red-700 shadow-md"
+                          : "bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                       }`}
                     >
                       {status === "present"
@@ -198,64 +256,42 @@ const AttendanceTableBody = ({
                     </button>
                   ) : status ? (
                     status === "present" ? (
-                      <span className="text-green-600 font-bold text-sm dark:text-green-400">
+                      <span className="text-green-700 font-bold text-sm dark:text-green-400">
                         P
                       </span>
                     ) : (
-                      <span className="text-red-600 font-bold text-sm dark:text-red-400">
+                      <span className="text-red-700 font-bold text-sm dark:text-red-400">
                         A
                       </span>
                     )
                   ) : (
-                    <span className="text-gray-300 dark:text-gray-500">-</span>
+                    <span className="text-slate-400 dark:text-slate-500">-</span>
                   )}
                 </td>
               );
             })}
 
-            {/* Statistics columns */}
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-blue-50 dark:bg-blue-900 font-semibold w-24 min-w-24 max-w-24">
+            {/* Current Month Summary - No Loading State Needed */}
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 font-semibold text-xs sm:text-sm">
               {workingDays}
             </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-blue-50 dark:bg-blue-900 text-green-600 dark:text-green-400 font-semibold w-24 min-w-24 max-w-24">
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 text-green-700 dark:text-green-400 font-semibold text-xs sm:text-sm">
               {presentDays}
             </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-blue-50 dark:bg-blue-900 text-red-600 dark:text-red-400 font-semibold w-24 min-w-24 max-w-24">
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 text-red-700 dark:text-red-400 font-semibold text-xs sm:text-sm">
               {absentDays}
             </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-blue-50 dark:bg-blue-900 font-bold w-24 min-w-24 max-w-24">
+            <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 font-bold text-xs sm:text-sm">
               <span
                 className={`${
                   percentage >= 75
-                    ? "text-green-600 dark:text-green-400"
+                    ? "text-green-700 dark:text-green-400"
                     : percentage >= 50
-                    ? "text-yellow-600 dark:text-yellow-400"
-                    : "text-red-600 dark:text-red-400"
+                    ? "text-amber-700 dark:text-amber-400"
+                    : "text-red-700 dark:text-red-400"
                 }`}
               >
                 {percentage}%
-              </span>
-            </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-green-50 dark:bg-green-900 font-semibold w-24 min-w-24 max-w-24">
-              {prevMonthData.workingDays}
-            </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-green-50 dark:bg-green-900 text-green-600 dark:text-green-400 font-semibold w-24 min-w-24 max-w-24">
-              {prevMonthData.presentDays}
-            </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-green-50 dark:bg-green-900 text-red-600 dark:text-red-400 font-semibold w-24 min-w-24 max-w-24">
-              {prevMonthData.absentDays}
-            </td>
-            <td className="py-3 px-3 border border-gray-300 dark:border-gray-700 text-center bg-green-50 dark:bg-green-900 font-bold w-24 min-w-24 max-w-24">
-              <span
-                className={`${
-                  totalPercentage >= 75
-                    ? "text-green-600 dark:text-green-400"
-                    : totalPercentage >= 50
-                    ? "text-yellow-600 dark:text-yellow-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                {totalPercentage}%
               </span>
             </td>
           </tr>

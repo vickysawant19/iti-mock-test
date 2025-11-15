@@ -9,12 +9,16 @@ const AttendanceTableFooter = ({
   formatDate,
 }) => {
   return (
-    <tfoot className="bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+    <tfoot className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
       <tr className="font-bold">
-        <td className="sticky left-0 py-3 px-4 border border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 w-48 min-w-48 max-w-48">
+        <td
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
+        ></td>
+        <td className="sticky left-0 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10 text-xs sm:text-sm">
           Present Students
         </td>
-        <td className="sticky left-48 py-3 px-4 border  border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 "></td>
+        <td className="sticky left-32 sm:left-48 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10"></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -35,8 +39,8 @@ const AttendanceTableFooter = ({
           return (
             <td
               key={`summary-present-${date}`}
-              className={`py-3 px-2 border border-gray-300 dark:border-gray-700 text-center text-green-600 dark:text-green-400 w-16 min-w-16 max-w-16 ${
-                isHoliday ? "bg-red-50 dark:bg-red-900" : ""
+              className={`py-2 sm:py-3 px-1 sm:px-2 border border-slate-300 dark:border-slate-600 text-center text-green-700 dark:text-green-400 text-xs sm:text-sm ${
+                isHoliday ? "bg-rose-50 dark:bg-rose-900/30" : ""
               }`}
             >
               {isHoliday ? "-" : dailyPresent}
@@ -44,15 +48,19 @@ const AttendanceTableFooter = ({
           );
         })}
         <td
-          colSpan="8"
-          className="py-3 px-3 border border-gray-300 dark:border-gray-700 w-24 min-w-24 max-w-24"
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
         ></td>
       </tr>
       <tr className="font-bold">
-        <td className="sticky left-0 py-3 px-4 border border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 w-48 min-w-48 max-w-48">
+        <td
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
+        ></td>
+        <td className="sticky left-0 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10 text-xs sm:text-sm">
           Absent Students
         </td>
-        <td className="sticky left-48 py-3 px-4 border border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 "></td>
+        <td className="sticky left-32 sm:left-48 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10"></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -73,8 +81,8 @@ const AttendanceTableFooter = ({
           return (
             <td
               key={`summary-absent-${date}`}
-              className={`py-3 px-2 border border-gray-300 dark:border-gray-700 text-center text-red-600 dark:text-red-400 w-16 min-w-16 max-w-16 ${
-                isHoliday ? "bg-red-50 dark:bg-red-900" : ""
+              className={`py-2 sm:py-3 px-1 sm:px-2 border border-slate-300 dark:border-slate-600 text-center text-red-700 dark:text-red-400 text-xs sm:text-sm ${
+                isHoliday ? "bg-rose-50 dark:bg-rose-900/30" : ""
               }`}
             >
               {isHoliday ? "-" : dailyAbsent}
@@ -82,15 +90,19 @@ const AttendanceTableFooter = ({
           );
         })}
         <td
-          colSpan="8"
-          className="py-3 px-3 border border-gray-300 dark:border-gray-700 w-24 min-w-24 max-w-24"
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
         ></td>
       </tr>
       <tr className="font-bold">
-        <td className="sticky left-0 py-3 px-4 border border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 w-48 min-w-48 max-w-48">
+        <td
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
+        ></td>
+        <td className="sticky left-0 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10 text-xs sm:text-sm">
           Total Students
         </td>
-        <td className="sticky left-48 py-3 px-4 border border-gray-300 dark:border-gray-700 text-indigo-700 dark:text-indigo-300 bg-gray-100 dark:bg-gray-700 z-10 "></td>
+        <td className="sticky left-32 sm:left-48 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10"></td>
         {monthDates.map((date) => {
           const fullDate = formatDate(
             new Date(
@@ -112,8 +124,8 @@ const AttendanceTableFooter = ({
           return (
             <td
               key={`summary-total-${date}`}
-              className={`py-3 px-2 border border-gray-300 dark:border-gray-700 text-center text-indigo-600 dark:text-indigo-400 w-16 min-w-16 max-w-16 ${
-                isHoliday ? "bg-red-50 dark:bg-red-900" : ""
+              className={`py-2 sm:py-3 px-1 sm:px-2 border border-slate-300 dark:border-slate-600 text-center text-indigo-700 dark:text-indigo-400 text-xs sm:text-sm ${
+                isHoliday ? "bg-rose-50 dark:bg-rose-900/30" : ""
               }`}
             >
               {isHoliday ? "-" : dailyTotal}
@@ -121,8 +133,8 @@ const AttendanceTableFooter = ({
           );
         })}
         <td
-          colSpan="8"
-          className="py-3 px-3 border border-gray-300 dark:border-gray-700 w-24 min-w-24 max-w-24"
+          colSpan="4"
+          className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
         ></td>
       </tr>
     </tfoot>

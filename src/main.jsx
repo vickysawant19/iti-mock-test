@@ -31,33 +31,24 @@ import AttainTest from "./components/private/mocktest/AttainTest.jsx";
 import MockTestResults from "./components/private/mocktest/MockTestResults.jsx";
 
 import Dash from "./components/private/pages/Dash.jsx";
-
 import Home from "./components/private/pages/Home.jsx";
 import About from "./components/private/pages/About.jsx";
 import ForgetPass from "./components/Auth/ForgetPass.jsx";
-
-import CheckAttendance from "./components/private/teacher/attaindance/CheckAttendance.jsx";
 import MarkStudentAttendance from "./components/private/teacher/attaindance/MarkStudentAttendance.jsx";
-
 import CreateBatch from "./components/private/teacher/batch/CreateBatch.jsx";
 import ViewBatch from "./components/private/teacher/batch/ViewBatch.jsx";
-
 import Profile from "./components/private/profile/Profile.jsx";
 import ProfileView from "./components/private/profile/ProfileView.jsx";
 import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
-
 import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
-
 import Modules from "./components/private/admin/Modules.jsx";
-
 import Assessment from "./components/private/assessment/Assessment.jsx";
 import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
 import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
-import FaceAttendance from "./components/private/teacher/attaindance/faceAttendance/FaceAttendance.jsx";
 import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
@@ -115,14 +106,11 @@ const router = (
           </Route>
           <Route path="attendance">
             <Route path="register" element={<AttendanceRegister />} />
-            <Route path="face" element={<FaceAttendance />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
-            <Route path="mark-attendance" element={<MarkAttendance />} />
             <Route
               path="mark-student-attendance"
               element={<MarkStudentAttendance />}
             />
-            <Route path="check-attendance" element={<CheckAttendance />} />
           </Route>
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />

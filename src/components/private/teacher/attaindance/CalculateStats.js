@@ -12,6 +12,7 @@ export const calculateStats = ({
     const stats = {
       userId,
       userName,
+      studentId,
       totalDays: 0,
       presentDays: 0,
       absentDays: 0,

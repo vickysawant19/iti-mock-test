@@ -38,6 +38,7 @@ const AttendanceRegister = () => {
   const [loading, setLoading] = useState(true); // Initial load
   const [loadingAttendance, setLoadingAttendance] = useState(false); // Month change
   const [loadingBatch, setLoadingBatch] = useState(false); // Batch change
+  const [loadingStats, setLoadingStats] = useState(false); // Student stats loading
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -65,6 +66,8 @@ const AttendanceRegister = () => {
       (bt) => bt.$id === selectedBatch
     )?.start_date;
     if (!currentBatchStartDate) return;
+    
+    setLoadingStats(true);
     try {
       // Fetch stats for all students in parallel
       const statsPromises = students.map((student) =>
@@ -85,8 +88,10 @@ const AttendanceRegister = () => {
       setStudentStatsMap(statsMap);
     } catch (error) {
       console.log("fetching stats error ", error);
+    } finally {
+      setLoadingStats(false);
     }
-  }, [students, selectedBatch, selectedMonth]);
+  }, [students, selectedBatch, selectedMonth, batches]);
 
   // Handle attendance status change
   const onAttendanceStatusChange = async (userId, date, newStatus) => {
@@ -349,6 +354,7 @@ const AttendanceRegister = () => {
             updatingAttendance={updatingAttendance}
             isStudentUpdating={isStudentUpdating}
             loadingAttendance={loadingAttendance}
+            loadingStats={loadingStats}
           />
         )}
         <MarkAttendanceModal

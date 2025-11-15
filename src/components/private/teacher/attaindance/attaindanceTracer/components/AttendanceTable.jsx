@@ -19,7 +19,8 @@ const AttendanceTable = ({
   onAttendanceStatusChange,
   updatingAttendance,
   isStudentUpdating,
-  loadingAttendance = false, // New prop
+  loadingAttendance = false,
+  loadingStats = false,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -71,7 +72,8 @@ const AttendanceTable = ({
             onAttendanceStatusChange={onAttendanceStatusChange}
             updatingAttendance={updatingAttendance}
             isStudentUpdating={isStudentUpdating}
-            loadingAttendance={loadingAttendance} // Pass to body
+            loadingAttendance={loadingAttendance}
+            loadingStats={loadingStats}
           />
           <AttendanceTableFooter
             students={students}

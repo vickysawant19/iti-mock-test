@@ -196,7 +196,7 @@ const generateStudentData = (studentsMap, moduleData, studentAttendance) => {
       for (let j = 0; j < 7; j++) {
         const checkDate = addDays(referenceDate, j);
         const dateKey = format(checkDate, "yyyy-MM-dd"); // Format the date as "YYYY-MM-DD"
-        if (studentAttendance?.[student.userId]?.[dateKey] === "Present") {
+        if (studentAttendance?.[student.userId]?.[dateKey] === "present") {
           isPresentInAnyDay = true;
           break;
         }
