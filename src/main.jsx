@@ -49,7 +49,7 @@ import Modules from "./components/private/admin/Modules.jsx";
 import Assessment from "./components/private/assessment/Assessment.jsx";
 import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
 import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
-import MarkAttendance from "./components/private/teacher/attaindance/MarkAttendance.jsx";
+
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
 import AttendanceRegister from "./components/private/teacher/attaindance/attaindanceTracer/AttendanceRegister.jsx";
@@ -101,8 +101,6 @@ const router = (
           </Route>
           <Route path="assessment">
             <Route path="" element={<Assessment />} />
-            <Route path="mark-holidays" element={<MarkHolidays />} />
-            <Route path="mark-attendance" element={<MarkAttendance />} />
           </Route>
           <Route path="attendance">
             <Route path="register" element={<AttendanceRegister />} />

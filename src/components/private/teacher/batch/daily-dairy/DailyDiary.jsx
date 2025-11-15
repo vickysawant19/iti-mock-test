@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   startOfWeek,
   addDays,
@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import holidayService from "@/appwrite/holidaysService";
 
 function DailyDiary() {
   const currentWeekStartInitial = useMemo(
@@ -33,15 +34,14 @@ function DailyDiary() {
     []
   );
 
-  const [currentWeekStart, setCurrentWeekStart] = useState(currentWeekStartInitial);
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    currentWeekStartInitial
+  );
   const [diaryData, setDiaryData] = useState({});
   const [attendance, setAttendance] = useState(new Map());
   const [holidays, setHolidays] = useState(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
-
-  // Cache for attendance data - stores attendance by week key
-  const attendanceCache = useRef(new Map());
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
@@ -57,7 +57,10 @@ function DailyDiary() {
 
   // Memoize week days calculation
   const weekDays = useMemo(
-    () => Array.from({ length: 7 }).map((_, index) => addDays(currentWeekStart, index)),
+    () =>
+      Array.from({ length: 7 }).map((_, index) =>
+        addDays(currentWeekStart, index)
+      ),
     [currentWeekStart]
   );
 
@@ -77,22 +80,9 @@ function DailyDiary() {
     );
   }, [batchData, currentWeekStart]);
 
-  // Generate cache key for the current week
-  const getWeekCacheKey = useCallback((weekStart) => {
-    return format(weekStart, "yyyy-MM-dd");
-  }, []);
-
-  // Fetch attendance with caching
-  const fetchAttendance = useCallback(async () => {
+  // Fetch attendance without caching
+  const fetchAttendanceAndHolidays = useCallback(async () => {
     if (!profile?.userId || !profile?.batchId) return;
-
-    const cacheKey = getWeekCacheKey(currentWeekStart);
-    
-    // Check if we already have this week's data in cache
-    if (attendanceCache.current.has(cacheKey)) {
-      setAttendance(attendanceCache.current.get(cacheKey));
-      return;
-    }
 
     setIsLoadingAttendance(true);
     try {
@@ -109,9 +99,16 @@ function DailyDiary() {
       newAttendanceRes.documents.forEach((item) =>
         map.set(item.date, item.status)
       );
-      
-      // Store in cache
-      attendanceCache.current.set(cacheKey, map);
+
+      const data = await holidayService.getBatchHolidaysByDateRange(
+        profile.batchId,
+        format(currentWeekStart, "yyyy-MM-dd"),
+        format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd")
+      );
+      const newMap = new Map();
+      data.forEach((item) => newMap.set(item.date, item));
+
+      setHolidays(newMap);
       setAttendance(map);
     } catch (error) {
       console.error("Error fetching attendance:", error);
@@ -119,7 +116,7 @@ function DailyDiary() {
     } finally {
       setIsLoadingAttendance(false);
     }
-  }, [profile, currentWeekStart, getWeekCacheKey]);
+  }, [profile, currentWeekStart]);
 
   useEffect(() => {
     if (profile && !profile.batchId) {
@@ -127,8 +124,8 @@ function DailyDiary() {
       navigate("/profile");
       return;
     }
-    fetchAttendance();
-  }, [profile, currentWeekStart, fetchAttendance, navigate]);
+    fetchAttendanceAndHolidays();
+  }, [profile, currentWeekStart, fetchAttendanceAndHolidays, navigate]);
 
   useEffect(() => {
     if (!batchData) return;
@@ -140,20 +137,6 @@ function DailyDiary() {
       );
       setDiaryData(data);
     }
-
-    // Set holidays
-    const map = new Map();
-    if (batchData.attendanceHolidays) {
-      batchData.attendanceHolidays.forEach((itm) => {
-        try {
-          const holiday = typeof itm === "string" ? JSON.parse(itm) : itm;
-          map.set(holiday.date, holiday);
-        } catch (e) {
-          console.error("Error parsing holiday:", e);
-        }
-      });
-    }
-    setHolidays(map);
   }, [batchData]);
 
   // Navigation functions
@@ -184,39 +167,42 @@ function DailyDiary() {
   }, []);
 
   // Toggle editing mode for a specific day
-  const toggleEditing = useCallback((dateKey) => {
-    const currentEntry = diaryData[dateKey] || {
-      theory: "",
-      practical: "",
-      practicalNumber: "",
-      isEditing: true,
-    };
+  const toggleEditing = useCallback(
+    (dateKey) => {
+      const currentEntry = diaryData[dateKey] || {
+        theory: "",
+        practical: "",
+        practicalNumber: "",
+        isEditing: true,
+      };
 
-    if (currentEntry.isEditing) {
-      setDiaryData((prev) => ({
-        ...prev,
-        [dateKey]: {
-          ...currentEntry,
-          isEditing: false,
-        },
-      }));
-      handleSubmit(dateKey);
-    } else {
-      setDiaryData((prev) => ({
-        ...prev,
-        [dateKey]: {
-          ...currentEntry,
-          isEditing: true,
-        },
-      }));
-    }
-  }, [diaryData]);
+      if (currentEntry.isEditing) {
+        setDiaryData((prev) => ({
+          ...prev,
+          [dateKey]: {
+            ...currentEntry,
+            isEditing: false,
+          },
+        }));
+        handleSubmit(dateKey);
+      } else {
+        setDiaryData((prev) => ({
+          ...prev,
+          [dateKey]: {
+            ...currentEntry,
+            isEditing: true,
+          },
+        }));
+      }
+    },
+    [diaryData]
+  );
 
   // Submit diary entry to backend
   const handleSubmit = async (dateKey) => {
     const entry = diaryData[dateKey];
     if (!entry) return;
-    
+
     const updateData = {
       ...diaryData,
       [dateKey]: { ...entry, isEditing: false },
@@ -241,12 +227,6 @@ function DailyDiary() {
       setIsSubmitting(false);
     }
   };
-
-  // Optional: Clear cache function (can be called when needed, e.g., on manual refresh)
-  const clearAttendanceCache = useCallback(() => {
-    attendanceCache.current.clear();
-    fetchAttendance();
-  }, [fetchAttendance]);
 
   if (isLoading) {
     return <Loader isLoading={isLoading} />;
@@ -283,19 +263,11 @@ function DailyDiary() {
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Previous
               </Button>
-              
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-base px-4 py-2">
-                  Week {weekNumber}
-                </Badge>
-                {/* Cached indicator - shows when data is from cache */}
-                {!isLoadingAttendance && attendanceCache.current.has(getWeekCacheKey(currentWeekStart)) && (
-                  <Badge variant="outline" className="text-xs">
-                    Cached
-                  </Badge>
-                )}
-              </div>
-              
+
+              <Badge variant="secondary" className="text-base px-4 py-2">
+                Week {weekNumber}
+              </Badge>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -311,150 +283,174 @@ function DailyDiary() {
 
         {/* Diary Cards - Mobile View */}
         <div className="block lg:hidden space-y-4">
-          {isLoadingAttendance ? (
-            Array.from({ length: 7 }).map((_, index) => (
-              <Card key={index}>
-                <CardContent className="pt-6 space-y-3">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            weekDays.map((day) => {
-              const dateKey = format(day, "yyyy-MM-dd");
-              const entry = diaryData[dateKey] || {
-                theory: "",
-                practical: "",
-                practicalNumber: "",
-                isEditing: true,
-              };
-
-              const isAbsent = attendance.get(dateKey) === "absent";
-              const isHoliday = holidays.has(dateKey);
-              const isWeekend =
-                format(day, "E") === "Sat" || format(day, "E") === "Sun";
-
-              return (
-                <Card
-                  key={dateKey}
-                  className={`
-                    ${isHoliday ? "border-red-500 bg-red-50 dark:bg-red-950" : ""}
-                    ${isAbsent ? "border-pink-500 bg-pink-50 dark:bg-pink-950" : ""}
-                    ${isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""}
-                  `}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {format(day, "EEEE")}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {format(day, "MMM dd, yyyy")}
-                        </p>
-                      </div>
-                      {isAbsent && (
-                        <Badge variant="destructive">Absent</Badge>
-                      )}
-                      {isHoliday && (
-                        <Badge variant="destructive">Holiday</Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {isHoliday ? (
-                      <p className="text-center py-4 text-muted-foreground">
-                        {holidays.get(dateKey)?.holidayText || "Holiday"}
-                      </p>
-                    ) : isAbsent ? (
-                      <p className="text-center py-4 text-muted-foreground">
-                        No entries for absent day
-                      </p>
-                    ) : (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Theory</label>
-                          {isTeacher && entry.isEditing ? (
-                            <Textarea
-                              value={entry.theory || ""}
-                              onChange={(e) =>
-                                updateDiaryField(dateKey, "theory", e.target.value)
-                              }
-                              placeholder="Add theory notes..."
-                              className="min-h-[80px]"
-                            />
-                          ) : (
-                            <div className="p-3 bg-muted rounded-md min-h-[60px] whitespace-pre-wrap">
-                              {entry.theory || "-"}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Practical</label>
-                          {isTeacher && entry.isEditing ? (
-                            <Textarea
-                              value={entry.practical || ""}
-                              onChange={(e) =>
-                                updateDiaryField(dateKey, "practical", e.target.value)
-                              }
-                              placeholder="Add practical notes..."
-                              className="min-h-[80px]"
-                            />
-                          ) : (
-                            <div className="p-3 bg-muted rounded-md min-h-[60px] whitespace-pre-wrap">
-                              {entry.practical || "-"}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Practical #</label>
-                          {isTeacher && entry.isEditing ? (
-                            <Input
-                              type="number"
-                              value={entry.practicalNumber || ""}
-                              onChange={(e) =>
-                                updateDiaryField(
-                                  dateKey,
-                                  "practicalNumber",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="#"
-                            />
-                          ) : (
-                            <div className="p-3 bg-muted rounded-md">
-                              {entry.practicalNumber || "-"}
-                            </div>
-                          )}
-                        </div>
-
-                        {isTeacher && (
-                          <Button
-                            onClick={() => toggleEditing(dateKey)}
-                            disabled={isSubmitting}
-                            className="w-full"
-                          >
-                            {isSubmitting ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : entry.isEditing ? (
-                              <Save className="h-4 w-4 mr-2" />
-                            ) : (
-                              <Edit className="h-4 w-4 mr-2" />
-                            )}
-                            {entry.isEditing ? "Save" : "Edit"}
-                          </Button>
-                        )}
-                      </>
-                    )}
+          {isLoadingAttendance
+            ? Array.from({ length: 7 }).map((_, index) => (
+                <Card key={index}>
+                  <CardContent className="pt-6 space-y-3">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
+              ))
+            : weekDays.map((day) => {
+                const dateKey = format(day, "yyyy-MM-dd");
+                const entry = diaryData[dateKey] || {
+                  theory: "",
+                  practical: "",
+                  practicalNumber: "",
+                  isEditing: true,
+                };
+
+                const isAbsent = attendance.get(dateKey) === "absent";
+                const isHoliday = holidays.has(dateKey);
+                const isWeekend =
+                  format(day, "E") === "Sat" || format(day, "E") === "Sun";
+
+                return (
+                  <Card
+                    key={dateKey}
+                    className={`
+                    ${
+                      isHoliday
+                        ? "border-red-500 bg-red-50 dark:bg-red-950"
+                        : ""
+                    }
+                    ${
+                      isAbsent
+                        ? "border-pink-500 bg-pink-50 dark:bg-pink-950"
+                        : ""
+                    }
+                    ${
+                      isWeekend && !isHoliday && !isAbsent
+                        ? "bg-gray-100 dark:bg-gray-900"
+                        : ""
+                    }
+                  `}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {format(day, "EEEE")}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {format(day, "MMM dd, yyyy")}
+                          </p>
+                        </div>
+                        {isAbsent && (
+                          <Badge variant="destructive">Absent</Badge>
+                        )}
+                        {isHoliday && (
+                          <Badge variant="destructive">Holiday</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {isHoliday ? (
+                        <p className="text-center py-4 text-muted-foreground">
+                          {holidays.get(dateKey)?.holidayText || "Holiday"}
+                        </p>
+                      ) : isAbsent ? (
+                        <p className="text-center py-4 text-muted-foreground">
+                          No entries for absent day
+                        </p>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Theory
+                            </label>
+                            {isTeacher && entry.isEditing ? (
+                              <Textarea
+                                value={entry.theory || ""}
+                                onChange={(e) =>
+                                  updateDiaryField(
+                                    dateKey,
+                                    "theory",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Add theory notes..."
+                                className="min-h-[80px]"
+                              />
+                            ) : (
+                              <div className="p-3 bg-muted rounded-md min-h-[60px] whitespace-pre-wrap">
+                                {entry.theory || "-"}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Practical
+                            </label>
+                            {isTeacher && entry.isEditing ? (
+                              <Textarea
+                                value={entry.practical || ""}
+                                onChange={(e) =>
+                                  updateDiaryField(
+                                    dateKey,
+                                    "practical",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Add practical notes..."
+                                className="min-h-[80px]"
+                              />
+                            ) : (
+                              <div className="p-3 bg-muted rounded-md min-h-[60px] whitespace-pre-wrap">
+                                {entry.practical || "-"}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Practical #
+                            </label>
+                            {isTeacher && entry.isEditing ? (
+                              <Input
+                                type="number"
+                                value={entry.practicalNumber || ""}
+                                onChange={(e) =>
+                                  updateDiaryField(
+                                    dateKey,
+                                    "practicalNumber",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="#"
+                              />
+                            ) : (
+                              <div className="p-3 bg-muted rounded-md">
+                                {entry.practicalNumber || "-"}
+                              </div>
+                            )}
+                          </div>
+
+                          {isTeacher && (
+                            <Button
+                              onClick={() => toggleEditing(dateKey)}
+                              disabled={isSubmitting}
+                              className="w-full"
+                            >
+                              {isSubmitting ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : entry.isEditing ? (
+                                <Save className="h-4 w-4 mr-2" />
+                              ) : (
+                                <Edit className="h-4 w-4 mr-2" />
+                              )}
+                              {entry.isEditing ? "Save" : "Edit"}
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
         </div>
 
         {/* Table View - Desktop */}
@@ -468,154 +464,185 @@ function DailyDiary() {
                     <th className="p-4 text-left font-medium">Day</th>
                     <th className="p-4 text-left font-medium">Theory</th>
                     <th className="p-4 text-left font-medium">Practical</th>
-                    <th className="p-4 text-left font-medium w-32">Practical #</th>
+                    <th className="p-4 text-left font-medium w-32">
+                      Practical #
+                    </th>
                     {isTeacher && (
-                      <th className="p-4 text-center font-medium w-32">Actions</th>
+                      <th className="p-4 text-center font-medium w-32">
+                        Actions
+                      </th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
-                  {isLoadingAttendance ? (
-                    Array.from({ length: 7 }).map((_, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-4"><Skeleton className="h-6 w-32" /></td>
-                        <td className="p-4"><Skeleton className="h-6 w-24" /></td>
-                        <td className="p-4"><Skeleton className="h-20 w-full" /></td>
-                        <td className="p-4"><Skeleton className="h-20 w-full" /></td>
-                        <td className="p-4"><Skeleton className="h-10 w-20" /></td>
-                        {isTeacher && (
-                          <td className="p-4"><Skeleton className="h-10 w-20" /></td>
-                        )}
-                      </tr>
-                    ))
-                  ) : (
-                    weekDays.map((day) => {
-                      const dateKey = format(day, "yyyy-MM-dd");
-                      const entry = diaryData[dateKey] || {
-                        theory: "",
-                        practical: "",
-                        practicalNumber: "",
-                        isEditing: true,
-                      };
-
-                      const isAbsent = attendance.get(dateKey) === "absent";
-                      const isHoliday = holidays.has(dateKey);
-                      const isWeekend =
-                        format(day, "E") === "Sat" || format(day, "E") === "Sun";
-
-                      return (
-                        <tr
-                          key={dateKey}
-                          className={`
-                            border-b transition-colors
-                            ${isHoliday ? "bg-red-50 dark:bg-red-950" : ""}
-                            ${isAbsent ? "bg-pink-50 dark:bg-pink-950" : ""}
-                            ${isWeekend && !isHoliday && !isAbsent ? "bg-muted/30" : ""}
-                          `}
-                        >
-                          <td className="p-4 font-medium whitespace-nowrap">
-                            {format(day, "MMM dd, yyyy")}
+                  {isLoadingAttendance
+                    ? Array.from({ length: 7 }).map((_, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="p-4">
+                            <Skeleton className="h-6 w-32" />
                           </td>
-                          <td className="p-4 font-medium">
-                            {format(day, "EEEE")}
+                          <td className="p-4">
+                            <Skeleton className="h-6 w-24" />
                           </td>
-                          <td
-                            colSpan={isHoliday ? 3 : 1}
-                            className="p-4"
-                          >
-                            {isHoliday ? (
-                              <div className="text-center text-muted-foreground">
-                                {holidays.get(dateKey)?.holidayText || "Holiday"}
-                              </div>
-                            ) : isAbsent ? (
-                              <div className="text-muted-foreground">Absent</div>
-                            ) : isTeacher && entry.isEditing ? (
-                              <Textarea
-                                value={entry.theory || ""}
-                                onChange={(e) =>
-                                  updateDiaryField(dateKey, "theory", e.target.value)
-                                }
-                                placeholder="Add theory notes..."
-                                className="min-h-[80px]"
-                              />
-                            ) : (
-                              <div className="whitespace-pre-wrap">
-                                {entry.theory || "-"}
-                              </div>
-                            )}
+                          <td className="p-4">
+                            <Skeleton className="h-20 w-full" />
                           </td>
-                          {!isHoliday && (
-                            <>
-                              <td className="p-4">
-                                {isAbsent ? (
-                                  <div className="text-muted-foreground">Absent</div>
-                                ) : isTeacher && entry.isEditing ? (
-                                  <Textarea
-                                    value={entry.practical || ""}
-                                    onChange={(e) =>
-                                      updateDiaryField(dateKey, "practical", e.target.value)
-                                    }
-                                    placeholder="Add practical notes..."
-                                    className="min-h-[80px]"
-                                  />
-                                ) : (
-                                  <div className="whitespace-pre-wrap">
-                                    {entry.practical || "-"}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="p-4">
-                                {isAbsent ? (
-                                  <div className="text-muted-foreground">-</div>
-                                ) : isTeacher && entry.isEditing ? (
-                                  <Input
-                                    type="number"
-                                    value={entry.practicalNumber || ""}
-                                    onChange={(e) =>
-                                      updateDiaryField(
-                                        dateKey,
-                                        "practicalNumber",
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="#"
-                                  />
-                                ) : (
-                                  <span>{entry.practicalNumber || "-"}</span>
-                                )}
-                              </td>
-                            </>
-                          )}
+                          <td className="p-4">
+                            <Skeleton className="h-20 w-full" />
+                          </td>
+                          <td className="p-4">
+                            <Skeleton className="h-10 w-20" />
+                          </td>
                           {isTeacher && (
                             <td className="p-4">
-                              {!isHoliday && (
-                                <Button
-                                  onClick={() => toggleEditing(dateKey)}
-                                  disabled={isSubmitting}
-                                  size="sm"
-                                  className="w-full"
-                                >
-                                  {isSubmitting ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : entry.isEditing ? (
-                                    <>
-                                      <Save className="h-4 w-4 mr-2" />
-                                      Save
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Edit className="h-4 w-4 mr-2" />
-                                      Edit
-                                    </>
-                                  )}
-                                </Button>
-                              )}
+                              <Skeleton className="h-10 w-20" />
                             </td>
                           )}
                         </tr>
-                      );
-                    })
-                  )}
+                      ))
+                    : weekDays.map((day) => {
+                        const dateKey = format(day, "yyyy-MM-dd");
+                        const entry = diaryData[dateKey] || {
+                          theory: "",
+                          practical: "",
+                          practicalNumber: "",
+                          isEditing: true,
+                        };
+
+                        const isAbsent = attendance.get(dateKey) === "absent";
+                        const isHoliday = holidays.has(dateKey);
+                        const isWeekend =
+                          format(day, "E") === "Sat" ||
+                          format(day, "E") === "Sun";
+
+                        return (
+                          <tr
+                            key={dateKey}
+                            className={`
+                            border-b transition-colors
+                            ${isHoliday ? "bg-red-50 dark:bg-red-950" : ""}
+                            ${isAbsent ? "bg-pink-50 dark:bg-pink-950" : ""}
+                            ${
+                              isWeekend && !isHoliday && !isAbsent
+                                ? "bg-muted/30"
+                                : ""
+                            }
+                          `}
+                          >
+                            <td className="p-4 font-medium whitespace-nowrap">
+                              {format(day, "MMM dd, yyyy")}
+                            </td>
+                            <td className="p-4 font-medium">
+                              {format(day, "EEEE")}
+                            </td>
+                            <td colSpan={isHoliday ? 3 : 1} className="p-4">
+                              {isHoliday ? (
+                                <div className="text-center text-muted-foreground">
+                                  {holidays.get(dateKey)?.holidayText ||
+                                    "Holiday"}
+                                </div>
+                              ) : isAbsent ? (
+                                <div className="text-muted-foreground">
+                                  Absent
+                                </div>
+                              ) : isTeacher && entry.isEditing ? (
+                                <Textarea
+                                  value={entry.theory || ""}
+                                  onChange={(e) =>
+                                    updateDiaryField(
+                                      dateKey,
+                                      "theory",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Add theory notes..."
+                                  className="min-h-[80px]"
+                                />
+                              ) : (
+                                <div className="whitespace-pre-wrap">
+                                  {entry.theory || "-"}
+                                </div>
+                              )}
+                            </td>
+                            {!isHoliday && (
+                              <>
+                                <td className="p-4">
+                                  {isAbsent ? (
+                                    <div className="text-muted-foreground">
+                                      Absent
+                                    </div>
+                                  ) : isTeacher && entry.isEditing ? (
+                                    <Textarea
+                                      value={entry.practical || ""}
+                                      onChange={(e) =>
+                                        updateDiaryField(
+                                          dateKey,
+                                          "practical",
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder="Add practical notes..."
+                                      className="min-h-[80px]"
+                                    />
+                                  ) : (
+                                    <div className="whitespace-pre-wrap">
+                                      {entry.practical || "-"}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-4">
+                                  {isAbsent ? (
+                                    <div className="text-muted-foreground">
+                                      -
+                                    </div>
+                                  ) : isTeacher && entry.isEditing ? (
+                                    <Input
+                                      type="number"
+                                      value={entry.practicalNumber || ""}
+                                      onChange={(e) =>
+                                        updateDiaryField(
+                                          dateKey,
+                                          "practicalNumber",
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder="#"
+                                    />
+                                  ) : (
+                                    <span>{entry.practicalNumber || "-"}</span>
+                                  )}
+                                </td>
+                              </>
+                            )}
+                            {isTeacher && (
+                              <td className="p-4">
+                                {!isHoliday && (
+                                  <Button
+                                    onClick={() => toggleEditing(dateKey)}
+                                    disabled={isSubmitting}
+                                    size="sm"
+                                    className="w-full"
+                                  >
+                                    {isSubmitting ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : entry.isEditing ? (
+                                      <>
+                                        <Save className="h-4 w-4 mr-2" />
+                                        Save
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                 </tbody>
               </table>
             </div>

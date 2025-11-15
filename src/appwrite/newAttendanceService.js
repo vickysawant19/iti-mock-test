@@ -374,7 +374,8 @@ class NewAttendanceService {
       }
 
       // Fetch counts for each status in parallel
-      const [presentCount, absentCount, lateCount] = await Promise.all([
+      const lateCount = 0;
+      const [presentCount, absentCount] = await Promise.all([
         this.database
           .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
             ...baseQueries,
@@ -391,16 +392,16 @@ class NewAttendanceService {
           ])
           .then((res) => res.total),
 
-        this.database
-          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
-            ...baseQueries,
-            Query.equal("status", "late"),
-            Query.limit(1),
-          ])
-          .then((res) => res.total),
+        // this.database
+        //   .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
+        //     ...baseQueries,
+        //     Query.equal("status", "late"),
+        //     Query.limit(1),
+        //   ])
+        //   .then((res) => res.total),
       ]);
 
-      const total = presentCount + absentCount + lateCount;
+      const total = presentCount + absentCount;
       const workingDays = total;
       const stats = {
         total,
@@ -410,9 +411,7 @@ class NewAttendanceService {
         workingDays,
         percentage:
           workingDays > 0
-            ? parseFloat(
-                (((presentCount + lateCount) / workingDays) * 100).toFixed(2)
-              )
+            ? parseFloat(((presentCount / workingDays) * 100).toFixed(2))
             : 0,
       };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
 import batchService from "@/appwrite/batchService";
-import attendanceService from "@/appwrite/attaindanceService";
+
 import { Query } from "appwrite";
 import { selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
@@ -24,6 +24,7 @@ import {
 
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import holidayService from "@/appwrite/holidaysService";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
@@ -66,7 +67,7 @@ const AttendanceRegister = () => {
       (bt) => bt.$id === selectedBatch
     )?.start_date;
     if (!currentBatchStartDate) return;
-    
+
     setLoadingStats(true);
     try {
       // Fetch stats for all students in parallel
@@ -211,19 +212,17 @@ const AttendanceRegister = () => {
       setLoadingBatch(true);
       setLoading(true);
       try {
-        const batch = await batchService.getBatch(selectedBatch);
-        const holidays =
-          (batch.attendanceHolidays || []).map((itm) => JSON.parse(itm)) || [];
+        const holidays = await holidayService.getBatchHolidays(selectedBatch);
         const holidayMap = new Map();
         holidays.forEach((holiday) => {
           holidayMap.set(holiday.date, holiday);
         });
         setHolidays(holidayMap);
 
+        const batch = await batchService.getBatch(selectedBatch);
         const studentIds = batch.studentIds.map(
           (ids) => JSON.parse(ids).userId
         );
-
         if (studentIds.length === 0) {
           setStudents([]);
           setLoading(false);
@@ -320,7 +319,7 @@ const AttendanceRegister = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 ">
       <div className="max-w-full mx-auto">
         <AttendanceHeader
           selectedBatch={selectedBatch}

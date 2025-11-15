@@ -10,7 +10,7 @@ const ShowStats = ({ attendance, label = "Attendance" }) => {
     totalDays > 0 ? Math.round((attendance?.presentDays / totalDays) * 100) : 0;
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 p-4 rounded-lg ">
+    <div className="w-full bg-white dark:bg-gray-800 p-4  ">
       <h2 className="text-lg font-semibold mb-4 flex items-center">
         <CalendarIcon className="mr-2 text-blue-600" size={20} />
         {label}

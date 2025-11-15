@@ -26,7 +26,7 @@ const AttendanceTable = ({
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="relative overflow-x-auto shadow-lg rounded-lg border border-gray-300 dark:border-gray-700">
+    <div className="relative overflow-x-auto shadow-lg  border border-gray-300 dark:border-gray-700 ">
       {/* Loading Overlay */}
       {loadingAttendance && (
         <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
@@ -45,12 +45,12 @@ const AttendanceTable = ({
       )}
 
       {/* Table Container with opacity transition */}
-      <div 
-        className={`max-h-[80vh] overflow-y-auto transition-opacity duration-300 ${
-          loadingAttendance ? 'opacity-30 pointer-events-none' : 'opacity-100'
+      <div
+        className={`max-h-[80vh] overflow-y-auto transition-opacity  duration-300 ${
+          loadingAttendance ? "opacity-30 pointer-events-none" : "opacity-100"
         }`}
       >
-        <table className="min-w-full bg-white dark:bg-gray-800 text-xs border-collapse">
+        <table className="min-w-full  dark:bg-gray-800 text-xs border-collapse">
           <AttendanceTableHead
             monthDates={monthDates}
             selectedMonth={selectedMonth}

@@ -203,7 +203,6 @@ const CreateMockTest = () => {
 
   useEffect(() => {
     if (tradeId && subjectId && year) {
-      console.log("Fetching modules based on updated form values...");
       fetchModules();
     }
   }, [tradeId, subjectId, year]);

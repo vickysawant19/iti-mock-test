@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "format": "prettier --write .",
-    "migrate-attendance": "node src/migrateAttendanceScript.js"
+    "migrate-holidays": "node src/migrateHolidays.js"
   },
   "dependencies": {
     "node-appwrite": "^20.3.0"

@@ -33,6 +33,7 @@ import CustomSelectData from "../../../components/customSelectData";
 import useLocationManager from "./hook/useLocationManager";
 import { FaCalendar } from "react-icons/fa";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import holidayService from "@/appwrite/holidaysService";
 
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +68,6 @@ const MarkStudentAttendance = () => {
   const [modalData, setModalData] = useState({
     date: "",
     status: "present",
-
     markedBy: profile.userId,
     remarks: "",
   });
@@ -102,13 +102,11 @@ const MarkStudentAttendance = () => {
   const fetchBatchData = async (batchId) => {
     try {
       const data = await batchService.getBatch(batchId);
-      const parsedData = data?.attendanceHolidays.map((item) =>
-        JSON.parse(item)
-      );
+      const holidayData = await holidayService.getBatchHolidays(batchId);
       const newMap = new Map();
-      parsedData.forEach((item) => newMap.set(item.date, item.holidayText));
+      holidayData.forEach((item) => newMap.set(item.date, item.holidayText));
       setHolidays(newMap);
-      setBatchData({ ...data, attendanceHolidays: parsedData || [] });
+      setBatchData(data);
     } catch (error) {
       console.log(error);
     }
@@ -229,7 +227,7 @@ const MarkStudentAttendance = () => {
     if (!batchData) {
       fetchBatchData(profile.batchId);
     }
-  }, [batchData, profile.batchId, navigate]);
+  }, [batchData, profile?.batchId, navigate]);
 
   useEffect(() => {
     if (isTeacher) {
@@ -462,9 +460,9 @@ const MarkStudentAttendance = () => {
   }
 
   return (
-    <div className="w-full  mx-auto px-4 py-6 dark:bg-black">
+    <div className="w-full  mx-auto  dark:bg-black">
       {/* Top Actions Bar */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 mb-6">
+      <div className="bg-white dark:bg-gray-800  shadow-md p-5 mb-2">
         {isTeacher ? (
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Select with improved width handling */}
@@ -488,7 +486,7 @@ const MarkStudentAttendance = () => {
 
             {/* Student Details Card */}
             {studentAttendance && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600  rounded-lg p-3 shadow-xs">
                 <div className="flex flex-col">
                   <div className="flex items-center mb-1">
                     <User
@@ -516,7 +514,7 @@ const MarkStudentAttendance = () => {
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
             {/* Student Details Card */}
             {profile && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600  p-3 shadow-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="flex items-center">
                     <User
@@ -627,8 +625,8 @@ const MarkStudentAttendance = () => {
           </div>
         ) : (
           studentAttendance && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4  shadow-md">
                 <h1 className="text-black dark:text-white flex gap-2 items-center mb-4 font-semibold text-lg">
                   {" "}
                   <FaCalendar /> Attendance Calendar - {currentMonth}
@@ -650,7 +648,7 @@ const MarkStudentAttendance = () => {
                   circleRadius={batchData.circleRadius}
                 />
               </div>
-              <div className="lg:col-span-5 space-y-6">
+              <div className="lg:col-span-5 space-y-2">
                 <ShowStats
                   attendance={currentMonthData}
                   label={`Month Attendance - ${currentMonth}`}
@@ -665,7 +663,7 @@ const MarkStudentAttendance = () => {
           )
         )}
         {isTeacher && !studentAttendance && !isLoadingAttendance && (
-          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800  shadow-md">
             <p className="text-gray-500 dark:text-gray-400 text-lg">
               Please select a student to view their attendance.
             </p>
@@ -712,7 +710,6 @@ const MarkStudentAttendance = () => {
                     onClick={() =>
                       setModalData((prev) => ({
                         ...prev,
-
                         markedBy: profile.userId,
                         status: "present",
                       }))
@@ -757,7 +754,7 @@ const MarkStudentAttendance = () => {
                 </label>
                 <textarea
                   id="remarks"
-                  value={modalData.remarks}
+                  value={modalData?.remarks || ""}
                   onChange={(e) =>
                     setModalData((prev) => ({
                       ...prev,

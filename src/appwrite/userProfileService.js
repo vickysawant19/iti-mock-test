@@ -1,7 +1,6 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
-import attendanceService from "./attaindanceService";
 
 export class UserProfileService {
   constructor() {

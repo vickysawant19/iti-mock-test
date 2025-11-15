@@ -24,8 +24,6 @@ const CreateQuestion = () => {
   const [images, setImages] = useState([]);
   const [similarQuestions, setSimilarQuestions] = useState([]);
 
- 
-
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
@@ -40,25 +38,21 @@ const CreateQuestion = () => {
     formState: { errors },
   } = useForm();
 
-
-   
-
-
   const tradeId = useWatch({ control, name: "tradeId" });
   const subjectId = useWatch({ control, name: "subjectId" });
   const year = useWatch({ control, name: "year" });
 
   useEffect(() => {
-    console.log("here")
-    return
+    console.log("here");
+    return;
     const debounceTimer = setTimeout(async () => {
       if (watch("question").trim()) {
         setIsLoading(true);
         try {
           const response = await quesdbservice.getSimilarQuestions({
-            question:watch("question"), tradeId
-          }
-          );
+            question: watch("question"),
+            tradeId,
+          });
 
           console.log("Similar questions:", response);
           setSimilarQuestions(response);
@@ -97,13 +91,16 @@ const CreateQuestion = () => {
   const fetchModules = async () => {
     if (!tradeId || !subjectId || !year) return;
     try {
-      const response = await moduleServices.listModules([
-        Query.equal("tradeId", tradeId),
-        Query.equal("subjectId", subjectId),
-        Query.equal("year", year),
-      ]);
+      const syllabusData = await moduleServices.getNewModulesData(
+        tradeId,
+        subjectId,
+        year
+      );
+      const sortedSyllabusData = syllabusData.sort(
+        (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0]
+      );
 
-      setModules(response);
+      setModules(sortedSyllabusData);
     } catch (error) {
       console.log(error);
       toast.error("Failed to fetch Modules");
@@ -132,7 +129,7 @@ const CreateQuestion = () => {
     try {
       data.userId = user.$id;
       data.userName = user.name;
-      data.tags = (data.tags || []).join(',');
+      data.tags = (data.tags || []).join(",");
       data.images = images.map((item) => JSON.stringify(item)) || [];
       await quesdbservice.createQuestion(data);
       reset({
@@ -372,7 +369,7 @@ const CreateQuestion = () => {
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Select Module</option>
-                  {modules.syllabus.map((m) => (
+                  {modules.map((m) => (
                     <option key={m.moduleId} value={m.moduleId}>
                       {m.moduleId} {m.moduleName}
                     </option>

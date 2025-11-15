@@ -60,16 +60,21 @@ const EditQuestion = () => {
     if (!tradeId || !subjectId || !year) return;
     setIsLoading(true);
     try {
-      const response = await moduleServices.listModules([
-        Query.equal("tradeId", tradeId),
-        Query.equal("subjectId", subjectId),
-        Query.equal("year", year),
-      ]);
+      const syllabusData = await moduleServices.getNewModulesData(
+        tradeId,
+        subjectId,
+        year
+      );
+
+      const sortedSyllabusData = syllabusData.sort(
+        (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0]
+      );
+
       const currentModuleId = getValues("moduleId");
       if (currentModuleId) {
         setValue("moduleId", currentModuleId);
       }
-      setModules(response);
+      setModules(sortedSyllabusData);
     } catch (error) {
       console.log(error);
       toast.error("Failed to fetch Modules");
@@ -104,7 +109,7 @@ const EditQuestion = () => {
         options: question.options,
         correctAnswer: question.correctAnswer,
         images: images,
-        tags: question.tags?.split(",") || []
+        tags: question.tags?.split(",") || [],
       });
     } catch (error) {
       console.log(error.message);
@@ -123,7 +128,6 @@ const EditQuestion = () => {
 
   useEffect(() => {
     if (tradeId && subjectId && year) {
-
       fetchModules();
     }
   }, [tradeId, subjectId, year]);
@@ -145,7 +149,7 @@ const EditQuestion = () => {
 
     data.images = images.map((img) => JSON.stringify(img));
     data.userId = user.$id;
-    data.tags = (data.tags || []).join(',');
+    data.tags = (data.tags || []).join(",");
     try {
       await quesdbservice.updateQuestion(quesId, data);
       toast.success("Question updated");
@@ -288,7 +292,7 @@ const EditQuestion = () => {
                           className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-100"
                         >
                           <option value="">Select Module</option>
-                          {modules?.syllabus.map((m) => (
+                          {modules?.map((m) => (
                             <option key={m.moduleId} value={String(m.moduleId)}>
                               {m.moduleId} {m.moduleName}
                             </option>
@@ -301,7 +305,7 @@ const EditQuestion = () => {
               </div>
             )}
 
-                 {/* Tags */}
+            {/* Tags */}
             <div className="mb-6 lg:col-span-2">
               <label
                 htmlFor="tags"
@@ -309,7 +313,7 @@ const EditQuestion = () => {
               >
                 Tags (Press Enter or Space to add)
               </label>
-             
+
               <div className="flex flex-wrap gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
                 {watch("tags")?.map((tag, index) => (
                   <span

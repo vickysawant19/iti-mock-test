@@ -15,7 +15,7 @@ const AttendanceHeader = ({
   loadingStats = false,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 shadow-lg p-2 ">
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
         {/* Batch Selection */}
         <div className="flex-1">
@@ -65,7 +65,7 @@ const AttendanceHeader = ({
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            
+
             <div className="relative flex-1">
               <input
                 type="month"
@@ -81,7 +81,7 @@ const AttendanceHeader = ({
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={handleNextMonth}
               disabled={loadingAttendance || loadingStats}
@@ -99,11 +99,15 @@ const AttendanceHeader = ({
       <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-green-600 dark:text-green-400 font-bold text-lg">P</span>
+            <span className="text-green-600 dark:text-green-400 font-bold text-lg">
+              P
+            </span>
             <span className="text-gray-700 dark:text-gray-300">Present</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-red-600 dark:text-red-400 font-bold text-lg">A</span>
+            <span className="text-red-600 dark:text-red-400 font-bold text-lg">
+              A
+            </span>
             <span className="text-gray-700 dark:text-gray-300">Absent</span>
           </div>
           <div className="flex items-center gap-2">
@@ -111,7 +115,9 @@ const AttendanceHeader = ({
             <span className="text-gray-700 dark:text-gray-300">Holiday</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-300 dark:text-gray-600 font-bold text-lg">-</span>
+            <span className="text-gray-300 dark:text-gray-600 font-bold text-lg">
+              -
+            </span>
             <span className="text-gray-700 dark:text-gray-300">No Record</span>
           </div>
         </div>

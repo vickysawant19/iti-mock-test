@@ -24,7 +24,12 @@ const conf = {
     import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID
   ),
   faceAttendanceCollectionId: String("6800d3c9000712f842e3"),
-  newAttendanceCollectionId: String(import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID),
+  newAttendanceCollectionId: String(
+    import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID
+  ),
+  holidayDaysCollectionId: String(
+    import.meta.env.VITE_HOLIDAY_DAYS_COLLECTION_ID
+  ),
 };
 
 export default conf;

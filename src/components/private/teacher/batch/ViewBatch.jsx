@@ -16,7 +16,7 @@ import { selectProfile } from "../../../../store/profileSlice";
 import { calculateStats } from "../attaindance/CalculateStats";
 import userProfileService from "../../../../appwrite/userProfileService";
 import batchService from "../../../../appwrite/batchService";
-import attendanceService from "../../../../appwrite/attaindanceService";
+
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
 import ViewProfiles from "./profile/ViewProfiles";
@@ -180,11 +180,6 @@ const ViewBatch = () => {
         setData((prev) => ({ ...prev, attendanceStats: [] }));
         return;
       }
-      const attendance = await attendanceService.getStudentsAttendance([
-        Query.equal("userId", studentIds),
-        Query.equal("batchId", data.selectedBatchData.$id),
-        Query.orderDesc("$updatedAt"),
-      ]);
 
       const newAttendance = data.students.map(async (student) => {
         return await newAttendanceService.getStudentAttendance(

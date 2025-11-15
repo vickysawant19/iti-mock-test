@@ -2,38 +2,49 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, CalendarDays } from "lucide-react";
 import CustomCalendar from "./Calender";
 import { selectProfile } from "../../../../store/profileSlice";
-import batchService from "../../../../appwrite/batchService";
-import { Query } from "appwrite";
-import LoadingState from "../batch/components/LoadingState";
 import Loader from "@/components/components/Loader";
+import holidayService from "@/appwrite/holidaysService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const MarkHolidays = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [attendanceHolidays, setAttendanceHolidays] = useState([]);
+  const [attendanceHolidays, setAttendanceHolidays] = useState(new Map());
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const profile = useSelector(selectProfile);
 
-  const fetchBatchData = async () => {
+  const fetchBatchHolidays = async () => {
     setIsLoading(true);
     try {
-      const data = await batchService.listBatches([
-        Query.equal("$id", profile.batchId),
-        Query.select(["attendanceHolidays"]),
-      ]);
-      if (data.total >= 1) {
-        setAttendanceHolidays(
-          data.documents[0]?.attendanceHolidays.map((item) =>
-            JSON.parse(item)
-          ) || []
-        );
-      }
+      const data = await holidayService.getBatchHolidays(profile.batchId);
+      const newMap = new Map();
+      data.forEach((item) => newMap.set(item.date, item));
+      setAttendanceHolidays(newMap);
     } catch (error) {
       console.error("Error fetching batch data:", error);
       toast.error("Failed to load holiday data. Please try again.");
@@ -44,72 +55,94 @@ const MarkHolidays = () => {
 
   useEffect(() => {
     if (profile?.batchId) {
-      fetchBatchData();
+      fetchBatchHolidays();
     }
-  }, [profile]);
-
-  const saveModalData = (e) => {
-    e.preventDefault();
-    if (!modalData.holidayText?.trim()) {
-      toast.error("Please enter a holiday description");
-      return;
-    }
-
-    setAttendanceHolidays((prev) => [
-      ...prev.filter(
-        (holiday) => holiday.date !== format(selectedDate, "yyyy-MM-dd")
-      ),
-      {
-        ...modalData,
-        holidayText: modalData.holidayText.trim(),
-      },
-    ]);
-    setModalData({});
-    setShowModal(false);
-  };
+  }, [profile?.batchId]);
 
   const openModal = (date) => {
-    const existingData = attendanceHolidays.find(
-      (holiday) => holiday.date === date
-    );
+    const existingData = attendanceHolidays.get(date);
     setModalData(
       existingData || {
         date,
-        isHoliday: true,
         holidayText: "",
       }
     );
     setShowModal(true);
   };
 
-  const removeModalData = () => {
-    setAttendanceHolidays((prev) =>
-      prev.filter(
-        (holiday) => holiday.date !== format(selectedDate, "yyyy-MM-dd")
-      )
-    );
+  const closeModal = () => {
     setShowModal(false);
+    setModalData({});
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const stringifyData = attendanceHolidays.map((item) =>
-        JSON.stringify(item)
-      );
-      const data = await batchService.updateBatch(profile.batchId, {
-        attendanceHolidays: stringifyData,
-      });
+  const saveModalData = async () => {
+    if (!modalData.holidayText?.trim()) {
+      toast.error("Please enter a holiday description");
+      return;
+    }
 
-      setAttendanceHolidays(
-        data.attendanceHolidays.map((item) => JSON.parse(item))
-      );
-      toast.success("Holidays saved successfully");
+    setIsSaving(true);
+    try {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const existingHoliday = attendanceHolidays.get(dateStr);
+
+      if (existingHoliday) {
+        const updatedHoliday = await holidayService.updateHoliday(
+          existingHoliday.$id,
+          {
+            holidayText: modalData.holidayText.trim(),
+          }
+        );
+        setAttendanceHolidays((prev) => {
+          const updatedMap = new Map(prev);
+          updatedMap.set(dateStr, updatedHoliday);
+          return updatedMap;
+        });
+        toast.success("Holiday updated successfully!");
+      } else {
+        const newHoliday = await holidayService.addHoliday({
+          batchId: profile.batchId,
+          date: dateStr,
+          holidayText: modalData.holidayText.trim(),
+        });
+        setAttendanceHolidays((prev) => {
+          const updatedMap = new Map(prev);
+          updatedMap.set(dateStr, newHoliday);
+          return updatedMap;
+        });
+        toast.success("Holiday added successfully!");
+      }
+      closeModal();
     } catch (error) {
-      console.error("Error submitting holidays:", error);
-      toast.error("Failed to save holidays. Please try again.");
+      console.error("Error saving holiday:", error);
+      toast.error("Failed to save holiday. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
+    }
+  };
+
+  const removeModalData = async () => {
+    if (!modalData.$id) {
+      toast.error("No holiday to remove");
+      return;
+    }
+
+    setIsRemoving(true);
+    try {
+      await holidayService.removeHoliday(modalData.$id);
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      setAttendanceHolidays((prev) => {
+        const updatedMap = new Map(prev);
+        updatedMap.delete(dateStr);
+        return updatedMap;
+      });
+      toast.success("Holiday removed successfully!");
+      closeModal();
+    } catch (error) {
+      console.error("Error removing holiday:", error);
+      toast.error("Failed to remove holiday. Please try again.");
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -117,19 +150,20 @@ const MarkHolidays = () => {
     if (view !== "month") return null;
 
     const formattedDate = format(date, "yyyy-MM-dd");
-    const holiday = attendanceHolidays.find(
-      (holiday) => holiday.date === formattedDate
-    );
+    const holiday = attendanceHolidays.get(formattedDate);
 
     return (
       <div
         onDoubleClick={() => openModal(formattedDate)}
-        className="w-full h-full min-h-[60px] p-1  cursor-pointer"
+        className="w-full h-full min-h-[60px] p-1 cursor-pointer"
       >
         {holiday && (
-          <div className="bg-red-100 p-1 rounded-sm text-xs text-red-800 break-words">
+          <Badge
+            variant="destructive"
+            className="text-[10px] sm:text-xs w-full justify-center break-words whitespace-normal h-auto py-1"
+          >
             {holiday.holidayText}
-          </div>
+          </Badge>
         )}
       </div>
     );
@@ -139,11 +173,9 @@ const MarkHolidays = () => {
     if (view !== "month") return "";
 
     const formattedDate = format(date, "yyyy-MM-dd");
-    const holiday = attendanceHolidays.find(
-      (holiday) => holiday.date === formattedDate
-    );
+    const holiday = attendanceHolidays.has(formattedDate);
 
-    return `relative ${holiday ? "holiday-tile" : null}`;
+    return `relative ${holiday ? "holiday-tile" : ""}`;
   };
 
   if (isLoading) {
@@ -151,119 +183,126 @@ const MarkHolidays = () => {
   }
 
   return (
-    <div className="p-4 mx-auto dark:bg-black">
-      <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md dark:shadow-none">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-          Update Holidays
-        </h1>
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || isSubmitting}
-          className="w-full sm:w-auto px-6 py-2 bg-blue-500 dark:bg-blue-500 text-white rounded-md shadow-sm
-            hover:bg-blue-600 dark:hover:bg-blue-400 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-            disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-        >
-          {isSubmitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="animate-spin" size={16} />
-              Saving...
-            </span>
-          ) : (
-            "Save Holidays"
-          )}
-        </button>
-      </div>
-      <div className="container mx-auto">
-      <CustomCalendar
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        enableNextTiles={true}
-        tileContent={tileContent}
-        tileClassName={tileClassName}
-      />
-
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto dark:bg-opacity-80">
-          <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-90 transition-opacity" />
-
-            <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-              <div className="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                    {modalData.holidayText ? "Edit Holiday" : "Add Holiday"}
-                  </h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                  </button>
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    htmlFor="holidayText"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
-                    Holiday Description
-                  </label>
-                  <input
-                    value={modalData.holidayText}
-                    onChange={(e) =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        holidayText: e.target.value,
-                        isHoliday: true,
-                        date: format(selectedDate, "yyyy-MM-dd"),
-                      }))
-                    }
-                    type="text"
-                    id="holidayText"
-                    placeholder="Enter holiday description"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
-                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100
-                      placeholder:text-gray-400 text-sm"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-end gap-2 mt-5">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="inline-flex justify-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm 
-                      font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 
-                      hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  {modalData.holidayText && (
-                    <button
-                      onClick={removeModalData}
-                      className="inline-flex justify-center rounded-md bg-red-600 dark:bg-red-500 px-3 py-2 
-                        text-sm font-semibold text-white shadow-sm hover:bg-red-700 dark:hover:bg-red-400 
-                        focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                      Remove Holiday
-                    </button>
-                  )}
-                  <button
-                    onClick={saveModalData}
-                    className="inline-flex justify-center rounded-md bg-blue-600 dark:bg-blue-500 px-3 py-2 
-                      text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:hover:bg-blue-400 
-                      focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    {modalData.holidayText ? "Update" : "Add"} Holiday
-                  </button>
-                </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="container mx-auto max-w-6xl space-y-4 sm:space-y-6">
+        {/* Header Card */}
+        <Card className="border-none shadow-sm rounded-none">
+          <CardHeader className="pb-3 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6" />
+                  Holiday Management
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Double-click on any date to add or edit holidays
+                </CardDescription>
               </div>
+              <Badge variant="outline" className="self-start sm:self-center">
+                {attendanceHolidays.size}{" "}
+                {attendanceHolidays.size === 1 ? "Holiday" : "Holidays"}
+              </Badge>
             </div>
+          </CardHeader>
+        </Card>
+
+        {/* Calendar Card */}
+        <Card className="border-none shadow-sm rounded-none">
+          <CardContent className="p-0">
+            <CustomCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              enableNextTiles={true}
+              tileContent={tileContent}
+              tileClassName={tileClassName}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modal using shadcn Dialog */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-[425px] max-w-[95vw] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl">
+              {modalData.$id ? "Edit Holiday" : "Add Holiday"}
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              {selectedDate && format(selectedDate, "EEEE, MMMM d, yyyy")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="holidayText" className="text-sm sm:text-base">
+                Holiday Description
+              </Label>
+              <Input
+                id="holidayText"
+                value={modalData.holidayText || ""}
+                onChange={(e) =>
+                  setModalData((prev) => ({
+                    ...prev,
+                    holidayText: e.target.value,
+                    date: format(selectedDate, "yyyy-MM-dd"),
+                  }))
+                }
+                placeholder="e.g., National Holiday, Diwali"
+                className="text-sm sm:text-base"
+                disabled={isSaving || isRemoving}
+                autoFocus
+              />
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeModal}
+                  disabled={isSaving || isRemoving}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                {modalData.$id && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={removeModalData}
+                    disabled={isSaving || isRemoving}
+                    className="w-full sm:w-auto"
+                  >
+                    {isRemoving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Removing...
+                      </>
+                    ) : (
+                      "Remove Holiday"
+                    )}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={saveModalData}
+                  disabled={isSaving || isRemoving}
+                  className="w-full sm:w-auto"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>{modalData.$id ? "Update" : "Add"} Holiday</>
+                  )}
+                </Button>
+              </div>
+            </DialogFooter>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
