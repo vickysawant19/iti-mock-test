@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import RenderModule from "./RenderModule";
 import AssessmentHeader from "./components/AssessmentHeader.";
-import useScrollToItem from "../../../utils/useScrollToItem";
+import useScrollToItem from "@/hooks/useScrollToItem";
 
 const AssessmentList = ({ modulesData = [], papersData, redirect }) => {
   const isMobileView = window.innerWidth < 750;

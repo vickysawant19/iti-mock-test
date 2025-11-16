@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import {
@@ -10,9 +10,9 @@ import {
   MapPin,
   MapPinOff,
   User,
-  X, // Added
-  XCircle, // Added
-  Trash2, // Added
+  X,
+  XCircle,
+  Trash2,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -21,16 +21,14 @@ import { Query } from "appwrite";
 import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import userProfileService from "../../../../appwrite/userProfileService";
-// import attendanceService from "../../../../appwrite/attaindanceService"; // Unused import
 import batchService from "../../../../appwrite/batchService";
 import LocationPicker from "../components/LocationPicker";
 import AttendanceStatus from "./AttendanceStatus";
 import { selectProfile } from "../../../../store/profileSlice";
 import { selectUser } from "../../../../store/userSlice";
 import { calculateStats } from "./CalculateStats";
-// import { ClipLoader } from "react-spinners"; // Replaced with Loader2
 import CustomSelectData from "../../../components/customSelectData";
-import useLocationManager from "./hook/useLocationManager";
+import useLocationManager from "../../../../hooks/useLocationManager";
 import { FaCalendar } from "react-icons/fa";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
@@ -38,7 +36,7 @@ import holidayService from "@/appwrite/holidaysService";
 const MarkStudentAttendance = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
-  const [isModalLoading, setIsModalLoading] = useState(false); // For modal actions
+  const [isModalLoading, setIsModalLoading] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -88,16 +86,27 @@ const MarkStudentAttendance = () => {
   const {
     deviceLocation,
     locationText,
-    distance,
-    loading, // This is from the hook, not the component's loader
+    loading,
     error,
     getDeviceLocation,
-  } = useLocationManager({
-    isTeacher,
-    batchData,
-  });
+    calculateDistance,
+  } = useLocationManager(isTeacher); // Enable location tracking for students only
 
-  const isMarkingAllowed = distance < batchData?.circleRadius || isTeacher;
+  // Memoize distance calculation to prevent multiple re-renders
+  const distance = useMemo(() => {
+    if (!deviceLocation || !batchData?.location) return Infinity;
+
+    return calculateDistance(
+      deviceLocation.lat,
+      deviceLocation.lon,
+      batchData.location.lat,
+      batchData.location.lon
+    );
+  }, [deviceLocation, batchData?.location, calculateDistance]);
+
+  const isMarkingAllowed = useMemo(() => {
+    return distance < batchData?.circleRadius || isTeacher;
+  }, [distance, batchData?.circleRadius, isTeacher]);
 
   const fetchBatchData = async (batchId) => {
     try {
@@ -119,7 +128,6 @@ const MarkStudentAttendance = () => {
       let studentIds = batchData?.studentIds.map(
         (student) => JSON.parse(student)?.userId
       );
-      // BUG FIX: Removed teacher's ID from student list
       studentIds.push(profile?.userId);
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("userId", studentIds),
@@ -139,31 +147,25 @@ const MarkStudentAttendance = () => {
   const fetchStudentAttendance = async (userId) => {
     if (!profile.batchId) return;
     setIsLoadingAttendance(true);
-    setStudentAttendance(null); // Clear previous student's data
-    setWorkingDays(new Map()); // Clear previous working days
+    setStudentAttendance(null);
+    setWorkingDays(new Map());
     try {
       const data = await newAttendanceService.getStudentAttendance(
         userId,
         profile.batchId
       );
 
-      // Get student profile details (needed for both cases)
       let studentProfile;
       if (isTeacher) {
         studentProfile = batchStudents?.find((item) => item.userId === userId);
       } else {
-        studentProfile = profile; // Student is the profile
+        studentProfile = profile;
       }
 
       if (!studentProfile) {
-        // This can happen if batchStudents isn't loaded yet when selectedStudent is set
-        // Or if student isn't the profile (which shouldn't happen)
         console.warn("Student profile not found, retrying...");
-        // This might be optimistic. A better solution might be to ensure batchStudents is loaded first.
-        // For now, let's just use the profile for the student's own view.
         if (!isTeacher) studentProfile = profile;
         else {
-          // If teacher is viewing and profile not found, fetch it directly (edge case)
           const fallbackProfile = await userProfileService.getUserProfile(
             userId
           );
@@ -172,22 +174,20 @@ const MarkStudentAttendance = () => {
       }
 
       if (!data || data.length === 0) {
-        // No attendance records found
         setStudentAttendance({
-          ...studentProfile, // Spread the whole profile
-          attendanceRecords: [], // Empty array
-          batchId: profile.batchId, // Ensure batchId is from the context
+          ...studentProfile,
+          attendanceRecords: [],
+          batchId: profile.batchId,
         });
       } else {
-        // Records found
         const newMap = new Map();
         data.forEach((item) => newMap.set(item.date, item));
         setWorkingDays(newMap);
 
         setStudentAttendance({
-          ...studentProfile, // Spread the whole profile
-          attendanceRecords: data, // Just the array
-          batchId: profile.batchId, // Ensure batchId is from the context
+          ...studentProfile,
+          attendanceRecords: data,
+          batchId: profile.batchId,
         });
       }
     } catch (error) {
@@ -206,7 +206,6 @@ const MarkStudentAttendance = () => {
         setAttendanceStats,
       });
     } else {
-      // Reset stats if no student is selected or has no data
       setAttendanceStats({
         totalDays: 0,
         presentDays: 0,
@@ -233,12 +232,11 @@ const MarkStudentAttendance = () => {
     if (isTeacher) {
       fetchBatchStudents();
     } else {
-      // Only fetch if batchData is loaded
       if (batchData) {
         fetchStudentAttendance(profile.userId);
       }
     }
-  }, [batchData, profile, isTeacher]); // Dependency on batchData is important for student view
+  }, [batchData, profile, isTeacher]);
 
   useEffect(() => {
     const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
@@ -249,7 +247,6 @@ const MarkStudentAttendance = () => {
     setCurrentMonthData(monthData);
   }, [currentMonth, attendanceStats]);
 
-  // Refetch attendance when teacher selects a new student
   useEffect(() => {
     if (isTeacher && selectedStudent) {
       fetchStudentAttendance(selectedStudent.userId);
@@ -269,8 +266,7 @@ const MarkStudentAttendance = () => {
     if (!existingRecord) {
       existingRecord = {
         date: formattedDate,
-        status: "present", // Default when attendance isn't marked
-
+        status: "present",
         markedBy: profile.userId,
         remarks: "",
       };
@@ -280,7 +276,7 @@ const MarkStudentAttendance = () => {
   };
 
   const saveAttendance = async () => {
-    setIsModalLoading(true); // Start loading
+    setIsModalLoading(true);
     try {
       const alreadyMarked = studentAttendance?.attendanceRecords?.find(
         (record) => record.date === modalData.date
@@ -293,7 +289,6 @@ const MarkStudentAttendance = () => {
         );
         toast.success("Attendance updated successfully!");
       } else {
-        // CRITICAL BUG FIX: Use studentAttendance.userId, not profile.userId
         markedRes = await newAttendanceService.createAttendance({
           userId: studentAttendance.userId,
           batchId: studentAttendance.batchId,
@@ -301,7 +296,7 @@ const MarkStudentAttendance = () => {
           date: modalData.date,
           status: modalData.status,
           remarks: modalData.remarks,
-          markedBy: profile.userId, // "markedBy" is correct (the current user)
+          markedBy: profile.userId,
         });
         toast.success("Attendance marked successfully!");
       }
@@ -327,12 +322,11 @@ const MarkStudentAttendance = () => {
       console.error("Error saving attendance:", error);
       toast.error("Failed to save attendance.");
     } finally {
-      setIsModalLoading(false); // Stop loading
+      setIsModalLoading(false);
     }
   };
 
   const removeAttendance = async () => {
-    // Find the record to delete
     const recordToDelete = studentAttendance.attendanceRecords.find(
       (record) => record.date === modalData.date
     );
@@ -342,7 +336,7 @@ const MarkStudentAttendance = () => {
       return;
     }
 
-    setIsModalLoading(true); // Start loading
+    setIsModalLoading(true);
     try {
       await newAttendanceService.deleteAttendance(recordToDelete.$id);
 
@@ -367,7 +361,7 @@ const MarkStudentAttendance = () => {
       console.error("Error removing attendance:", error);
       toast.error("Failed to remove attendance.");
     } finally {
-      setIsModalLoading(false); // Stop loading
+      setIsModalLoading(false);
     }
   };
 
@@ -387,8 +381,6 @@ const MarkStudentAttendance = () => {
     }
     const selectedDateData = workingDays.get(formattedDate);
 
-    // Don't show anything if data exists but it's not a teacher
-    // Only teachers can see the details in the tile
     if (!isMarkingAllowed) {
       return null;
     }
@@ -460,20 +452,19 @@ const MarkStudentAttendance = () => {
   }
 
   return (
-    <div className="w-full  mx-auto  dark:bg-black">
+    <div className="w-full mx-auto dark:bg-black">
       {/* Top Actions Bar */}
-      <div className="bg-white dark:bg-gray-800  shadow-md p-5 mb-2">
+      <div className="bg-white dark:bg-gray-800 shadow-md p-5 mb-2">
         {isTeacher ? (
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
-            {/* Student Select with improved width handling */}
-            <div className="w-full sm:w-1/3 ">
+            <div className="w-full sm:w-1/3">
               <CustomSelectData
                 label="Select Student"
                 placeholder={
                   isLoading ? "Loading students..." : "Select student"
                 }
                 labelKey="userName"
-                valueKey="$id" // Using $id as value key, but onChange gets the whole object
+                valueKey="$id"
                 value={selectedStudent}
                 onChange={setSelectedStudent}
                 options={batchStudents}
@@ -484,9 +475,8 @@ const MarkStudentAttendance = () => {
               />
             </div>
 
-            {/* Student Details Card */}
             {studentAttendance && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600  rounded-lg p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
                 <div className="flex flex-col">
                   <div className="flex items-center mb-1">
                     <User
@@ -512,9 +502,8 @@ const MarkStudentAttendance = () => {
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
-            {/* Student Details Card */}
             {profile && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600  p-3 shadow-xs">
+              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-3 shadow-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="flex items-center">
                     <User
@@ -565,7 +554,6 @@ const MarkStudentAttendance = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex flex-col xs:flex-row gap-3">
               <button
                 onClick={() => setIsShowMap((prev) => !prev)}
@@ -626,9 +614,8 @@ const MarkStudentAttendance = () => {
         ) : (
           studentAttendance && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4  shadow-md">
+              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 shadow-md">
                 <h1 className="text-black dark:text-white flex gap-2 items-center mb-4 font-semibold text-lg">
-                  {" "}
                   <FaCalendar /> Attendance Calendar - {currentMonth}
                 </h1>
                 <CustomCalendar
@@ -640,7 +627,7 @@ const MarkStudentAttendance = () => {
                     !isTeacher ? new Date(profile.enrolledAt) : undefined
                   }
                   handleActiveStartDateChange={handleMonthChange}
-                  openModal={openModal} // Pass openModal to calendar
+                  openModal={openModal}
                   distance={distance}
                   canMarkPrevious={!batchData.canMarkPrevious}
                   enableNextTiles={isTeacher}
@@ -663,7 +650,7 @@ const MarkStudentAttendance = () => {
           )
         )}
         {isTeacher && !studentAttendance && !isLoadingAttendance && (
-          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800  shadow-md">
+          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800 shadow-md">
             <p className="text-gray-500 dark:text-gray-400 text-lg">
               Please select a student to view their attendance.
             </p>
@@ -671,11 +658,10 @@ const MarkStudentAttendance = () => {
         )}
       </div>
 
-      {/* Attendance Modal (IMPROVED) */}
+      {/* Attendance Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
               <h2 className="text-xl font-semibold dark:text-white">
                 {modalData.$id ? "Edit Attendance" : "Mark Attendance"}
@@ -689,9 +675,7 @@ const MarkStudentAttendance = () => {
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-6 space-y-4">
-              {/* Date Info */}
               <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <Calendar size={18} className="text-blue-500 mr-3" />
                 <span className="text-md font-medium text-gray-800 dark:text-gray-200">
@@ -700,7 +684,6 @@ const MarkStudentAttendance = () => {
                 </span>
               </div>
 
-              {/* Status Buttons */}
               <div>
                 <label className="block text-sm font-medium mb-2 dark:text-gray-200">
                   Status
@@ -727,7 +710,6 @@ const MarkStudentAttendance = () => {
                     onClick={() =>
                       setModalData((prev) => ({
                         ...prev,
-
                         markedBy: profile.userId,
                         status: "absent",
                       }))
@@ -744,7 +726,6 @@ const MarkStudentAttendance = () => {
                 </div>
               </div>
 
-              {/* Remarks Text Input */}
               <div>
                 <label
                   htmlFor="remarks"
@@ -769,9 +750,7 @@ const MarkStudentAttendance = () => {
               </div>
             </div>
 
-            {/* Footer (Action Buttons) */}
             <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 flex items-center justify-between rounded-b-lg">
-              {/* Delete/Undo Button (Left-aligned) */}
               {modalData.$id ? (
                 <button
                   onClick={removeAttendance}
@@ -787,10 +766,9 @@ const MarkStudentAttendance = () => {
                   )}
                 </button>
               ) : (
-                <div></div> // Empty div to keep other buttons on the right
+                <div></div>
               )}
 
-              {/* Cancel and Save Buttons (Right-aligned) */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsModalOpen(false)}

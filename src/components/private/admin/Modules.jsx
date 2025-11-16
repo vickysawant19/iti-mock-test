@@ -4,10 +4,15 @@ import { selectProfile } from "../../../store/profileSlice";
 import { PlusCircle, BookOpen, Filter, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 import ModulesList from "./ModulesList";
 import AddTopics from "./AddTopics";
@@ -19,7 +24,7 @@ import tradeservice from "../../../appwrite/tradedetails";
 import subjectService from "../../../appwrite/subjectService";
 import moduleServices from "../../../appwrite/moduleServices";
 import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
-import useScrollToItem from "../../../utils/useScrollToItem";
+import useScrollToItem from "@/hooks/useScrollToItem";
 
 const Modules = () => {
   const [tradeData, setTradeData] = useState([]);
@@ -139,8 +144,8 @@ const Modules = () => {
               <Filter className="h-3.5 w-3.5 text-primary" />
               Trade
             </Label>
-            <Select 
-              value={selectedTradeID} 
+            <Select
+              value={selectedTradeID}
               onValueChange={setSelectedTradeID}
               disabled={fetchingData}
             >
@@ -162,8 +167,8 @@ const Modules = () => {
               <Filter className="h-3.5 w-3.5 text-primary" />
               Year
             </Label>
-            <Select 
-              value={selectedTradeYear} 
+            <Select
+              value={selectedTradeYear}
               onValueChange={setSelectedTradeYear}
               disabled={fetchingData}
             >
@@ -173,10 +178,14 @@ const Modules = () => {
               <SelectContent>
                 {selectedTradeID &&
                   Array.from({
-                    length: tradeData.find((trade) => trade.$id === selectedTradeID)
-                      ?.duration || 0,
+                    length:
+                      tradeData.find((trade) => trade.$id === selectedTradeID)
+                        ?.duration || 0,
                   }).map((_, idx) => (
-                    <SelectItem key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
+                    <SelectItem
+                      key={idx}
+                      value={idx === 0 ? "FIRST" : "SECOND"}
+                    >
                       {idx === 0 ? "FIRST" : "SECOND"}
                     </SelectItem>
                   ))}
@@ -189,8 +198,8 @@ const Modules = () => {
               <Filter className="h-3.5 w-3.5 text-primary" />
               Subject
             </Label>
-            <Select 
-              value={selectedSubjectID} 
+            <Select
+              value={selectedSubjectID}
               onValueChange={(value) => {
                 setSelectedSubject(
                   subjectData.find((item) => item.$id === value)
@@ -223,8 +232,8 @@ const Modules = () => {
                 <Filter className="h-3.5 w-3.5 text-primary" />
                 Trade
               </Label>
-              <Select 
-                value={selectedTradeID} 
+              <Select
+                value={selectedTradeID}
                 onValueChange={setSelectedTradeID}
                 disabled={fetchingData}
               >
@@ -246,8 +255,8 @@ const Modules = () => {
                 <Filter className="h-3.5 w-3.5 text-primary" />
                 Year
               </Label>
-              <Select 
-                value={selectedTradeYear} 
+              <Select
+                value={selectedTradeYear}
                 onValueChange={setSelectedTradeYear}
                 disabled={fetchingData}
               >
@@ -257,10 +266,14 @@ const Modules = () => {
                 <SelectContent>
                   {selectedTradeID &&
                     Array.from({
-                      length: tradeData.find((trade) => trade.$id === selectedTradeID)
-                        ?.duration || 0,
+                      length:
+                        tradeData.find((trade) => trade.$id === selectedTradeID)
+                          ?.duration || 0,
                     }).map((_, idx) => (
-                      <SelectItem key={idx} value={idx === 0 ? "FIRST" : "SECOND"}>
+                      <SelectItem
+                        key={idx}
+                        value={idx === 0 ? "FIRST" : "SECOND"}
+                      >
                         {idx === 0 ? "FIRST" : "SECOND"}
                       </SelectItem>
                     ))}
@@ -273,8 +286,8 @@ const Modules = () => {
                 <Filter className="h-3.5 w-3.5 text-primary" />
                 Subject
               </Label>
-              <Select 
-                value={selectedSubjectID} 
+              <Select
+                value={selectedSubjectID}
                 onValueChange={(value) => {
                   setSelectedSubject(
                     subjectData.find((item) => item.$id === value)
@@ -387,7 +400,7 @@ const Modules = () => {
                   Back to Modules
                 </Button>
               )}
-              
+
               <Card className="p-0 w-full overflow-hidden">
                 <CardContent className="w-full px-0  ">
                   {show.has("AddModules") && (
@@ -450,7 +463,9 @@ const Modules = () => {
                   {!hasActiveView && (
                     <div className="flex flex-col justify-center items-center h-64 text-muted-foreground p-8 text-center">
                       <BookOpen className="h-12 w-12 mb-4 opacity-40" />
-                      <p className="text-sm">Select a module or create a new one to get started</p>
+                      <p className="text-sm">
+                        Select a module or create a new one to get started
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -465,7 +480,9 @@ const Modules = () => {
         <div className="flex flex-col justify-center items-center h-[calc(100vh-200px)] text-muted-foreground p-8 text-center">
           <Filter className="h-16 w-16 mb-4 opacity-30" />
           <p className="text-base font-medium mb-2">Get Started</p>
-          <p className="text-sm">Select a trade, year, and subject to view modules</p>
+          <p className="text-sm">
+            Select a trade, year, and subject to view modules
+          </p>
         </div>
       )}
     </div>

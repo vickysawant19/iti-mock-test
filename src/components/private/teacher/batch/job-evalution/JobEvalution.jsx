@@ -9,7 +9,7 @@ import JobEvaluationReportPDF from "./JobEvalutionPDF";
 import { useGetCollegeQuery } from "../../../../../store/api/collegeApi";
 import { useGetTradeQuery } from "../../../../../store/api/tradeApi";
 import moduleServices from "../../../../../appwrite/moduleServices";
-import useScrollToItem from "../../../../../utils/useScrollToItem";
+import useScrollToItem from "@/hooks/useScrollToItem";
 import Loader from "@/components/components/Loader";
 import subjectService from "@/appwrite/subjectService";
 

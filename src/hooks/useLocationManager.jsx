@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { haversineDistance } from "../util";
+import { haversineDistance } from "@/utils/haversineDistance";
 
 /**
  * Calculate haversine distance between two geographic points
@@ -9,26 +9,19 @@ import { haversineDistance } from "../util";
  */
 
 /**
- * Custom hook to manage device location, batch location, and related calculations
- * @param {Object} params - Configuration parameters
- * @param {boolean} params.isTeacher - Whether the current user is a teacher
- * @param {Object} params.batchData - Batch data including location
+ * Custom hook to manage device location and related calculations
+ * @param {boolean} enableLocation - Whether to enable location tracking
  * @returns {Object} - Location state and utilities
  */
-const useLocationManager = ({ isTeacher, batchData }) => {
+const useLocationManager = (enableLocation = false) => {
   const [deviceLocation, setDeviceLocation] = useState(null);
-  const [locationText, setLocationText] = useState({
-    device: "",
-    batch: "",
-  });
-  const [distance, setDistance] = useState(Infinity);
+  const [locationText, setLocationText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Set up continuous location tracking
   useEffect(() => {
-    if (isTeacher) return;
-
+    if (enableLocation) return;
     setLoading(true);
 
     // Check if geolocation is available
@@ -73,12 +66,10 @@ const useLocationManager = ({ isTeacher, batchData }) => {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [isTeacher]);
+  }, [enableLocation]);
 
   // Manual refresh method (if needed)
   const getDeviceLocation = () => {
-    if (isTeacher) return;
-
     if (!navigator.geolocation) {
       setError({
         code: "GEOLOCATION_NOT_SUPPORTED",
@@ -88,6 +79,7 @@ const useLocationManager = ({ isTeacher, batchData }) => {
     }
 
     setLoading(true);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const newLocation = {
@@ -100,6 +92,7 @@ const useLocationManager = ({ isTeacher, batchData }) => {
         setDeviceLocation(newLocation);
         setLoading(false);
         setError(null);
+        return newLocation;
       },
       (error) => {
         setError({
@@ -130,31 +123,33 @@ const useLocationManager = ({ isTeacher, batchData }) => {
     }
   };
 
-  // Update location text and distance when locations change
+  // Calculate distance between any two coordinate pairs
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) {
+      console.error("Invalid coordinates provided to calculateDistance");
+      return null;
+    }
+
+    const coords1 = { lat: lat1, lon: lon1 };
+    const coords2 = { lat: lat2, lon: lon2 };
+
+    return haversineDistance(coords1, coords2);
+  };
+
+  // Update location text when device location changes
   useEffect(() => {
-    if (isTeacher) return; // Skip for teachers
+    if (enableLocation) return;
 
-    if (deviceLocation && batchData?.location) {
-      // Calculate distance
-      const dist = haversineDistance(deviceLocation, batchData.location);
-      setDistance(dist);
-
-      // Fetch location text for both coordinates
+    if (deviceLocation) {
+      // Fetch location text for device coordinates
       const updateLocationText = async () => {
         try {
           const deviceText = await fetchLocationText(
             deviceLocation.lat,
             deviceLocation.lon
           );
-          const batchText = await fetchLocationText(
-            batchData.location.lat,
-            batchData.location.lon
-          );
 
-          setLocationText({
-            device: deviceText,
-            batch: batchText,
-          });
+          setLocationText(deviceText);
         } catch (error) {
           console.error("Error updating location text:", error);
         }
@@ -162,16 +157,16 @@ const useLocationManager = ({ isTeacher, batchData }) => {
 
       updateLocationText();
     }
-  }, [deviceLocation, batchData, isTeacher]);
+  }, [deviceLocation, enableLocation]);
 
   return {
     deviceLocation,
     locationText,
-    distance,
     loading,
     error,
     getDeviceLocation, // Method to manually refresh location
-    isTeacher,
+    calculateDistance, // Method to calculate distance between any two coordinates
+    enableLocation,
   };
 };
 
