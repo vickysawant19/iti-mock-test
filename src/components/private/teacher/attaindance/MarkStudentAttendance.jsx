@@ -282,10 +282,18 @@ const MarkStudentAttendance = () => {
         (record) => record.date === modalData.date
       );
       let markedRes = null;
+      if (alreadyMarked.status === modalData.status && alreadyMarked.remarks === modalData.remarks) {
+        toast.warn("Alredy marked with same status")
+        return
+      }
       if (alreadyMarked) {
         markedRes = await newAttendanceService.updateAttendance(
           alreadyMarked.$id,
-          modalData
+          {
+            status: modalData.status,
+            remarks: modalData.remarks,
+            markedBy: profile.userId,
+          }
         );
         toast.success("Attendance updated successfully!");
       } else {

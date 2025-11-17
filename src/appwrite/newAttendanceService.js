@@ -489,6 +489,8 @@ class NewAttendanceService {
         existingDocs.documents.map((doc) => [doc.userId, doc])
       );
 
+      
+
       const results = [];
       const errors = [];
       let createdCount = 0;
