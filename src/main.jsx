@@ -53,6 +53,7 @@ import AddStudents from "./components/private/teacher/batch/students/AddStudents
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
 import AttendanceRegister from "./components/private/teacher/attaindance/attaindanceTracer/AttendanceRegister.jsx";
+import AttendanceTracker from "./components/private/teacher/attaindance/todaysAttendance.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -104,6 +105,7 @@ const router = (
           </Route>
           <Route path="attendance">
             <Route path="register" element={<AttendanceRegister />} />
+            <Route path="marktoday" element={<AttendanceTracker />} />
             <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route
               path="mark-student-attendance"

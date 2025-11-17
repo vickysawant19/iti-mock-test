@@ -24,14 +24,14 @@ const AttendanceTable = ({
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  
+
   // Loading states
   const loadingStudents = loading.students;
   const loadingAttendance = loading.attendance;
   const loadingStats = loading.stats;
-  
+
   // Overall loading state for table data
-  const isTableDataLoading = loadingStudents || loadingAttendance || loadingStats;
+  const isTableDataLoading = loadingStudents;
 
   // Determine what's currently loading for the message
   const getLoadingMessage = () => {
@@ -60,10 +60,14 @@ const AttendanceTable = ({
   }
 
   return (
-    <div className="relative overflow-x-auto shadow-lg border border-gray-300 dark:border-gray-700">
+    <div
+      className={`relative overflow-x-auto shadow-lg border border-gray-300 dark:border-gray-700 ${
+        isTableDataLoading ? "min-h-screen" : ""
+      }`}
+    >
       {/* Loading Overlay - only shows when loading table data */}
       {isTableDataLoading && (
-        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg h-screen min-h-80">
           <div className="flex flex-col items-center gap-3 bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-2xl border-2 border-indigo-200 dark:border-indigo-700">
             <Loader2 className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-400" />
             <div className="text-center">
@@ -82,7 +86,9 @@ const AttendanceTable = ({
       {students.length > 0 && (
         <div
           className={`max-h-[80vh] overflow-y-auto transition-opacity duration-300 ${
-            isTableDataLoading ? "opacity-30 pointer-events-none" : "opacity-100"
+            isTableDataLoading
+              ? "opacity-30 pointer-events-none"
+              : "opacity-100"
           }`}
         >
           <table className="min-w-full dark:bg-gray-800 text-xs border-collapse">
@@ -92,6 +98,7 @@ const AttendanceTable = ({
               holidays={holidays}
               formatDate={formatDate}
               onMarkAttendance={onMarkAttendance}
+              loadingAttendance={loadingAttendance}
             />
             <AttendanceTableBody
               students={students}

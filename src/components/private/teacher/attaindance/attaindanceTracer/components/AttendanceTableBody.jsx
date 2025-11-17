@@ -25,14 +25,14 @@ const AttendanceTableBody = ({
         const prevMonthData = calculatePreviousMonthsData.get(
           student.userId
         ) || {
-          workingDays: 0,
-          presentDays: 0,
-          absentDays: 0,
+          prevMonthWorkingDays: 0,
+          prevMonthPresentDays: 0,
+          prevMonthAbsentDays: 0,
         };
 
-        let presentDays = 0;
-        let absentDays = 0;
-        let workingDays = 0;
+        let currentMonthPresentDays = 0;
+        let currentMonthAbsentDays = 0;
+        let currentMonthWorkingDays = 0;
 
         monthDates.forEach((date) => {
           const fullDate = formatDate(
@@ -44,21 +44,27 @@ const AttendanceTableBody = ({
             "yyyy-MM-dd"
           );
           if (!holidays.has(fullDate)) {
-            workingDays++;
+            currentMonthWorkingDays++;
             const status = studentRecords.get(fullDate);
-            if (status === "present") presentDays++;
-            else if (status === "absent") absentDays++;
+            if (status === "present") currentMonthPresentDays++;
+            else if (status === "absent") currentMonthAbsentDays++;
           }
         });
 
-        const percentage =
-          workingDays > 0 ? ((presentDays / workingDays) * 100).toFixed(1) : 0;
+        const currentMonthPercentage =
+          currentMonthWorkingDays > 0
+            ? (
+                (currentMonthPresentDays / currentMonthWorkingDays) *
+                100
+              ).toFixed(1)
+            : 0;
 
-        const totalWorkingDays = prevMonthData.workingDays + workingDays;
-        const totalPresentDays = prevMonthData.presentDays + presentDays;
-        const totalPercentage =
-          totalWorkingDays > 0
-            ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
+        const prevMonthWorkingDays =
+          prevMonthData.presentDays + prevMonthData.absentDays;
+        const prevMonthPresentDays = prevMonthData.presentDays;
+        const prevMonthPercentage =
+          prevMonthWorkingDays > 0
+            ? ((prevMonthPresentDays / prevMonthWorkingDays) * 100).toFixed(1)
             : 0;
 
         const studentUpdating = isStudentUpdating(student.userId);
@@ -112,23 +118,25 @@ const AttendanceTableBody = ({
               ) : (
                 <span
                   className={`${
-                    totalPercentage >= 75
+                    prevMonthPercentage >= 75
                       ? "text-green-700 dark:text-green-400"
-                      : totalPercentage >= 50
+                      : prevMonthPercentage >= 50
                       ? "text-amber-700 dark:text-amber-400"
                       : "text-red-700 dark:text-red-400"
                   }`}
                 >
-                  {totalPercentage}%
+                  {prevMonthPercentage}%
                 </span>
               )}
             </td>
 
             {/* Student Name */}
-            <td className="py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 sticky left-0 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100">
+            <td className="py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 sticky left-0 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100 shadow-2xl ">
               <div className="flex items-center gap-2">
                 <div className="flex flex-col flex-1 w-28 sm:w-48 min-w-28 sm:min-w-48">
-                  <span className="font-semibold text-xs sm:text-sm text-wrap">{student.userName}</span>
+                  <span className="font-semibold text-xs sm:text-sm text-wrap">
+                    {student.userName}
+                  </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     ID: {student.studentId}
                   </span>
@@ -138,7 +146,7 @@ const AttendanceTableBody = ({
                 )}
               </div>
             </td>
-            
+
             {/* Edit Button */}
             <td className="py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 sticky left-32 sm:left-48 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100">
               <button
@@ -183,7 +191,9 @@ const AttendanceTableBody = ({
               const status = studentRecords.get(fullDate);
               const isHoliday = holidays.has(fullDate);
               const holidayData = holidays.get(fullDate);
-              const cellUpdating = updatingAttendance.get(`${student.userId}-${fullDate}`);
+              const cellUpdating = updatingAttendance.get(
+                `${student.userId}-${fullDate}`
+              );
 
               if (isHoliday) {
                 if (idx === 0) {
@@ -236,9 +246,7 @@ const AttendanceTableBody = ({
                         )
                       }
                       disabled={
-                        loadingAttendance || 
-                        studentUpdating || 
-                        cellUpdating
+                        loadingAttendance || studentUpdating || cellUpdating
                       }
                       className={`px-2 py-1 text-xs font-bold rounded shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[2rem] ${
                         status === "present"
@@ -265,7 +273,9 @@ const AttendanceTableBody = ({
                       </span>
                     )
                   ) : (
-                    <span className="text-slate-400 dark:text-slate-500">-</span>
+                    <span className="text-slate-400 dark:text-slate-500">
+                      -
+                    </span>
                   )}
                 </td>
               );
@@ -273,25 +283,25 @@ const AttendanceTableBody = ({
 
             {/* Current Month Summary - No Loading State Needed */}
             <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 font-semibold text-xs sm:text-sm">
-              {workingDays}
+              {currentMonthWorkingDays}
             </td>
             <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 text-green-700 dark:text-green-400 font-semibold text-xs sm:text-sm">
-              {presentDays}
+              {currentMonthPresentDays}
             </td>
             <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 text-red-700 dark:text-red-400 font-semibold text-xs sm:text-sm">
-              {absentDays}
+              {currentMonthAbsentDays}
             </td>
             <td className="py-2 px-2 border border-slate-300 dark:border-slate-600 text-center bg-sky-50 dark:bg-sky-900/30 font-bold text-xs sm:text-sm">
               <span
                 className={`${
-                  percentage >= 75
+                  currentMonthPercentage >= 75
                     ? "text-green-700 dark:text-green-400"
-                    : percentage >= 50
+                    : currentMonthPercentage >= 50
                     ? "text-amber-700 dark:text-amber-400"
                     : "text-red-700 dark:text-red-400"
                 }`}
               >
-                {percentage}%
+                {currentMonthPercentage}%
               </span>
             </td>
           </tr>

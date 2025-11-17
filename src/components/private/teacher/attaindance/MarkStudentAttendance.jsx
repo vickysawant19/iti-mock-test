@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { endOfMonth, format, parse, startOfMonth } from "date-fns";
 import { toast } from "react-toastify";
 import {
   Calendar,
@@ -150,9 +150,18 @@ const MarkStudentAttendance = () => {
     setStudentAttendance(null);
     setWorkingDays(new Map());
     try {
-      const data = await newAttendanceService.getStudentAttendance(
+      const parsedDate = parse(currentMonth, "MMMM yyyy", new Date());
+
+      // Start & end of month
+      const startDate = format(startOfMonth(parsedDate), "yyyy-MM-dd");
+      const endDate = format(endOfMonth(parsedDate), "yyyy-MM-dd");
+      console.log(startDate, endDate);
+
+      const data = await newAttendanceService.getStudentAttendanceByDateRange(
         userId,
-        profile.batchId
+        profile.batchId,
+        startDate,
+        endDate
       );
 
       let studentProfile;
@@ -173,7 +182,7 @@ const MarkStudentAttendance = () => {
         }
       }
 
-      if (!data || data.length === 0) {
+      if (!data.documents || data.documents.length === 0) {
         setStudentAttendance({
           ...studentProfile,
           attendanceRecords: [],
@@ -181,12 +190,12 @@ const MarkStudentAttendance = () => {
         });
       } else {
         const newMap = new Map();
-        data.forEach((item) => newMap.set(item.date, item));
+        data.documents.forEach((item) => newMap.set(item.date, item));
         setWorkingDays(newMap);
 
         setStudentAttendance({
           ...studentProfile,
-          attendanceRecords: data,
+          attendanceRecords: data.documents,
           batchId: profile.batchId,
         });
       }
@@ -256,6 +265,7 @@ const MarkStudentAttendance = () => {
   const handleMonthChange = ({ activeStartDate }) => {
     const newMonth = format(activeStartDate, "MMMM yyyy");
     setCurrentMonth(newMonth);
+    console.log("current month", currentMonth);
   };
 
   const openModal = (date) => {
@@ -282,9 +292,12 @@ const MarkStudentAttendance = () => {
         (record) => record.date === modalData.date
       );
       let markedRes = null;
-      if (alreadyMarked.status === modalData.status && alreadyMarked.remarks === modalData.remarks) {
-        toast.warn("Alredy marked with same status")
-        return
+      if (
+        alreadyMarked.status === modalData.status &&
+        alreadyMarked.remarks === modalData.remarks
+      ) {
+        toast.warn("Alredy marked with same status");
+        return;
       }
       if (alreadyMarked) {
         markedRes = await newAttendanceService.updateAttendance(

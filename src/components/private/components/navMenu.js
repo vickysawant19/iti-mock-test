@@ -125,6 +125,12 @@ export const menuConfig = [
         icon: FaCalendarAlt,
         roles: ["teacher"],
       },
+      // {
+      //   label: "Mark Todays Attendance",
+      //   path: "/attendance/marktoday",
+      //   icon: FaCalendarAlt,
+      //   roles: ["teacher", "student"],
+      // },
     ],
   },
   {
