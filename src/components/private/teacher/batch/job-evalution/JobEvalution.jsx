@@ -14,7 +14,6 @@ import Loader from "@/components/components/Loader";
 import subjectService from "@/appwrite/subjectService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
-  console.log("attendance ", attendance);
   if (!studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -54,7 +53,6 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
       return acc;
     }, {});
-    console.log("dateKeysAttendance ", dateKeysAttendance);
 
     setStudentAttendance(dateKeysAttendance);
   }, [attendance]);

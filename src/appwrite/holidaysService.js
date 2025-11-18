@@ -39,6 +39,7 @@ class HolidayService {
 
   async getBatchHolidaysByDateRange(batchId, startDate, endDate) {
     try {
+       console.log("api called time", new Date().getTime())
       const data = this.getAllHolidays([
         Query.equal("batchId", batchId),
         Query.greaterThanEqual("date", startDate),

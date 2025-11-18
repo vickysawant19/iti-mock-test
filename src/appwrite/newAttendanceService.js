@@ -358,6 +358,7 @@ class NewAttendanceService {
     startDate = null,
     endDate = null
   ) {
+   
     try {
       const baseQueries = [
         Query.equal("userId", userId),

@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { endOfMonth, format, parse, startOfMonth } from "date-fns";
+import {
+  endOfMonth,
+  endOfWeek,
+  format,
+  parse,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { toast } from "react-toastify";
 import {
   Calendar,
@@ -51,6 +58,8 @@ const MarkStudentAttendance = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShowMap, setIsShowMap] = useState(false);
 
+  const [refreshStats, setRefreshStats] = useState(0);
+
   const [attendanceStats, setAttendanceStats] = useState({
     totalDays: 0,
     presentDays: 0,
@@ -58,6 +67,14 @@ const MarkStudentAttendance = () => {
     holidayDays: 0,
     attendancePercentage: 0,
     monthlyAttendance: {},
+  });
+
+  const [totalAttendance, setTotalAttendance] = useState({
+    totalDays: 0,
+    presentDays: 0,
+    absentDays: 0,
+    holidayDays: 0,
+    attendancePercentage: 0,
   });
 
   const profile = useSelector(selectProfile);
@@ -153,9 +170,16 @@ const MarkStudentAttendance = () => {
       const parsedDate = parse(currentMonth, "MMMM yyyy", new Date());
 
       // Start & end of month
-      const startDate = format(startOfMonth(parsedDate), "yyyy-MM-dd");
-      const endDate = format(endOfMonth(parsedDate), "yyyy-MM-dd");
-      console.log(startDate, endDate);
+      const startDate = format(
+        startOfWeek(startOfMonth(parsedDate), { weekStartsOn: 0 }), // 1 = Monday, 0 = Sunday
+        "yyyy-MM-dd"
+      );
+
+      // End of the last week that includes the month end
+      const endDate = format(
+        endOfWeek(endOfMonth(parsedDate), { weekStartsOn: 0 }),
+        "yyyy-MM-dd"
+      );
 
       const data = await newAttendanceService.getStudentAttendanceByDateRange(
         userId,
@@ -163,6 +187,16 @@ const MarkStudentAttendance = () => {
         startDate,
         endDate
       );
+
+      const holidayData = await holidayService.getBatchHolidaysByDateRange(
+        profile.batchId,
+        startDate,
+        endDate
+      );
+      
+      const newMap = new Map();
+      holidayData.forEach((item) => newMap.set(item.date, item.holidayText));
+      setHolidays(newMap);
 
       let studentProfile;
       if (isTeacher) {
@@ -248,6 +282,28 @@ const MarkStudentAttendance = () => {
   }, [batchData, profile, isTeacher]);
 
   useEffect(() => {
+    const fetchTotalAttendanceStats = async () => {
+      if (!selectedStudent || !batchData) return;
+
+      try {
+        const res = await newAttendanceService.getStudentAttendanceStats(
+          selectedStudent.userId,
+          profile.batchId,
+          batchData.start_date,
+          batchData.end_date
+        );
+        console.log(res);
+        setTotalAttendance(res);
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to fetch attendance stats.");
+      }
+    };
+
+    fetchTotalAttendanceStats();
+  }, [selectedStudent, batchData, profile.batchId, refreshStats]);
+
+  useEffect(() => {
     const monthData = attendanceStats?.monthlyAttendance[currentMonth] || {
       presentDays: 0,
       absentDays: 0,
@@ -260,12 +316,12 @@ const MarkStudentAttendance = () => {
     if (isTeacher && selectedStudent) {
       fetchStudentAttendance(selectedStudent.userId);
     }
-  }, [selectedStudent, isTeacher]);
+  }, [selectedStudent, isTeacher, currentMonth]);
 
   const handleMonthChange = ({ activeStartDate }) => {
     const newMonth = format(activeStartDate, "MMMM yyyy");
     setCurrentMonth(newMonth);
-    console.log("current month", currentMonth);
+    setSelectedDate(activeStartDate);
   };
 
   const openModal = (date) => {
@@ -292,14 +348,15 @@ const MarkStudentAttendance = () => {
         (record) => record.date === modalData.date
       );
       let markedRes = null;
-      if (
-        alreadyMarked.status === modalData.status &&
-        alreadyMarked.remarks === modalData.remarks
-      ) {
-        toast.warn("Alredy marked with same status");
-        return;
-      }
+
       if (alreadyMarked) {
+        if (
+          alreadyMarked?.status === modalData.status &&
+          alreadyMarked?.remarks === modalData.remarks
+        ) {
+          toast.warn("Alredy marked with same status");
+          return;
+        }
         markedRes = await newAttendanceService.updateAttendance(
           alreadyMarked.$id,
           {
@@ -308,6 +365,7 @@ const MarkStudentAttendance = () => {
             markedBy: profile.userId,
           }
         );
+
         toast.success("Attendance updated successfully!");
       } else {
         markedRes = await newAttendanceService.createAttendance({
@@ -321,6 +379,8 @@ const MarkStudentAttendance = () => {
         });
         toast.success("Attendance marked successfully!");
       }
+
+      setRefreshStats((prev) => prev + 1);
 
       setStudentAttendance((prev) => {
         const updatedRecords = prev.attendanceRecords.some(
@@ -362,6 +422,7 @@ const MarkStudentAttendance = () => {
       await newAttendanceService.deleteAttendance(recordToDelete.$id);
 
       toast.success("Attendance removed successfully!");
+      setRefreshStats((prev) => prev + 1);
       setStudentAttendance((prev) => {
         const updatedRecords = prev.attendanceRecords.filter(
           (record) => record.date !== modalData.date
@@ -633,7 +694,8 @@ const MarkStudentAttendance = () => {
             <Loader2 size={50} className="text-blue-500 animate-spin" />
           </div>
         ) : (
-          studentAttendance && (
+          batchData &&
+          (isTeacher ? studentAttendance : true) && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
               <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 shadow-md">
                 <h1 className="text-black dark:text-white flex gap-2 items-center mb-4 font-semibold text-lg">
@@ -650,10 +712,10 @@ const MarkStudentAttendance = () => {
                   handleActiveStartDateChange={handleMonthChange}
                   openModal={openModal}
                   distance={distance}
-                  canMarkPrevious={!batchData.canMarkPrevious}
+                  canMarkPrevious={batchData?.canMarkPrevious || false}
                   enableNextTiles={isTeacher}
-                  attendanceTime={batchData.attendanceTime}
-                  circleRadius={batchData.circleRadius}
+                  attendanceTime={batchData?.attendanceTime}
+                  circleRadius={batchData?.circleRadius}
                 />
               </div>
               <div className="lg:col-span-5 space-y-2">
@@ -663,7 +725,7 @@ const MarkStudentAttendance = () => {
                 />
 
                 <ShowStats
-                  attendance={attendanceStats}
+                  attendance={totalAttendance}
                   label="Total Attendance"
                 />
               </div>
