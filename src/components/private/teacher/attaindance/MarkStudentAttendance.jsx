@@ -193,7 +193,7 @@ const MarkStudentAttendance = () => {
         startDate,
         endDate
       );
-      
+
       const newMap = new Map();
       holidayData.forEach((item) => newMap.set(item.date, item.holidayText));
       setHolidays(newMap);
@@ -275,6 +275,7 @@ const MarkStudentAttendance = () => {
     if (isTeacher) {
       fetchBatchStudents();
     } else {
+      setSelectedStudent(profile);
       if (batchData) {
         fetchStudentAttendance(profile.userId);
       }
@@ -292,7 +293,7 @@ const MarkStudentAttendance = () => {
           batchData.start_date,
           batchData.end_date
         );
-        console.log(res);
+
         setTotalAttendance(res);
       } catch (error) {
         console.log(error);
@@ -313,7 +314,7 @@ const MarkStudentAttendance = () => {
   }, [currentMonth, attendanceStats]);
 
   useEffect(() => {
-    if (isTeacher && selectedStudent) {
+    if (selectedStudent) {
       fetchStudentAttendance(selectedStudent.userId);
     }
   }, [selectedStudent, isTeacher, currentMonth]);
