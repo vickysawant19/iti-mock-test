@@ -49,6 +49,7 @@ const useLocationManager = (enableLocation = false) => {
         setError(null);
       },
       (error) => {
+        
         setError({
           code: error.code,
           message: error.message,
@@ -95,6 +96,7 @@ const useLocationManager = (enableLocation = false) => {
         return newLocation;
       },
       (error) => {
+       
         setError({
           code: error.code,
           message: error.message,

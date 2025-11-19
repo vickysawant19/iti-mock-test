@@ -12,6 +12,8 @@ import {
   FaLayerGroup,
   FaList,
   FaQuestionCircle,
+  FaRegCalendarCheck,
+  FaTasks,
   FaUserCircle,
   FaUserPlus,
   FaUserSecret,
@@ -113,10 +115,10 @@ export const menuConfig = [
         roles: ["teacher"],
       },
       {
-        teacherLabel: "Mark Attendance",
-        studentLabel: "My Attendance",
+        teacherLabel: "Student Attendance Record",
+        studentLabel: "My Attendance Log",
         path: "/attendance/mark-student-attendance",
-        icon: FaCalendarCheck,
+        icon: FaTasks,
         roles: ["teacher", "student"],
       },
       {
@@ -125,12 +127,12 @@ export const menuConfig = [
         icon: FaCalendarAlt,
         roles: ["teacher"],
       },
-      // {
-      //   label: "Mark Todays Attendance",
-      //   path: "/attendance/marktoday",
-      //   icon: FaCalendarAlt,
-      //   roles: ["teacher", "student"],
-      // },
+      {
+        label: "Quick Mark",
+        path: "/attendance/marktoday",
+        icon: FaRegCalendarCheck,
+        roles: ["teacher", "student"],
+      },
     ],
   },
   {
