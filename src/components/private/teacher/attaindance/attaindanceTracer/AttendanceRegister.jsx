@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useSelector } from "react-redux";
 import batchService from "@/appwrite/batchService";
 import { Query } from "appwrite";
@@ -19,10 +25,11 @@ import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import Legent from "./components/Legent";
+import { toast } from "react-toastify";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
-  
+
   // Use ref to track if initial fetch is done to prevent double fetching
   const initialFetchDone = useRef(false);
   const abortControllerRef = useRef(null);
@@ -90,12 +97,12 @@ const AttendanceRegister = () => {
       updateLoading("initial", false);
       return;
     }
-    
+
     // Prevent double fetching
     if (initialFetchDone.current) return;
-    
+
     console.log("loading batches");
-    
+
     try {
       const response = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
@@ -120,7 +127,7 @@ const AttendanceRegister = () => {
       if (response.documents.length > 0) {
         setSelectedBatch(response.documents[response.documents.length - 1].$id);
       }
-      
+
       initialFetchDone.current = true;
     } catch (error) {
       console.error("Error fetching batches:", error);
@@ -132,9 +139,9 @@ const AttendanceRegister = () => {
   // Fetch students and holidays for selected batch
   const fetchStudentsAndHolidays = useCallback(async () => {
     if (!selectedBatch || !batches.has(selectedBatch)) return;
-    
+
     console.log("loading students and holidays");
-    
+
     // Cancel any pending requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -188,7 +195,7 @@ const AttendanceRegister = () => {
       // Set students
       setStudents(studentsData);
     } catch (error) {
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         console.error("Error fetching students and holidays:", error);
         setStudents([]);
       }
@@ -209,7 +216,7 @@ const AttendanceRegister = () => {
     if (!batch?.start_date) return;
 
     console.log("loading attendance and stats");
-    
+
     try {
       updateLoading("attendance", true);
       updateLoading("stats", true);
@@ -238,7 +245,7 @@ const AttendanceRegister = () => {
 
       // Update attendance
       setNewAttendance(attendanceData.documents);
-      
+
       // Create stats map
       const statsMap = new Map();
       students.forEach((student, index) => {
@@ -292,14 +299,14 @@ const AttendanceRegister = () => {
       const batch = batches.get(selectedBatch);
       const currentBatchStartDate = batch.start_date;
       const endDate = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
-      
+
       const updatedStats = await newAttendanceService.getStudentAttendanceStats(
         userId,
         selectedBatch,
         currentBatchStartDate,
         endDate
       );
-      
+
       setStudentStatsMap((prev) => {
         const newMap = new Map(prev);
         newMap.set(userId, updatedStats);
@@ -353,6 +360,89 @@ const AttendanceRegister = () => {
     }
   };
 
+  const handleRemoveHoliday = async (date) => {
+    setLoading("holiday", true);
+    try {
+      const holiday = holidays.get(date);
+      const res = await holidayService.removeHoliday(holiday.$id);
+      setHolidays((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(date);
+        return newMap;
+      });
+      toast.success("Holiday removed successfully");
+    } catch (error) {
+      console.error("Error removing holiday:", error);
+    } finally {
+      setLoading("holiday", false);
+    }
+  };
+
+  const handleAddHoliday = async (date, holidayText) => {
+    setLoading("holiday", true);
+
+    try {
+      // 1. Identify attendance records that need to be removed
+      const attendanceToDelete = newAttendance.filter(
+        (att) => att.date === date
+      );
+
+      const idsToDelete = attendanceToDelete.map((att) => att.$id);
+      let deletionSuccess = true;
+
+      // 2. If there are records, attempt to delete them
+      if (idsToDelete.length > 0) {
+        const deletedIds = await newAttendanceService.deleteMultipleAttendance(
+          idsToDelete
+        );
+
+        console.log("Requested delete count:", idsToDelete.length);
+        console.log("Actual deleted count:", deletedIds.length);
+
+        // STRICT CHECK: Only proceed if deleted count matches requested count
+        if (deletedIds.length !== idsToDelete.length) {
+          deletionSuccess = false;
+          throw new Error(
+            "Partial deletion occurred. Cannot safely add holiday."
+          );
+        }
+
+        // 3. Update local attendance state (remove deleted records)
+        setNewAttendance((prev) =>
+          prev.filter((att) => !deletedIds.includes(att.$id))
+        );
+      }
+
+      // 4. Only add Holiday if deletion was successful (or if there was nothing to delete)
+      if (deletionSuccess) {
+        const holidayRes = await holidayService.addHoliday({
+          date,
+          batchId: selectedBatch,
+          holidayText,
+        });
+
+        // Update Holiday State
+        setHolidays((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(date, holidayRes);
+          return newMap;
+        });
+
+        toast.success("Holiday added and attendance cleared successfully");
+      }
+    } catch (error) {
+      console.error("Add Holiday Error:", error);
+      // If the error came from the deletion check, show specific message
+      if (error.message.includes("Partial deletion")) {
+        toast.error("Could not clear existing attendance. Holiday not added.");
+      } else {
+        toast.error("Error adding holiday");
+      }
+    } finally {
+      setLoading("holiday", false);
+    }
+  };
+
   // Modal handlers
   const handleOpenModal = (date) => {
     setSelectedDate(date);
@@ -375,7 +465,7 @@ const AttendanceRegister = () => {
     if (profile?.userId && !initialFetchDone.current) {
       fetchBatches();
     }
-    
+
     return () => {
       initialFetchDone.current = false;
     };
@@ -386,7 +476,7 @@ const AttendanceRegister = () => {
     if (selectedBatch) {
       fetchStudentsAndHolidays();
     }
-    
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -428,8 +518,11 @@ const AttendanceRegister = () => {
           handleMonthChange={handleMonthChange}
           formatDate={format}
           loading={loading}
+          holidays={holidays}
+          handleAddHoliday={handleAddHoliday}
+          handleRemoveHoliday={handleRemoveHoliday}
         />
-        
+
         <AttendanceTable
           students={students}
           selectedMonth={selectedMonth}
@@ -447,7 +540,7 @@ const AttendanceRegister = () => {
           loading={loading}
           selectedBatch={selectedBatch}
         />
-        
+
         <Legent />
 
         <MarkAttendanceModal
@@ -458,6 +551,9 @@ const AttendanceRegister = () => {
           batchId={selectedBatch}
           onSave={handleSaveAttendance}
           existingAttendance={newAttendance}
+          holidays={holidays}
+          handleAddHoliday={handleAddHoliday}
+          handleRemoveHoliday={handleRemoveHoliday}
         />
       </div>
     </div>

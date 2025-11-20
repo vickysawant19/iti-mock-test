@@ -6,7 +6,7 @@ const AttendanceTableHead = ({
   holidays,
   formatDate,
   onMarkAttendance,
-  loadingAttendance,
+  loadingAttendance
 }) => {
   return (
     <thead className="text-white">
@@ -118,15 +118,13 @@ const AttendanceTableHead = ({
                   : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
               }`}
             >
-              {!isHoliday && (
-                <button
-                  disabled={loadingAttendance}
-                  onClick={() => onMarkAttendance(fullDate)}
-                  className="px-2 py-1 text-xs font-medium bg-white text-sky-700 rounded shadow-sm hover:bg-sky-50 hover:shadow-md transition-all duration-200 border border-sky-200"
-                >
-                  Mark
-                </button>
-              )}
+              <button
+                disabled={loadingAttendance}
+                onClick={() => onMarkAttendance(fullDate)}
+                className="px-2 py-1 text-xs font-medium bg-white text-sky-700 rounded shadow-sm hover:bg-sky-50 hover:shadow-md transition-all duration-200 border border-sky-200"
+              >
+                Mark
+              </button>
             </td>
           );
         })}

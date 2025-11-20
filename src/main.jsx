@@ -43,7 +43,7 @@ import ProfileForm from "./components/private/profile/ProfileForm.jsx";
 import ResetPass from "./components/Auth/ResetPass.jsx";
 import ChangePassword from "./components/Auth/changePassword.jsx";
 import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
-import MarkHolidays from "./components/private/teacher/attaindance/MarkHolidays.jsx";
+
 import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
 import Modules from "./components/private/admin/Modules.jsx";
 import Assessment from "./components/private/assessment/Assessment.jsx";
@@ -106,7 +106,6 @@ const router = (
           <Route path="attendance">
             <Route path="register" element={<AttendanceRegister />} />
             <Route path="marktoday" element={<AttendanceTracker />} />
-            <Route path="mark-holidays" element={<MarkHolidays />} />
             <Route
               path="mark-student-attendance"
               element={<MarkStudentAttendance />}

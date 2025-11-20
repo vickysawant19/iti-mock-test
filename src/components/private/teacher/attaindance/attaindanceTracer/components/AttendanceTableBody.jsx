@@ -205,7 +205,7 @@ const AttendanceTableBody = ({
                     >
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                         <div
-                          className="whitespace-nowrap text-[10px] font-semibold text-rose-800 dark:text-rose-300"
+                          className="whitespace-nowrap text-sm text-wrap font-semibold text-rose-800 dark:text-rose-300"
                           style={{
                             writingMode: "vertical-rl",
                             textOrientation: "mixed",

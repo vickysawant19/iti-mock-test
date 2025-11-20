@@ -345,11 +345,31 @@ class NewAttendanceService {
         conf.newAttendanceCollectionId,
         documentId
       );
-      return { success: true };
+      return documentId;
     } catch (error) {
       throw error;
     }
   }
+
+ async deleteMultipleAttendance(documentIds) {
+  try {
+    if (!documentIds || documentIds.length === 0) {
+      return []; // Nothing to delete, return empty array immediately
+    }
+
+    // Promise.all will throw an error if ANY of the deletions fail
+    // This ensures we catch failures in the component's catch block
+
+    const res = await Promise.all(
+      documentIds.map((id) => this.deleteAttendance(id))
+    );
+    
+    return res; // Returns array of deleted IDs
+  } catch (error) {
+    console.error("Error in deleteMultipleAttendance:", error);
+    throw error;
+  }
+}
 
   // Get attendance statistics for a student
   async getStudentAttendanceStats(
@@ -358,7 +378,6 @@ class NewAttendanceService {
     startDate = null,
     endDate = null
   ) {
-   
     try {
       const baseQueries = [
         Query.equal("userId", userId),
@@ -489,8 +508,6 @@ class NewAttendanceService {
       const existingRecordsMap = new Map(
         existingDocs.documents.map((doc) => [doc.userId, doc])
       );
-
-      
 
       const results = [];
       const errors = [];

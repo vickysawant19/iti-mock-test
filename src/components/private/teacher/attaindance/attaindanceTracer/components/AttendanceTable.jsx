@@ -21,6 +21,8 @@ const AttendanceTable = ({
   isStudentUpdating,
   loading,
   selectedBatch,
+  handleAddHoliday,
+  handleRemoveHoliday,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -95,10 +97,12 @@ const AttendanceTable = ({
             <AttendanceTableHead
               monthDates={monthDates}
               selectedMonth={selectedMonth}
-              holidays={holidays}
               formatDate={formatDate}
               onMarkAttendance={onMarkAttendance}
               loadingAttendance={loadingAttendance}
+              holidays={holidays}
+              handleAddHoliday={handleAddHoliday}
+              handleRemoveHoliday={handleRemoveHoliday}
             />
             <AttendanceTableBody
               students={students}

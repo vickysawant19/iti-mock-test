@@ -109,12 +109,6 @@ export const menuConfig = [
     children: [
       { label: "Daily Diary", path: "/daily-dairy", icon: FaBookReader },
       {
-        label: "Mark Holidays",
-        path: "/attendance/mark-holidays",
-        icon: FaBookReader,
-        roles: ["teacher"],
-      },
-      {
         teacherLabel: "Student Attendance Record",
         studentLabel: "My Attendance Log",
         path: "/attendance/mark-student-attendance",
