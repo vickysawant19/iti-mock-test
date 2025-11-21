@@ -15,45 +15,45 @@ import { Provider } from "react-redux";
 import { registerSW } from "virtual:pwa-register";
 import { store } from "./store/store.js";
 
-import Login from "./components/Auth/Login.jsx";
-import Signup from "./components/Auth/Signup.jsx";
+import Login from "./Auth/Login.jsx";
+import Signup from "./Auth/Signup.jsx";
 
-import ProtectedRoute from "./components/private/ProtectedRoute.jsx";
+import ProtectedRoute from "./private/ProtectedRoute.jsx";
 
-import CreateQuestion from "./components/private/mocktest/CreateQuestion.jsx";
-import ManageQuestions from "./components/private/mocktest/ManageQuestions.jsx";
-import EditQuestion from "./components/private/mocktest/EditQuestion.jsx";
-import CreateMockTest from "./components/private/mocktest/CreateMockTest.jsx";
-import AllMockTests from "./components/private/mocktest/AllMockTests.jsx";
-import StartMockTest from "./components/private/mocktest/StartMockTest.jsx";
-import ShowMockTest from "./components/private/mocktest/ShowMockTest.jsx";
-import AttainTest from "./components/private/mocktest/AttainTest.jsx";
-import MockTestResults from "./components/private/mocktest/MockTestResults.jsx";
+import CreateQuestion from "./private/mocktest/CreateQuestion.jsx";
+import ManageQuestions from "./private/mocktest/ManageQuestions.jsx";
+import EditQuestion from "./private/mocktest/EditQuestion.jsx";
+import CreateMockTest from "./private/mocktest/CreateMockTest.jsx";
+import AllMockTests from "./private/mocktest/AllMockTests.jsx";
+import StartMockTest from "./private/mocktest/StartMockTest.jsx";
+import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
+import AttainTest from "./private/mocktest/AttainTest.jsx";
+import MockTestResults from "./private/mocktest/MockTestResults.jsx";
 
-import Dash from "./components/private/pages/Dash.jsx";
-import Home from "./components/private/pages/Home.jsx";
-import About from "./components/private/pages/About.jsx";
-import ForgetPass from "./components/Auth/ForgetPass.jsx";
-import MarkStudentAttendance from "./components/private/teacher/attaindance/MarkStudentAttendance.jsx";
-import CreateBatch from "./components/private/teacher/batch/CreateBatch.jsx";
-import ViewBatch from "./components/private/teacher/batch/ViewBatch.jsx";
-import Profile from "./components/private/profile/Profile.jsx";
-import ProfileView from "./components/private/profile/ProfileView.jsx";
-import ProfileForm from "./components/private/profile/ProfileForm.jsx";
-import ResetPass from "./components/Auth/ResetPass.jsx";
-import ChangePassword from "./components/Auth/changePassword.jsx";
-import ProtectedTeacherRoutes from "./components/private/ProtectedTeacherRoutes.jsx";
+import Dash from "./pages/Dash.jsx";
+import Home from "./pages/Home.jsx";
+import About from "./pages/About.jsx";
+import ForgetPass from "./Auth/ForgetPass.jsx";
+import MarkStudentAttendance from "./private/Attendance/MarkStudentAttendance.jsx";
+import CreateBatch from "./private/teacher/batch/CreateBatch.jsx";
+import ViewBatch from "./private/teacher/batch/ViewBatch.jsx";
+import Profile from "./private/profile/Profile.jsx";
+import ProfileView from "./private/profile/ProfileView.jsx";
+import ProfileForm from "./private/profile/ProfileForm.jsx";
+import ResetPass from "./Auth/ResetPass.jsx";
+import ChangePassword from "./Auth/changePassword.jsx";
+import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
 
-import ProtectedAdminRoutes from "./components/private/ProtectedAdminRoutes.jsx";
-import Modules from "./components/private/admin/Modules.jsx";
-import Assessment from "./components/private/assessment/Assessment.jsx";
-import DailyDiary from "./components/private/teacher/batch/daily-dairy/DailyDiary.jsx";
-import AddStudents from "./components/private/teacher/batch/students/AddStudents.jsx";
+import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
+import Modules from "./private/admin/Modules.jsx";
+import Assessment from "./private/assessment/Assessment.jsx";
+import DailyDiary from "./private/teacher/batch/daily-dairy/DailyDiary.jsx";
+import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
 
 import PageNotFound from "./PageNotFound.jsx";
-import AddBulkQuestions from "./components/private/admin/BulkOperations/AddBulkQuestions.jsx";
-import AttendanceRegister from "./components/private/teacher/attaindance/attaindanceTracer/AttendanceRegister.jsx";
-import AttendanceTracker from "./components/private/teacher/attaindance/todaysAttendance.jsx";
+import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
+import AttendanceRegister from "./private/Attendance/AttendanceRegister/AttendanceRegister.jsx";
+import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {

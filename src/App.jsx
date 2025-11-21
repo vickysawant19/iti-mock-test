@@ -9,7 +9,7 @@ import { addUser, selectUser } from "./store/userSlice";
 import { addProfile, selectProfile } from "./store/profileSlice";
 import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
-import Navbar from "./components/private/components/Navbar";
+import Navbar from "./components/navbar/Navbar";
 import { Analytics } from "@vercel/analytics/react";
 
 import { ThemeProvider } from "./ThemeProvider";
