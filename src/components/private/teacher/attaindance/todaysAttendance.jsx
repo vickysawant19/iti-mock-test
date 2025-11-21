@@ -64,9 +64,10 @@ function MapBounds({ userLocation, campusLocation }) {
 const AttendanceTracker = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [batchLocation, setBatchLocation] = useState(null);
-  const [circleRadius, setCircleRadius] = useState(null)
+  const [circleRadius, setCircleRadius] = useState(null);
 
   const [attendanceMarked, setAttendanceMarked] = useState(false);
+  const [existingAttendance, setExistingAttendance] = useState(null);
   const [marking, setMarking] = useState(false);
   const [distance, setDistance] = useState(null);
   const [showMap, setShowMap] = useState(false);
@@ -93,7 +94,6 @@ const AttendanceTracker = () => {
       setBatchLocation(batchData?.location || null);
     }
   }, [batchData]);
-  
 
   // Check existing attendance on mount
   useEffect(() => {
@@ -104,8 +104,11 @@ const AttendanceTracker = () => {
           profile.batchId,
           new Date()
         );
-        if (response && response?.status === "present") {
-          setAttendanceMarked(true);
+        if (response) {
+          setExistingAttendance(response);
+          if (response?.status === "present") {
+            setAttendanceMarked(true);
+          }
         }
       } catch (e) {
         console.log(e);
@@ -137,15 +140,23 @@ const AttendanceTracker = () => {
 
     setMarking(true);
     try {
-      await newAttendanceService.createAttendance({
-        userId: profile.userId,
-        batchId: profile.batchId,
-        tradeId: profile.tradeId,
-        date: new Date(),
-        status: "present",
-        remarks: "",
-      });
-      setAttendanceMarked(true);
+      if (existingAttendance) {
+        await newAttendanceService.updateAttendanceStatus(
+          existingAttendance.$id,
+          "present"
+        );
+        setAttendanceMarked(true);
+      } else {
+        await newAttendanceService.createAttendance({
+          userId: profile.userId,
+          batchId: profile.batchId,
+          tradeId: profile.tradeId,
+          date: new Date(),
+          status: "present",
+          remarks: "",
+        });
+        setAttendanceMarked(true);
+      }
     } catch (error) {
       console.error("Failed to mark attendance:", error);
     } finally {
@@ -160,19 +171,18 @@ const AttendanceTracker = () => {
     return `${(meters / 1000).toFixed(2)}km`;
   };
 
-  const isWithinRange =
-    distance !== null && distance <= (circleRadius || 0);
+  const isWithinRange = distance !== null && distance <= (circleRadius || 0);
   const loading = batchLoading || locationLoading || checkingAttendance;
   const error = batchError || locationError;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4 md:p-6">
       <div className="max-w-2xl mx-auto space-y-4">
         {/* User Info Card */}
         <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm overflow-hidden">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
+              <div className="w-14 h-14 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
                 <User className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -228,7 +238,8 @@ const AttendanceTracker = () => {
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                     {batchError?.message
                       ? batchError.message
-                      : locationError?.message || "Failed to get your location."}
+                      : locationError?.message ||
+                        "Failed to get your location."}
                   </p>
                 </div>
               </div>
