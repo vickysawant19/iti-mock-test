@@ -185,6 +185,62 @@
             "entrypoint": "src/main.js",
             "commands": "npm install",
             "path": "functions/imageUpload"
+        },
+        {
+            "$id": "6921c1550003e4e220c0",
+            "execute": [
+                "any"
+            ],
+            "name": "manage-attendance",
+            "enabled": true,
+            "logging": true,
+            "runtime": "node-22",
+            "scopes": [
+                "users.read"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "specification": "s-0.5vcpu-512mb",
+            "path": "functions/manage-attendance"
+        },
+        {
+            "$id": "6921c245003a3bd702ba",
+            "execute": [
+                "any"
+            ],
+            "name": "manage-attendance",
+            "enabled": true,
+            "logging": true,
+            "runtime": "node-22",
+            "scopes": [
+                "users.read",
+                "databases.read",
+                "databases.write",
+                "tables.read",
+                "collections.read",
+                "tables.write",
+                "collections.write",
+                "columns.read",
+                "attributes.read",
+                "columns.write",
+                "attributes.write",
+                "indexes.read",
+                "indexes.write",
+                "rows.read",
+                "documents.read",
+                "rows.write",
+                "documents.write"
+            ],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "specification": "s-0.5vcpu-512mb",
+            "path": "functions/manage-attendance"
         }
     ],
     "databases": [
