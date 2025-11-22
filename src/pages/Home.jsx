@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils"; // Assuming you have this utility
 
-import classroomImg from "@/assets/classroom.png";
+import classroomImg from "@/assets/Classroom.png";
 
 
 // Animation variants
