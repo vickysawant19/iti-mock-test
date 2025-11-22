@@ -20,14 +20,13 @@ import AddModules from "./AddModules";
 import ShowModules from "./ShowModules";
 import ShowTopic from "./ShowTopic";
 
-import tradeservice from "@/appwrite/tradedetails";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
 import useScrollToItem from "@/hooks/useScrollToItem";
 
 const Modules = () => {
-  const [tradeData, setTradeData] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [subjectData, setSubjectData] = useState([]);
   const [selectedTradeID, setSelectedTradeID] = useState("");
@@ -61,17 +60,12 @@ const Modules = () => {
     "moduleId"
   );
 
-  const fetchTrades = async () => {
-    setFetchingData(true);
-    try {
-      const data = await tradeservice.listTrades();
-      setTradeData(data.documents);
-    } catch (error) {
-      console.error("Error fetching trades:", error);
-    } finally {
-      setFetchingData(false);
-    }
-  };
+  // Use RTK Query to fetch trades; skip until profile is available
+  const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
+    undefined,
+    { skip: !profile }
+  );
+  const tradeData = tradesResponse?.documents || [];
 
   const fetchSubjects = async () => {
     setFetchingData(true);
@@ -105,10 +99,12 @@ const Modules = () => {
 
   useEffect(() => {
     if (profile) {
-      fetchTrades();
       fetchSubjects();
     }
   }, [profile]);
+
+  // Combined fetching flag for UI disables (trades OR subjects)
+  const isFetching = fetchingData || tradesLoading;
 
   useEffect(() => {
     if (selectedTradeID && selectedSubjectID) {
@@ -147,7 +143,7 @@ const Modules = () => {
             <Select
               value={selectedTradeID}
               onValueChange={setSelectedTradeID}
-              disabled={fetchingData}
+              disabled={isFetching}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Trade" />
@@ -170,7 +166,7 @@ const Modules = () => {
             <Select
               value={selectedTradeYear}
               onValueChange={setSelectedTradeYear}
-              disabled={fetchingData}
+              disabled={isFetching}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Year" />
@@ -206,7 +202,7 @@ const Modules = () => {
                 );
                 setSelectedSubjectID(value);
               }}
-              disabled={!selectedTradeID || fetchingData}
+              disabled={!selectedTradeID || isFetching}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Subject" />
@@ -235,7 +231,7 @@ const Modules = () => {
               <Select
                 value={selectedTradeID}
                 onValueChange={setSelectedTradeID}
-                disabled={fetchingData}
+                disabled={isFetching}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Trade" />
@@ -258,7 +254,7 @@ const Modules = () => {
               <Select
                 value={selectedTradeYear}
                 onValueChange={setSelectedTradeYear}
-                disabled={fetchingData}
+                disabled={isFetching}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Year" />
@@ -294,7 +290,7 @@ const Modules = () => {
                   );
                   setSelectedSubjectID(value);
                 }}
-                disabled={!selectedTradeID || fetchingData}
+                disabled={!selectedTradeID || isFetching}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Subject" />
@@ -348,7 +344,7 @@ const Modules = () => {
             <div
               className={`${
                 hasActiveView && !showModulesList ? "hidden lg:block" : "block"
-              } w-full lg:w-80 flex-shrink-0`}
+              } w-full lg:w-80 shrink-0`}
             >
               <Card className="overflow-hidden py-0">
                 <CardContent className="p-0">

@@ -7,7 +7,8 @@ import { ArrowLeft, Save } from "lucide-react";
 
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
-import collegeService from "@/appwrite/collageService";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 
@@ -17,8 +18,6 @@ import PersonalDetailsSection from "./PersonalDetailsSection";
 import Loader from "@/components/components/Loader";
 
 const ProfileForm = () => {
-  const [collegeData, setCollegeData] = useState([]);
-  const [tradeData, setTradeData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,6 +32,12 @@ const ProfileForm = () => {
   const { userId } = useParams();
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
+
+  // Fetch colleges and trades via RTK Query
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegeData = collegesResponse?.documents || [];
+  const { data: tradesResponse } = useListTradesQuery();
+  const tradeData = tradesResponse?.documents || [];
 
   const isTeacher = user.labels.includes("Teacher");
   const isStudent = !isTeacher;
@@ -103,15 +108,6 @@ const ProfileForm = () => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        // Fetch reference data
-        const [colleges, trades] = await Promise.all([
-          collegeService.listColleges(),
-          tradeService.listTrades(),
-        ]);
-
-        setCollegeData(colleges.documents);
-        setTradeData(trades.documents);
-
         // Handle profile data based on different scenarios
         let profileData = null;
 

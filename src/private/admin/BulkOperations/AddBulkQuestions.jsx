@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import subjectService from "@/appwrite/subjectService";
-import tradeservice from "@/appwrite/tradedetails";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check, Loader2, Upload, AlertCircle } from "lucide-react";
@@ -34,18 +34,13 @@ const AddBulkQuestions = () => {
 
   const profile = useSelector(selectProfile);
 
-  const fetchTrades = async () => {
-    setFetchingData(true);
-    try {
-      const data = await tradeservice.listTrades();
-      setTradeData({ data: data.documents || [], selectedTrade: null });
-    } catch (error) {
-      console.error("Error fetching trades:", error);
-      setTradeData({ data: [], selectedTrade: null });
-    } finally {
-      setFetchingData(false);
-    }
-  };
+  // Trades fetched via RTK Query (useListTradesQuery)
+  const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
+    undefined,
+    { skip: !profile }
+  );
+  const trades = tradesResponse?.documents || [];
+  const isFetching = fetchingData || tradesLoading;
 
   const fetchSubjects = async () => {
     setFetchingData(true);
@@ -96,7 +91,6 @@ const AddBulkQuestions = () => {
 
   useEffect(() => {
     if (profile) {
-      fetchTrades();
       fetchSubjects();
     }
   }, [profile]);
@@ -238,15 +232,15 @@ const AddBulkQuestions = () => {
               <Select.Root
                 value={tradeData.selectedTrade?.$id || ""}
                 onValueChange={(value) => {
-                  const trade = tradeData.data.find((t) => t.$id === value);
+                  const trade = trades.find((t) => t.$id === value);
                   setTradeData((prev) => ({ ...prev, selectedTrade: trade }));
                 }}
-                disabled={fetchingData || tradeData.data.length === 0}
+                disabled={isFetching || trades.length === 0}
               >
                 <Select.Trigger className="w-full inline-flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Select.Value
                     placeholder={
-                      tradeData.data.length === 0
+                      trades.length === 0
                         ? "No trades available"
                         : "Select trade"
                     }
@@ -258,7 +252,7 @@ const AddBulkQuestions = () => {
                 <Select.Portal>
                   <Select.Content className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                     <Select.Viewport className="p-1">
-                      {tradeData.data.map((trade) => (
+                      {trades.map((trade) => (
                         <Select.Item
                           key={trade.$id}
                           value={trade.$id}
@@ -292,7 +286,7 @@ const AddBulkQuestions = () => {
                     selectedSubject: subject,
                   }));
                 }}
-                disabled={fetchingData || subjectData.data.length === 0}
+                disabled={isFetching || subjectData.data.length === 0}
               >
                 <Select.Trigger className="w-full inline-flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Select.Value
@@ -447,7 +441,7 @@ const AddBulkQuestions = () => {
             modulesData.selectedModule) && (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-blue-600 mr-2 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-900 mb-1">
                     Selected Criteria
@@ -508,7 +502,7 @@ const AddBulkQuestions = () => {
             />
             {jsonError && (
               <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-4 h-4 text-red-600 mr-2 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-800">{jsonError}</p>
               </div>
             )}
@@ -542,7 +536,7 @@ const AddBulkQuestions = () => {
                     className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                   >
                     <div className="flex items-start">
-                      <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-medium mr-3">
+                      <span className="shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-medium mr-3">
                         {idx + 1}
                       </span>
                       <div className="flex-1">

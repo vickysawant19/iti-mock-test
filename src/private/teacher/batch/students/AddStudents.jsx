@@ -10,11 +10,11 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { appwriteService } from "@/appwrite/appwriteConfig"
+import { appwriteService } from "@/appwrite/appwriteConfig";
 import batchService from "@/appwrite/batchService";
 import { Query } from "appwrite";
-import collegeService from "@/appwrite/collageService";
-import tradeservice from "@/appwrite/tradedetails";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import userProfileService from "@/appwrite/userProfileService";
 import { toast } from "react-toastify";
 import CustomInput from "@/components/components/CustomInput";
@@ -23,16 +23,19 @@ const AddStudents = () => {
   // State for tracking search/create mode and data
   const [mode, setMode] = useState("search"); // 'search' or 'create'
   const [showProfileForm, setShowProfileForm] = useState(false);
-  const [collegeData, setCollegeData] = useState([]);
-  const [tradeData, setTradeData] = useState([]);
   const [batchesData, setBatchesData] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userSearchResult, setUserSearchResult] = useState(null);
   const [existingProfile, setExsistingProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingBatches, setIsLoadingBatches] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false); // New loading state for user creation
+
+  // Fetch colleges and trades via RTK Query
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegeData = collegesResponse?.documents || [];
+  const { data: tradesResponse } = useListTradesQuery();
+  const tradeData = tradesResponse?.documents || [];
 
   // Form hooks
   const {
@@ -69,30 +72,6 @@ const AddStudents = () => {
   // Watch for changes in college and trade selections
   const selectedCollegeId = watch("collegeId");
   const selectedTradeId = watch("tradeId");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [colleges, trades] = await Promise.all([
-          collegeService.listColleges(),
-          tradeservice.listTrades(),
-        ]);
-
-        setCollegeData(colleges.documents || []);
-        setTradeData(trades.documents || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (showProfileForm && collegeData.length === 0 && tradeData.length === 0) {
-      fetchData();
-    }
-  }, [showProfileForm]);
 
   // Fetch batches when both college and trade are selected
   useEffect(() => {
@@ -139,7 +118,7 @@ const AddStudents = () => {
 
       if (response.data) {
         setUserSearchResult(response.data);
-        
+
         // Check if user has existing profile
         try {
           const userProfile = await userProfileService.getUserProfile(
@@ -200,21 +179,21 @@ const AddStudents = () => {
   const onCreateUser = async (data) => {
     setIsCreatingUser(true);
     setExsistingProfile(null);
-    
+
     try {
       const func = appwriteService.getFunctions();
       const { responseBody } = await func.createExecution(
         "678e7277002e1d5c9b9b",
-        JSON.stringify({ 
-          action: "createAccount", 
+        JSON.stringify({
+          action: "createAccount",
           ...data,
           // Add country code if provided, default to India (+91)
-          countryCode: data.countryCode || "91"
+          countryCode: data.countryCode || "91",
         })
       );
-      
+
       const response = JSON.parse(responseBody);
-      
+
       if (response.success) {
         setUserSearchResult(response.data);
         resetProfileForm({
@@ -395,7 +374,9 @@ const AddStudents = () => {
             <div className="flex justify-center items-center mt-4 py-8">
               <div className="text-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-                <p className="text-gray-600 dark:text-gray-300">Searching for user...</p>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Searching for user...
+                </p>
               </div>
             </div>
           ) : userSearchResult ? (
@@ -405,9 +386,13 @@ const AddStudents = () => {
                   <h3 className="font-medium text-gray-800 dark:text-white">
                     {userSearchResult.name}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300">{userSearchResult.email}</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {userSearchResult.email}
+                  </p>
                   {userSearchResult.phone && (
-                    <p className="text-gray-600 dark:text-gray-300">{userSearchResult.phone}</p>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      {userSearchResult.phone}
+                    </p>
                   )}
                 </div>
                 <button
@@ -557,7 +542,9 @@ const AddStudents = () => {
             </div>
 
             <div>
-              <label className="block text-gray-600 mb-1 dark:text-gray-300">Role</label>
+              <label className="block text-gray-600 mb-1 dark:text-gray-300">
+                Role
+              </label>
               <div className="bg-blue-100 py-1 px-3 rounded-md inline-flex items-center dark:bg-blue-900/20">
                 <span className="dark:text-blue-200">Student</span>
                 <Check className="w-4 h-4 ml-2 text-blue-500" />
@@ -594,13 +581,17 @@ const AddStudents = () => {
           <div className="flex justify-center items-center mt-4 py-8">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-              <p className="text-gray-600 dark:text-gray-300">Loading form data...</p>
+              <p className="text-gray-600 dark:text-gray-300">
+                Loading form data...
+              </p>
             </div>
           </div>
         ) : (
           <div className="mt-8 border-t border-gray-200 pt-6 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 dark:text-white">
-              {existingProfile ? "Update Student Profile" : "Complete Student Profile"}
+              {existingProfile
+                ? "Update Student Profile"
+                : "Complete Student Profile"}
             </h2>
 
             <form
@@ -825,12 +816,16 @@ const AddStudents = () => {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {existingProfile ? "Updating Profile..." : "Creating Profile..."}
+                      {existingProfile
+                        ? "Updating Profile..."
+                        : "Creating Profile..."}
                     </>
                   ) : (
                     <>
                       <Check className="w-5 h-5 mr-2" />
-                      {existingProfile ? "Update Student Profile" : "Create Student Profile"}
+                      {existingProfile
+                        ? "Update Student Profile"
+                        : "Create Student Profile"}
                     </>
                   )}
                 </button>

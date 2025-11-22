@@ -37,6 +37,20 @@ class HolidayService {
     }
   }
 
+  async getHolidayByDate(date, batchId) {
+    try {
+      const data = await this.getAllHolidays([
+        Query.equal("batchId", batchId),
+        Query.equal("date", date),
+      ]);
+
+      return data?.length > 0 ? data[0] : null;
+      documents[0];
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async getBatchHolidaysByDateRange(batchId, startDate, endDate) {
     try {
       const data = this.getAllHolidays([

@@ -51,7 +51,7 @@ function DailyDiary() {
     data: batchData,
     isLoading,
     isError,
-  } = useGetBatchQuery(profile.batchId);
+  } = useGetBatchQuery({ batchId: profile.batchId });
 
   const navigate = useNavigate();
 

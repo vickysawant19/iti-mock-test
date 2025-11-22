@@ -37,9 +37,6 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
-  // const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
-  //   batchData.tradeId
-  // );
 
   const { scrollToItem, itemRefs } = useScrollToItem(modules || [], "moduleId");
 

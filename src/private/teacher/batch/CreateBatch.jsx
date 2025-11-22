@@ -6,8 +6,8 @@ import { ClipLoader } from "react-spinners";
 import { useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
 
-import collegeService from "@/appwrite/collageService";
-import tradeservice from "@/appwrite/tradedetails";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
 import batchService from "@/appwrite/batchService";
@@ -16,8 +16,6 @@ import LocationPicker from "../components/LocationPicker";
 import Loader from "@/components/components/Loader";
 
 const BatchForm = ({ onClose }) => {
-  const [collegesData, setCollegesData] = useState([]);
-  const [tradesData, setTradesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBatchDataLoading, setIsBatchDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +29,12 @@ const BatchForm = ({ onClose }) => {
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+
+  // Fetch colleges and trades via RTK Query
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegesData = collegesResponse?.documents || [];
+  const { data: tradesResponse } = useListTradesQuery();
+  const tradesData = tradesResponse?.documents || [];
 
   const {
     register,
@@ -119,27 +123,10 @@ const BatchForm = ({ onClose }) => {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const [collegeResponse, tradesResponse] = await Promise.all([
-        collegeService.listColleges(),
-        tradeservice.listTrades(),
-      ]);
-
-      setCollegesData(collegeResponse.documents);
-      setTradesData(tradesResponse.documents);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load required data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (profile) {
       fetchBatches();
-      fetchData();
+      setIsLoading(false);
     }
   }, [profile]);
 
@@ -150,7 +137,6 @@ const BatchForm = ({ onClose }) => {
   }, [selectedBatchId]);
 
   const handleBatchSubmit = async (data) => {
-
     setIsSubmitting(true);
     try {
       const batchPayload = {
@@ -343,7 +329,10 @@ const BatchForm = ({ onClose }) => {
               disabled={isBatchDataLoading}
               className="w-6 h-6 pt-2 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:focus:ring-blue-800"
             />
-            <label htmlFor="isActive" className="text-gray-600 dark:text-gray-300">
+            <label
+              htmlFor="isActive"
+              className="text-gray-600 dark:text-gray-300"
+            >
               Batch is Active
             </label>
           </div>

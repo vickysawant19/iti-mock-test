@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import tradeservice from "@/appwrite/tradedetails";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import conf from "@/config/config";
 import { appwriteService } from "@/appwrite/appwriteConfig";
 
@@ -83,7 +83,6 @@ const Checkbox = ({ checked, onChange, label, className = "" }) => (
 
 const CreateMockTest = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [trades, setTrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
 
@@ -147,20 +146,15 @@ const CreateMockTest = () => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
+  // Fetch trades via RTK Query
+  const { data: tradesResponse } = useListTradesQuery();
+  const tradesList = tradesResponse?.documents || [];
+
   const navigate = useNavigate();
 
   const tradeId = useWatch({ control, name: "tradeId" });
   const subjectId = useWatch({ control, name: "subjectId" });
   const year = useWatch({ control, name: "year" });
-
-  const fetchTrades = async () => {
-    try {
-      const resp = await tradeservice.listTrades();
-      setTrades(resp.documents);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   const fetchSubjects = async () => {
     try {
@@ -197,7 +191,6 @@ const CreateMockTest = () => {
   };
 
   useEffect(() => {
-    fetchTrades();
     fetchSubjects();
   }, []);
 
@@ -209,19 +202,19 @@ const CreateMockTest = () => {
 
   useEffect(() => {
     if (!profile) return;
-    if (trades.length < 0) return;
+    if (tradesList.length < 1) return;
     setValue("tradeId", profile.tradeId);
-    const trade = trades.find((tr) => tr.$id === profile.tradeId);
+    const trade = tradesList.find((tr) => tr.$id === profile.tradeId);
     setSelectedTrade(trade);
-  }, [profile, trades]);
+  }, [profile, tradesList, setValue]);
 
   useEffect(() => {
-    if (!trades.length) return;
+    if (!tradesList.length) return;
     const onTradeChange = (e) => {
-      setSelectedTrade(trades.find((tr) => tr.$id === tradeId));
+      setSelectedTrade(tradesList.find((tr) => tr.$id === tradeId));
     };
     onTradeChange();
-  }, [tradeId]);
+  }, [tradeId, tradesList]);
 
   const handleSelectAllModules = (checked) => {
     if (checked) {
@@ -288,7 +281,7 @@ const CreateMockTest = () => {
                 className="text-gray-900 dark:text-gray-100"
               >
                 <option value="">Select Trade</option>
-                {trades.map((trade) => (
+                {tradesList.map((trade) => (
                   <option key={trade.$id} value={trade.$id}>
                     {trade.tradeName}
                   </option>

@@ -25,7 +25,7 @@ import { FaCalendar } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 import userStatsService from "@/appwrite/userStats";
-import tradeservice from "@/appwrite/tradedetails";
+import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import CustomSelect from "@/components/components/CustomSelect";
 import TodaysTestsPopup from "@/private/popup/TodaysTests";
@@ -228,18 +228,20 @@ const Dashboard = () => {
     [getTimeForPeriod]
   );
 
+  // Fetch trade via RTK Query; skip until profile is available
+  const { data: tradeData } = useGetTradeQuery(profile?.tradeId, {
+    skip: !profile?.tradeId,
+  });
+
   const fetchData = useCallback(async () => {
     if (!profile) return;
 
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const [tradeRes, statsRes] = await Promise.all([
-        tradeservice.getTrade(profile.tradeId),
-        userStatsService.getAllStats([
-          Query.equal("tradeId", profile.tradeId),
-          Query.equal("collegeId", profile.collegeId),
-          Query.equal("batchId", profile.batchId),
-        ]),
+      const statsRes = await userStatsService.getAllStats([
+        Query.equal("tradeId", profile.tradeId),
+        Query.equal("collegeId", profile.collegeId),
+        Query.equal("batchId", profile.batchId),
       ]);
 
       if (statsRes.documents.length > 0) {
@@ -257,7 +259,7 @@ const Dashboard = () => {
 
         setState((prev) => ({
           ...prev,
-          trades: tradeRes || {},
+          trades: tradeData || {},
           allUsersStats: processedStats,
           currUserRecord: processUserStats(processedStats),
           topContributors: contributors,
@@ -277,6 +279,7 @@ const Dashboard = () => {
     processUserStats,
     processTopStats,
     processTestsToday,
+    tradeData,
   ]);
 
   useEffect(() => {

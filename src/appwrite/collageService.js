@@ -79,31 +79,6 @@ export class CollegeService {
       throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
-
-  static async customCollegeBaseQuery({ method, data }) {
-    const collegeService = new CollegeService();
-    try {
-      // Ensure method is uppercase
-      const reqMethod = method.toUpperCase();
-
-      const methodMap = {
-        GET: () => collegeService.getCollege(data.collegeId),
-        POST: () => collegeService.createCollege(data.collegeName),
-        UPDATE: () =>
-          collegeService.updateCollege(data.collegeId, data.updatedData),
-        DELETE: () => collegeService.deleteCollege(data.collegeId),
-      };
-
-      if (!methodMap[reqMethod]) {
-        throw new Error(`Method ${reqMethod} not supported`);
-      }
-
-      const result = await methodMap[reqMethod]();
-      return { data: result };
-    } catch (error) {
-      return { error: error.message };
-    }
-  }
 }
 
 const collegeService = new CollegeService();

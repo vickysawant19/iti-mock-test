@@ -17,7 +17,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-import tradeservice from "@/appwrite/tradedetails";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import quesdbservice from "@/appwrite/database";
 import moduleServices from "@/appwrite/moduleServices";
@@ -38,7 +38,6 @@ const EditQuestion = () => {
   const { quesId } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [trades, setTrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [modules, setModules] = useState(null);
@@ -48,6 +47,10 @@ const EditQuestion = () => {
   const user = useSelector(selectUser);
   const questionsStore = useSelector(selectQuestions);
   const isTeacher = user.labels.includes("Teacher");
+
+  // Fetch trades via RTK Query
+  const { data: tradesResponse } = useListTradesQuery();
+  const trades = tradesResponse?.documents || [];
 
   const { register, handleSubmit, setValue, watch, reset, getValues, control } =
     useForm();
@@ -86,16 +89,11 @@ const EditQuestion = () => {
   const fetchTradesAndQuestion = async () => {
     setIsLoading(true);
     try {
-      const [trades, subjects] = await Promise.all([
-        tradeservice.listTrades(),
-        subjectService.listSubjects(),
-      ]);
-
-      setTrades(trades.documents);
+      const subjects = await subjectService.listSubjects();
       setSubjects(subjects.documents);
 
       const question = await quesdbservice.getQuestion(quesId);
-      const trade = trades.documents.find((tr) => tr.$id === question.tradeId);
+      const trade = trades.find((tr) => tr.$id === question.tradeId);
       const images = question.images.map((img) => JSON.parse(img));
       setSelectedTrade(trade);
       setImages(images);
@@ -123,8 +121,10 @@ const EditQuestion = () => {
     if (!isTeacher) {
       toast.error("You are not Authorized");
     }
-    fetchTradesAndQuestion();
-  }, [quesId, isTeacher]);
+    if (trades.length > 0) {
+      fetchTradesAndQuestion();
+    }
+  }, [quesId, isTeacher, trades]);
 
   useEffect(() => {
     if (tradeId && subjectId && year) {

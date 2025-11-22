@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { FaArrowLeft } from "react-icons/fa";
 
 import quesdbservice from "@/appwrite/database";
-import tradeservice from "@/appwrite/tradedetails";
+import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import ImageUploader from "./components/ImageUpload";
@@ -16,7 +16,6 @@ import { selectProfile } from "@/store/profileSlice";
 
 const CreateQuestion = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [trades, setTrades] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [modules, setModules] = useState(null);
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -26,6 +25,10 @@ const CreateQuestion = () => {
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+
+  // Fetch trades via RTK Query
+  const { data: tradesResponse } = useListTradesQuery();
+  const trades = tradesResponse?.documents || [];
 
   const {
     register,
@@ -70,11 +73,7 @@ const CreateQuestion = () => {
 
   const fetchData = async () => {
     try {
-      const [trades, subjects] = await Promise.all([
-        tradeservice.listTrades(),
-        subjectService.listSubjects(),
-      ]);
-      setTrades(trades.documents);
+      const subjects = await subjectService.listSubjects();
       setSubjects(subjects.documents);
     } catch (error) {
       console.log(error);
@@ -82,10 +81,10 @@ const CreateQuestion = () => {
   };
 
   useEffect(() => {
-    if (trades.length === 0 && subjects.length === 0) {
+    if (subjects.length === 0) {
       fetchData();
     }
-  }, [trades, subjects]);
+  }, [subjects]);
 
   const fetchModules = async () => {
     if (!tradeId || !subjectId || !year) return;
@@ -108,13 +107,13 @@ const CreateQuestion = () => {
 
   useEffect(() => {
     if (!profile) return;
-    if (trades.length < 0) return;
+    if (trades.length < 1) return;
     const trade = trades.find((t) => t.$id === profile.tradeId);
     if (trade) {
       setValue("tradeId", trade.$id);
       setSelectedTrade(trade);
     }
-  }, [profile, trades]);
+  }, [profile, trades, setValue]);
 
   useEffect(() => {
     if (tradeId && subjectId && year) {
