@@ -116,12 +116,13 @@ class NewAttendanceService {
   }
 
   // Get batch attendance for a specific date (all students)
-  async getBatchAttendanceByDate(batchId, date) {
+  async getBatchAttendanceByDate(batchId, date, extraQueries = []) {
     try {
       const queries = [
         Query.equal("batchId", batchId),
         Query.equal("date", this.formatDate(date)),
       ];
+      extraQueries.length !== 0 && queries.push(...extraQueries);
 
       return await this.fetchAllDocuments(queries);
     } catch (error) {
@@ -772,7 +773,6 @@ class NewAttendanceService {
           Query.equal("batchId", batchId),
           Query.equal("date", formattedDate),
           Query.select(["userId", "status"]),
-
         ];
 
         // Only add the userId filter if valid students exist
