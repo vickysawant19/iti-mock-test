@@ -32,6 +32,34 @@ const AddBulkQuestions = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
 
+  // Prompt template that can be copied into the textarea
+  const promptTemplate = `Act as a data formatting assistant. Your task is to convert the raw quiz questions provided below into a specific JSON array format.
+
+Target JSON Structure:
+[
+  {
+    "question": "Question Text Here",
+    "correctAnswer": "A",
+    "options": [
+      "Option A Text",
+      "Option B Text",
+      "Option C Text",
+      "Option D Text"
+    ],
+    "tags": "nimi"
+  }
+]
+
+Strict Rules:
+1. Merging Translations: If a question or option is provided in two languages (e.g., English on one line, Marathi on the next), you must combine them into a single string on the same line. Use a forward slash and a space to join the translations (e.g., "English text / मराठी शब्द ").
+2. Tags: The "tags" field must always be set to "nimi".
+3. Correct Answer: Extract only the option letter (A, B, C, or D).
+4. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.
+
+Input Data:
+Paste your raw quiz questions below.
+`;
+
   const profile = useSelector(selectProfile);
 
   // Trades fetched via RTK Query (useListTradesQuery)
@@ -490,10 +518,29 @@ const AddBulkQuestions = () => {
           </h2>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Paste your questions JSON here{" "}
-              <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Paste your questions JSON here
+                <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(promptTemplate);
+                    toast.success("Prompt copied to clipboard");
+                  } catch (err) {
+                    console.error("Clipboard write failed", err);
+                    toast.error("Failed to copy prompt to clipboard");
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
+                aria-label="Copy prompt"
+              >
+                Copy Prompt
+              </button>
+            </div>
+
             <textarea
               value={jsonInput}
               onChange={(e) => handleJsonInput(e.target.value)}
