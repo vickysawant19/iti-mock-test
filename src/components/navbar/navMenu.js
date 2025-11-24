@@ -30,6 +30,7 @@ export const menuConfig = [
     children: [
       { label: "Modules", path: "/add-modules", icon: MdAddCard },
       { label: "Questions", path: "/add-bulk-questions", icon: Group },
+      { label: "College Attendance", path: "/college-attendance", icon: FaCalendarCheck },
     ],
   },
   {

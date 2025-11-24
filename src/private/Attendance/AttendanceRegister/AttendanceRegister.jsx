@@ -355,7 +355,7 @@ const AttendanceRegister = () => {
       });
 
       handleCloseModal();
-      await fetchAttendanceAndStats();
+      // await fetchAttendanceAndStats();
     } catch (error) {
       console.error("Error saving attendance:", error);
     }

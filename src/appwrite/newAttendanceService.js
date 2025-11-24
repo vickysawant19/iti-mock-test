@@ -351,25 +351,25 @@ class NewAttendanceService {
     }
   }
 
- async deleteMultipleAttendance(documentIds) {
-  try {
-    if (!documentIds || documentIds.length === 0) {
-      return []; // Nothing to delete, return empty array immediately
+  async deleteMultipleAttendance(documentIds) {
+    try {
+      if (!documentIds || documentIds.length === 0) {
+        return []; // Nothing to delete, return empty array immediately
+      }
+
+      // Promise.all will throw an error if ANY of the deletions fail
+      // This ensures we catch failures in the component's catch block
+
+      const res = await Promise.all(
+        documentIds.map((id) => this.deleteAttendance(id))
+      );
+
+      return res; // Returns array of deleted IDs
+    } catch (error) {
+      console.error("Error in deleteMultipleAttendance:", error);
+      throw error;
     }
-
-    // Promise.all will throw an error if ANY of the deletions fail
-    // This ensures we catch failures in the component's catch block
-
-    const res = await Promise.all(
-      documentIds.map((id) => this.deleteAttendance(id))
-    );
-    
-    return res; // Returns array of deleted IDs
-  } catch (error) {
-    console.error("Error in deleteMultipleAttendance:", error);
-    throw error;
   }
-}
 
   // Get attendance statistics for a student
   async getStudentAttendanceStats(
@@ -756,6 +756,75 @@ class NewAttendanceService {
       const data = await this.fetchAllDocuments(queries);
       return data.total;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async getBatchStatsByDate(batchIds, studentIds, date) {
+    try {
+      const formattedDate = this.formatDate(date);
+
+      // 1. Create an array of promises (requests run in parallel)
+      const statsPromises = batchIds.map(async (batchId) => {
+        const batchStudents = studentIds[batchId] || [];
+
+        const queryParams = [
+          Query.equal("batchId", batchId),
+          Query.equal("date", formattedDate),
+          Query.select(["userId", "status"]),
+
+        ];
+
+        // Only add the userId filter if valid students exist
+        if (batchStudents.length > 0) {
+          queryParams.push(Query.equal("userId", batchStudents));
+        }
+
+        // 2. Single API Call: Fetch ALL records for this batch/date
+        const response = await this.fetchAllDocuments(queryParams);
+
+        // 3. Calculate Stats in Memory (JavaScript is faster than a 2nd Network Request)
+        const documents = response.documents;
+
+        const presentCount = documents.filter(
+          (doc) => doc.status === "present"
+        ).length;
+        const absentCount = documents.filter(
+          (doc) => doc.status === "absent"
+        ).length;
+
+        const totalMarked = presentCount + absentCount;
+
+        // Calculate Percentage
+        const percentage =
+          totalMarked > 0
+            ? parseFloat(((presentCount / totalMarked) * 100).toFixed(2))
+            : 0;
+
+        return {
+          batchId,
+          stats: {
+            total: totalMarked,
+            present: presentCount,
+            absent: absentCount,
+            holiday: 0,
+            percentage: percentage,
+          },
+        };
+      });
+
+      // 4. Wait for all requests to finish simultaneously
+      const results = await Promise.all(statsPromises);
+
+      // 5. Convert array back to object format: { batchId: { ...stats } }
+      const finalStats = results.reduce((acc, item) => {
+        acc[item.batchId] = item.stats;
+        return acc;
+      }, {});
+
+      return finalStats;
+    } catch (error) {
+      console.error("Error fetching batch stats:", error);
       throw error;
     }
   }

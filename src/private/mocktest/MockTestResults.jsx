@@ -336,7 +336,7 @@ const MockTestResults = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[80px]">Rank</TableHead>
+                    <TableHead className="w-20">Rank</TableHead>
                     <TableHead>Student Name</TableHead>
                     <TableHead className="text-center">Score</TableHead>
                     <TableHead className="text-center">Time Taken</TableHead>

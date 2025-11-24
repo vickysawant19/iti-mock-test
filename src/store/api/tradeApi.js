@@ -112,12 +112,19 @@ export const tradeApi = createApi({
           const res = await tradeservice.listTrades(queries);
           return { data: res };
         } catch (error) {
-          return { error };
+          return {
+            error: {
+              message: error.message || 'An unknown error occurred',
+              name: error.name || 'Error',
+              // You can add other serializable properties from the error here if needed
+              // e.g., stack: error.stack (though often not recommended for production)
+            },}
         }
       },
       onQueryStarted: async (queries, { dispatch, queryFulfilled }) => {
         try {
           const { data } = await queryFulfilled;
+          console.log("res data", data)
           dispatch(
             tradeApi.util.updateQueryData("listTrades", undefined, (draft) => {
               draft.documents = data.documents;
@@ -127,10 +134,15 @@ export const tradeApi = createApi({
           console.log(error);
         }
       },
-      providesTags: (result, error, arg) => [
-        { type: "trade", id: "LIST" },
-        ...result.documents.map((doc) => ({ type: "trade", id: doc.$id })),
-      ],
+      providesTags: (result, error, arg) => {
+        if (!result || !result.documents) {
+          return [{ type: "trade", id: "LIST" }];
+        }
+        return [
+          { type: "trade", id: "LIST" },
+          ...result.documents.map((doc) => ({ type: "trade", id: doc.$id })),
+        ];
+      },
     }),
   }),
 });

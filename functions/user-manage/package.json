@@ -8,6 +8,8 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
+    "fuzzball": "^1.4.0",
     "node-appwrite": "^14.1.0"
   },
   "devDependencies": {
