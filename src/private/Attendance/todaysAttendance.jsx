@@ -18,6 +18,7 @@ import {
   ChevronUp,
   Calendar,
   Navigation,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -204,54 +205,47 @@ const AttendanceTracker = () => {
   const error = batchError || (!holiday && locationError);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/50 to-pink-50 dark:from-slate-950 dark:via-indigo-950/30 dark:to-slate-950 p-4 md:p-6">
-      <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
+      <div className="max-w-xl mx-auto space-y-6 animate-in fade-in duration-500">
         {/* Header Card */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-800">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                <User className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold text-white truncate">
-                  {profile?.userName || profile?.name || "Student"}
-                </h2>
-                <div className="flex items-center gap-2 mt-1 text-blue-100">
-                  <Calendar className="w-4 h-4" />
-                  <p className="text-sm">
-                    {new Date().toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-              {attendanceMarked && (
-                <div className="animate-bounce">
-                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-                    <CheckCircle2 className="w-7 h-7 text-white" />
-                  </div>
-                </div>
-              )}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white shadow-xl shadow-blue-500/20">
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -mb-8 -ml-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative flex items-center gap-5">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-inner border border-white/10">
+              <User className="h-8 w-8 text-white" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl font-bold tracking-tight truncate">
+                {profile?.userName || profile?.name || "Student"}
+              </h2>
+              <div className="mt-1 flex items-center gap-2 text-blue-100">
+                <Calendar className="h-4 w-4" />
+                <p className="font-medium text-sm">
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Holiday Notice */}
         {holiday && !loading && (
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500 dark:bg-amber-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-amber-500 dark:bg-amber-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-lg text-amber-900 dark:text-amber-100">
                     Holiday Today
                   </h3>
-                  <p className="text-amber-800 dark:text-amber-200 mt-1">
+                  <p className="text-amber-800 dark:text-amber-200 mt-1 font-medium">
                     {holiday?.holidayText ||
                       holiday?.day ||
                       (holiday?.date
@@ -269,11 +263,14 @@ const AttendanceTracker = () => {
 
         {/* Loading State */}
         {loading && (
-          <Card className="border-0 shadow-lg bg-white dark:bg-slate-900">
-            <CardContent className="py-16">
+          <Card className="border-0 shadow-lg bg-white dark:bg-slate-900 rounded-3xl">
+            <CardContent className="py-20">
               <div className="text-center space-y-4">
-                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-                <p className="text-slate-600 dark:text-slate-400">
+                <div className="relative mx-auto w-16 h-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-blue-100 dark:border-blue-900"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">
                   {checkingAttendance
                     ? "Checking for holidays..."
                     : batchLoading
@@ -287,10 +284,10 @@ const AttendanceTracker = () => {
 
         {/* Error State */}
         {!loading && error && (
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40 rounded-3xl">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/20">
                   <XCircle className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -302,6 +299,13 @@ const AttendanceTracker = () => {
                       locationError?.message ||
                       "Failed to get your location."}
                   </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 bg-white/50 border-red-200 hover:bg-white/80 text-red-700"
+                    onClick={() => window.location.reload()}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -311,120 +315,146 @@ const AttendanceTracker = () => {
         {/* Main Status Card - Only show if NOT a holiday */}
         {!loading && !error && batchData && !holiday && (
           <>
-            <Card className="border-0 shadow-lg bg-white dark:bg-slate-900 overflow-hidden">
-              <CardContent className="p-6 space-y-6">
+            <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 overflow-hidden rounded-3xl">
+              <CardContent className="p-0">
                 {attendanceMarked ? (
-                  <div className="text-center py-8 space-y-4">
-                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-xl">
-                      <CheckCircle2 className="w-14 h-14 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                        Attendance Marked!
-                      </h3>
-                      <p className="text-slate-600 dark:text-slate-400 mt-2">
-                        You're all set for today
-                      </p>
+                  <div className="p-8">
+                    <div className="flex flex-col items-center justify-center text-center space-y-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 animate-ping rounded-full bg-green-400 opacity-20 duration-1000" />
+                        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-xl shadow-green-500/30">
+                          <CheckCircle2 className="h-12 w-12 text-white" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                          Attendance Marked
+                        </h3>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                          You have successfully marked your attendance for today.
+                        </p>
+                      </div>
+                      <div className="w-full pt-2">
+                         <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 text-green-700 px-4 py-3 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-900/50">
+                            <Clock className="w-5 h-5" />
+                            <span className="font-semibold">
+                              Marked at {existingAttendance?.$createdAt ? format(new Date(existingAttendance.$createdAt), "hh:mm a") : format(new Date(), "hh:mm a")}
+                            </span>
+                         </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <>
+                  <div className="p-6 space-y-6 relative">
+                    {/* View Map Button - Absolute Top Right */}
+                    <div className="absolute top-4 right-4 z-10">
+                      <Button
+                        onClick={() => setShowMap(!showMap)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                      >
+                        <Map className="h-3.5 w-3.5 mr-1.5" />
+                        {showMap ? "Hide Map" : "View Map"}
+                      </Button>
+                    </div>
+
                     {/* Distance Display */}
-                    <div className="text-center space-y-3 py-4">
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <div className="text-center space-y-4 py-2 mt-2">
+                      <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">
                         Distance from Campus
                       </p>
-                      <div className="flex items-baseline justify-center gap-2">
-                        <p className="text-5xl font-bold bg-gradient-to-br from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                      <div className="flex flex-col items-center gap-2">
+                        <p className="text-6xl font-black tracking-tighter text-slate-900 dark:text-white">
                           {distance !== null ? formatDistance(distance) : "---"}
                         </p>
+                        <Badge
+                          variant={isWithinRange ? "default" : "destructive"}
+                          className={`text-sm px-4 py-1.5 rounded-full ${
+                            isWithinRange 
+                              ? "bg-green-500 hover:bg-green-600" 
+                              : "bg-red-500 hover:bg-red-600"
+                          }`}
+                        >
+                          {isWithinRange ? (
+                            <span className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4" />
+                              In Range
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              <XCircle className="w-4 h-4" />
+                              Out of Range
+                            </span>
+                          )}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant={isWithinRange ? "default" : "destructive"}
-                        className="text-sm px-4 py-1.5"
-                      >
-                        {isWithinRange ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                            In Range
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-4 h-4 mr-1.5" />
-                            Out of Range
-                          </>
-                        )}
-                      </Badge>
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
-                        Required: Within {circleRadius / 1000}km radius
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        Allowed Radius: {circleRadius}m
                       </p>
                     </div>
 
                     {/* Warning Message */}
                     {!isWithinRange && distance !== null && (
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border border-red-200 dark:border-red-800">
+                      <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50">
                         <div className="flex items-start gap-3">
-                          <Navigation className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                          <p className="text-sm text-red-800 dark:text-red-200">
-                            You're too far from campus. Please move closer to
-                            mark attendance.
-                          </p>
+                          <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                            <Navigation className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div className="flex-1 pt-1">
+                            <p className="text-sm font-medium text-red-900 dark:text-red-200">
+                              You are too far away
+                            </p>
+                            <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
+                              Please move closer to the campus to mark your attendance.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {/* Action Buttons */}
                     <div className="space-y-3 pt-2">
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button
-                          onClick={handleMarkAttendance}
-                          disabled={
-                            !isWithinRange || marking || distance === null
-                          }
-                          className="h-14 text-base font-semibold rounded-xl shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform transition-all hover:scale-[1.02] active:scale-[0.98]"
-                          size="lg"
-                        >
-                          {marking ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Marking...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="mr-2 h-5 w-5" />
-                              Mark
-                            </>
-                          )}
-                        </Button>
-
-                        <Button
-                          onClick={() => setShowMap(!showMap)}
-                          variant="outline"
-                          className="h-14 rounded-xl text-base font-semibold"
-                        >
-                          <Map className="mr-2 h-5 w-5" />
-                          {showMap ? "Hide" : "Show"} Map
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={handleMarkAttendance}
+                        disabled={!isWithinRange || marking || distance === null}
+                        className={`w-full h-16 text-lg font-bold rounded-2xl shadow-lg shadow-blue-500/20 transition-all duration-300 ${
+                          isWithinRange 
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98]" 
+                            : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
+                        }`}
+                      >
+                        {marking ? (
+                          <>
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            Marking Attendance...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="mr-2 h-6 w-6" />
+                            Mark Attendance Now
+                          </>
+                        )}
+                      </Button>
 
                       {!deviceLocation && (
                         <Button
                           onClick={getDeviceLocation}
                           variant="secondary"
-                          className="w-full h-12 rounded-xl"
+                          className="w-full h-12 rounded-xl text-base font-medium"
                         >
                           <MapPin className="mr-2 h-4 w-4" />
-                          Get My Location
+                          Locate Me
                         </Button>
                       )}
                     </div>
-                  </>
+                  </div>
                 )}
 
-                {/* Map Section - Inside Same Card */}
+                {/* Map Section */}
                 {showMap && !attendanceMarked && (
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <div className="h-[350px] md:h-[400px] w-full relative rounded-xl overflow-hidden">
+                  <div className="border-t border-slate-100 dark:border-slate-800">
+                    <div className="h-[350px] w-full relative">
                       <MapContainer
                         center={[
                           batchData.location.lat,
@@ -432,7 +462,7 @@ const AttendanceTracker = () => {
                         ]}
                         zoom={13}
                         style={{ height: "100%", width: "100%", zIndex: 0 }}
-                        zoomControl={true}
+                        zoomControl={false}
                       >
                         <TileLayer
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -493,17 +523,18 @@ const AttendanceTracker = () => {
                         )}
                       </MapContainer>
 
-                      {/* Map Legend */}
-                      <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-[1000] space-y-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></div>
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">
+                      {/* Map Legend Overlay */}
+                      <div className="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-xl shadow-lg p-3 z-[400] flex justify-between items-center border border-white/20">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm ring-2 ring-white dark:ring-slate-900"></div>
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Campus
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">
+                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm ring-2 ring-white dark:ring-slate-900 animate-pulse"></div>
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             You
                           </span>
                         </div>

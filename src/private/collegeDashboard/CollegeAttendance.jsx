@@ -312,27 +312,23 @@ const AttendanceDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto space-y-6 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 pb-20">
+      <div className="max-w-7xl mx-auto space-y-8 p-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
-              <GraduationCap
-                className="text-blue-600 dark:text-blue-400"
-                size={32}
-              />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/30">
+                <GraduationCap className="text-white" size={32} />
+              </div>
               Attendance Dashboard
             </h1>
-            <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-              <span className="flex items-center gap-2">
-                <Calendar
-                  size={16}
-                  className="text-blue-600 dark:text-blue-400"
-                />
+            <div className="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400 pl-1">
+              <span className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
                 {formattedDate}
               </span>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
                 <Clock size={16} className="text-blue-600 dark:text-blue-400" />
                 {dayName}
               </span>
@@ -340,7 +336,7 @@ const AttendanceDashboard = () => {
           </div>
 
           <div className="w-full md:w-80">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block ml-1">
               Select College
             </label>
             <Select
@@ -353,15 +349,15 @@ const AttendanceDashboard = () => {
                 setBatchAttendance(new Map()); // Clear old data
               }}
             >
-              <SelectTrigger className="w-full bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+              <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500">
                 <SelectValue placeholder="Select a college" />
               </SelectTrigger>
-              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+              <SelectContent className="dark:bg-slate-800 dark:border-slate-700 rounded-xl">
                 {collegeData?.documents.map((college) => (
                   <SelectItem
                     key={college.$id}
                     value={String(college.$id)}
-                    className="focus:bg-slate-100 dark:focus:bg-slate-700 dark:text-slate-100"
+                    className="focus:bg-slate-50 dark:focus:bg-slate-700 dark:text-slate-100 rounded-lg my-1 cursor-pointer"
                   >
                     {college.collageName}
                   </SelectItem>
@@ -373,57 +369,65 @@ const AttendanceDashboard = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-800 text-white border-0 shadow-lg">
-            <CardHeader className="pb-1 pt-3 px-4">
-              <CardTitle className="text-xs md:text-sm font-medium opacity-90 flex items-center gap-1.5">
-                <Users size={16} className="shrink-0" />
-                <span className="truncate">Total Students</span>
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-md text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                  <Users size={14} />
+                </div>
+                Total
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+            <CardContent className="px-4 pb-4">
+              <div className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
                 {dashboardStats.overall.total}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-800 text-white border-0 shadow-lg">
-            <CardHeader className="pb-1 pt-3 px-4">
-              <CardTitle className="text-xs md:text-sm font-medium opacity-90 flex items-center gap-1.5">
-                <UserCheck size={16} className="shrink-0" />
-                <span className="truncate">Present</span>
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-md text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                  <UserCheck size={14} />
+                </div>
+                Present
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+            <CardContent className="px-4 pb-4">
+              <div className="text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                 {dashboardStats.overall.present}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-800 text-white border-0 shadow-lg">
-            <CardHeader className="pb-1 pt-3 px-4">
-              <CardTitle className="text-xs md:text-sm font-medium opacity-90 flex items-center gap-1.5">
-                <UserX size={16} className="shrink-0" />
-                <span className="truncate">Absent</span>
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+                <div className="p-1.5 bg-rose-50 dark:bg-rose-900/20 rounded-md text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
+                  <UserX size={14} />
+                </div>
+                Absent
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+            <CardContent className="px-4 pb-4">
+              <div className="text-2xl md:text-3xl font-bold text-rose-600 dark:text-rose-400">
                 {dashboardStats.overall.absent}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-800 text-white border-0 shadow-lg">
-            <CardHeader className="pb-1 pt-3 px-4">
-              <CardTitle className="text-xs md:text-sm font-medium opacity-90 flex items-center gap-1.5">
-                <TrendingUp size={16} className="shrink-0" />
-                <span className="truncate">Rate</span>
+          <Card className="bg-gradient-to-br from-indigo-600 to-violet-600 text-white border-0 shadow-lg shadow-indigo-500/30 rounded-2xl overflow-hidden group">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-indigo-100 flex items-center gap-2 uppercase tracking-wider">
+                <div className="p-1.5 bg-white/20 rounded-md text-white group-hover:scale-110 transition-transform">
+                  <TrendingUp size={14} />
+                </div>
+                Rate
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+            <CardContent className="px-4 pb-4">
+              <div className="text-2xl md:text-3xl font-bold">
                 {dashboardStats.overall.percentage}%
               </div>
             </CardContent>
@@ -431,22 +435,30 @@ const AttendanceDashboard = () => {
         </div>
 
         {/* Trade-wise Attendance */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-            Trade-wise Attendance
-          </h2>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1.5 bg-blue-600 rounded-full"></div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Trade-wise Performance
+            </h2>
+          </div>
 
           {loadingStats && (
-            <div className="text-center py-10 text-slate-500 dark:text-slate-400">
-              Loading attendance data...
+            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">Loading attendance data...</p>
             </div>
           )}
 
           {!loadingStats &&
             dashboardStats.trades.length === 0 &&
             selectedCollege && (
-              <div className="text-center py-10 text-slate-500 dark:text-slate-400">
-                No batch data available for this college.
+              <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-center">
+                <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
+                  <GraduationCap size={40} className="text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Data Available</h3>
+                <p className="text-slate-500 dark:text-slate-400">No batch data available for this college.</p>
               </div>
             )}
 
@@ -454,16 +466,21 @@ const AttendanceDashboard = () => {
             dashboardStats.trades.map((trade, idx) => (
               <Card
                 key={trade.tradeId || idx}
-                className="shadow-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-colors"
+                className="shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all hover:shadow-md rounded-3xl"
               >
-                <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-800 dark:from-slate-800 dark:to-slate-900 text-white">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <GraduationCap size={24} />
+                <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-4 px-6">
+                  <CardTitle className="text-lg font-bold flex items-center gap-3 text-slate-800 dark:text-slate-100">
+                    <div className="p-2 bg-white dark:bg-slate-700 rounded-xl shadow-sm border border-slate-100 dark:border-slate-600">
+                      <GraduationCap size={20} className="text-slate-700 dark:text-slate-300" />
+                    </div>
                     {trade.tradeName}
+                    <span className="ml-auto text-sm font-medium px-3 py-1 bg-white dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300">
+                      {trade.batches.length} Batches
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     {trade.batches.map((batch, bIdx) => {
                       const present = batch.attendance.present || 0;
                       const total = batch.attendance.total || 0;
@@ -472,89 +489,68 @@ const AttendanceDashboard = () => {
 
                       const statusColor =
                         parseFloat(batchPercentage) >= 90
-                          ? "green"
+                          ? "emerald"
                           : parseFloat(batchPercentage) >= 75
-                          ? "yellow"
-                          : "red";
+                          ? "amber"
+                          : "rose";
 
                       return (
                         <div
                           key={batch.batchId || bIdx}
-                          className="bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg p-3 md:p-4 hover:shadow-lg transition-all"
+                          className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-blue-300 dark:hover:border-blue-700 transition-all group relative overflow-hidden"
                         >
-                          <div className="flex justify-between items-start mb-2 md:mb-3">
-                            <h3 className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                          <div className={`absolute top-0 left-0 w-1 h-full bg-${statusColor}-500`}></div>
+                          
+                          <div className="flex justify-between items-start mb-4 pl-2">
+                            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-1" title={batch.batchName}>
                               {batch.batchName}
                             </h3>
                             <span
-                              className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold ${
-                                statusColor === "green"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                                  : statusColor === "yellow"
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-                                  : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                statusColor === "emerald"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                  : statusColor === "amber"
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
                               }`}
                             >
                               {batchPercentage}%
                             </span>
                           </div>
 
-                          <div className="space-y-1.5 md:space-y-2">
+                          <div className="space-y-3 pl-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-xs md:text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
-                                <UserCheck
-                                  size={14}
-                                  className="text-green-600 dark:text-green-500"
-                                />
-                                <span className="truncate">Present</span>
+                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                Present
                               </span>
-                              <span className="font-bold text-xl md:text-2xl text-green-700 dark:text-green-500">
+                              <span className="font-bold text-lg text-slate-700 dark:text-slate-200">
                                 {present}
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-xs md:text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
-                                <UserX
-                                  size={14}
-                                  className="text-red-600 dark:text-red-500"
-                                />
-                                <span className="truncate">Absent</span>
+                              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                                Absent
                               </span>
-                              <span className="font-bold text-xl md:text-2xl text-red-700 dark:text-red-500">
+                              <span className="font-bold text-lg text-slate-700 dark:text-slate-200">
                                 {absent}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center pt-1.5 md:pt-2 border-t border-slate-200 dark:border-slate-800">
-                              <span className="text-xs md:text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
-                                <Users
-                                  size={14}
-                                  className="text-blue-600 dark:text-blue-500"
-                                />
-                                <span className="truncate">Total</span>
+                            <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                Total Students
                               </span>
-                              <span className="font-bold text-xl md:text-2xl text-blue-700 dark:text-blue-500">
+                              <span className="font-bold text-lg text-slate-900 dark:text-white">
                                 {total}
                               </span>
                             </div>
-                          </div>
-
-                          <div className="mt-2 md:mt-3 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 md:h-2 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300 ${
-                                statusColor === "green"
-                                  ? "bg-green-500 dark:bg-green-600"
-                                  : statusColor === "yellow"
-                                  ? "bg-yellow-500 dark:bg-yellow-600"
-                                  : "bg-red-500 dark:bg-red-600"
-                              }`}
-                              style={{ width: `${batchPercentage}%` }}
-                            />
                           </div>
                         </div>
                       );
                     })}
                     {trade.batches.length === 0 && (
-                      <div className="col-span-full text-center text-sm text-slate-500 dark:text-slate-400 py-4">
+                      <div className="col-span-full text-center text-sm text-slate-500 dark:text-slate-400 py-8 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                         No active batches found for this trade.
                       </div>
                     )}

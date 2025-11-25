@@ -74,7 +74,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
       // Only redirect when loading completes
       if (!isLoading) {
-        navigate("/login");
+        navigate("/");
       }
     } catch (error) {
       console.log(error);
@@ -211,6 +211,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       <ScrollArea className="flex-1 px-2 py-4 h-full overflow-y-auto">
         {menuConfig.map((configItem, index) => {
           if (configItem.roles && !hasRole(configItem.roles)) return null;
+          if (configItem.requiresAuth && !user) return null;
 
           if (configItem.group) {
             return (
@@ -296,9 +297,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         ) : (
           <div className="mt-2 space-y-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2"
+              className="w-full justify-start gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
               onClick={() => {
                 if (!isLoading) {
                   navigate("/login");
@@ -313,7 +314,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             <Button
               variant="default"
               size="sm"
-              className="w-full justify-start gap-2"
+              className="w-full justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 if (!isLoading) {
                   navigate("/signup");
@@ -392,10 +393,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
     return (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild disabled={isLoading}>
-          <NavLink to="/login">Login </NavLink>
+        <Button variant="ghost" size="sm" asChild disabled={isLoading} className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">
+          <NavLink to="/login">Login</NavLink>
         </Button>
-        <Button size="sm" asChild disabled={isLoading}>
+        <Button size="sm" asChild disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
           <NavLink to="/signup">SignUp</NavLink>
         </Button>
       </div>

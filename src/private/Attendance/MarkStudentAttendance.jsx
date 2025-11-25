@@ -525,359 +525,378 @@ const MarkStudentAttendance = () => {
   function getStatusColor(status) {
     switch (status) {
       case "present":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-400";
       case "absent":
-        return "text-red-600";
+        return "text-red-600 dark:text-red-400";
       case "late":
-        return "text-amber-600";
+        return "text-amber-600 dark:text-amber-400";
       default:
-        return "text-gray-600";
+        return "text-gray-500 dark:text-gray-400";
     }
   }
 
   return (
-    <div className="w-full mx-auto dark:bg-black">
-      {/* Top Actions Bar */}
-      <div className="bg-white dark:bg-gray-800 shadow-md p-5 mb-2">
-        {isTeacher ? (
-          <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
-            <div className="w-full sm:w-1/3">
-              <CustomSelectData
-                label="Select Student"
-                placeholder={
-                  isLoading ? "Loading students..." : "Select student"
-                }
-                labelKey="userName"
-                valueKey="$id"
-                value={selectedStudent}
-                onChange={setSelectedStudent}
-                options={batchStudents}
-                renderOptionLabel={(option) =>
-                  option.studentId + "-" + option.userName
-                }
-                disabled={isLoading}
-              />
-            </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-20">
+      <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+        
+        {/* Top Profile/Actions Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+          {isTeacher ? (
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+              <div className="w-full md:w-1/3">
+                <CustomSelectData
+                  label="Select Student"
+                  placeholder={isLoading ? "Loading students..." : "Search student..."}
+                  labelKey="userName"
+                  valueKey="$id"
+                  value={selectedStudent}
+                  onChange={setSelectedStudent}
+                  options={batchStudents}
+                  renderOptionLabel={(option) => `${option.studentId} - ${option.userName}`}
+                  disabled={isLoading}
+                />
+              </div>
 
-            {studentAttendance && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-xs">
-                <div className="flex flex-col">
-                  <div className="flex items-center mb-1">
-                    <User
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {studentAttendance.userName}
-                    </p>
+              {studentAttendance && (
+                <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Student Name</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{studentAttendance.userName}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Hash
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Roll number: {studentAttendance.studentId}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600 dark:text-purple-400">
+                      <Hash size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Roll Number</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{studentAttendance.studentId}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4 sm:justify-between">
-            {profile && (
-              <div className="grow bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-3 shadow-xs">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div className="flex items-center">
-                    <User
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {profile.userName}
-                    </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+              {profile && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400 shadow-sm">
+                      <User size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">Student</p>
+                      <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[150px]">{profile.userName}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Hash
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Roll number: {profile.studentId}
-                    </p>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className="p-2.5 bg-purple-100 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400 shadow-sm">
+                      <Hash size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">Roll No</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{profile.studentId}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Calendar
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Date: {format(selectedDate, "dd-MM-yyyy")}
-                    </p>
+
+                  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400 shadow-sm">
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">Date</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{format(selectedDate, "dd MMM yyyy")}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Clock
-                      size={16}
-                      className="text-gray-500 dark:text-gray-400 mr-2"
-                    />
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Status:{" "}
-                      <span
-                        className={`font-medium ${getStatusColor(
-                          workingDays.get(format(selectedDate, "yyyy-MM-dd"))
-                            ?.status
-                        )}`}
-                      >
-                        {workingDays.get(format(selectedDate, "yyyy-MM-dd"))
-                          ?.status || "Not Marked"}
-                      </span>
-                    </p>
+
+                  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400 shadow-sm">
+                      <Clock size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">Today's Status</p>
+                      <p className={`font-bold ${getStatusColor(workingDays.get(format(selectedDate, "yyyy-MM-dd"))?.status)}`}>
+                        {workingDays.get(format(selectedDate, "yyyy-MM-dd"))?.status || "Not Marked"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            <div className="flex flex-col xs:flex-row gap-3">
-              <button
-                onClick={() => setIsShowMap((prev) => !prev)}
-                className="w-full xs:w-auto min-w-32 bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-lg px-4 py-2.5 font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                {!isShowMap ? (
-                  <>
-                    <MapPin size={18} />
-                    <span>Show Map</span>
-                  </>
-                ) : (
-                  <>
-                    <MapPinOff size={18} />
-                    <span>Hide Map</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Map Section */}
-      <div
-        className={`transition-all duration-300 ease-in-out ${
-          isShowMap ? "mb-6" : "h-0 overflow-hidden"
-        }`}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xs overflow-hidden h-fit lg:h-80">
-            {isShowMap && (
-              <AttendanceStatus
-                batchData={batchData}
-                distance={distance}
-                locationText={locationText}
-              />
-            )}
-          </div>
-          <div className="bg-white dark:bg-gray-800 md:col-span-2 rounded-lg shadow-xs overflow-hidden h-80">
-            {isShowMap && (
-              <LocationPicker
-                deviceLocation={deviceLocation}
-                batchLocation={batchData?.location}
-                disableSelection={true}
-                circleRadius={batchData?.circleRadius}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Attendance Section */}
-      <div className="">
-        {isLoadingAttendance ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 size={50} className="text-blue-500 animate-spin" />
-          </div>
-        ) : (
-          batchData &&
-          (isTeacher ? studentAttendance : true) && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-              <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-4 shadow-md">
-                <h1 className="text-black dark:text-white flex gap-2 items-center mb-4 font-semibold text-lg">
-                  <FaCalendar /> Attendance Calendar - {currentMonth}
-                </h1>
-                <CustomCalendar
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  tileContent={tileContent}
-                  tileClassName={tileClassName}
-                  startDate={
-                    !isTeacher ? new Date(profile.enrolledAt) : undefined
-                  }
-                  handleActiveStartDateChange={handleMonthChange}
-                  openModal={openModal}
-                  distance={distance}
-                  canMarkPrevious={batchData?.canMarkPrevious || false}
-                  enableNextTiles={isTeacher}
-                  attendanceTime={batchData?.attendanceTime}
-                  circleRadius={batchData?.circleRadius}
-                />
-              </div>
-              <div className="lg:col-span-5 space-y-2">
-                <ShowStats
-                  attendance={currentMonthData}
-                  label={`Month Attendance - ${currentMonth}`}
-                />
-
-                <ShowStats
-                  attendance={totalAttendance}
-                  label="Total Attendance"
-                />
-              </div>
-            </div>
-          )
-        )}
-        {isTeacher && !studentAttendance && !isLoadingAttendance && (
-          <div className="flex items-center justify-center min-h-[400px] bg-white dark:bg-gray-800 shadow-md">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-              Please select a student to view their attendance.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Attendance Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-              <h2 className="text-xl font-semibold dark:text-white">
-                {modalData.$id ? "Edit Attendance" : "Mark Attendance"}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                disabled={isModalLoading}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <Calendar size={18} className="text-blue-500 mr-3" />
-                <span className="text-md font-medium text-gray-800 dark:text-gray-200">
-                  Date:{" "}
-                  {format(new Date(modalData.date.replace(/-/g, "/")), "PPP")}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 dark:text-gray-200">
-                  Status
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        markedBy: profile.userId,
-                        status: "present",
-                      }))
-                    }
-                    disabled={isModalLoading}
-                    className={`p-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                      modalData.status === "present"
-                        ? "bg-green-500 text-white shadow-md ring-2 ring-green-300"
-                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                    }`}
-                  >
-                    <CheckCircle size={16} /> Present
-                  </button>
-                  <button
-                    onClick={() =>
-                      setModalData((prev) => ({
-                        ...prev,
-                        markedBy: profile.userId,
-                        status: "absent",
-                      }))
-                    }
-                    disabled={isModalLoading}
-                    className={`p-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                      modalData.status === "absent"
-                        ? "bg-red-500 text-white shadow-md ring-2 ring-red-300"
-                        : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-200"
-                    }`}
-                  >
-                    <XCircle size={16} /> Absent
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="remarks"
-                  className="block text-sm font-medium mb-1 dark:text-gray-200"
-                >
-                  Remarks (Optional)
-                </label>
-                <textarea
-                  id="remarks"
-                  value={modalData?.remarks || ""}
-                  onChange={(e) =>
-                    setModalData((prev) => ({
-                      ...prev,
-                      remarks: e.target.value,
-                    }))
-                  }
-                  disabled={isModalLoading}
-                  className="w-full p-2.5 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  rows={3}
-                  placeholder="e.g., Sick leave, half day..."
-                />
-              </div>
-            </div>
-
-            <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 flex items-center justify-between rounded-b-lg">
-              {modalData.$id ? (
-                <button
-                  onClick={removeAttendance}
-                  disabled={isModalLoading}
-                  className="p-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  {isModalLoading ? (
-                    <Loader2 className="animate-spin" size={18} />
-                  ) : (
-                    <>
-                      <Trash2 size={16} /> Delete Entry
-                    </>
-                  )}
-                </button>
-              ) : (
-                <div></div>
               )}
 
-              <div className="flex gap-3">
+              <button
+                onClick={() => setIsShowMap((prev) => !prev)}
+                className={`shrink-0 w-full lg:w-auto px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
+                  isShowMap 
+                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700" 
+                    : "bg-teal-600 text-white hover:bg-teal-700 active:scale-95 hover:shadow-md"
+                }`}
+              >
+                {isShowMap ? <MapPinOff size={18} /> : <MapPin size={18} />}
+                <span>{isShowMap ? "Hide Map" : "View Map"}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Map Section */}
+        <div
+          className={`transition-all duration-500 ease-in-out overflow-hidden ${
+            isShowMap ? "max-h-[800px] opacity-100 mb-6" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden h-[350px]">
+              {isShowMap && (
+                <AttendanceStatus
+                  batchData={batchData}
+                  distance={distance}
+                  locationText={locationText}
+                />
+              )}
+            </div>
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden h-[350px]">
+              {isShowMap && (
+                <LocationPicker
+                  deviceLocation={deviceLocation}
+                  batchLocation={batchData?.location}
+                  disableSelection={true}
+                  circleRadius={batchData?.circleRadius}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Content */}
+        <div className="">
+          {isLoadingAttendance ? (
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <Loader2 size={48} className="text-blue-600 animate-spin mb-4" />
+              <p className="text-slate-500 font-medium">Loading attendance records...</p>
+            </div>
+          ) : (
+            batchData &&
+            (isTeacher ? studentAttendance : true) && (
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                {/* Calendar Section */}
+                <div className="xl:col-span-8 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                      <FaCalendar size={20} />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                      Attendance Calendar
+                      <span className="ml-2 text-sm font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                        {currentMonth}
+                      </span>
+                    </h2>
+                  </div>
+                  
+                  <CustomCalendar
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    tileContent={tileContent}
+                    tileClassName={tileClassName}
+                    startDate={!isTeacher ? new Date(profile.enrolledAt) : undefined}
+                    handleActiveStartDateChange={handleMonthChange}
+                    openModal={openModal}
+                    distance={distance}
+                    canMarkPrevious={batchData?.canMarkPrevious || false}
+                    enableNextTiles={isTeacher}
+                    attendanceTime={batchData?.attendanceTime}
+                    circleRadius={batchData?.circleRadius}
+                  />
+                </div>
+
+                {/* Stats Section */}
+                <div className="xl:col-span-4 space-y-6">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-1 overflow-hidden">
+                    <ShowStats
+                      attendance={currentMonthData}
+                      label={`Month Overview`}
+                      subLabel={currentMonth}
+                    />
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-1 overflow-hidden">
+                    <ShowStats
+                      attendance={totalAttendance}
+                      label="Overall Performance"
+                      subLabel="All Time"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+          
+          {isTeacher && !studentAttendance && !isLoadingAttendance && (
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 text-center">
+              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <User size={40} className="text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Student Selected</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-md">
+                Please select a student from the dropdown above to view and manage their attendance records.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Attendance Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  {modalData.$id ? "Edit Attendance" : "Mark Attendance"}
+                </h2>
                 <button
                   onClick={() => setIsModalOpen(false)}
                   disabled={isModalLoading}
-                  className="p-2.5 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
+                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500"
                 >
-                  Cancel
+                  <X size={20} />
                 </button>
-                <button
-                  onClick={saveAttendance}
-                  disabled={isModalLoading}
-                  className="p-2.5 px-6 bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center min-w-[100px]"
-                >
-                  {isModalLoading ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    "Save"
-                  )}
-                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-xl text-blue-600 dark:text-blue-300 mr-4">
+                    <Calendar size={24} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Selected Date</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {format(new Date(modalData.date.replace(/-/g, "/")), "EEEE, MMMM do, yyyy")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Attendance Status
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          markedBy: profile.userId,
+                          status: "present",
+                        }))
+                      }
+                      disabled={isModalLoading}
+                      className={`p-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border-2 ${
+                        modalData.status === "present"
+                          ? "bg-green-50 border-green-500 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-green-200 hover:bg-green-50/50"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${modalData.status === "present" ? "bg-green-500 text-white" : "bg-slate-200 dark:bg-slate-700"}`}>
+                        {modalData.status === "present" && <CheckCircle size={12} />}
+                      </div>
+                      Present
+                    </button>
+                    <button
+                      onClick={() =>
+                        setModalData((prev) => ({
+                          ...prev,
+                          markedBy: profile.userId,
+                          status: "absent",
+                        }))
+                      }
+                      disabled={isModalLoading}
+                      className={`p-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 border-2 ${
+                        modalData.status === "absent"
+                          ? "bg-red-50 border-red-500 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-red-200 hover:bg-red-50/50"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${modalData.status === "absent" ? "bg-red-500 text-white" : "bg-slate-200 dark:bg-slate-700"}`}>
+                        {modalData.status === "absent" && <XCircle size={12} />}
+                      </div>
+                      Absent
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="remarks"
+                    className="block text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Remarks <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    id="remarks"
+                    value={modalData?.remarks || ""}
+                    onChange={(e) =>
+                      setModalData((prev) => ({
+                        ...prev,
+                        remarks: e.target.value,
+                      }))
+                    }
+                    disabled={isModalLoading}
+                    className="w-full p-4 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-white transition-all resize-none"
+                    rows={3}
+                    placeholder="Add any notes about this attendance record..."
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                {modalData.$id ? (
+                  <button
+                    onClick={removeAttendance}
+                    disabled={isModalLoading}
+                    className="p-3 px-4 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {isModalLoading ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      <>
+                        <Trash2 size={18} /> Delete
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div></div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={isModalLoading}
+                    className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveAttendance}
+                    disabled={isModalLoading}
+                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                  >
+                    {isModalLoading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
