@@ -1,0 +1,21 @@
+{
+  "name": "ITI Mock Test",
+  "short_name": "ITI Mock Test",
+  "description": "Online platform for ITI students to practice mock exams and track attendance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

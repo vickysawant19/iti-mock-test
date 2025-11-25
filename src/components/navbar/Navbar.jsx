@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
 import { Menu, User, LogOut, ChevronRight, Sun, Moon } from "lucide-react";
-import logo from "@/assets/logo.jpeg"
+import logo from "@/assets/iti-logo.jpg"
 
 // Import services and store actions
 import authService from "@/appwrite/auth";
