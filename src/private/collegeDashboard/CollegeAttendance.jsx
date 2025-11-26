@@ -5,6 +5,9 @@ import React, {
   useRef,
   useMemo,
 } from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/userSlice";
+import { selectProfile } from "@/store/profileSlice";
 import {
   Calendar,
   Users,
@@ -44,6 +47,10 @@ const getPersistentClient = () => {
 };
 
 const AttendanceDashboard = () => {
+  const user = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
+  const isAdmin = user?.labels?.includes("admin");
+
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [batchAttendance, setBatchAttendance] = useState(new Map());
   const [loadingStats, setLoadingStats] = useState(false);
@@ -60,6 +67,23 @@ const AttendanceDashboard = () => {
   // 1. Fetch Colleges
   const { data: collegeData, isLoading: collegeLoading } =
     useListCollegesQuery();
+
+  // Effect to set default college for non-admins (Teachers)
+  useEffect(() => {
+    if (
+      !collegeLoading &&
+      collegeData?.documents &&
+      !isAdmin &&
+      profile?.collegeId
+    ) {
+      const teacherCollege = collegeData.documents.find(
+        (c) => c.$id === profile.collegeId
+      );
+      if (teacherCollege) {
+        setSelectedCollege(teacherCollege);
+      }
+    }
+  }, [collegeData, collegeLoading, isAdmin, profile]);
 
   // 2. Fetch Trades
   const { data: tradeData } = useListTradesQuery(
@@ -325,7 +349,10 @@ const AttendanceDashboard = () => {
             </h1>
             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400 pl-1">
               <span className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
+                <Calendar
+                  size={16}
+                  className="text-blue-600 dark:text-blue-400"
+                />
                 {formattedDate}
               </span>
               <span className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
@@ -336,34 +363,47 @@ const AttendanceDashboard = () => {
           </div>
 
           <div className="w-full md:w-80">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block ml-1">
-              Select College
-            </label>
-            <Select
-              value={selectedCollege?.$id || ""}
-              onValueChange={(id) => {
-                const college = collegeData.documents?.find(
-                  (item) => item.$id === id
-                );
-                setSelectedCollege(college);
-                setBatchAttendance(new Map()); // Clear old data
-              }}
-            >
-              <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500">
-                <SelectValue placeholder="Select a college" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-slate-800 dark:border-slate-700 rounded-xl">
-                {collegeData?.documents.map((college) => (
-                  <SelectItem
-                    key={college.$id}
-                    value={String(college.$id)}
-                    className="focus:bg-slate-50 dark:focus:bg-slate-700 dark:text-slate-100 rounded-lg my-1 cursor-pointer"
-                  >
-                    {college.collageName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isAdmin ? (
+              <>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block ml-1">
+                  Select College
+                </label>
+                <Select
+                  value={selectedCollege?.$id || ""}
+                  onValueChange={(id) => {
+                    const college = collegeData.documents?.find(
+                      (item) => item.$id === id
+                    );
+                    setSelectedCollege(college);
+                    setBatchAttendance(new Map()); // Clear old data
+                  }}
+                >
+                  <SelectTrigger className="w-full h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500">
+                    <SelectValue placeholder="Select a college" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700 rounded-xl">
+                    {collegeData?.documents.map((college) => (
+                      <SelectItem
+                        key={college.$id}
+                        value={String(college.$id)}
+                        className="focus:bg-slate-50 dark:focus:bg-slate-700 dark:text-slate-100 rounded-lg my-1 cursor-pointer"
+                      >
+                        {college.collageName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            ) : (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">
+                  Viewing data for:
+                </p>
+                <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                  {selectedCollege?.collageName || "Loading..."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,7 +486,9 @@ const AttendanceDashboard = () => {
           {loadingStats && (
             <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">Loading attendance data...</p>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">
+                Loading attendance data...
+              </p>
             </div>
           )}
 
@@ -457,8 +499,12 @@ const AttendanceDashboard = () => {
                 <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
                   <GraduationCap size={40} className="text-slate-400" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Data Available</h3>
-                <p className="text-slate-500 dark:text-slate-400">No batch data available for this college.</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                  No Data Available
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  No batch data available for this college.
+                </p>
               </div>
             )}
 
@@ -471,7 +517,10 @@ const AttendanceDashboard = () => {
                 <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 py-4 px-6">
                   <CardTitle className="text-lg font-bold flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <div className="p-2 bg-white dark:bg-slate-700 rounded-xl shadow-sm border border-slate-100 dark:border-slate-600">
-                      <GraduationCap size={20} className="text-slate-700 dark:text-slate-300" />
+                      <GraduationCap
+                        size={20}
+                        className="text-slate-700 dark:text-slate-300"
+                      />
                     </div>
                     {trade.tradeName}
                     <span className="ml-auto text-sm font-medium px-3 py-1 bg-white dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300">
@@ -499,10 +548,15 @@ const AttendanceDashboard = () => {
                           key={batch.batchId || bIdx}
                           className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-blue-300 dark:hover:border-blue-700 transition-all group relative overflow-hidden"
                         >
-                          <div className={`absolute top-0 left-0 w-1 h-full bg-${statusColor}-500`}></div>
-                          
+                          <div
+                            className={`absolute top-0 left-0 w-1 h-full bg-${statusColor}-500`}
+                          ></div>
+
                           <div className="flex justify-between items-start mb-4 pl-2">
-                            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-1" title={batch.batchName}>
+                            <h3
+                              className="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-1"
+                              title={batch.batchName}
+                            >
                               {batch.batchName}
                             </h3>
                             <span

@@ -111,11 +111,12 @@ const router = (
               path="mark-student-attendance"
               element={<MarkStudentAttendance />}
             />
+            <Route path="college-attendance" element={<CollegeAttendance />} />
           </Route>
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
             <Route path="add-bulk-questions" element={<AddBulkQuestions />} />
-            <Route path="college-attendance" element={<CollegeAttendance />} />
+
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />

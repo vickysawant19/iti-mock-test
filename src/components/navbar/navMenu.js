@@ -31,7 +31,7 @@ export const menuConfig = [
     children: [
       { label: "Modules", path: "/add-modules", icon: MdAddCard, requiresAuth: true },
       { label: "Questions", path: "/add-bulk-questions", icon: Group, requiresAuth: true },
-      { label: "College Attendance", path: "/college-attendance", icon: FaCalendarCheck, requiresAuth: true },
+
     ],
   },
   {
@@ -139,6 +139,13 @@ export const menuConfig = [
         path: "/attendance/marktoday",
         icon: FaRegCalendarCheck,
         roles: ["teacher", "student"],
+        requiresAuth: true,
+      },
+      {
+        label: "College Attendance",
+        path: "/attendance/college-attendance",
+        icon: FaCalendarCheck,
+        roles: ["admin", "teacher"],
         requiresAuth: true,
       },
     ],

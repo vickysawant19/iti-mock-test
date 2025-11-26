@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { FormProvider, useForm } from "react-hook-form";
 import { json, useNavigate, useParams } from "react-router-dom";
@@ -12,8 +13,7 @@ import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 
-import BatchManagementSection from "./BatchManagementSection";
-import AcademicInformationSection from "./AcadamicInformationSection";
+import AcademicAndBatchSection from "./AcademicAndBatchSection";
 import PersonalDetailsSection from "./PersonalDetailsSection";
 import Loader from "@/components/components/Loader";
 
@@ -34,9 +34,11 @@ const ProfileForm = () => {
   const existingProfile = useSelector(selectProfile);
 
   // Fetch colleges and trades via RTK Query
-  const { data: collegesResponse } = useListCollegesQuery();
+  const { data: collegesResponse, isLoading: isCollegesLoading } =
+    useListCollegesQuery();
   const collegeData = collegesResponse?.documents || [];
-  const { data: tradesResponse } = useListTradesQuery();
+  const { data: tradesResponse, isLoading: isTradesLoading } =
+    useListTradesQuery();
   const tradeData = tradesResponse?.documents || [];
 
   const isTeacher = user.labels.includes("Teacher");
@@ -127,6 +129,7 @@ const ProfileForm = () => {
         }
 
         if (profileData) {
+          console.log("profile data", profileData);
           // Format dates for the form
           const formattedData = {
             ...profileData,
@@ -134,6 +137,13 @@ const ProfileForm = () => {
             enrolledAt: profileData.enrolledAt
               ? profileData.enrolledAt.split("T")[0]
               : "",
+            collegeId: profileData.collegeId?.$id || profileData.collegeId,
+            tradeId: profileData.tradeId?.$id || profileData.tradeId,
+            allBatchIds: profileData.allBatchIds
+              ? profileData.allBatchIds.map((item) =>
+                  typeof item === "string" ? JSON.parse(item) : item
+                )
+              : [],
           };
           methods.reset(formattedData);
         } else {
@@ -189,6 +199,7 @@ const ProfileForm = () => {
           othersProfile.$id,
           data
         );
+        toast.success("Profile updated successfully!");
         navigate(-1);
       } else if (existingProfile) {
         // Updating current user's profile
@@ -207,6 +218,7 @@ const ProfileForm = () => {
           }
         );
         dispatch(addProfile(updatedProfile));
+        toast.success("Profile updated successfully!");
         navigate("/profile/edit");
       } else {
         console.log("create new profile");
@@ -216,104 +228,112 @@ const ProfileForm = () => {
         data.userName = data.userName || user.name;
         updatedProfile = await userProfileService.createUserProfile(data);
         dispatch(addProfile(updatedProfile));
+        toast.success("Profile created successfully!");
         navigate("/profile/edit");
       }
     } catch (err) {
       console.error("Error saving profile:", err);
       setError("Failed to save profile. Please try again.");
+      toast.error("Failed to save profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return <Loader isLoading={isLoading} />;
+  if (isLoading || isCollegesLoading || isTradesLoading) {
+    return <Loader isLoading={true} />;
   }
 
   return (
-    <div className=" bg-gray-50 dark:bg-gray-900 p-6 ">
-      <div className="flex justify-between items-center mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-600"
-        >
-          <ArrowLeft size={18} className="mr-1" />
-          Back
-        </button>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white text-center">
-          {formMode === "edit" ? "Edit Profile" : "Create Profile"}
-          {isEditingStudentProfile && " (Student)"}
-        </h1>
-        <div className="w-20"></div> {/* Spacer for alignment */}
-      </div>
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900 border-l-4 border-red-500 dark:border-red-400 p-4 mb-6">
-          <p className="text-red-700 dark:text-red-300">{error}</p>
-        </div>
-      )}
-
-      {/* Role Badge */}
-      <div className="flex mb-6 items-center">
-        <div
-          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-            isTeacher
-              ? "bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300"
-              : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"
-          }`}
-        >
-          {isTeacher ? "Teacher" : "Student"}
-        </div>
-
-        {formMode === "edit" && (
-          <span className="ml-3 text-gray-500 dark:text-gray-400 text-sm">
-            {isEditingOwnProfile
-              ? "Editing your own profile"
-              : isEditingStudentProfile
-              ? "Editing student profile"
-              : "Editing profile"}
-          </span>
-        )}
-      </div>
-
-      <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(handleProfileSubmit)}>
-          <PersonalDetailsSection
-            isFieldEditable={isFieldEditable}
-            formMode={formMode}
-          />
-
-          <AcademicInformationSection
-            collegeData={collegeData}
-            tradeData={tradeData}
-            isFieldEditable={isFieldEditable}
-            formMode={formMode}
-          />
-
-          <BatchManagementSection
-            batchesData={batchesData}
-            isTeacher={isTeacher}
-            isStudent={isStudent}
-            isUserProfile={isUserProfile}
-            isFieldEditable={isFieldEditable}
-            formMode={formMode}
-            fetchBatchData={fetchBatchData}
-          />
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <button
-            disabled={isSubmitting}
-            type="submit"
-            className="w-full bg-blue-500 dark:bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-600 dark:hover:bg-blue-700 transition duration-200 flex items-center justify-center disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
-            <Save size={20} className="mr-2" />
-            {isSubmitting
-              ? "Processing..."
-              : formMode === "edit"
-              ? "Update Profile"
-              : "Create Profile"}
+            <ArrowLeft size={18} className="mr-2" />
+            Back
           </button>
-        </form>
-      </FormProvider>
+
+          <div className="flex items-center gap-3">
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                isTeacher
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+              }`}
+            >
+              {isTeacher ? "Teacher" : "Student"}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {formMode === "edit" ? "Edit Profile" : "Create Profile"}
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            {isEditingOwnProfile
+              ? "Manage your personal and academic information"
+              : isEditingStudentProfile
+              ? "Update student profile details"
+              : "Set up your profile information"}
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-center text-red-700 dark:text-red-400">
+            <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+            {error}
+          </div>
+        )}
+
+        <FormProvider {...methods}>
+          <form
+            onSubmit={methods.handleSubmit(handleProfileSubmit)}
+            className="space-y-6"
+          >
+            <PersonalDetailsSection
+              isFieldEditable={isFieldEditable}
+              formMode={formMode}
+            />
+
+            <AcademicAndBatchSection
+              collegeData={collegeData}
+              tradeData={tradeData}
+              batchesData={batchesData}
+              isTeacher={isTeacher}
+              isStudent={isStudent}
+              isUserProfile={isUserProfile}
+              isFieldEditable={isFieldEditable}
+              formMode={formMode}
+              fetchBatchData={fetchBatchData}
+            />
+
+            <div className="sticky bottom-6 z-10 pt-4">
+              <button
+                disabled={isSubmitting}
+                type="submit"
+                className="w-full bg-blue-600 dark:bg-blue-600 text-white py-4 px-6 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 dark:hover:bg-blue-700 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center font-semibold text-lg disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.99]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3"></div>
+                    Saving Changes...
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} className="mr-2" />
+                    {formMode === "edit" ? "Save Changes" : "Create Profile"}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </FormProvider>
+      </div>
     </div>
   );
 };
