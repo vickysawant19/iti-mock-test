@@ -9,6 +9,7 @@ export default function DiaryHeader({
   onMonthChange,
   onExport,
   isExporting,
+  onRefresh, // Pass refresh callback for Add Diary Form
 }) {
   // input type="month" expects "YYYY-MM"
   const monthString = format(selectedMonth, "yyyy-MM");
@@ -47,16 +48,18 @@ export default function DiaryHeader({
             </div>
           </div>
 
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onExport}
-            disabled={isExporting}
-            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-sm transition-colors"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Exporting..." : "Export to Excel"}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 w-full sm:w-auto">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onExport}
+              disabled={isExporting}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white shadow-sm transition-colors mt-4 sm:mt-0"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Exporting..." : "Export to Excel"}
+            </Button>
+          </div>
         </div>
       </CardHeader>
     </Card>

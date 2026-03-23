@@ -64,9 +64,10 @@ const DiaryWeekView = ({
                     <p className="text-center py-4 text-muted-foreground">No entries for absent day</p>
                   ) : (
                     <>
-                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theory" label="Theory" value={entry.theory} updateDiaryField={updateDiaryField} type="textarea" />
-                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practical" label="Practical" value={entry.practical} updateDiaryField={updateDiaryField} type="textarea" />
-                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumber" label="Practical #" value={entry.practicalNumber} updateDiaryField={updateDiaryField} type="number" />
+                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theoryWork" label="Theory" value={entry.theoryWork || entry.theory} updateDiaryField={updateDiaryField} type="textarea" />
+                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" label="Practical" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />
+                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" label="Practical No." value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />
+                      <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" label="Remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />
                       {isTeacher && (
                         <Button onClick={() => toggleEditing(dateKey)} disabled={isSubmitting} className="w-full">
                           {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : entry.isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
@@ -84,17 +85,18 @@ const DiaryWeekView = ({
 
   // Desktop View
   const renderDesktopView = () => (
-    <Card className="hidden lg:block">
+    <Card className="hidden lg:block rounded-xl shadow-md border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 overflow-hidden">
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="p-4 text-left font-medium">Date</th>
                 <th className="p-4 text-left font-medium">Day</th>
                 <th className="p-4 text-left font-medium">Theory</th>
                 <th className="p-4 text-left font-medium">Practical</th>
-                <th className="p-4 text-left font-medium w-32">Practical #</th>
+                <th className="p-4 text-left font-medium w-32">Practical No.</th>
+                <th className="p-4 text-left font-medium w-48">Remarks</th>
                 {isTeacher && <th className="p-4 text-center font-medium w-32">Actions</th>}
               </tr>
             </thead>
@@ -106,7 +108,8 @@ const DiaryWeekView = ({
                       <td className="p-4"><Skeleton className="h-6 w-24" /></td>
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
-                      <td className="p-4"><Skeleton className="h-10 w-20" /></td>
+                      <td className="p-4"><Skeleton className="h-20 w-full" /></td>
+                      <td className="p-4"><Skeleton className="h-20 w-full" /></td>
                       {isTeacher && <td className="p-4"><Skeleton className="h-10 w-20" /></td>}
                     </tr>
                   ))
@@ -118,7 +121,7 @@ const DiaryWeekView = ({
                     const isWeekend = ["Sat", "Sun"].includes(format(day, "E"));
 
                     return (
-                      <tr key={dateKey} className={`border-b ${isHoliday ? "bg-red-50 dark:bg-red-950" : isAbsent ? "bg-pink-50 dark:bg-pink-950" : isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
+                      <tr key={dateKey} className={`border-b border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/50 ${isHoliday ? "bg-red-50 dark:bg-red-950" : isAbsent ? "bg-pink-50 dark:bg-pink-950" : isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
                         <td className="p-4 align-top">
                           {format(day, "MMM dd, yyyy")}
                           {isAbsent && <Badge variant="destructive" className="ml-2">Absent</Badge>}
@@ -126,13 +129,16 @@ const DiaryWeekView = ({
                         </td>
                         <td className="p-4 align-top">{format(day, "EEEE")}</td>
                         <td className="p-4 align-top">
-                          {isHoliday ? <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p> : isAbsent ? <p className="text-center py-4 text-muted-foreground">No entries</p> : <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theory" value={entry.theory} updateDiaryField={updateDiaryField} type="textarea" />}
+                          {isHoliday ? <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p> : isAbsent ? <p className="text-center py-4 text-muted-foreground">No entries</p> : <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theoryWork" value={entry.theoryWork || entry.theory} updateDiaryField={updateDiaryField} type="textarea" />}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practical" value={entry.practical} updateDiaryField={updateDiaryField} type="textarea" />}
+                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumber" value={entry.practicalNumber} updateDiaryField={updateDiaryField} type="number" />}
+                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />}
+                        </td>
+                        <td className="p-4 align-top">
+                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />}
                         </td>
                         {isTeacher && (
                           <td className="p-4 align-top text-center">
@@ -167,7 +173,17 @@ const FieldRenderer = ({ isTeacher, isEditing, dateKey, field, label, value, upd
     onChange: (e) => updateDiaryField(dateKey, field, e.target.value),
   };
 
-  const readOnlyView = (
+  const readOnlyView = type === "numberArray" ? (
+      value && Array.isArray(value) && value.length > 0 ? (
+        <div className="flex flex-wrap gap-1 p-3 bg-muted rounded-md min-h-[60px]">
+          {value.map((num, i) => (
+            <span key={i} className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-md">
+              {num}
+            </span>
+          ))}
+        </div>
+      ) : <div className="p-3 bg-muted text-muted-foreground rounded-md min-h-[60px]">-</div>
+  ) : (
     <div className="p-3 bg-muted rounded-md min-h-[60px] whitespace-pre-wrap">
       {value || "-"}
     </div>
@@ -181,6 +197,15 @@ const FieldRenderer = ({ isTeacher, isEditing, dateKey, field, label, value, upd
           label ? label.toLowerCase() : field
         } notes...`}
         className="min-h-20"
+      />
+    ) : type === "numberArray" ? (
+      <Input
+        value={Array.isArray(value) ? value.join(", ") : value || ""}
+        placeholder="e.g. 1, 3"
+        onChange={(e) => {
+           const parsed = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
+           updateDiaryField(dateKey, field, parsed);
+        }}
       />
     ) : (
       <Input {...commonProps} type="number" placeholder="#" />

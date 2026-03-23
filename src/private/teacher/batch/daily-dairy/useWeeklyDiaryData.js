@@ -16,6 +16,7 @@ import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
+import dailyDiaryService from "@/appwrite/dailyDiaryService";
 
 export const useWeeklyDiaryData = () => {
   const currentWeekStartInitial = useMemo(
@@ -71,7 +72,7 @@ export const useWeeklyDiaryData = () => {
       const startDate = format(currentWeekStart, "yyyy-MM-dd");
       const endDate = format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd");
       
-      const [attendanceRes, holidayData] = await Promise.all([
+      const [attendanceRes, holidayData, diaryRes] = await Promise.all([
         newAttendanceService.getStudentAttendanceByDateRange(
           profile.userId,
           profile.batchId,
@@ -84,6 +85,12 @@ export const useWeeklyDiaryData = () => {
           startDate,
           endDate
         ),
+        dailyDiaryService.getBatchInstructorDiary(
+          profile.batchId,
+          null, // instructorId optional
+          startDate,
+          endDate
+        )
       ]);
 
       const attendanceMap = new Map();
@@ -95,6 +102,16 @@ export const useWeeklyDiaryData = () => {
       const holidayMap = new Map();
       holidayData.forEach((item) => holidayMap.set(item.date, item));
       setHolidays(holidayMap);
+
+      // parse diary entries
+      const formattedDiary = {};
+      if (diaryRes && diaryRes.length > 0) {
+        diaryRes.forEach(doc => {
+           const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
+           formattedDiary[dateKey] = doc;
+        });
+      }
+      setDiaryData(formattedDiary);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data");
@@ -112,14 +129,8 @@ export const useWeeklyDiaryData = () => {
     fetchData();
   }, [profile, currentWeekStart, fetchData, navigate]);
 
-  useEffect(() => {
-    if (batchData?.dailyDairy) {
-      const data = Object.fromEntries(
-        batchData.dailyDairy.map((itm) => JSON.parse(itm))
-      );
-      setDiaryData(data);
-    }
-  }, [batchData]);
+  // Removing the useEffect that watches batchData.dailyDairy
+  // Since we now fetch it properly inside fetchData()
 
   const handlePreviousWeek = useCallback(() => {
     if (weekNumber > 1) {

@@ -10,9 +10,11 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import { Query } from "node-appwrite";
 
 import holidayService from "@/appwrite/holidaysService";
+import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import Loader from "@/components/components/Loader";
 import DiaryHeader from "./DiaryHeader";
 import DiaryTable from "./DiaryTable";
+import { parseISO } from "date-fns";
 
 function InstructorDailyDiary() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -69,6 +71,22 @@ function InstructorDailyDiary() {
       const holidayMap = new Map();
       holidayData.forEach((item) => holidayMap.set(item.date, item));
       setHolidays(holidayMap);
+      // Fetch daily diary
+      const diaryRes = await dailyDiaryService.getBatchInstructorDiary(
+        profile.batchId,
+        profile.userId,
+        startDate,
+        endDate
+      );
+
+      const formattedDiary = {};
+      if (diaryRes && diaryRes.length > 0) {
+        diaryRes.forEach((doc) => {
+          const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
+          formattedDiary[dateKey] = doc;
+        });
+      }
+      setDiaryData(formattedDiary);
     } catch (error) {
       console.error("Error fetching month data:", error);
       toast.error("Failed to load monthly data");
@@ -81,14 +99,15 @@ function InstructorDailyDiary() {
     fetchDataForMonth();
   }, [fetchDataForMonth]);
 
-  useEffect(() => {
-    if (batchData?.dailyDairy) {
-      const data = Object.fromEntries(
-        batchData.dailyDairy.map((itm) => JSON.parse(itm)),
-      );
-      setDiaryData(data);
-    }
-  }, [batchData]);
+  // Removed the useEffect that watched batchData.dailyDairy
+  // as we now fetch it in fetchDataForMonth
+
+  const handleUpdateEntry = useCallback((dateKey, updatedDoc) => {
+    setDiaryData((prev) => ({
+      ...prev,
+      [dateKey]: updatedDoc,
+    }));
+  }, []);
 
   const handleExport = () => {
     setIsExporting(true);
@@ -101,29 +120,29 @@ function InstructorDailyDiary() {
         const isAbsent = attendance.get(dateKey) === "absent";
         const dayOfWeek = format(day, "EEEE");
 
-        let workDone = entry.theory || "";
-        let remarks = "";
+        let theory = entry.theoryWork || "";
+        let practical = entry.practicalWork || "";
+        let practicalNo = entry.practicalNumbers ? entry.practicalNumbers.join(", ") : "";
+        let extraWork = entry.extraWork || "";
+        let hours = entry.hours || "";
+        let remarks = entry.remarks || "";
 
         if (isHoliday) {
-          workDone = "Holiday: " + (holidays.get(dateKey)?.holidayText || "");
+          theory = "Holiday: " + (holidays.get(dateKey)?.holidayText || "");
           remarks = "Holiday";
         } else if (isAbsent) {
-          workDone = "Absent";
+          theory = "Absent";
           remarks = "Absent";
-        } else {
-          if (entry.practical) {
-            workDone +=
-              (workDone ? "\n" : "") + "Practical: " + entry.practical;
-          }
-          if (entry.practicalNumber) {
-            remarks = "Prac #: " + entry.practicalNumber;
-          }
         }
 
         return {
           Date: format(day, "dd-MMM-yyyy"),
           Day: dayOfWeek,
-          "Subject / Work Done": workDone,
+          "Theory": theory,
+          "Practical": practical,
+          "Practical No.": practicalNo,
+          "Extra Work": extraWork,
+          Hours: hours,
           Remarks: remarks,
           "Instructor Name": profile.name || "",
         };
@@ -135,7 +154,11 @@ function InstructorDailyDiary() {
       const wscols = [
         { wch: 15 }, // Date
         { wch: 12 }, // Day
-        { wch: 60 }, // Subject / Work Done
+        { wch: 30 }, // Theory
+        { wch: 30 }, // Practical
+        { wch: 15 }, // Practical No.
+        { wch: 20 }, // Extra Work
+        { wch: 8 },  // Hours
         { wch: 20 }, // Remarks
         { wch: 25 }, // Instructor Name
       ];
@@ -175,6 +198,7 @@ function InstructorDailyDiary() {
         onMonthChange={setCurrentMonth}
         onExport={handleExport}
         isExporting={isExporting}
+        onRefresh={fetchDataForMonth}
       />
       <DiaryTable
         monthDays={monthDays}
@@ -182,6 +206,7 @@ function InstructorDailyDiary() {
         holidays={holidays}
         attendance={attendance}
         isLoadingData={isLoadingData}
+        onUpdateEntry={handleUpdateEntry}
       />
     </div>
   );
