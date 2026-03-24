@@ -47,7 +47,7 @@ function TeacherDiaryView() {
           ...(prev[dateKey] || {
             theoryWork: "",
             practicalWork: "",
-            practicalNumbers: [],
+            practicalNumbers: "", // Start tracking as string for smooth typing
             extraWork: "",
             hours: "",
             remarks: "",
@@ -67,13 +67,18 @@ function TeacherDiaryView() {
     setIsSubmitting(true);
     try {
       const dateISO = new Date(dateKey).toISOString();
-      const updatedEntry = { ...entry, isEditing: false };
+      const rawPractical = entry.practicalNumbers;
+      const parsedPractical = typeof rawPractical === "string" 
+         ? rawPractical.split(",").map(v => v.trim()).filter(Boolean)
+         : Array.isArray(rawPractical) ? rawPractical : [];
+         
+      updatedEntry.practicalNumbers = parsedPractical;
 
       if (entry.$id) {
         await dailyDiaryService.updateDocument(entry.$id, {
           theoryWork: entry.theoryWork || "",
           practicalWork: entry.practicalWork || "",
-          practicalNumbers: entry.practicalNumbers || [],
+          practicalNumbers: parsedPractical,
           extraWork: entry.extraWork || "",
           hours: entry.hours ? Number(entry.hours) : null,
           remarks: entry.remarks || "-",
@@ -83,7 +88,7 @@ function TeacherDiaryView() {
           date: dateISO,
           theoryWork: entry.theoryWork || "",
           practicalWork: entry.practicalWork || "",
-          practicalNumbers: entry.practicalNumbers || [],
+          practicalNumbers: parsedPractical,
           extraWork: "-",
           hours: null,
           remarks: entry.remarks || "-",
@@ -122,6 +127,9 @@ function TeacherDiaryView() {
           [dateKey]: {
             ...currentEntry,
             isEditing: true,
+            practicalNumbers: Array.isArray(currentEntry.practicalNumbers) 
+               ? currentEntry.practicalNumbers.join(", ") 
+               : currentEntry.practicalNumbers || "",
           },
         }));
       }

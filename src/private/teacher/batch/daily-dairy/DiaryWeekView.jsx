@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { PracticalNumberInput } from "./PracticalNumberInput";
 
 const DiaryWeekView = ({
   weekDays,
@@ -215,13 +216,12 @@ const FieldRenderer = ({ isTeacher, isEditing, dateKey, field, label, value, upd
         className="min-h-20"
       />
     ) : type === "numberArray" ? (
-      <Input
-        value={Array.isArray(value) ? value.join(", ") : value || ""}
-        placeholder="e.g. 1, 3"
-        onChange={(e) => {
-           const parsed = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
-           updateDiaryField(dateKey, field, parsed);
+      <PracticalNumberInput
+        value={value}
+        onChange={(newValue) => {
+           updateDiaryField(dateKey, field, newValue);
         }}
+        placeholder="e.g. 1, 3"
       />
     ) : (
       <Input {...commonProps} type="number" placeholder="#" />

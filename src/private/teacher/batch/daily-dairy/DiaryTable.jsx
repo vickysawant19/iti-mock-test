@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
+import { PracticalNumberInput } from "./PracticalNumberInput";
 
 function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText, onUpdateEntry }) {
   const profile = useSelector(selectProfile);
@@ -24,7 +25,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
   const [formData, setFormData] = useState({
     theoryWork: entry?.theoryWork || "",
     practicalWork: entry?.practicalWork || "",
-    practicalNumbers: entry?.practicalNumbers || [],
+    practicalNumbers: Array.isArray(entry?.practicalNumbers) ? entry.practicalNumbers.join(", ") : entry?.practicalNumbers || "",
     extraWork: entry?.extraWork || "",
     hours: entry?.hours || "",
     remarks: entry?.remarks || "",
@@ -36,7 +37,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         setFormData({
             theoryWork: entry.theoryWork || "",
             practicalWork: entry.practicalWork || "",
-            practicalNumbers: entry.practicalNumbers || [],
+            practicalNumbers: Array.isArray(entry.practicalNumbers) ? entry.practicalNumbers.join(", ") : entry.practicalNumbers || "",
             extraWork: entry.extraWork || "",
             hours: entry.hours || "",
             remarks: entry.remarks || "",
@@ -55,10 +56,14 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
     try {
       if (entry && entry.$id) {
         // Update existing document
+        const parsedPractical = typeof formData.practicalNumbers === "string" 
+           ? formData.practicalNumbers.split(",").map(v => v.trim()).filter(Boolean)
+           : Array.isArray(formData.practicalNumbers) ? formData.practicalNumbers : [];
+
         const updatedDoc = await dailyDiaryService.updateDocument(entry.$id, {
           theoryWork: formData.theoryWork,
           practicalWork: formData.practicalWork,
-          practicalNumbers: formData.practicalNumbers,
+          practicalNumbers: parsedPractical,
           extraWork: formData.extraWork,
           hours: formData.hours ? Number(formData.hours) : null,
           remarks: formData.remarks,
@@ -76,11 +81,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         
         // Create new document for missing entry
         const dateISO = new Date(dateKey).toISOString();
+        const parsedPractical = typeof formData.practicalNumbers === "string" 
+           ? formData.practicalNumbers.split(",").map(v => v.trim()).filter(Boolean)
+           : Array.isArray(formData.practicalNumbers) ? formData.practicalNumbers : [];
+
         const newDoc = await dailyDiaryService.createDocument({
             date: dateISO,
             theoryWork: formData.theoryWork,
             practicalWork: formData.practicalWork,
-            practicalNumbers: formData.practicalNumbers,
+            practicalNumbers: parsedPractical,
             extraWork: formData.extraWork,
             hours: formData.hours ? Number(formData.hours) : null,
             remarks: formData.remarks || "-",
@@ -112,7 +121,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
       setFormData({
         theoryWork: entry.theoryWork || "",
         practicalWork: entry.practicalWork || "",
-        practicalNumbers: entry.practicalNumbers || [],
+        practicalNumbers: Array.isArray(entry.practicalNumbers) ? entry.practicalNumbers.join(", ") : entry.practicalNumbers || "",
         extraWork: entry.extraWork || "",
         hours: entry.hours || "",
         remarks: entry.remarks || "",
@@ -160,10 +169,12 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
             <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.practicalWork} rows={3} onChange={(e) => setFormData({ ...formData, practicalWork: e.target.value })} />
           </td>
           <td className="px-4 py-3 align-top min-w-[150px]">
-            <Input className="w-full border p-2 rounded-md bg-transparent" value={formData.practicalNumbers.join(", ")} placeholder="e.g. 1, 3" onChange={(e) => {
-               const vals = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
-               setFormData({ ...formData, practicalNumbers: vals });
-            }} />
+            <PracticalNumberInput 
+               className="w-full bg-transparent" 
+               value={formData.practicalNumbers} 
+               placeholder="e.g. 1, 3" 
+               onChange={(newValue) => setFormData({ ...formData, practicalNumbers: newValue })} 
+            />
           </td>
           <td className="px-4 py-3 align-top min-w-[200px]">
             <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.extraWork} rows={3} placeholder="-" onChange={(e) => setFormData({ ...formData, extraWork: e.target.value })} />
