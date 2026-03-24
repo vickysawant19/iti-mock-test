@@ -48,6 +48,8 @@ function TeacherDiaryView() {
             theoryWork: "",
             practicalWork: "",
             practicalNumbers: [],
+            extraWork: "",
+            hours: "",
             remarks: "",
             isEditing: true,
           }),
@@ -72,6 +74,8 @@ function TeacherDiaryView() {
           theoryWork: entry.theoryWork || "",
           practicalWork: entry.practicalWork || "",
           practicalNumbers: entry.practicalNumbers || [],
+          extraWork: entry.extraWork || "",
+          hours: entry.hours ? Number(entry.hours) : null,
           remarks: entry.remarks || "-",
         });
       } else {

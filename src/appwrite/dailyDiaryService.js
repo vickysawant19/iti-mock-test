@@ -9,6 +9,30 @@ export class DailyDiaryService {
     this.collectionId = "dailyDiary"; // Hardcoded as per migration
   }
 
+  async getDatesByPracticalNumber(batchId, practicalNumber) {
+    try {
+      // practicalNumbers is an array of strings in Appwrite
+      const queries = [
+        Query.equal("batchId", batchId),
+        Query.contains("practicalNumbers", [practicalNumber.toString()]),
+        Query.limit(100),
+      ];
+
+      const res = await this.database.listDocuments(
+        conf.databaseId,
+        this.collectionId,
+        queries,
+      );
+      return res.documents.map((doc) => doc.date);
+    } catch (error) {
+      console.error(
+        `Appwrite error fetching dates for practical ${practicalNumber}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
   async createDocument(data) {
     try {
       const timestamp = new Date().toISOString();
@@ -18,7 +42,7 @@ export class DailyDiaryService {
         ID.unique(),
         {
           ...data,
-        }
+        },
       );
     } catch (error) {
       console.error("Appwrite error: creating daily diary entry:", error);
@@ -32,7 +56,7 @@ export class DailyDiaryService {
         conf.databaseId,
         this.collectionId,
         documentId,
-        updatedData
+        updatedData,
       );
     } catch (error) {
       console.error("Appwrite error: updating daily diary entry:", error);
@@ -45,7 +69,7 @@ export class DailyDiaryService {
       return await this.database.deleteDocument(
         conf.databaseId,
         this.collectionId,
-        documentId
+        documentId,
       );
     } catch (error) {
       console.error("Appwrite error: deleting daily diary entry:", error);
@@ -57,14 +81,14 @@ export class DailyDiaryService {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.limit(100) // Assuming no more than 100 entries per month/week for a single batch
+        Query.limit(100), // Reverted back to 100 default
       ];
-      
+
       if (instructorId) {
-         // Query.equal("instructorId", instructorId) is optional depending on if we want ALL or just for this instructor
-         // We might just show all entries for the batch, but filter on client, or filter here.
+        // Query.equal("instructorId", instructorId) is optional depending on if we want ALL or just for this instructor
+        // We might just show all entries for the batch, but filter on client, or filter here.
       }
-      
+
       if (startDate && endDate) {
         queries.push(Query.greaterThanEqual("date", startDate));
         queries.push(Query.lessThanEqual("date", endDate));
@@ -73,9 +97,9 @@ export class DailyDiaryService {
       const res = await this.database.listDocuments(
         conf.databaseId,
         this.collectionId,
-        queries
+        queries,
       );
-      
+
       return res.documents;
     } catch (error) {
       console.error("Appwrite error: fetching daily diary:", error);

@@ -67,6 +67,8 @@ const DiaryWeekView = ({
                       <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theoryWork" label="Theory" value={entry.theoryWork || entry.theory} updateDiaryField={updateDiaryField} type="textarea" />
                       <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" label="Practical" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />
                       <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" label="Practical No." value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />
+                      {isTeacher && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="extraWork" label="Extra Work" value={entry.extraWork} updateDiaryField={updateDiaryField} type="textarea" />}
+                      {isTeacher && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="hours" label="Hours" value={entry.hours} updateDiaryField={updateDiaryField} type="number" />}
                       <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" label="Remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />
                       {isTeacher && (
                         <Button onClick={() => toggleEditing(dateKey)} disabled={isSubmitting} className="w-full">
@@ -96,6 +98,8 @@ const DiaryWeekView = ({
                 <th className="p-4 text-left font-medium">Theory</th>
                 <th className="p-4 text-left font-medium">Practical</th>
                 <th className="p-4 text-left font-medium w-32">Practical No.</th>
+                {isTeacher && <th className="p-4 text-left font-medium w-48">Extra Work</th>}
+                {isTeacher && <th className="p-4 text-left font-medium w-24">Hours</th>}
                 <th className="p-4 text-left font-medium w-48">Remarks</th>
                 {isTeacher && <th className="p-4 text-center font-medium w-32">Actions</th>}
               </tr>
@@ -109,6 +113,8 @@ const DiaryWeekView = ({
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
+                      {isTeacher && <td className="p-4"><Skeleton className="h-20 w-full" /></td>}
+                      {isTeacher && <td className="p-4"><Skeleton className="h-10 w-full" /></td>}
                       <td className="p-4"><Skeleton className="h-20 w-full" /></td>
                       {isTeacher && <td className="p-4"><Skeleton className="h-10 w-20" /></td>}
                     </tr>
@@ -137,6 +143,16 @@ const DiaryWeekView = ({
                         <td className="p-4 align-top">
                           {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />}
                         </td>
+                        {isTeacher && (
+                          <td className="p-4 align-top">
+                            {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="extraWork" value={entry.extraWork} updateDiaryField={updateDiaryField} type="textarea" />}
+                          </td>
+                        )}
+                        {isTeacher && (
+                          <td className="p-4 align-top">
+                            {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="hours" value={entry.hours} updateDiaryField={updateDiaryField} type="number" />}
+                          </td>
+                        )}
                         <td className="p-4 align-top">
                           {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />}
                         </td>

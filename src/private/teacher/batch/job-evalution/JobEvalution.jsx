@@ -12,6 +12,7 @@ import moduleServices from "@/appwrite/moduleServices";
 import useScrollToItem from "@/hooks/useScrollToItem";
 import Loader from "@/components/components/Loader";
 import subjectService from "@/appwrite/subjectService";
+import dailyDiaryService from "@/appwrite/dailyDiaryService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   if (!studentProfiles.length) {
@@ -28,6 +29,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
   const [selectedYear, setSelectedYear] = useState("FIRST");
   const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedModuleWithDates, setSelectedModuleWithDates] = useState(null);
 
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
@@ -35,7 +37,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   const [studentAttendance, setStudentAttendance] = useState({});
 
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
-    batchData.collegeId
+    batchData.collegeId,
   );
 
   const { scrollToItem, itemRefs } = useScrollToItem(modules || [], "moduleId");
@@ -63,13 +65,13 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   useEffect(() => {
     if (studentProfiles) {
       setStudentsMap(
-        new Map(studentProfiles.map((item) => [+item.studentId, item]))
+        new Map(studentProfiles.map((item) => [+item.studentId, item])),
       );
     }
   }, [studentProfiles]);
 
   const generatePreview = async () => {
-    if (!selectedModule) {
+    if (!selectedModuleWithDates) {
       setPdfUrl("");
       return;
     }
@@ -78,9 +80,9 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         <JobEvaluationReportPDF
           college={college}
           studentsMap={studentsMap}
-          selectedModule={selectedModule}
+          selectedModule={selectedModuleWithDates}
           studentAttendance={studentAttendance}
-        />
+        />,
       ).toBlob();
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
@@ -90,7 +92,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     }
   };
 
-  // Generate/re-generate PDF preview when selected student or module changes
+  // Generate/re-generate PDF preview when selected student or module with dates changes
   useEffect(() => {
     generatePreview();
     return () => {
@@ -98,7 +100,54 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         URL.revokeObjectURL(pdfUrl);
       }
     };
-  }, [selectedModule]);
+  }, [selectedModuleWithDates]);
+
+  useEffect(() => {
+    if (!selectedModule) {
+      setSelectedModuleWithDates(null);
+      return;
+    }
+
+    const fetchDatesForModule = async () => {
+      setIsLoading(true);
+      try {
+        const moduleIdNumber = +selectedModule.moduleId.match(/\d+/)?.[0];
+
+        let minDate = null;
+        let maxDate = null;
+
+        if (moduleIdNumber) {
+          const rawDates = await dailyDiaryService.getDatesByPracticalNumber(
+            batchData.$id,
+            moduleIdNumber,
+          );
+
+          const dateObjects = rawDates
+            .map((date) => (date ? parseISO(date) : null))
+            .filter((date) => date instanceof Date && !isNaN(date));
+
+          minDate = dateObjects.length
+            ? format(min(dateObjects), "yyyy-MM-dd")
+            : null;
+          maxDate = dateObjects.length
+            ? format(max(dateObjects), "yyyy-MM-dd")
+            : null;
+        }
+
+        setSelectedModuleWithDates({
+          ...selectedModule,
+          startDate: minDate,
+          endDate: maxDate,
+        });
+      } catch (err) {
+        console.error("Failed to map module practical dates:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDatesForModule();
+  }, [selectedModule, batchData.$id]);
 
   const fetchSubject = async () => {
     try {
@@ -120,75 +169,15 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       const data = await moduleServices.getNewModulesData(
         batchData.tradeId,
         subject.$id,
-        selectedYear
+        selectedYear,
       );
 
-      const practicalDates = Array.isArray(batchData?.dailyDairy) // Ensure dailyDairyd is an array
-        ? batchData.dailyDairy
-            .map((item) => {
-              try {
-                const parsedItem = JSON.parse(item);
-                if (!Array.isArray(parsedItem) || parsedItem.length < 2) {
-                  console.warn("Invalid parsed item format:", parsedItem);
-                  return null;
-                }
-                return parsedItem;
-              } catch (error) {
-                console.error("JSON parsing error:", error);
-                return null;
-              }
-            })
-            .filter(Boolean) // Remove null values (invalid entries)
-            .reduce((acc, [date, practical]) => {
-              if (!date || typeof date !== "string") {
-                console.warn("Invalid date format:", date);
-                return acc;
-              }
+      const sortedData =
+        data?.sort(
+          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0],
+        ) || [];
 
-              if (!practical || typeof practical !== "object") {
-                console.warn("Invalid practical data:", practical);
-                return acc;
-              }
-
-              if (!practical.practicalNumber) return acc;
-
-              acc[practical.practicalNumber] = acc[practical.practicalNumber]
-                ? [...acc[practical.practicalNumber], date]
-                : [date];
-
-              return acc;
-            }, {})
-        : {}; // Ensure practicalDates is an object even if dailyDairyd is missing
-
-      const newSyllabus = data
-        ?.sort(
-          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0]
-        )
-        .map((item) => {
-          const moduleIdNumber = +item.moduleId.match(/\d+/)?.[0];
-          const rawDates = practicalDates[moduleIdNumber] || [];
-
-          // Validate and parse dates
-          const dateObjects = rawDates
-            .map((date) => (date ? parseISO(date) : null))
-            .filter((date) => date instanceof Date && !isNaN(date));
-
-          // Ensure valid min/max dates
-          const minDate = dateObjects.length
-            ? format(min(dateObjects), "yyyy-MM-dd")
-            : null;
-          const maxDate = dateObjects.length
-            ? format(max(dateObjects), "yyyy-MM-dd")
-            : null;
-
-          return {
-            ...item,
-            startDate: minDate,
-            endDate: maxDate,
-          };
-        });
-
-      setModules(newSyllabus);
+      setModules(sortedData);
     } catch (error) {
       console.error("Error fetching modules:", error);
     }
@@ -318,17 +307,17 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
       </div>
 
       {/* PDF Download Link */}
-      {Array.isArray(modules) && selectedModule && (
+      {Array.isArray(modules) && selectedModuleWithDates && (
         <PDFDownloadLink
           document={
             <JobEvaluationReportPDF
               college={college}
               studentsMap={studentsMap}
-              selectedModule={selectedModule}
+              selectedModule={selectedModuleWithDates}
               studentAttendance={studentAttendance}
             />
           }
-          fileName={`job-evaluation-${selectedModule?.moduleName
+          fileName={`job-evaluation-${selectedModuleWithDates?.moduleName
             .slice(0, 40)
             .split(" ")
             .join("-")}.pdf`}
