@@ -10,9 +10,11 @@ export default function DiaryHeader({
   onExport,
   isExporting,
   onRefresh, // Pass refresh callback for Add Diary Form
+  batchStartDate,
 }) {
   // input type="month" expects "YYYY-MM"
   const monthString = format(selectedMonth, "yyyy-MM");
+  const minMonthString = batchStartDate ? format(new Date(batchStartDate), "yyyy-MM") : undefined;
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -41,6 +43,7 @@ export default function DiaryHeader({
               <input
                 id="month-picker"
                 type="month"
+                min={minMonthString}
                 value={monthString}
                 onChange={handleChange}
                 className="px-3 py-2 border rounded-md shadow-sm bg-white dark:bg-gray-950 border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary focus:border-primary text-sm w-full sm:w-auto transition-shadow"

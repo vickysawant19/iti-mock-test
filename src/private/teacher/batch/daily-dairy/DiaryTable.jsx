@@ -130,20 +130,23 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
     }
   };
 
-  const rowClass = `transition-colors border-b border-gray-100 dark:border-gray-800 ${
-    isHoliday ? "bg-red-50/50 dark:bg-red-950/20 hover:bg-red-100/50" :
-    isAbsent ? "bg-pink-50/50 dark:bg-pink-950/20 hover:bg-pink-100/50" :
-    isWeekend ? "bg-gray-50/50 dark:bg-gray-900/40 hover:bg-gray-100/50" :
-    "bg-white hover:bg-gray-50 dark:bg-gray-950 dark:hover:bg-gray-900"
+  const rowClass = `transition-colors border-gray-200 dark:border-gray-800 ${
+    isHoliday ? "bg-red-50/50 dark:bg-red-950/20 lg:hover:bg-red-100/50 border-red-200 dark:border-red-900" :
+    isAbsent ? "bg-pink-50/50 dark:bg-pink-950/20 lg:hover:bg-pink-100/50 border-pink-200 dark:border-pink-900" :
+    isWeekend ? "bg-gray-50/50 dark:bg-gray-900/40 lg:hover:bg-gray-100/50" :
+    "bg-white lg:hover:bg-gray-50 dark:bg-gray-950 dark:lg:hover:bg-gray-900"
   }`;
 
   // If it's literally a holiday or absent day where we have no entry
   if (!entry && (isHoliday || isAbsent)) {
     return (
-      <tr className={rowClass}>
-        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</td>
-        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{format(day, "EEEE")}</td>
-        <td className="px-6 py-4 whitespace-pre-wrap" colSpan={7}>
+      <tr className={`${rowClass} flex flex-col lg:table-row mb-4 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
+        <td className="flex justify-between items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
+          <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
+          <span className="lg:hidden text-muted-foreground text-sm">{format(day, "EEEE")}</span>
+        </td>
+        <td className="hidden lg:table-cell px-6 py-4 text-muted-foreground">{format(day, "EEEE")}</td>
+        <td className="p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-center lg:text-left block lg:table-cell" colSpan={7}>
           {isHoliday ? (
             <span className="text-red-600 dark:text-red-400 font-medium">{holidayText}</span>
           ) : (
@@ -156,41 +159,50 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
 
   // Active or blank rows
   return (
-    <tr className={rowClass}>
-      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{format(day, "EEEE")}</td>
+    <tr className={`${rowClass} flex flex-col lg:table-row mb-6 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
+      <td className="flex justify-between lg:justify-start items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
+        <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
+        <span className="lg:hidden text-muted-foreground text-sm font-medium">{format(day, "EEEE")}</span>
+      </td>
+      <td className="hidden lg:table-cell px-6 py-4 text-muted-foreground">{format(day, "EEEE")}</td>
       
       {isEditing ? (
         <>
-          <td className="px-4 py-3 align-top min-w-[250px]">
-            <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.theoryWork} rows={3} onChange={(e) => setFormData({ ...formData, theoryWork: e.target.value })} />
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[250px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Theory Work</label>
+            <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.theoryWork} rows={3} onChange={(e) => setFormData({ ...formData, theoryWork: e.target.value })} placeholder="Add theory notes..." />
           </td>
-          <td className="px-4 py-3 align-top min-w-[250px]">
-            <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.practicalWork} rows={3} onChange={(e) => setFormData({ ...formData, practicalWork: e.target.value })} />
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[250px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical Work</label>
+            <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.practicalWork} rows={3} onChange={(e) => setFormData({ ...formData, practicalWork: e.target.value })} placeholder="Add practical notes..." />
           </td>
-          <td className="px-4 py-3 align-top min-w-[150px]">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[150px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical No.</label>
             <PracticalNumberInput 
-               className="w-full bg-transparent" 
+               className="w-full bg-white dark:bg-gray-900" 
                value={formData.practicalNumbers} 
                placeholder="e.g. 1, 3" 
                onChange={(newValue) => setFormData({ ...formData, practicalNumbers: newValue })} 
             />
           </td>
-          <td className="px-4 py-3 align-top min-w-[200px]">
-            <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.extraWork} rows={3} placeholder="-" onChange={(e) => setFormData({ ...formData, extraWork: e.target.value })} />
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[200px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Extra Work</label>
+            <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.extraWork} rows={3} placeholder="-" onChange={(e) => setFormData({ ...formData, extraWork: e.target.value })} />
           </td>
-          <td className="px-4 py-3 align-top max-w-[80px]">
-            <Input className="w-full border p-2 rounded-md bg-transparent" value={formData.hours} type="number" placeholder="-" onChange={(e) => setFormData({ ...formData, hours: e.target.value })} />
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top max-w-full lg:max-w-[80px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Hours</label>
+            <Input className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.hours} type="number" placeholder="-" onChange={(e) => setFormData({ ...formData, hours: e.target.value })} />
           </td>
-          <td className="px-4 py-3 align-top min-w-[150px]">
-            <Textarea className="w-full border p-2 rounded-md bg-transparent" value={formData.remarks} rows={2} placeholder="-" onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[150px] border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Remarks</label>
+            <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.remarks} rows={2} placeholder="-" onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
           </td>
-          <td className="px-4 py-3 align-top">
-            <div className="flex flex-col gap-2">
-              <Button size="sm" onClick={handleSave} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top bg-muted/10 lg:bg-transparent">
+            <div className="flex flex-row lg:flex-col gap-3">
+              <Button size="sm" onClick={handleSave} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null} Save
               </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isSaving} className="w-full text-gray-600 border-gray-300">
+              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isSaving} className="w-full text-gray-600 border-gray-300 bg-white dark:bg-gray-900">
                 Cancel
               </Button>
             </div>
@@ -198,11 +210,18 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         </>
       ) : (
         <>
-          <td className="px-6 py-4 whitespace-pre-wrap">{entry.theoryWork || "-"}</td>
-          <td className="px-6 py-4 whitespace-pre-wrap">{entry.practicalWork || "-"}</td>
-          <td className="px-6 py-4 whitespace-nowrap">
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Theory Work</label>
+            <span className="text-gray-800 dark:text-gray-200">{entry.theoryWork || "-"}</span>
+          </td>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Practical Work</label>
+            <span className="text-gray-800 dark:text-gray-200">{entry.practicalWork || "-"}</span>
+          </td>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap border-b lg:border-0 border-dashed">
+            <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical No.</label>
             {entry.practicalNumbers && entry.practicalNumbers.length > 0 ? (
-               <div className="flex flex-wrap gap-1 max-w-[150px]">
+               <div className="flex flex-wrap gap-1 max-w-full lg:max-w-[150px]">
                  {entry.practicalNumbers.map((num, i) => (
                    <span key={i} className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-md">
                      {num}
@@ -211,11 +230,20 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
                </div>
             ) : <span className="text-muted-foreground">-</span>}
           </td>
-          <td className="px-6 py-4 whitespace-pre-wrap text-muted-foreground">{entry.extraWork || "-"}</td>
-          <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{entry.hours || "-"}</td>
-          <td className="px-6 py-4 whitespace-pre-wrap text-muted-foreground max-w-[200px]">{entry.remarks === "Prac #: -" ? "-" : entry.remarks || "-"}</td>
-          <td className="px-6 py-4 whitespace-nowrap">
-            <Button size="sm" variant="default" className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => setIsEditing(true)}>Edit</Button>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-muted-foreground border-b lg:border-0 border-dashed">
+             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Extra Work</label>
+             {entry.extraWork || "-"}
+          </td>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap text-muted-foreground border-b lg:border-0 border-dashed">
+             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Hours</label>
+             {entry.hours || "-"}
+          </td>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-muted-foreground lg:max-w-[200px] border-b lg:border-0 border-dashed">
+             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Remarks</label>
+             {entry.remarks === "Prac #: -" ? "-" : entry.remarks || "-"}
+          </td>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap bg-muted/10 lg:bg-transparent">
+            <Button size="lg" variant="default" className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => setIsEditing(true)}>Edit Entry</Button>
           </td>
         </>
       )}
@@ -225,11 +253,11 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
 
 export default function DiaryTable({ monthDays, diaryData, holidays, attendance, isLoadingData, onUpdateEntry }) {
   return (
-    <Card className="shadow-md border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mt-6 bg-white dark:bg-gray-950">
+    <Card className="shadow-none lg:shadow-md border-0 lg:border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mt-6 bg-transparent lg:bg-white dark:bg-gray-950">
       <CardContent className="p-0">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-sm">
-            <thead>
+        <div className="w-full">
+          <table className="w-full text-sm block lg:table">
+            <thead className="hidden lg:table-header-group">
               <tr className="border-b bg-muted/60 text-muted-foreground">
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs">Date</th>
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs">Day</th>
@@ -242,7 +270,7 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs w-32">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+            <tbody className="block lg:table-row-group lg:divide-y divide-gray-200 dark:divide-gray-800 space-y-4 lg:space-y-0 p-1 lg:p-0">
               {isLoadingData ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <tr key={index} className="bg-white dark:bg-gray-950">

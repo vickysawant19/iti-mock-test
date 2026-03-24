@@ -199,6 +199,7 @@ function InstructorDailyDiary() {
         onExport={handleExport}
         isExporting={isExporting}
         onRefresh={fetchDataForMonth}
+        batchStartDate={batchData?.start_date}
       />
       <DiaryTable
         monthDays={monthDays}
