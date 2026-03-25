@@ -20,7 +20,7 @@ import batchService from "@/appwrite/batchService";
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
 import ViewProfiles from "./profile/ViewProfiles";
-import ViewAttendance from "./attendance/ViewAttendance";
+import ViewAttendance from "../../Attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";

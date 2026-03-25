@@ -118,7 +118,7 @@ export const menuConfig = [
     groupKey: "attendance",
     requiresAuth: true,
     children: [
-      { label: "Daily Diary", path: "/daily-dairy", icon: FaBookReader, requiresAuth: true },
+      { label: "Daily Diary", path: "/daily-diary", icon: FaBookReader, requiresAuth: true },
       {
         teacherLabel: "Student Attendance Record",
         studentLabel: "My Attendance Log",
@@ -168,7 +168,7 @@ export const pathToHeading = {
   "/mock-exam": "Create Mock Exam",
   "/all-mock-tests": "My Mock Tests",
   "/attain-test": "Attain Test",
-  "/daily-dairy": "Daily Diary",
+  "/daily-diary": "Daily Diary",
   "/attendance/face": "Face Attendance",
   "/attendance/mark-holidays": "Mark Holidays",
   "/attendance/mark-attendance": "Mark Daywise Attendance",

@@ -47,7 +47,7 @@ import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
 import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
 import Modules from "./private/admin/Modules.jsx";
 import Assessment from "./private/assessment/Assessment.jsx";
-import DailyDiary from "./private/teacher/batch/daily-dairy/DailyDiary.jsx";
+import DailyDiary from "./private/Attendance/DailyDiary/DailyDiary.jsx";
 import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
 
 import PageNotFound from "./PageNotFound.jsx";
@@ -87,7 +87,7 @@ const router = (
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
-          <Route path="daily-dairy" element={<DailyDiary />} />
+          <Route path="daily-diary" element={<DailyDiary />} />
           <Route
             path="mock-test-result/:paperId"
             element={<MockTestResults />}
