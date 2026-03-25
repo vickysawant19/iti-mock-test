@@ -25,7 +25,7 @@ import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import Legent from "./components/Legent";
-import { toast } from "react-toastify";
+import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
@@ -42,6 +42,9 @@ const AttendanceRegister = () => {
   const [holidays, setHolidays] = useState(new Map());
   const [newAttendance, setNewAttendance] = useState([]);
   const [newStudentStatsMap, setStudentStatsMap] = useState(new Map());
+
+  // Initialize Realtime Sync
+  useAttendanceRealtime(selectedBatch, selectedMonth, setNewAttendance);
 
   // Simplified loading states
   const [loading, setLoading] = useState({
