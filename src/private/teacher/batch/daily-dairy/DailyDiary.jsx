@@ -72,6 +72,7 @@ function TeacherDiaryView() {
          ? rawPractical.split(",").map(v => v.trim()).filter(Boolean)
          : Array.isArray(rawPractical) ? rawPractical : [];
          
+      let updatedEntry = { ...entry, isEditing: false };
       updatedEntry.practicalNumbers = parsedPractical;
 
       if (entry.$id) {
@@ -89,8 +90,8 @@ function TeacherDiaryView() {
           theoryWork: entry.theoryWork || "",
           practicalWork: entry.practicalWork || "",
           practicalNumbers: parsedPractical,
-          extraWork: "-",
-          hours: null,
+          extraWork: entry.extraWork || "-",
+          hours: entry.hours ? Number(entry.hours) : null,
           remarks: entry.remarks || "-",
           instructorId: profile.userId,
           batchId: profile.batchId,
