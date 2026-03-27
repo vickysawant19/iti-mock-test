@@ -17,7 +17,7 @@ class HolidayService {
         response = await this.database.listDocuments(
           conf.databaseId,
           conf.holidayDaysCollectionId,
-          [...queries, Query.limit(limit), Query.offset(offset)]
+          [...queries, Query.limit(limit), Query.offset(offset)],
         );
         allDocuments.push(...response.documents);
         offset += response.documents.length;
@@ -69,7 +69,7 @@ class HolidayService {
       await this.database.deleteDocument(
         conf.databaseId,
         conf.holidayDaysCollectionId,
-        holidayId
+        holidayId,
       );
     } catch (error) {
       throw new Error(error.message);
@@ -82,7 +82,7 @@ class HolidayService {
         conf.databaseId,
         conf.holidayDaysCollectionId,
         ID.unique(),
-        holidayData
+        holidayData,
       );
       return data;
     } catch (error) {
@@ -96,7 +96,7 @@ class HolidayService {
         conf.databaseId,
         conf.holidayDaysCollectionId,
         holidayId,
-        holidayData
+        holidayData,
       );
       return data;
     } catch (error) {

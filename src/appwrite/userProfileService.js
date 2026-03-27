@@ -58,8 +58,9 @@ export class UserProfileService {
         conf.databaseId,
         conf.userProfilesCollectionId,
         "unique()",
-        userProfile
+        userProfile,
       );
+
       return {
         ...response,
         allBatchIds: response.allBatchIds.map((itm) => JSON.parse(itm)),
@@ -122,7 +123,7 @@ export class UserProfileService {
         conf.databaseId,
         conf.userProfilesCollectionId,
         profileId,
-        updatedData
+        updatedData,
       );
 
       return {
@@ -140,7 +141,7 @@ export class UserProfileService {
       return await this.database.deleteDocument(
         conf.databaseId,
         conf.userProfilesCollectionId,
-        profileId
+        profileId,
       );
     } catch (error) {
       console.error("Appwrite error: deleting user profile:", error);
@@ -153,7 +154,7 @@ export class UserProfileService {
       const userProfiles = await this.database.listDocuments(
         conf.databaseId,
         conf.userProfilesCollectionId,
-        [...query]
+        [...query],
       );
 
       if (userProfiles.total === 0) {
@@ -172,8 +173,9 @@ export class UserProfileService {
       const userProfile = await this.database.listDocuments(
         conf.databaseId,
         conf.userProfilesCollectionId,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId)],
       );
+      console.log(userProfile);
 
       if (userProfile.total === 0) {
         throw new Error("User profile not found.");

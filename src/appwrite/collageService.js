@@ -15,7 +15,7 @@ export class CollegeService {
         conf.databaseId,
         conf.collegesCollectionId,
         ID.unique(),
-        data
+        data,
       );
     } catch (error) {
       console.error("Appwrite error: creating college:", error);
@@ -29,7 +29,7 @@ export class CollegeService {
         conf.databaseId,
         conf.collegesCollectionId,
         collegeId,
-        updatedData
+        updatedData,
       );
     } catch (error) {
       console.error("Appwrite error: updating college:", error);
@@ -42,7 +42,7 @@ export class CollegeService {
       return await this.database.deleteDocument(
         conf.databaseId,
         conf.collegesCollectionId,
-        collegeId
+        collegeId,
       );
     } catch (error) {
       console.error("Appwrite error: deleting college:", error);
@@ -55,7 +55,7 @@ export class CollegeService {
       const res = await this.database.getDocument(
         conf.databaseId,
         conf.collegesCollectionId,
-        collegeId
+        collegeId,
       );
 
       return res;
@@ -66,13 +66,13 @@ export class CollegeService {
   }
 
   async listColleges(
-    queries = [Query.orderDesc("$createdAt"), Query.limit(100)]
+    queries = [Query.orderDesc("$createdAt"), Query.limit(100)],
   ) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.collegesCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching colleges:", error);

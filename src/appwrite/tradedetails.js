@@ -13,7 +13,7 @@ export class TradeService {
       return await this.database.getDocument(
         conf.databaseId,
         conf.tradeCollectionId,
-        id
+        id,
       );
     } catch (error) {
       console.log("Appwrite error: get Trade:", error);
@@ -28,12 +28,12 @@ export class TradeService {
       const existingTrades = await this.database.listDocuments(
         conf.databaseId,
         conf.tradeCollectionId,
-        [Query.equal("tradeName", tradeName), Query.equal("year", year)]
+        [Query.equal("tradeName", tradeName), Query.equal("year", year)],
       );
 
       if (existingTrades.total > 0) {
         throw new Error(
-          "The trade with the specified name and year already exists."
+          "The trade with the specified name and year already exists.",
         );
       }
 
@@ -46,7 +46,7 @@ export class TradeService {
         conf.databaseId,
         conf.tradeCollectionId,
         ID.unique(),
-        documentData
+        documentData,
       );
     } catch (error) {
       throw new Error(`${error.message}`);
@@ -60,7 +60,7 @@ export class TradeService {
         conf.databaseId,
         conf.tradeCollectionId,
         id,
-        documentData
+        documentData,
       );
     } catch (error) {
       console.log("Appwrite error: update Trade:", error);
@@ -73,7 +73,7 @@ export class TradeService {
       await this.database.deleteDocument(
         conf.databaseId,
         conf.tradeCollectionId,
-        id
+        id,
       );
       return true;
     } catch (error) {
@@ -83,13 +83,13 @@ export class TradeService {
   }
 
   async listTrades(
-    queries = [Query.orderDesc("$createdAt"), Query.limit(100)]
+    queries = [Query.orderDesc("$createdAt"), Query.limit(100)],
   ) {
     try {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.tradeCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching trades:", error);

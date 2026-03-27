@@ -10,7 +10,7 @@ import {
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Query } from "node-appwrite";
+import { Query } from "appwrite";
 
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";

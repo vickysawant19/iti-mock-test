@@ -15,7 +15,6 @@ class QuestionPaperService {
   }
 
   async createPaper(paperData) {
-   
     try {
       // Create a new document in the new collection
       const response = await this.database.createDocument(
@@ -25,7 +24,7 @@ class QuestionPaperService {
         {
           ...paperData,
           questions: paperData.questions.map((item) => JSON.stringify(item)),
-        }
+        },
       );
 
       return {
@@ -43,7 +42,7 @@ class QuestionPaperService {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        [Query.equal("paperId", paperId), Query.limit(1)]
+        [Query.equal("paperId", paperId), Query.limit(1)],
       );
 
       if (response.documents.length > 0) {
@@ -86,7 +85,7 @@ class QuestionPaperService {
         let result = "";
         for (let i = 0; i < length; i++) {
           result += characters.charAt(
-            Math.floor(Math.random() * characters.length)
+            Math.floor(Math.random() * characters.length),
           );
         }
         return result;
@@ -113,7 +112,7 @@ class QuestionPaperService {
         this.databaseId,
         this.questionPapersCollectionId,
         "unique()",
-        newPaperData
+        newPaperData,
       );
 
       return response;
@@ -132,7 +131,7 @@ class QuestionPaperService {
       const response = await this.database.getDocument(
         this.databaseId,
         this.questionPapersCollectionId,
-        $Id
+        $Id,
       );
       return response;
     } catch (error) {
@@ -159,7 +158,7 @@ class QuestionPaperService {
         this.databaseId,
         this.questionPapersCollectionId,
         paperId,
-        { questions: updatedQuestions }
+        { questions: updatedQuestions },
       );
 
       return response;
@@ -178,7 +177,7 @@ class QuestionPaperService {
 
       let score = 0;
       const responseMap = new Map(
-        data.responses.map((res) => [res.questionId, res.selectedAnswer])
+        data.responses.map((res) => [res.questionId, res.selectedAnswer]),
       );
 
       const updatedQuestions = paper.questions.map((q) => {
@@ -209,7 +208,7 @@ class QuestionPaperService {
           score,
           submitted: true,
           endTime: data.endTime,
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating all responses:", error);
@@ -223,7 +222,7 @@ class QuestionPaperService {
         this.databaseId,
         this.questionPapersCollectionId,
         paperId,
-        time
+        time,
       );
       return response;
     } catch (error) {
@@ -238,17 +237,17 @@ class QuestionPaperService {
     let allDocuments = [];
     try {
       while (true) {
-      const response = await this.database.listDocuments(
-        this.databaseId,
-        this.questionPapersCollectionId,
-        [...queries, Query.limit(limit), Query.offset(offset)]
-      );
-      allDocuments = allDocuments.concat(response.documents);
-      if (response.documents.length < limit) {
-        break;
+        const response = await this.database.listDocuments(
+          this.databaseId,
+          this.questionPapersCollectionId,
+          [...queries, Query.limit(limit), Query.offset(offset)],
+        );
+        allDocuments = allDocuments.concat(response.documents);
+        if (response.documents.length < limit) {
+          break;
+        }
+        offset += limit;
       }
-      offset += limit;
-    }
       return allDocuments;
     } catch (error) {
       console.error("Error getting Questions", error);
@@ -262,7 +261,7 @@ class QuestionPaperService {
         this.databaseId,
         this.questionPapersCollectionId,
         id,
-        data
+        data,
       );
 
       return response;
@@ -290,7 +289,7 @@ class QuestionPaperService {
             "submitted",
             "totalMinutes",
           ]),
-        ]
+        ],
       );
       return response?.documents || [];
     } catch (error) {
@@ -305,7 +304,7 @@ class QuestionPaperService {
       const response = await this.database.listDocuments(
         this.databaseId,
         this.questionPapersCollectionId,
-        queries
+        queries,
       );
       return response;
     } catch (error) {
@@ -319,7 +318,7 @@ class QuestionPaperService {
       const res = await this.database.deleteDocument(
         this.databaseId,
         this.questionPapersCollectionId,
-        paperId
+        paperId,
       );
       return res;
     } catch (error) {

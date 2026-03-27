@@ -8,7 +8,7 @@ export class AuthService {
     this.functions = appwriteService.getFunctions();
   }
 
-  async createAccount({ email, password, name, labels,countryCode, phone }) {
+  async createAccount({ email, password, name, labels, countryCode, phone }) {
     try {
       const response = await this.functions.createExecution(
         "678e7277002e1d5c9b9b",
@@ -20,7 +20,7 @@ export class AuthService {
           phone,
           countryCode,
           action: "createAccount",
-        })
+        }),
       );
       const result = JSON.parse(response.responseBody);
       return result;

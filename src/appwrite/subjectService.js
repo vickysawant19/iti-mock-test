@@ -16,7 +16,7 @@ export class SubjectService {
         conf.databaseId,
         conf.subjectsCollectionId,
         "unique()",
-        data
+        data,
       );
     } catch (error) {
       console.error("Appwrite error: creating subject:", error);
@@ -30,7 +30,7 @@ export class SubjectService {
         conf.databaseId,
         conf.subjectsCollectionId,
         subjectId,
-        updatedData
+        updatedData,
       );
     } catch (error) {
       console.error("Appwrite error: updating subject:", error);
@@ -43,7 +43,7 @@ export class SubjectService {
       return await this.database.deleteDocument(
         conf.databaseId,
         conf.subjectsCollectionId,
-        subjectId
+        subjectId,
       );
     } catch (error) {
       console.error("Appwrite error: deleting subject:", error);
@@ -56,7 +56,7 @@ export class SubjectService {
       return await this.database.getDocument(
         conf.databaseId,
         conf.subjectsCollectionId,
-        subjectId
+        subjectId,
       );
     } catch (error) {
       console.log("Appwrite error: get subject:", error);
@@ -73,7 +73,7 @@ export class SubjectService {
         const data = await this.database.listDocuments(
           conf.databaseId,
           conf.subjectsCollectionId,
-          [...queries, Query.limit(limit), Query.offset(offset)]
+          [...queries, Query.limit(limit), Query.offset(offset)],
         );
         allDocuments = allDocuments.concat(data.documents);
         if (data.documents.length < limit) {
@@ -93,7 +93,7 @@ export class SubjectService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.subjectsCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching subjects:", error);

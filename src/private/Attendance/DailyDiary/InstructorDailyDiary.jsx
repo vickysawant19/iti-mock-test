@@ -7,7 +7,7 @@ import * as XLSX from "xlsx";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import { Query } from "node-appwrite";
+import { Query } from "appwrite";
 
 import holidayService from "@/appwrite/holidaysService";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";

@@ -17,9 +17,14 @@ export const store = configureStore({
     [questionsSlice.name]: questionsSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      collegeApi.middleware,
-      tradeApi.middleware,
-      batchApi.middleware
-    ),
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [
+          "user/addUser",
+          "profile/addProfile",
+          "questions/addQuestions",
+        ],
+        ignoredPaths: ["user.data", "profile.data", "questions"],
+      },
+    }).concat(collegeApi.middleware, tradeApi.middleware, batchApi.middleware),
 });

@@ -25,7 +25,7 @@ export class ModuleServices {
             Query.equal("year", year),
             Query.limit(limit),
             Query.offset(offset),
-          ]
+          ],
         );
 
         allDocuments = allDocuments.concat(response.documents);
@@ -59,16 +59,16 @@ export class ModuleServices {
         {
           ...newModulesData,
           evalutionsPoints: newModulesData.evalutionsPoints.map((item) =>
-            JSON.stringify(item)
+            JSON.stringify(item),
           ),
           images: newModulesData.images.map((item) => JSON.stringify(item)),
           topics: newModulesData.topics.map((item) => JSON.stringify(item)),
-        }
+        },
       );
       return {
         ...response,
         evalutionsPoints: response.evalutionsPoints.map((item) =>
-          JSON.parse(item)
+          JSON.parse(item),
         ),
         images: response.images.map((item) => JSON.parse(item)),
         topics: response.topics.map((item) => JSON.parse(item)),
@@ -88,17 +88,17 @@ export class ModuleServices {
         {
           ...newModulesData,
           evalutionsPoints: newModulesData.evalutionsPoints.map((item) =>
-            JSON.stringify(item)
+            JSON.stringify(item),
           ),
           images: newModulesData.images.map((item) => JSON.stringify(item)),
           topics: newModulesData.topics.map((item) => JSON.stringify(item)),
-        }
+        },
       );
 
       return {
         ...response,
         evalutionsPoints: response.evalutionsPoints.map((item) =>
-          JSON.parse(item)
+          JSON.parse(item),
         ),
         images: response.images.map((item) => JSON.parse(item)),
         topics: response.topics.map((item) => JSON.parse(item)),
@@ -115,12 +115,12 @@ export class ModuleServices {
       const existingModules = await this.getNewModulesData(
         module.tradeId,
         module.subjectId,
-        module.year
+        module.year,
       );
       console.log("Existing Modules:", existingModules);
 
       const existingModuleIds = new Set(
-        existingModules.map((doc) => doc.moduleId)
+        existingModules.map((doc) => doc.moduleId),
       );
       const modulesToAdd = [];
       const modulesToUpdate = [];
@@ -130,8 +130,8 @@ export class ModuleServices {
         if (moduleExists) {
           modulesToUpdate.push(
             existingModules.find(
-              (itm) => itm.moduleId === newModuleData.moduleId
-            )
+              (itm) => itm.moduleId === newModuleData.moduleId,
+            ),
           );
         } else {
           modulesToAdd.push(newModuleData);
@@ -142,7 +142,7 @@ export class ModuleServices {
       // );
 
       const addPromises = modulesToAdd.map((newModuleData) =>
-        this.createNewModulesData(newModuleData)
+        this.createNewModulesData(newModuleData),
       );
       const finalResponses = await Promise.all([
         // ...updatePromises,
@@ -161,7 +161,7 @@ export class ModuleServices {
       return await this.database.deleteDocument(
         conf.databaseId,
         "newmodulesdata",
-        moduleId
+        moduleId,
       );
     } catch (error) {
       console.error("Appwrite error: delete new Data", error);

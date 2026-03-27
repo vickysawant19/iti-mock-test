@@ -17,7 +17,7 @@ class NewAttendanceService {
       const firstResponse = await this.database.listDocuments(
         conf.databaseId,
         conf.newAttendanceCollectionId,
-        [...queries, Query.limit(limit), Query.offset(0)]
+        [...queries, Query.limit(limit), Query.offset(0)],
       );
 
       const total = firstResponse.total;
@@ -36,8 +36,8 @@ class NewAttendanceService {
         this.database.listDocuments(
           conf.databaseId,
           conf.newAttendanceCollectionId,
-          [...queries, Query.limit(limit), Query.offset((i + 1) * limit)]
-        )
+          [...queries, Query.limit(limit), Query.offset((i + 1) * limit)],
+        ),
       );
 
       // Fetch all remaining pages concurrently
@@ -79,7 +79,7 @@ class NewAttendanceService {
     batchId,
     startDate,
     endDate,
-    additionalQueries = []
+    additionalQueries = [],
   ) {
     try {
       const queries = [
@@ -107,7 +107,7 @@ class NewAttendanceService {
           Query.equal("batchId", batchId),
           Query.equal("date", this.formatDate(date)),
           Query.limit(1),
-        ]
+        ],
       );
       return data.documents.length > 0 ? data.documents[0] : null;
     } catch (error) {
@@ -141,7 +141,7 @@ class NewAttendanceService {
           Query.orderDesc("date"),
           Query.limit(limit),
           Query.offset(offset),
-        ]
+        ],
       );
       return data;
     } catch (error) {
@@ -173,7 +173,7 @@ class NewAttendanceService {
 
       if (startDate) {
         queries.push(
-          Query.greaterThanEqual("date", this.formatDate(startDate))
+          Query.greaterThanEqual("date", this.formatDate(startDate)),
         );
       }
       if (endDate) {
@@ -191,7 +191,7 @@ class NewAttendanceService {
     batchId,
     status,
     startDate = null,
-    endDate = null
+    endDate = null,
   ) {
     try {
       const queries = [
@@ -201,7 +201,7 @@ class NewAttendanceService {
 
       if (startDate) {
         queries.push(
-          Query.greaterThanEqual("date", this.formatDate(startDate))
+          Query.greaterThanEqual("date", this.formatDate(startDate)),
         );
       }
       if (endDate) {
@@ -243,7 +243,7 @@ class NewAttendanceService {
           remarks: remarks || null,
           markedAt: markedAt || new Date().toISOString(),
           markedBy: markedBy || null,
-        }
+        },
       );
       return data;
     } catch (error) {
@@ -272,7 +272,7 @@ class NewAttendanceService {
               date: formattedDate,
               status: record.status,
               remarks: record.remarks || null,
-            }
+            },
           );
           results.push(data);
         } catch (error) {
@@ -310,7 +310,7 @@ class NewAttendanceService {
         conf.databaseId,
         conf.newAttendanceCollectionId,
         documentId,
-        updates
+        updates,
       );
       return data;
     } catch (error) {
@@ -330,7 +330,7 @@ class NewAttendanceService {
         conf.databaseId,
         conf.newAttendanceCollectionId,
         documentId,
-        updates
+        updates,
       );
       return data;
     } catch (error) {
@@ -344,7 +344,7 @@ class NewAttendanceService {
       await this.database.deleteDocument(
         conf.databaseId,
         conf.newAttendanceCollectionId,
-        documentId
+        documentId,
       );
       return documentId;
     } catch (error) {
@@ -362,7 +362,7 @@ class NewAttendanceService {
       // This ensures we catch failures in the component's catch block
 
       const res = await Promise.all(
-        documentIds.map((id) => this.deleteAttendance(id))
+        documentIds.map((id) => this.deleteAttendance(id)),
       );
 
       return res; // Returns array of deleted IDs
@@ -377,7 +377,7 @@ class NewAttendanceService {
     userId,
     batchId,
     startDate = null,
-    endDate = null
+    endDate = null,
   ) {
     try {
       const baseQueries = [
@@ -387,7 +387,7 @@ class NewAttendanceService {
 
       if (startDate) {
         baseQueries.push(
-          Query.greaterThanEqual("date", this.formatDate(startDate))
+          Query.greaterThanEqual("date", this.formatDate(startDate)),
         );
       }
       if (endDate) {
@@ -472,7 +472,7 @@ class NewAttendanceService {
 
       if (stats.total > 0) {
         stats.percentage = parseFloat(
-          (((stats.present + stats.late) / stats.total) * 100).toFixed(2)
+          (((stats.present + stats.late) / stats.total) * 100).toFixed(2),
         );
       }
 
@@ -502,12 +502,12 @@ class NewAttendanceService {
       // Fetch existing records once
       const existingDocs = await this.getBatchAttendanceByDate(
         batchId,
-        formattedDate
+        formattedDate,
       );
 
       // Create a Map for O(1) lookup instead of array.find() in loop
       const existingRecordsMap = new Map(
-        existingDocs.documents.map((doc) => [doc.userId, doc])
+        existingDocs.documents.map((doc) => [doc.userId, doc]),
       );
 
       const results = [];
@@ -534,7 +534,7 @@ class NewAttendanceService {
               {
                 status: record.status,
                 remarks: record.remarks || null,
-              }
+              },
             );
             return { type: "updated", data, userId: record.userId };
           } else {
@@ -558,7 +558,7 @@ class NewAttendanceService {
               date: formattedDate,
               status: record.status,
               remarks: record.remarks || null,
-            }
+            },
           );
           return { type: "created", data, userId: record.userId };
         }
@@ -616,7 +616,7 @@ class NewAttendanceService {
       const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
-        lastDay
+        lastDay,
       ).padStart(2, "0")}`;
 
       const queries = [
@@ -640,7 +640,7 @@ class NewAttendanceService {
 
       if (startDate) {
         queries.push(
-          Query.greaterThanEqual("date", this.formatDate(startDate))
+          Query.greaterThanEqual("date", this.formatDate(startDate)),
         );
       }
       if (endDate) {
@@ -680,7 +680,7 @@ class NewAttendanceService {
                   (
                     ((student.present + student.late) / workingDays) *
                     100
-                  ).toFixed(2)
+                  ).toFixed(2),
                 )
               : 0;
           return { ...student, percentage, workingDays };
@@ -707,7 +707,7 @@ class NewAttendanceService {
           Query.equal("batchId", batchId),
           Query.equal("date", formattedDate),
           Query.limit(1),
-        ]
+        ],
       );
       return data.documents.length > 0;
     } catch (error) {
@@ -728,7 +728,7 @@ class NewAttendanceService {
       // Get unique dates
       const dates = [...new Set(data.documents.map((doc) => doc.date))].slice(
         0,
-        limit
+        limit,
       );
       return dates;
     } catch (error) {
@@ -741,7 +741,7 @@ class NewAttendanceService {
     batchId,
     startDate,
     endDate,
-    status = null
+    status = null,
   ) {
     try {
       const queries = [
@@ -787,10 +787,10 @@ class NewAttendanceService {
         const documents = response.documents;
 
         const presentCount = documents.filter(
-          (doc) => doc.status === "present"
+          (doc) => doc.status === "present",
         ).length;
         const absentCount = documents.filter(
-          (doc) => doc.status === "absent"
+          (doc) => doc.status === "absent",
         ).length;
 
         const totalMarked = presentCount + absentCount;
@@ -864,7 +864,7 @@ class NewAttendanceService {
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
-      lastDay
+      lastDay,
     ).padStart(2, "0")}`;
 
     return { startDate, endDate, year, month };

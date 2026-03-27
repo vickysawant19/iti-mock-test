@@ -68,37 +68,33 @@ export function useAttendanceRealtime(
     };
 
     try {
-      // 🚀 Upgrade: Attempt to use Server-Side Filtered Subscriptions (Realtime Queries)
-      // Check if the new Realtime and Channel APIs are available in the current SDK
-      if (Appwrite.Realtime && Appwrite.Channel) {
-        const realtime = new Appwrite.Realtime(client);
-        unsubscribe = realtime.subscribe(
-          Appwrite.Channel.databases(databaseId)
-            .collections(collectionId)
-            .documents(),
-          handleEvent,
-          [Query.equal("batchId", [selectedBatch])],
-        );
-      } else {
-        throw new Error("New Realtime API not available in this SDK version.");
-      }
+      // 🚀 Appwrite v23+ supports Server-Side Filtered Subscriptions (Realtime Queries)
+      // client.subscribe is deprecated; using Realtime service instead.
+      const realtime = appwriteService.getRealtime();
+      const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
+
+      unsubscribe = realtime.subscribe(channel, handleEvent, [
+        Query.equal("batchId", [selectedBatch]),
+      ]);
+
+      console.log(
+        "Subscribed to attendance updates with server-side batch filter.",
+      );
     } catch (err) {
       console.warn(
-        "Realtime query subscription failed, falling back to collection-level subscription.",
+        "Realtime query subscription failed, falling back to simple subscription.",
         err.message,
       );
 
       // 🔄 Fallback: Collection-level subscription with client-side batch filtering
       const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
 
-      const fallbackUnsubscribe = client.subscribe(channel, (response) => {
+      unsubscribe = realtime.subscribe(channel, (response) => {
         // Apply manual batch filter in fallback mode
         if (response.payload.batchId === selectedBatch) {
           handleEvent(response);
         }
       });
-
-      unsubscribe = fallbackUnsubscribe;
     }
 
     // Cleanup subscription on unmount or when dependencies change

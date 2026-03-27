@@ -13,7 +13,7 @@ export class UserStatsService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.userStatsCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching all user stats:", error);
@@ -26,7 +26,7 @@ export class UserStatsService {
       const userStats = await this.database.listDocuments(
         conf.databaseId,
         conf.userStatsCollectionId,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId)],
       );
 
       if (userStats.total === 0) {

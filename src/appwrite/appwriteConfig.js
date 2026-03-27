@@ -5,6 +5,7 @@ import {
   Functions,
   Storage,
   Teams,
+  Realtime,
 } from "appwrite";
 import conf from "../config/config";
 
@@ -20,6 +21,7 @@ class AppwriteService {
     this.account = new Account(this.client);
     this.bucket = new Storage(this.client);
     this.functions = new Functions(this.client);
+    this.realtime = new Realtime(this.client);
   }
 
   getClient() {
@@ -39,6 +41,9 @@ class AppwriteService {
   }
   getFunctions() {
     return this.functions;
+  }
+  getRealtime() {
+    return this.realtime;
   }
 }
 

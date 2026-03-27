@@ -20,7 +20,7 @@ export class BatchService {
         conf.databaseId,
         conf.batchesCollectionId,
         "unique()",
-        batchData
+        batchData,
       );
     } catch (error) {
       console.error("Appwrite error: creating batch:", error);
@@ -34,7 +34,7 @@ export class BatchService {
         conf.databaseId,
         conf.batchesCollectionId,
         batchId,
-        updatedData
+        updatedData,
       );
     } catch (error) {
       console.error("Appwrite error: updating batch:", error);
@@ -47,7 +47,7 @@ export class BatchService {
       return await this.database.deleteDocument(
         conf.databaseId,
         conf.batchesCollectionId,
-        batchId
+        batchId,
       );
     } catch (error) {
       console.error("Appwrite error: deleting batch:", error);
@@ -61,7 +61,7 @@ export class BatchService {
         conf.databaseId,
         conf.batchesCollectionId,
         batchId,
-        queries
+        queries,
       );
 
       return {
@@ -84,7 +84,7 @@ export class BatchService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.batchesCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching batches:", error);

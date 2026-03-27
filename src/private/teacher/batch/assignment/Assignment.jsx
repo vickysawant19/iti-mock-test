@@ -1,7 +1,7 @@
 import questionpaperservice from "@/appwrite/mockTest";
 import moduleServices from "@/appwrite/moduleServices";
 import subjectService from "@/appwrite/subjectService";
-import { Query } from "node-appwrite";
+import { Query } from "appwrite";
 import React, { useEffect, useState, useMemo } from "react";
 import AssignmentHeader from "./components/AssignmentHeader";
 import AssignmentFilters from "./components/AssignmentFilters";

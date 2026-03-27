@@ -14,7 +14,7 @@ export class QuesDbService {
     try {
       const response = await this.functions.createExecution(
         "67a88715003234e3617a",
-        payload
+        payload,
       );
       const result = JSON.parse(response.responseBody);
       if (result.error) {
@@ -44,7 +44,7 @@ export class QuesDbService {
       const existingQuestions = await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        [Query.equal("question", question)]
+        [Query.equal("question", question)],
       );
 
       if (existingQuestions.total > 0) {
@@ -69,7 +69,7 @@ export class QuesDbService {
         conf.databaseId,
         conf.quesCollectionId,
         ID.unique(),
-        documentData
+        documentData,
       );
     } catch (error) {
       if (imageId) {
@@ -91,7 +91,7 @@ export class QuesDbService {
       moduleId,
       images,
       tags,
-    }
+    },
   ) {
     try {
       const documentData = {
@@ -109,7 +109,7 @@ export class QuesDbService {
         conf.databaseId,
         conf.quesCollectionId,
         id,
-        documentData
+        documentData,
       );
     } catch (error) {
       console.log("Appwrite error: update Question:", error);
@@ -214,7 +214,7 @@ export class QuesDbService {
       const response = await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        query
+        query,
       );
       console.log(response);
       const candidates = response.documents || [];
@@ -251,7 +251,7 @@ export class QuesDbService {
       await this.database.deleteDocument(
         conf.databaseId,
         conf.quesCollectionId,
-        id
+        id,
       );
       return true;
     } catch (error) {
@@ -265,7 +265,7 @@ export class QuesDbService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        queries
+        queries,
       );
     } catch (error) {
       console.error("Appwrite error: fetching questions:", error);
@@ -278,7 +278,7 @@ export class QuesDbService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
+        [Query.equal("userId", userId), Query.orderDesc("$createdAt")],
       );
     } catch (error) {
       console.log("Appwrite error: get user Question:", error);
@@ -290,7 +290,7 @@ export class QuesDbService {
       return await this.database.listDocuments(
         conf.databaseId,
         conf.quesCollectionId,
-        [Query.search("tags", tags), Query.orderDesc("$createdAt")]
+        [Query.search("tags", tags), Query.orderDesc("$createdAt")],
       );
     } catch (error) {
       console.log("Appwrite error: get questions by tags:", error);
@@ -307,7 +307,7 @@ export class QuesDbService {
           tag ? Query.contains("tags", tag) : Query.notEqual("tags", ""),
           Query.select("tags"),
           Query.limit(20), // Add limit to prevent performance issues
-        ]
+        ],
       );
 
       // Extract unique tags from all questions
@@ -333,7 +333,7 @@ export class QuesDbService {
       return await this.database.getDocument(
         conf.databaseId,
         conf.quesCollectionId,
-        id
+        id,
       );
     } catch (error) {
       console.log("Appwrite error: get Question:", error);

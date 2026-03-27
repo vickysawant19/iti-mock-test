@@ -28,23 +28,12 @@ import {
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListBatchesQuery } from "@/store/api/batchApi";
-import { Query, Client } from "appwrite";
+import { Query } from "appwrite";
+import { appwriteService } from "@/appwrite/appwriteConfig";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import conf from "@/config/config";
 
-// Create a single persistent client instance outside the component
-let persistentClient = null;
-let subscriptionActive = false;
-
-const getPersistentClient = () => {
-  if (!persistentClient) {
-    console.log("🔌 Creating persistent Appwrite client");
-    persistentClient = new Client()
-      .setEndpoint(conf.appwriteUrl)
-      .setProject(conf.projectId);
-  }
-  return persistentClient;
-};
+// 💡 Using centralized appwriteService instead of local persistentClient
 
 const AttendanceDashboard = () => {
   const user = useSelector(selectUser);
@@ -264,15 +253,15 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    if (subscriptionActive && subscriptionRef.current) {
+    if (subscriptionRef.current) {
       return;
     }
 
     try {
-      const client = getPersistentClient();
+      const realtime = appwriteService.getRealtime();
       const channel = `databases.${conf.databaseId}.collections.${conf.newAttendanceCollectionId}.documents`;
 
-      const unsubscribe = client.subscribe(channel, (response) => {
+      const unsubscribe = realtime.subscribe(channel, (response) => {
         if (!isComponentMountedRef.current) return;
 
         const document = response.payload;
@@ -322,7 +311,6 @@ const AttendanceDashboard = () => {
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
-        subscriptionActive = false;
       }
     };
   }, [selectedCollege, batchData]);
