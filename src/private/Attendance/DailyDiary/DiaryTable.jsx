@@ -130,7 +130,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
     }
   };
 
-  const rowClass = `transition-colors border-gray-200 dark:border-gray-800 ${
+  const rowClass = `group transition-colors border-gray-200 dark:border-gray-800 ${
     isHoliday ? "bg-red-50/50 dark:bg-red-950/20 lg:hover:bg-red-100/50 border-red-200 dark:border-red-900" :
     isAbsent ? "bg-pink-50/50 dark:bg-pink-950/20 lg:hover:bg-pink-100/50 border-pink-200 dark:border-pink-900" :
     isWeekend ? "bg-gray-50/50 dark:bg-gray-900/40 lg:hover:bg-gray-100/50" :
@@ -197,12 +197,12 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Remarks</label>
             <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.remarks} rows={2} placeholder="-" onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top bg-muted/10 lg:bg-transparent">
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap lg:align-top bg-muted/10 lg:bg-white dark:lg:bg-gray-950 lg:sticky right-0 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-gray-50 dark:group-hover:bg-gray-900 transition-colors">
             <div className="flex flex-row lg:flex-col gap-3">
-              <Button size="sm" onClick={handleSave} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm">
+              <Button size="sm" onClick={handleSave} disabled={isSaving} className="min-w-fit px-3 py-1.5 w-full bg-green-600 hover:bg-green-700 text-white shadow-sm whitespace-nowrap">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null} Save
               </Button>
-              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isSaving} className="w-full text-gray-600 border-gray-300 bg-white dark:bg-gray-900">
+              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isSaving} className="min-w-fit px-3 py-1.5 w-full text-gray-600 border-gray-300 bg-white dark:bg-gray-900 whitespace-nowrap">
                 Cancel
               </Button>
             </div>
@@ -242,8 +242,8 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
              <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Remarks</label>
              {entry.remarks === "Prac #: -" ? "-" : entry.remarks || "-"}
           </td>
-          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap bg-muted/10 lg:bg-transparent">
-            <Button size="lg" variant="default" className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => setIsEditing(true)}>Edit Entry</Button>
+          <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap bg-muted/10 lg:bg-white dark:lg:bg-gray-950 lg:sticky right-0 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-gray-50 dark:group-hover:bg-gray-900 transition-colors">
+            <Button size="lg" variant="default" className="min-w-fit px-4 py-2 w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap" onClick={() => setIsEditing(true)}>Edit Entry</Button>
           </td>
         </>
       )}
@@ -255,8 +255,8 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
   return (
     <Card className="shadow-none lg:shadow-md border-0 lg:border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mt-6 bg-transparent lg:bg-white dark:bg-gray-950">
       <CardContent className="p-0">
-        <div className="w-full">
-          <table className="w-full text-sm block lg:table">
+        <div className="w-full overflow-x-auto relative">
+          <table className="min-w-[900px] w-full text-sm block lg:table table-auto">
             <thead className="hidden lg:table-header-group">
               <tr className="border-b bg-muted/60 text-muted-foreground">
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs">Date</th>
@@ -267,7 +267,7 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs min-w-[150px]">Extra Work</th>
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs">Hours</th>
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs min-w-[150px]">Remarks</th>
-                <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs w-32">Actions</th>
+                <th className="px-6 py-4 text-center font-semibold uppercase tracking-wider text-xs w-32 lg:sticky right-0 bg-gray-100 dark:bg-gray-800 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">Actions</th>
               </tr>
             </thead>
             <tbody className="block lg:table-row-group lg:divide-y divide-gray-200 dark:divide-gray-800 space-y-4 lg:space-y-0 p-1 lg:p-0">
