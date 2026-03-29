@@ -25,13 +25,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/userSlice";
 
 import heroImg from "@/assets/hero-student-mobile.png";
 
 // Animation variants
-const fadeIn = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
 };
 
 const staggerContainer = {
@@ -39,24 +41,24 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.15,
     },
   },
 };
 
 const FeatureCard = ({ feature, borderColor, bgColor, iconColor }) => (
-  <motion.div variants={fadeIn} className="h-full">
+  <motion.div variants={fadeInUp} className="h-full" whileHover={{ y: -8, scale: 1.02 }} transition={{ duration: 0.2 }}>
     <Card
       className={cn(
-        "h-full hover:shadow-xl transition-all duration-300 border-t-4 group hover:-translate-y-1",
+        "h-full transition-all duration-300 border-t-4 group hover:shadow-2xl hover:shadow-blue-900/5",
         `border-t-${borderColor}`,
-        "dark:bg-slate-900 dark:border-slate-800 bg-white"
+        "dark:bg-slate-900/90 dark:backdrop-blur-xl dark:border-slate-800 bg-white"
       )}
     >
       <CardContent className="pt-8 px-6 pb-6">
         <div
           className={cn(
-            "mb-6 p-3 rounded-2xl w-14 h-14 flex items-center justify-center transition-transform group-hover:scale-110",
+            "mb-6 p-3 rounded-2xl w-14 h-14 flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-3 shadow-sm",
             `bg-${bgColor}`,
             `dark:bg-${borderColor}/10`
           )}
@@ -78,17 +80,18 @@ const FeatureCard = ({ feature, borderColor, bgColor, iconColor }) => (
 
 const StepCard = ({ step, index }) => (
   <motion.div
-    variants={fadeIn}
+    variants={fadeInUp}
     className="relative h-full"
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
+    whileHover={{ y: -8, scale: 1.02 }}
+    transition={{ duration: 0.2 }}
   >
-    <Card className="relative bg-white dark:bg-slate-900 rounded-2xl p-8 text-center shadow-sm hover:shadow-lg border-slate-100 dark:border-slate-800 h-full transition-all">
+    <Card className="relative bg-white dark:bg-slate-900/90 dark:backdrop-blur-xl rounded-3xl p-8 text-center shadow-lg hover:shadow-2xl hover:shadow-blue-900/5 border-slate-100 dark:border-slate-800 h-full transition-all">
       <CardContent className="pt-2 flex flex-col items-center">
-        <div className="relative z-10 mb-6">
+        <div className="relative z-10 mb-6 group-hover:-translate-y-2 transition-transform duration-300">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 transform rotate-3 group-hover:rotate-6 transition-transform">
             {step.icon}
           </div>
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-yellow-900 border-2 border-white dark:border-slate-900">
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-yellow-900 border-2 border-white dark:border-slate-900 shadow-sm">
             {index + 1}
           </div>
         </div>
@@ -105,6 +108,8 @@ const StepCard = ({ step, index }) => (
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const user = useSelector(selectUser);
+  const isLoggedIn = !!user;
 
   const studentFeatures = [
     {
@@ -168,71 +173,78 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-blue-100 dark:selection:bg-blue-900">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-white dark:bg-slate-900 pb-16 pt-10 lg:pb-32 lg:pt-20">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-950 pb-16 pt-10 lg:pb-32 lg:pt-20">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] dark:opacity-20 opacity-50"></div>
         
         <motion.div
           initial="hidden"
           animate="visible"
-          variants={fadeIn}
-          transition={{ duration: 0.6 }}
-          className="container mx-auto px-4 relative"
+          variants={staggerContainer}
+          className="container mx-auto px-4 relative z-10"
         >
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
               <motion.div 
-                variants={fadeIn}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-6 border border-blue-100 dark:border-blue-800"
+                variants={fadeInUp}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-6 border border-blue-100 dark:border-blue-800/60 shadow-sm"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>#1 Platform for ITI Students</span>
               </motion.div>
 
               <motion.h1
-                variants={fadeIn}
-                transition={{ delay: 0.2 }}
+                variants={fadeInUp}
                 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]"
               >
                 Master Your <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 drop-shadow-sm">
                   ITI Exams
                 </span>{" "}
                 Today
               </motion.h1>
 
               <motion.p
-                variants={fadeIn}
-                transition={{ delay: 0.3 }}
+                variants={fadeInUp}
                 className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0"
               >
                 The ultimate platform for ITI students to practice mock tests, track attendance, and boost exam performance. Join thousands of successful students.
               </motion.p>
 
               <motion.div 
-                variants={fadeIn} 
-                transition={{ delay: 0.4 }}
+                variants={fadeInUp} 
                 className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
               >
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/signup")}
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold px-8 py-6 rounded-xl text-lg shadow-xl shadow-blue-500/20 hover:shadow-blue-500/30 transition-all hover:-translate-y-1"
-                >
-                  Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate("/login")}
-                  className="border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold px-8 py-6 rounded-xl text-lg"
-                >
-                  Login to Account
-                </Button>
+                {isLoggedIn ? (
+                  <Button
+                    size="lg"
+                    onClick={() => navigate("/dash")}
+                    className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold px-8 py-6 rounded-2xl text-lg shadow-[0_8px_30px_rgb(37,99,235,0.2)] hover:shadow-[0_8px_30px_rgb(37,99,235,0.3)] transition-all hover:-translate-y-1"
+                  >
+                    Go to Dashboard <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      size="lg"
+                      onClick={() => navigate("/signup")}
+                      className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold px-8 py-6 rounded-2xl text-lg shadow-[0_8px_30px_rgb(37,99,235,0.2)] hover:shadow-[0_8px_30px_rgb(37,99,235,0.3)] transition-all hover:-translate-y-1"
+                    >
+                      Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => navigate("/login")}
+                      className="border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold px-8 py-6 rounded-2xl text-lg bg-white/50 dark:bg-slate-900/50 backdrop-blur-md transition-all hover:-translate-y-1 shadow-sm"
+                    >
+                      Login to Account
+                    </Button>
+                  </>
+                )}
               </motion.div>
 
               <motion.div
-                variants={fadeIn}
-                transition={{ delay: 0.5 }}
+                variants={fadeInUp}
                 className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-500 dark:text-slate-400 font-medium"
               >
                 <div className="flex items-center gap-2">
@@ -248,15 +260,17 @@ const LandingPage = () => {
 
             {/* Hero Image */}
             <motion.div
-              variants={fadeIn}
-              transition={{ delay: 0.6, duration: 0.8 }}
+              variants={fadeInUp}
               className="relative lg:h-[600px] flex items-center justify-center"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full blur-3xl opacity-60 animate-pulse"></div>
-              <img
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-indigo-100 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl opacity-60 animate-pulse"></div>
+              <motion.img
+                whileHover={{ scale: 1.02 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1, transition: { duration: 0.8, ease: "easeOut" } }}
                 src={heroImg}
                 alt="Students taking online test"
-                className="relative z-10 w-full max-w-lg lg:max-w-full rounded-2xl shadow-2xl shadow-blue-900/20 transform hover:scale-[1.02] transition-transform duration-500"
+                className="relative z-10 w-full max-w-lg lg:max-w-full rounded-2xl shadow-2xl xl:shadow-[0_20px_50px_rgba(0,0,0,0.2)] shadow-blue-900/20 dark:shadow-blue-900/40"
               />
             </motion.div>
           </div>
@@ -351,7 +365,15 @@ const LandingPage = () => {
 
           <div className="relative max-w-6xl mx-auto">
             {/* Connecting Line */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 dark:bg-slate-800 hidden md:block -translate-y-1/2 rounded-full"></div>
+            <div className="absolute top-1/2 left-0 w-full h-1.5 bg-slate-100 dark:bg-slate-800/50 hidden md:block -translate-y-1/2 rounded-full overflow-hidden">
+               <motion.div 
+                 initial={{ width: 0 }} 
+                 whileInView={{ width: "100%" }} 
+                 viewport={{ once: true, margin: "-100px" }} 
+                 transition={{ duration: 1.5, ease: "easeInOut" }} 
+                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" 
+               />
+            </div>
             
             <motion.div
               variants={staggerContainer}
@@ -390,21 +412,32 @@ const LandingPage = () => {
               </p>
 
               <motion.div 
-                whileHover={{ scale: 1.05 }} 
+                whileHover={{ scale: 1.05, y: -5 }} 
                 whileTap={{ scale: 0.98 }}
                 className="inline-block"
               >
-                <Button
-                  onClick={() => navigate("/signup")}
-                  className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 px-10 py-7 text-xl font-bold rounded-xl shadow-lg"
-                >
-                  Create Free Account <ChevronRight className="ml-2 w-6 h-6" />
-                </Button>
+                {isLoggedIn ? (
+                  <Button
+                    onClick={() => navigate("/dash")}
+                    className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 px-10 py-7 text-xl font-bold rounded-2xl shadow-xl transition-all"
+                  >
+                    Go to Dashboard <ChevronRight className="ml-2 w-6 h-6" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate("/signup")}
+                    className="bg-white text-blue-600 hover:bg-blue-50 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-slate-800 px-10 py-7 text-xl font-bold rounded-2xl shadow-xl transition-all"
+                  >
+                    Create Free Account <ChevronRight className="ml-2 w-6 h-6" />
+                  </Button>
+                )}
               </motion.div>
               
-              <p className="mt-6 text-sm text-blue-200 font-medium">
-                No credit card required • Free for students
-              </p>
+              {!isLoggedIn && (
+                <p className="mt-6 text-sm text-blue-200 font-medium tracking-wide">
+                  No credit card required • Free for students
+                </p>
+              )}
             </div>
           </div>
         </div>
