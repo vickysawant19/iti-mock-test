@@ -31,6 +31,7 @@ import { useListBatchesQuery } from "@/store/api/batchApi";
 import { Query } from "appwrite";
 import { appwriteService } from "@/appwrite/appwriteConfig";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import conf from "@/config/config";
 
 // 💡 Using centralized appwriteService instead of local persistentClient
@@ -111,16 +112,8 @@ const AttendanceDashboard = () => {
     try {
       const data = await Promise.all(
         batchData.documents.map(async (batch) => {
-          const studentIds = batch.studentIds || [];
-          const userIds = studentIds
-            .map((itm) => {
-              try {
-                return JSON.parse(itm).userId;
-              } catch (e) {
-                return null;
-              }
-            })
-            .filter(Boolean);
+          const batchMembers = await batchStudentService.getBatchStudents(batch.$id);
+          const userIds = batchMembers.map(m => m.studentId).filter(Boolean);
 
           return await newAttendanceService.getBatchAttendanceByDate(
             batch.$id,

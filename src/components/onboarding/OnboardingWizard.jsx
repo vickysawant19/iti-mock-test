@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
+import batchRequestService from "@/appwrite/batchRequestService";
 import StepBasicInfo from "./StepBasicInfo";
 import StepAcademic from "./StepAcademic";
 import StepBatch from "./StepBatch";
@@ -117,6 +118,16 @@ export default function OnboardingWizard() {
       { isApproved: false, approvalStatus: "pending" },
       true
     );
+    
+    // Create a request for the selected batch
+    if (ok && formData.batchId && user.$id) {
+      try {
+        await batchRequestService.sendRequest(formData.batchId, user.$id);
+      } catch (err) {
+        console.error("Failed to create batch request during onboarding:", err);
+      }
+    }
+    
     if (ok) navigate("/approval-pending");
   };
 

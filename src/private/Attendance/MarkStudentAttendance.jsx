@@ -29,6 +29,7 @@ import CustomCalendar from "./Calender";
 import ShowStats from "./ShowStats";
 import userProfileService from "@/appwrite/userProfileService";
 import batchService from "@/appwrite/batchService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import LocationPicker from "../teacher/components/LocationPicker";
 import AttendanceStatus from "./AttendanceStatus";
 import { selectProfile } from "@/store/profileSlice";
@@ -140,17 +141,26 @@ const MarkStudentAttendance = () => {
   };
 
   const fetchBatchStudents = async () => {
-    if (!batchData?.studentIds) return;
+    if (!batchData?.$id) return;
     setIsLoading(true);
     try {
-      let studentIds = batchData?.studentIds.map(
-        (student) => JSON.parse(student)?.userId
-      );
-      studentIds.push(profile?.userId);
+      const batchMembers = await batchStudentService.getBatchStudents(batchData.$id);
+      let studentIds = batchMembers.map(member => member.studentId).filter(Boolean);
+      
+      if (profile?.userId) {
+        studentIds.push(profile.userId);
+      }
+
+      if (studentIds.length === 0) {
+        setBatchStudents([]);
+        return;
+      }
+
       const data = await userProfileService.getBatchUserProfile([
         Query.equal("userId", studentIds),
         Query.orderDesc("studentId"),
         Query.equal("status", "Active"),
+        Query.limit(100)
       ]);
       setBatchStudents(
         data.sort((a, b) => parseInt(a.studentId) - parseInt(b.studentId))

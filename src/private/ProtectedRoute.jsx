@@ -37,11 +37,12 @@ const ProtectedRoute = () => {
 
       // ── Phase 2: Approval gate (students only) ────────────────────────────
       if (isStudent && isOnboarded && !isWhitelisted) {
-        if (profile?.approvalStatus === "rejected") {
+        if (location.pathname.startsWith("/browse-batches")) {
+          // Allow access to browse batches even if not approved
+        } else if (profile?.approvalStatus === "rejected") {
           navigate("/approval-rejected");
           return;
-        }
-        if (!profile?.isApproved && profile?.approvalStatus !== "approved") {
+        } else if (!profile?.isApproved && profile?.approvalStatus !== "approved") {
           navigate("/approval-pending");
           return;
         }

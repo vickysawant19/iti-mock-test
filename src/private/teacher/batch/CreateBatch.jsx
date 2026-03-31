@@ -119,12 +119,6 @@ const BatchForm = ({ onClose }) => {
       setValue("collegeId", data.collegeId);
       setValue("tradeId", data.tradeId);
       setValue("isActive", data.isActive ?? false);
-      setValue(
-        "studentIds",
-        Array.isArray(data.studentIds)
-          ? data.studentIds.join(", ")
-          : data.studentIds
-      );
 
       setValue("canEditAttendance", data.canEditAttendance ?? false);
       setValue("attendanceTime", {

@@ -30,6 +30,12 @@ const conf = {
   holidayDaysCollectionId: String(
     import.meta.env.VITE_HOLIDAY_DAYS_COLLECTION_ID
   ),
+  batchRequestsCollectionId: String(
+    import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "batchRequests"
+  ),
+  batchStudentsCollectionId: String(
+    import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "batchStudents"
+  ),
 };
 
 export default conf;

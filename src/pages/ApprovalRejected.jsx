@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { XCircle, Edit, RefreshCw, LogOut } from "lucide-react";
+import { XCircle, Edit, RefreshCw, LogOut, BookOpen } from "lucide-react";
 import { selectProfile, addProfile } from "@/store/profileSlice";
 import { selectUser, removeUser } from "@/store/userSlice";
 import { removeProfile } from "@/store/profileSlice";
@@ -76,6 +76,15 @@ export default function ApprovalRejected() {
           >
             <Edit className="w-4 h-4" />
             Edit My Details
+          </Button>
+
+          <Button
+            className="w-full gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+            variant="outline"
+            onClick={() => navigate("/browse-batches")}
+          >
+            <BookOpen className="w-4 h-4" />
+            Browse Other Batches
           </Button>
 
           <Button

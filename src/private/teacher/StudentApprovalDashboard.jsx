@@ -13,8 +13,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { selectUser } from "@/store/userSlice";
 import batchService from "@/appwrite/batchService";
-import userProfileService from "@/appwrite/userProfileService";
 import PendingStudentsList from "./components/PendingStudentsList";
+import batchRequestService from "@/appwrite/batchRequestService";
 import {
   Select,
   SelectContent,
@@ -140,14 +140,15 @@ export default function StudentApprovalDashboard() {
 
   // Load raw students for all tabs to compute accurate counts
   const loadCounts = async () => {
-    if (!collegeIds.length || !tradeIds.length) return;
+    if (!selectedBatch) return;
     setIsLoadingCounts(true);
     try {
-      const [pending, approved, rejected] = await Promise.all([
-        userProfileService.getStudentsByApprovalStatus("pending", collegeIds, tradeIds),
-        userProfileService.getStudentsByApprovalStatus("approved", collegeIds, tradeIds),
-        userProfileService.getStudentsByApprovalStatus("rejected", collegeIds, tradeIds),
-      ]);
+      const allRequests = await batchRequestService.getRequests(selectedBatch);
+      
+      const pending = allRequests.filter(r => r.status === "pending");
+      const approved = allRequests.filter(r => r.status === "approved");
+      const rejected = allRequests.filter(r => r.status === "rejected");
+      
       setRawStudents({ pending, approved, rejected });
     } catch (err) {
       console.error("StudentApprovalDashboard: error loading counts:", err);
@@ -158,21 +159,18 @@ export default function StudentApprovalDashboard() {
 
   // Derive counts based on the currently selected batch
   const counts = useMemo(() => {
-    if (!selectedBatch) return { pending: 0, approved: 0, rejected: 0 };
-    const filterByBatch = (list) => list.filter(s => {
-      const bId = s.batchId?.$id || s.batchId;
-      return bId === selectedBatch;
-    });
     return {
-      pending: filterByBatch(rawStudents.pending).length,
-      approved: filterByBatch(rawStudents.approved).length,
-      rejected: filterByBatch(rawStudents.rejected).length,
+      pending: rawStudents.pending.length,
+      approved: rawStudents.approved.length,
+      rejected: rawStudents.rejected.length,
     };
-  }, [rawStudents, selectedBatch]);
+  }, [rawStudents]);
 
   useEffect(() => {
-    loadCounts();
-  }, [collegeIds.join(","), tradeIds.join(",")]);
+    if (selectedBatch) {
+      loadCounts();
+    }
+  }, [selectedBatch]);
 
   const activeTabCfg = TABS.find((t) => t.id === activeTab);
   const colors = COLOR_MAP[activeTabCfg?.color];

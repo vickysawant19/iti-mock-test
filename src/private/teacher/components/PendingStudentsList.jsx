@@ -1,49 +1,26 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Loader2, Users, Filter, RefreshCw } from "lucide-react";
+import { Loader2, Users, RefreshCw } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Query } from "appwrite";
+import conf from "@/config/config";
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
+import batchRequestService from "@/appwrite/batchRequestService";
 import StudentApprovalCard from "./StudentApprovalCard";
 
-/**
- * PendingStudentsList
- * ─────────────────────────────────────────────────────────────────────────────
- * Shows students filtered by approvalStatus, scoped to the teacher's
- * colleges and trades (derived from the teacher's own batches).
- *
- * Key architecture decision:
- *   Pending students have NOT been assigned a confirmed batchId yet.
- *   Filtering by batchId would always return 0 results for the "pending" tab.
- *   Instead we filter by collegeId + tradeId (stable at onboarding time).
- *
- *   For "pending" tab — the batch dropdown shows the student's *requested*
- *   batch preference from onboarding (stored as batchId at that point),
- *   NOT a confirmed assignment.
- *
- * Props:
- *   status – "pending" | "approved" | "rejected" (default "pending")
- */
 export default function PendingStudentsList({ status = "pending", selectedBatch }) {
   const user = useSelector(selectUser);
   const teacherId = user?.$id;
 
-  const [teacherBatches, setTeacherBatches] = useState([]); // full batch objects
+  const [teacherBatches, setTeacherBatches] = useState([]);
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState("");
 
-  // ── Step A: fetch teacher's batches (need collegeId, tradeId, $id, BatchName) ──
+  // Step A: fetch teacher's batches
   useEffect(() => {
     if (!teacherId) return;
     const fetchBatches = async () => {
@@ -61,50 +38,65 @@ export default function PendingStudentsList({ status = "pending", selectedBatch 
     fetchBatches();
   }, [teacherId]);
 
-  // ── Step B: derive unique collegeIds + tradeIds from those batches ──────────
-  const { collegeIds, tradeIds } = useMemo(() => {
-    const colSet = new Set();
-    const tradeSet = new Set();
-    teacherBatches.forEach((b) => {
-      if (b.collegeId) colSet.add(b.collegeId);
-      if (b.tradeId) tradeSet.add(b.tradeId);
-    });
-    return {
-      collegeIds: [...colSet],
-      tradeIds: [...tradeSet],
-    };
-  }, [teacherBatches]);
-
-  // ── Step C: fetch students by status + college scope ─────────────────────────
+  // Step B: fetch requests and corresponding user profiles
   const fetchStudents = async () => {
-    if (!collegeIds.length || !tradeIds.length) {
+    if (!selectedBatch) {
       setStudents([]);
       setIsLoading(false);
       return;
     }
+    
     setIsLoading(true);
     try {
-      const result = await userProfileService.getStudentsByApprovalStatus(
-        status,
-        collegeIds,
-        tradeIds
+      const requests = await batchRequestService.getRequests(selectedBatch, status);
+      
+      if (requests.length === 0) {
+        setStudents([]);
+        return;
+      }
+      
+      const uniqueStudentIds = [...new Set(requests.map(r => r.studentId))];
+      
+      const profilesRes = await userProfileService.database.listDocuments(
+        conf.databaseId,
+        conf.userProfilesCollectionId,
+        [Query.equal("userId", uniqueStudentIds), Query.limit(100)]
       );
-      setStudents(result);
+      
+      const profileMap = {};
+      profilesRes.documents.forEach(p => {
+        profileMap[p.userId] = p;
+      });
+      
+      const mergedStudents = requests.map(req => {
+        const profile = profileMap[req.studentId] || {};
+        return {
+          ...profile,
+          // Inject request data to be used by StudentApprovalCard actions
+          requestId: req.$id,
+          requestStatus: req.status,
+          requestedBatchId: req.batchId,
+          requestedAt: req.createdAt,
+          $id: profile.$id || req.studentId, // Ensure $id exists for backward compatibility functions
+          userId: req.studentId
+        };
+      });
+      
+      setStudents(mergedStudents);
     } catch (err) {
-      console.error("PendingStudentsList: error fetching students:", err);
+      console.error("PendingStudentsList: error fetching requests:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (collegeIds.length > 0 && tradeIds.length > 0) {
+    if (selectedBatch) {
       fetchStudents();
-    } else if (teacherBatches.length > 0) {
-      // batches loaded but no college/trade info — unlikely, stop loading
+    } else {
       setIsLoading(false);
     }
-  }, [collegeIds.join(","), tradeIds.join(","), status]);
+  }, [selectedBatch, status]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -112,19 +104,8 @@ export default function PendingStudentsList({ status = "pending", selectedBatch 
     setIsRefreshing(false);
   };
 
-  // ── Filtering / search ───────────────────────────────────────────────────────
   const displayed = useMemo(() => {
     let list = students;
-
-    if (selectedBatch) {
-      list = list.filter((s) => {
-        // For "approved" students — filter by their confirmed assigned batchId.
-        // For "pending" students — filter by their *requested* batchId from onboarding.
-        // Both cases use the same batchId field; pending just hasn't been confirmed yet.
-        const studentBatchId = s.batchId?.$id || s.batchId;
-        return studentBatchId === selectedBatch;
-      });
-    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -134,14 +115,12 @@ export default function PendingStudentsList({ status = "pending", selectedBatch 
       );
     }
     return list;
-  }, [students, selectedBatch, search]);
+  }, [students, search]);
 
-  // ── Remove student from local state after an action ──────────────────────────
-  const handleActioned = (studentId) => {
-    setStudents((prev) => prev.filter((s) => s.$id !== studentId));
+  const handleActioned = (requestId) => {
+    setStudents((prev) => prev.filter((s) => s.requestId !== requestId));
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -205,13 +184,14 @@ export default function PendingStudentsList({ status = "pending", selectedBatch 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {displayed.map((student) => (
             <StudentApprovalCard
-              key={student.$id}
+              key={student.requestId || student.$id}
               student={student}
               teacherId={teacherId}
               teacherBatches={teacherBatches}
               onApproved={handleActioned}
               onRejected={handleActioned}
               onReApproved={handleActioned}
+              selectedBatchContext={selectedBatch}
             />
           ))}
         </div>

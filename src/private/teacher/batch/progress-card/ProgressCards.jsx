@@ -82,7 +82,7 @@ const ProgressCard = ({
       if (!student || !batch || !studentStats.length) return null;
 
       // Parse batch marks data
-      const batchMarksParsed = batch.batchMarks.map((item) =>
+      const batchMarksParsed = (batch.batchMarks || []).map((item) =>
         typeof item === "string" ? JSON.parse(item) : item
       );
 

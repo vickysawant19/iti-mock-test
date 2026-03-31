@@ -60,6 +60,7 @@ import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.js
 import AttendanceRegister from "./private/Attendance/AttendanceRegister/AttendanceRegister.jsx";
 import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
 import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx";
+import BrowseBatches from "./private/student/BrowseBatches.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -85,6 +86,7 @@ const router = (
           <Route path="approval-pending" element={<ApprovalPending />} />
           <Route path="approval-rejected" element={<ApprovalRejected />} />
           <Route path="dash" element={<Dash />} />
+          <Route path="browse-batches" element={<BrowseBatches />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<ProfileForm />} />

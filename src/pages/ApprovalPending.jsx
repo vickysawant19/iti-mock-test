@@ -146,6 +146,15 @@ export default function ApprovalPending() {
 
           <Button
             variant="outline"
+            className="w-full gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+            onClick={() => navigate("/browse-batches")}
+          >
+            <BookOpen className="w-4 h-4" />
+            Browse Other Batches
+          </Button>
+
+          <Button
+            variant="outline"
             className="w-full gap-2"
             onClick={() => navigate("/profile/edit")}
           >

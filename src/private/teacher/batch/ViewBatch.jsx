@@ -16,6 +16,7 @@ import { selectProfile } from "@/store/profileSlice";
 import { calculateStats } from "../../Attendance/CalculateStats";
 import userProfileService from "@/appwrite/userProfileService";
 import batchService from "@/appwrite/batchService";
+import batchStudentService from "@/appwrite/batchStudentService";
 
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
@@ -131,26 +132,24 @@ const ViewBatch = () => {
   const fetchBatchStudents = useCallback(async () => {
     if (!data.selectedBatchData) return;
 
-    const studentIds = data.selectedBatchData.studentIds
-      .map((item) => {
-        try {
-          return JSON.parse(item).userId;
-        } catch (error) {
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    if (studentIds.length === 0) {
-      setData((prev) => ({ ...prev, students: [] }));
-      return;
-    }
-
     setLoading("students", true);
     try {
+      // 1. Fetch approved memberships from batchStudents
+      const batchMembers = await batchStudentService.getBatchStudents(data.selectedBatchData.$id);
+      const studentIds = batchMembers.map(member => member.studentId).filter(Boolean);
+
+      if (studentIds.length === 0) {
+        setData((prev) => ({ ...prev, students: [] }));
+        setLoading("students", false);
+        fetchedStudentsRef.current = true;
+        return;
+      }
+
+      // 2. Fetch the actual user profiles using the member IDs
       const result = await userProfileService.getBatchUserProfile([
         Query.equal("userId", studentIds),
         Query.orderAsc("studentId"),
+        Query.limit(100)
       ]);
       const sortedStudents = result.sort(
         (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
@@ -193,11 +192,12 @@ const ViewBatch = () => {
         studentMap.set(student.userId, student);
       });
 
-      const newEnrichedAttendance = result.map((student) => {
-        const studentData = studentMap.get(student[0].userId);
+      const newEnrichedAttendance = result.map((recordsObj, index) => {
+        const originalStudent = data.students[index];
+        const studentData = studentMap.get(originalStudent.userId);
 
         return {
-          attendanceRecords: student,
+          attendanceRecords: recordsObj,
           batchId: data.selectedBatchData.$id,
           studentId: studentData?.studentId || "NA",
           userName: studentData?.userName || "Unknown",

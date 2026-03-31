@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/ThemeProvider";
@@ -49,6 +49,8 @@ import {
 } from "@/store/userSlice";
 import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
+import batchStudentService from "@/appwrite/batchStudentService";
+import batchService from "@/appwrite/batchService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
 
@@ -68,6 +70,29 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const isTeacher = user?.labels?.includes("Teacher");
   const isAdmin = user?.labels?.includes("admin");
   const isStudent = user && !isTeacher && !isAdmin;
+
+  const [studentBatchesList, setStudentBatchesList] = useState([]);
+  
+  useEffect(() => {
+    const fetchStudentBatches = async () => {
+      if (isStudent && user?.$id) {
+        try {
+          const bsInfo = await batchStudentService.getStudentBatches(user.$id);
+          if (bsInfo.length > 0) {
+            const batchIds = bsInfo.map(b => b.batchId);
+            // Fetch names for these batches
+            const batches = await batchService.getBatchesByIds(batchIds);
+            if (batches && batches.length > 0) {
+               setStudentBatchesList(batches);
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching student batches", e);
+        }
+      }
+    };
+    fetchStudentBatches();
+  }, [isStudent, user]);
 
   const currentHeading = pathToHeading[location.pathname] || "";
 
@@ -215,7 +240,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </div>
         </div>
 
-        {/* Batch Switcher for Teachers */}
+        {/* Batch Switcher for Teachers & Students */}
         {isTeacher && profile?.allBatchIds?.length > 0 && (
           <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -235,6 +260,26 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                     </SelectItem>
                   );
                 })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {isStudent && studentBatchesList.length > 0 && (
+          <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active Batch
+            </span>
+            <Select value={profile?.batchId || ""} onValueChange={handleBatchSwitch}>
+              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <SelectValue placeholder="Select a batch" />
+              </SelectTrigger>
+              <SelectContent>
+                {studentBatchesList.map((b) => (
+                  <SelectItem key={b.$id} value={b.$id}>
+                    {b.BatchName || b.$id}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

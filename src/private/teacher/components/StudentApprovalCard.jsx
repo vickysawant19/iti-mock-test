@@ -1,49 +1,24 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   CheckCircle,
   XCircle,
-  User,
   Building,
   BookOpen,
   Users,
   Calendar,
   Loader2,
   RefreshCw,
-  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "react-toastify";
 import userProfileService from "@/appwrite/userProfileService";
+import batchRequestService from "@/appwrite/batchRequestService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 
-/**
- * StudentApprovalCard
- * ─────────────────────────────────────────────────────────────────────────────
- * Renders one student's approval card, adaptable to any approval-status tab.
- *
- * State machine:
- *   pending  → Approve (with batch select) | Reject
- *   approved → Revoke access | Re-assign batch
- *   rejected → Re-approve (with batch select)
- *
- * Props:
- *   student        – profile document
- *   teacherId      – current teacher's $id
- *   teacherBatches – full batch objects [{$id, BatchName, collegeId, tradeId}]
- *   onApproved     – callback(profileId) after approve
- *   onRejected     – callback(profileId) after reject
- *   onReApproved   – callback(profileId) after re-approving a rejected student
- */
 export default function StudentApprovalCard({
   student,
   teacherId,
@@ -51,22 +26,11 @@ export default function StudentApprovalCard({
   onApproved,
   onRejected,
   onReApproved,
+  selectedBatchContext
 }) {
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isReApproving, setIsReApproving] = useState(false);
-  const [isReassigning, setIsReassigning] = useState(false);
-  const [showReassign, setShowReassign] = useState(false);
-
-  // Teacher selects/confirms which batch to assign on approve
-  const [selectedBatchId, setSelectedBatchId] = useState(
-    student?.batchId?.$id || student?.batchId || ""
-  );
-
-  // Separate state for batch reassignment (approved tab)
-  const [reassignBatchId, setReassignBatchId] = useState(
-    student?.batchId?.$id || student?.batchId || ""
-  );
 
   const { data: collegesData } = useListCollegesQuery();
   const { data: tradesData } = useListTradesQuery();
@@ -81,30 +45,17 @@ export default function StudentApprovalCard({
       (t) => t.$id === (student?.tradeId?.$id || student?.tradeId)
     )?.tradeName || "—";
 
-  // Resolve the currently assigned batch name (for approved students)
-  const assignedBatchId = student?.batchId?.$id || student?.batchId;
   const assignedBatchName =
-    teacherBatches.find((b) => b.$id === assignedBatchId)?.BatchName ||
-    (assignedBatchId ? "Batch ID: " + assignedBatchId : "—");
+    teacherBatches.find((b) => b.$id === selectedBatchContext)?.BatchName || "Requested Batch";
 
-  const requestDate = student?.$updatedAt
-    ? new Date(student.$updatedAt).toLocaleDateString("en-IN", {
+  const requestDate = student?.requestedAt
+    ? new Date(student.requestedAt).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
         year: "numeric",
       })
     : "—";
 
-  // Only show batches that match the student's college + trade
-  const compatibleBatches = useMemo(() => {
-    const studentCollegeId = student?.collegeId?.$id || student?.collegeId;
-    const studentTradeId = student?.tradeId?.$id || student?.tradeId;
-    return teacherBatches.filter(
-      (b) => b.collegeId === studentCollegeId && b.tradeId === studentTradeId
-    );
-  }, [teacherBatches, student]);
-
-  // ── Status badge ─────────────────────────────────────────────────────────────
   const statusBadge = {
     pending: (
       <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 shrink-0">
@@ -121,19 +72,19 @@ export default function StudentApprovalCard({
         Rejected
       </Badge>
     ),
-  }[student?.approvalStatus] ?? null;
+  }[student?.requestStatus] ?? null;
 
-  // ── Actions ───────────────────────────────────────────────────────────────────
   const handleApprove = async () => {
     setIsApproving(true);
     try {
-      await userProfileService.approveStudent(
-        student.$id,
-        teacherId,
-        selectedBatchId || undefined
-      );
+      await batchRequestService.updateRequestStatus(student.requestId, "approved");
+      await batchStudentService.addStudent(selectedBatchContext, student.userId);
+      
+      // Backward compatibility update
+      await userProfileService.approveStudent(student.$id, teacherId, selectedBatchContext);
+
       toast.success(`${student.userName || "Student"} approved!`);
-      onApproved?.(student.$id);
+      onApproved?.(student.requestId);
     } catch {
       toast.error("Failed to approve student.");
     } finally {
@@ -144,9 +95,13 @@ export default function StudentApprovalCard({
   const handleReject = async () => {
     setIsRejecting(true);
     try {
+      await batchRequestService.updateRequestStatus(student.requestId, "rejected");
+      
+      // Backward compatibility
       await userProfileService.rejectStudent(student.$id, teacherId);
+
       toast.info(`${student.userName || "Student"} request rejected.`);
-      onRejected?.(student.$id);
+      onRejected?.(student.requestId);
     } catch {
       toast.error("Failed to reject student.");
     } finally {
@@ -157,13 +112,13 @@ export default function StudentApprovalCard({
   const handleReApprove = async () => {
     setIsReApproving(true);
     try {
-      await userProfileService.approveStudent(
-        student.$id,
-        teacherId,
-        selectedBatchId || undefined
-      );
+       await batchRequestService.updateRequestStatus(student.requestId, "approved");
+       await batchStudentService.addStudent(selectedBatchContext, student.userId);
+       
+       await userProfileService.approveStudent(student.$id, teacherId, selectedBatchContext);
+
       toast.success(`${student.userName || "Student"} re-approved!`);
-      onReApproved?.(student.$id);
+      onReApproved?.(student.requestId);
     } catch {
       toast.error("Failed to re-approve student.");
     } finally {
@@ -171,36 +126,7 @@ export default function StudentApprovalCard({
     }
   };
 
-  /** Reassign batch for an already-approved student without changing approval status */
-  const handleReassign = async () => {
-    if (!reassignBatchId) {
-      toast.warning("Please select a batch to reassign.");
-      return;
-    }
-    if (reassignBatchId === assignedBatchId) {
-      toast.info("Student is already in this batch.");
-      setShowReassign(false);
-      return;
-    }
-    setIsReassigning(true);
-    try {
-      await userProfileService.reassignStudentBatch(
-        student.$id,
-        reassignBatchId,
-        teacherId
-      );
-      toast.success(`${student.userName || "Student"} reassigned successfully!`);
-      // Remove from list (parent will refresh or re-fetch)
-      onApproved?.(student.$id);
-    } catch {
-      toast.error("Failed to reassign student.");
-    } finally {
-      setIsReassigning(false);
-      setShowReassign(false);
-    }
-  };
-
-  const isBusy = isApproving || isRejecting || isReApproving || isReassigning;
+  const isBusy = isApproving || isRejecting || isReApproving;
 
   return (
     <Card className="border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow flex flex-col">
@@ -235,126 +161,23 @@ export default function StudentApprovalCard({
           </div>
           <div className="flex items-center gap-1.5 col-span-2">
             <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-            <span>{requestDate}</span>
+            <span>Requested: {requestDate}</span>
           </div>
         </div>
 
-        {/* ── APPROVED: show assigned batch + optional re-assign ── */}
-        {student.approvalStatus === "approved" && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded-md">
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-medium truncate">
-                Batch: {assignedBatchName}
-              </span>
-            </div>
-
-            {/* Re-assign section (toggled) */}
-            {showReassign ? (
-              <div className="space-y-1.5">
-                <p className="text-xs text-slate-400">Reassign to batch:</p>
-                <Select
-                  value={reassignBatchId}
-                  onValueChange={setReassignBatchId}
-                  disabled={isBusy}
-                >
-                  <SelectTrigger className="h-8 text-xs border-slate-200 dark:border-slate-700">
-                    <SelectValue placeholder="Select batch…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {compatibleBatches.length > 0 ? (
-                      compatibleBatches.map((b) => (
-                        <SelectItem key={b.$id} value={b.$id} className="text-xs">
-                          {b.BatchName}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled className="text-xs text-slate-400">
-                        No compatible batches
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-1 text-xs h-7"
-                    onClick={handleReassign}
-                    disabled={isBusy || !reassignBatchId}
-                  >
-                    {isReassigning ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Save className="w-3 h-3" />
-                    )}
-                    {isReassigning ? "Saving…" : "Save"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="flex-1 text-xs h-7 text-slate-400"
-                    onClick={() => setShowReassign(false)}
-                    disabled={isBusy}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowReassign(true)}
-                disabled={isBusy}
-                className="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 underline-offset-2 hover:underline transition-colors disabled:opacity-50"
-              >
-                Reassign batch
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* ── PENDING / REJECTED: batch selector for approval ── */}
-        {student.approvalStatus !== "approved" && compatibleBatches.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs text-slate-400">
-              {student.approvalStatus === "pending"
-                ? "Assign batch on approve:"
-                : "Batch to assign:"}
-            </p>
-            <Select
-              value={selectedBatchId}
-              onValueChange={setSelectedBatchId}
-              disabled={isBusy}
-            >
-              <SelectTrigger className="h-8 text-xs border-slate-200 dark:border-slate-700">
-                <SelectValue placeholder="Select batch…" />
-              </SelectTrigger>
-              <SelectContent>
-                {compatibleBatches.map((b) => (
-                  <SelectItem key={b.$id} value={b.$id} className="text-xs">
-                    {b.BatchName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!selectedBatchId && (
-              <p className="text-xs text-amber-500">
-                ⚠ No batch selected — student's own preference will be used.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* No compatible batches warning (pending/rejected only) */}
-        {student.approvalStatus !== "approved" && compatibleBatches.length === 0 && (
-          <p className="text-xs text-slate-400 italic">
-            No matching batches for this college + trade.
-          </p>
-        )}
+        {/* Action context details */}
+        <div className="space-y-2 mt-2">
+           <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-md">
+             <Users className="w-3.5 h-3.5 shrink-0" />
+             <span className="font-medium truncate">
+               Target Batch: {assignedBatchName}
+             </span>
+           </div>
+        </div>
 
         {/* Actions */}
-        <div className="mt-auto pt-1 flex gap-2">
-          {/* PENDING → Approve + Reject */}
-          {student.approvalStatus === "pending" && (
+        <div className="mt-auto pt-2 flex gap-2">
+          {student.requestStatus === "pending" && (
             <>
               <Button
                 size="sm"
@@ -386,8 +209,7 @@ export default function StudentApprovalCard({
             </>
           )}
 
-          {/* APPROVED → Revoke access */}
-          {student.approvalStatus === "approved" && !showReassign && (
+          {student.requestStatus === "approved" && (
             <Button
               size="sm"
               variant="outline"
@@ -400,12 +222,11 @@ export default function StudentApprovalCard({
               ) : (
                 <XCircle className="w-3.5 h-3.5" />
               )}
-              {isRejecting ? "Revoking…" : "Revoke Access"}
+              {isRejecting ? "Revoking…" : "Revoke"}
             </Button>
           )}
 
-          {/* REJECTED → Re-approve */}
-          {student.approvalStatus === "rejected" && (
+          {student.requestStatus === "rejected" && (
             <Button
               size="sm"
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-1.5 text-xs"

@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import batchService from "@/appwrite/batchService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import { Query } from "appwrite";
 import { selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
@@ -169,18 +170,18 @@ const AttendanceRegister = () => {
           return [];
         }),
         (async () => {
-          if (!batch.studentIds || batch.studentIds.length === 0) {
+          const batchMembers = await batchStudentService.getBatchStudents(selectedBatch);
+          const studentIds = batchMembers.map(member => member.studentId).filter(Boolean);
+
+          if (studentIds.length === 0) {
             return [];
           }
-
-          const studentIds = batch.studentIds.map(
-            (ids) => JSON.parse(ids).userId
-          );
 
           const students = await userProfileService.getBatchUserProfile([
             Query.equal("userId", studentIds),
             Query.orderAsc("studentId"),
             Query.select(["$id", "userId", "userName", "studentId"]),
+            Query.limit(100)
           ]);
 
           return students.sort(

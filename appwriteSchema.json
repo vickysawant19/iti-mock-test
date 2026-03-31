@@ -1047,61 +1047,6 @@
                     "array": false,
                     "size": 40,
                     "default": null
-                },
-                {
-                    "key": "experience",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "allBatchIds",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 5000,
-                    "default": null
-                },
-                {
-                    "key": "onboardingStep",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": 0,
-                    "max": 10,
-                    "default": 0
-                },
-                {
-                    "key": "isProfileComplete",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
-                    "key": "isApproved",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
-                    "key": "approvalStatus",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 20,
-                    "default": "pending"
-                },
-                {
-                    "key": "approvedBy",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
                 }
             ],
             "indexes": []

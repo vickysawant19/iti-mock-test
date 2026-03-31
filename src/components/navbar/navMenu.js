@@ -1,4 +1,4 @@
-import { ClipboardList, Group } from "lucide-react";
+import { ClipboardList, Group, Search } from "lucide-react";
 import {
   FaBook,
   FaBookReader,
@@ -73,6 +73,21 @@ export const menuConfig = [
         requiresAuth: true,
       },
       { label: "View Batch", path: "/manage-batch/view", icon: FaUserPlus, requiresAuth: true },
+    ],
+  },
+  {
+    group: "Batches",
+    roles: ["student"],
+    icon: FaLayerGroup,
+    groupKey: "studentBatches",
+    requiresAuth: true,
+    children: [
+      {
+        label: "Browse Batches",
+        path: "/browse-batches",
+        icon: Search,
+        requiresAuth: true,
+      },
     ],
   },
   {

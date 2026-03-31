@@ -330,10 +330,6 @@ export class UserProfileService {
 
     const result = await this.patchUserProfile(profileId, payload);
     
-    // Synchronize to the batch table array
-    if (targetBatchId) {
-      await batchService.addStudentToBatchSync(targetBatchId, profile);
-    }
     return result;
   }
 
@@ -353,11 +349,6 @@ export class UserProfileService {
       status: "Inactive",
     });
     
-    // Eject from the batch table array
-    const targetBatchId = profile.batchId?.$id || profile.batchId;
-    if (targetBatchId && profile.userId) {
-      await batchService.removeStudentFromBatchSync(targetBatchId, profile.userId);
-    }
     return result;
   }
 
@@ -391,13 +382,6 @@ export class UserProfileService {
       approvedBy: teacherId, // Update who last touched this
     });
 
-    const oldBatchId = profile.batchId?.$id || profile.batchId;
-    if (oldBatchId && oldBatchId !== newBatchId && profile.userId) {
-      await batchService.removeStudentFromBatchSync(oldBatchId, profile.userId);
-    }
-    
-    await batchService.addStudentToBatchSync(newBatchId, profile);
-    
     return result;
   }
 
