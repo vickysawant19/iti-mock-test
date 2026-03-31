@@ -48,12 +48,12 @@ const Login = () => {
       // Fetch user profile
       const res = await userProfileService.getUserProfile(user?.$id);
       if (res) {
-        dispatch(addProfile(res));
+        dispatch(addProfile({ data: res, isLoading: false }));
         toast.success("Welcome back! Login successful.");
         navigate("/", { replace: true });
       } else {
-        toast.info("Please complete your profile to continue.");
-        navigate("/profile");
+        toast.info("Please setup your profile to continue.");
+        navigate("/onboarding");
       }
     } catch (error) {
       console.error("Login Error:", error);

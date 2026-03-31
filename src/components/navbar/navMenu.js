@@ -66,6 +66,12 @@ export const menuConfig = [
         icon: FaUserPlus,
         requiresAuth: true,
       },
+      {
+        label: "Student Approvals",
+        path: "/manage-batch/approvals",
+        icon: FaUserPlus, // Or an appropriate icon
+        requiresAuth: true,
+      },
       { label: "View Batch", path: "/manage-batch/view", icon: FaUserPlus, requiresAuth: true },
     ],
   },
@@ -163,6 +169,7 @@ export const pathToHeading = {
   "/profile": "Profile",
   "/manage-batch/create": "Create/Update Batch",
   "/manage-batch/view": "View Batch Students",
+  "/manage-batch/approvals": "Student Approvals",
   "/create-question": "Create Question",
   "/manage-questions": "Manage Questions",
   "/mock-exam": "Create Mock Exam",

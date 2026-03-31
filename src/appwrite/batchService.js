@@ -79,6 +79,75 @@ export class BatchService {
     }
   }
 
+  async addStudentToBatchSync(batchId, studentProfile) {
+    if (!batchId) return;
+    try {
+      const batchData = await this.database.getDocument(conf.databaseId, conf.batchesCollectionId, batchId);
+      let batchStudentsParsed = [];
+      if (batchData.studentIds && Array.isArray(batchData.studentIds)) {
+        batchData.studentIds.forEach((itm) => {
+          try { batchStudentsParsed.push(JSON.parse(itm)); } catch (error) {}
+        });
+      }
+
+      // Check if already in batch
+      if (batchStudentsParsed.some(s => s.userId === studentProfile.userId)) return;
+
+      const occupied = new Set(batchStudentsParsed.map((b) => {
+        const pos = b.position || { x: 0, y: 0 };
+        return `${pos.x}_${pos.y}`;
+      }));
+
+      // Find first free position in a 5x5 grid (x:0-4, y:0-4)
+      let freePos = null;
+      for (let x = 0; x < 5 && !freePos; x++) {
+        for (let y = 0; y < 5 && !freePos; y++) {
+          const key = `${x}_${y}`;
+          if (!occupied.has(key)) freePos = { x, y };
+        }
+      }
+
+      if (!freePos) freePos = { x: 0, y: 0 }; // Fallback
+
+      const newBatchStudent = {
+        studentId: studentProfile.studentId || studentProfile.userId || "",
+        userId: studentProfile.userId,
+        status: "Active",
+        position: freePos,
+      };
+
+      const updatedBatchStudents = [...batchStudentsParsed, newBatchStudent];
+      await this.updateBatch(batchId, {
+        studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
+      });
+    } catch (e) {
+      console.error("Appwrite error: addStudentToBatchSync:", e);
+    }
+  }
+
+  async removeStudentFromBatchSync(batchId, userId) {
+    if (!batchId || !userId) return;
+    try {
+      const batchData = await this.database.getDocument(conf.databaseId, conf.batchesCollectionId, batchId);
+      if (!batchData.studentIds || !Array.isArray(batchData.studentIds)) return;
+      
+      let batchStudentsParsed = [];
+      batchData.studentIds.forEach((itm) => {
+        try { batchStudentsParsed.push(JSON.parse(itm)); } catch (error) {}
+      });
+
+      const updatedBatchStudents = batchStudentsParsed.filter(s => s.userId !== userId);
+      
+      if (updatedBatchStudents.length !== batchStudentsParsed.length) {
+        await this.updateBatch(batchId, {
+          studentIds: updatedBatchStudents.map((itm) => JSON.stringify(itm)),
+        });
+      }
+    } catch (e) {
+      console.error("Appwrite error: removeStudentFromBatchSync:", e);
+    }
+  }
+
   async listBatches(queries = [Query.orderDesc("$createdAt")]) {
     try {
       return await this.database.listDocuments(

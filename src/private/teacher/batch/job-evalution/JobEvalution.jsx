@@ -65,10 +65,11 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   useEffect(() => {
     if (studentProfiles) {
       setStudentsMap(
-        new Map(studentProfiles.map((item) => [+item.studentId, item])),
+        new Map(studentProfiles.map((item,itm) => [itm+1, item])),
       );
     }
   }, [studentProfiles]);
+
 
   const generatePreview = async () => {
     if (!selectedModuleWithDates) {

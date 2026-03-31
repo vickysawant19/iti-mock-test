@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
 import { Query } from "appwrite";
-import Classroom from "./Classroom"; // Import the new Classroom component
+import { selectUser } from "@/store/userSlice";
+import Classroom from "./Classroom";
 import ListView from "./ListView";
 
 const Students = ({ selectedBatchData, setSelectedBatchData }) => {
+  const user = useSelector(selectUser);
   const [studentsData, setStudentsData] = useState([]);
   const [students, setStudents] = useState([]);
   const [batchStudents, setBatchStudents] = useState([]);
@@ -170,6 +173,40 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
     return studentDataMap[userId] || { userName: "Unknown", studentId: "N/A" };
   };
 
+  // Toggle approval status for a batch student
+  const toggleApproval = async (studentProfile) => {
+    if (!studentProfile?.$id) return;
+    const teacherId = user?.$id;
+    try {
+      if (studentProfile.isApproved) {
+        // Revoke approval → back to pending
+        await userProfileService.rejectStudent(studentProfile.$id, teacherId);
+        setStudentsData((prev) =>
+          prev.map((s) =>
+            s.$id === studentProfile.$id
+              ? { ...s, isApproved: false, approvalStatus: "rejected" }
+              : s
+          )
+        );
+        toast.info(`${studentProfile.userName}'s access revoked.`);
+      } else {
+        // Grant approval
+        await userProfileService.approveStudent(studentProfile.$id, teacherId);
+        setStudentsData((prev) =>
+          prev.map((s) =>
+            s.$id === studentProfile.$id
+              ? { ...s, isApproved: true, approvalStatus: "approved" }
+              : s
+          )
+        );
+        toast.success(`${studentProfile.userName} approved!`);
+      }
+    } catch (err) {
+      console.error("Toggle approval error:", err);
+      toast.error("Failed to update approval status.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">Loading...</div>
@@ -217,10 +254,12 @@ const Students = ({ selectedBatchData, setSelectedBatchData }) => {
       ) : (
         <ListView
           batchStudents={batchStudents}
+          studentsData={studentsData}
           getStudentDetails={getStudentDetails}
           removeStudentFromBatch={removeStudentFromBatch}
           addStudentToBatch={addStudentToBatch}
           students={students}
+          toggleApproval={toggleApproval}
         />
       )}
     </div>

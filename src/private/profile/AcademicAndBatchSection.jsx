@@ -175,6 +175,51 @@ const AcademicAndBatchSection = ({
             </div>
           </div>
 
+          {/* Teacher Specific Fields */}
+          {isTeacher && (
+            <>
+              {/* Specialization */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Other Specializations (Optional)
+                </label>
+                <div className="relative">
+                  <BookOpen
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="e.g. Fitter, Welder"
+                    {...register("specialization")}
+                    disabled={!isFieldEditable("specialization")}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Experience */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Years of Experience (Optional)
+                </label>
+                <div className="relative">
+                  <Activity
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <input
+                    type="number"
+                    placeholder="e.g. 5"
+                    {...register("experience")}
+                    disabled={!isFieldEditable("experience")}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Active Batch */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">

@@ -21,6 +21,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Collapsible,
@@ -39,8 +46,9 @@ import {
   removeUser,
   selectUser,
   selectUserLoading,
-} from "@/store/userSlice"
-import { removeProfile, selectProfile } from "@/store/profileSlice";
+} from "@/store/userSlice";
+import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
+import userProfileService from "@/appwrite/userProfileService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
 
@@ -102,6 +110,18 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const handleBatchSwitch = async (batchId) => {
+    if (!batchId || batchId === profile?.batchId) return;
+    try {
+      const updatedProfile = await userProfileService.updateUserProfile(profile.$id, {
+        batchId: batchId,
+      });
+      dispatch(addProfile({ data: updatedProfile }));
+    } catch (error) {
+      console.error("Error switching batch:", error);
+    }
+  };
+
   const MenuGroup = ({ title, icon: Icon, children, groupKey }) => (
     <Collapsible
       className="w-full my-1"
@@ -150,7 +170,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               : "hover:bg-muted"
           } ${isLoading ? "pointer-events-none opacity-50" : ""}`
         }
-        onClick={handleMenuClick}
+        onClick={(e) => {
+          e.preventDefault();
+          handleMenuClick(e);
+          setTimeout(() => navigate(to), 150);
+        }}
       >
         <Icon className="w-4 h-4" />
         <span>{children}</span>
@@ -173,21 +197,48 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     }
 
     return user ? (
-      <div className="flex items-center gap-3">
-        <Avatar>
-          <AvatarImage src={profile?.profileImage} />
-          <AvatarFallback>{profile?.userName?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="text-sm font-medium">{profile?.userName || "User"}</p>
-          <NavLink
-            to="/profile"
-            className="text-xs text-primary hover:underline"
-            onClick={() => setIsNavOpen(false)}
-          >
-            View Profile
-          </NavLink>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={profile?.profileImage} />
+            <AvatarFallback>{profile?.userName?.charAt(0) || "U"}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">{profile?.userName || "User"}</p>
+            <NavLink
+              to="/profile"
+              className="text-xs text-primary hover:underline"
+              onClick={() => setIsNavOpen(false)}
+            >
+              View Profile
+            </NavLink>
+          </div>
         </div>
+
+        {/* Batch Switcher for Teachers */}
+        {isTeacher && profile?.allBatchIds?.length > 0 && (
+          <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active Batch
+            </span>
+            <Select value={profile?.batchId || ""} onValueChange={handleBatchSwitch}>
+              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <SelectValue placeholder="Select a batch" />
+              </SelectTrigger>
+              <SelectContent>
+                {profile.allBatchIds.map((item, idx) => {
+                  const b = typeof item === "string" ? JSON.parse(item) : item;
+                  if (!b?.batchId) return null;
+                  return (
+                    <SelectItem key={b.batchId || idx} value={b.batchId}>
+                      {b.batchName || "Unknown Batch"}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
     ) : (
       <div className="text-sm text-muted-foreground">Not logged in</div>
@@ -302,8 +353,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               className="w-full justify-start gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
               onClick={() => {
                 if (!isLoading) {
-                  navigate("/login");
                   setIsNavOpen(false);
+                  setTimeout(() => navigate("/login"), 150);
                 }
               }}
               disabled={isLoading}
@@ -317,8 +368,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               className="w-full justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 if (!isLoading) {
-                  navigate("/signup");
                   setIsNavOpen(false);
+                  setTimeout(() => navigate("/signup"), 150);
                 }
               }}
               disabled={isLoading}

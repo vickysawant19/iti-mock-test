@@ -24,7 +24,6 @@ import ViewAttendance from "../../Attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
-import Students from "./profile/Students";
 import CustomSelector from "@/components/components/CustomSelector";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
@@ -32,7 +31,6 @@ import Assignment from "./assignment/Assignment";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const TABS = [
-  { id: "students", label: "Student", icon: Users },
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
@@ -278,9 +276,7 @@ const ViewBatch = () => {
   // Render content based on active tab
   const renderContent = () => {
     const isContentLoading =
-      activeTab === "students"
-        ? false
-        : loadingStates.students ||
+      loadingStates.students ||
           ([
             "attendance",
             "progress-card",
@@ -294,15 +290,6 @@ const ViewBatch = () => {
     }
 
     switch (activeTab) {
-      case "students":
-        return (
-          <Students
-            selectedBatchData={data.selectedBatchData}
-            setSelectedBatchData={(newData) =>
-              setData((prev) => ({ ...prev, selectedBatchData: newData }))
-            }
-          />
-        );
       case "profiles":
         return <ViewProfiles students={data.students} />;
       case "attendance":

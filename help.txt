@@ -1,0 +1,16 @@
+﻿Usage: cli databases create-integer-attribute [options]
+
+Create an integer attribute. Optionally, minimum and maximum values can be provided.
+
+
+Options:
+  --database-id <database-id>      Database ID.
+  --collection-id <collection-id>  Collection ID.
+  --key <key>                      Attribute Key.
+  --required <required>            Is attribute required?
+  --min <min>                      Minimum value
+  --max <max>                      Maximum value
+  --xdefault <xdefault>            Default value. Cannot be set when attribute
+                                   is required.
+  --array [value]                  Is attribute an array?
+  -h, --help                       display help for command

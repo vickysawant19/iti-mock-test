@@ -139,6 +139,7 @@ const ProfileForm = () => {
               : "",
             collegeId: profileData.collegeId?.$id || profileData.collegeId,
             tradeId: profileData.tradeId?.$id || profileData.tradeId,
+            specialization: Array.isArray(profileData.specialization) ? profileData.specialization.join(", ") : (profileData.specialization || ""),
             allBatchIds: profileData.allBatchIds
               ? profileData.allBatchIds.map((item) =>
                   typeof item === "string" ? JSON.parse(item) : item
@@ -171,7 +172,9 @@ const ProfileForm = () => {
       let updatedProfile;
       let newBatchData;
 
-      data.allBatchIds = data.allBatchIds.map((itm) => JSON.stringify(itm));
+      if (data.allBatchIds && Array.isArray(data.allBatchIds)) {
+        // We now pass the array of objects directly. The service handles stringification.
+      }
 
       if (
         data.BatchName &&
@@ -210,6 +213,14 @@ const ProfileForm = () => {
               data[key] = existingProfile[key];
             }
           });
+        } else if (isTeacher) {
+          // Guarantee that teachers saving their profile are marked as complete
+          data.isProfileComplete = true;
+          data.onboardingStep = 4;
+          if (existingProfile.approvalStatus !== "approved") {
+            data.isApproved = true;
+            data.approvalStatus = "approved";
+          }
         }
         updatedProfile = await userProfileService.updateUserProfile(
           existingProfile.$id,
@@ -217,7 +228,7 @@ const ProfileForm = () => {
             ...data,
           }
         );
-        dispatch(addProfile(updatedProfile));
+        dispatch(addProfile({ data: updatedProfile }));
         toast.success("Profile updated successfully!");
         navigate("/profile/edit");
       } else {
@@ -227,7 +238,7 @@ const ProfileForm = () => {
         data.userId = user.$id;
         data.userName = data.userName || user.name;
         updatedProfile = await userProfileService.createUserProfile(data);
-        dispatch(addProfile(updatedProfile));
+        dispatch(addProfile({ data: updatedProfile }));
         toast.success("Profile created successfully!");
         navigate("/profile/edit");
       }

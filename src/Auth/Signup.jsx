@@ -31,7 +31,6 @@ const Signup = () => {
   } = useForm({
     defaultValues: {
       labels: "Student",
-      countryCode: "+91",
     },
   });
 
@@ -50,7 +49,10 @@ const Signup = () => {
       // Transform labels string to array as expected by backend
       const formattedData = {
         ...data,
-        labels: [data.labels]
+        labels: [data.labels],
+        name: data.name || "", // Captured here, and pre-filled in onboarding
+        phone: data.phone || "", // Captured here
+        countryCode: "+91",
       };
       
       const result = await authService.createAccount(formattedData);
@@ -101,12 +103,33 @@ const Signup = () => {
                 <Label htmlFor="name">Full Name</Label>
                 <Input
                   id="name"
+                  type="text"
                   placeholder="John Doe"
-                  {...register("name", { required: "Name is required" })}
+                  {...register("name", { required: "Full name is required" })}
                   className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="9876543210"
+                  {...register("phone", { 
+                    required: "Phone number is required",
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Please enter a valid 10-digit phone number"
+                    }
+                  })}
+                  className={errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-red-500">{errors.phone.message}</p>
                 )}
               </div>
 
@@ -127,42 +150,6 @@ const Signup = () => {
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="flex gap-2">
-                  <Controller
-                    name="countryCode"
-                    control={control}
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger className="w-[100px]">
-                          <SelectValue placeholder="+91" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="+91">+91</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="9876543210"
-                    {...register("phone", {
-                      required: "Phone number is required",
-                      pattern: {
-                        value: /^[0-9]{6,15}$/,
-                        message: "Invalid phone number",
-                      },
-                    })}
-                    className={`flex-1 ${errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-sm text-red-500">{errors.phone.message}</p>
                 )}
               </div>
 

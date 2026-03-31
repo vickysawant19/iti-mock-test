@@ -136,13 +136,14 @@ export default async ({ req, res, log, error }) => {
           formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
         }
         
-        // Create an account using the provided or a unique ID
+        // Create an account using the provided or a unique ID.
+        // Convert empty strings to undefined to avoid strict Appwrite validation errors.
         const newUserResponse = await users.create(
           userId || ID.unique(), 
           email, 
-          formattedPhone, 
+          formattedPhone || undefined, 
           password, 
-          name
+          name || undefined
         );
         
         // Update labels for the created account

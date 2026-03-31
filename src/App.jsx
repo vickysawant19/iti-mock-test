@@ -38,7 +38,11 @@ function App() {
               navigate("/");
             }
           } else {
-            navigate("/profile");
+            if (currentUser.labels && currentUser.labels.includes("Teacher")) {
+              navigate("/onboarding/teacher");
+            } else {
+              navigate("/onboarding");
+            }
           }
         }
       }

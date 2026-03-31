@@ -42,6 +42,10 @@ import ProfileView from "./private/profile/ProfileView.jsx";
 import ProfileForm from "./private/profile/ProfileForm.jsx";
 import ResetPass from "./Auth/ResetPass.jsx";
 import ChangePassword from "./Auth/changePassword.jsx";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard.jsx";
+import TeacherOnboardingWizard from "./components/onboarding/teacher/TeacherOnboardingWizard.jsx";
+import ApprovalPending from "./pages/ApprovalPending.jsx";
+import ApprovalRejected from "./pages/ApprovalRejected.jsx";
 import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
 
 import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
@@ -49,6 +53,7 @@ import Modules from "./private/admin/Modules.jsx";
 import Assessment from "./private/assessment/Assessment.jsx";
 import DailyDiary from "./private/Attendance/DailyDiary/DailyDiary.jsx";
 import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
+import StudentApprovalDashboard from "./private/teacher/StudentApprovalDashboard.jsx";
 
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
@@ -75,6 +80,10 @@ const router = (
         <Route path="reset-pass" element={<ResetPass />} />
         <Route path="about" element={<About />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="onboarding" element={<OnboardingWizard />} />
+          <Route path="onboarding/teacher" element={<TeacherOnboardingWizard />} />
+          <Route path="approval-pending" element={<ApprovalPending />} />
+          <Route path="approval-rejected" element={<ApprovalRejected />} />
           <Route path="dash" element={<Dash />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile" element={<Profile />} />
@@ -96,6 +105,7 @@ const router = (
             <Route path="create" element={<CreateBatch />} />
             <Route path="students" element={<AddStudents />} />
             <Route path="view" element={<ViewBatch />} />
+            <Route path="approvals" element={<StudentApprovalDashboard />} />
             <Route path="view/:userId" element={<ProfileView />} />
             <Route path="edit/:userId" element={<ProfileForm />} />
             <Route path="edit/:batchId" element={<div>Edit</div>} />

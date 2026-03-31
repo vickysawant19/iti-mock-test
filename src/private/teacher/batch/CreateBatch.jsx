@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { ClipLoader } from "react-spinners";
 import { useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
@@ -25,9 +25,10 @@ import {
 
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
-import { selectProfile } from "@/store/profileSlice";
+import { selectProfile, addProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
 import batchService from "@/appwrite/batchService";
+import userProfileService from "@/appwrite/userProfileService";
 
 import LocationPicker from "../components/LocationPicker";
 import Loader from "@/components/components/Loader";
@@ -46,6 +47,7 @@ const BatchForm = ({ onClose }) => {
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const dispatch = useDispatch();
 
   // Fetch colleges and trades via RTK Query
   const { data: collegesResponse } = useListCollegesQuery();
@@ -188,7 +190,35 @@ const BatchForm = ({ onClose }) => {
         const data = await batchService.createBatch(batchPayload);
         setAllBatches((prev) => [...prev, data]);
         toast.success("Batch created successfully!");
+        
+        // Link the new batch to the teacher's profile
+        try {
+          const newBatchObj = {
+            batchId: data.$id,
+            batchName: data.BatchName,
+          };
+          const updatedAllBatchIds = [...(profile?.allBatchIds || []), newBatchObj];
+          const payload = {
+            ...profile,
+            allBatchIds: updatedAllBatchIds,
+          };
+          // Also set as primary active batch if it's their first one
+          if (!profile?.batchId) {
+             payload.batchId = data.$id;
+          }
+          const updatedProfile = await userProfileService.updateUserProfile(profile.$id, payload);
+          dispatch(addProfile({ data: updatedProfile }));
+        } catch (profileErr) {
+          console.error("Error linking batch to profile:", profileErr);
+          toast.warning("Batch created, but failed to link to your profile.");
+        }
+        
         reset();
+
+        // If this was their very first batch, securely redirect them out to the batch view
+        if (!profile?.allBatchIds || profile.allBatchIds.length === 0) {
+           navigate("/manage-batch/view");
+        }
       }
     } catch (error) {
       console.error("Error submitting batch:", error);
@@ -213,6 +243,47 @@ const BatchForm = ({ onClose }) => {
 
   if (isLoading) {
     return <Loader isLoading={isLoading} />;
+  }
+
+  // Guard for incomplete teacher profiles
+  const missingFields = [];
+  if (!profile?.isProfileComplete) missingFields.push("Finalizing Setup");
+  if (!profile?.collegeId) missingFields.push("Institute/College");
+  if (!profile?.tradeId && !profile?.specialization) missingFields.push("Trade or Specialization");
+
+  if (missingFields.length > 0) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-gray-50/50 dark:bg-gray-900">
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-full p-4 mb-4">
+          <Building className="w-12 h-12 text-amber-500 dark:text-amber-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Incomplete Profile</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+          You must complete your instructor profile before creating or managing batches.
+        </p>
+        
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 w-full max-w-sm mb-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 border-b border-gray-100 dark:border-gray-700 pb-2">
+            Missing Details:
+          </h3>
+          <ul className="text-sm text-left text-gray-600 dark:text-gray-400 space-y-1">
+            {missingFields.map((field, idx) => (
+              <li key={idx} className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 dark:bg-red-500"></span>
+                {field}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <button
+          onClick={() => navigate("/profile/edit")}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors shadow-sm"
+        >
+          Go to Profile Edit
+        </button>
+      </div>
+    );
   }
 
   return (

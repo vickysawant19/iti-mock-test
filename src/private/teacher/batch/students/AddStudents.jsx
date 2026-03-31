@@ -1,4 +1,6 @@
 import React, { useState, useEffect, forwardRef } from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/userSlice";
 import { useForm } from "react-hook-form";
 import {
   Search,
@@ -30,6 +32,9 @@ const AddStudents = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingBatches, setIsLoadingBatches] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false); // New loading state for user creation
+
+  // Get the logged-in teacher's ID to record who approved the student
+  const currentUser = useSelector(selectUser);
 
   // Fetch colleges and trades via RTK Query
   const { data: collegesResponse } = useListCollegesQuery();
@@ -251,11 +256,22 @@ const AddStudents = () => {
         return;
       }
 
+      // Teacher-created/assigned students are auto-approved.
+      // Record the teacher's userId as the approver.
+      const approvedData = {
+        ...data,
+        isApproved: true,
+        approvalStatus: "approved",
+        approvedBy: currentUser?.$id || null,
+        isProfileComplete: true,
+        onboardingStep: 4,
+      };
+
       if (existingProfile) {
-        await userProfileService.updateUserProfile(existingProfile.$id, data);
+        await userProfileService.updateUserProfile(existingProfile.$id, approvedData);
         toast.success("Student profile updated successfully");
       } else {
-        await userProfileService.createUserProfile(data);
+        await userProfileService.createUserProfile(approvedData);
         toast.success("Student profile added successfully");
       }
 
