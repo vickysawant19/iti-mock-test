@@ -21,8 +21,10 @@ async function inspect(collectionId) {
 }
 
 async function main() {
-    await inspect('667e7755002efc107f60'); // trades
-    await inspect('66964e180017101cd8aa'); // colleges
+    await inspect(process.env.VITE_TRADE_COLLECTION_ID || 'trades');
+    await inspect(process.env.VITE_COLLEGE_COLLECTION_ID || 'colleges');
+    await inspect(process.env.VITE_SUBJECTS_COLLECTION_ID || 'subjects');
+    await inspect('newmodulesdata');
 }
 
 main();

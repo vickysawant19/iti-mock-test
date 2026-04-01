@@ -159,13 +159,7 @@ const AddModules = ({
           existingModule
         );
         console.log("added new module", createdData);
-        setNewModules((prev) => {
-          return prev.map((m) =>
-            m.moduleId.toUpperCase() === createdData.moduleId.toUpperCase()
-              ? createdData
-              : m
-          );
-        });
+        setNewModules((prev) => [...prev, createdData]);
         scrollToItem(createdData.moduleId.toUpperCase());
         setFocus("moduleId");
         toast.success("Module added successfully!");

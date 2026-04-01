@@ -68,7 +68,7 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
         </div>
       </div>
 
-      <div className="p-6 space-y-6 overflow-y-scroll">
+      <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(80vh)]">
         {/* Module Info */}
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">

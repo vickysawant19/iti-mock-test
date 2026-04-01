@@ -1,7 +1,6 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
-import { retry } from "@reduxjs/toolkit/query";
 
 export class ModuleServices {
   constructor() {
@@ -52,26 +51,27 @@ export class ModuleServices {
 
   async createNewModulesData(newModulesData) {
     try {
+      const { subjectName, ...cleanData } = newModulesData;
       const response = await this.database.createDocument(
         conf.databaseId,
         "newmodulesdata",
         "unique()",
         {
-          ...newModulesData,
-          evalutionsPoints: newModulesData.evalutionsPoints.map((item) =>
-            JSON.stringify(item),
+          ...cleanData,
+          evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
+            JSON.stringify(item)
           ),
-          images: newModulesData.images.map((item) => JSON.stringify(item)),
-          topics: newModulesData.topics.map((item) => JSON.stringify(item)),
-        },
+          images: (cleanData.images || []).map((item) => JSON.stringify(item)),
+          topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
+        }
       );
       return {
         ...response,
-        evalutionsPoints: response.evalutionsPoints.map((item) =>
-          JSON.parse(item),
+        evalutionsPoints: (response.evalutionsPoints || []).map((item) =>
+          JSON.parse(item)
         ),
-        images: response.images.map((item) => JSON.parse(item)),
-        topics: response.topics.map((item) => JSON.parse(item)),
+        images: (response.images || []).map((item) => JSON.parse(item)),
+        topics: (response.topics || []).map((item) => JSON.parse(item)),
       };
     } catch (error) {
       console.error("Appwrite error:  add new Data:", error);
@@ -81,27 +81,37 @@ export class ModuleServices {
 
   async updateNewModulesData(newModulesData) {
     try {
+      const {
+        subjectName,
+        $id,
+        $collectionId,
+        $databaseId,
+        $createdAt,
+        $updatedAt,
+        $permissions,
+        ...cleanData
+      } = newModulesData;
       const response = await this.database.updateDocument(
         conf.databaseId,
         "newmodulesdata",
         newModulesData.$id,
         {
-          ...newModulesData,
-          evalutionsPoints: newModulesData.evalutionsPoints.map((item) =>
-            JSON.stringify(item),
+          ...cleanData,
+          evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
+            JSON.stringify(item)
           ),
-          images: newModulesData.images.map((item) => JSON.stringify(item)),
-          topics: newModulesData.topics.map((item) => JSON.stringify(item)),
-        },
+          images: (cleanData.images || []).map((item) => JSON.stringify(item)),
+          topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
+        }
       );
 
       return {
         ...response,
-        evalutionsPoints: response.evalutionsPoints.map((item) =>
-          JSON.parse(item),
+        evalutionsPoints: (response.evalutionsPoints || []).map((item) =>
+          JSON.parse(item)
         ),
-        images: response.images.map((item) => JSON.parse(item)),
-        topics: response.topics.map((item) => JSON.parse(item)),
+        images: (response.images || []).map((item) => JSON.parse(item)),
+        topics: (response.topics || []).map((item) => JSON.parse(item)),
       };
     } catch (error) {
       console.error("Appwrite error: update new Data", error);
@@ -137,15 +147,11 @@ export class ModuleServices {
           modulesToAdd.push(newModuleData);
         }
       }
-      // const updatePromises = modulesToUpdate.map((newModuleData) =>
-      //   this.updateNewModulesData(newModuleData)
-      // );
 
       const addPromises = modulesToAdd.map((newModuleData) =>
         this.createNewModulesData(newModuleData),
       );
       const finalResponses = await Promise.all([
-        // ...updatePromises,
         ...addPromises,
       ]);
 

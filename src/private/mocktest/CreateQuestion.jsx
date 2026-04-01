@@ -13,7 +13,7 @@ import moduleServices from "@/appwrite/moduleServices";
 import ImageUploader from "./components/ImageUpload";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { Query } from "appwrite";
-import { selectUser } from "@/userSlice";
+import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 
 const CreateQuestion = () => {

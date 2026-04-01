@@ -12,7 +12,6 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
-import { Query } from "appwrite";
 
 import AcademicAndBatchSection from "./AcademicAndBatchSection";
 import PersonalDetailsSection from "./PersonalDetailsSection";

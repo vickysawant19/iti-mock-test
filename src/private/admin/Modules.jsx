@@ -55,7 +55,8 @@ const Modules = () => {
   });
 
   const isPractical =
-    selectedSubject && selectedSubject.subjectName.includes("PRACTICAL");
+    selectedSubject &&
+    selectedSubject.subjectName.toUpperCase().includes("PRACTICAL");
 
   const { scrollToItem, itemRefs } = useScrollToItem(
     newModules || [],
