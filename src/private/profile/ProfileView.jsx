@@ -226,8 +226,7 @@ const ProfileView = ({ profileProps }) => {
                     ? format(new Date(profile.enrolledAt), "dd MMMM yyyy")
                     : null
                 )}
-                {profile.assignedBatches &&
-                  renderField("Assigned Batches", profile.assignedBatches)}
+
               </div>
             </div>
 

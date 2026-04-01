@@ -59,6 +59,8 @@ import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.js
 import AttendanceRegister from "./private/Attendance/AttendanceRegister/AttendanceRegister.jsx";
 import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
 import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx";
+import ManageTrades from "./private/admin/ManageTrades.jsx";
+import ManageColleges from "./private/admin/ManageColleges.jsx";
 import BrowseBatches from "./private/student/BrowseBatches.jsx";
 
 const updateSW = registerSW({
@@ -126,7 +128,8 @@ const router = (
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
             <Route path="add-bulk-questions" element={<AddBulkQuestions />} />
-
+            <Route path="manage-trades" element={<ManageTrades />} />
+            <Route path="manage-colleges" element={<ManageColleges />} />
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />

@@ -18,7 +18,12 @@ import {
   FaUserPlus,
   FaUserSecret,
 } from "react-icons/fa";
-import { MdAddCard, MdGroupAdd, MdOutlineGroupAdd } from "react-icons/md";
+import { 
+  MdAddCard, 
+  MdGroupAdd, 
+  MdOutlineGroupAdd 
+} from "react-icons/md";
+import { Building2, Briefcase } from "lucide-react";
 
 export const menuConfig = [
   {
@@ -31,7 +36,8 @@ export const menuConfig = [
     children: [
       { label: "Modules", path: "/add-modules", icon: MdAddCard, requiresAuth: true },
       { label: "Questions", path: "/add-bulk-questions", icon: Group, requiresAuth: true },
-
+      { label: "Colleges", path: "/manage-colleges", icon: Building2, requiresAuth: true },
+      { label: "Trades", path: "/manage-trades", icon: Briefcase, requiresAuth: true },
     ],
   },
   {
@@ -187,6 +193,8 @@ export const pathToHeading = {
   "/manage-batch/approvals": "Student Approvals",
   "/create-question": "Create Question",
   "/manage-questions": "Manage Questions",
+  "/manage-colleges": "Manage Colleges",
+  "/manage-trades": "Manage Trades",
   "/mock-exam": "Create Mock Exam",
   "/all-mock-tests": "My Mock Tests",
   "/attain-test": "Attain Test",

@@ -21,6 +21,8 @@ import ShowModules from "./ShowModules";
 import ShowTopic from "./ShowTopic";
 
 import { useListTradesQuery } from "@/store/api/tradeApi";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
+import { Query } from "appwrite";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
@@ -60,9 +62,17 @@ const Modules = () => {
     "moduleId"
   );
 
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegeData = collegesResponse?.documents || [];
+
+  const isAdmin = profile?.role?.includes("admin") || false; 
+  const userCollege = collegeData.find(c => c.$id === profile?.collegeId);
+  const tradeIds = userCollege?.tradeIds || [];
+
   // Use RTK Query to fetch trades; skip until profile is available
+  // Filter by college tradeIds unless it's an admin
   const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
-    undefined,
+    isAdmin || !tradeIds.length ? undefined : [Query.equal("$id", tradeIds)],
     { skip: !profile }
   );
   const tradeData = tradesResponse?.documents || [];

@@ -3,14 +3,12 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TeacherStepScope({ initialData, onNext, onSkip, isSaving }) {
   const { register, handleSubmit } = useForm({
     defaultValues: {
       experience: initialData?.experience || "",
-      assignedBatches: initialData?.assignedBatches || "",
     },
   });
 
@@ -23,7 +21,7 @@ export default function TeacherStepScope({ initialData, onNext, onSkip, isSaving
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold tracking-tight text-center">Teaching Scope</CardTitle>
         <CardDescription className="text-center">
-          Optionally, provide your experience and any pre-assigned batches.
+          Optionally, provide your experience.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -37,19 +35,6 @@ export default function TeacherStepScope({ initialData, onNext, onSkip, isSaving
               placeholder="e.g. 5"
               {...register("experience")}
             />
-          </div>
-
-          <div className="space-y-2 pt-2">
-            <Label htmlFor="assignedBatches">Assigned Batches (Optional)</Label>
-            <Textarea
-              id="assignedBatches"
-              placeholder="Any specific batch names you are already handling..."
-              className="resize-none h-20"
-              {...register("assignedBatches")}
-            />
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              You'll be able to create and manage batches later in the dashboard.
-            </p>
           </div>
           
         </form>

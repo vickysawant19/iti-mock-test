@@ -53,6 +53,7 @@ import batchStudentService from "@/appwrite/batchStudentService";
 import batchService from "@/appwrite/batchService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
+import { Query } from "appwrite";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);
@@ -72,6 +73,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const isStudent = user && !isTeacher && !isAdmin;
 
   const [studentBatchesList, setStudentBatchesList] = useState([]);
+  const [teacherBatchesList, setTeacherBatchesList] = useState([]);
   
   useEffect(() => {
     const fetchStudentBatches = async () => {
@@ -91,8 +93,21 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         }
       }
     };
+    const fetchTeacherBatches = async () => {
+      if (isTeacher && user?.$id) {
+        try {
+          const batches = await batchService.listBatches([Query.equal("teacherId", [user.$id])]);
+          if (batches?.documents && batches.documents.length > 0) {
+             setTeacherBatchesList(batches.documents);
+          }
+        } catch (e) {
+          console.error("Error fetching teacher batches", e);
+        }
+      }
+    };
     fetchStudentBatches();
-  }, [isStudent, user]);
+    fetchTeacherBatches();
+  }, [isStudent, isTeacher, user]);
 
   const currentHeading = pathToHeading[location.pathname] || "";
 
@@ -241,7 +256,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
 
         {/* Batch Switcher for Teachers & Students */}
-        {isTeacher && profile?.allBatchIds?.length > 0 && (
+        {isTeacher && teacherBatchesList.length > 0 && (
           <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Active Batch
@@ -251,12 +266,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {profile.allBatchIds.map((item, idx) => {
-                  const b = typeof item === "string" ? JSON.parse(item) : item;
-                  if (!b?.batchId) return null;
+                {teacherBatchesList.map((b) => {
+                  if (!b?.$id) return null;
                   return (
-                    <SelectItem key={b.batchId || idx} value={b.batchId}>
-                      {b.batchName || "Unknown Batch"}
+                    <SelectItem key={b.$id} value={b.$id}>
+                      {b.BatchName || "Unknown Batch"}
                     </SelectItem>
                   );
                 })}

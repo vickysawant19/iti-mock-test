@@ -52,8 +52,6 @@ const BatchForm = ({ onClose }) => {
   // Fetch colleges and trades via RTK Query
   const { data: collegesResponse } = useListCollegesQuery();
   const collegesData = collegesResponse?.documents || [];
-  const { data: tradesResponse } = useListTradesQuery();
-  const tradesData = tradesResponse?.documents || [];
 
   const {
     register,
@@ -63,6 +61,16 @@ const BatchForm = ({ onClose }) => {
     watch,
     formState: { errors },
   } = useForm();
+
+  const selectedCollegeId = watch("collegeId");
+  const selectedCollege = collegesData.find((c) => c.$id === selectedCollegeId);
+  const tradeIds = selectedCollege?.tradeIds || [];
+
+  const { data: tradesResponse } = useListTradesQuery(
+    [Query.equal("$id", tradeIds)],
+    { skip: !tradeIds.length }
+  );
+  const tradesData = tradesResponse?.documents || [];
   const navigate = useNavigate();
   // Fetch location from browser
   const handleGetLocation = () => {
@@ -185,23 +193,15 @@ const BatchForm = ({ onClose }) => {
         setAllBatches((prev) => [...prev, data]);
         toast.success("Batch created successfully!");
         
-        // Link the new batch to the teacher's profile
+        // Link the new batch to the teacher's profile (Primary batchId only)
         try {
-          const newBatchObj = {
-            batchId: data.$id,
-            batchName: data.BatchName,
-          };
-          const updatedAllBatchIds = [...(profile?.allBatchIds || []), newBatchObj];
-          const payload = {
-            ...profile,
-            allBatchIds: updatedAllBatchIds,
-          };
-          // Also set as primary active batch if it's their first one
+          // Set as primary active batch if it's their first one
           if (!profile?.batchId) {
-             payload.batchId = data.$id;
+             const payload = { batchId: data.$id };
+             const updatedProfile = await userProfileService.patchUserProfile(profile.$id, payload);
+             // We merge with current profile so Redux isn't overwritten sparsely
+             dispatch(addProfile({ data: { ...profile, ...updatedProfile } }));
           }
-          const updatedProfile = await userProfileService.updateUserProfile(profile.$id, payload);
-          dispatch(addProfile({ data: updatedProfile }));
         } catch (profileErr) {
           console.error("Error linking batch to profile:", profileErr);
           toast.warning("Batch created, but failed to link to your profile.");
@@ -210,7 +210,7 @@ const BatchForm = ({ onClose }) => {
         reset();
 
         // If this was their very first batch, securely redirect them out to the batch view
-        if (!profile?.allBatchIds || profile.allBatchIds.length === 0) {
+        if (!profile?.batchId) {
            navigate("/manage-batch/view");
         }
       }

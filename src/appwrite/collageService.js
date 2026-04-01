@@ -8,9 +8,15 @@ export class CollegeService {
     this.database = appwriteService.getDatabases();
   }
 
-  async createCollege(collegeName) {
+  async createCollege(collegeData) {
+    const { collageName, location, tradeIds, isActive } = collegeData;
     try {
-      const data = { name: collegeName };
+      const data = {
+        collageName,
+        location: location || "",
+        tradeIds: tradeIds || [],
+        isActive: isActive ?? true,
+      };
       return await this.database.createDocument(
         conf.databaseId,
         conf.collegesCollectionId,

@@ -13,7 +13,21 @@ export class BatchRequestService {
     if (!batchId || !studentId) throw new Error("batchId and studentId are required");
 
     try {
-      // First, check if a pending or approved request already exists
+      // 1. Check if the user is ALREADY ACTIVE in the batch (via batchStudents)
+      const activeCheck = await this.database.listDocuments(
+        conf.databaseId,
+        conf.batchStudentsCollectionId,
+        [
+          Query.equal("batchId", batchId),
+          Query.equal("studentId", studentId),
+        ]
+      );
+
+      if (activeCheck.total > 0) {
+        return { alreadyJoined: true }; // Custom state instead of throwing error if preferred by UI
+      }
+
+      // 2. check if a pending or approved request already exists
       const existing = await this.database.listDocuments(
         conf.databaseId,
         conf.batchRequestsCollectionId,

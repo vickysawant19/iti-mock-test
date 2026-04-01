@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
+import { Query } from "appwrite";
 
 export default function TeacherStepProfessional({ initialData, onNext, isSaving }) {
-  const { control, register, handleSubmit, formState: { errors } } = useForm({
+  const { control, register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       collegeId: initialData?.collegeId || "",
       tradeId: initialData?.tradeId || "",
@@ -17,9 +18,17 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
     },
   });
 
+  const selectedCollegeId = watch("collegeId");
   const { data: collegesResponse, isLoading: isCollegesLoading } = useListCollegesQuery();
   const collegeData = collegesResponse?.documents || [];
-  const { data: tradesResponse, isLoading: isTradesLoading } = useListTradesQuery();
+
+  const selectedCollege = collegeData.find(c => c.$id === selectedCollegeId);
+  const tradeIds = selectedCollege?.tradeIds || [];
+
+  const { data: tradesResponse, isLoading: isTradesLoading } = useListTradesQuery(
+    [Query.equal("$id", tradeIds)],
+    { skip: !tradeIds.length }
+  );
   const tradeData = tradesResponse?.documents || [];
 
   const onSubmit = (data) => {

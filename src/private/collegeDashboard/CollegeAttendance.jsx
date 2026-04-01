@@ -294,7 +294,6 @@ const AttendanceDashboard = () => {
       });
 
       subscriptionRef.current = unsubscribe;
-      subscriptionActive = true;
     } catch (error) {
       console.error("❌ Subscription setup failed:", error);
     }

@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { useListTradesQuery } from "@/store/api/tradeApi";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
 import conf from "@/config/config";
 import { appwriteService } from "@/appwrite/appwriteConfig";
 
@@ -146,8 +147,18 @@ const CreateMockTest = () => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
-  // Fetch trades via RTK Query
-  const { data: tradesResponse } = useListTradesQuery();
+  // Fetch colleges and trades via RTK Query
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegeListData = collegesResponse?.documents || [];
+
+  const isAdmin = profile?.role?.includes("admin") || false;
+  const userCollege = collegeListData.find((c) => c.$id === profile?.collegeId);
+  const tradeIds = userCollege?.tradeIds || [];
+
+  const { data: tradesResponse } = useListTradesQuery(
+    isAdmin || !tradeIds.length ? undefined : [Query.equal("$id", tradeIds)],
+    { skip: !profile }
+  );
   const tradesList = tradesResponse?.documents || [];
 
   const navigate = useNavigate();

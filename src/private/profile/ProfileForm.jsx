@@ -12,6 +12,7 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
+import { Query } from "appwrite";
 
 import AcademicAndBatchSection from "./AcademicAndBatchSection";
 import PersonalDetailsSection from "./PersonalDetailsSection";
@@ -33,12 +34,14 @@ const ProfileForm = () => {
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
 
-  // Fetch colleges and trades via RTK Query
-  const { data: collegesResponse, isLoading: isCollegesLoading } =
-    useListCollegesQuery();
-  const collegeData = collegesResponse?.documents || [];
-  const { data: tradesResponse, isLoading: isTradesLoading } =
-    useListTradesQuery();
+  const selectedCollegeId = methods.watch("collegeId");
+  const selectedCollege = collegeData.find((c) => c.$id === selectedCollegeId);
+  const tradeIds = selectedCollege?.tradeIds || [];
+
+  const { data: tradesResponse, isLoading: isTradesLoading } = useListTradesQuery(
+    [Query.equal("$id", tradeIds)],
+    { skip: !tradeIds.length }
+  );
   const tradeData = tradesResponse?.documents || [];
 
   const isTeacher = user.labels.includes("Teacher");
@@ -61,7 +64,6 @@ const ProfileForm = () => {
     "collegeId",
     "batchId",
     "tradeId",
-    "allBatchIds",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -140,11 +142,6 @@ const ProfileForm = () => {
             collegeId: profileData.collegeId?.$id || profileData.collegeId,
             tradeId: profileData.tradeId?.$id || profileData.tradeId,
             specialization: Array.isArray(profileData.specialization) ? profileData.specialization.join(", ") : (profileData.specialization || ""),
-            allBatchIds: profileData.allBatchIds
-              ? profileData.allBatchIds.map((item) =>
-                  typeof item === "string" ? JSON.parse(item) : item
-                )
-              : [],
           };
           methods.reset(formattedData);
         } else {
@@ -172,9 +169,6 @@ const ProfileForm = () => {
       let updatedProfile;
       let newBatchData;
 
-      if (data.allBatchIds && Array.isArray(data.allBatchIds)) {
-        // We now pass the array of objects directly. The service handles stringification.
-      }
 
       if (
         data.BatchName &&

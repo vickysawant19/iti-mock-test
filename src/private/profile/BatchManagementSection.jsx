@@ -12,40 +12,8 @@ const BatchManagementSection = ({
   formMode,
   fetchBatchData,
 }) => {
-  const { watch, setValue, register, getValues } = useFormContext();
+  const { watch, setValue, register } = useFormContext();
   const [showNewBatchForm, setShowNewBatchForm] = useState(false);
-
-  // Initialize the allBatchIds array if it doesn't exist
-  useEffect(() => {
-    if (!watch("allBatchIds")) {
-      setValue("allBatchIds", []);
-    }
-
-    // In edit mode, ensure the current batchId is added to allBatchIds array
-    if (formMode === "edit" && watch("batchId")) {
-      const currentBatchId = watch("batchId");
-      const allBatchIds = watch("allBatchIds") || [];
-
-      // Check if current batchId exists in allBatchIds
-      const batchExists = allBatchIds.some(
-        (item) => item.batchId === currentBatchId
-      );
-
-      if (!batchExists && currentBatchId) {
-        // Find the batch name from batchesData
-        const currentBatch = batchesData.find((b) => b.$id === currentBatchId);
-        if (currentBatch) {
-          setValue("allBatchIds", [
-            ...allBatchIds,
-            {
-              batchId: currentBatchId,
-              batchName: currentBatch.BatchName,
-            },
-          ]);
-        }
-      }
-    }
-  }, [watch("batchId"), formMode, setValue, watch, batchesData]);
 
   const handleToggleBatchForm = () => {
     setShowNewBatchForm((prev) => !prev);
@@ -57,49 +25,6 @@ const BatchManagementSection = ({
       setValue("isActive", true);
     }
   };
-
-  const addBatchToList = (batchId) => {
-    if (!batchId) return;
-
-    const currentAllBatchIds = [...(watch("allBatchIds") || [])];
-
-    // Only add if not already in the array
-    if (!currentAllBatchIds.some((item) => item.batchId === batchId)) {
-      const batchToAdd = batchesData.find((b) => b.$id === batchId);
-      if (batchToAdd) {
-        const newBatchObj = {
-          batchId: batchId,
-          batchName: batchToAdd.BatchName,
-        };
-        setValue("allBatchIds", [...currentAllBatchIds, newBatchObj]);
-      }
-    }
-  };
-
-  const removeBatchFromList = (batchId) => {
-    const currentAllBatchIds = [...(watch("allBatchIds") || [])];
-    const newAllBatchIds = currentAllBatchIds.filter(
-      (item) => item.batchId !== batchId
-    );
-    setValue("allBatchIds", newAllBatchIds);
-
-    // If removing the active batch, set active to first in list or empty
-    if (watch("batchId") === batchId) {
-      setValue(
-        "batchId",
-        newAllBatchIds.length > 0 ? newAllBatchIds[0].batchId : ""
-      );
-    }
-  };
-
-  const setActiveBatch = (batchId) => {
-    setValue("batchId", batchId);
-  };
-
-  // Get all batch IDs that are already selected
-  const selectedBatchIds = (watch("allBatchIds") || []).map(
-    (item) => item.batchId
-  );
 
   return (
     <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-xs mb-6">
@@ -132,9 +57,9 @@ const BatchManagementSection = ({
               onChange={(e) => setValue("batchId", e.target.value)}
             >
               <option value="">Select Active Batch</option>
-              {(watch("allBatchIds") || []).map((batchItem) => (
-                <option key={batchItem.batchId} value={batchItem.batchId}>
-                  {batchItem.batchName}
+              {(batchesData || []).map((batchItem) => (
+                <option key={batchItem.$id} value={batchItem.$id}>
+                  {batchItem.BatchName}
                 </option>
               ))}
             </select>
@@ -154,47 +79,6 @@ const BatchManagementSection = ({
               >
                 {showNewBatchForm ? <X size={18} /> : <Users size={18} />}
               </button>
-            )}
-          </div>
-          {/* Add Batch Section */}
-          <div className="mt-4">
-            <div className="flex items-center mb-1">
-              <PlusCircle
-                size={18}
-                className="text-gray-500 dark:text-gray-400 mr-1"
-              />
-              <label className="text-gray-600 dark:text-gray-400">
-                Add Batch to List
-              </label>
-            </div>
-            <div className="flex items-center">
-              <select
-                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    addBatchToList(e.target.value);
-                    e.target.value = ""; // Reset after selection
-                  }
-                }}
-                disabled={!isFieldEditable("batchId")}
-              >
-                <option value="">Select Batch to Add</option>
-                {batchesData.length > 0 &&
-                  batchesData
-                    .filter((batch) => !selectedBatchIds.includes(batch.$id))
-                    .map((batch) => (
-                      <option key={batch.$id} value={batch.$id}>
-                        {batch.BatchName}
-                      </option>
-                    ))}
-              </select>
-            </div>
-            {isTeacher && !isUserProfile && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 italic mt-1">
-                {batchesData.length === 0
-                  ? "No batches available. Create a new batch."
-                  : "Select batches from the dropdown to add them to your list."}
-              </div>
             )}
           </div>
         </div>
@@ -337,67 +221,6 @@ const BatchManagementSection = ({
             </div>
           </div>
         )}
-      {/* Display selected batches */}
-      {(watch("allBatchIds") || []).length > 0 && (
-        <div className="mt-4">
-          <h3 className="font-medium text-gray-700 dark:text-gray-200 mb-2">
-            Selected Batches:
-          </h3>
-          <div className="space-y-2">
-            {(watch("allBatchIds") || []).map((batchItem) => {
-              const batch = batchesData.find(
-                (b) => b.$id === batchItem.batchId
-              );
-              const isActive = watch("batchId") === batchItem.batchId;
-              return (
-                <div
-                  key={batchItem.batchId}
-                  className={`flex justify-between items-center p-2 rounded-md ${
-                    isActive
-                      ? "bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-800"
-                      : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                  }`}
-                >
-                  <div className="text-sm">
-                    <span className="font-medium">{batchItem.batchName}</span>
-                    {batch?.teacherName && (
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {" | Teacher: "}
-                        {batch.teacherName}
-                      </span>
-                    )}
-                    {isActive && (
-                      <span className="ml-2 text-green-700 dark:text-green-300 font-medium">
-                        (Active)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex">
-                    {!isActive && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveBatch(batchItem.batchId)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-500 mr-2"
-                        title="Set as active batch"
-                      >
-                        <Check size={18} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeBatchFromList(batchItem.batchId)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-500"
-                      title="Remove batch"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

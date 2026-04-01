@@ -11,7 +11,9 @@ import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import ImageUploader from "./components/ImageUpload";
-import { selectUser } from "@/store/userSlice";
+import { useListCollegesQuery } from "@/store/api/collegeApi";
+import { Query } from "appwrite";
+import { selectUser } from "@/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 
 const CreateQuestion = () => {
@@ -26,8 +28,18 @@ const CreateQuestion = () => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
 
-  // Fetch trades via RTK Query
-  const { data: tradesResponse } = useListTradesQuery();
+  // Fetch colleges and trades via RTK Query
+  const { data: collegesResponse } = useListCollegesQuery();
+  const collegeListData = collegesResponse?.documents || [];
+
+  const isAdmin = profile?.role?.includes("admin") || false;
+  const userCollege = collegeListData.find((c) => c.$id === profile?.collegeId);
+  const tradeIds = userCollege?.tradeIds || [];
+
+  const { data: tradesResponse } = useListTradesQuery(
+    isAdmin || !tradeIds.length ? undefined : [Query.equal("$id", tradeIds)],
+    { skip: !profile }
+  );
   const trades = tradesResponse?.documents || [];
 
   const {

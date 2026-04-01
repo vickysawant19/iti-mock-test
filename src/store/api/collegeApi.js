@@ -20,9 +20,9 @@ export const collegeApi = createApi({
       ],
     }),
     createCollege: build.mutation({
-      queryFn: async (collegeName) => {
+      queryFn: async (collegeData) => {
         try {
-          const college = await collegeService.createCollege(collegeName);
+          const college = await collegeService.createCollege(collegeData);
           return { data: college };
         } catch (error) {
           return { error };

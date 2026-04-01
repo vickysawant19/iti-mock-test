@@ -87,7 +87,7 @@ const ProtectedRoute = () => {
 
       // ── Phase 3: Force Batch Creation (teachers only) ──────────────────────
       if (isTeacher && isOnboarded) {
-        const hasNoBatches = !profile?.allBatchIds || profile.allBatchIds.length === 0;
+        const hasNoBatches = !profile?.batchId;
         const teacherBatchWhitelistedPaths = [...whitelistedPaths, "/manage-batch/create"];
         const isTeacherBatchWhitelisted = teacherBatchWhitelistedPaths.some(
           (p) => location.pathname === p || location.pathname.startsWith(p + "/")

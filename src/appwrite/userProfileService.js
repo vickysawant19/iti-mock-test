@@ -12,7 +12,6 @@ export class UserProfileService {
   async createUserProfile({
     DOB,
     address,
-    assignedBatches,
     batchId,
     collegeId,
     email,
@@ -30,7 +29,6 @@ export class UserProfileService {
     tradeId,
     userId,
     userName,
-    allBatchIds,
     onboardingStep = 0,
     isProfileComplete = false,
   }) {
@@ -38,7 +36,6 @@ export class UserProfileService {
       const userProfile = {
         DOB: DOB || null,
         address: address || null,
-        assignedBatches: assignedBatches || null,
         batchId: batchId || null,
         collegeId: collegeId || null,
         email: email || null,
@@ -56,7 +53,6 @@ export class UserProfileService {
         tradeId: tradeId || null,
         userId: userId || null,
         userName: userName || null,
-        allBatchIds: allBatchIds ? (typeof allBatchIds === "string" ? allBatchIds : JSON.stringify(allBatchIds)) : "[]",
         onboardingStep,
         isProfileComplete,
       };
@@ -68,16 +64,7 @@ export class UserProfileService {
         userProfile,
       );
 
-      const parsedBatches = () => {
-        try {
-          return response?.allBatchIds ? JSON.parse(response.allBatchIds) : [];
-        } catch(e) { return []; }
-      };
-
-      return {
-        ...response,
-        allBatchIds: parsedBatches(),
-      };
+      return response;
     } catch (error) {
       console.error("Appwrite error: creating user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -117,7 +104,6 @@ export class UserProfileService {
     const {
       DOB,
       address,
-      assignedBatches,
       batchId,
       collegeId,
       email,
@@ -135,7 +121,6 @@ export class UserProfileService {
       userName,
       role,
       registerId,
-      allBatchIds,
       onboardingStep,
       isProfileComplete,
       isApproved,
@@ -150,7 +135,6 @@ export class UserProfileService {
     // String / nullable fields — only write when key is present in data object
     if ("DOB" in data) updatedData.DOB = DOB || null;
     if ("address" in data) updatedData.address = address || null;
-    if ("assignedBatches" in data) updatedData.assignedBatches = assignedBatches || null;
     if ("batchId" in data) updatedData.batchId = batchId || null;
     if ("collegeId" in data) updatedData.collegeId = collegeId || null;
     if ("email" in data) updatedData.email = email || null;
@@ -174,12 +158,7 @@ export class UserProfileService {
     if ("role" in data) updatedData.role = role || null;
     if ("registerId" in data) updatedData.registerId = registerId || null;
 
-    // Appwrite stores allBatchIds as a single JSON string (max 5000 chars)
-    if ("allBatchIds" in data) {
-      updatedData.allBatchIds = data.allBatchIds 
-        ? (typeof data.allBatchIds === "string" ? data.allBatchIds : JSON.stringify(data.allBatchIds))
-        : "[]";
-    }
+
 
     // Boolean / approval fields — preserve only when explicitly provided
     if (onboardingStep !== undefined) updatedData.onboardingStep = onboardingStep;
@@ -193,16 +172,7 @@ export class UserProfileService {
         updatedData,
       );
 
-      const parsedBatches = () => {
-        try {
-          return response?.allBatchIds ? JSON.parse(response.allBatchIds) : [];
-        } catch(e) { return []; }
-      };
-
-      return {
-        ...response,
-        allBatchIds: parsedBatches(),
-      };
+      return response;
     } catch (error) {
       console.error("Appwrite error: updating user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -222,13 +192,7 @@ export class UserProfileService {
       throw new Error("patchUserProfile: profileId and fields are required.");
     }
 
-    // Re-serialize allBatchIds if present
     const payload = { ...fields };
-    if ("allBatchIds" in payload) {
-      payload.allBatchIds = payload.allBatchIds
-        ? (typeof payload.allBatchIds === "string" ? payload.allBatchIds : JSON.stringify(payload.allBatchIds))
-        : "[]";
-    }
 
     try {
       const response = await this.database.updateDocument(
@@ -238,16 +202,7 @@ export class UserProfileService {
         payload,
       );
 
-      const parsedBatches = () => {
-        try {
-          return response?.allBatchIds ? JSON.parse(response.allBatchIds) : [];
-        } catch(e) { return []; }
-      };
-
-      return {
-        ...response,
-        allBatchIds: parsedBatches(),
-      };
+      return response;
     } catch (error) {
       console.error("Appwrite error: patchUserProfile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -275,13 +230,7 @@ export class UserProfileService {
         [...query],
       );
 
-      return userProfiles.documents.map(doc => ({
-        ...doc,
-        allBatchIds: (() => {
-          try { return doc.allBatchIds ? JSON.parse(doc.allBatchIds) : []; }
-          catch(e) { return []; }
-        })()
-      }));
+      return userProfiles.documents;
     } catch (error) {
       console.error("Appwrite error: get batch user profiles:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -301,16 +250,7 @@ export class UserProfileService {
       }
 
       const profile = userProfile.documents[0];
-      const parsedBatches = () => {
-        try {
-          return profile?.allBatchIds ? JSON.parse(profile.allBatchIds) : [];
-        } catch(e) { return []; }
-      };
-
-      return {
-        ...profile,
-        allBatchIds: parsedBatches(),
-      }; // Assuming user profile is unique per userId
+      return profile; // Assuming user profile is unique per userId
     } catch (error) {
       console.log("Appwrite error: get user profile:", error);
       return false;
