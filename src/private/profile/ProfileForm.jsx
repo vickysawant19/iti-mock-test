@@ -217,10 +217,6 @@ const ProfileForm = () => {
           // Guarantee that teachers saving their profile are marked as complete
           data.isProfileComplete = true;
           data.onboardingStep = 4;
-          if (existingProfile.approvalStatus !== "approved") {
-            data.isApproved = true;
-            data.approvalStatus = "approved";
-          }
         }
         updatedProfile = await userProfileService.updateUserProfile(
           existingProfile.$id,

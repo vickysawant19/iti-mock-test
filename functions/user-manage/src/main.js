@@ -7,7 +7,9 @@ const validateUserId = (userId) => {
   }
   // Appwrite IDs typically follow a specific format (20 alphanumeric characters)
   if (!/^[0-9a-zA-Z]{20}$/.test(userId)) {
-    throw new Error('Invalid userId format: must be 20 characters long and alphanumeric');
+    throw new Error(
+      'Invalid userId format: must be 20 characters long and alphanumeric'
+    );
   }
 };
 
@@ -15,13 +17,15 @@ const validateLabels = (labels) => {
   if (!Array.isArray(labels)) {
     throw new Error('Labels must be an array');
   }
-  
+
   // Check if all elements are strings and non-empty
-  const invalidLabels = labels.filter(label => typeof label !== 'string' || !label.trim());
+  const invalidLabels = labels.filter(
+    (label) => typeof label !== 'string' || !label.trim()
+  );
   if (invalidLabels.length > 0) {
     throw new Error('All labels must be non-empty strings');
   }
-  
+
   // Check for duplicate labels
   const uniqueLabels = new Set(labels);
   if (uniqueLabels.size !== labels.length) {
@@ -77,20 +81,25 @@ const formatPhoneNumber = (countryCode, phone) => {
   if (!countryCode || !phone) {
     return '';
   }
-  
+
   // Clean country code (remove + if present)
   const cleanCountryCode = countryCode.replace(/^\+/, '');
   // Clean phone number (remove any non-digits)
   const cleanPhone = phone.replace(/\D/g, '');
-  
+
   return `+${cleanCountryCode}${cleanPhone}`;
 };
 
 import migrateAttendance from './migrateAttendance.js';
 
 export default async ({ req, res, log, error }) => {
+  const debugLogs = [];
+  const trace = (msg) => {
+    if (log) log(msg); // Original Appwrite log
+    debugLogs.push(msg);
+  };
+
   try {
-    
     if (!req.bodyJson) {
       throw new Error('Request body is required');
     }
@@ -99,10 +108,13 @@ export default async ({ req, res, log, error }) => {
     if (!action) {
       throw new Error('Action is required');
     }
-    
+
     // Validate Appwrite API key header and environment variables
     validateAppwriteKey(req.headers['x-appwrite-key']);
-    if (!process.env.APPWRITE_FUNCTION_API_ENDPOINT || !process.env.APPWRITE_FUNCTION_PROJECT_ID) {
+    if (
+      !process.env.APPWRITE_FUNCTION_API_ENDPOINT ||
+      !process.env.APPWRITE_FUNCTION_PROJECT_ID
+    ) {
       throw new Error('Missing required environment variables');
     }
 
@@ -118,13 +130,14 @@ export default async ({ req, res, log, error }) => {
     switch (action) {
       case 'createAccount': {
         // Expecting userId, email, password, name, countryCode, phone and labels
-        const { userId, email, password, name, countryCode, phone, labels } = req.bodyJson;
-        
+        const { userId, email, password, name, countryCode, phone, labels } =
+          req.bodyJson;
+
         // Validate required fields
         validateEmail(email);
         validatePassword(password);
         validateLabels(labels);
-        
+
         // Format phone number with country code if both are provided
         let formattedPhone = '';
         if (countryCode && phone) {
@@ -135,20 +148,22 @@ export default async ({ req, res, log, error }) => {
           // If only phone is provided without country code, use it as is (assuming it includes country code)
           formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
         }
-        
+
         // Create an account using the provided or a unique ID.
         // Convert empty strings to undefined to avoid strict Appwrite validation errors.
         const newUserResponse = await users.create(
-          userId || ID.unique(), 
-          email, 
-          formattedPhone || undefined, 
-          password, 
+          userId || ID.unique(),
+          email,
+          formattedPhone || undefined,
+          password,
           name || undefined
         );
-        
+
         // Update labels for the created account
         response = await users.updateLabels(newUserResponse.$id, labels);
-        log(`Account created for user ${newUserResponse.$id} with phone: ${formattedPhone}`);
+        log(
+          `Account created for user ${newUserResponse.$id} with phone: ${formattedPhone}`
+        );
         break;
       }
       case 'deleteAccount': {
@@ -174,14 +189,18 @@ export default async ({ req, res, log, error }) => {
         const { userId, labels: newLabels } = req.bodyJson;
         validateUserId(userId);
         validateLabels(newLabels);
-        
+
         // Retrieve the current user data to get existing labels
         const userData = await users.get(userId);
         // Assume that userData.labels is an array of strings; if not present, use an empty array
-        const existingLabels = Array.isArray(userData.labels) ? userData.labels : [];
-        
+        const existingLabels = Array.isArray(userData.labels)
+          ? userData.labels
+          : [];
+
         // Merge new labels with the existing ones while ensuring uniqueness
-        const mergedLabels = Array.from(new Set([...existingLabels, ...newLabels]));
+        const mergedLabels = Array.from(
+          new Set([...existingLabels, ...newLabels])
+        );
         response = await users.updateLabels(userId, mergedLabels);
         log(`Labels added for user ${userId}`);
         break;
@@ -192,23 +211,78 @@ export default async ({ req, res, log, error }) => {
         break;
       }
       case 'getUserIdByEmail': {
-        // Expecting an email in the request
-        const { email } = req.bodyJson;
-        validateEmail(email);
-        
-        // Use a query to search for users by email.
-        // The query syntax here assumes Appwrite's standard search syntax.
-        // For example: 'email='+email
-       
-        const userList = await users.list([Query.equal("email", email)]);
-        // Check if any user is found
-        if (userList.total && userList.total > 0 && Array.isArray(userList.users)) {
-          // Return the first matching user's id
-          const user = userList.users[0];
-          response = { $id: user.$id, name: user.name, email: user.email, phone: user.phone };
-        } else {
-          throw new Error('No user found with the given email');
+        // Now also accepts a name despite the property name 'email'
+        const emailOrName = req.bodyJson.searchString || req.bodyJson.email;
+        trace(`[getUserIdByEmail] Searching for user: ${emailOrName}`);
+
+        if (!emailOrName || typeof emailOrName !== 'string') {
+          throw new Error('Invalid search string');
         }
+
+        // Search using robust startsWith matching to bypass tokenization limitations
+        trace(`[getUserIdByEmail] Executing strict structured Appwrite auth list queries...`);
+        const [emailList, nameList] = await Promise.all([
+          users.list([Query.startsWith("email", emailOrName), Query.limit(1)]).catch(() => ({ total: 0, users: [] })),
+          users.list([Query.startsWith("name", emailOrName), Query.limit(1)]).catch(() => ({ total: 0, users: [] }))
+        ]);
+
+        let user = null;
+        if (emailList.total > 0) {
+          user = emailList.users[0];
+        } else if (nameList.total > 0) {
+          user = nameList.users[0];
+        }
+
+        if (user) {
+          trace(`[getUserIdByEmail] User found: ${user.$id} ${user.email}`);
+          response = {
+            $id: user.$id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+          };
+        } else {
+          trace(`[getUserIdByEmail] Error: No user found`);
+          throw new Error('No user found with the given search text');
+        }
+        break;
+      }
+      case 'searchUsers': {
+        const { searchTerm } = req.bodyJson;
+        trace(`[searchUsers] Triggered with search term: ${searchTerm}`);
+
+        if (!searchTerm || typeof searchTerm !== 'string') {
+          throw new Error('Invalid searchTerm: must be a non-empty string');
+        }
+
+        // Instead of the native search parameter which tokenizes poorly for emails, use strict startsWith
+        trace(`[searchUsers] Running structured queries for name and email...`);
+        const [emailList, nameList] = await Promise.all([
+          users.list([Query.startsWith("email", searchTerm), Query.limit(10)]).catch(() => ({ total: 0, users: [] })),
+          users.list([
+            Query.startsWith("name", searchTerm), 
+            Query.limit(10)
+          ]).catch(() => ({ total: 0, users: [] }))
+        ]);
+
+        trace(`[searchUsers] Found ${emailList.total} email matches and ${nameList.total} name matches.`);
+        
+        // Merge without duplicates based on $id
+        const userMap = new Map();
+        [...(emailList.users || []), ...(nameList.users || [])].forEach((user) => {
+          userMap.set(user.$id, {
+            $id: user.$id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+          });
+        });
+
+        response = Array.from(userMap.values());
+        trace(
+          `[searchUsers] Returning ${response.length} unified unique results.`
+        );
+
         break;
       }
       default: {
@@ -218,14 +292,18 @@ export default async ({ req, res, log, error }) => {
 
     return res.json({
       success: true,
-      data: response
+      data: response,
+      logs: debugLogs
     });
-    
   } catch (err) {
-    error(`Error performing action: ${err}`);
-    return res.json({
-      success: false,
-      error: err.message
-    }, 400);
+    if (error) error(`Error performing action: ${err}`);
+    return res.json(
+      {
+        success: false,
+        error: err.message,
+        logs: debugLogs
+      },
+      400
+    );
   }
 };

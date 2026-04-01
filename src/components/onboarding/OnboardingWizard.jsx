@@ -36,14 +36,7 @@ export default function OnboardingWizard() {
 
       // If already approved/complete → go straight to dash
       if (existingProfile.isProfileComplete || existingProfile.onboardingStep >= 4) {
-        if (existingProfile.approvalStatus === "rejected") {
-          navigate("/approval-rejected");
-        } else if (existingProfile.isApproved) {
-          navigate("/dash");
-        } else {
-          // pending or no status yet
-          navigate("/approval-pending");
-        }
+        navigate("/dash");
       } else if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep < 4) {
         setCurrentStep(existingProfile.onboardingStep);
       }
@@ -113,9 +106,9 @@ export default function OnboardingWizard() {
   };
 
   const finishOnboarding = async () => {
-    // Mark profile complete and set to pending approval
+    // Save progress without touching global approval states
     const ok = await saveProfileProgress(
-      { isApproved: false, approvalStatus: "pending" },
+      {},
       true
     );
     
@@ -128,7 +121,7 @@ export default function OnboardingWizard() {
       }
     }
     
-    if (ok) navigate("/approval-pending");
+    if (ok) navigate("/dash");
   };
 
   if (!user) return null; // Or a loader

@@ -117,7 +117,6 @@ const AttendanceRegister = () => {
           "start_date",
           "end_date",
           "tradeId",
-          "studentIds",
         ]),
       ]);
 

@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { selectUser } from "@/store/userSlice";
 import batchService from "@/appwrite/batchService";
 import PendingStudentsList from "./components/PendingStudentsList";
+import TargetedStudentsList from "./components/TargetedStudentsList";
 import batchRequestService from "@/appwrite/batchRequestService";
 import {
   Select,
@@ -49,6 +50,13 @@ const TABS = [
     description: "Students waiting for your review",
   },
   {
+    id: "targeted",
+    label: "Unrequested",
+    icon: Users,
+    color: "blue",
+    description: "Students marked for this batch without a request",
+  },
+  {
     id: "approved",
     label: "Approved",
     icon: CheckCircle,
@@ -73,6 +81,15 @@ const COLOR_MAP = {
     header:
       "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-200 dark:border-amber-800/40",
     icon: "text-amber-500",
+  },
+  blue: {
+    tab: "bg-blue-500 text-white shadow-blue-200 dark:shadow-blue-900/40",
+    inactive:
+      "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+    badge: "bg-blue-500",
+    header:
+      "from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800/40",
+    icon: "text-blue-500",
   },
   green: {
     tab: "bg-green-500 text-white shadow-green-200 dark:shadow-green-900/40",
@@ -307,11 +324,18 @@ export default function StudentApprovalDashboard() {
         {/* ── Student List ────────────────────────────────────────────────────── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6">
           {selectedBatch ? (
-            <PendingStudentsList
-              key={activeTab + selectedBatch}
-              status={activeTab}
-              selectedBatch={selectedBatch}
-            />
+            activeTab === "targeted" ? (
+              <TargetedStudentsList
+                key={activeTab + selectedBatch}
+                selectedBatch={selectedBatch}
+              />
+            ) : (
+              <PendingStudentsList
+                key={activeTab + selectedBatch}
+                status={activeTab}
+                selectedBatch={selectedBatch}
+              />
+            )
           ) : (
             <div className="py-12 text-center text-slate-500">Please select a batch to view students.</div>
           )}

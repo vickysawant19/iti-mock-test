@@ -18,6 +18,7 @@ import { Query } from "appwrite";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import userProfileService from "@/appwrite/userProfileService";
+import studentSearchService from "@/appwrite/studentSearchService";
 import { toast } from "react-toastify";
 import CustomInput from "@/components/components/CustomInput";
 
@@ -32,6 +33,7 @@ const AddStudents = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingBatches, setIsLoadingBatches] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false); // New loading state for user creation
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get the logged-in teacher's ID to record who approved the student
   const currentUser = useSelector(selectUser);
@@ -106,71 +108,20 @@ const AddStudents = () => {
     }
   }, [selectedCollegeId, selectedTradeId]);
 
-  // Handler for searching a user
   const onSearchUser = async (data) => {
     setIsSearching(true);
     setUserSearchResult(null);
     resetProfileForm();
 
     try {
-      const func = appwriteService.getFunctions();
-      const { responseBody } = await func.createExecution(
-        "678e7277002e1d5c9b9b",
-        JSON.stringify({ action: "getUserIdByEmail", email: data.searchEmail })
-      );
+      // Use the unified search service finding multiple users
+      const results = await studentSearchService.searchStudents(data.searchString);
 
-      const response = JSON.parse(responseBody);
-
-      if (response.data) {
-        setUserSearchResult(response.data);
-
-        // Check if user has existing profile
-        try {
-          const userProfile = await userProfileService.getUserProfile(
-            response.data.$id
-          );
-          if (userProfile) {
-            // Pre-fill old profile form with user data
-            setExsistingProfile(userProfile);
-            resetProfileForm({
-              ...userProfile,
-              DOB: userProfile.DOB?.split("T")[0] || "",
-              enrolledAt: userProfile.enrolledAt?.split("T")[0] || "",
-              role: userProfile.role || ["Student"],
-              status: "Active",
-              enrollmentStatus: "Active",
-              isActive: true,
-            });
-          } else {
-            // Pre-fill new profile form with user data
-            const user = response.data;
-            resetProfileForm({
-              userId: user.$id,
-              userName: user.name || "",
-              email: user.email || "",
-              phone: user.phone || "",
-              role: user.labels || ["Student"],
-              status: "Active",
-              enrollmentStatus: "Active",
-              isActive: true,
-            });
-          }
-        } catch (profileError) {
-          // If profile doesn't exist, continue with new profile setup
-          const user = response.data;
-          resetProfileForm({
-            userId: user.$id,
-            userName: user.name || "",
-            email: user.email || "",
-            phone: user.phone || "",
-            role: user.labels || ["Student"],
-            status: "Active",
-            enrollmentStatus: "Active",
-            isActive: true,
-          });
-        }
+      if (results && results.length > 0) {
+        // Just store the results array
+        setUserSearchResult(results);
       } else {
-        toast.info("No user found with that email address");
+        toast.info("No users found matching that name or email");
       }
     } catch (error) {
       console.error("Error searching for user:", error);
@@ -178,6 +129,74 @@ const AddStudents = () => {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSelectUser = async (userResult) => {
+    // If the search service already determined they have no profile, skip the network request
+    if (userResult.noProfile) {
+      setExsistingProfile(null);
+      resetProfileForm({
+        userId: userResult.$id || userResult.userId,
+        userName: userResult.userName || userResult.name || "",
+        email: userResult.email || "",
+        phone: userResult.phone || "",
+        role: userResult.labels || ["Student"],
+        status: "Active",
+        enrollmentStatus: "Active",
+        isActive: true,
+      });
+      setShowProfileForm(true);
+      return;
+    }
+
+    // Try fetching full user profile for existing profiles
+    try {
+      // Prioritize userId as ...existingProfile overwrites $id with the DB Document ID!
+      const userProfile = await userProfileService.getUserProfile(
+        userResult.userId || userResult.$id
+      );
+
+      if (userProfile && typeof userProfile === "object") {
+        // Pre-fill old profile form with user data
+        setExsistingProfile(userProfile);
+        resetProfileForm({
+          ...userProfile,
+          DOB: userProfile.DOB?.split("T")[0] || "",
+          enrolledAt: userProfile.enrolledAt?.split("T")[0] || "",
+          role: userProfile.role || ["Student"],
+          status: "Active",
+          enrollmentStatus: "Active",
+          isActive: true,
+        });
+      } else {
+        // Fallback for when profile returns false/null despite being marked as existing
+        setExsistingProfile(null);
+        resetProfileForm({
+          userId: userResult.userId || userResult.$id,
+          userName: userResult.userName || userResult.name || "",
+          email: userResult.email || "",
+          phone: userResult.phone || "",
+          role: userResult.labels || ["Student"],
+          status: "Active",
+          enrollmentStatus: "Active",
+          isActive: true,
+        });
+      }
+    } catch (profileError) {
+      // Fallback if anything goes wrong natively
+      setExsistingProfile(null);
+      resetProfileForm({
+        userId: userResult.userId || userResult.$id,
+        userName: userResult.userName || userResult.name || "",
+        email: userResult.email || "",
+        phone: userResult.phone || "",
+        role: userResult.labels || ["Student"],
+        status: "Active",
+        enrollmentStatus: "Active",
+        isActive: true,
+      });
+    }
+    setShowProfileForm(true);
   };
 
   // Handler for creating a new user
@@ -194,7 +213,7 @@ const AddStudents = () => {
           ...data,
           // Add country code if provided, default to India (+91)
           countryCode: data.countryCode || "91",
-        })
+        }),
       );
 
       const response = JSON.parse(responseBody);
@@ -246,7 +265,7 @@ const AddStudents = () => {
       const missingFields = requiredFields.filter((field) => !data[field]);
       if (missingFields.length > 0) {
         toast.error(
-          `Please fill in all required fields: ${missingFields.join(", ")}`
+          `Please fill in all required fields: ${missingFields.join(", ")}`,
         );
         return;
       }
@@ -260,15 +279,15 @@ const AddStudents = () => {
       // Record the teacher's userId as the approver.
       const approvedData = {
         ...data,
-        isApproved: true,
-        approvalStatus: "approved",
-        approvedBy: currentUser?.$id || null,
         isProfileComplete: true,
         onboardingStep: 4,
       };
 
       if (existingProfile) {
-        await userProfileService.updateUserProfile(existingProfile.$id, approvedData);
+        await userProfileService.updateUserProfile(
+          existingProfile.$id,
+          approvedData,
+        );
         toast.success("Student profile updated successfully");
       } else {
         await userProfileService.createUserProfile(approvedData);
@@ -346,28 +365,28 @@ const AddStudents = () => {
           >
             <div className="flex-grow">
               <label className="block text-gray-600 mb-1 dark:text-gray-300">
-                Email Address <span className="text-red-500">*</span>
+                Email Address or Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  type="email"
-                  placeholder="Enter email address"
+                  type="text"
+                  placeholder="Enter email address or name"
                   disabled={isSearching}
-                  className="pl-10 block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  {...registerSearch("searchEmail", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
+                  className={`pl-10 block w-full border ${
+                    searchErrors.searchString
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white`}
+                  {...registerSearch("searchString", {
+                    required: "Email or name is required",
                   })}
                 />
               </div>
-              {searchErrors.searchEmail && (
+              {searchErrors.searchString && (
                 <p className="mt-1 text-red-500 text-sm flex items-center">
                   <AlertCircle className="w-4 h-4 mr-1" />
-                  {searchErrors.searchEmail.message}
+                  {searchErrors.searchString.message}
                 </p>
               )}
             </div>
@@ -395,29 +414,41 @@ const AddStudents = () => {
                 </p>
               </div>
             </div>
-          ) : userSearchResult ? (
-            <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-lg dark:bg-green-900/20 dark:border-green-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">
-                    {userSearchResult.name}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {userSearchResult.email}
-                  </p>
-                  {userSearchResult.phone && (
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {userSearchResult.phone}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowProfileForm(true)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 flex items-center"
-                >
-                  <Check className="w-5 h-5 mr-2" />
-                  Select & Continue
-                </button>
+          ) : userSearchResult && userSearchResult.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              <h3 className="font-medium text-gray-700 dark:text-gray-200">
+                Found {userSearchResult.length} matches:
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userSearchResult.map((result) => (
+                  <div key={result.$id || result.userId} className="p-4 border border-green-200 bg-green-50 rounded-lg dark:bg-green-900/20 dark:border-green-700 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h3 className="font-medium text-gray-800 dark:text-white flex items-center gap-2">
+                        {result.userName || result.name || "Unknown"}
+                        {result.noProfile && (
+                          <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full">
+                            No Profile
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {result.email}
+                      </p>
+                      {result.phone && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {result.phone}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleSelectUser(result)}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 flex items-center justify-center font-medium"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Select User
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           ) : null}

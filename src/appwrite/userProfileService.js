@@ -33,10 +33,6 @@ export class UserProfileService {
     allBatchIds,
     onboardingStep = 0,
     isProfileComplete = false,
-    // Approval fields – default to pending for all new profiles
-    isApproved = false,
-    approvalStatus = "pending",
-    approvedBy = null,
   }) {
     try {
       const userProfile = {
@@ -63,9 +59,6 @@ export class UserProfileService {
         allBatchIds: allBatchIds ? (typeof allBatchIds === "string" ? allBatchIds : JSON.stringify(allBatchIds)) : "[]",
         onboardingStep,
         isProfileComplete,
-        isApproved,
-        approvalStatus,
-        approvedBy: approvedBy || null,
       };
 
       const response = await this.database.createDocument(
@@ -88,6 +81,28 @@ export class UserProfileService {
     } catch (error) {
       console.error("Appwrite error: creating user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
+
+  /**
+   * Creates a minimal stub profile for a user who exists in Auth but not in userProfile.
+   * Useful when a teacher adds/requests a student who hasn't completed onboarding.
+   */
+  async createStubProfile(userId, name, email) {
+    try {
+      return await this.createUserProfile({
+        userId,
+        userName: name || "Unknown User",
+        email: email,
+        isProfileComplete: false,
+        onboardingStep: 0,
+        role: ["Student"], // Default role
+        status: "Active",
+        enrollmentStatus: "Pending", // Needs full profile to be fully active
+      });
+    } catch (error) {
+      console.error("Appwrite error: creating stub profile:", error);
+      throw error;
     }
   }
 
@@ -169,9 +184,6 @@ export class UserProfileService {
     // Boolean / approval fields — preserve only when explicitly provided
     if (onboardingStep !== undefined) updatedData.onboardingStep = onboardingStep;
     if (isProfileComplete !== undefined) updatedData.isProfileComplete = isProfileComplete;
-    if (isApproved !== undefined) updatedData.isApproved = isApproved;
-    if (approvalStatus !== undefined) updatedData.approvalStatus = approvalStatus;
-    if (approvedBy !== undefined) updatedData.approvedBy = approvedBy || null;
 
     try {
       const response = await this.database.updateDocument(
@@ -306,125 +318,25 @@ export class UserProfileService {
   }
 
   /**
-   * Approve a student — called by a teacher.
-   * Uses patchUserProfile so only approval fields are touched.
-   *
-   * @param {string} profileId  - profile document $id
-   * @param {string} teacherId  - approving teacher's userId
-   * @param {string} [batchId]  - confirmed batch (teacher-selected)
+   * Get all user profiles that have a specific batch target configured.
+   * Useful for finding targeted students who haven't generated requests.
    */
-  async approveStudent(profileId, teacherId, batchId) {
-    const payload = {
-      isApproved: true,
-      approvalStatus: "approved",
-      approvedBy: teacherId,
-      enrollmentStatus: "Active",
-      status: "Active",
-    };
-    
-    // Fetch profile early so we can synchronize to the batch
-    const profile = await this.database.getDocument(conf.databaseId, conf.userProfilesCollectionId, profileId);
-    
-    const targetBatchId = batchId || profile.batchId;
-    if (targetBatchId) payload.batchId = targetBatchId;
-
-    const result = await this.patchUserProfile(profileId, payload);
-    
-    return result;
-  }
-
-  /**
-   * Reject a student — called by a teacher.
-   * Uses patchUserProfile so only approval fields are touched.
-   */
-  async rejectStudent(profileId, teacherId) {
-    // Fetch profile to untether from the batch specifically
-    const profile = await this.database.getDocument(conf.databaseId, conf.userProfilesCollectionId, profileId);
-    
-    const result = await this.patchUserProfile(profileId, {
-      isApproved: false,
-      approvalStatus: "rejected",
-      approvedBy: teacherId,
-      enrollmentStatus: "not_enrolled",
-      status: "Inactive",
-    });
-    
-    return result;
-  }
-
-  /**
-   * Re-submit approval request — called by a rejected student who has edited details.
-   * Uses patchUserProfile so only approval fields are touched.
-   */
-  async reRequestApproval(profileId) {
-    return this.patchUserProfile(profileId, {
-      isApproved: false,
-      approvalStatus: "pending",
-      approvedBy: null,
-    });
-  }
-
-  /**
-   * Reassign a student to a different batch after approval.
-   * Only updates batchId — does not change approval status.
-   *
-   * @param {string} profileId  - profile document $id
-   * @param {string} newBatchId - new batch to assign
-   * @param {string} teacherId  - teacher performing the reassignment
-   */
-  async reassignStudentBatch(profileId, newBatchId, teacherId) {
-    if (!newBatchId) throw new Error("reassignStudentBatch: newBatchId is required.");
-    
-    const profile = await this.database.getDocument(conf.databaseId, conf.userProfilesCollectionId, profileId);
-    
-    const result = await this.patchUserProfile(profileId, {
-      batchId: newBatchId,
-      approvedBy: teacherId, // Update who last touched this
-    });
-
-    return result;
-  }
-
-  /**
-   * Get students by approvalStatus scoped to a teacher's colleges & trades.
-   *
-   * Instead of filtering by batchId (which pending students don't have confirmed),
-   * we filter by the set of collegeIds and tradeIds that appear in the teacher's batches.
-   * This is the correct decoupled approach.
-   *
-   * @param {string}   status     - "pending" | "approved" | "rejected"
-   * @param {string[]} collegeIds - from teacher's batches
-   * @param {string[]} tradeIds   - from teacher's batches
-   */
-  async getStudentsByApprovalStatus(status, collegeIds, tradeIds) {
-    if (!collegeIds?.length || !tradeIds?.length) return [];
+  async getProfilesByBatchId(batchId) {
+    if (!batchId) return [];
     try {
-      const queries = [
-        Query.equal("approvalStatus", status),
-        Query.equal("collegeId", collegeIds),
-        Query.equal("tradeId", tradeIds),
-        Query.limit(100),
-      ];
-      const res = await this.database.listDocuments(
+      const response = await this.database.listDocuments(
         conf.databaseId,
         conf.userProfilesCollectionId,
-        queries
+        [
+          Query.equal("batchId", batchId),
+          Query.limit(100)
+        ]
       );
-      return res.documents.map((doc) => ({
-        ...doc,
-        allBatchIds: (() => {
-          try { return doc.allBatchIds ? JSON.parse(doc.allBatchIds) : []; }
-          catch(e) { return []; }
-        })(),
-      }));
+      return response.documents;
     } catch (error) {
-      console.error(`Appwrite error: getStudentsByApprovalStatus(${status}):`, error);
+      console.error(`Appwrite error: getProfilesByBatchId(${batchId}):`, error);
       return [];
     }
-  }
-
-  async getPendingStudents(collegeIds, tradeIds) {
-    return this.getStudentsByApprovalStatus("pending", collegeIds, tradeIds);
   }
 }
 

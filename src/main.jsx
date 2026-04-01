@@ -44,8 +44,7 @@ import ResetPass from "./Auth/ResetPass.jsx";
 import ChangePassword from "./Auth/changePassword.jsx";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard.jsx";
 import TeacherOnboardingWizard from "./components/onboarding/teacher/TeacherOnboardingWizard.jsx";
-import ApprovalPending from "./pages/ApprovalPending.jsx";
-import ApprovalRejected from "./pages/ApprovalRejected.jsx";
+import BatchEnrollmentStatus from "./pages/BatchEnrollmentStatus.jsx";
 import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
 
 import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
@@ -83,8 +82,7 @@ const router = (
         <Route element={<ProtectedRoute />}>
           <Route path="onboarding" element={<OnboardingWizard />} />
           <Route path="onboarding/teacher" element={<TeacherOnboardingWizard />} />
-          <Route path="approval-pending" element={<ApprovalPending />} />
-          <Route path="approval-rejected" element={<ApprovalRejected />} />
+          <Route path="batch-enroll" element={<BatchEnrollmentStatus />} />
           <Route path="dash" element={<Dash />} />
           <Route path="browse-batches" element={<BrowseBatches />} />
           <Route path="change-password" element={<ChangePassword />} />

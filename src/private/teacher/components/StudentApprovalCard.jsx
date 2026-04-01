@@ -80,8 +80,7 @@ export default function StudentApprovalCard({
       await batchRequestService.updateRequestStatus(student.requestId, "approved");
       await batchStudentService.addStudent(selectedBatchContext, student.userId);
       
-      // Backward compatibility update
-      await userProfileService.approveStudent(student.$id, teacherId, selectedBatchContext);
+      // Backward compatibility update removed as per new architecture
 
       toast.success(`${student.userName || "Student"} approved!`);
       onApproved?.(student.requestId);
@@ -97,8 +96,7 @@ export default function StudentApprovalCard({
     try {
       await batchRequestService.updateRequestStatus(student.requestId, "rejected");
       
-      // Backward compatibility
-      await userProfileService.rejectStudent(student.$id, teacherId);
+      // Backward compatibility update removed as per new architecture
 
       toast.info(`${student.userName || "Student"} request rejected.`);
       onRejected?.(student.requestId);
@@ -114,8 +112,7 @@ export default function StudentApprovalCard({
     try {
        await batchRequestService.updateRequestStatus(student.requestId, "approved");
        await batchStudentService.addStudent(selectedBatchContext, student.userId);
-       
-       await userProfileService.approveStudent(student.$id, teacherId, selectedBatchContext);
+       // Backward compatibility update removed
 
       toast.success(`${student.userName || "Student"} re-approved!`);
       onReApproved?.(student.requestId);

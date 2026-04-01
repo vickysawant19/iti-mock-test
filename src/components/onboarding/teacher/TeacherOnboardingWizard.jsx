@@ -70,8 +70,7 @@ export default function TeacherOnboardingWizard() {
       };
 
       if (isComplete) {
-        payload.isApproved = true;
-        payload.approvalStatus = "approved";
+        // Teacher profile complete flag
       }
 
       let updatedProfile;
@@ -105,7 +104,7 @@ export default function TeacherOnboardingWizard() {
   };
 
   const finishOnboarding = async () => {
-    const ok = await saveProfileProgress({ isApproved: true, approvalStatus: "approved" }, true);
+    const ok = await saveProfileProgress({}, true);
     if (ok) navigate("/manage-batch/create");
   };
 
