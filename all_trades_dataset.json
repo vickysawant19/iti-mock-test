@@ -1,0 +1,1192 @@
+[
+  {
+    "tradeCode": "962",
+    "tradeName": "Additive Manufacturing Technician Three D Painting",
+    "duration": 1,
+    "description": "Official ITI training course in Additive Manufacturing Technician Three D Painting covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "400",
+    "tradeName": "Additive Manufacturing Technician Three D Printing",
+    "duration": 1,
+    "description": "Official ITI training course in Additive Manufacturing Technician Three D Printing covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1001",
+    "tradeName": "ADVANCED CNC MACHINING TECHNICIAN",
+    "duration": 1,
+    "description": "Official ITI training course in ADVANCED CNC MACHINING TECHNICIAN covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "401",
+    "tradeName": "Aeronautical Structure and Equipment Fitter",
+    "duration": 2,
+    "description": "Official ITI training course in Aeronautical Structure and Equipment Fitter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "402",
+    "tradeName": "Agro Processing",
+    "duration": 1,
+    "description": "Official ITI training course in Agro Processing covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "990",
+    "tradeName": "Architectural Draughtsman",
+    "duration": 1,
+    "description": "Official ITI training course in Architectural Draughtsman covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1036",
+    "tradeName": "Artificial Intelligence Programming Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Artificial Intelligence Programming Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1004",
+    "tradeName": "ARTISAN USING ADVANCED TOOL",
+    "duration": 1,
+    "description": "Official ITI training course in ARTISAN USING ADVANCED TOOL covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "406",
+    "tradeName": "Attendant Operator (Chemical Plant)",
+    "duration": 1,
+    "description": "Official ITI training course in Attendant Operator (Chemical Plant) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "407",
+    "tradeName": "Baker and Confectioner",
+    "duration": 1,
+    "description": "Official ITI training course in Baker and Confectioner covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "408",
+    "tradeName": "Bamboo Works",
+    "duration": 1,
+    "description": "Official ITI training course in Bamboo Works covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1005",
+    "tradeName": "BASIC DESIGNER AND VIRTUAL VERIFIER (MECHANICAL)",
+    "duration": 1,
+    "description": "Official ITI training course in BASIC DESIGNER AND VIRTUAL VERIFIER (MECHANICAL) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "415",
+    "tradeName": "Catering & Hospitality Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Catering & Hospitality Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "996",
+    "tradeName": "CENTRAL AIRCONDITION PLANT MECHANIC",
+    "duration": 1,
+    "description": "Official ITI training course in CENTRAL AIRCONDITION PLANT MECHANIC covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "416",
+    "tradeName": "Civil Engineer Assistant",
+    "duration": 2,
+    "description": "Official ITI training course in Civil Engineer Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "417",
+    "tradeName": "Computer Aided Embroidery And Designing",
+    "duration": 1,
+    "description": "Official ITI training course in Computer Aided Embroidery And Designing covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1035",
+    "tradeName": "Computer Aided Manufacturing (CAM) Programmer",
+    "duration": 1,
+    "description": "Official ITI training course in Computer Aided Manufacturing (CAM) Programmer covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "418",
+    "tradeName": "Computer Hardware & Network Maintenance",
+    "duration": 1,
+    "description": "Official ITI training course in Computer Hardware & Network Maintenance covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1030",
+    "tradeName": "Computer Operator & Programming Assistant (VI & OD)",
+    "duration": 2,
+    "description": "Official ITI training course in Computer Operator & Programming Assistant (VI & OD) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "242",
+    "tradeName": "Computer Operator and Programming Assistant",
+    "duration": 2,
+    "description": "Official ITI training course in Computer Operator and Programming Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "421",
+    "tradeName": "Computer Operator and Programming Assistant",
+    "duration": 2,
+    "description": "Official ITI training course in Computer Operator and Programming Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "409",
+    "tradeName": "Cosmetology",
+    "duration": 1,
+    "description": "Official ITI training course in Cosmetology covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1031",
+    "tradeName": "Cutting & Sewing (VI & OD)",
+    "duration": 1,
+    "description": "Official ITI training course in Cutting & Sewing (VI & OD) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "100",
+    "tradeName": "Dairying",
+    "duration": 1,
+    "description": "Official ITI training course in Dairying covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "993",
+    "tradeName": "Dairying",
+    "duration": 1,
+    "description": "Official ITI training course in Dairying covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "427",
+    "tradeName": "Data Base System Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Data Base System Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1012",
+    "tradeName": "Data Entry Operator",
+    "duration": 1,
+    "description": "Official ITI training course in Data Entry Operator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "430",
+    "tradeName": "Dental Laboratory Equipment Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Dental Laboratory Equipment Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "431",
+    "tradeName": "Desk Top Publishing Operator",
+    "duration": 1,
+    "description": "Official ITI training course in Desk Top Publishing Operator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1032",
+    "tradeName": "Desktop Publishing Operator (VI & OD)",
+    "duration": 1,
+    "description": "Official ITI training course in Desktop Publishing Operator (VI & OD) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "432",
+    "tradeName": "Desktop Publishing Operator (VI)",
+    "duration": 1,
+    "description": "Official ITI training course in Desktop Publishing Operator (VI) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "433",
+    "tradeName": "Digital Photographer",
+    "duration": 1,
+    "description": "Official ITI training course in Digital Photographer covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "435",
+    "tradeName": "Domestic Painter",
+    "duration": 1,
+    "description": "Official ITI training course in Domestic Painter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "436",
+    "tradeName": "Draftsman Civil",
+    "duration": 1,
+    "description": "Official ITI training course in Draftsman Civil covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "991",
+    "tradeName": "Draughtsman (Civil)",
+    "duration": 1,
+    "description": "Official ITI training course in Draughtsman (Civil) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "439",
+    "tradeName": "Draughtsman (Mechanical)",
+    "duration": 1,
+    "description": "Official ITI training course in Draughtsman (Mechanical) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "440",
+    "tradeName": "Dress Making",
+    "duration": 1,
+    "description": "Official ITI training course in Dress Making covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1011",
+    "tradeName": "Driver Cum Mechanic",
+    "duration": 1,
+    "description": "Official ITI training course in Driver Cum Mechanic covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1029",
+    "tradeName": "Drone Pilot ( Junior)",
+    "duration": 1,
+    "description": "Official ITI training course in Drone Pilot ( Junior) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1021",
+    "tradeName": "Drone Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Drone Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "544",
+    "tradeName": "Early Childhood Educator",
+    "duration": 1,
+    "description": "Official ITI training course in Early Childhood Educator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "986",
+    "tradeName": "Early Childhood Educator",
+    "duration": 1,
+    "description": "Official ITI training course in Early Childhood Educator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "231",
+    "tradeName": "Electrician",
+    "duration": 2,
+    "description": "Official ITI training course in Electrician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "442",
+    "tradeName": "Electrician",
+    "duration": 2,
+    "description": "Official ITI training course in Electrician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "444",
+    "tradeName": "Electrician Power Distribution",
+    "duration": 2,
+    "description": "Official ITI training course in Electrician Power Distribution covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "446",
+    "tradeName": "Electronics Mechanic",
+    "duration": 2,
+    "description": "Official ITI training course in Electronics Mechanic covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "233",
+    "tradeName": "Electroplater",
+    "duration": 1,
+    "description": "Official ITI training course in Electroplater covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "447",
+    "tradeName": "Electroplater",
+    "duration": 1,
+    "description": "Official ITI training course in Electroplater covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1016",
+    "tradeName": "Event Management Assitant",
+    "duration": 1,
+    "description": "Official ITI training course in Event Management Assitant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "449",
+    "tradeName": "Fashion Design & Technology",
+    "duration": 1,
+    "description": "Official ITI training course in Fashion Design & Technology covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1017",
+    "tradeName": "Fibre to Home Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Fibre to Home Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "450",
+    "tradeName": "Finance Executive",
+    "duration": 1,
+    "description": "Official ITI training course in Finance Executive covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "451",
+    "tradeName": "Fire Technology and Industrial Safety Management",
+    "duration": 1,
+    "description": "Official ITI training course in Fire Technology and Industrial Safety Management covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "452",
+    "tradeName": "Firemen",
+    "duration": 1,
+    "description": "Official ITI training course in Firemen covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "227",
+    "tradeName": "Fitter",
+    "duration": 2,
+    "description": "Official ITI training course in Fitter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "453",
+    "tradeName": "Fitter",
+    "duration": 2,
+    "description": "Official ITI training course in Fitter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "455",
+    "tradeName": "Floriculture & Landscaping",
+    "duration": 1,
+    "description": "Official ITI training course in Floriculture & Landscaping covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "456",
+    "tradeName": "Food & Beverages Services Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Food & Beverages Services Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "457",
+    "tradeName": "Food Beverage",
+    "duration": 1,
+    "description": "Official ITI training course in Food Beverage covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "458",
+    "tradeName": "Food Production (General)",
+    "duration": 1,
+    "description": "Official ITI training course in Food Production (General) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "459",
+    "tradeName": "Footwear maker",
+    "duration": 1,
+    "description": "Official ITI training course in Footwear maker covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "214",
+    "tradeName": "Foundryman",
+    "duration": 1,
+    "description": "Official ITI training course in Foundryman covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "460",
+    "tradeName": "Foundryman",
+    "duration": 1,
+    "description": "Official ITI training course in Foundryman covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "461",
+    "tradeName": "Front Office Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Front Office Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "462",
+    "tradeName": "Fruit and Vegetable Processor",
+    "duration": 1,
+    "description": "Official ITI training course in Fruit and Vegetable Processor covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "463",
+    "tradeName": "Geo Informatics Assitant",
+    "duration": 1,
+    "description": "Official ITI training course in Geo Informatics Assitant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1028",
+    "tradeName": "Geriatric (Old Age) Care",
+    "duration": 1,
+    "description": "Official ITI training course in Geriatric (Old Age) Care covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1033",
+    "tradeName": "Hair & Skin Care (VI & OD)",
+    "duration": 1,
+    "description": "Official ITI training course in Hair & Skin Care (VI & OD) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "466",
+    "tradeName": "Health Safety & Environment",
+    "duration": 1,
+    "description": "Official ITI training course in Health Safety & Environment covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "467",
+    "tradeName": "Health Sanitary Inspector",
+    "duration": 1,
+    "description": "Official ITI training course in Health Sanitary Inspector covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "468",
+    "tradeName": "Horticulture",
+    "duration": 1,
+    "description": "Official ITI training course in Horticulture covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "921",
+    "tradeName": "Horticulture (P)",
+    "duration": 1,
+    "description": "Official ITI training course in Horticulture (P) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "470",
+    "tradeName": "Hospital House Keeping",
+    "duration": 1,
+    "description": "Official ITI training course in Hospital House Keeping covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "471",
+    "tradeName": "House Keeper",
+    "duration": 1,
+    "description": "Official ITI training course in House Keeper covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "472",
+    "tradeName": "Human Resource Executive",
+    "duration": 1,
+    "description": "Official ITI training course in Human Resource Executive covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1019",
+    "tradeName": "In Plant Logistics Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in In Plant Logistics Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "473",
+    "tradeName": "Industrial Painter",
+    "duration": 1,
+    "description": "Official ITI training course in Industrial Painter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1006",
+    "tradeName": "INDUSTRIAL ROBOTICS AND DIGITAL MANUFACTURING TECHNICIAN",
+    "duration": 1,
+    "description": "Official ITI training course in INDUSTRIAL ROBOTICS AND DIGITAL MANUFACTURING TECHNICIAN covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "474",
+    "tradeName": "Information Communication Technology System Maintenance",
+    "duration": 1,
+    "description": "Official ITI training course in Information Communication Technology System Maintenance covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "475",
+    "tradeName": "Information Technology",
+    "duration": 2,
+    "description": "Official ITI training course in Information Technology covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "478",
+    "tradeName": "Instrument Mechanic (Chemical Plant)",
+    "duration": 2,
+    "description": "Official ITI training course in Instrument Mechanic (Chemical Plant) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "477",
+    "tradeName": "Instrument Mechanic",
+    "duration": 2,
+    "description": "Official ITI training course in Instrument Mechanic covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "926",
+    "tradeName": "Interior Decoration and Designing (P)",
+    "duration": 1,
+    "description": "Official ITI training course in Interior Decoration and Designing (P) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "481",
+    "tradeName": "Interior Design & Decoration",
+    "duration": 1,
+    "description": "Official ITI training course in Interior Design & Decoration covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "987",
+    "tradeName": "IoT Technician (Smart Agriculture)",
+    "duration": 1,
+    "description": "Official ITI training course in IoT Technician (Smart Agriculture) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "965",
+    "tradeName": "IoT Technician (Smart City)",
+    "duration": 1,
+    "description": "Official ITI training course in IoT Technician (Smart City) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "988",
+    "tradeName": "IoT Technician (Smart healthcare)",
+    "duration": 1,
+    "description": "Official ITI training course in IoT Technician (Smart healthcare) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "485",
+    "tradeName": "Laboratory Assistant (Chemical Plant)",
+    "duration": 1,
+    "description": "Official ITI training course in Laboratory Assistant (Chemical Plant) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "487",
+    "tradeName": "Leather Goods Maker",
+    "duration": 1,
+    "description": "Official ITI training course in Leather Goods Maker covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "490",
+    "tradeName": "Lift and Escalator Mechanic",
+    "duration": 1,
+    "description": "Official ITI training course in Lift and Escalator Mechanic covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "929",
+    "tradeName": "Lift Mechanic (P)",
+    "duration": 1,
+    "description": "Official ITI training course in Lift Mechanic (P) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "494",
+    "tradeName": "Machinist (Grinder)",
+    "duration": 2,
+    "description": "Official ITI training course in Machinist (Grinder) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "493",
+    "tradeName": "Machinist",
+    "duration": 2,
+    "description": "Official ITI training course in Machinist covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "495",
+    "tradeName": "Maintenance Mechanic (Chemical Plant)",
+    "duration": 1,
+    "description": "Official ITI training course in Maintenance Mechanic (Chemical Plant) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1007",
+    "tradeName": "MANUFACTURING PROCESS CONTROL AND AUTOMATION",
+    "duration": 1,
+    "description": "Official ITI training course in MANUFACTURING PROCESS CONTROL AND AUTOMATION covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "496",
+    "tradeName": "Marine Engine Fitter",
+    "duration": 2,
+    "description": "Official ITI training course in Marine Engine Fitter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "497",
+    "tradeName": "Marine Fitter",
+    "duration": 2,
+    "description": "Official ITI training course in Marine Fitter covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "498",
+    "tradeName": "Marketing Executive",
+    "duration": 1,
+    "description": "Official ITI training course in Marketing Executive covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "499",
+    "tradeName": "Mason (Building Constructor)",
+    "duration": 1,
+    "description": "Official ITI training course in Mason (Building Constructor) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "502",
+    "tradeName": "Mechanic (Motor Vehicle)",
+    "duration": 2,
+    "description": "Official ITI training course in Mechanic (Motor Vehicle) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "504",
+    "tradeName": "Mechanic (Tractor)",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic (Tractor) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "505",
+    "tradeName": "Mechanic Agriculture Machinery",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Agriculture Machinery covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "507",
+    "tradeName": "Mechanic Auto Body Painting",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Auto Body Painting covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "508",
+    "tradeName": "Mechanic Auto Body Repair",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Auto Body Repair covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "509",
+    "tradeName": "Mechanic Auto Electrical and Electronics",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Auto Electrical and Electronics covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "513",
+    "tradeName": "Mechanic Consumer Electronics Appliances",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Consumer Electronics Appliances covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "515",
+    "tradeName": "Mechanic Diesel",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Diesel covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1002",
+    "tradeName": "MECHANIC ELECTRIC VEHICLE",
+    "duration": 1,
+    "description": "Official ITI training course in MECHANIC ELECTRIC VEHICLE covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "517",
+    "tradeName": "Mechanic Lens/Prism Grinding",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Lens/Prism Grinding covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "518",
+    "tradeName": "Mechanic Machine Tool Maintenance",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Machine Tool Maintenance covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "519",
+    "tradeName": "Mechanic Mechatronics",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Mechatronics covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "521",
+    "tradeName": "Mechanic Mining Machinery",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Mining Machinery covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "985",
+    "tradeName": "Mechanic Two & Three Wheeler",
+    "duration": 1,
+    "description": "Official ITI training course in Mechanic Two & Three Wheeler covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "527",
+    "tradeName": "Metal Cutting Attendant (VI)",
+    "duration": 1,
+    "description": "Official ITI training course in Metal Cutting Attendant (VI) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "994",
+    "tradeName": "Milk & Milk Product Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Milk & Milk Product Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "530",
+    "tradeName": "Multimedia Animation & Special Effects",
+    "duration": 1,
+    "description": "Official ITI training course in Multimedia Animation & Special Effects covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "535",
+    "tradeName": "Operator Advanced Machine Tools",
+    "duration": 1,
+    "description": "Official ITI training course in Operator Advanced Machine Tools covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "536",
+    "tradeName": "Painter General",
+    "duration": 1,
+    "description": "Official ITI training course in Painter General covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "539",
+    "tradeName": "Photographer",
+    "duration": 1,
+    "description": "Official ITI training course in Photographer covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "540",
+    "tradeName": "Physiotherapy Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Physiotherapy Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "541",
+    "tradeName": "Plastic Processing Operator",
+    "duration": 1,
+    "description": "Official ITI training course in Plastic Processing Operator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "543",
+    "tradeName": "Plumber",
+    "duration": 1,
+    "description": "Official ITI training course in Plumber covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "547",
+    "tradeName": "Pump Operator-Cum-Mechanic",
+    "duration": 1,
+    "description": "Official ITI training course in Pump Operator-Cum-Mechanic covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1003",
+    "tradeName": "Radiology - Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Radiology - Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "548",
+    "tradeName": "Radiology Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Radiology Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "998",
+    "tradeName": "REFRIGERATION AND AIR CONDITIONING TECHNICIAN",
+    "duration": 1,
+    "description": "Official ITI training course in REFRIGERATION AND AIR CONDITIONING TECHNICIAN covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "553",
+    "tradeName": "Secretarial Practice (English)",
+    "duration": 1,
+    "description": "Official ITI training course in Secretarial Practice (English) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "554",
+    "tradeName": "Sewing Technology",
+    "duration": 1,
+    "description": "Official ITI training course in Sewing Technology covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "555",
+    "tradeName": "Sheet Metal Worker",
+    "duration": 1,
+    "description": "Official ITI training course in Sheet Metal Worker covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "557",
+    "tradeName": "Smartphone Technician Cum App Tester",
+    "duration": 1,
+    "description": "Official ITI training course in Smartphone Technician Cum App Tester covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1013",
+    "tradeName": "Smartphone Technician Cum App Tester",
+    "duration": 1,
+    "description": "Official ITI training course in Smartphone Technician Cum App Tester covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "558",
+    "tradeName": "Software Testing Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Software Testing Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "559",
+    "tradeName": "Soil Testing and Crop Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Soil Testing and Crop Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "561",
+    "tradeName": "Solar Technician (Electrical)",
+    "duration": 1,
+    "description": "Official ITI training course in Solar Technician (Electrical) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "560",
+    "tradeName": "Solar Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Solar Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "562",
+    "tradeName": "Spa Therapy",
+    "duration": 1,
+    "description": "Official ITI training course in Spa Therapy covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "563",
+    "tradeName": "Spinning Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Spinning Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "564",
+    "tradeName": "Stenographer & Secretarial Assistant (English)",
+    "duration": 1,
+    "description": "Official ITI training course in Stenographer & Secretarial Assistant (English) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "565",
+    "tradeName": "Stenographer & Secretarial Assistant (Hindi)",
+    "duration": 1,
+    "description": "Official ITI training course in Stenographer & Secretarial Assistant (Hindi) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "566",
+    "tradeName": "Stone Mining Machine Operator",
+    "duration": 1,
+    "description": "Official ITI training course in Stone Mining Machine Operator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "567",
+    "tradeName": "Stone Processing Machine Operator",
+    "duration": 1,
+    "description": "Official ITI training course in Stone Processing Machine Operator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "568",
+    "tradeName": "Surface Ornamentation Techniques (Embroidery)",
+    "duration": 1,
+    "description": "Official ITI training course in Surface Ornamentation Techniques (Embroidery) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "207",
+    "tradeName": "Surveyor",
+    "duration": 1,
+    "description": "Official ITI training course in Surveyor covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "970",
+    "tradeName": "Surveyor",
+    "duration": 1,
+    "description": "Official ITI training course in Surveyor covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "974",
+    "tradeName": "Surveyor (Two Years)",
+    "duration": 2,
+    "description": "Official ITI training course in Surveyor (Two Years) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1027",
+    "tradeName": "Technician Electronics System Design and Repair",
+    "duration": 1,
+    "description": "Official ITI training course in Technician Electronics System Design and Repair covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "570",
+    "tradeName": "Technician Mechatronics",
+    "duration": 1,
+    "description": "Official ITI training course in Technician Mechatronics covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "995",
+    "tradeName": "TECHNICIAN MEDICAL ELECTRONICS",
+    "duration": 1,
+    "description": "Official ITI training course in TECHNICIAN MEDICAL ELECTRONICS covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "571",
+    "tradeName": "Technician Power Electronics System",
+    "duration": 1,
+    "description": "Official ITI training course in Technician Power Electronics System covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "572",
+    "tradeName": "Textile Mechatronics",
+    "duration": 1,
+    "description": "Official ITI training course in Textile Mechatronics covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "573",
+    "tradeName": "Textile Wet Processing Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Textile Wet Processing Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "574",
+    "tradeName": "Tool & Die Maker (Dies & Moulds)",
+    "duration": 2,
+    "description": "Official ITI training course in Tool & Die Maker (Dies & Moulds) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "229",
+    "tradeName": "Tool & Die Maker (Press Tools, Jigs & Fixtures)",
+    "duration": 2,
+    "description": "Official ITI training course in Tool & Die Maker (Press Tools, Jigs & Fixtures) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "575",
+    "tradeName": "Tool & Die Maker (Press Tools, Jigs & Fixtures)",
+    "duration": 2,
+    "description": "Official ITI training course in Tool & Die Maker (Press Tools, Jigs & Fixtures) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "576",
+    "tradeName": "Tourist Guide",
+    "duration": 1,
+    "description": "Official ITI training course in Tourist Guide covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "577",
+    "tradeName": "Travel & Tour Assistant",
+    "duration": 1,
+    "description": "Official ITI training course in Travel & Tour Assistant covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "578",
+    "tradeName": "Turner",
+    "duration": 2,
+    "description": "Official ITI training course in Turner covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "579",
+    "tradeName": "Vessel Navigator",
+    "duration": 1,
+    "description": "Official ITI training course in Vessel Navigator covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1018",
+    "tradeName": "Warehouse Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Warehouse Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "581",
+    "tradeName": "Weaving Technician",
+    "duration": 1,
+    "description": "Official ITI training course in Weaving Technician covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "582",
+    "tradeName": "Weaving Technician for Silk & Woolen Fabrics",
+    "duration": 1,
+    "description": "Official ITI training course in Weaving Technician for Silk & Woolen Fabrics covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "312",
+    "tradeName": "Welder",
+    "duration": 1,
+    "description": "Official ITI training course in Welder covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "586",
+    "tradeName": "Welder (Fabrication & Fitting)",
+    "duration": 1,
+    "description": "Official ITI training course in Welder (Fabrication & Fitting) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "992",
+    "tradeName": "Welder (GMAW & GTAW)",
+    "duration": 1,
+    "description": "Official ITI training course in Welder (GMAW & GTAW) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "969",
+    "tradeName": "Welder",
+    "duration": 1,
+    "description": "Official ITI training course in Welder covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "588",
+    "tradeName": "Welder (Pipe)",
+    "duration": 1,
+    "description": "Official ITI training course in Welder (Pipe) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "589",
+    "tradeName": "Welder (Structural)",
+    "duration": 1,
+    "description": "Official ITI training course in Welder (Structural) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "590",
+    "tradeName": "Welder (Welding & Inspection)",
+    "duration": 1,
+    "description": "Official ITI training course in Welder (Welding & Inspection) covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "592",
+    "tradeName": "Wireman",
+    "duration": 1,
+    "description": "Official ITI training course in Wireman covering practical skills and industry standards.",
+    "isActive": true
+  },
+  {
+    "tradeCode": "1020",
+    "tradeName": "Wood Work Technic",
+    "duration": 1,
+    "description": "Official ITI training course in Wood Work Technic covering practical skills and industry standards.",
+    "isActive": true
+  }
+]

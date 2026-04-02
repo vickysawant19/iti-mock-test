@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { 
   Plus, 
@@ -14,12 +14,8 @@ import {
   AlertCircle
 } from "lucide-react";
 
-import {
-  useListTradesQuery,
-  useCreateTradeMutation,
-  useUpdateTradeMutation,
-  useDeleteTradeMutation,
-} from "@/store/api/tradeApi";
+import { useTrades } from "./hooks/useTrades";
+import tradeservice from "../../appwrite/tradedetails";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,10 +55,10 @@ import {
 } from "@/components/ui/select";
 
 const ManageTrades = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [localSearch, setLocalSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState(null);
+  const [isMutating, setIsMutating] = useState(false);
   const [formData, setFormData] = useState({
     tradeName: "",
     tradeCode: "",
@@ -71,24 +67,59 @@ const ManageTrades = () => {
     isActive: true,
   });
 
-  // API Hooks
-  const { data: tradesResponse, isLoading, error } = useListTradesQuery();
-  const [createTrade, { isLoading: isCreating }] = useCreateTradeMutation();
-  const [updateTrade, { isLoading: isUpdating }] = useUpdateTradeMutation();
-  const [deleteTrade] = useDeleteTradeMutation();
+  const observerRef = useRef();
+  
+  const {
+    trades,
+    loading,
+    hasMore,
+    total,
+    activeCount,
+    inactiveCount,
+    filter,
+    setFilter,
+    searchTerm,
+    setSearchTerm,
+    fetchTrades,
+    refresh
+  } = useTrades();
 
-  const trades = tradesResponse?.documents || [];
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(localSearch);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localSearch, setSearchTerm]);
 
-  // Filtered trades
-  const filteredTrades = trades.filter((trade) => {
-    const matchesSearch = 
-      trade.tradeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (trade.tradeCode && trade.tradeCode.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "active" && trade.isActive) || 
-      (statusFilter === "inactive" && !trade.isActive);
-    return matchesSearch && matchesStatus;
-  });
+  // Infinite Scroll Observer
+  useEffect(() => {
+    // The observer will trigger when the sentinel div enters the threshold area
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Trigger as soon as ANY part of the sentinel enters (threshold: 0)
+        // proactively with a rootMargin of 200px
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          fetchTrades(true);
+        }
+      },
+      { 
+        threshold: 0, 
+        rootMargin: '200px' // Fetch more when within 200px of bottom
+      } 
+    );
+
+    const currentRef = observerRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, loading, fetchTrades]);
 
   const handleOpenAddModal = () => {
     setEditingTrade(null);
@@ -121,28 +152,30 @@ const ManageTrades = () => {
       return;
     }
 
+    setIsMutating(true);
     try {
       if (editingTrade) {
-        await updateTrade({
-          tradeId: editingTrade.$id,
-          updatedData: formData,
-        }).unwrap();
+        await tradeservice.updateTrade(editingTrade.$id, formData);
         toast.success("Trade updated successfully");
       } else {
-        await createTrade(formData).unwrap();
+        await tradeservice.createTrade(formData);
         toast.success("Trade created successfully");
       }
       setIsModalOpen(false);
+      refresh();
     } catch (err) {
       toast.error(err.message || "Failed to save trade");
+    } finally {
+      setIsMutating(false);
     }
   };
 
   const handleDelete = async (tradeId) => {
     if (window.confirm("Are you sure you want to delete this trade?")) {
       try {
-        await deleteTrade(tradeId).unwrap();
+        await tradeservice.deleteTrade(tradeId);
         toast.success("Trade deleted successfully");
+        refresh();
       } catch (err) {
         toast.error("Failed to delete trade");
       }
@@ -151,26 +184,13 @@ const ManageTrades = () => {
 
   const toggleStatus = async (trade) => {
     try {
-      await updateTrade({
-        tradeId: trade.$id,
-        updatedData: { isActive: !trade.isActive },
-      }).unwrap();
+      await tradeservice.updateTrade(trade.$id, { isActive: !trade.isActive });
       toast.success(`Trade ${trade.isActive ? "deactivated" : "activated"}`);
+      refresh();
     } catch (err) {
       toast.error("Failed to update status");
     }
   };
-
-  if (error) {
-    return (
-      <div className="p-8 text-center bg-background min-h-screen flex flex-col items-center justify-center">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-bold mb-2">Error Loading Trades</h2>
-        <p className="text-muted-foreground">{error.message || "An unknown error occurred"}</p>
-        <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl animate-in fade-in duration-500">
@@ -190,106 +210,132 @@ const ManageTrades = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" />
-                Trades List
+                Trades List ({total})
               </CardTitle>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search trades..."
-                  className="pl-9 bg-background/50"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search ALL trades..."
+                  className="pl-9 bg-background/50 focus:ring-primary"
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
                 />
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-20 flex flex-col items-center justify-center">
-                <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-                <p className="text-muted-foreground">Fetching trades...</p>
-              </div>
-            ) : filteredTrades.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead className="w-[30%]">Trade Name</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Created At</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTrades.map((trade) => (
-                      <TableRow key={trade.$id} className="hover:bg-muted/30 transition-colors group">
-                        <TableCell>
-                          <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-bold text-primary border border-primary/10">
-                            {trade.tradeCode || "---"}
-                          </code>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <span>{trade.tradeName}</span>
-                            <span className="text-xs text-muted-foreground font-normal line-clamp-1 max-w-[200px]">
-                              {trade.description || "No description"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                            {trade.duration} {trade.duration === 1 ? "Year" : "Years"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={trade.isActive ? "success" : "secondary"}
-                            className={trade.isActive 
-                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                              : "bg-gray-500/10 text-gray-500 border-gray-500/20"
-                            }
-                          >
-                            {trade.isActive ? (
-                              <span className="flex items-center gap-1"><CheckCircle2 size={12} /> Active</span>
-                            ) : (
-                              <span className="flex items-center gap-1"><XCircle size={12} /> Inactive</span>
-                            )}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground text-xs font-mono">
-                          {new Date(trade.$createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 shadow-xl">
-                              <DropdownMenuItem onClick={() => handleOpenEditModal(trade)} className="gap-2">
-                                <Edit2 size={14} /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleStatus(trade)} className="gap-2">
-                                {trade.isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-                                {trade.isActive ? "Deactivate" : "Activate"}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(trade.$id)} 
-                                className="text-destructive gap-2 focus:bg-destructive/10 focus:text-destructive"
-                              >
-                                <Trash2 size={14} /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+          <CardContent className="p-0 flex flex-col">
+            {trades.length > 0 ? (
+              <>
+                <div className="overflow-x-auto"> 
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead className="w-[30%]">Trade Name</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell">Created At</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {trades.map((trade) => (
+                        <TableRow key={trade.$id} className="hover:bg-muted/30 transition-colors group">
+                          <TableCell>
+                            <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-bold text-primary border border-primary/10">
+                              {trade.tradeCode || "---"}
+                            </code>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col">
+                              <span>{trade.tradeName}</span>
+                              <span className="text-xs text-muted-foreground font-normal line-clamp-1 max-w-[200px]">
+                                {trade.description || "No description"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                              {trade.duration} {trade.duration === 1 ? "Year" : "Years"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={trade.isActive ? "success" : "secondary"}
+                              className={trade.isActive 
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                                : "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                              }
+                            >
+                              {trade.isActive ? (
+                                <span className="flex items-center gap-1"><CheckCircle2 size={12} /> Active</span>
+                              ) : (
+                                <span className="flex items-center gap-1"><XCircle size={12} /> Inactive</span>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-muted-foreground text-xs font-mono">
+                            {new Date(trade.$createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 shadow-xl">
+                                <DropdownMenuItem onClick={() => handleOpenEditModal(trade)} className="gap-2">
+                                  <Edit2 size={14} /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleStatus(trade)} className="gap-2">
+                                  {trade.isActive ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                                  {trade.isActive ? "Deactivate" : "Activate"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(trade.$id)} 
+                                  className="text-destructive gap-2 focus:bg-destructive/10 focus:text-destructive"
+                                >
+                                  <Trash2 size={14} /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* Dedicated Infinite Scroll Sentinel - Placed AFTER the table */}
+                <div 
+                  ref={observerRef} 
+                  className="w-full flex flex-col items-center justify-center p-8 border-t border-muted/20"
+                >
+                  {loading && (
+                    <div className="flex flex-col items-center justify-center gap-2 py-4">
+                      <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                      <span className="text-sm font-medium text-muted-foreground">Fetching more results...</span>
+                    </div>
+                  )}
+                  {!hasMore && (
+                    <div className="flex flex-col items-center justify-center gap-2 py-4 opacity-70">
+                      <div className="h-[1px] w-12 bg-muted-foreground/30 mb-2" />
+                      <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                        End of list ({total} trades total)
+                      </span>
+                    </div>
+                  )}
+                  {hasMore && !loading && (
+                    <div className="h-2 w-full" /> // Invisible spacer to maintain layout
+                  )}
+                </div>
+              </>
+            ) : loading ? (
+              <div className="p-32 flex flex-col items-center justify-center">
+                <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground animate-pulse">Initializing trade database...</p>
               </div>
             ) : (
               <div className="p-20 flex flex-col items-center justify-center text-center">
@@ -299,11 +345,11 @@ const ManageTrades = () => {
                 <h3 className="text-xl font-semibold mb-1">No trades found</h3>
                 <p className="text-muted-foreground max-w-sm mb-6">
                   {searchTerm 
-                    ? "Adjust your search filters to find what you're looking for." 
-                    : "Get started by adding your first ITI trade specialization."}
+                    ? `No matches found for "${searchTerm}". Try a different search term.` 
+                    : "Your trade database is currently empty."}
                 </p>
                 {searchTerm && (
-                  <Button variant="outline" onClick={() => setSearchTerm("")}>Clear Search</Button>
+                  <Button variant="outline" onClick={() => {setLocalSearch(""); setSearchTerm("");}}>Clear Search</Button>
                 )}
               </div>
             )}
@@ -320,25 +366,25 @@ const ManageTrades = () => {
             </CardHeader>
             <CardContent className="pt-4 flex flex-col gap-2">
               <Button 
-                variant={statusFilter === "all" ? "secondary" : "ghost"} 
+                variant={filter === "all" ? "secondary" : "ghost"} 
                 className="justify-start font-normal h-9"
-                onClick={() => setStatusFilter("all")}
+                onClick={() => setFilter("all")}
               >
-                All Trades ({trades.length})
+                All Trades ({total})
               </Button>
               <Button 
-                variant={statusFilter === "active" ? "secondary" : "ghost"} 
-                className={`justify-start font-normal h-9 ${statusFilter === "active" ? "text-emerald-600" : ""}`}
-                onClick={() => setStatusFilter("active")}
+                variant={filter === "active" ? "secondary" : "ghost"} 
+                className={`justify-start font-normal h-9 ${filter === "active" ? "text-emerald-600 font-medium" : ""}`}
+                onClick={() => setFilter("active")}
               >
-                Active Only ({trades.filter(t => t.isActive).length})
+                Active Only ({activeCount})
               </Button>
               <Button 
-                variant={statusFilter === "inactive" ? "secondary" : "ghost"} 
-                className={`justify-start font-normal h-9 ${statusFilter === "inactive" ? "text-red-600" : ""}`}
-                onClick={() => setStatusFilter("inactive")}
+                variant={filter === "inactive" ? "secondary" : "ghost"} 
+                className={`justify-start font-normal h-9 ${filter === "inactive" ? "text-red-600 font-medium" : ""}`}
+                onClick={() => setFilter("inactive")}
               >
-                Inactive Only ({trades.filter(t => !t.isActive).length})
+                Inactive Only ({inactiveCount})
               </Button>
             </CardContent>
           </Card>
@@ -346,9 +392,12 @@ const ManageTrades = () => {
           <Card className="bg-primary/5 border-primary/10 shadow-none">
             <CardContent className="p-4 flex gap-3">
               <AlertCircle className="h-5 w-5 text-primary shrink-0" />
-              <p className="text-xs text-primary/80 leading-relaxed">
-                Changes made here will affect student registration, module assignments, and exam configurations across the system.
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-primary">Scrolling Tip</p>
+                <p className="text-[10px] text-primary/70 leading-relaxed">
+                  More results are loaded automatically as you approach the end of the current list.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -428,11 +477,11 @@ const ManageTrades = () => {
               </div>
             </div>
             <DialogFooter className="pt-4 border-t gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isCreating || isUpdating}>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isMutating}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating || isUpdating} className="min-w-[100px]">
-                {(isCreating || isUpdating) ? (
+              <Button type="submit" disabled={isMutating} className="min-w-[100px]">
+                {isMutating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   editingTrade ? "Update Trade" : "Create Trade"
