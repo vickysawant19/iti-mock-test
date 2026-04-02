@@ -65,6 +65,7 @@ const ManageTrades = () => {
   const [editingTrade, setEditingTrade] = useState(null);
   const [formData, setFormData] = useState({
     tradeName: "",
+    tradeCode: "",
     duration: 1,
     description: "",
     isActive: true,
@@ -80,7 +81,9 @@ const ManageTrades = () => {
 
   // Filtered trades
   const filteredTrades = trades.filter((trade) => {
-    const matchesSearch = trade.tradeName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      trade.tradeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (trade.tradeCode && trade.tradeCode.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === "all" || 
       (statusFilter === "active" && trade.isActive) || 
       (statusFilter === "inactive" && !trade.isActive);
@@ -91,6 +94,7 @@ const ManageTrades = () => {
     setEditingTrade(null);
     setFormData({
       tradeName: "",
+      tradeCode: "",
       duration: 1,
       description: "",
       isActive: true,
@@ -102,6 +106,7 @@ const ManageTrades = () => {
     setEditingTrade(trade);
     setFormData({
       tradeName: trade.tradeName,
+      tradeCode: trade.tradeCode || "",
       duration: trade.duration,
       description: trade.description || "",
       isActive: trade.isActive,
@@ -209,6 +214,7 @@ const ManageTrades = () => {
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
+                      <TableHead>Code</TableHead>
                       <TableHead className="w-[30%]">Trade Name</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
@@ -219,6 +225,11 @@ const ManageTrades = () => {
                   <TableBody>
                     {filteredTrades.map((trade) => (
                       <TableRow key={trade.$id} className="hover:bg-muted/30 transition-colors group">
+                        <TableCell>
+                          <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-bold text-primary border border-primary/10">
+                            {trade.tradeCode || "---"}
+                          </code>
+                        </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
                             <span>{trade.tradeName}</span>
@@ -354,15 +365,25 @@ const ManageTrades = () => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tradeName">Trade Name <span className="text-destructive">*</span></Label>
-                <Input
-                  id="tradeName"
-                  placeholder="e.g. COPA"
-                  value={formData.tradeName}
-                  onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })}
-                  autoFocus
-                />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2 col-span-1">
+                  <Label htmlFor="tradeCode">Trade Code <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="tradeCode"
+                    placeholder="e.g. 231"
+                    value={formData.tradeCode}
+                    onChange={(e) => setFormData({ ...formData, tradeCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="tradeName">Trade Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="tradeName"
+                    placeholder="e.g. Electrician"
+                    value={formData.tradeName}
+                    onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (Years)</Label>

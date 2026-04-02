@@ -22,7 +22,7 @@ export class TradeService {
   }
 
   async createTrade(tradeData) {
-    const { tradeName, duration, description, isActive } = tradeData;
+    const { tradeName, tradeCode, duration, description, isActive } = tradeData;
     try {
       // Check if the trade already exists
       const existingTrades = await this.database.listDocuments(
@@ -39,6 +39,7 @@ export class TradeService {
 
       const documentData = {
         tradeName,
+        tradeCode: tradeCode || "",
         duration: parseInt(duration) || 1,
         description: description || "",
         isActive: isActive ?? true,
