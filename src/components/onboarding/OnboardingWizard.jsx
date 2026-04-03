@@ -1,15 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
-import StepBasicInfo from "./StepBasicInfo";
+import { checkProfileCompletion } from "@/utils/profileCompletion";
+
 import StepAcademic from "./StepAcademic";
-import StepBatch from "./StepBatch";
+import StepBasicInfo from "./StepBasicInfo";
+import StepPersonalInfo from "./StepPersonalInfo";
 import StepComplete from "./StepComplete";
+
+const STEPS = [
+  { label: "Academic" },
+  { label: "Basic" },
+  { label: "Personal" },
+  { label: "Review" },
+];
 
 export default function OnboardingWizard() {
   const dispatch = useDispatch();
@@ -21,165 +29,153 @@ export default function OnboardingWizard() {
   const [formData, setFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize form data from existing profile if available
+  // Resume guard: only initialize once on mount
+  const hasInitializedRef = useRef(false);
+
   useEffect(() => {
     if (existingProfile) {
-      setFormData({
-        ...existingProfile,
-        userName: existingProfile.userName || user?.name || "",
-        phone: existingProfile.phone || user?.phone || "",
-        email: user?.email || "",
-        collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
-        tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
-        batchId: existingProfile.batchId?.$id || existingProfile.batchId || "",
-      });
-
-      // If already approved/complete → go straight to dash
-      if (existingProfile.isProfileComplete || existingProfile.onboardingStep >= 4) {
-        navigate("/dash");
-      } else if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep < 4) {
-        setCurrentStep(existingProfile.onboardingStep);
+      if (!hasInitializedRef.current) {
+        setFormData({
+          ...existingProfile,
+          userName: existingProfile.userName || user?.name || "",
+          phone: existingProfile.phone || user?.phone || "",
+          email: user?.email || "",
+          DOB: existingProfile.DOB ? existingProfile.DOB.split("T")[0] : "",
+          address: existingProfile.address || "",
+          collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
+          tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
+        });
       }
-    } else if (user) {
-      // Default info from auth user if no profile exists yet
+
+      if (existingProfile.isProfileComplete) {
+        navigate("/dash");
+        return;
+      }
+
+      // Resume from last saved step — only on first mount
+      if (!hasInitializedRef.current) {
+        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 4) {
+          setCurrentStep(existingProfile.onboardingStep);
+        }
+        hasInitializedRef.current = true;
+      }
+    } else if (user && !hasInitializedRef.current) {
       setFormData({
         userName: user.name || "",
         phone: user.phone || "",
         email: user.email || "",
       });
+      hasInitializedRef.current = true;
     }
   }, [existingProfile, user, navigate]);
 
-  const saveProfileProgress = async (stepData, incrementStep = true) => {
+  const saveProgress = async (stepData, nextStep) => {
     if (!user) return false;
-    
     setIsSaving(true);
+
     try {
-      const mergedData = { ...formData, ...stepData };
-      setFormData(mergedData);
-      
-      const newStep = incrementStep ? currentStep + 1 : currentStep;
-      
-      // Determine if marking as complete
-      const isComplete = incrementStep && currentStep === 4;
+      const merged = { ...formData, ...stepData };
+      setFormData(merged);
+
+      const { isComplete } = checkProfileCompletion(merged);
 
       const payload = {
-        ...mergedData,
+        ...merged,
         userId: user.$id,
-        role: user.labels,
-        onboardingStep: newStep,
+        role: ["Student"],
+        onboardingStep: nextStep,
         isProfileComplete: isComplete,
+        enrollmentStatus: merged.enrollmentStatus || "enrolled",
+        status: merged.status || "active",
       };
 
-      let updatedProfile;
+      let updated;
       if (existingProfile) {
-        updatedProfile = await userProfileService.updateUserProfile(existingProfile.$id, payload);
+        updated = await userProfileService.updateUserProfile(existingProfile.$id, payload);
       } else {
-        updatedProfile = await userProfileService.createUserProfile(payload);
+        updated = await userProfileService.createUserProfile(payload);
       }
 
-      dispatch(addProfile({ data: updatedProfile }));
-      
-      if (incrementStep) {
-        setCurrentStep(newStep);
-        if (newStep === 4 && currentStep !== 4) {
-             // Let user see completion step
-        }
-      }
+      dispatch(addProfile({ data: updated }));
+      setCurrentStep(nextStep);
       return true;
-    } catch (error) {
-       console.error("Error saving onboarding step:", error);
-       toast.error("Failed to save progress. Please try again.");
-       return false;
+    } catch (err) {
+      console.error("Onboarding save error:", err);
+      toast.error("Failed to save progress. Please try again.");
+      return false;
     } finally {
-       setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const handleNext = async (stepData) => {
-    await saveProfileProgress(stepData, true);
-  };
+  const handleNext = (stepData) => saveProgress(stepData, currentStep + 1);
+  const handleBack = () => setCurrentStep((s) => Math.max(1, s - 1));
 
-  const handleSkip = async () => {
-    // Save current formData but move to next step without requiring validation
-    await saveProfileProgress({}, true);
-  };
-
-  const finishOnboarding = async () => {
-    // Save progress without touching global approval states
-    const ok = await saveProfileProgress(
-      {},
-      true
-    );
-    
-    // Create a request for the selected batch
-    if (ok && formData.batchId && user.$id) {
-      try {
-        await batchRequestService.sendRequest(formData.batchId, user.$id);
-      } catch (err) {
-        console.error("Failed to create batch request during onboarding:", err);
-      }
-    }
-    
+  const handleFinish = async () => {
+    const ok = await saveProgress({}, currentStep + 1);
+    // Profile is already saved in saveProgress
     if (ok) navigate("/dash");
   };
 
-  if (!user) return null; // Or a loader
+  if (!user) return null;
 
-  // 1 = Basic Info, 2 = Academic, 3 = Batch, 4 = Complete
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <StepBasicInfo initialData={formData} onNext={handleNext} isSaving={isSaving} />;
-      case 2:
-        return <StepAcademic initialData={formData} onNext={handleNext} onSkip={handleSkip} isSaving={isSaving} />;
-      case 3:
-        return <StepBatch initialData={formData} onNext={handleNext} onSkip={handleSkip} isSaving={isSaving} />;
-      case 4:
-      default:
-        return <StepComplete onFinish={finishOnboarding} isSaving={isSaving} />;
-    }
-  };
+  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
     <div className="min-h-[80vh] w-full flex flex-col items-center justify-center p-4 sm:p-8 bg-slate-50 dark:bg-slate-950">
       <div className="w-full max-w-2xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-white mb-6">
-            Welcome to Your Account!
+            Welcome to ITI Mock Test
           </h1>
-          
-          {/* Progress Bar */}
+
+          {/* Stepper */}
           <div className="flex items-center justify-between relative mb-2">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full z-0"></div>
-            <div 
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full z-0" />
+            <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-600 rounded-full z-0 transition-all duration-500"
-              style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
-            ></div>
-            
-            {[1, 2, 3, 4].map((step) => (
-              <div 
-                key={step}
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm z-10 transition-colors duration-300 ${
-                  currentStep >= step 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-              >
-                {step}
-              </div>
-            ))}
+              style={{ width: `${progress}%` }}
+            />
+            {STEPS.map((step, i) => {
+              const stepNum = i + 1;
+              const done = currentStep > stepNum;
+              const active = currentStep === stepNum;
+              return (
+                <div
+                  key={stepNum}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm z-10 transition-all duration-300 border-2 ${
+                    done
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : active
+                      ? "bg-white dark:bg-slate-900 border-blue-600 text-blue-600"
+                      : "bg-slate-200 dark:bg-slate-800 border-transparent text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {done ? "✓" : stepNum}
+                </div>
+              );
+            })}
           </div>
-          <div className="flex justify-between text-xs font-medium text-slate-500 px-1">
-             <span className="text-center w-8">Basic</span>
-             <span className="text-center w-8">Academic</span>
-             <span className="text-center w-8">Batch</span>
-             <span className="text-center w-8">Done</span>
+          <div className="flex justify-between text-xs font-medium text-slate-500 mt-1">
+            {STEPS.map((s) => (
+              <span key={s.label} className="w-9 text-center">{s.label}</span>
+            ))}
           </div>
         </div>
 
         <div className="animate-in fade-in zoom-in-95 duration-300 ease-out">
-          {renderStep()}
+          {currentStep === 1 && (
+            <StepAcademic initialData={formData} onNext={handleNext} isSaving={isSaving} role="Student" />
+          )}
+          {currentStep === 2 && (
+            <StepBasicInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} />
+          )}
+          {currentStep === 3 && (
+            <StepPersonalInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} />
+          )}
+          {currentStep === 4 && (
+            <StepComplete formData={formData} onFinish={handleFinish} onBack={handleBack} isSaving={isSaving} />
+          )}
         </div>
       </div>
     </div>

@@ -37,7 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
-import { Menu, User, LogOut, ChevronRight, Sun, Moon } from "lucide-react";
+import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react";
 import logo from "@/assets/iti-logo.jpg"
 
 // Import services and store actions
@@ -54,6 +54,8 @@ import batchService from "@/appwrite/batchService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
 import { Query } from "appwrite";
+import { useNotifications } from "@/hooks/useNotifications";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);
@@ -67,6 +69,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   const [expandedGroup, setExpandedGroup] = useState("");
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+  const { notifications, notifCount } = useNotifications();
 
   const isTeacher = user?.labels?.includes("Teacher");
   const isAdmin = user?.labels?.includes("admin");
@@ -567,6 +572,31 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
+
+          {/* Notification Bell */}
+          {user && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsNotifOpen((o) => !o)}
+                className="relative"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {notifCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none animate-in zoom-in-75 duration-200">
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </Button>
+              <NotificationPanel
+                notifications={notifications}
+                isOpen={isNotifOpen}
+                onClose={() => setIsNotifOpen(false)}
+              />
+            </div>
+          )}
 
           {/* User Menu */}
           {renderUserMenu()}

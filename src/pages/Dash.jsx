@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -25,11 +26,14 @@ import { FaCalendar } from "react-icons/fa";
 import { motion } from "framer-motion";
 
 import userStatsService from "@/appwrite/userStats";
+import batchService from "@/appwrite/batchService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUser } from "@/store/userSlice";
 import CustomSelect from "@/components/components/CustomSelect";
 import TodaysTestsPopup from "@/private/popup/TodaysTests";
-import { selectUser } from "@/store/userSlice";
+import { checkProfileCompletion } from "@/utils/profileCompletion";
 
 const SkeletonChart = () => (
   <div className="animate-pulse">
@@ -92,6 +96,14 @@ const Dashboard = () => {
       updatedAt: null,
     },
   });
+
+  const [teacherBatches, setTeacherBatches] = useState([]);
+  const [studentBatches, setStudentBatches] = useState([]);
+  const navigate = useNavigate();
+
+  const isTeacher = user?.labels?.includes("Teacher");
+  const isStudent = user && !isTeacher && !user?.labels?.includes("admin");
+  const { isComplete: isProfileComplete, missingFields } = checkProfileCompletion(profile);
 
   // Define chart colors for both themes
   const chartColors = {
@@ -238,11 +250,12 @@ const Dashboard = () => {
 
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const statsRes = await userStatsService.getAllStats([
-        Query.equal("tradeId", profile.tradeId),
-        Query.equal("collegeId", profile.collegeId),
-        Query.equal("batchId", profile.batchId),
-      ]);
+      const queries = [];
+      if (profile.tradeId) queries.push(Query.equal("tradeId", profile.tradeId));
+      if (profile.collegeId) queries.push(Query.equal("collegeId", profile.collegeId));
+      if (profile.batchId) queries.push(Query.equal("batchId", profile.batchId));
+
+      const statsRes = await userStatsService.getAllStats(queries);
 
       if (statsRes.documents.length > 0) {
         const processedStats = statsRes.documents.map((stat) => ({
@@ -281,6 +294,23 @@ const Dashboard = () => {
     processTestsToday,
     tradeData,
   ]);
+
+  // Fetch teacher/student batch data for CTAs
+  useEffect(() => {
+    const fetchBatchContext = async () => {
+      if (!user?.$id) return;
+      try {
+        if (isTeacher) {
+          const res = await batchService.listBatches([Query.equal("teacherId", user.$id), Query.select(["$id", "BatchName"])]);
+          setTeacherBatches(res?.documents ?? []);
+        } else if (isStudent) {
+          const res = await batchStudentService.getStudentBatches(user.$id);
+          setStudentBatches(res ?? []);
+        }
+      } catch (_) {}
+    };
+    fetchBatchContext();
+  }, [user, isTeacher, isStudent]);
 
   useEffect(() => {
     fetchData();
@@ -368,6 +398,69 @@ const Dashboard = () => {
             </p>
           </div>
         </motion.div>
+
+        {/* ── Profile Incomplete Banner ── */}
+        {!isProfileComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
+          >
+            <span className="text-xl">⚠️</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Complete your profile</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Missing: {missingFields.join(", ")}</p>
+            </div>
+            <button
+              onClick={() => navigate("/profile/edit")}
+              className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-3 py-1.5 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors whitespace-nowrap"
+            >
+              Update Profile
+            </button>
+          </motion.div>
+        )}
+
+        {/* ── Teacher No-Batch CTA ── */}
+        {isTeacher && teacherBatches.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
+          >
+            <span className="text-3xl">🏫</span>
+            <div className="flex-1">
+              <p className="font-bold text-base">Create Your First Batch</p>
+              <p className="text-blue-100 text-sm mt-0.5">Set up a batch to start managing students and track their progress.</p>
+            </div>
+            <button
+              onClick={() => navigate("/manage-batch/create")}
+              className="shrink-0 bg-white text-blue-600 text-sm font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Create Batch →
+            </button>
+          </motion.div>
+        )}
+
+        {/* ── Student No-Batch CTA ── */}
+        {isStudent && studentBatches.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 text-white shadow-lg shadow-green-500/20"
+          >
+            <span className="text-3xl">🎓</span>
+            <div className="flex-1">
+              <p className="font-bold text-base">Join a Batch</p>
+              <p className="text-green-100 text-sm mt-0.5">Send a request to join a batch and start practicing with your classmates.</p>
+            </div>
+            <button
+              onClick={() => navigate("/browse-batches")}
+              className="shrink-0 bg-white text-green-600 text-sm font-bold px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
+            >
+              Browse Batches →
+            </button>
+          </motion.div>
+        )}
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">

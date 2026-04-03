@@ -19,6 +19,8 @@ import {
   Calendar,
   Navigation,
   Clock,
+  Search,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ import { selectProfile } from "@/store/profileSlice";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import holidayService from "@/appwrite/holidaysService";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 // Custom marker icons
 const campusIcon = new L.DivIcon({
@@ -67,6 +70,7 @@ function MapBounds({ userLocation, campusLocation }) {
 }
 
 const AttendanceTracker = () => {
+  const navigate = useNavigate();
   const [userLocation, setUserLocation] = useState(null);
   const [batchLocation, setBatchLocation] = useState(null);
   const [circleRadius, setCircleRadius] = useState(null);
@@ -84,7 +88,10 @@ const AttendanceTracker = () => {
     data: batchData,
     isLoading: batchLoading,
     error: batchError,
-  } = useGetBatchQuery({ batchId: profile.batchId });
+  } = useGetBatchQuery(
+    { batchId: profile?.batchId },
+    { skip: !profile?.batchId }
+  );
 
   const {
     deviceLocation,
@@ -103,6 +110,11 @@ const AttendanceTracker = () => {
 
   // Check for holiday first
   useEffect(() => {
+    if (!profile?.batchId) {
+      setCheckingAttendance(false);
+      return;
+    }
+
     (async () => {
       try {
         const res = await holidayService.getHolidayByDate(
@@ -118,9 +130,9 @@ const AttendanceTracker = () => {
     })();
   }, [profile]);
 
-  // Only check existing attendance if NOT a holiday
+  // Only check existing attendance if NOT a holiday and batch is joined
   useEffect(() => {
-    if (holiday) {
+    if (!profile?.batchId || holiday) {
       setCheckingAttendance(false);
       return;
     }
@@ -146,7 +158,7 @@ const AttendanceTracker = () => {
     };
 
     fetchExistingAttendance();
-  }, [profile.userId, profile.batchId, holiday]);
+  }, [profile?.userId, profile?.batchId, holiday]);
 
   // Calculate distance when location updates (only if not a holiday)
   useEffect(() => {
@@ -165,6 +177,7 @@ const AttendanceTracker = () => {
   const handleMarkAttendance = async () => {
     if (distance > circleRadius) return;
     if (attendanceMarked) return;
+    if (!profile?.batchId) return;
 
     setMarking(true);
     try {
@@ -203,6 +216,42 @@ const AttendanceTracker = () => {
   const loading =
     batchLoading || (holiday ? false : locationLoading) || checkingAttendance;
   const error = batchError || (!holiday && locationError);
+
+  // If user has no batch, show "No Batch Joined/Created" UI
+  if (!profile?.batchId) {
+    const isTeacher = profile?.role?.includes("Teacher");
+    
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
+        <div className="max-w-xl mx-auto space-y-6 flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="w-24 h-24 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+            {isTeacher ? (
+              <Plus className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <Search className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+            )}
+          </div>
+          <div className="text-center space-y-3">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              {isTeacher ? "Create Your Batch" : "No Batch Joined"}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              {isTeacher 
+                ? "As an instructor, you need to create a batch before you can manage attendance and track student progress."
+                : "You haven't joined any batch yet. To mark your attendance, you first need to join a batch."}
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate(isTeacher ? "/batches" : "/batches/browse")} 
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-8 shadow-xl shadow-blue-500/20"
+          >
+            {isTeacher ? "Create Batch" : "Browse Batches"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">

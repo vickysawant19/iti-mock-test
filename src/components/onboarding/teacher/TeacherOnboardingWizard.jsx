@@ -1,15 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
+import { checkProfileCompletion } from "@/utils/profileCompletion";
 
 import TeacherStepBasicInfo from "./TeacherStepBasicInfo";
-import TeacherStepProfessional from "./TeacherStepProfessional";
-import TeacherStepScope from "./TeacherStepScope";
+import StepPersonalInfo from "../StepPersonalInfo";
+import StepAcademic from "../StepAcademic";
 import TeacherStepComplete from "./TeacherStepComplete";
+
+const STEPS = [
+  { label: "Basic" },
+  { label: "Personal" },
+  { label: "Academic" },
+  { label: "Review" },
+];
 
 export default function TeacherOnboardingWizard() {
   const dispatch = useDispatch();
@@ -21,108 +29,110 @@ export default function TeacherOnboardingWizard() {
   const [formData, setFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (existingProfile) {
-      setFormData({
-        ...existingProfile,
-        userName: existingProfile.userName || user?.name || "",
-        phone: existingProfile.phone || user?.phone || "",
-        email: user?.email || "",
-        collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
-        tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
-      });
+  // Guard: only restore step on initial mount, not on every profile change
+  const hasInitializedRef = useRef(false);
 
-      if (existingProfile.isProfileComplete || existingProfile.onboardingStep >= 4) {
-        if (existingProfile.allBatchIds && existingProfile.allBatchIds.length === 0) {
-          navigate("/manage-batch/create");
-        } else {
-          navigate("/dash");
-        }
-      } else if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep < 4) {
-        setCurrentStep(existingProfile.onboardingStep);
+  useEffect(() => {
+    console.log("[WIZARD useEffect] fired — hasInitializedRef:", hasInitializedRef.current, "| existingProfile:", existingProfile ? `onboardingStep=${existingProfile.onboardingStep}, isProfileComplete=${existingProfile.isProfileComplete}` : "null");
+
+    if (existingProfile) {
+      if (!hasInitializedRef.current) {
+        console.log("[WIZARD useEffect] FIRST MOUNT — hydrating formData and checking step resume");
+        setFormData({
+          ...existingProfile,
+          userName: existingProfile.userName || user?.name || "",
+          phone: existingProfile.phone || user?.phone || "",
+          email: user?.email || "",
+          DOB: existingProfile.DOB ? existingProfile.DOB.split("T")[0] : "",
+          address: existingProfile.address || "",
+          collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
+          tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
+        });
       }
-    } else if (user) {
+
+      // Already complete → go to dash
+      if (existingProfile.isProfileComplete) {
+        console.log("[WIZARD useEffect] isProfileComplete=true → navigating to /dash");
+        navigate("/dash");
+        return;
+      }
+
+      // Only restore saved step on FIRST mount (resume mid-progress)
+      if (!hasInitializedRef.current) {
+        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 4) {
+          console.log("[WIZARD useEffect] Restoring step to:", existingProfile.onboardingStep);
+          setCurrentStep(Math.min(existingProfile.onboardingStep, 4));
+        }
+        hasInitializedRef.current = true;
+      }
+    } else if (user && !hasInitializedRef.current) {
       setFormData({
         userName: user.name || "",
         phone: user.phone || "",
         email: user.email || "",
       });
+      hasInitializedRef.current = true;
     }
   }, [existingProfile, user, navigate]);
 
-  const saveProfileProgress = async (stepData, incrementStep = true) => {
+  const saveProgress = async (stepData, nextStep) => {
+    console.log(`[WIZARD saveProgress] called — currentStep: ${currentStep}, nextStep: ${nextStep}`);
     if (!user) return false;
-    
     setIsSaving(true);
+
     try {
-      const mergedData = { ...formData, ...stepData };
-      setFormData(mergedData);
-      
-      const newStep = incrementStep ? currentStep + 1 : currentStep;
-      const isComplete = incrementStep && currentStep === 4;
+      const merged = { ...formData, ...stepData };
+      setFormData(merged);
+
+      const { isComplete } = checkProfileCompletion(merged);
+      console.log("[WIZARD saveProgress] checkProfileCompletion result:", isComplete);
+
+      const roleLabels =
+        user.labels && user.labels.includes("Teacher")
+          ? user.labels
+          : [...(user.labels || []), "Teacher"];
 
       const payload = {
-        ...mergedData,
+        ...merged,
         userId: user.$id,
-        role: user.labels && user.labels.includes("Teacher") ? user.labels : [...(user.labels || []), "Teacher"],
-        onboardingStep: newStep,
+        role: roleLabels,
+        onboardingStep: nextStep,
         isProfileComplete: isComplete,
+        enrollmentStatus: merged.enrollmentStatus || "enrolled",
+        status: merged.status || "active",
       };
 
-      if (isComplete) {
-        // Teacher profile complete flag
-      }
-
-      let updatedProfile;
+      let updated;
       if (existingProfile) {
-        updatedProfile = await userProfileService.updateUserProfile(existingProfile.$id, payload);
+        updated = await userProfileService.updateUserProfile(existingProfile.$id, payload);
       } else {
-        updatedProfile = await userProfileService.createUserProfile(payload);
+        updated = await userProfileService.createUserProfile(payload);
       }
 
-      dispatch(addProfile({ data: updatedProfile }));
-      
-      if (incrementStep) {
-        setCurrentStep(newStep);
-      }
+      dispatch(addProfile({ data: updated }));
+      setCurrentStep(nextStep);
       return true;
-    } catch (error) {
-       console.error("Error saving onboarding step:", error);
-       toast.error("Failed to save progress. Please try again.");
-       return false;
+    } catch (err) {
+      console.error("Teacher onboarding save error:", err);
+      toast.error("Failed to save progress. Please try again.");
+      return false;
     } finally {
-       setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const handleNext = async (stepData) => {
-    await saveProfileProgress(stepData, true);
-  };
+  const handleNext = (stepData) => saveProgress(stepData, currentStep + 1);
+  const handleBack = () => setCurrentStep((s) => Math.max(1, s - 1));
 
-  const handleSkip = async () => {
-    await saveProfileProgress({}, true);
-  };
-
-  const finishOnboarding = async () => {
-    const ok = await saveProfileProgress({}, true);
-    if (ok) navigate("/manage-batch/create");
+  const handleFinish = async () => {
+    const ok = await saveProgress({}, currentStep + 1);
+    // Redirect to dashboard
+    if (ok) navigate("/dash");
   };
 
   if (!user) return null;
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <TeacherStepBasicInfo initialData={formData} onNext={handleNext} isSaving={isSaving} />;
-      case 2:
-        return <TeacherStepProfessional initialData={formData} onNext={handleNext} isSaving={isSaving} />;
-      case 3:
-        return <TeacherStepScope initialData={formData} onNext={handleNext} onSkip={handleSkip} isSaving={isSaving} />;
-      case 4:
-      default:
-        return <TeacherStepComplete onFinish={finishOnboarding} isSaving={isSaving} />;
-    }
-  };
+  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
     <div className="min-h-[80vh] w-full flex flex-col items-center justify-center p-4 sm:p-8 bg-slate-50 dark:bg-slate-950">
@@ -131,38 +141,72 @@ export default function TeacherOnboardingWizard() {
           <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-white mb-6">
             Instructor Setup
           </h1>
-          
-          {/* Progress Bar */}
+
+          {/* Stepper */}
           <div className="flex items-center justify-between relative mb-2">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full z-0"></div>
-            <div 
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full z-0" />
+            <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-600 rounded-full z-0 transition-all duration-500"
-              style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
-            ></div>
-            
-            {[1, 2, 3, 4].map((step) => (
-              <div 
-                key={step}
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm z-10 transition-colors duration-300 ${
-                  currentStep >= step 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-              >
-                {step}
-              </div>
-            ))}
+              style={{ width: `${progress}%` }}
+            />
+            {STEPS.map((step, i) => {
+              const stepNum = i + 1;
+              const done = currentStep > stepNum;
+              const active = currentStep === stepNum;
+              return (
+                <div
+                  key={stepNum}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm z-10 transition-all duration-300 border-2 ${
+                    done
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : active
+                      ? "bg-white dark:bg-slate-900 border-blue-600 text-blue-600"
+                      : "bg-slate-200 dark:bg-slate-800 border-transparent text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {done ? "✓" : stepNum}
+                </div>
+              );
+            })}
           </div>
-          <div className="flex justify-between text-xs font-medium text-slate-500 px-1">
-             <span className="text-center w-8">Basic</span>
-             <span className="text-center w-8">Trade</span>
-             <span className="text-center w-8">Scope</span>
-             <span className="text-center w-8">Done</span>
+          <div className="flex justify-between text-xs font-medium text-slate-500 mt-1">
+            {STEPS.map((s) => (
+              <span key={s.label} className="w-9 text-center">
+                {s.label}
+              </span>
+            ))}
           </div>
         </div>
 
         <div className="animate-in fade-in zoom-in-95 duration-300 ease-out">
-          {renderStep()}
+          {currentStep === 1 && (
+            <TeacherStepBasicInfo initialData={formData} onNext={handleNext} isSaving={isSaving} />
+          )}
+          {currentStep === 2 && (
+            <StepPersonalInfo
+              initialData={formData}
+              onNext={handleNext}
+              onBack={handleBack}
+              isSaving={isSaving}
+            />
+          )}
+          {currentStep === 3 && (
+            <StepAcademic
+              initialData={formData}
+              onNext={handleNext}
+              onBack={handleBack}
+              isSaving={isSaving}
+              role="Teacher"
+            />
+          )}
+          {currentStep === 4 && (
+            <TeacherStepComplete
+              formData={formData}
+              onFinish={handleFinish}
+              onBack={handleBack}
+              isSaving={isSaving}
+            />
+          )}
         </div>
       </div>
     </div>

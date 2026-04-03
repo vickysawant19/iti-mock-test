@@ -58,6 +58,7 @@ class NewAttendanceService {
   }
   // Get student attendance by userId and batchId
   async getStudentAttendance(userId, batchId) {
+    if (!batchId) return [];
     try {
       const queries = [
         Query.equal("userId", userId),
@@ -81,6 +82,7 @@ class NewAttendanceService {
     endDate,
     additionalQueries = [],
   ) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       const queries = [
         Query.equal("userId", userId),
@@ -98,6 +100,7 @@ class NewAttendanceService {
 
   // Get attendance for a specific date
   async getAttendanceByDate(userId, batchId, date) {
+    if (!batchId) return null;
     try {
       const data = await this.database.listDocuments(
         conf.databaseId,
@@ -117,6 +120,7 @@ class NewAttendanceService {
 
   // Get batch attendance for a specific date (all students)
   async getBatchAttendanceByDate(batchId, date, extraQueries = []) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       const queries = [
         Query.equal("batchId", batchId),
@@ -132,6 +136,7 @@ class NewAttendanceService {
 
   // Get batch attendance with pagination (for UI with infinite scroll)
   async getBatchAttendance(batchId, limit = 100, offset = 0) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       const data = await this.database.listDocuments(
         conf.databaseId,
@@ -151,6 +156,7 @@ class NewAttendanceService {
 
   // Get all batch attendance (fetch all pages)
   async getAllBatchAttendance(batchId) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       const queries = [
         Query.equal("batchId", batchId),
@@ -193,6 +199,7 @@ class NewAttendanceService {
     startDate = null,
     endDate = null,
   ) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       const queries = [
         Query.equal("batchId", batchId),
@@ -227,6 +234,7 @@ class NewAttendanceService {
     markedAt = null,
     markedBy = null,
   }) {
+    if (!batchId) return null;
     try {
       // Ensure date is in YYYY-MM-DD format (10 characters)
       const formattedDate = this.formatDate(date);
@@ -379,6 +387,7 @@ class NewAttendanceService {
     startDate = null,
     endDate = null,
   ) {
+    if (!batchId) return { total: 0, presentDays: 0, absentDays: 0, lateDays: 0, workingDays: 0, percentage: 0 };
     try {
       const baseQueries = [
         Query.equal("userId", userId),
@@ -444,6 +453,7 @@ class NewAttendanceService {
 
   // Get batch attendance statistics for a specific date
   async getBatchAttendanceStats(batchId, date) {
+    if (!batchId) return { total: 0, present: 0, absent: 0, late: 0, holiday: 0, percentage: 0 };
     try {
       const formattedDate = this.formatDate(date);
 
@@ -484,6 +494,7 @@ class NewAttendanceService {
 
   // Mark batch attendance for a specific date (optimized approach)
   async markBatchAttendance(batchId, date, attendanceData) {
+    if (!batchId) return { success: [], errors: [], total: 0, created: 0, updated: 0, failed: 0 };
     try {
       const formattedDate = this.formatDate(date);
 
@@ -611,6 +622,7 @@ class NewAttendanceService {
 
   // Get monthly attendance summary
   async getMonthlyAttendance(userId, batchId, year, month) {
+    if (!batchId) return { documents: [], total: 0 };
     try {
       // Format dates as YYYY-MM-DD (10 characters)
       const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -635,6 +647,7 @@ class NewAttendanceService {
 
   // Get students with low attendance
   async getLowAttendanceStudents(batchId, startDate, endDate, threshold = 75) {
+    if (!batchId) return [];
     try {
       const queries = [Query.equal("batchId", batchId)];
 
@@ -696,6 +709,7 @@ class NewAttendanceService {
 
   // Check if attendance exists
   async checkAttendanceExists(userId, batchId, date) {
+    if (!batchId) return false;
     try {
       const formattedDate = this.formatDate(date);
 
@@ -717,6 +731,7 @@ class NewAttendanceService {
 
   // Get distinct dates for a batch
   async getBatchAttendanceDates(batchId, limit = 30) {
+    if (!batchId) return [];
     try {
       const queries = [
         Query.equal("batchId", batchId),
@@ -743,6 +758,7 @@ class NewAttendanceService {
     endDate,
     status = null,
   ) {
+    if (!batchId) return 0;
     try {
       const queries = [
         Query.equal("batchId", batchId),

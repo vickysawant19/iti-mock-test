@@ -33,6 +33,9 @@ const ProfileForm = () => {
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
 
+  const { data: collegesResponse, isLoading: isCollegesLoading } = useListCollegesQuery();
+  const collegeData = collegesResponse?.documents || [];
+
   const selectedCollegeId = methods.watch("collegeId");
   const selectedCollege = collegeData.find((c) => c.$id === selectedCollegeId);
   const tradeIds = selectedCollege?.tradeIds || [];
@@ -130,7 +133,6 @@ const ProfileForm = () => {
         }
 
         if (profileData) {
-          console.log("profile data", profileData);
           // Format dates for the form
           const formattedData = {
             ...profileData,

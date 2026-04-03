@@ -29,6 +29,7 @@ class HolidayService {
   }
 
   async getBatchHolidays(batchId) {
+    if (!batchId) return [];
     try {
       const data = this.getAllHolidays([Query.equal("batchId", batchId)]);
       return data;
@@ -38,6 +39,7 @@ class HolidayService {
   }
 
   async getHolidayByDate(date, batchId) {
+    if (!batchId) return null;
     try {
       const data = await this.getAllHolidays([
         Query.equal("batchId", batchId),
@@ -45,13 +47,13 @@ class HolidayService {
       ]);
 
       return data?.length > 0 ? data[0] : null;
-      documents[0];
     } catch (error) {
       throw new Error(error.message);
     }
   }
 
   async getBatchHolidaysByDateRange(batchId, startDate, endDate) {
+    if (!batchId) return [];
     try {
       const data = this.getAllHolidays([
         Query.equal("batchId", batchId),

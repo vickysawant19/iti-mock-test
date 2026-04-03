@@ -9,12 +9,14 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { Query } from "appwrite";
 
-export default function TeacherStepProfessional({ initialData, onNext, isSaving }) {
+export default function TeacherStepProfessional({ initialData, onNext, onBack, isSaving }) {
   const { control, register, handleSubmit, watch, formState: { errors } } = useForm({
     defaultValues: {
       collegeId: initialData?.collegeId || "",
       tradeId: initialData?.tradeId || "",
-      specialization: Array.isArray(initialData?.specialization) ? initialData.specialization.join(", ") : (initialData?.specialization || ""),
+      specialization: Array.isArray(initialData?.specialization)
+        ? initialData.specialization.join(", ")
+        : (initialData?.specialization || ""),
     },
   });
 
@@ -31,9 +33,7 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
   );
   const tradeData = tradesResponse?.documents || [];
 
-  const onSubmit = (data) => {
-    onNext(data);
-  };
+  const onSubmit = (data) => onNext(data);
 
   return (
     <Card className="w-full border-0 shadow-lg sm:border sm:bg-white dark:sm:bg-slate-900 overflow-hidden mx-auto">
@@ -58,9 +58,7 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
                   </SelectTrigger>
                   <SelectContent>
                     {!isCollegesLoading && collegeData.map((college) => (
-                      <SelectItem key={college.$id} value={college.$id}>
-                        {college.collageName}
-                      </SelectItem>
+                      <SelectItem key={college.$id} value={college.$id}>{college.collageName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -68,7 +66,7 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
             />
             {errors.collegeId && <p className="text-sm text-red-500">{errors.collegeId.message}</p>}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="tradeId">Primary Trade <span className="text-red-500">*</span></Label>
             <Controller
@@ -82,9 +80,7 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
                   </SelectTrigger>
                   <SelectContent>
                     {!isTradesLoading && tradeData.map((trade) => (
-                      <SelectItem key={trade.$id} value={trade.$id}>
-                        {trade.tradeName}
-                      </SelectItem>
+                      <SelectItem key={trade.$id} value={trade.$id}>{trade.tradeName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -106,11 +102,14 @@ export default function TeacherStepProfessional({ initialData, onNext, isSaving 
           </div>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-end border-t pt-4 dark:border-slate-800">
-        <Button 
-          type="submit" 
-          form="teacher-professional-form" 
-          disabled={isSaving || isCollegesLoading || isTradesLoading} 
+      <CardFooter className="flex justify-between border-t pt-4 dark:border-slate-800">
+        <Button type="button" variant="outline" onClick={onBack} disabled={isSaving}>
+          Back
+        </Button>
+        <Button
+          type="submit"
+          form="teacher-professional-form"
+          disabled={isSaving || isCollegesLoading || isTradesLoading}
           className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px]"
         >
           {isSaving ? "Saving..." : "Continue"}
