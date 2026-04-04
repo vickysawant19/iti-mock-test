@@ -98,6 +98,23 @@ class NewAttendanceService {
     }
   }
 
+  /** Teacher's own attendance in a range (`userId` in collection === teacherId). */
+  async getTeacherAttendanceByDateRange(
+    teacherId,
+    batchId,
+    startDate,
+    endDate,
+    additionalQueries = [],
+  ) {
+    return this.getStudentAttendanceByDateRange(
+      teacherId,
+      batchId,
+      startDate,
+      endDate,
+      additionalQueries,
+    );
+  }
+
   // Get attendance for a specific date
   async getAttendanceByDate(userId, batchId, date) {
     if (!batchId) return null;

@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { highlightAbsentRow } from "./diaryAbsentHighlight";
 import { Query } from "appwrite";
 
 import holidayService from "@/appwrite/holidaysService";
@@ -47,9 +48,8 @@ function InstructorDailyDiary() {
       const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
       const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
-      // Fetch attendance
       const attendanceRes =
-        await newAttendanceService.getStudentAttendanceByDateRange(
+        await newAttendanceService.getTeacherAttendanceByDateRange(
           profile.userId,
           profile.batchId,
           startDate,
@@ -79,9 +79,12 @@ function InstructorDailyDiary() {
         endDate
       );
 
+      const ownDiary =
+        diaryRes?.filter((doc) => doc.instructorId === profile.userId) || [];
+
       const formattedDiary = {};
-      if (diaryRes && diaryRes.length > 0) {
-        diaryRes.forEach((doc) => {
+      if (ownDiary.length > 0) {
+        ownDiary.forEach((doc) => {
           const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
           formattedDiary[dateKey] = doc;
         });
@@ -117,7 +120,7 @@ function InstructorDailyDiary() {
         const dateKey = format(day, "yyyy-MM-dd");
         const entry = diaryData[dateKey] || {};
         const isHoliday = holidays.has(dateKey);
-        const isAbsent = attendance.get(dateKey) === "absent";
+        const isAbsent = highlightAbsentRow(attendance.get(dateKey));
         const dayOfWeek = format(day, "EEEE");
 
         let theory = entry.theoryWork || "";

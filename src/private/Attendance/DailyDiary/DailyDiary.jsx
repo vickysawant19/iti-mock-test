@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import InstructorDailyDiary from "./InstructorDailyDiary";
 import StudentDailyDiary from "./StudentDailyDiary";
 import DiaryWeekView from "./DiaryWeekView";
-import { useWeeklyDiaryData } from "./useWeeklyDiaryData";
+import { useDiaryData } from "./useDiaryData";
 
 function DailyDiary() {
   const user = useSelector(selectUser);
@@ -37,7 +37,13 @@ function TeacherDiaryView() {
     handlePreviousWeek,
     handleNextWeek,
     setDiaryData,
-  } = useWeeklyDiaryData();
+    dailyDateLabel,
+    canGoPreviousPeriod,
+  } = useDiaryData({
+    viewType: activeTab === "daily" ? "daily" : "weekly",
+    role: "teacher",
+    enabled: activeTab !== "monthly",
+  });
 
   const updateDiaryField = useCallback(
     (dateKey, field, value) => {
@@ -138,7 +144,7 @@ function TeacherDiaryView() {
     [diaryData, setDiaryData]
   );
 
-  if (isLoading) {
+  if (activeTab !== "monthly" && isLoading) {
     return <Loader isLoading={isLoading} />;
   }
 
@@ -167,6 +173,7 @@ function TeacherDiaryView() {
           </h1>
           <div className="flex flex-row flex-wrap gap-2 w-full sm:w-auto">
             <button
+              type="button"
               onClick={() => setActiveTab("monthly")}
               className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
                 activeTab === "monthly"
@@ -177,6 +184,7 @@ function TeacherDiaryView() {
               Monthly
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("weekly")}
               className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
                 activeTab === "weekly"
@@ -185,6 +193,17 @@ function TeacherDiaryView() {
               }`}
             >
               Weekly
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("daily")}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                activeTab === "daily"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+              }`}
+            >
+              Daily
             </button>
           </div>
         </div>
@@ -200,11 +219,17 @@ function TeacherDiaryView() {
               <Card className="rounded-xl shadow-sm border-gray-200 dark:border-gray-800">
                 <CardHeader className="py-4">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <Button variant="outline" size="sm" onClick={handlePreviousWeek} disabled={weekNumber <= 1} className="w-full sm:w-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousWeek}
+                      disabled={!canGoPreviousPeriod}
+                      className="w-full sm:w-auto"
+                    >
                       <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                     </Button>
-                    <Badge variant="secondary" className="text-base px-6 py-2 shadow-sm shrink-0">
-                      Week {weekNumber}
+                    <Badge variant="secondary" className="text-base px-6 py-2 shadow-sm shrink-0 text-center">
+                      {activeTab === "daily" ? dailyDateLabel : `Week ${weekNumber}`}
                     </Badge>
                     <Button variant="outline" size="sm" onClick={handleNextWeek} className="w-full sm:w-auto">
                       Next <ChevronRight className="h-4 w-4 ml-2" />

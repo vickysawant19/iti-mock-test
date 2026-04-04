@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { PracticalNumberInput } from "./PracticalNumberInput";
+import { highlightAbsentRow, TEACHER_ABSENT_ROW_CLASS } from "./diaryAbsentHighlight";
 
 const DiaryWeekView = ({
   weekDays,
@@ -37,16 +38,19 @@ const DiaryWeekView = ({
         : weekDays.map((day) => {
             const dateKey = format(day, "yyyy-MM-dd");
             const entry = diaryData[dateKey] || { isEditing: isTeacher };
-            const isAbsent = attendance.get(dateKey) === "absent";
+            const isAbsent = highlightAbsentRow(attendance.get(dateKey));
             const isHoliday = holidays.has(dateKey);
             const isWeekend = ["Sat", "Sun"].includes(format(day, "E"));
+            const teacherAbsentHighlight = isTeacher && isAbsent && !isHoliday;
 
             return (
               <Card
                 key={dateKey}
                 className={`${isHoliday ? "border-red-500 bg-red-50 dark:bg-red-950" : ""} ${
-                  isAbsent ? "border-pink-500 bg-pink-50 dark:bg-pink-950" : ""
-                } ${isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""}`}
+                  teacherAbsentHighlight ? `${TEACHER_ABSENT_ROW_CLASS} rounded-xl border border-red-200 dark:border-red-900` : ""
+                } ${!isTeacher && isAbsent ? "border-pink-500 bg-pink-50 dark:bg-pink-950" : ""} ${
+                  isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""
+                }`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -54,14 +58,19 @@ const DiaryWeekView = ({
                       <CardTitle className="text-lg">{format(day, "EEEE")}</CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">{format(day, "MMM dd, yyyy")}</p>
                     </div>
-                    {isAbsent && <Badge variant="destructive">Absent</Badge>}
-                    {isHoliday && <Badge variant="destructive">Holiday</Badge>}
+                    <div className="flex flex-col items-end gap-1">
+                      {teacherAbsentHighlight && (
+                        <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
+                      )}
+                      {isAbsent && !isTeacher && <Badge variant="destructive">Absent</Badge>}
+                      {isHoliday && <Badge variant="destructive">Holiday</Badge>}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isHoliday ? (
                     <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p>
-                  ) : isAbsent ? (
+                  ) : isAbsent && !isTeacher ? (
                     <p className="text-center py-4 text-muted-foreground">No entries for absent day</p>
                   ) : (
                     <>
@@ -123,43 +132,75 @@ const DiaryWeekView = ({
                 : weekDays.map((day) => {
                     const dateKey = format(day, "yyyy-MM-dd");
                     const entry = diaryData[dateKey] || { isEditing: isTeacher };
-                    const isAbsent = attendance.get(dateKey) === "absent";
+                    const isAbsent = highlightAbsentRow(attendance.get(dateKey));
                     const isHoliday = holidays.has(dateKey);
                     const isWeekend = ["Sat", "Sun"].includes(format(day, "E"));
+                    const teacherAbsentHighlight = isTeacher && isAbsent && !isHoliday;
+                    const studentAbsentBlock = !isTeacher && isAbsent && !isHoliday;
+                    const rowAccent = isHoliday
+                      ? "bg-red-50 dark:bg-red-950"
+                      : teacherAbsentHighlight
+                        ? TEACHER_ABSENT_ROW_CLASS
+                        : !isTeacher && isAbsent
+                          ? "bg-pink-50 dark:bg-pink-950"
+                          : isWeekend && !isHoliday && !isAbsent
+                            ? "bg-gray-100 dark:bg-gray-900"
+                            : "";
 
                     return (
-                      <tr key={dateKey} className={`border-b border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/50 ${isHoliday ? "bg-red-50 dark:bg-red-950" : isAbsent ? "bg-pink-50 dark:bg-pink-950" : isWeekend && !isHoliday && !isAbsent ? "bg-gray-100 dark:bg-gray-900" : ""}`}>
+                      <tr key={dateKey} className={`border-b border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/50 ${rowAccent}`}>
                         <td className="p-4 align-top">
-                          {format(day, "MMM dd, yyyy")}
-                          {isAbsent && <Badge variant="destructive" className="ml-2">Absent</Badge>}
-                          {isHoliday && <Badge variant="destructive" className="ml-2">Holiday</Badge>}
+                          <div className="flex flex-col gap-1">
+                            <span>{format(day, "MMM dd, yyyy")}</span>
+                            {teacherAbsentHighlight && (
+                              <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
+                            )}
+                          </div>
+                          {isAbsent && !isTeacher && <Badge variant="destructive" className="ml-2 mt-1">Absent</Badge>}
+                          {isHoliday && <Badge variant="destructive" className="ml-2 mt-1">Holiday</Badge>}
                         </td>
                         <td className="p-4 align-top">{format(day, "EEEE")}</td>
                         <td className="p-4 align-top">
-                          {isHoliday ? <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p> : isAbsent ? <p className="text-center py-4 text-muted-foreground">No entries</p> : <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theoryWork" value={entry.theoryWork || entry.theory} updateDiaryField={updateDiaryField} type="textarea" />}
+                          {isHoliday ? (
+                            <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p>
+                          ) : studentAbsentBlock ? (
+                            <p className="text-center py-4 text-muted-foreground">No entries</p>
+                          ) : (
+                            <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="theoryWork" value={entry.theoryWork || entry.theory} updateDiaryField={updateDiaryField} type="textarea" />
+                          )}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />}
+                          {!(isHoliday || studentAbsentBlock) && (
+                            <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />
+                          )}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />}
+                          {!(isHoliday || studentAbsentBlock) && (
+                            <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />
+                          )}
                         </td>
                         {isTeacher && (
                           <td className="p-4 align-top">
-                            {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="extraWork" value={entry.extraWork} updateDiaryField={updateDiaryField} type="textarea" />}
+                            {!(isHoliday || studentAbsentBlock) && (
+                              <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="extraWork" value={entry.extraWork} updateDiaryField={updateDiaryField} type="textarea" />
+                            )}
                           </td>
                         )}
                         {isTeacher && (
                           <td className="p-4 align-top">
-                            {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="hours" value={entry.hours} updateDiaryField={updateDiaryField} type="number" />}
+                            {!(isHoliday || studentAbsentBlock) && (
+                              <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="hours" value={entry.hours} updateDiaryField={updateDiaryField} type="number" />
+                            )}
                           </td>
                         )}
                         <td className="p-4 align-top">
-                          {!(isHoliday || isAbsent) && <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />}
+                          {!(isHoliday || studentAbsentBlock) && (
+                            <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />
+                          )}
                         </td>
                         {isTeacher && (
                           <td className="p-4 align-top text-center">
-                            {!(isHoliday || isAbsent) && (
+                            {!(isHoliday || studentAbsentBlock) && (
                               <Button size="sm" onClick={() => toggleEditing(dateKey)} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : entry.isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                               </Button>

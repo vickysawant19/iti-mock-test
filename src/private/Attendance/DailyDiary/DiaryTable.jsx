@@ -11,13 +11,15 @@ import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
 import { PracticalNumberInput } from "./PracticalNumberInput";
+import { highlightAbsentRow, TEACHER_ABSENT_ROW_CLASS } from "./diaryAbsentHighlight";
 
 function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText, onUpdateEntry }) {
   const profile = useSelector(selectProfile);
   // Default to editing mode if no entry exists and it's not a holiday/absent/weekend
   // We can also let the user add an entry on weekends just in case, but let's default to editing if !entry and !holiday and !absent.
   const isMissing = !entry;
-  const shouldDefaultToEdit = isMissing && !isHoliday && !isAbsent;
+  // Instructor diary: absence is visual only — allow adding/editing on absent days.
+  const shouldDefaultToEdit = isMissing && !isHoliday;
 
   const [isEditing, setIsEditing] = useState(shouldDefaultToEdit);
   const [isSaving, setIsSaving] = useState(false);
@@ -130,15 +132,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
     }
   };
 
+  const absentHighlight = isAbsent && !isHoliday ? TEACHER_ABSENT_ROW_CLASS : "";
   const rowClass = `group transition-colors border-gray-200 dark:border-gray-800 ${
     isHoliday ? "bg-red-50/50 dark:bg-red-950/20 lg:hover:bg-red-100/50 border-red-200 dark:border-red-900" :
-    isAbsent ? "bg-pink-50/50 dark:bg-pink-950/20 lg:hover:bg-pink-100/50 border-pink-200 dark:border-pink-900" :
+    absentHighlight ? `${absentHighlight} lg:hover:bg-red-100/40 dark:lg:hover:bg-red-950/40` :
     isWeekend ? "bg-gray-50/50 dark:bg-gray-900/40 lg:hover:bg-gray-100/50" :
     "bg-white lg:hover:bg-gray-50 dark:bg-gray-950 dark:lg:hover:bg-gray-900"
   }`;
 
-  // If it's literally a holiday or absent day where we have no entry
-  if (!entry && (isHoliday || isAbsent)) {
+  if (!entry && isHoliday) {
     return (
       <tr className={`${rowClass} flex flex-col lg:table-row mb-4 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
         <td className="flex justify-between items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
@@ -147,11 +149,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         </td>
         <td className="hidden lg:table-cell px-6 py-4 text-muted-foreground">{format(day, "EEEE")}</td>
         <td className="p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-center lg:text-left block lg:table-cell" colSpan={7}>
-          {isHoliday ? (
-            <span className="text-red-600 dark:text-red-400 font-medium">{holidayText}</span>
-          ) : (
-            <span className="text-pink-600 dark:text-pink-400 font-medium">Absent</span>
-          )}
+          <span className="text-red-600 dark:text-red-400 font-medium">{holidayText}</span>
         </td>
       </tr>
     );
@@ -161,7 +159,12 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
   return (
     <tr className={`${rowClass} flex flex-col lg:table-row mb-6 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
       <td className="flex justify-between lg:justify-start items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
-        <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
+          {isAbsent && !isHoliday && (
+            <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
+          )}
+        </div>
         <span className="lg:hidden text-muted-foreground text-sm font-medium">{format(day, "EEEE")}</span>
       </td>
       <td className="hidden lg:table-cell px-6 py-4 text-muted-foreground">{format(day, "EEEE")}</td>
@@ -212,15 +215,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         <>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Theory Work</label>
-            <span className="text-gray-800 dark:text-gray-200">{entry.theoryWork || "-"}</span>
+            <span className="text-gray-800 dark:text-gray-200">{entry?.theoryWork || "-"}</span>
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Practical Work</label>
-            <span className="text-gray-800 dark:text-gray-200">{entry.practicalWork || "-"}</span>
+            <span className="text-gray-800 dark:text-gray-200">{entry?.practicalWork || "-"}</span>
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical No.</label>
-            {entry.practicalNumbers && entry.practicalNumbers.length > 0 ? (
+            {entry?.practicalNumbers && entry.practicalNumbers.length > 0 ? (
                <div className="flex flex-wrap gap-1 max-w-full lg:max-w-[150px]">
                  {entry.practicalNumbers.map((num, i) => (
                    <span key={i} className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-md">
@@ -232,15 +235,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-muted-foreground border-b lg:border-0 border-dashed">
              <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Extra Work</label>
-             {entry.extraWork || "-"}
+             {entry?.extraWork || "-"}
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap text-muted-foreground border-b lg:border-0 border-dashed">
              <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Hours</label>
-             {entry.hours || "-"}
+             {entry?.hours || "-"}
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-pre-wrap text-muted-foreground lg:max-w-[200px] border-b lg:border-0 border-dashed">
              <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-1 block">Remarks</label>
-             {entry.remarks === "Prac #: -" ? "-" : entry.remarks || "-"}
+             {entry?.remarks === "Prac #: -" ? "-" : entry?.remarks || "-"}
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap bg-muted/10 lg:bg-white dark:lg:bg-gray-950 lg:sticky right-0 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-gray-50 dark:group-hover:bg-gray-900 transition-colors">
             <Button size="lg" variant="default" className="min-w-fit px-4 py-2 w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap" onClick={() => setIsEditing(true)}>Edit Entry</Button>
@@ -296,7 +299,7 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
                   const dateKey = format(day, "yyyy-MM-dd");
                   const entry = diaryData[dateKey];
                   const isHoliday = holidays.has(dateKey);
-                  const isAbsent = attendance.get(dateKey) === "absent";
+                  const isAbsent = highlightAbsentRow(attendance.get(dateKey));
                   const dayOfWeek = format(day, "E");
                   const isWeekend = dayOfWeek === "Sat" || dayOfWeek === "Sun";
                   const holidayText = isHoliday ? holidays.get(dateKey)?.holidayText : "";
