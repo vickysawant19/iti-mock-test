@@ -15,13 +15,9 @@ import { highlightAbsentRow, TEACHER_ABSENT_ROW_CLASS } from "./diaryAbsentHighl
 
 function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText, onUpdateEntry }) {
   const profile = useSelector(selectProfile);
-  // Default to editing mode if no entry exists and it's not a holiday/absent/weekend
-  // We can also let the user add an entry on weekends just in case, but let's default to editing if !entry and !holiday and !absent.
   const isMissing = !entry;
-  // Instructor diary: absence is visual only — allow adding/editing on absent days.
-  const shouldDefaultToEdit = isMissing && !isHoliday;
 
-  const [isEditing, setIsEditing] = useState(shouldDefaultToEdit);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -47,9 +43,9 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
         setIsEditing(false);
     } else {
         setFormData({ theoryWork: "", practicalWork: "", practicalNumbers: [], extraWork: "", hours: "", remarks: "" });
-        setIsEditing(shouldDefaultToEdit);
+        setIsEditing(false);
     }
-  }, [entry, shouldDefaultToEdit]);
+  }, [entry]);
 
   const dateKey = format(day, "yyyy-MM-dd");
 
@@ -112,12 +108,8 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
 
   const handleCancel = () => {
     if (isMissing) {
-      // Clear inputs if they cancel a missing row
       setFormData({ theoryWork: "", practicalWork: "", practicalNumbers: [], extraWork: "", hours: "", remarks: "" });
-      // If it's a weekend default where inputs were manually invoked, collapse the inputs.
-      if (!shouldDefaultToEdit) {
-          setIsEditing(false);
-      }
+      setIsEditing(false);
     } else {
       // Revert to original data
       setFormData({
@@ -246,7 +238,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
              {entry?.remarks === "Prac #: -" ? "-" : entry?.remarks || "-"}
           </td>
           <td className="block lg:table-cell p-4 lg:px-6 lg:py-4 whitespace-nowrap bg-muted/10 lg:bg-white dark:lg:bg-gray-950 lg:sticky right-0 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-gray-50 dark:group-hover:bg-gray-900 transition-colors">
-            <Button size="lg" variant="default" className="min-w-fit px-4 py-2 w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap" onClick={() => setIsEditing(true)}>Edit Entry</Button>
+            <Button size="lg" variant="default" className="min-w-fit px-4 py-2 w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap" onClick={() => setIsEditing(true)}>{isMissing ? "Edit" : "Edit Entry"}</Button>
           </td>
         </>
       )}

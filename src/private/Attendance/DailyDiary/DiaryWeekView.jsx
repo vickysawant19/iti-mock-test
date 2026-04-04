@@ -37,7 +37,7 @@ const DiaryWeekView = ({
           ))
         : weekDays.map((day) => {
             const dateKey = format(day, "yyyy-MM-dd");
-            const entry = diaryData[dateKey] || { isEditing: isTeacher };
+            const entry = diaryData[dateKey] || { isEditing: false };
             const isAbsent = highlightAbsentRow(attendance.get(dateKey));
             const isHoliday = holidays.has(dateKey);
             const isWeekend = ["Sat", "Sun"].includes(format(day, "E"));
@@ -131,7 +131,7 @@ const DiaryWeekView = ({
                   ))
                 : weekDays.map((day) => {
                     const dateKey = format(day, "yyyy-MM-dd");
-                    const entry = diaryData[dateKey] || { isEditing: isTeacher };
+                    const entry = diaryData[dateKey] || { isEditing: false };
                     const isAbsent = highlightAbsentRow(attendance.get(dateKey));
                     const isHoliday = holidays.has(dateKey);
                     const isWeekend = ["Sat", "Sun"].includes(format(day, "E"));

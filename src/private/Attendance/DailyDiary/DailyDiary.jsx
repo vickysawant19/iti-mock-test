@@ -123,7 +123,7 @@ function TeacherDiaryView() {
   const toggleEditing = useCallback(
     (dateKey) => {
       const currentEntry = diaryData[dateKey] || {
-        isEditing: true,
+        isEditing: false,
       };
 
       if (currentEntry.isEditing) {
