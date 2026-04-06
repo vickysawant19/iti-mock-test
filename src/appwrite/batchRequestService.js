@@ -1,6 +1,7 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
+import batchStudentService from "./batchStudentService";
 
 export class BatchRequestService {
   constructor() {
@@ -9,7 +10,7 @@ export class BatchRequestService {
   }
 
   // Send a request to join a batch
-  async sendRequest(batchId, studentId) {
+  async sendRequest(batchId, studentId, requestedBy = "student") {
     if (!batchId || !studentId) throw new Error("batchId and studentId are required");
 
     try {
@@ -125,6 +126,92 @@ export class BatchRequestService {
       console.error("Appwrite error: updateRequestStatus:", error);
       throw new Error(`Error: ${error.message}`);
     }
+  }
+
+  // Centralized unified status evaluation function
+  async getStudentBatchStatus(studentId, batchId) {
+    if (!studentId || !batchId) return "unrequested";
+    
+    // First check if they are already in the batch
+    const activeCheck = await this.database.listDocuments(
+      conf.databaseId,
+      conf.batchStudentsCollectionId,
+      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    );
+    if (activeCheck.total > 0) return "approved";
+
+    // Second check their request status
+    const reqCheck = await this.database.listDocuments(
+      conf.databaseId,
+      conf.batchRequestsCollectionId,
+      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    );
+    if (reqCheck.total > 0) {
+      return reqCheck.documents[0].status; // "pending", "approved", or "rejected"
+    }
+
+    return "unrequested";
+  }
+
+  // Teacher specific: Approve a request & map to batch
+  async approveRequest(requestId, batchId, studentId) {
+    if (!requestId || !batchId || !studentId) {
+       // if we only have requestId, we need to fetch it first to get batchId and studentId, 
+       // but typically we can pass all 3 if known from UI
+       throw new Error("Missing params for complete approval");
+    }
+    
+    // 1. Mark request as approved
+    const updatedRequest = await this.updateRequestStatus(requestId, "approved");
+    
+    // 2. Add student to batch
+    await batchStudentService.addStudent(batchId, studentId);
+    
+    return updatedRequest;
+  }
+
+  // Teacher specific: Reject a request
+  async rejectRequest(requestId) {
+    return await this.updateRequestStatus(requestId, "rejected");
+  }
+
+  // Teacher specific: direct assign (skip request process via auto-approve)
+  async assignStudentDirectly(studentId, batchId) {
+    // 1. Try to fetch existing request, create one if not existing
+    const existing = await this.database.listDocuments(
+      conf.databaseId,
+      conf.batchRequestsCollectionId,
+      [
+        Query.equal("batchId", batchId),
+        Query.equal("studentId", studentId),
+      ]
+    );
+
+    let request;
+    if (existing.total > 0) {
+      request = existing.documents[0];
+      if (request.status !== "approved") {
+        request = await this.updateRequestStatus(request.$id, "approved");
+      }
+    } else {
+      request = await this.database.createDocument(
+        conf.databaseId,
+        conf.batchRequestsCollectionId,
+        "unique()",
+        {
+          batchId,
+          studentId,
+          status: "approved",
+          requestedBy: "teacher", 
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      );
+    }
+
+    // 2. Add to batch
+    await batchStudentService.addStudent(batchId, studentId);
+    return request;
   }
 }
 

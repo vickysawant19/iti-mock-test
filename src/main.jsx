@@ -52,7 +52,6 @@ import Modules from "./private/admin/Modules.jsx";
 import Assessment from "./private/assessment/Assessment.jsx";
 import DailyDiary from "./private/Attendance/DailyDiary/DailyDiary.jsx";
 import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
-import StudentApprovalDashboard from "./private/teacher/StudentApprovalDashboard.jsx";
 
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
@@ -107,7 +106,6 @@ const router = (
             <Route path="create" element={<CreateBatch />} />
             <Route path="students" element={<AddStudents />} />
             <Route path="view" element={<ViewBatch />} />
-            <Route path="approvals" element={<StudentApprovalDashboard />} />
             <Route path="view/:userId" element={<ProfileView />} />
             <Route path="edit/:userId" element={<ProfileForm />} />
             <Route path="edit/:batchId" element={<div>Edit</div>} />

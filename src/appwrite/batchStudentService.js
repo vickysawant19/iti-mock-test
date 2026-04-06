@@ -60,6 +60,37 @@ export class BatchStudentService {
     }
   }
 
+  // Remove a student from a batch (revoke approval)
+  async removeStudent(batchId, studentId) {
+    if (!batchId || !studentId) throw new Error("batchId and studentId are required");
+
+    try {
+      const existing = await this.database.listDocuments(
+        conf.databaseId,
+        conf.batchStudentsCollectionId,
+        [
+          Query.equal("batchId", batchId),
+          Query.equal("studentId", studentId),
+        ]
+      );
+
+      if (existing.total > 0) {
+        // Delete all matching mappings
+        for (const doc of existing.documents) {
+          await this.database.deleteDocument(
+            conf.databaseId,
+            conf.batchStudentsCollectionId,
+            doc.$id
+          );
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Appwrite error: removeStudent:", error);
+      throw new Error(`Error: ${error.message}`);
+    }
+  }
+
   // Get all batches a student is a part of
   async getStudentBatches(studentId) {
     if (!studentId) throw new Error("studentId is required");
