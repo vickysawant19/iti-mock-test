@@ -6,7 +6,6 @@ import { json, useNavigate, useParams } from "react-router-dom";
 import { Query } from "appwrite";
 import { ArrowLeft, Save } from "lucide-react";
 
-import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
@@ -18,7 +17,6 @@ import PersonalDetailsSection from "./PersonalDetailsSection";
 import Loader from "@/components/components/Loader";
 
 const ProfileForm = () => {
-  const [batchesData, setBatchesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [othersProfile, setOthersProfile] = useState(null);
@@ -75,40 +73,7 @@ const ProfileForm = () => {
     return studentEditableFields.includes(fieldName);
   };
 
-  const fetchBatchData = async () => {
-    try {
-      if (methods.watch("tradeId") && methods.watch("collegeId")) {
-        const queryFilters = [
-          Query.select(["$id", "BatchName"]),
-          Query.equal("collegeId", methods.watch("collegeId")),
-          Query.equal("tradeId", methods.watch("tradeId")),
-          Query.equal("isActive", true),
-        ];
-        if (isTeacher && !isUserProfile) {
-          queryFilters.push(
-            Query.equal("teacherId", existingProfile?.userId || user.$id)
-          );
-        }
-        const response = await batchService.listBatches(queryFilters);
-
-        setBatchesData(response.documents);
-        const batchExists = response.documents.some(
-          (doc) =>
-            doc.$id === (existingProfile?.batchId || othersProfile?.batchId)
-        );
-        const batchId = batchExists
-          ? existingProfile?.batchId || othersProfile?.batchId
-          : "";
-        methods.setValue("batchId", batchId);
-      }
-    } catch (error) {
-      console.error("Error fetching batches:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBatchData();
-  }, [methods.watch("tradeId"), methods.watch("collegeId")]);
+  // Batch fetching logic has been moved to the Batches nav menu section
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -168,28 +133,6 @@ const ProfileForm = () => {
     try {
       setIsSubmitting(true);
       let updatedProfile;
-      let newBatchData;
-
-
-      if (
-        data.BatchName &&
-        data.batchId === "" &&
-        isTeacher &&
-        !isUserProfile
-      ) {
-        newBatchData = await batchService.createBatch({
-          BatchName: data.BatchName,
-          teacherId: user.$id,
-          teacherName: data.userName,
-          isActive: data.isActive ?? true,
-          collegeId: data.collegeId,
-          tradeId: data.tradeId,
-          start_date: data.start_date,
-          end_date: data.end_date,
-        });
-        data.batchId = newBatchData.$id;
-        setBatchesData((prev) => [...prev, newBatchData]);
-      }
 
       if (isUserProfile) {
         // Updating another user's profile
@@ -305,13 +248,11 @@ const ProfileForm = () => {
             <AcademicAndBatchSection
               collegeData={collegeData}
               tradeData={tradeData}
-              batchesData={batchesData}
               isTeacher={isTeacher}
               isStudent={isStudent}
               isUserProfile={isUserProfile}
               isFieldEditable={isFieldEditable}
               formMode={formMode}
-              fetchBatchData={fetchBatchData}
             />
 
             <div className="sticky bottom-6 z-10 pt-4">

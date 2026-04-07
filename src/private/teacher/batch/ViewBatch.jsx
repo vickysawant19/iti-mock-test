@@ -25,7 +25,6 @@ import ViewAttendance from "../../Attendance/ViewAttendance";
 import JobEvaluation from "./job-evalution/JobEvalution";
 import ProgressCard from "./progress-card/ProgressCards";
 import TraineeLeaveRecord from "./leave-record/LeaveRecord";
-import CustomSelector from "@/components/components/CustomSelector";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
 import Assignment from "./assignment/Assignment";
@@ -45,21 +44,28 @@ const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
   const [loadingStates, setLoadingStates] = useState({
-    batches: false,
     batchData: false,
     students: false,
     attendance: false,
   });
   const [data, setData] = useState({
-    teacherBatches: [],
     selectedBatchData: null,
     students: null,
     studentsAttendance: [],
     attendanceStats: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
-    searchParams.get("batchid") || ""
+    searchParams.get("batchid") || profile?.batchId || ""
   );
+
+  // Sync selectedBatch from search params 
+  useEffect(() => {
+    if (searchParams.get("batchid")) {
+      setSelectedBatch(searchParams.get("batchid"));
+    } else if (profile?.batchId) {
+      setSelectedBatch(profile.batchId);
+    }
+  }, [searchParams.get("batchid"), profile?.batchId]);
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );
@@ -77,42 +83,15 @@ const ViewBatch = () => {
 
   // Update URL params when batch or tab changes
   useEffect(() => {
-    const batchId = data.teacherBatches.some(
-      (batch) => batch.$id === selectedBatch
-    )
-      ? selectedBatch
-      : data.teacherBatches[0]?.$id || "";
+    const batchId = selectedBatch;
 
-    setSearchParams((prevData) => {
-      const data = Object.fromEntries(prevData);
-      return { ...data, batchid: batchId, active: activeTab };
-    });
-  }, [selectedBatch, activeTab, data.teacherBatches, setSearchParams]);
-
-  // Fetch teacher's batches
-  const fetchTeacherBatches = useCallback(async () => {
-    setLoading("batches", true);
-    try {
-      const result = await batchService.listBatches([
-        Query.equal("teacherId", profile.userId),
-        Query.equal("isActive", true),
-        Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
-      ]);
-      const batchesArray = Array.isArray(result.documents)
-        ? result.documents
-        : [result.documents];
-      setData((prev) => ({ ...prev, teacherBatches: batchesArray }));
-
-      // Auto-select first batch if none selected
-      if (!selectedBatch && batchesArray.length > 0) {
-        setSelectedBatch(batchesArray[0].$id);
-      }
-    } catch (error) {
-      console.error("Error fetching batches:", error);
-    } finally {
-      setLoading("batches", false);
+    if (batchId) {
+      setSearchParams((prevData) => {
+        const queryData = Object.fromEntries(prevData);
+        return { ...queryData, batchid: batchId, active: activeTab };
+      });
     }
-  }, [profile.userId, selectedBatch]);
+  }, [selectedBatch, activeTab, setSearchParams]);
 
   // Fetch batch data
   const fetchBatchData = useCallback(async () => {
@@ -228,11 +207,6 @@ const ViewBatch = () => {
       setLoading("attendance", false);
     }
   }, [data.students, data.selectedBatchData]);
-
-  // Initial fetch for teacher batches
-  useEffect(() => {
-    fetchTeacherBatches();
-  }, [fetchTeacherBatches]);
 
   // Fetch batch data when selected batch changes
   useEffect(() => {
@@ -354,23 +328,6 @@ const ViewBatch = () => {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-sm text-black dark:text-white dark:bg-gray-900">
-      <div className="bg-white p-4 rounded-xl shadow-sm dark:bg-gray-800 dark:border dark:border-gray-700">
-        {/* New Enhanced Batch Selector */}
-        <h1 className="mb-2 text-gray-500 dark:text-gray-300">Select Batch</h1>
-        <CustomSelector
-          onValueChange={setSelectedBatch}
-          valueKey="$id"
-          displayKey="BatchName"
-          selectedValue={selectedBatch}
-          isLoading={loadingStates.batches}
-          options={data.teacherBatches}
-          disabled={loadingStates.batchData}
-          icon={Users}
-          placeholder="Select Batch"
-          className="dark:bg-gray-800 dark:text-white dark:border-gray-600"
-        />
-      </div>
-
       {data.selectedBatchData && (
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto dark:bg-gray-800 dark:border dark:border-gray-700">
           <TabNavigation

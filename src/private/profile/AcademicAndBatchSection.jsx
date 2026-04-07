@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { useFormContext } from "react-hook-form";
 import {
   BookOpen,
   Building,
   Clipboard,
   Calendar,
-  Users,
   Check,
-  X,
-  PlusCircle,
   IdCard,
   GraduationCap,
   Activity,
@@ -18,26 +15,13 @@ import CustomInput from "@/components/components/CustomInput";
 const AcademicAndBatchSection = ({
   collegeData,
   tradeData,
-  batchesData,
   isTeacher,
   isStudent,
   isUserProfile,
   isFieldEditable,
   formMode,
-  fetchBatchData,
 }) => {
   const { register, watch, setValue } = useFormContext();
-  const [showNewBatchForm, setShowNewBatchForm] = useState(false);
-
-  const handleToggleBatchForm = () => {
-    setShowNewBatchForm((prev) => !prev);
-    if (showNewBatchForm) {
-      setValue("BatchName", "");
-      setValue("start_date", "");
-      setValue("end_date", "");
-      setValue("isActive", true);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -156,34 +140,7 @@ const AcademicAndBatchSection = ({
             </>
           )}
 
-          {/* Active Batch */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Active Batch {isStudent && <span className="text-red-500">*</span>}
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Users
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <select
-                  {...register("batchId", { required: isStudent })}
-                  disabled={!isFieldEditable("batchId")}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                  value={watch("batchId") || ""}
-                  onChange={(e) => setValue("batchId", e.target.value)}
-                >
-                  <option value="">Select Active Batch</option>
-                  {(batchesData || []).map((batchItem) => (
-                    <option key={batchItem.$id} value={batchItem.$id}>
-                      {batchItem.BatchName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+          {/* Active Batch has been moved to the Batches nav menu */}
         </div>
       </div>
 
