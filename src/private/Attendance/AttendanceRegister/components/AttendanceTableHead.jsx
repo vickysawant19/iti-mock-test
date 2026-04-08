@@ -159,16 +159,14 @@ const AttendanceTableHead = ({
                 scope="col"
                 title={`${day}, ${formatDate(currentDate, "dd MMM yyyy")}${isHoliday ? " · Holiday" : ""}`}
                 className={`${cell} border ${
-                  isHoliday
+                  isHoliday || currentDate.getDay() === 0
                     ? "bg-rose-500 border-rose-400 dark:bg-rose-600 dark:border-rose-500"
                     : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
                 } w-12 min-w-12`}
               >
                 <div className="text-center">
-                  <div className="font-bold text-sm">{date}</div>
-                  {!compactView && (
-                    <div className="text-xs font-normal">{day}</div>
-                  )}
+                  <div className="font-bold text-sm leading-tight">{date}</div>
+                  <div className="text-[10px] sm:text-xs font-normal leading-tight opacity-90">{day}</div>
                 </div>
               </th>
             );
@@ -215,21 +213,21 @@ const AttendanceTableHead = ({
       <tr className="sticky z-30 bg-sky-500 dark:bg-sky-600" style={{ top: markRowTop }}>
         {columnVisibility.daily &&
           monthDates.map((date) => {
-            const fullDate = formatDate(
-              new Date(
-                selectedMonth.getFullYear(),
-                selectedMonth.getMonth(),
-                date,
-              ),
-              "yyyy-MM-dd",
+            const currentDate = new Date(
+              selectedMonth.getFullYear(),
+              selectedMonth.getMonth(),
+              date,
             );
+            const fullDate = formatDate(currentDate, "yyyy-MM-dd");
             const isHoliday = holidays.has(fullDate);
+            const isSunday = currentDate.getDay() === 0;
+
             return (
               <th
                 key={`mark-${date}`}
                 scope="col"
                 className={`${compactView ? "py-1 px-1" : "py-2 px-1 sm:px-2"} border border-slate-300 dark:border-slate-600 text-center ${
-                  isHoliday
+                  isHoliday || isSunday
                     ? "bg-rose-500 border-rose-400 dark:bg-rose-600 dark:border-rose-500"
                     : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
                 }`}

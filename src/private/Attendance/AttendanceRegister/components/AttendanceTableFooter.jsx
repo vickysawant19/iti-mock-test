@@ -72,6 +72,7 @@ const AttendanceTableFooter = ({
               const isHoliday = holidays.has(fullDate);
               let count = 0;
               students.forEach((student) => {
+                if (student.isTeacher) return;
                 const studentRecords = attendanceMap.get(student.userId);
                 count += countFn(studentRecords, fullDate);
               });

@@ -24,6 +24,8 @@ const AttendanceTableBody = ({
   const stickyCell = compactView ? "py-1 px-2" : "py-2 sm:py-3 px-2 sm:px-4";
   const textSize = compactView ? "text-xs" : "text-xs sm:text-sm";
 
+  let studentIndex = 1;
+
   return (
     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
       {students.map((student, idx) => {
@@ -69,7 +71,11 @@ const AttendanceTableBody = ({
           <tr
             key={student.userId}
             className={`hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all duration-200 ${
-              idx % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-850"
+              student.isTeacher
+                ? "bg-purple-100 dark:bg-purple-900/40 border-b-2 border-purple-300 dark:border-purple-700"
+                : idx % 2 === 0
+                ? "bg-white dark:bg-slate-800"
+                : "bg-slate-50 dark:bg-slate-850"
             } ${
               editStudentId === student.userId
                 ? "bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-400 dark:ring-amber-600"
@@ -132,7 +138,10 @@ const AttendanceTableBody = ({
             <td className={`${stickyCell} border border-slate-300 dark:border-slate-600 sticky left-0 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100 shadow-2xl`}>
               <div className="flex items-center gap-2">
                 <div className={`flex flex-col flex-1 ${compactView ? "w-28 min-w-28" : "w-28 sm:w-48 min-w-28 sm:min-w-48"}`}>
-                  <span className={`font-semibold text-xs text-wrap`}>{student.userName}</span>
+                  <span className={`font-semibold text-xs text-wrap`}>
+                    {!student.isTeacher && <span className="text-gray-500 dark:text-gray-400 mr-1.5">{studentIndex++}.</span>}
+                    {student.userName}
+                  </span>
                   {!compactView && (
                     <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                       ID: {student.studentId}

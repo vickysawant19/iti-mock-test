@@ -10,6 +10,7 @@ import batchService from "@/appwrite/batchService";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { Query } from "appwrite";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUser } from "@/store/userSlice";
 import userProfileService from "@/appwrite/userProfileService";
 import AttendanceHeader from "./components/AttendanceHeader";
 import AttendanceTable from "./components/AttendanceTable";
@@ -30,6 +31,7 @@ import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
 
   // Use ref to track if initial fetch is done to prevent double fetching
   const initialFetchDone = useRef(false);
@@ -92,7 +94,7 @@ const AttendanceRegister = () => {
       }
       return false;
     },
-    [updatingAttendance]
+    [updatingAttendance],
   );
 
   // Fetch batches - fixed to prevent double fetching
@@ -111,13 +113,7 @@ const AttendanceRegister = () => {
       const response = await batchService.listBatches([
         Query.equal("teacherId", profile.userId),
         Query.equal("isActive", true),
-        Query.select([
-          "$id",
-          "BatchName",
-          "start_date",
-          "end_date",
-          "tradeId",
-        ]),
+        Query.select(["$id", "BatchName", "start_date", "end_date", "tradeId"]),
       ]);
 
       const newMap = new Map();
@@ -169,8 +165,11 @@ const AttendanceRegister = () => {
           return [];
         }),
         (async () => {
-          const batchMembers = await batchStudentService.getBatchStudents(selectedBatch);
-          const studentIds = batchMembers.map(member => member.studentId).filter(Boolean);
+          const batchMembers =
+            await batchStudentService.getBatchStudents(selectedBatch);
+          const studentIds = batchMembers
+            .map((member) => member.studentId)
+            .filter(Boolean);
 
           if (studentIds.length === 0) {
             return [];
@@ -180,11 +179,11 @@ const AttendanceRegister = () => {
             Query.equal("userId", studentIds),
             Query.orderAsc("studentId"),
             Query.select(["$id", "userId", "userName", "studentId"]),
-            Query.limit(100)
+            Query.limit(100),
           ]);
 
           return students.sort(
-            (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
+            (a, b) => parseInt(a.studentId) - parseInt(b.studentId),
           );
         })(),
       ]);
@@ -197,7 +196,18 @@ const AttendanceRegister = () => {
       setHolidays(holidayMap);
 
       // Set students
-      setStudents(studentsData);
+      let finalStudents = studentsData;
+      if (user?.labels?.includes("Teacher")) {
+        const teacherProfile = {
+          $id: profile.$id || profile.userId,
+          userId: profile.userId,
+          userName: `${profile.userName || profile.name || "Instructor"} - ${profile.studentId || "Teacher"}`,
+          studentId: profile.studentId || "Teacher",
+          isTeacher: true,
+        };
+        finalStudents = [teacherProfile, ...studentsData];
+      }
+      setStudents(finalStudents);
     } catch (error) {
       if (error.name !== "AbortError") {
         console.error("Error fetching students and holidays:", error);
@@ -206,7 +216,7 @@ const AttendanceRegister = () => {
     } finally {
       updateLoading("students", false);
     }
-  }, [selectedBatch, batches, updateLoading]);
+  }, [selectedBatch, batches, updateLoading, profile, user]);
 
   // Fetch attendance and student statistics together
   const fetchAttendanceAndStats = useCallback(async () => {
@@ -235,15 +245,15 @@ const AttendanceRegister = () => {
           studentIds,
           selectedBatch,
           selectedMonth.getFullYear(),
-          selectedMonth.getMonth() + 1
+          selectedMonth.getMonth() + 1,
         ),
         ...students.map((student) =>
           newAttendanceService.getStudentAttendanceStats(
             student.userId,
             selectedBatch,
             currentBatchStartDate,
-            endDate
-          )
+            endDate,
+          ),
         ),
       ]);
 
@@ -272,14 +282,14 @@ const AttendanceRegister = () => {
 
     try {
       const existingRecord = newAttendance.find(
-        (att) => att.userId === userId && att.date === date
+        (att) => att.userId === userId && att.date === date,
       );
 
       let attendanceResponse;
       if (existingRecord) {
         attendanceResponse = await newAttendanceService.updateAttendance(
           existingRecord.$id,
-          { status: newStatus }
+          { status: newStatus },
         );
       } else {
         attendanceResponse = await newAttendanceService.createAttendance({
@@ -308,7 +318,7 @@ const AttendanceRegister = () => {
         userId,
         selectedBatch,
         currentBatchStartDate,
-        endDate
+        endDate,
       );
 
       setStudentStatsMap((prev) => {
@@ -344,12 +354,12 @@ const AttendanceRegister = () => {
       const response = await newAttendanceService.markBatchAttendance(
         selectedBatch,
         selectedDate,
-        records
+        records,
       );
 
       setNewAttendance((prev) => {
         const successIds = new Set(
-          response.success.map((record) => record.$id)
+          response.success.map((record) => record.$id),
         );
         return [
           ...prev.filter((att) => !successIds.has(att.$id)),
@@ -388,7 +398,7 @@ const AttendanceRegister = () => {
     try {
       // 1. Identify attendance records that need to be removed
       const attendanceToDelete = newAttendance.filter(
-        (att) => att.date === date
+        (att) => att.date === date,
       );
 
       const idsToDelete = attendanceToDelete.map((att) => att.$id);
@@ -396,9 +406,8 @@ const AttendanceRegister = () => {
 
       // 2. If there are records, attempt to delete them
       if (idsToDelete.length > 0) {
-        const deletedIds = await newAttendanceService.deleteMultipleAttendance(
-          idsToDelete
-        );
+        const deletedIds =
+          await newAttendanceService.deleteMultipleAttendance(idsToDelete);
 
         console.log("Requested delete count:", idsToDelete.length);
         console.log("Actual deleted count:", deletedIds.length);
@@ -407,13 +416,13 @@ const AttendanceRegister = () => {
         if (deletedIds.length !== idsToDelete.length) {
           deletionSuccess = false;
           throw new Error(
-            "Partial deletion occurred. Cannot safely add holiday."
+            "Partial deletion occurred. Cannot safely add holiday.",
           );
         }
 
         // 3. Update local attendance state (remove deleted records)
         setNewAttendance((prev) =>
-          prev.filter((att) => !deletedIds.includes(att.$id))
+          prev.filter((att) => !deletedIds.includes(att.$id)),
         );
       }
 

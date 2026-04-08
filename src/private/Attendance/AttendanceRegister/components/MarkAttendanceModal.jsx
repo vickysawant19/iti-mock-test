@@ -119,11 +119,14 @@ const MarkAttendanceModal = ({
     });
   };
 
-  const presentCount = Object.values(attendanceStatuses).filter(
-    (s) => s === "present"
+  const actualStudents = students.filter(s => !s.isTeacher);
+
+  const presentCount = Object.keys(attendanceStatuses).filter(
+    (userId) => attendanceStatuses[userId] === "present" && !students.find(s => s.userId === userId)?.isTeacher
   ).length;
-  const absentCount = Object.values(attendanceStatuses).filter(
-    (s) => s === "absent"
+  
+  const absentCount = Object.keys(attendanceStatuses).filter(
+    (userId) => attendanceStatuses[userId] === "absent" && !students.find(s => s.userId === userId)?.isTeacher
   ).length;
 
   const filteredStudents = students.filter((student) => {
@@ -133,6 +136,9 @@ const MarkAttendanceModal = ({
       return attendanceStatuses[student.userId] === "absent";
     return true;
   });
+
+  const teachersList = filteredStudents.filter(s => s.isTeacher);
+  const studentsList = filteredStudents.filter(s => !s.isTeacher);
 
   const markAllPresent = () => {
     const newStatuses = {};
@@ -202,7 +208,7 @@ const MarkAttendanceModal = ({
                   </span>
                 </div>
                 <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {students.length}
+                  {actualStudents.length}
                 </p>
               </div>
               <div className="flex-1 bg-green-50 dark:bg-green-900 rounded-lg px-3 py-2 border border-green-200 dark:border-green-700">
@@ -242,7 +248,7 @@ const MarkAttendanceModal = ({
                         : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    {f} {f === "all" ? `(${students.length})` : f === "present" ? `(${presentCount})` : `(${absentCount})`}
+                    {f} {f === "all" ? `(${actualStudents.length})` : f === "present" ? `(${presentCount})` : `(${absentCount})`}
                   </button>
                 ))}
               </div>
@@ -349,55 +355,119 @@ const MarkAttendanceModal = ({
 
           {/* VIEW 3: Student List */}
           {showAttendanceList && (
-            <div className="space-y-2 animate-fadeIn">
-              {filteredStudents.map((student) => (
-                <div
-                  key={student.userId}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                        {student.userName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
-                          {student.userName}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          ID: {student.studentId}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleStatusChange(student.userId, "present")
-                        }
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          attendanceStatuses[student.userId] === "present"
-                            ? "bg-green-600 text-white dark:bg-green-800"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                        }`}
+            <div className="space-y-4 animate-fadeIn">
+              {teachersList.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Instructor</h4>
+                  <div className="space-y-2">
+                    {teachersList.map((student) => (
+                      <div
+                        key={student.userId}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow"
                       >
-                        Present
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleStatusChange(student.userId, "absent")
-                        }
-                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          attendanceStatuses[student.userId] === "absent"
-                            ? "bg-red-600 text-white dark:bg-red-800"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        Absent
-                      </button>
-                    </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {student.userName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                                {student.userName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                ID: {student.studentId}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "present")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "present"
+                                  ? "bg-green-600 text-white dark:bg-green-800"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "absent")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "absent"
+                                  ? "bg-red-600 text-white dark:bg-red-800"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {studentsList.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Students</h4>
+                  <div className="space-y-2">
+                    {studentsList.map((student) => (
+                      <div
+                        key={student.userId}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {student.userName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                                {student.userName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                ID: {student.studentId}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "present")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "present"
+                                  ? "bg-green-600 text-white dark:bg-green-800"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "absent")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "absent"
+                                  ? "bg-red-600 text-white dark:bg-red-800"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {filteredStudents.length === 0 && (
                   <div className="text-center py-10 text-gray-500 dark:text-gray-400 text-sm">
                       No students found with this filter.
