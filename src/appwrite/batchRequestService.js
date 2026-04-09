@@ -253,6 +253,22 @@ export class BatchRequestService {
       }
     );
   }
+
+  // Delete a request completely from the database
+  async deleteRequest(requestId) {
+    if (!requestId) throw new Error("requestId is required");
+
+    try {
+      return await this.database.deleteDocument(
+        conf.databaseId,
+        conf.batchRequestsCollectionId,
+        requestId
+      );
+    } catch (error) {
+      console.error("Appwrite error: deleteRequest:", error);
+      throw new Error(`Error: ${error.message}`);
+    }
+  }
 }
 
 const batchRequestService = new BatchRequestService();

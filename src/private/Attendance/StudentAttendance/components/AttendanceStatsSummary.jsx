@@ -1,5 +1,6 @@
 import React from "react";
 import { Award } from "lucide-react";
+import { parse, getDaysInMonth } from "date-fns";
 
 export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePercentage }) => {
   return (
@@ -8,10 +9,10 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between">
         <div className="absolute top-0 inset-x-0 h-1bg-slate-200 dark:bg-slate-700"></div>
         <div>
-          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Classes</h4>
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Overall Classes</h4>
           <p className="text-3xl font-extrabold text-slate-900 dark:text-white leading-none">{totalDays}</p>
         </div>
-        <p className="text-xs text-slate-400 font-medium mt-3">Recorded classes</p>
+        <p className="text-xs text-slate-400 font-medium mt-3">Total recorded across batch</p>
       </div>
 
       {/* Present Card */}
@@ -37,7 +38,7 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
       {/* Rate Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-indigo-600/20 shadow-xl">
         <div>
-          <h4 className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">Attendance Rate</h4>
+          <h4 className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">Overall Rate</h4>
           <p className="text-3xl font-extrabold leading-none">{attendancePercentage}%</p>
         </div>
         <p className="text-xs text-indigo-100 font-medium mt-3 flex items-center gap-1">
@@ -50,6 +51,10 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
 
 export const RightPanelStats = ({ stats, currentMonth }) => {
   const { totalDays, presentDays, absentDays, leaveDays = 0, holidayDays = 0, attendancePercentage } = stats;
+  
+  const parsedDate = parse(currentMonth, "MMMM yyyy", new Date());
+  const monthTotalDays = getDaysInMonth(parsedDate);
+  const monthWorkingDays = monthTotalDays - holidayDays;
 
   return (
     <div className="flex flex-col gap-4">
@@ -105,19 +110,19 @@ export const RightPanelStats = ({ stats, currentMonth }) => {
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Working</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{totalDays}</div>
+             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{monthWorkingDays}</div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Holidays</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{stats.holidayDays || 0}</div>
+             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{holidayDays}</div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
-             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Attendance %</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{attendancePercentage}%</div>
+             <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Present</div>
+             <div className="text-xl font-extrabold text-emerald-600 mt-0.5">{presentDays}</div>
           </div>
            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
-             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leaves</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{leaveDays}</div>
+             <div className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Absent</div>
+             <div className="text-xl font-extrabold text-rose-600 mt-0.5">{absentDays}</div>
           </div>
         </div>
       </div>

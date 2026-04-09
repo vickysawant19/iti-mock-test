@@ -214,6 +214,7 @@ export function useDiaryData({
     weekDays,
     weekNumber,
     diaryData,
+    batchData,
     attendance,
     holidays,
     isLoading: enabled ? isLoading || isBatchLoading : false,

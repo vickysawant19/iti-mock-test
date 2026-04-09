@@ -188,6 +188,7 @@ export default function TeacherOnboardingWizard() {
               onNext={handleNext}
               onBack={handleBack}
               isSaving={isSaving}
+              userId={user.$id}
             />
           )}
           {currentStep === 3 && (

@@ -45,16 +45,33 @@ const AttendanceCalendar = ({
 
   const tileClassName = ({ date, view }) => {
     if (view !== "month") return "";
+    let classes = "";
     const formattedDate = format(date, "yyyy-MM-dd");
+    const todayDate = format(new Date(), "yyyy-MM-dd");
+    
+    if (formattedDate === todayDate) {
+      classes += "attendance-calendar-today ";
+    }
+
+    if (selectedDate && formattedDate === format(selectedDate, "yyyy-MM-dd")) {
+      classes += "attendance-calendar-selected ";
+    }
+
     const isRecentlyUpdated = lastUpdatedDate === formattedDate;
+    if (isRecentlyUpdated) {
+      classes += "attendance-calendar-updated ";
+    }
+
     const status = normalizeStatus(
       attendanceByDate?.get(formattedDate)?.status || workingDays?.get(formattedDate)?.status
     );
-    if (status === "present") return `attendance-calendar-present ${isRecentlyUpdated ? "attendance-calendar-updated" : ""}`;
-    if (status === "absent") return `attendance-calendar-absent ${isRecentlyUpdated ? "attendance-calendar-updated" : ""}`;
-    if (status === "leave" || status === "onleave") return `attendance-calendar-leave ${isRecentlyUpdated ? "attendance-calendar-updated" : ""}`;
-    if (holidays?.has(formattedDate)) return `attendance-calendar-holiday ${isRecentlyUpdated ? "attendance-calendar-updated" : ""}`;
-    return "";
+
+    if (status === "present") classes += "attendance-calendar-present";
+    else if (status === "absent") classes += "attendance-calendar-absent";
+    else if (status === "leave" || status === "onleave") classes += "attendance-calendar-leave";
+    else if (holidays?.has(formattedDate)) classes += "attendance-calendar-holiday";
+
+    return classes.trim();
   };
 
   const tileContent = ({ date, view }) => {
@@ -118,7 +135,7 @@ const AttendanceCalendar = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 md:p-6">
+    <div className="p-1">
       <Calendar
         value={selectedDate}
         onChange={(date) => {
@@ -215,6 +232,21 @@ const AttendanceCalendar = ({
         .attendance-calendar .attendance-calendar-holiday {
           background: #fef3c7 !important;
           color: #92400e !important;
+        }
+        .attendance-calendar .attendance-calendar-today {
+          border: 2px solid #3b82f6 !important;
+          background-color: #eff6ff;
+        }
+        .attendance-calendar .attendance-calendar-selected {
+          border: 2px solid #a855f7 !important; /* purple-500 */
+          position: relative;
+          z-index: 10;
+          animation: shapeShift 2s infinite ease-in-out;
+        }
+        @keyframes shapeShift {
+          0% { border-radius: 30px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+          50% { border-radius: 0px; box-shadow: 0 0 0 6px rgba(168, 85, 247, 0); }
+          100% { border-radius: 30px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
         }
         .attendance-calendar .attendance-calendar-updated {
           animation: attendanceTilePulse 1.6s ease-out;

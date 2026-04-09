@@ -178,7 +178,7 @@ const AttendanceRegister = () => {
           const students = await userProfileService.getBatchUserProfile([
             Query.equal("userId", studentIds),
             Query.orderAsc("studentId"),
-            Query.select(["$id", "userId", "userName", "studentId"]),
+            Query.select(["$id", "userId", "userName", "studentId", "profileImage"]),
             Query.limit(100),
           ]);
 
@@ -203,6 +203,7 @@ const AttendanceRegister = () => {
           userId: profile.userId,
           userName: `${profile.userName || profile.name || "Instructor"} - ${profile.studentId || "Teacher"}`,
           studentId: profile.studentId || "Teacher",
+          profileImage: profile.profileImage || "",
           isTeacher: true,
         };
         finalStudents = [teacherProfile, ...studentsData];

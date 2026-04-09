@@ -30,6 +30,7 @@ const ProfileForm = () => {
   const { userId } = useParams();
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
+  const targetUserId = userId || user?.$id;
 
   const { data: collegesResponse, isLoading: isCollegesLoading } = useListCollegesQuery();
   const collegeData = collegesResponse?.documents || [];
@@ -243,6 +244,7 @@ const ProfileForm = () => {
             <PersonalDetailsSection
               isFieldEditable={isFieldEditable}
               formMode={formMode}
+              targetUserId={targetUserId}
             />
 
             <AcademicAndBatchSection

@@ -36,6 +36,7 @@ const conf = {
   batchStudentsCollectionId: String(
     import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "batchStudents"
   ),
+  profileImagesBucketId: "mocktestimages",
 };
 
 export default conf;

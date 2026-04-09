@@ -21,12 +21,14 @@ const StudentAttendancePage = () => {
   const {
     isLoadingAttendance,
     batchData,
+    tradeData,
     studentAttendance,
     holidays,
     workingDays,
     finalAttendanceRecords,
     attendanceByDate,
-    totalAttendance,
+    overallStats,
+    monthlyStats,
     currentMonth,
     selectedDate,
     setSelectedDate,
@@ -34,7 +36,7 @@ const StudentAttendancePage = () => {
     markAttendance,
     lastUpdatedDate,
   } = useStudentAttendance(profile);
-  
+
   // Also getting live location status for the header strip
   const { deviceLocation, locationText, loading: locLoading, calculateDistance } = useLocationManager(false);
   const distance = (!deviceLocation || !batchData?.location) ? Infinity : calculateDistance(
@@ -73,16 +75,20 @@ const StudentAttendancePage = () => {
           
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-white/20 border-2 border-white/30 rounded-[14px] flex items-center justify-center font-extrabold text-lg flex-shrink-0">
-                 {avatarFallback(profile?.name || "Student")}
+               <div className="w-12 h-12 bg-white/20 border-2 border-white/30 rounded-[14px] flex items-center justify-center font-extrabold text-lg flex-shrink-0 overflow-hidden">
+                 {profile?.profileImage ? (
+                   <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                 ) : (
+                   avatarFallback(profile?.userName || profile?.name || "Student")
+                 )}
                </div>
                <div>
                   <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Student Portal</div>
                   <h1 className="text-xl font-extrabold leading-tight">My Attendance</h1>
                   <div className="text-xs text-white/80 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>{profile?.name}</span>
+                    <span>{profile?.userName || profile?.name}</span>
                     <span className="opacity-50">·</span>
-                    <span>{batchData?.name || "N/A"}</span>
+                    <span>{tradeData?.tradeName ? `${tradeData.tradeName} | ` : ""}{batchData?.BatchName || "N/A"}</span>
                   </div>
                </div>
             </div>
@@ -115,10 +121,10 @@ const StudentAttendancePage = () => {
 
         {/* Top Stats Row */}
         <TopStatsRow 
-          totalDays={totalAttendance?.totalDays || 0}
-          presentDays={totalAttendance?.presentDays || 0}
-          absentDays={totalAttendance?.absentDays || 0}
-          attendancePercentage={totalAttendance?.attendancePercentage || 0}
+          totalDays={overallStats?.totalDays || 0}
+          presentDays={overallStats?.presentDays || 0}
+          absentDays={overallStats?.absentDays || 0}
+          attendancePercentage={overallStats?.attendancePercentage || 0}
         />
 
         {/* View Tabs */}
@@ -157,7 +163,6 @@ const StudentAttendancePage = () => {
                 ) : viewMode === "table" ? (
                   <AttendanceTable attendanceRecords={tableRecords} holidays={holidays} />
                 ) : (
-                  <div className="p-3">
                   <AttendanceCalendar
                     profile={profile}
                     batchData={batchData}
@@ -174,7 +179,6 @@ const StudentAttendancePage = () => {
                     }}
                     canOpenTodayMarkModal={canOpenTodayMarkModal}
                   />
-                  </div>
                 )}
               </div>
             </div>
@@ -182,7 +186,7 @@ const StudentAttendancePage = () => {
 
           {/* Right Column (Analytics) */}
           <div className="w-full xl:w-[320px] xl:sticky xl:top-4">
-            <RightPanelStats stats={totalAttendance || {}} currentMonth={currentMonth} />
+            <RightPanelStats stats={monthlyStats || {}} currentMonth={currentMonth} />
           </div>
 
         </div>

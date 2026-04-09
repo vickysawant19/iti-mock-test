@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import batchService from "@/appwrite/batchService";
+import tradeservice from "@/appwrite/tradedetails";
 
 const STATUS_ALIASES = {
   p: "present",
@@ -123,7 +124,7 @@ const buildAttendanceMap = ({ workingDaysList, attendanceByDate, profile }) => {
   return finalMap;
 };
 
-const calculateStats = (attendanceMap) => {
+const calculateStats = (attendanceMap, holidayDays = 0) => {
   let presentDays = 0;
   let absentDays = 0;
   let leaveDays = 0;
@@ -140,7 +141,7 @@ const calculateStats = (attendanceMap) => {
     presentDays,
     absentDays,
     leaveDays,
-    holidayDays: 0,
+    holidayDays,
     attendancePercentage:
       totalDays > 0 ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0,
   };
@@ -161,6 +162,8 @@ export const useStudentAttendance = (profile) => {
   const [currentMonth, setCurrentMonth] = useState(format(new Date(), "MMMM yyyy"));
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [lastUpdatedDate, setLastUpdatedDate] = useState(null);
+  const [overallStats, setOverallStats] = useState(null);
+  const [tradeData, setTradeData] = useState(null);
 
   const fetchBatchData = useCallback(async (batchId) => {
     try {
@@ -171,9 +174,22 @@ export const useStudentAttendance = (profile) => {
     }
   }, []);
 
+  const fetchTradeData = useCallback(async (tradeId) => {
+    try {
+      const data = await tradeservice.getTrade(tradeId);
+      setTradeData(data || null);
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
   useEffect(() => {
     if (profile?.batchId) fetchBatchData(profile.batchId);
   }, [profile?.batchId, fetchBatchData]);
+
+  useEffect(() => {
+    if (profile?.tradeId) fetchTradeData(profile.tradeId);
+  }, [profile?.tradeId, fetchTradeData]);
 
   const getMonthRange = useCallback((monthLabel) => {
     const parsedDate = parse(monthLabel, "MMMM yyyy", new Date());
@@ -234,6 +250,29 @@ export const useStudentAttendance = (profile) => {
     fetchMonthlyAttendance();
   }, [fetchMonthlyAttendance, refreshStatsCounter]);
 
+  const fetchOverallStats = useCallback(async () => {
+    if (!profile?.userId || !profile?.batchId) return;
+    try {
+      const stats = await newAttendanceService.getStudentAttendanceStats(
+        profile.userId,
+        profile.batchId
+      );
+      setOverallStats({
+        totalDays: stats.total,
+        presentDays: stats.presentDays,
+        absentDays: stats.absentDays,
+        attendancePercentage: stats.percentage,
+        leaveDays: 0,
+      });
+    } catch (error) {
+      console.error("Error fetching overall stats:", error);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    fetchOverallStats();
+  }, [fetchOverallStats, refreshStatsCounter]);
+
   const normalized = useMemo(
     () => normalizeAttendanceData(rawMonthlyRecords),
     [rawMonthlyRecords]
@@ -280,7 +319,7 @@ export const useStudentAttendance = (profile) => {
     [finalAttendanceMap]
   );
 
-  const stats = useMemo(() => calculateStats(finalAttendanceMap), [finalAttendanceMap]);
+  const stats = useMemo(() => calculateStats(finalAttendanceMap, holidays.size), [finalAttendanceMap, holidays.size]);
 
   const studentAttendance = useMemo(
     () => ({
@@ -411,6 +450,7 @@ export const useStudentAttendance = (profile) => {
   return {
     isLoadingAttendance,
     batchData,
+    tradeData,
     studentAttendance,
     holidays,
     workingDays: finalAttendanceMap,
@@ -419,7 +459,8 @@ export const useStudentAttendance = (profile) => {
     workingDaysList,
     attendanceByDate: finalAttendanceMap,
     attendanceStats: stats,
-    totalAttendance: stats,
+    monthlyStats: stats,
+    overallStats,
     currentMonth,
     selectedDate,
     setSelectedDate,

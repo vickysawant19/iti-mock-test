@@ -7,6 +7,7 @@ import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import Loader from "@/components/components/Loader";
+import { avatarFallback } from "@/utils/avatarFallback";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ function TeacherDiaryView() {
     setDiaryData,
     dailyDateLabel,
     canGoPreviousPeriod,
+    batchData,
   } = useDiaryData({
     viewType: activeTab === "daily" ? "daily" : "weekly",
     role: "teacher",
@@ -164,79 +166,70 @@ function TeacherDiaryView() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 space-y-4">
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 ">
         
-        {/* Sticky Controls Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 sticky top-0 z-10 transition-colors">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100">
-            Daily Diary
-          </h1>
-          <div className="flex flex-row flex-wrap gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab("monthly")}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
-                activeTab === "monthly"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("weekly")}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
-                activeTab === "weekly"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
-              }`}
-            >
-              Weekly
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("daily")}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
-                activeTab === "daily"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
-              }`}
-            >
-              Daily
-            </button>
+        {/* Beautiful Header */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 rounded-t-[22px] p-5 sm:p-6 text-white shadow-none">
+          <div className="absolute top-[-80px] right-[-60px] w-[260px] h-[260px] rounded-full bg-white/10 blur-xl" />
+          <div className="absolute bottom-[-60px] left-[-60px] w-[160px] h-[160px] rounded-full bg-white/10 blur-xl" />
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 border-2 border-white/30 rounded-[14px] flex items-center justify-center font-extrabold text-lg flex-shrink-0 overflow-hidden">
+                {profile?.profileImage ? (
+                  <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  avatarFallback(profile?.userName || profile?.name || "Teacher")
+                )}
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Instructor Portal</div>
+                <h1 className="text-xl sm:text-2xl font-extrabold leading-tight shadow-sm">Daily Diary Management</h1>
+                <div className="text-xs text-white/80 mt-1 flex items-center gap-2 flex-wrap">
+                  <span>{profile?.userName || profile?.name || "Teacher"}</span>
+                  {profile?.email && (
+                    <>
+                      <span className="opacity-50">·</span>
+                      <span>{profile.email}</span>
+                    </>
+                  )}
+                  {batchData?.BatchName && (
+                    <>
+                      <span className="opacity-50">·</span>
+                      <span>{batchData.BatchName}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-row p-1 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 self-start lg:self-auto w-full sm:w-auto">
+              <button onClick={() => setActiveTab("monthly")} className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'monthly' ? 'bg-white text-blue-700 shadow-sm' : 'text-white hover:bg-white/20'}`}>Monthly</button>
+              <button onClick={() => setActiveTab("weekly")} className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'weekly' ? 'bg-white text-blue-700 shadow-sm' : 'text-white hover:bg-white/20'}`}>Weekly</button>
+              <button onClick={() => setActiveTab("daily")} className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'daily' ? 'bg-white text-blue-700 shadow-sm' : 'text-white hover:bg-white/20'}`}>Daily</button>
+            </div>
           </div>
         </div>
 
         {/* Content Render */}
-        <div className="mt-4 animate-in fade-in duration-500">
+        <div className="animate-in fade-in duration-500">
           {activeTab === "monthly" ? (
             <div className="w-full space-y-4">
               <InstructorDailyDiary />
             </div>
           ) : (
             <div className="w-full space-y-4">
-              <Card className="rounded-xl shadow-sm border-gray-200 dark:border-gray-800">
-                <CardHeader className="py-4">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePreviousWeek}
-                      disabled={!canGoPreviousPeriod}
-                      className="w-full sm:w-auto"
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                    </Button>
-                    <Badge variant="secondary" className="text-base px-6 py-2 shadow-sm shrink-0 text-center">
-                      {activeTab === "daily" ? dailyDateLabel : `Week ${weekNumber}`}
-                    </Badge>
-                    <Button variant="outline" size="sm" onClick={handleNextWeek} className="w-full sm:w-auto">
-                      Next <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                </CardHeader>
-              </Card>
+              {/* Responsive Navigation attached to header */}
+              <div className="flex items-center justify-between bg-white dark:bg-gray-900 p-2 sm:p-3 rounded-b-[22px] shadow-lg border border-gray-200 dark:border-gray-800 border-t-0 mb-4 sticky top-4 z-20">
+                <Button variant="ghost" size="sm" onClick={handlePreviousWeek} disabled={!canGoPreviousPeriod} className="flex-1 sm:flex-none justify-start px-2 sm:px-4 active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <ChevronLeft className="h-5 w-5 sm:mr-1" /> <span className="hidden sm:inline font-bold">Previous</span>
+                </Button>
+                <div className="px-2 sm:px-6 text-center font-extrabold text-sm sm:text-base text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                  {activeTab === "daily" ? dailyDateLabel : `Week ${weekNumber}`}
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleNextWeek} className="flex-1 sm:flex-none justify-end px-2 sm:px-4 active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <span className="hidden sm:inline font-bold">Next</span> <ChevronRight className="h-5 w-5 sm:ml-1" />
+                </Button>
+              </div>
               <DiaryWeekView
                 weekDays={weekDays}
                 diaryData={diaryData}

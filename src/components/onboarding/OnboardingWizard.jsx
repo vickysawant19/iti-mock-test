@@ -171,7 +171,7 @@ export default function OnboardingWizard() {
             <StepBasicInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} />
           )}
           {currentStep === 3 && (
-            <StepPersonalInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} />
+            <StepPersonalInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} userId={user.$id} />
           )}
           {currentStep === 4 && (
             <StepComplete formData={formData} onFinish={handleFinish} onBack={handleBack} isSaving={isSaving} />
