@@ -34,7 +34,6 @@ import Dash from "./pages/Dash.jsx";
 import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
 import ForgetPass from "./Auth/ForgetPass.jsx";
-import MarkStudentAttendance from "./private/Attendance/MarkStudentAttendance.jsx";
 import CreateBatch from "./private/teacher/batch/CreateBatch.jsx";
 import ViewBatch from "./private/teacher/batch/ViewBatch.jsx";
 import Profile from "./private/profile/Profile.jsx";
@@ -61,6 +60,7 @@ import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx"
 import ManageTrades from "./private/admin/ManageTrades.jsx";
 import ManageColleges from "./private/admin/ManageColleges.jsx";
 import BrowseBatches from "./private/student/BrowseBatches.jsx";
+import StudentAttendancePage from "./private/Attendance/StudentAttendance/StudentAttendancePage.jsx";
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -86,6 +86,7 @@ const router = (
           <Route path="batch-enroll" element={<BatchEnrollmentStatus />} />
           <Route path="dash" element={<Dash />} />
           <Route path="browse-batches" element={<BrowseBatches />} />
+          <Route path="student-attendance" element={<StudentAttendancePage />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<ProfileForm />} />
@@ -117,10 +118,6 @@ const router = (
           <Route path="attendance">
             <Route path="register" element={<AttendanceRegister />} />
             <Route path="marktoday" element={<AttendanceTracker />} />
-            <Route
-              path="mark-student-attendance"
-              element={<MarkStudentAttendance />}
-            />
             <Route path="college-attendance" element={<CollegeAttendance />} />
           </Route>
           <Route element={<ProtectedAdminRoutes />}>

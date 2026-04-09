@@ -141,11 +141,10 @@ export const menuConfig = [
     children: [
       { label: "Daily Diary", path: "/daily-diary", icon: FaBookReader, requiresAuth: true },
       {
-        teacherLabel: "Student Attendance Record",
-        studentLabel: "My Attendance Log",
-        path: "/attendance/mark-student-attendance",
-        icon: FaTasks,
-        roles: ["teacher", "student"],
+        label: "My Attendance",
+        path: "/student-attendance",
+        icon: FaCalendarCheck,
+        roles: ["student"],
         requiresAuth: true,
       },
       {
@@ -195,7 +194,7 @@ export const pathToHeading = {
   "/attendance/face": "Face Attendance",
   "/attendance/mark-holidays": "Mark Holidays",
   "/attendance/mark-attendance": "Mark Daywise Attendance",
-  "/attendance/mark-student-attendance": "Mark My Attendance",
+  "/student-attendance": "My Attendance",
   "/attendance/tracer": "Attendance Register",
   "/attendance/check-attendance": "Check My Attendance",
   "/about": "About",
