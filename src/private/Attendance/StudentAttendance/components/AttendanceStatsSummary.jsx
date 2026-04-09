@@ -1,6 +1,5 @@
 import React from "react";
-import { format } from "date-fns";
-import { Award, Target, CalendarDays, CheckCircle2 } from "lucide-react";
+import { Award } from "lucide-react";
 
 export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePercentage }) => {
   return (
@@ -9,10 +8,10 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between">
         <div className="absolute top-0 inset-x-0 h-1bg-slate-200 dark:bg-slate-700"></div>
         <div>
-          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Days</h4>
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Classes</h4>
           <p className="text-3xl font-extrabold text-slate-900 dark:text-white leading-none">{totalDays}</p>
         </div>
-        <p className="text-xs text-slate-400 font-medium mt-3">Scheduled this period</p>
+        <p className="text-xs text-slate-400 font-medium mt-3">Recorded classes</p>
       </div>
 
       {/* Present Card */}
@@ -50,9 +49,7 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
 };
 
 export const RightPanelStats = ({ stats, currentMonth }) => {
-  const { totalDays, presentDays, absentDays, attendancePercentage } = stats;
-  // Estimate some data to match design's required feel
-  const target = Math.max(90, attendancePercentage);
+  const { totalDays, presentDays, absentDays, leaveDays = 0, holidayDays = 0, attendancePercentage } = stats;
 
   return (
     <div className="flex flex-col gap-4">
@@ -85,16 +82,20 @@ export const RightPanelStats = ({ stats, currentMonth }) => {
       {/* Mini Stats Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden text-sm">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-          <div className="flex justify-between font-bold"><span className="text-slate-500 text-xs">Total Days</span><span className="text-slate-900 dark:text-white">{totalDays}</span></div>
+          <div className="flex justify-between font-bold"><span className="text-slate-500 text-xs">Total Classes</span><span className="text-slate-900 dark:text-white">{totalDays}</span></div>
           <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-slate-300 dark:bg-slate-600 rounded-full w-full"></div></div>
         </div>
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2">
           <div className="flex justify-between font-bold"><span className="text-emerald-500 text-xs">Present Days</span><span className="text-emerald-500">{presentDays}</span></div>
           <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${totalDays > 0 ? (presentDays/totalDays)*100 : 0}%` }}></div></div>
         </div>
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+          <div className="flex justify-between font-bold"><span className="text-violet-500 text-xs">Leave Days</span><span className="text-violet-500">{leaveDays}</span></div>
+          <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-violet-500 rounded-full transition-all duration-1000" style={{ width: `${totalDays > 0 ? (leaveDays/totalDays)*100 : 0}%` }}></div></div>
+        </div>
         <div className="p-4 flex flex-col gap-2">
-          <div className="flex justify-between font-bold"><span className="text-rose-500 text-xs">Absent Days</span><span className="text-rose-500">{absentDays}</span></div>
-          <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-rose-500 rounded-full transition-all duration-1000" style={{ width: `${totalDays > 0 ? (absentDays/totalDays)*100 : 0}%` }}></div></div>
+          <div className="flex justify-between font-bold"><span className="text-amber-500 text-xs">Holidays</span><span className="text-amber-500">{holidayDays}</span></div>
+          <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-amber-500 rounded-full transition-all duration-1000" style={{ width: `${(totalDays + holidayDays) > 0 ? (holidayDays/(totalDays + holidayDays))*100 : 0}%` }}></div></div>
         </div>
       </div>
 
@@ -111,12 +112,12 @@ export const RightPanelStats = ({ stats, currentMonth }) => {
              <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{stats.holidayDays || 0}</div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
-             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{target}%</div>
+             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Attendance %</div>
+             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{attendancePercentage}%</div>
           </div>
            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leaves</div>
-             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{absentDays}</div>
+             <div className="text-xl font-extrabold text-indigo-600 mt-0.5">{leaveDays}</div>
           </div>
         </div>
       </div>

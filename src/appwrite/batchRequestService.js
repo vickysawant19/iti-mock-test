@@ -213,6 +213,46 @@ export class BatchRequestService {
     await batchStudentService.addStudent(batchId, studentId);
     return request;
   }
+
+  // Teacher specific: revoke approval and mark request as rejected
+  async revokeStudent(batchId, studentId, requestId = null) {
+    if (!batchId || !studentId) {
+      throw new Error("batchId and studentId are required");
+    }
+
+    // 1. Remove active enrollment from batch
+    await batchStudentService.removeStudent(batchId, studentId);
+
+    // 2. Mark corresponding request as rejected
+    if (requestId) {
+      return await this.updateRequestStatus(requestId, "rejected");
+    }
+
+    const existing = await this.database.listDocuments(
+      conf.databaseId,
+      conf.batchRequestsCollectionId,
+      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    );
+
+    if (existing.total > 0) {
+      return await this.updateRequestStatus(existing.documents[0].$id, "rejected");
+    }
+
+    // Keep request history consistent when no prior request exists
+    return await this.database.createDocument(
+      conf.databaseId,
+      conf.batchRequestsCollectionId,
+      "unique()",
+      {
+        batchId,
+        studentId,
+        status: "rejected",
+        requestedBy: "teacher",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    );
+  }
 }
 
 const batchRequestService = new BatchRequestService();

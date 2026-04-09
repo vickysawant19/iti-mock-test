@@ -7,7 +7,7 @@ import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import AttendanceTable from "./components/AttendanceTable";
 import AttendanceCalendar from "./components/AttendanceCalendar";
 import { TopStatsRow, RightPanelStats } from "./components/AttendanceStatsSummary";
-import { Loader2, Calendar as CalendarIcon, Table as TableIcon, MapPin, CheckCircle } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Table as TableIcon, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import useLocationManager from "@/hooks/useLocationManager";
 import { avatarFallback } from "@/utils/avatarFallback";
@@ -16,6 +16,7 @@ const StudentAttendancePage = () => {
   const profile = useSelector(selectProfile);
   const [viewMode, setViewMode] = useState("table"); // 'table' | 'calendar'
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalDate, setModalDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const {
     isLoadingAttendance,
@@ -23,12 +24,15 @@ const StudentAttendancePage = () => {
     studentAttendance,
     holidays,
     workingDays,
+    finalAttendanceRecords,
+    attendanceByDate,
     totalAttendance,
     currentMonth,
     selectedDate,
     setSelectedDate,
     handleMonthChange,
     markAttendance,
+    lastUpdatedDate,
   } = useStudentAttendance(profile);
   
   // Also getting live location status for the header strip
@@ -39,6 +43,12 @@ const StudentAttendancePage = () => {
   
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayAttendance = workingDays?.get(todayStr);
+  const modalAttendance = workingDays?.get(modalDate);
+  const tableRecords = finalAttendanceRecords || studentAttendance?.attendanceRecords || [];
+  const canOpenTodayMarkModal =
+    Boolean(batchData?.canMarkAttendance) &&
+    Number.isFinite(distance) &&
+    distance <= (batchData?.circleRadius || 1000);
 
   if (!profile?.batchId) {
     return (
@@ -53,8 +63,8 @@ const StudentAttendancePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f4ff] dark:bg-slate-950 p-4 md:p-6 pb-20 font-sans">
-      <div className="max-w-[940px] mx-auto animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#f0f4ff] dark:bg-slate-950 px-3 py-4 md:px-5 md:py-6 xl:px-8 pb-20 font-sans">
+      <div className="w-full max-w-[1700px] mx-auto animate-in fade-in duration-500">
         
         {/* Header */}
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 rounded-[22px] p-6 pt-6 pb-4 mb-5 text-white shadow-lg">
@@ -132,7 +142,7 @@ const StudentAttendancePage = () => {
         </div>
 
         {/* Main Grid Split */}
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
           
           {/* Left Column (Table/Calendar) */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
@@ -145,7 +155,7 @@ const StudentAttendancePage = () => {
                 {isLoadingAttendance ? (
                   <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" /></div>
                 ) : viewMode === "table" ? (
-                  <AttendanceTable attendanceRecords={studentAttendance?.attendanceRecords || []} holidays={holidays} />
+                  <AttendanceTable attendanceRecords={tableRecords} holidays={holidays} />
                 ) : (
                   <div className="p-3">
                   <AttendanceCalendar
@@ -156,7 +166,13 @@ const StudentAttendancePage = () => {
                     handleMonthChange={handleMonthChange}
                     holidays={holidays}
                     workingDays={workingDays}
-                    openModal={() => {}}
+                    attendanceByDate={attendanceByDate}
+                    lastUpdatedDate={lastUpdatedDate}
+                    openMarkModal={(dateKey) => {
+                      setModalDate(dateKey || todayStr);
+                      setIsModalOpen(true);
+                    }}
+                    canOpenTodayMarkModal={canOpenTodayMarkModal}
                   />
                   </div>
                 )}
@@ -165,7 +181,7 @@ const StudentAttendancePage = () => {
           </div>
 
           {/* Right Column (Analytics) */}
-          <div className="w-full md:w-[260px] flex-shrink-0">
+          <div className="w-full xl:w-[320px] xl:sticky xl:top-4">
             <RightPanelStats stats={totalAttendance || {}} currentMonth={currentMonth} />
           </div>
 
@@ -179,6 +195,8 @@ const StudentAttendancePage = () => {
          onClose={() => setIsModalOpen(false)}
          batchData={batchData}
          onMarkAttendance={markAttendance}
+         selectedDate={modalDate}
+         selectedAttendance={modalAttendance}
          todayAttendance={todayAttendance}
       />
     </div>

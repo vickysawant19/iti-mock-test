@@ -8,6 +8,8 @@ const MarkAttendanceModal = ({
   onClose, 
   batchData, 
   onMarkAttendance,
+  selectedDate,
+  selectedAttendance,
   todayAttendance
 }) => {
   const [isMarking, setIsMarking] = useState(false);
@@ -30,13 +32,21 @@ const MarkAttendanceModal = ({
   
   // Calculate percentage for progress bar (cap at 100%)
   const distPercent = Math.min((distance / maxRadius) * 100, 100);
+  const targetDate = selectedDate || format(new Date(), "yyyy-MM-dd");
+  const isToday = targetDate === format(new Date(), "yyyy-MM-dd");
+  const currentStatus = String(selectedAttendance?.status || "").toLowerCase();
+  const alreadyPresent = currentStatus === "present";
+  const alreadyAbsent = currentStatus === "absent";
 
-  const handleMark = async () => {
+  const handleMark = async (targetStatus = "present") => {
     if (!isMarkingAllowed) return;
     setIsMarking(true);
     try {
-      const today = format(new Date(), "yyyy-MM-dd");
-      await onMarkAttendance(today, "present", locationText || "Marked from student app");
+      await onMarkAttendance(
+        targetDate,
+        targetStatus,
+        locationText || `Marked from student app (${targetDate})`
+      );
       setSuccess(true);
       setTimeout(() => {
         onClose();
@@ -62,8 +72,11 @@ const MarkAttendanceModal = ({
           
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Mark Attendance</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Verify your location to mark today's attendance
+            Verify your location to mark attendance for {targetDate}
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span className="capitalize">Current: {currentStatus || "not marked"}</span>
+          </div>
 
           {!success ? (
             <div className="mt-6 space-y-5">
@@ -133,20 +146,68 @@ const MarkAttendanceModal = ({
 
               {/* Actions */}
               <div className="pt-2 flex flex-col gap-2">
-                <button
-                  onClick={handleMark}
-                  disabled={!isMarkingAllowed || isMarking || todayAttendance?.status === 'present'}
-                  className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
-                    todayAttendance?.status === 'present'
-                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                      : isMarkingAllowed 
-                        ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 hover:opacity-90 active:scale-95"
+                {!isToday && !alreadyPresent && !alreadyAbsent && (
+                  <>
+                    <button
+                      onClick={() => handleMark("present")}
+                      disabled={!isMarkingAllowed || isMarking}
+                      className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                        isMarkingAllowed
+                          ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 hover:opacity-90 active:scale-95"
+                          : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                      }`}
+                    >
+                      {isMarking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                      {isMarking ? "Saving..." : `Mark Present (${targetDate})`}
+                    </button>
+                    <button
+                      onClick={() => handleMark("absent")}
+                      disabled={!isMarkingAllowed || isMarking}
+                      className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                        isMarkingAllowed
+                          ? "bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:opacity-90 active:scale-95"
+                          : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                      }`}
+                    >
+                      {isMarking ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
+                      {isMarking ? "Saving..." : `Mark Absent (${targetDate})`}
+                    </button>
+                  </>
+                )}
+
+                {!isToday && (alreadyPresent || alreadyAbsent) && (
+                  <button
+                    onClick={() => handleMark(alreadyPresent ? "absent" : "present")}
+                    disabled={!isMarkingAllowed || isMarking}
+                    className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                      isMarkingAllowed
+                        ? alreadyPresent
+                          ? "bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:opacity-90 active:scale-95"
+                          : "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 hover:opacity-90 active:scale-95"
                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
-                  }`}
-                >
-                  {isMarking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                  {todayAttendance?.status === 'present' ? "Already Marked Today" : "Mark Present Now"}
-                </button>
+                    }`}
+                  >
+                    {isMarking ? <Loader2 className="w-5 h-5 animate-spin" /> : alreadyPresent ? <X className="w-5 h-5" /> : <Check className="w-5 h-5" />}
+                    {isMarking ? "Saving..." : alreadyPresent ? `Marked Present - Toggle to Absent` : `Marked Absent - Toggle to Present`}
+                  </button>
+                )}
+
+                {isToday && (
+                  <button
+                    onClick={() => handleMark("present")}
+                    disabled={!isMarkingAllowed || isMarking || todayAttendance?.status === 'present'}
+                    className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                      todayAttendance?.status === 'present'
+                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        : isMarkingAllowed 
+                          ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 hover:opacity-90 active:scale-95"
+                          : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                    }`}
+                  >
+                    {isMarking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                    {isMarking ? "Saving..." : todayAttendance?.status === 'present' ? "Already Marked Today" : "Mark Present Now"}
+                  </button>
+                )}
                 <button
                   onClick={onClose}
                   className="w-full py-3 text-sm font-semibold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"

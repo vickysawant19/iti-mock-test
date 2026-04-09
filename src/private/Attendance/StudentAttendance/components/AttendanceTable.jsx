@@ -1,6 +1,5 @@
 import React from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, XCircle } from "lucide-react";
 
 const getStatusClasses = (status) => {
   switch (status) {
@@ -10,6 +9,8 @@ const getStatusClasses = (status) => {
       return "bg-rose-50 text-rose-600 border-rose-200";
     case "late":
       return "bg-amber-50 text-amber-600 border-amber-200";
+    case "leave":
+      return "bg-violet-50 text-violet-600 border-violet-200";
     case "holiday":
       return "bg-amber-50 text-amber-600 border-amber-200";
     default:
@@ -22,19 +23,28 @@ const getStatusDotColor = (status) => {
     case "present": return "bg-emerald-500";
     case "absent": return "bg-rose-500";
     case "late": return "bg-amber-500";
+    case "leave": return "bg-violet-500";
     case "holiday": return "bg-amber-500";
     default: return "bg-slate-400";
   }
 };
 
 const AttendanceTable = ({ attendanceRecords, holidays }) => {
+  const normalizeStatus = (rawStatus) => {
+    const value = String(rawStatus || "").trim().toLowerCase();
+    if (["present", "p"].includes(value)) return "present";
+    if (["absent", "a"].includes(value)) return "absent";
+    if (["leave", "onleave", "on_leave", "l"].includes(value)) return "leave";
+    if (["holiday", "h"].includes(value)) return "holiday";
+    if (["late"].includes(value)) return "late";
+    return value;
+  };
 
-  const allRecords = [];
-  
-  // Combine logic to show holidays in the table if they fall between min and max date of records
-  // For simplicity based on prompt, let's just map the attendanceRecords (the user's design shows mostly attendance with some absent).
-  
-  if (!attendanceRecords || attendanceRecords.length === 0) {
+  const safeRecords = Array.isArray(attendanceRecords) ? attendanceRecords : [];
+  const holidayEntries = holidays instanceof Map ? Array.from(holidays.entries()) : [];
+  const holidayMap = holidays instanceof Map ? holidays : new Map();
+
+  if (safeRecords.length === 0 && holidayEntries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50">
         <p className="text-slate-500 text-sm font-medium">No attendance data found for this period.</p>
@@ -42,15 +52,33 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
     );
   }
 
-  // Sort by date desc
-  const sortedRecords = [...attendanceRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Merge attendance and holiday-only dates so the table stays consistent with calendar/stats.
+  const dateMap = new Map();
+  safeRecords.forEach((record) => {
+    if (!record?.date) return;
+    dateMap.set(record.date, { ...record, status: normalizeStatus(record.status) });
+  });
+  holidayEntries.forEach(([date, holidayText]) => {
+    if (!dateMap.has(date)) {
+      dateMap.set(date, {
+        $id: `holiday-${date}`,
+        date,
+        status: "holiday",
+        remarks: holidayText || "Holiday",
+      });
+    }
+  });
+
+  const mergedSortedRecords = Array.from(dateMap.values()).sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full text-left border-collapse text-[13px] table-fixed min-w-[500px]">
+      <table className="w-full text-left border-collapse text-[13px] min-w-[680px]">
         <colgroup>
-           <col className="w-[100px]" />
-           <col className="w-auto" />
+           <col className="w-[120px]" />
+           <col className="w-[45%]" />
            <col className="w-[100px]" />
            <col className="w-[110px]" />
         </colgroup>
@@ -63,9 +91,11 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-[#f1f5f9] dark:divide-slate-800">
-          {sortedRecords.map((record) => {
-            const isHoliday = holidays?.has(record.date);
-            const holidayText = holidays?.get(record.date);
+          {mergedSortedRecords.map((record) => {
+            const status = normalizeStatus(record.status);
+            const hasAttendanceStatus = ["present", "absent", "late", "leave", "onleave"].includes(status);
+            const isHoliday = status === "holiday" || (!hasAttendanceStatus && holidayMap.has(record.date));
+            const holidayText = holidayMap.get(record.date);
             
             const dateObj = new Date(record.date);
             const dateFmt = format(dateObj, "dd MMM");
@@ -99,15 +129,15 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
                      <div className="text-[10px] text-slate-400">{dayFmt}</div>
                   </td>
                   <td className="px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 truncate">
-                     {record.remarks || "-"}
+                     {isHoliday ? holidayText || record.remarks || "Public Holiday" : record.remarks || "-"}
                   </td>
                   <td className="px-4 py-2.5 font-mono text-[12px] text-slate-500 truncate">
                      {record.$updatedAt ? format(new Date(record.$updatedAt), "h:mm a") : "—"}
                   </td>
                   <td className="px-4 py-2.5">
-                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(record.status)}`}>
-                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(record.status)}`} />
-                       <span className="capitalize">{record.status}</span>
+                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(isHoliday ? "holiday" : status)}`}>
+                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(isHoliday ? "holiday" : status)}`} />
+                       <span className="capitalize">{isHoliday ? "holiday" : status || "unknown"}</span>
                      </span>
                   </td>
                 </tr>

@@ -59,7 +59,17 @@ export default function ManageStudentsList({ selectedBatch }) {
       const targetProfiles = await userProfileService.getProfilesByBatchId(
         selectedBatch
       );
-      targetProfiles.forEach((p) => studentIds.add(p.userId));
+      targetProfiles.forEach((p) => {
+        const roles = Array.isArray(p.role) ? p.role : [p.role];
+        const hasStudentRole = roles.some(
+          (role) => String(role || "").toLowerCase() === "student"
+        );
+        const isTeacherProfile = p.userId === teacherId;
+
+        if (hasStudentRole && !isTeacherProfile) {
+          studentIds.add(p.userId);
+        }
+      });
 
       const uniqueIds = Array.from(studentIds);
       if (uniqueIds.length === 0) {
