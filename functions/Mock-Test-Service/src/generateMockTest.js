@@ -16,12 +16,39 @@ const generateMockTest = async ({
 }) => {
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
+
+    // 1. Fetch relevant module IDs based on trade, subject, year
+    let moduleIdsToQuery = selectedModules || [];
+    
+    if (moduleIdsToQuery.length === 0) {
+      let modOffset = 0;
+      let hasMoreMods = true;
+      while (hasMoreMods) {
+        const modResponse = await database.listDocuments(
+          process.env.APPWRITE_DATABASE_ID,
+          "newmodulesdata",
+          [
+            Query.equal("tradeId", tradeId),
+            Query.equal("subjectId", subjectId),
+            Query.equal("year", year),
+            Query.limit(100),
+            Query.offset(modOffset),
+            Query.select(["$id"])
+          ]
+        );
+        moduleIdsToQuery = moduleIdsToQuery.concat(modResponse.documents.map(d => d.$id));
+        modOffset += modResponse.documents.length;
+        hasMoreMods = modOffset < modResponse.total;
+      }
+    }
+
+    if (moduleIdsToQuery.length === 0) return [];
+
+    // 2. Query questions by the module IDs
     let offset = 0;
     let hasMore = true;
     const queries = [
-      Query.equal("tradeId", tradeId),
-      Query.equal("subjectId", subjectId),
-      Query.equal("year", year),
+      Query.equal("moduleId", moduleIdsToQuery)
     ];
 
     if (Array.isArray(tags) && tags.length > 0) {
@@ -29,16 +56,12 @@ const generateMockTest = async ({
     }
 
     queries.push(Query.limit(100), Query.select(["$id"]));
-    
-    if (selectedModules.length > 0) {
-      queries.push(Query.equal("moduleId", selectedModules));
-    }
 
     while (hasMore) {
       const response = await database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID,
-        [...queries, Query.offset(offset) ]
+        [...queries, Query.offset(offset)]
       );
 
       documents = documents.concat(response.documents);
@@ -101,7 +124,7 @@ const generateMockTest = async ({
       process.env.APPWRITE_QUES_COLLECTION_ID,
       [Query.limit(quesCount),
        Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
-       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","tradeId", "year","moduleId","images"])]
+       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","moduleId"])]
     );
 
     const shuffledQuestions = selectedQuestions.documents.sort(() => Math.random - 1)
@@ -109,13 +132,10 @@ const generateMockTest = async ({
     const questionsWithResponses = shuffledQuestions.map((question) => ({
       $id: question.$id,
       question: question.question,
-      images: question.images,
       options: question.options,
       userId: question.userId,
       userName: question.userName,
       correctAnswer: question.correctAnswer,
-      tradeId: question.tradeId,
-      year: question.year,
       moduleId: question?.moduleId || "",
       response: null, // initializing response to null
     }));

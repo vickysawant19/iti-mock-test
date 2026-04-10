@@ -7,13 +7,11 @@ import { addProfile, selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/appwrite/userProfileService";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 
-import StepAcademic from "./StepAcademic";
 import StepBasicInfo from "./StepBasicInfo";
 import StepPersonalInfo from "./StepPersonalInfo";
 import StepComplete from "./StepComplete";
 
 const STEPS = [
-  { label: "Academic" },
   { label: "Basic" },
   { label: "Personal" },
   { label: "Review" },
@@ -42,8 +40,6 @@ export default function OnboardingWizard() {
           email: user?.email || "",
           DOB: existingProfile.DOB ? existingProfile.DOB.split("T")[0] : "",
           address: existingProfile.address || "",
-          collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
-          tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
         });
       }
 
@@ -54,7 +50,7 @@ export default function OnboardingWizard() {
 
       // Resume from last saved step — only on first mount
       if (!hasInitializedRef.current) {
-        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 4) {
+        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 3) {
           setCurrentStep(existingProfile.onboardingStep);
         }
         hasInitializedRef.current = true;
@@ -165,15 +161,12 @@ export default function OnboardingWizard() {
 
         <div className="animate-in fade-in zoom-in-95 duration-300 ease-out">
           {currentStep === 1 && (
-            <StepAcademic initialData={formData} onNext={handleNext} isSaving={isSaving} role="Student" />
+            <StepBasicInfo initialData={formData} onNext={handleNext} isSaving={isSaving} />
           )}
           {currentStep === 2 && (
-            <StepBasicInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} />
-          )}
-          {currentStep === 3 && (
             <StepPersonalInfo initialData={formData} onNext={handleNext} onBack={handleBack} isSaving={isSaving} userId={user.$id} />
           )}
-          {currentStep === 4 && (
+          {currentStep === 3 && (
             <StepComplete formData={formData} onFinish={handleFinish} onBack={handleBack} isSaving={isSaving} />
           )}
         </div>

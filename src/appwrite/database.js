@@ -32,12 +32,8 @@ export class QuesDbService {
     correctAnswer,
     userId,
     userName,
-    tradeId,
-    year,
     tags,
-    subjectId,
     moduleId,
-    images,
   }) {
     try {
       // Check if the question already exists
@@ -57,12 +53,8 @@ export class QuesDbService {
         correctAnswer,
         userId,
         userName,
-        tradeId,
-        year,
         tags,
-        subjectId,
         moduleId,
-        images,
       };
 
       return await this.database.createDocument(
@@ -72,9 +64,6 @@ export class QuesDbService {
         documentData,
       );
     } catch (error) {
-      if (imageId) {
-        this.bucket.deleteFile(conf.bucketId, imageId);
-      }
       throw new Error(`${error.message}`);
     }
   }
@@ -85,11 +74,7 @@ export class QuesDbService {
       question,
       options,
       correctAnswer,
-      tradeId,
-      year,
-      subjectId,
       moduleId,
-      images,
       tags,
     },
   ) {
@@ -98,11 +83,7 @@ export class QuesDbService {
         question,
         options,
         correctAnswer,
-        tradeId,
-        year,
-        subjectId,
         moduleId,
-        images,
         tags,
       };
       return await this.database.updateDocument(

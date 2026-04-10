@@ -13,8 +13,6 @@ import {
 import CustomInput from "@/components/components/CustomInput";
 
 const AcademicAndBatchSection = ({
-  collegeData,
-  tradeData,
   isTeacher,
   isStudent,
   isUserProfile,
@@ -25,124 +23,45 @@ const AcademicAndBatchSection = ({
 
   return (
     <div className="space-y-6">
-      {/* --- Section 1: Academic & Batch Information --- */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
-            <GraduationCap
-              className="text-blue-600 dark:text-blue-400"
-              size={24}
-            />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-              Academic & Batch Details
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Manage college, trade, and batch assignments
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {/* College */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              College <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Building
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <select
-                {...register("collegeId", { required: true })}
-                disabled={!isFieldEditable("collegeId")}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-              >
-                <option value="">Select College</option>
-                {collegeData.map((college) => (
-                  <option key={college.$id} value={college.$id}>
-                    {college.collageName}
-                  </option>
-                ))}
-              </select>
+      {/* --- Section 1: Professional Details (Teachers Only) --- */}
+      {isTeacher && (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
+              <Activity className="text-blue-600 dark:text-blue-400" size={24} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+                Professional Details
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Manage your experience and professional information
+              </p>
             </div>
           </div>
 
-          {/* Trade */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Trade <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <BookOpen
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <select
-                {...register("tradeId", { required: true })}
-                disabled={!isFieldEditable("tradeId")}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-              >
-                <option value="">Select Trade</option>
-                {tradeData.map((trade) => (
-                  <option key={trade.$id} value={trade.$id}>
-                    {trade.tradeName}
-                  </option>
-                ))}
-              </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Years of Experience (Optional)
+              </label>
+              <div className="relative">
+                <Activity
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="number"
+                  placeholder="e.g. 5"
+                  {...register("experience")}
+                  disabled={!isFieldEditable("experience")}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                />
+              </div>
             </div>
           </div>
-
-          {/* Teacher Specific Fields */}
-          {isTeacher && (
-            <>
-              {/* Specialization */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Other Specializations (Optional)
-                </label>
-                <div className="relative">
-                  <BookOpen
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    placeholder="e.g. Fitter, Welder"
-                    {...register("specialization")}
-                    disabled={!isFieldEditable("specialization")}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Experience */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Years of Experience (Optional)
-                </label>
-                <div className="relative">
-                  <Activity
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
-                  />
-                  <input
-                    type="number"
-                    placeholder="e.g. 5"
-                    {...register("experience")}
-                    disabled={!isFieldEditable("experience")}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Active Batch has been moved to the Batches nav menu */}
         </div>
-      </div>
+      )}
 
       {/* --- Section 2: Student Identification --- */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">

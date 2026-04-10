@@ -32,6 +32,7 @@ import { Query } from "appwrite";
 import { appwriteService } from "@/appwrite/appwriteConfig";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import batchStudentService from "@/appwrite/batchStudentService";
+import batchService from "@/appwrite/batchService";
 import conf from "@/config/config";
 
 // 💡 Using centralized appwriteService instead of local persistentClient
@@ -60,20 +61,37 @@ const AttendanceDashboard = () => {
 
   // Effect to set default college for non-admins (Teachers)
   useEffect(() => {
-    if (
-      !collegeLoading &&
-      collegeData?.documents &&
-      !isAdmin &&
-      profile?.collegeId
-    ) {
-      const teacherCollege = collegeData.documents.find(
-        (c) => c.$id === profile.collegeId
-      );
-      if (teacherCollege) {
-        setSelectedCollege(teacherCollege);
+    const fetchTeacherCollege = async () => {
+      if (
+        !collegeLoading &&
+        collegeData?.documents &&
+        !isAdmin &&
+        user?.$id &&
+        !selectedCollege
+      ) {
+        try {
+          // Fetch the teacher's active batches to find their college
+          const res = await batchService.listBatches([
+            Query.equal("teacherId", user.$id),
+            Query.select(["collegeId"]),
+            Query.limit(1)
+          ]);
+          if (res?.documents?.length > 0) {
+            const batchCollegeId = res.documents[0].collegeId?.$id || res.documents[0].collegeId;
+            const teacherCollege = collegeData.documents.find(
+              (c) => c.$id === batchCollegeId
+            );
+            if (teacherCollege) {
+              setSelectedCollege(teacherCollege);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching teacher college:", error);
+        }
       }
-    }
-  }, [collegeData, collegeLoading, isAdmin, profile]);
+    };
+    fetchTeacherCollege();
+  }, [collegeData, collegeLoading, isAdmin, user, selectedCollege]);
 
   // 2. Fetch Trades
   const { data: tradeData } = useListTradesQuery(

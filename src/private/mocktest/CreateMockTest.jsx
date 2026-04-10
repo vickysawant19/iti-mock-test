@@ -152,11 +152,9 @@ const CreateMockTest = () => {
   const collegeListData = collegesResponse?.documents || [];
 
   const isAdmin = profile?.role?.includes("admin") || false;
-  const userCollege = collegeListData.find((c) => c.$id === profile?.collegeId);
-  const tradeIds = userCollege?.tradeIds || [];
 
   const { data: tradesResponse } = useListTradesQuery(
-    isAdmin || !tradeIds.length ? undefined : [Query.equal("$id", tradeIds)],
+    undefined,
     { skip: !profile }
   );
   const tradesList = tradesResponse?.documents || [];
@@ -193,7 +191,7 @@ const CreateMockTest = () => {
       // Set selectedModules to all module IDs by default
       setValue(
         "selectedModules",
-        response.map((module) => module.moduleId)
+        response.map((module) => module.$id)
       );
     } catch (error) {
       console.log(error);
@@ -214,9 +212,7 @@ const CreateMockTest = () => {
   useEffect(() => {
     if (!profile) return;
     if (tradesList.length < 1) return;
-    setValue("tradeId", profile.tradeId);
-    const trade = tradesList.find((tr) => tr.$id === profile.tradeId);
-    setSelectedTrade(trade);
+    // Removed auto-selection of tradeId based on profile
   }, [profile, tradesList, setValue]);
 
   useEffect(() => {
@@ -231,7 +227,7 @@ const CreateMockTest = () => {
     if (checked) {
       setValue(
         "selectedModules",
-        modules?.syllabus.map((module) => module.moduleId) || []
+        modules?.map((module) => module.$id) || []
       );
     } else {
       setValue("selectedModules", []);
@@ -492,18 +488,18 @@ const CreateMockTest = () => {
                             <div className="space-y-2">
                               {modules.map((module) => (
                                 <Checkbox
-                                  key={module.moduleId}
+                                  key={module.$id}
                                   checked={field.value.includes(
-                                    module.moduleId
+                                    module.$id
                                   )}
                                   onChange={() => {
                                     const newValue = field.value.includes(
-                                      module.moduleId
+                                      module.$id
                                     )
                                       ? field.value.filter(
-                                          (id) => id !== module.moduleId
+                                          (id) => id !== module.$id
                                         )
-                                      : [...field.value, module.moduleId];
+                                      : [...field.value, module.$id];
                                     field.onChange(newValue);
                                   }}
                                   label={

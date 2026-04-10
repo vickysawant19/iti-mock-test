@@ -242,8 +242,6 @@ const BatchForm = ({ onClose }) => {
   // Guard for incomplete teacher profiles
   const missingFields = [];
   if (!profile?.isProfileComplete) missingFields.push("Finalizing Setup");
-  if (!profile?.collegeId) missingFields.push("Institute/College");
-  if (!profile?.tradeId && !profile?.specialization) missingFields.push("Trade or Specialization");
 
   if (missingFields.length > 0) {
     return (

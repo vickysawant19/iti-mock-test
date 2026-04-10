@@ -13,7 +13,6 @@ export class UserProfileService {
     DOB,
     address,
     batchId,
-    collegeId,
     email,
     enrolledAt = new Date().toISOString(),
     enrollmentStatus,
@@ -22,11 +21,9 @@ export class UserProfileService {
     phone,
     profileImage,
     role,
-    specialization,
     experience,
     status,
     studentId,
-    tradeId,
     userId,
     userName,
     onboardingStep = 0,
@@ -37,7 +34,6 @@ export class UserProfileService {
         DOB: DOB || null,
         address: address || null,
         batchId: batchId || null,
-        collegeId: collegeId || null,
         email: email || null,
         enrolledAt: enrolledAt || null,
         enrollmentStatus: enrollmentStatus || "enrolled",
@@ -46,11 +42,9 @@ export class UserProfileService {
         phone: parseInt(phone) || null,
         profileImage: profileImage || null,
         role: role || null,
-        specialization: specialization ? (Array.isArray(specialization) ? specialization : specialization.split(",").map(s => s.trim()).filter(Boolean)) : [],
         experience: experience || null,
         status: status || "active",
         studentId: studentId || null,
-        tradeId: tradeId || null,
         userId: userId || null,
         userName: userName || null,
         onboardingStep,
@@ -105,7 +99,6 @@ export class UserProfileService {
       DOB,
       address,
       batchId,
-      collegeId,
       email,
       enrolledAt,
       enrollmentStatus,
@@ -113,11 +106,9 @@ export class UserProfileService {
       parentContact,
       phone,
       profileImage,
-      specialization,
       experience,
       status,
       studentId,
-      tradeId,
       userName,
       role,
       registerId,
@@ -136,7 +127,6 @@ export class UserProfileService {
     if ("DOB" in data) updatedData.DOB = DOB || null;
     if ("address" in data) updatedData.address = address || null;
     if ("batchId" in data) updatedData.batchId = batchId || null;
-    if ("collegeId" in data) updatedData.collegeId = collegeId || null;
     if ("email" in data) updatedData.email = email || null;
     if ("enrolledAt" in data) updatedData.enrolledAt = enrolledAt || null;
     if ("enrollmentStatus" in data) updatedData.enrollmentStatus = enrollmentStatus || null;
@@ -148,12 +138,6 @@ export class UserProfileService {
     if ("status" in data) updatedData.status = status || null;
     if ("studentId" in data) updatedData.studentId = studentId || null;
 
-    if ("specialization" in data) {
-      updatedData.specialization = specialization
-        ? (Array.isArray(specialization) ? specialization : specialization.split(",").map(s => s.trim()).filter(Boolean))
-        : [];
-    }
-    if ("tradeId" in data) updatedData.tradeId = tradeId || null;
     if ("userName" in data) updatedData.userName = userName || null;
     if ("role" in data) updatedData.role = role || null;
     if ("registerId" in data) updatedData.registerId = registerId || null;

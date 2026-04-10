@@ -6,8 +6,6 @@ import { Query } from "appwrite";
 import { Save } from "lucide-react";
 
 import userProfileService from "@/appwrite/userProfileService";
-import { useListCollegesQuery } from "@/store/api/collegeApi";
-import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 
@@ -35,22 +33,8 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
   
-  // Resolve target user: either explicitly provided (e.g. from table or add student), or self
   const targetUserId = explicitUserId || user?.$id;
   const isUserProfile = !!explicitUserId && explicitUserId !== user?.$id;
-
-  const { data: collegesResponse, isLoading: isCollegesLoading } = useListCollegesQuery();
-  const collegeData = collegesResponse?.documents || [];
-
-  const selectedCollegeId = methods.watch("collegeId");
-  const selectedCollege = collegeData.find((c) => c.$id === selectedCollegeId);
-  const tradeIds = selectedCollege?.tradeIds || [];
-
-  const { data: tradesResponse, isLoading: isTradesLoading } = useListTradesQuery(
-    [Query.equal("$id", tradeIds)],
-    { skip: !tradeIds.length }
-  );
-  const tradeData = tradesResponse?.documents || [];
 
   const isTeacher = user.labels.includes("Teacher");
   const isStudent = !isTeacher;
@@ -68,9 +52,7 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     "profileImage",
     "registerId",
     "studentId",
-    "collegeId",
     "batchId",
-    "tradeId",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -108,9 +90,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
             enrolledAt: profileData.enrolledAt
               ? profileData.enrolledAt.split("T")[0]
               : "",
-            collegeId: profileData.collegeId?.$id || profileData.collegeId,
-            tradeId: profileData.tradeId?.$id || profileData.tradeId,
-            specialization: Array.isArray(profileData.specialization) ? profileData.specialization.join(", ") : (profileData.specialization || ""),
             batchId: profileData.batchId || defaultBatchId || ""
           };
           methods.reset(formattedData);
@@ -203,7 +182,7 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     }
   };
 
-  if (isLoading || isCollegesLoading || isTradesLoading) {
+  if (isLoading) {
     return <Loader isLoading={true} />;
   }
 
@@ -228,8 +207,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
             />
 
             <AcademicAndBatchSection
-                collegeData={collegeData}
-                tradeData={tradeData}
                 isTeacher={isTeacher}
                 isStudent={isStudent}
                 isUserProfile={isUserProfile}

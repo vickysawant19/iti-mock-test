@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
+import batchService from "@/appwrite/batchService";
 
 export default function BatchEnrollmentStatus() {
   const profile = useSelector(selectProfile);
@@ -30,15 +31,22 @@ export default function BatchEnrollmentStatus() {
   const { data: collegesData } = useListCollegesQuery();
   const { data: tradesData } = useListTradesQuery();
 
+  const batchId = profile?.batchId?.$id || profile?.batchId;
+  const [targetBatch, setTargetBatch] = useState(null);
+
+  useEffect(() => {
+    if (batchId) {
+      batchService.getBatch(batchId).then(setTargetBatch).catch(console.error);
+    }
+  }, [batchId]);
+
   const collegeName = collegesData?.documents?.find(
-    (c) => c.$id === (profile?.collegeId?.$id || profile?.collegeId)
+    (c) => c.$id === (targetBatch?.collegeId?.$id || targetBatch?.collegeId)
   )?.collageName || "—";
 
   const tradeName = tradesData?.documents?.find(
-    (t) => t.$id === (profile?.tradeId?.$id || profile?.tradeId)
+    (t) => t.$id === (targetBatch?.tradeId?.$id || targetBatch?.tradeId)
   )?.tradeName || "—";
-
-  const batchId = profile?.batchId?.$id || profile?.batchId;
 
   const fetchStatus = async () => {
     if (!user?.$id) return;
@@ -223,7 +231,7 @@ export default function BatchEnrollmentStatus() {
                 <div>
                   <p className="text-xs text-slate-400">Batch Target</p>
                   <p className="font-medium text-slate-700 dark:text-slate-200">
-                    {profile.batchId?.BatchName || profile.batchId}
+                    {targetBatch?.BatchName || "-"}
                   </p>
                 </div>
               </div>

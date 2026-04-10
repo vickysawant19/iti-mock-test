@@ -9,13 +9,11 @@ import { checkProfileCompletion } from "@/utils/profileCompletion";
 
 import TeacherStepBasicInfo from "./TeacherStepBasicInfo";
 import StepPersonalInfo from "../StepPersonalInfo";
-import StepAcademic from "../StepAcademic";
 import TeacherStepComplete from "./TeacherStepComplete";
 
 const STEPS = [
   { label: "Basic" },
   { label: "Personal" },
-  { label: "Academic" },
   { label: "Review" },
 ];
 
@@ -45,8 +43,6 @@ export default function TeacherOnboardingWizard() {
           email: user?.email || "",
           DOB: existingProfile.DOB ? existingProfile.DOB.split("T")[0] : "",
           address: existingProfile.address || "",
-          collegeId: existingProfile.collegeId?.$id || existingProfile.collegeId || "",
-          tradeId: existingProfile.tradeId?.$id || existingProfile.tradeId || "",
         });
       }
 
@@ -59,9 +55,9 @@ export default function TeacherOnboardingWizard() {
 
       // Only restore saved step on FIRST mount (resume mid-progress)
       if (!hasInitializedRef.current) {
-        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 4) {
+        if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 3) {
           console.log("[WIZARD useEffect] Restoring step to:", existingProfile.onboardingStep);
-          setCurrentStep(Math.min(existingProfile.onboardingStep, 4));
+          setCurrentStep(Math.min(existingProfile.onboardingStep, 3));
         }
         hasInitializedRef.current = true;
       }
@@ -192,15 +188,6 @@ export default function TeacherOnboardingWizard() {
             />
           )}
           {currentStep === 3 && (
-            <StepAcademic
-              initialData={formData}
-              onNext={handleNext}
-              onBack={handleBack}
-              isSaving={isSaving}
-              role="Teacher"
-            />
-          )}
-          {currentStep === 4 && (
             <TeacherStepComplete
               formData={formData}
               onFinish={handleFinish}

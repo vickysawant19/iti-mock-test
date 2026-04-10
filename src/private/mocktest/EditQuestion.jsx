@@ -24,7 +24,6 @@ import moduleServices from "@/appwrite/moduleServices";
 import { Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectQuestions } from "@/store/questionSlice";
-import ImageUploader from "./components/ImageUpload";
 
 const LoadingSkeleton = () => (
   <div className="animate-pulse">
@@ -41,7 +40,6 @@ const EditQuestion = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [modules, setModules] = useState(null);
-  const [images, setImages] = useState([]);
 
   const navigate = useNavigate();
   const user = useSelector(selectUser);
@@ -93,20 +91,19 @@ const EditQuestion = () => {
       setSubjects(subjects.documents);
 
       const question = await quesdbservice.getQuestion(quesId);
-      const trade = trades.find((tr) => tr.$id === question.tradeId);
-      const images = question.images.map((img) => JSON.parse(img));
+      const module = await moduleServices.getModule(question.moduleId);
+      const trade = trades.find((tr) => tr.$id === module.tradeId);
+      
       setSelectedTrade(trade);
-      setImages(images);
 
       reset({
         question: question.question,
-        tradeId: question.tradeId,
-        year: question.year,
-        subjectId: question.subjectId,
-        moduleId: String(question.moduleId),
+        tradeId: module.tradeId,
+        year: module.year,
+        subjectId: module.subjectId,
+        moduleId: question.moduleId,
         options: question.options,
         correctAnswer: question.correctAnswer,
-        images: images,
         tags: question.tags?.split(",") || [],
       });
     } catch (error) {
@@ -147,7 +144,10 @@ const EditQuestion = () => {
       return;
     }
 
-    data.images = images.map((img) => JSON.stringify(img));
+    delete data.tradeId;
+    delete data.subjectId;
+    delete data.year;
+    
     data.userId = user.$id;
     data.tags = (data.tags || []).join(",");
     try {
@@ -293,7 +293,7 @@ const EditQuestion = () => {
                         >
                           <option value="">Select Module</option>
                           {modules?.map((m) => (
-                            <option key={m.moduleId} value={String(m.moduleId)}>
+                            <option key={m.$id} value={String(m.$id)}>
                               {m.moduleId} {m.moduleName}
                             </option>
                           ))}
@@ -375,10 +375,7 @@ const EditQuestion = () => {
               )}
             </div>
 
-            {/* Images */}
-            <div className="col-span-full">
-              <ImageUploader images={images} setImages={setImages} />
-            </div>
+
 
             {/* Options */}
             <div className="space-y-4">

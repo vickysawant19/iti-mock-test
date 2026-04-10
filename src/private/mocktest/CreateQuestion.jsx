@@ -10,7 +10,7 @@ import quesdbservice from "@/appwrite/database";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
-import ImageUploader from "./components/ImageUpload";
+
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
@@ -21,7 +21,7 @@ const CreateQuestion = () => {
   const [subjects, setSubjects] = useState([]);
   const [modules, setModules] = useState(null);
   const [selectedTrade, setSelectedTrade] = useState(null);
-  const [images, setImages] = useState([]);
+
   const [similarQuestions, setSimilarQuestions] = useState([]);
 
   const navigate = useNavigate();
@@ -33,11 +33,9 @@ const CreateQuestion = () => {
   const collegeListData = collegesResponse?.documents || [];
 
   const isAdmin = profile?.role?.includes("admin") || false;
-  const userCollege = collegeListData.find((c) => c.$id === profile?.collegeId);
-  const tradeIds = userCollege?.tradeIds || [];
 
   const { data: tradesResponse } = useListTradesQuery(
-    isAdmin || !tradeIds.length ? undefined : [Query.equal("$id", tradeIds)],
+    undefined,
     { skip: !profile }
   );
   const trades = tradesResponse?.documents || [];
@@ -120,11 +118,7 @@ const CreateQuestion = () => {
   useEffect(() => {
     if (!profile) return;
     if (trades.length < 1) return;
-    const trade = trades.find((t) => t.$id === profile.tradeId);
-    if (trade) {
-      setValue("tradeId", trade.$id);
-      setSelectedTrade(trade);
-    }
+    // Removed auto-selection of tradeId based on profile
   }, [profile, trades, setValue]);
 
   useEffect(() => {
@@ -140,14 +134,14 @@ const CreateQuestion = () => {
       data.userId = user.$id;
       data.userName = user.name;
       data.tags = (data.tags || []).join(",");
-      data.images = images.map((item) => JSON.stringify(item)) || [];
+      delete data.tradeId;
+      delete data.subjectId;
+      delete data.year;
       await quesdbservice.createQuestion(data);
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options
-        images: [],
       });
-      setImages([]);
       toast.success("Question created");
       // navigate("/manage-questions");
     } catch (error) {
@@ -380,7 +374,7 @@ const CreateQuestion = () => {
                 >
                   <option value="">Select Module</option>
                   {modules.map((m) => (
-                    <option key={m.moduleId} value={m.moduleId}>
+                    <option key={m.$id} value={m.$id}>
                       {m.moduleId} {m.moduleName}
                     </option>
                   ))}
@@ -469,17 +463,7 @@ const CreateQuestion = () => {
               )}
             </div>
 
-            {/* Image Uploader */}
-            <div className="col-span-full">
-              <ImageUploader
-                folderName={`questions/${
-                  selectedTrade?.tradeName.split(" ").join("").slice(10) ||
-                  "img"
-                }`}
-                images={images}
-                setImages={setImages}
-              />
-            </div>
+
 
             {/* Options */}
             <div className="mb-6 col-span-full lg:grid lg:grid-cols-2">

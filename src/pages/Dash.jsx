@@ -240,20 +240,27 @@ const Dashboard = () => {
     [getTimeForPeriod]
   );
 
-  // Fetch trade via RTK Query; skip until profile is available
-  const { data: tradeData } = useGetTradeQuery(profile?.tradeId, {
-    skip: !profile?.tradeId,
-  });
+  // No direct tradeData from profile anymore. Trade names can be derived if needed, but omitted for simplicity.
+  const tradeData = null;
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
 
+    // Use teacherBatches or studentBatches as the source for filtering stats
+    const activeBatchIds = isTeacher
+      ? teacherBatches.map((b) => b.$id)
+      : studentBatches.map((b) => b.batchId?.$id || b.batchId);
+
+    // If they have no batches, don't attempt to load thousands of stats
+    if (activeBatchIds.length === 0) {
+      setState((prev) => ({ ...prev, isLoading: false }));
+      return;
+    }
+
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const queries = [];
-      if (profile.tradeId) queries.push(Query.equal("tradeId", profile.tradeId));
-      if (profile.collegeId) queries.push(Query.equal("collegeId", profile.collegeId));
-      if (profile.batchId) queries.push(Query.equal("batchId", profile.batchId));
+      queries.push(Query.equal("batchId", activeBatchIds));
 
       const statsRes = await userStatsService.getAllStats(queries);
 
@@ -295,7 +302,7 @@ const Dashboard = () => {
     tradeData,
   ]);
 
-  // Fetch teacher/student batch data for CTAs
+  // Fetch teacher/student batch data for CTAs and Stats querying
   useEffect(() => {
     const fetchBatchContext = async () => {
       if (!user?.$id) return;
@@ -313,8 +320,10 @@ const Dashboard = () => {
   }, [user, isTeacher, isStudent]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Only attempt to fetch stats if batches are loaded, or user has no batches
+    if (isTeacher && teacherBatches) fetchData();
+    if (isStudent && studentBatches) fetchData();
+  }, [fetchData, teacherBatches, studentBatches]);
 
   // Update metrics when time period changes
   useEffect(() => {

@@ -4,8 +4,6 @@ import { BookOpen, Building, Clipboard, Calendar } from "lucide-react";
 import CustomInput from "@/components/components/CustomInput";
 
 const AcademicInformationSection = ({
-  collegeData,
-  tradeData,
   isFieldEditable,
   formMode,
 }) => {
@@ -21,53 +19,6 @@ const AcademicInformationSection = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <div className="flex items-center mb-1">
-            <Building
-              size={18}
-              className="text-gray-500 dark:text-gray-400 mr-1"
-            />
-            <label className="text-gray-600 dark:text-gray-400">
-              College <span className="text-red-500">*</span>
-            </label>
-          </div>
-          <select
-            {...register("collegeId", { required: true })}
-            disabled={!isFieldEditable("collegeId")}
-            className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-          >
-            <option value="">Select College</option>
-            {collegeData.map((college) => (
-              <option key={college.$id} value={college.$id}>
-                {college.collageName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <div className="flex items-center mb-1">
-            <BookOpen
-              size={18}
-              className="text-gray-500 dark:text-gray-400 mr-1"
-            />
-            <label className="text-gray-600 dark:text-gray-400">
-              Trade <span className="text-red-500">*</span>
-            </label>
-          </div>
-          <select
-            {...register("tradeId", { required: true })}
-            disabled={!isFieldEditable("tradeId")}
-            className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-          >
-            <option value="">Select Trade</option>
-            {tradeData.map((trade) => (
-              <option key={trade.$id} value={trade.$id}>
-                {trade.tradeName}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <CustomInput
           label="Student ID/Roll Number"
@@ -101,31 +52,6 @@ const AcademicInformationSection = ({
         />
       </div>
 
-      {/* Display selected college and trade names if present */}
-      {(watch("collegeId") || watch("tradeId")) && (
-        <div className="mt-4 bg-blue-50 dark:bg-gray-900 p-3 rounded-md">
-          <p className="text-sm text-blue-800 dark:text-blue-300">
-            {watch("collegeId") &&
-              collegeData.find((c) => c.$id === watch("collegeId")) && (
-                <span className="font-medium">
-                  College:{" "}
-                  {
-                    collegeData.find((c) => c.$id === watch("collegeId"))
-                      .collageName
-                  }
-                </span>
-              )}
-            {watch("collegeId") && watch("tradeId") && " | "}
-            {watch("tradeId") &&
-              tradeData.find((t) => t.$id === watch("tradeId")) && (
-                <span className="font-medium">
-                  Trade:{" "}
-                  {tradeData.find((t) => t.$id === watch("tradeId")).tradeName}
-                </span>
-              )}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

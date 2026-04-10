@@ -8,6 +8,19 @@ export class ModuleServices {
     this.database = appwriteService.getDatabases();
   }
 
+  async getModule(moduleId) {
+    try {
+      return await this.database.getDocument(
+        conf.databaseId,
+        "newmodulesdata",
+        moduleId
+      );
+    } catch (error) {
+      console.error("Error getting module", error);
+      throw new Error(error);
+    }
+  }
+
   async getNewModulesData(tradeId, subjectId, year) {
     try {
       let allDocuments = [];

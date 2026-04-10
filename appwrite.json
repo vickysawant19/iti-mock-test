@@ -134,12 +134,15 @@
             "entrypoint": "src/main.js",
             "commands": "npm install",
             "specification": "s-0.5vcpu-512mb",
-            "path": "functions/user-manage"
+            "path": "functions/user-manage",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
         },
         {
             "$id": "67a88715003234e3617a",
             "name": "Mock-Test-Service",
-            "runtime": "node-22",
+            "runtime": "node-18.0",
             "specification": "s-0.5vcpu-512mb",
             "execute": [
                 "any"
@@ -164,12 +167,15 @@
             "logging": true,
             "entrypoint": "src/main.js",
             "commands": "npm install",
-            "path": "functions/Mock-Test-Service"
+            "path": "functions/Mock-Test-Service",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
         },
         {
             "$id": "67d3fa29000adc329a4a",
             "name": "imageUpload",
-            "runtime": "node-22",
+            "runtime": "node-18.0",
             "specification": "s-0.5vcpu-512mb",
             "execute": [
                 "any"
@@ -184,7 +190,10 @@
             "logging": true,
             "entrypoint": "src/main.js",
             "commands": "npm install",
-            "path": "functions/imageUpload"
+            "path": "functions/imageUpload",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
         },
         {
             "$id": "6921c1550003e4e220c0",

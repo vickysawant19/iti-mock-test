@@ -19,13 +19,16 @@ const ProfileView = ({ profileProps }) => {
   const [profile, setProfile] = useState(null);
   const { userId } = useParams();
 
+  const [collegeIdFromBatch, setCollegeIdFromBatch] = useState(null);
+  const [tradeIdFromBatch, setTradeIdFromBatch] = useState(null);
+
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
-    profile?.collegeId,
-    { skip: !profile?.collegeId }
+    collegeIdFromBatch,
+    { skip: !collegeIdFromBatch }
   );
   const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
-    profile?.tradeId,
-    { skip: !profile?.tradeId }
+    tradeIdFromBatch,
+    { skip: !tradeIdFromBatch }
   );
 
   const fetchProfile = async () => {
@@ -45,14 +48,20 @@ const ProfileView = ({ profileProps }) => {
   };
 
   const fetchData = async () => {
+    if (!profile?.batchId) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const [batchesRes] = await Promise.all([
-        batchService.getBatch(profile.batchId, [
-          Query.select(["$id", "BatchName"]),
-        ]),
+      const batchRes = await batchService.getBatch(profile.batchId, [
+          Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
       ]);
-      setBatches(batchesRes);
+      if (batchRes) {
+        setBatches(batchRes);
+        setCollegeIdFromBatch(batchRes.collegeId?.$id || batchRes.collegeId);
+        setTradeIdFromBatch(batchRes.tradeId?.$id || batchRes.tradeId);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -237,7 +246,6 @@ const ProfileView = ({ profileProps }) => {
                   Teaching Information
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {renderField("Specialization", profile.specialization)}
                   {renderField("Grade Level", profile.gradeLevel)}
                 </div>
               </div>
