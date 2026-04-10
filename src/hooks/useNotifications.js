@@ -95,9 +95,6 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 60s
-    const interval = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   const notifCount = notifications.length;

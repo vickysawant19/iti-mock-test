@@ -11,6 +11,7 @@ import { Loader2, Calendar as CalendarIcon, Table as TableIcon, MapPin } from "l
 import { Link } from "react-router-dom";
 import useLocationManager from "@/hooks/useLocationManager";
 import { avatarFallback } from "@/utils/avatarFallback";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 const StudentAttendancePage = () => {
   const profile = useSelector(selectProfile);
@@ -75,12 +76,14 @@ const StudentAttendancePage = () => {
           
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-white/20 border-2 border-white/30 rounded-[14px] flex items-center justify-center font-extrabold text-lg flex-shrink-0 overflow-hidden">
-                 {profile?.profileImage ? (
-                   <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                 ) : (
-                   avatarFallback(profile?.userName || profile?.name || "Student")
-                 )}
+               <div className="flex items-center justify-center flex-shrink-0">
+                 <InteractiveAvatar
+                    src={profile?.profileImage}
+                    fallbackText={profile?.userName?.charAt(0) || profile?.name?.charAt(0) || "S"}
+                    userId={profile?.userId}
+                    editable={false}
+                    className="w-12 h-12 shadow-sm border-2 border-white/30"
+                 />
                </div>
                <div>
                   <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Student Portal</div>

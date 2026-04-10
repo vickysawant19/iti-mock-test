@@ -300,10 +300,10 @@ const AttendanceDashboard = () => {
 
     return () => {
       isComponentMountedRef.current = false;
-      if (subscriptionRef.current) {
+      if (typeof subscriptionRef.current === 'function') {
         subscriptionRef.current();
-        subscriptionRef.current = null;
       }
+      subscriptionRef.current = null;
     };
   }, [selectedCollege, batchData]);
 

@@ -1,194 +1,24 @@
-import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
-import { FormProvider, useForm } from "react-hook-form";
-import { json, useNavigate, useParams } from "react-router-dom";
-import { Query } from "appwrite";
-import { ArrowLeft, Save } from "lucide-react";
-
-import userProfileService from "@/appwrite/userProfileService";
-import { useListCollegesQuery } from "@/store/api/collegeApi";
-import { useListTradesQuery } from "@/store/api/tradeApi";
+import React from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
-import { addProfile, selectProfile } from "@/store/profileSlice";
+import { selectProfile } from "@/store/profileSlice";
 
-import AcademicAndBatchSection from "./AcademicAndBatchSection";
-import PersonalDetailsSection from "./PersonalDetailsSection";
-import Loader from "@/components/components/Loader";
+import EmbeddedProfileForm from "./EmbeddedProfileForm";
 
 const ProfileForm = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [othersProfile, setOthersProfile] = useState(null);
-  const [error, setError] = useState("");
-  const [formMode, setFormMode] = useState("create"); // "create" or "edit"
-
-  const dispatch = useDispatch();
-  const methods = useForm();
   const navigate = useNavigate();
-
   const { userId } = useParams();
+  
   const user = useSelector(selectUser);
   const existingProfile = useSelector(selectProfile);
-  const targetUserId = userId || user?.$id;
-
-  const { data: collegesResponse, isLoading: isCollegesLoading } = useListCollegesQuery();
-  const collegeData = collegesResponse?.documents || [];
-
-  const selectedCollegeId = methods.watch("collegeId");
-  const selectedCollege = collegeData.find((c) => c.$id === selectedCollegeId);
-  const tradeIds = selectedCollege?.tradeIds || [];
-
-  const { data: tradesResponse, isLoading: isTradesLoading } = useListTradesQuery(
-    [Query.equal("$id", tradeIds)],
-    { skip: !tradeIds.length }
-  );
-  const tradeData = tradesResponse?.documents || [];
-
-  const isTeacher = user.labels.includes("Teacher");
-  const isStudent = !isTeacher;
-
-  const isUserProfile = userId !== undefined;
+  const isTeacher = user?.labels?.includes("Teacher");
+  
+  const isUserProfile = !!userId;
   const isEditingOwnProfile = !isUserProfile && existingProfile;
   const isEditingStudentProfile = isTeacher && isUserProfile;
-
-  // Define which fields students can edit
-  const studentEditableFields = [
-    "DOB",
-    "email",
-    "phone",
-    "parentContact",
-    "address",
-    "profileImage",
-    "registerId",
-    "studentId",
-    "collegeId",
-    "batchId",
-    "tradeId",
-  ];
-
-  const isFieldEditable = (fieldName) => {
-    if (formMode === "create") return true; // All fields editable in create mode
-    if (isTeacher) return true; // Teachers can edit everything in edit mode
-    // Students in edit mode can only edit specific fields
-    return studentEditableFields.includes(fieldName);
-  };
-
-  // Batch fetching logic has been moved to the Batches nav menu section
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setIsLoading(true);
-      try {
-        // Handle profile data based on different scenarios
-        let profileData = null;
-
-        if (isUserProfile) {
-          // Scenario 1: Editing another user's profile (admin/teacher function)
-          const userProfile = await userProfileService.getUserProfile(userId);
-          setOthersProfile(userProfile);
-          profileData = userProfile;
-          setFormMode("edit");
-        } else if (existingProfile) {
-          // Scenario 2: Editing current user's profile
-          profileData = existingProfile;
-          setFormMode("edit");
-        } else {
-          // Scenario 3: Creating new profile
-          setFormMode("create");
-        }
-
-        if (profileData) {
-          // Format dates for the form
-          const formattedData = {
-            ...profileData,
-            DOB: profileData.DOB ? profileData.DOB.split("T")[0] : "",
-            enrolledAt: profileData.enrolledAt
-              ? profileData.enrolledAt.split("T")[0]
-              : "",
-            collegeId: profileData.collegeId?.$id || profileData.collegeId,
-            tradeId: profileData.tradeId?.$id || profileData.tradeId,
-            specialization: Array.isArray(profileData.specialization) ? profileData.specialization.join(", ") : (profileData.specialization || ""),
-          };
-          methods.reset(formattedData);
-        } else {
-          methods.reset({
-            userId: isTeacher && isUserProfile ? "" : user.$id,
-            userName: isTeacher && isUserProfile ? "" : user.name,
-            email: isTeacher && isUserProfile ? "" : user.email,
-            phone: isTeacher && isUserProfile ? "" : user.phone,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load profile data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, [methods.reset, userId, existingProfile]);
-
-  const handleProfileSubmit = async (data) => {
-    try {
-      setIsSubmitting(true);
-      let updatedProfile;
-
-      if (isUserProfile) {
-        // Updating another user's profile
-        updatedProfile = await userProfileService.updateUserProfile(
-          othersProfile.$id,
-          data
-        );
-        toast.success("Profile updated successfully!");
-        navigate(-1);
-      } else if (existingProfile) {
-        // Updating current user's profile
-        if (isStudent) {
-          // Preserve non-editable fields for students
-          Object.keys(existingProfile).forEach((key) => {
-            if (!studentEditableFields.includes(key)) {
-              data[key] = existingProfile[key];
-            }
-          });
-        } else if (isTeacher) {
-          // Guarantee that teachers saving their profile are marked as complete
-          data.isProfileComplete = true;
-          data.onboardingStep = 4;
-        }
-        updatedProfile = await userProfileService.updateUserProfile(
-          existingProfile.$id,
-          {
-            ...data,
-          }
-        );
-        dispatch(addProfile({ data: updatedProfile }));
-        toast.success("Profile updated successfully!");
-        navigate("/profile/edit");
-      } else {
-        console.log("create new profile");
-        // Creating new profile
-        data.role = user.labels;
-        data.userId = user.$id;
-        data.userName = data.userName || user.name;
-        updatedProfile = await userProfileService.createUserProfile(data);
-        dispatch(addProfile({ data: updatedProfile }));
-        toast.success("Profile created successfully!");
-        navigate("/profile/edit");
-      }
-    } catch (err) {
-      console.error("Error saving profile:", err);
-      setError("Failed to save profile. Please try again.");
-      toast.error("Failed to save profile. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading || isCollegesLoading || isTradesLoading) {
-    return <Loader isLoading={true} />;
-  }
+  const formMode = (isUserProfile || existingProfile) ? "edit" : "create";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -229,55 +59,13 @@ const ProfileForm = () => {
           </p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-center text-red-700 dark:text-red-400">
-            <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
-            {error}
-          </div>
-        )}
-
-        <FormProvider {...methods}>
-          <form
-            onSubmit={methods.handleSubmit(handleProfileSubmit)}
-            className="space-y-6"
-          >
-            <PersonalDetailsSection
-              isFieldEditable={isFieldEditable}
-              formMode={formMode}
-              targetUserId={targetUserId}
-            />
-
-            <AcademicAndBatchSection
-              collegeData={collegeData}
-              tradeData={tradeData}
-              isTeacher={isTeacher}
-              isStudent={isStudent}
-              isUserProfile={isUserProfile}
-              isFieldEditable={isFieldEditable}
-              formMode={formMode}
-            />
-
-            <div className="sticky bottom-6 z-10 pt-4">
-              <button
-                disabled={isSubmitting}
-                type="submit"
-                className="w-full bg-blue-600 dark:bg-blue-600 text-white py-4 px-6 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 dark:hover:bg-blue-700 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center font-semibold text-lg disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.99]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3"></div>
-                    Saving Changes...
-                  </>
-                ) : (
-                  <>
-                    <Save size={20} className="mr-2" />
-                    {formMode === "edit" ? "Save Changes" : "Create Profile"}
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </FormProvider>
+        <EmbeddedProfileForm 
+           explicitUserId={userId} 
+           onSuccess={() => {
+              if (isUserProfile) navigate(-1);
+              else navigate("/profile/edit");
+           }}
+        />
       </div>
     </div>
   );

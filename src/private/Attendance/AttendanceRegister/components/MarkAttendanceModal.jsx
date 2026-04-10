@@ -9,6 +9,7 @@ import {
   Trash2,
   Calendar
 } from "lucide-react";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 const MarkAttendanceModal = ({
   isOpen,
@@ -367,12 +368,14 @@ const MarkAttendanceModal = ({
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
-                              {student.profileImage ? (
-                                <img src={student.profileImage} alt={student.userName} className="w-full h-full object-cover" />
-                              ) : (
-                                student.userName ? student.userName.charAt(0).toUpperCase() : "U"
-                              )}
+                            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                               <InteractiveAvatar
+                                  src={student.profileImage}
+                                  fallbackText={student.userName ? student.userName.charAt(0).toUpperCase() : "U"}
+                                  userId={student.userId}
+                                  editable={false}
+                                  className="w-9 h-9"
+                               />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
@@ -427,12 +430,14 @@ const MarkAttendanceModal = ({
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
-                              {student.profileImage ? (
-                                <img src={student.profileImage} alt={student.userName} className="w-full h-full object-cover" />
-                              ) : (
-                                student.userName ? student.userName.charAt(0).toUpperCase() : "U"
-                              )}
+                            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                               <InteractiveAvatar
+                                  src={student.profileImage}
+                                  fallbackText={student.userName ? student.userName.charAt(0).toUpperCase() : "U"}
+                                  userId={student.userId}
+                                  editable={false}
+                                  className="w-9 h-9"
+                               />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">

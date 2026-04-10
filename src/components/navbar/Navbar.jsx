@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import {
   Select,
   SelectContent,
@@ -244,10 +245,20 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     return user ? (
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={profile?.profileImage} />
-            <AvatarFallback>{profile?.userName?.charAt(0) || "U"}</AvatarFallback>
-          </Avatar>
+          <InteractiveAvatar
+            src={profile?.profileImage}
+            fallbackText={profile?.userName?.charAt(0) || "U"}
+            userId={profile?.userId || user?.$id}
+            editable={true}
+            onImageUpdate={async (newUrl) => {
+               if (profile && profile.$id) {
+                 const updated = { ...profile, profileImage: newUrl };
+                 dispatch(addProfile({ data: updated }));
+                 await userProfileService.patchUserProfile(profile.$id, { profileImage: newUrl });
+               }
+            }}
+            className="h-10 w-10 shrink-0"
+          />
           <div>
             <p className="text-sm font-medium">{profile?.userName || "User"}</p>
             <NavLink

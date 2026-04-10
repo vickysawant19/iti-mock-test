@@ -36,6 +36,7 @@ import holidayService from "@/appwrite/holidaysService";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { avatarFallback } from "@/utils/avatarFallback";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 // Custom marker icons
 const campusIcon = new L.DivIcon({
@@ -262,12 +263,14 @@ const AttendanceTracker = () => {
           <div className="absolute top-0 right-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute bottom-0 left-0 -mb-8 -ml-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
           <div className="relative flex items-center gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-inner border border-white/10 overflow-hidden text-2xl font-bold">
-              {profile?.profileImage ? (
-                <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                profile?.userName ? avatarFallback(profile.userName) : <User className="h-8 w-8 text-white" />
-              )}
+            <div className="flex items-center justify-center flex-shrink-0">
+               <InteractiveAvatar
+                  src={profile?.profileImage}
+                  fallbackText={profile?.userName?.charAt(0) || profile?.name?.charAt(0) || "U"}
+                  userId={profile?.userId}
+                  editable={false}
+                  className="w-16 h-16 shadow-inner border border-white/10"
+               />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-bold tracking-tight truncate">

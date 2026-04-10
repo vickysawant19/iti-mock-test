@@ -12,6 +12,8 @@ import { Query } from "appwrite";
 
 import holidayService from "@/appwrite/holidaysService";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import collegeService from "@/appwrite/collageService";
+import tradeservice from "@/appwrite/tradedetails";
 import Loader from "@/components/components/Loader";
 import DiaryHeader from "./DiaryHeader";
 import DiaryTable from "./DiaryTable";
@@ -76,7 +78,7 @@ function InstructorDailyDiary() {
         profile.batchId,
         profile.userId,
         startDate,
-        endDate
+        endDate,
       );
 
       const ownDiary =
@@ -112,9 +114,34 @@ function InstructorDailyDiary() {
     }));
   }, []);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsExporting(true);
     try {
+      // Fetch dynamic names
+      let collegeName = "INDUSTRIAL TRAINING INSTITUTE";
+      let tradeName = "";
+
+      const cId = profile?.collegeId || batchData?.collegeId;
+      if (cId) {
+        try {
+          const colRes = await collegeService.getCollege(cId);
+          if (colRes?.collageName)
+            collegeName = colRes.collageName.toUpperCase();
+        } catch (e) {
+          console.error("Error fetching college name:", e);
+        }
+      }
+
+      const tId = profile?.tradeId || batchData?.tradeId;
+      if (tId) {
+        try {
+          const tradeRes = await tradeservice.getTrade(tId);
+          if (tradeRes?.tradeName) tradeName = tradeRes.tradeName.toUpperCase();
+        } catch (e) {
+          console.error("Error fetching trade name:", e);
+        }
+      }
+
       // Prepare data for Excel
       const exportData = monthDays.map((day) => {
         const dateKey = format(day, "yyyy-MM-dd");
@@ -125,7 +152,9 @@ function InstructorDailyDiary() {
 
         let theory = entry.theoryWork || "";
         let practical = entry.practicalWork || "";
-        let practicalNo = entry.practicalNumbers ? entry.practicalNumbers.join(", ") : "";
+        let practicalNo = entry.practicalNumbers
+          ? entry.practicalNumbers.join(", ")
+          : "";
         let extraWork = entry.extraWork || "";
         let hours = entry.hours || "";
         let remarks = entry.remarks || "";
@@ -141,17 +170,64 @@ function InstructorDailyDiary() {
         return {
           Date: format(day, "dd-MMM-yyyy"),
           Day: dayOfWeek,
-          "Theory": theory,
-          "Practical": practical,
+          Theory: theory,
+          Practical: practical,
           "Practical No.": practicalNo,
           "Extra Work": extraWork,
           Hours: hours,
           Remarks: remarks,
-          "Instructor Name": profile.name || "",
+          "Instructor Name": profile.userName || "",
+          "Instructor Sign": "",
         };
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const worksheet = XLSX.utils.json_to_sheet(exportData, { origin: "A6" });
+
+      // Add Headers
+      XLSX.utils.sheet_add_aoa(
+        worksheet,
+        [
+          [collegeName],
+          [`Trade: ${tradeName || "N/A"}`],
+          [`Month: ${format(currentMonth, "MMMM-yyyy")}`],
+          [
+            `Instructor: ${profile?.userName?.toUpperCase() || ""}`,
+            "",
+            "",
+            "",
+            `Batch: ${batchData?.BatchName || ""}`,
+          ],
+        ],
+        { origin: "A1" },
+      );
+
+      // Merge header rows for clean centering/formatting
+      worksheet["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Merge institute title across all columns
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }, // Merge Trade subtitle across
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }, // Merge month subtitle across
+      ];
+
+      // Add Footers (Signatures)
+      const footerRow = 6 + exportData.length + 4; // Table header + data + spacing lines
+      XLSX.utils.sheet_add_aoa(
+        worksheet,
+        [
+          [
+            "Group Instructor Sign",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "Principal Sign",
+          ],
+        ],
+        { origin: `A${footerRow}` },
+      );
 
       // Auto-size columns to be wider
       const wscols = [
@@ -161,9 +237,10 @@ function InstructorDailyDiary() {
         { wch: 30 }, // Practical
         { wch: 15 }, // Practical No.
         { wch: 20 }, // Extra Work
-        { wch: 8 },  // Hours
+        { wch: 8 }, // Hours
         { wch: 20 }, // Remarks
         { wch: 25 }, // Instructor Name
+        { wch: 20 }, // Instructor Sign
       ];
       worksheet["!cols"] = wscols;
 

@@ -65,6 +65,7 @@ export class StudentSearchService {
         if (existingProfile) {
           mergedMap.set(authUser.$id, {
             ...existingProfile,
+            labels: authUser.labels || [],
             hasProfile: true,
             noProfile: false,
           });
@@ -74,6 +75,7 @@ export class StudentSearchService {
             userName: authUser.name || "Unknown User",
             email: authUser.email,
             phone: authUser.phone,
+            labels: authUser.labels || [],
             hasProfile: false,
             noProfile: true,
           });

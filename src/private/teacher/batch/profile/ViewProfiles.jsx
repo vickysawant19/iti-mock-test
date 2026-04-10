@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { selectProfile } from "@/store/profileSlice";
 import { AiOutlineEdit } from "react-icons/ai";
 import { format } from "date-fns";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 const ViewProfiles = ({ students }) => {
   const profile = useSelector(selectProfile);
@@ -30,9 +31,13 @@ const ViewProfiles = ({ students }) => {
         >
           {/* Header section with avatar and basic info */}
           <div className="flex p-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-700 mr-4 dark:bg-gray-700 dark:text-gray-300">
-              {student.userName?.charAt(0) || "U"}
-            </div>
+            <InteractiveAvatar 
+              src={student.profileImage}
+              fallbackText={student.userName?.charAt(0) || "U"}
+              userId={student.userId}
+              editable={false}
+              className="w-16 h-16 mr-4 text-xl"
+            />
             <div className="grow">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                 {student.userName}

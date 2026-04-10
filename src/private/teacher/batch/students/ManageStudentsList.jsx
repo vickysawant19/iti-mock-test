@@ -10,11 +10,19 @@ import {
   RefreshCw,
   MoreVertical,
   Eye,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
 import batchRequestService from "@/appwrite/batchRequestService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
 import conf from "@/config/config";
@@ -30,6 +38,7 @@ export default function ManageStudentsList({ selectedBatch }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [processingId, setProcessingId] = useState(null);
+  const [viewProfileUserId, setViewProfileUserId] = useState(null);
 
   const fetchList = async () => {
     if (!selectedBatch) {
@@ -46,9 +55,8 @@ export default function ManageStudentsList({ selectedBatch }) {
       });
 
       // 2. Fetch active students in this batch
-      const activeStudents = await batchStudentService.getBatchStudents(
-        selectedBatch
-      );
+      const activeStudents =
+        await batchStudentService.getBatchStudents(selectedBatch);
       const activeSet = new Set(activeStudents.map((s) => s.studentId));
 
       // 3. Collect unique student IDs from requests and active
@@ -56,14 +64,17 @@ export default function ManageStudentsList({ selectedBatch }) {
       requests.forEach((r) => studentIds.add(r.studentId));
       activeStudents.forEach((s) => studentIds.add(s.studentId));
 
-      // 4. Also fetch profiles directly tied to this batchId
-      const targetProfiles = await userProfileService.getProfilesByBatchId(
-        selectedBatch
-      );
+      // 4. Also fetch profiles directly tied to this batchId, and cache them immediately
+      const targetProfiles =
+        await userProfileService.getProfilesByBatchId(selectedBatch);
+      
+      const profileMap = {};
       targetProfiles.forEach((p) => {
+        profileMap[p.userId] = p; // populate profileMap directly
+        
         const roles = Array.isArray(p.role) ? p.role : [p.role];
         const hasStudentRole = roles.some(
-          (role) => String(role || "").toLowerCase() === "student"
+          (role) => String(role || "").toLowerCase() === "student",
         );
         const isTeacherProfile = p.userId === teacherId;
 
@@ -78,17 +89,19 @@ export default function ManageStudentsList({ selectedBatch }) {
         return;
       }
 
-      // 5. Fetch full profiles for all unique IDs
-      const profilesRes = await userProfileService.database.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [Query.equal("userId", uniqueIds), Query.limit(100)]
-      );
+      // 5. Fetch full profiles ONLY for missing IDs
+      const missingIds = uniqueIds.filter(id => !profileMap[id]);
+      if (missingIds.length > 0) {
+        const profilesRes = await userProfileService.database.listDocuments(
+          conf.databaseId,
+          conf.userProfilesCollectionId,
+          [Query.equal("userId", missingIds), Query.limit(100)],
+        );
 
-      const profileMap = {};
-      profilesRes.documents.forEach((p) => {
-        profileMap[p.userId] = p;
-      });
+        profilesRes.documents.forEach((p) => {
+          profileMap[p.userId] = p;
+        });
+      }
 
       // 6. Map everything correctly
       const list = uniqueIds.map((id) => {
@@ -111,6 +124,7 @@ export default function ManageStudentsList({ selectedBatch }) {
           userName: profile.userName || "Unknown",
           email: profile.email || "No email",
           phone: profile.phone || "No phone",
+          profileImage: profile.profileImage || null,
           status,
           requestId,
         };
@@ -139,22 +153,40 @@ export default function ManageStudentsList({ selectedBatch }) {
     setProcessingId(student.userId);
     try {
       if (action === "request") {
-        await batchRequestService.sendRequest(selectedBatch, student.userId, "teacher");
+        await batchRequestService.sendRequest(
+          selectedBatch,
+          student.userId,
+          "teacher",
+        );
         toast.success("Request sent on behalf of student.");
       } else if (action === "approve") {
-        await batchRequestService.approveRequest(student.requestId, selectedBatch, student.userId);
+        await batchRequestService.approveRequest(
+          student.requestId,
+          selectedBatch,
+          student.userId,
+        );
         toast.success("Request approved.");
       } else if (action === "reject") {
         await batchRequestService.rejectRequest(student.requestId);
         toast.success("Request rejected.");
       } else if (action === "re-request") {
-        await batchRequestService.updateRequestStatus(student.requestId, "pending");
+        await batchRequestService.updateRequestStatus(
+          student.requestId,
+          "pending",
+        );
         toast.success("Request sent again.");
       } else if (action === "direct-assign") {
-        await batchRequestService.assignStudentDirectly(student.userId, selectedBatch);
+        await batchRequestService.assignStudentDirectly(
+          student.userId,
+          selectedBatch,
+        );
         toast.success("Student assigned directly.");
       } else if (action === "revoke") {
-        await batchRequestService.revokeStudent(selectedBatch, student.userId, student.requestId);
+        await batchRequestService.revokeStudent(
+          selectedBatch,
+          student.userId,
+          student.requestId,
+        );
         toast.info("Student approval revoked.");
       } else if (action === "delete") {
         await batchRequestService.deleteRequest(student.requestId);
@@ -170,8 +202,14 @@ export default function ManageStudentsList({ selectedBatch }) {
   };
 
   const counts = useMemo(() => {
-    const c = { all: students.length, pending: 0, approved: 0, rejected: 0, unrequested: 0 };
-    students.forEach(s => {
+    const c = {
+      all: students.length,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      unrequested: 0,
+    };
+    students.forEach((s) => {
       if (c[s.status] !== undefined) {
         c[s.status]++;
       }
@@ -189,7 +227,7 @@ export default function ManageStudentsList({ selectedBatch }) {
       list = list.filter(
         (s) =>
           s.userName?.toLowerCase().includes(q) ||
-          s.email?.toLowerCase().includes(q)
+          s.email?.toLowerCase().includes(q),
       );
     }
     return list;
@@ -220,15 +258,17 @@ export default function ManageStudentsList({ selectedBatch }) {
                 }`}
               >
                 {f}
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  filter === f
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-500 dark:bg-gray-600 dark:text-gray-400"
-                }`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                    filter === f
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-500 dark:bg-gray-600 dark:text-gray-400"
+                  }`}
+                >
                   {counts[f]}
                 </span>
               </button>
-            )
+            ),
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -273,7 +313,9 @@ export default function ManageStudentsList({ selectedBatch }) {
                   <div className="flex justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
                   </div>
-                  <span className="text-xs mt-2 block">Loading students...</span>
+                  <span className="text-xs mt-2 block">
+                    Loading students...
+                  </span>
                 </td>
               </tr>
             ) : displayed.length === 0 ? (
@@ -290,8 +332,17 @@ export default function ManageStudentsList({ selectedBatch }) {
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800 dark:text-gray-200">
-                      {student.userName}
+                    <div className="flex items-center gap-3">
+                      <InteractiveAvatar
+                        src={student.profileImage}
+                        fallbackText={student.userName?.charAt(0) || "U"}
+                        userId={student.userId}
+                        editable={false}
+                        className="w-8 h-8 text-xs rounded-full border border-gray-100 shadow-sm"
+                      />
+                      <div className="font-medium text-gray-800 dark:text-gray-200">
+                        {student.userName}
+                      </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-xs">
@@ -304,10 +355,10 @@ export default function ManageStudentsList({ selectedBatch }) {
                         student.status === "approved"
                           ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                           : student.status === "pending"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                          : student.status === "rejected"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                            : student.status === "rejected"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                       }`}
                     >
                       {student.status}
@@ -326,7 +377,9 @@ export default function ManageStudentsList({ selectedBatch }) {
                           </button>
                           <button
                             disabled={processingId === student.userId}
-                            onClick={() => handleAction("direct-assign", student)}
+                            onClick={() =>
+                              handleAction("direct-assign", student)
+                            }
                             className="border border-blue-600 text-blue-600 px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
                           >
                             Assign Direct
@@ -374,9 +427,13 @@ export default function ManageStudentsList({ selectedBatch }) {
                         <>
                           <button
                             disabled={processingId === student.userId}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-2"
+                            onClick={() => setViewProfileUserId(student.userId)}
+                            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-2 flex items-center transition-colors"
                           >
-                            <Eye className="w-4 h-4 cursor-not-allowed" title="View profile (coming soon)" />
+                            <Eye
+                              className="w-4 h-4 cursor-pointer"
+                              title="View/Edit Profile"
+                            />
                           </button>
                           <button
                             disabled={processingId === student.userId}
@@ -396,6 +453,43 @@ export default function ManageStudentsList({ selectedBatch }) {
           </tbody>
         </table>
       </div>
+
+      <Dialog
+        open={!!viewProfileUserId}
+        onOpenChange={(open) => {
+          if (!open) setViewProfileUserId(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full p-0 gap-0">
+          <DialogHeader className="p-6 pb-2 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
+            <DialogTitle className="text-xl">Student Profile</DialogTitle>
+          </DialogHeader>
+          <div className="p-6">
+            {viewProfileUserId && (
+              <EmbeddedProfileForm
+                explicitUserId={viewProfileUserId}
+                defaultBatchId={selectedBatch}
+                onSuccess={(updatedProfile) => {
+                  setViewProfileUserId(null);
+                  setStudents(prev => prev.map(s => {
+                    if (s.userId === updatedProfile.userId) {
+                      return {
+                        ...s,
+                        userName: updatedProfile.userName || "Unknown",
+                        email: updatedProfile.email || "No email",
+                        phone: updatedProfile.phone || "No phone",
+                        profileImage: updatedProfile.profileImage || null,
+                      };
+                    }
+                    return s;
+                  }));
+                }}
+                onCancel={() => setViewProfileUserId(null)}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

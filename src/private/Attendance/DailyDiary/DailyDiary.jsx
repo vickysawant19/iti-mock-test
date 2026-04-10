@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import InstructorDailyDiary from "./InstructorDailyDiary";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import StudentDailyDiary from "./StudentDailyDiary";
 import DiaryWeekView from "./DiaryWeekView";
 import { useDiaryData } from "./useDiaryData";
@@ -146,9 +147,7 @@ function TeacherDiaryView() {
     [diaryData, setDiaryData]
   );
 
-  if (activeTab !== "monthly" && isLoading) {
-    return <Loader isLoading={isLoading} />;
-  }
+  // The full page loader has been removed here. DiaryWeekView handles it gracefully with Skeleton loaders.
 
   if (isError) {
     return (
@@ -174,12 +173,14 @@ function TeacherDiaryView() {
           <div className="absolute bottom-[-60px] left-[-60px] w-[160px] h-[160px] rounded-full bg-white/10 blur-xl" />
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 border-2 border-white/30 rounded-[14px] flex items-center justify-center font-extrabold text-lg flex-shrink-0 overflow-hidden">
-                {profile?.profileImage ? (
-                  <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  avatarFallback(profile?.userName || profile?.name || "Teacher")
-                )}
+              <div className="flex items-center justify-center flex-shrink-0">
+                 <InteractiveAvatar
+                    src={profile?.profileImage}
+                    fallbackText={profile?.userName?.charAt(0) || profile?.name?.charAt(0) || "T"}
+                    userId={profile?.userId}
+                    editable={false}
+                    className="w-12 h-12 shadow-sm border-2 border-white/30"
+                 />
               </div>
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Instructor Portal</div>

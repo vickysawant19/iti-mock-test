@@ -1,4 +1,4 @@
-import { ID, Permission, Role } from "appwrite";
+import { ID, Permission, Role, Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteService } from "./appwriteConfig";
 
@@ -103,16 +103,31 @@ export class ProfileImageService {
       // 1. Sanitize and Convert the image first
       const processedFile = await this.sanitizeAndConvertImage(file);
 
-      // 2. Establish custom Custom File ID (userId + "-profile")
-      const fileId = `${userId}-profile`;
-
+      // 2. Establish short custom File ID to stay under 36 chars limit
+      const safeUserId = userId.length > 20 ? userId.substring(0, 20) : userId;
+      const idPrefix = `${safeUserId}-p-`;
+      
       // 3. Check if the file already exists to overwrite it
       try {
-         // Attempt to delete preexisting file so we can overwrite it with the same ID
-         await this.storage.deleteFile(this.bucketId, fileId);
+         // Find both old format and new format existing files
+         const existingFiles = await this.storage.listFiles(this.bucketId, [
+           Query.startsWith('$id', safeUserId)
+         ]);
+         
+         const filesToDelete = existingFiles.files.filter(f => 
+             f.$id.startsWith(idPrefix) || f.$id === `${userId}-profile`
+         );
+         
+         for (const existingFile of filesToDelete) {
+           await this.storage.deleteFile(this.bucketId, existingFile.$id);
+         }
       } catch (checkError) {
-         // If it doesn't exist, this fails silently (Appwrite throws 404). Clean passthrough!
+         // Fails silently if no matching files or error reading
       }
+
+      // Convert timestamp to base36 to save length (e.g. 8 chars)
+      const ts = Date.now().toString(36);
+      const fileId = `${idPrefix}${ts}`;
 
       // 4. Create (Upload) to Appwrite Bucket with explicit file-level permissions
       return await this.storage.createFile(
@@ -134,12 +149,13 @@ export class ProfileImageService {
 
   /**
    * Fetch the view URL for a profile picture
-   * @param {string} userId 
+   * @param {string} userIdOrFileId 
    * @returns {string} URL to view image
    */
-  getProfilePictureView(userId) {
-    if (!userId) return null;
-    const fileId = `${userId}-profile`;
+  getProfilePictureView(userIdOrFileId) {
+    if (!userIdOrFileId) return null;
+    const isFullFileId = userIdOrFileId.includes('-p-') || userIdOrFileId.includes('-profile');
+    const fileId = isFullFileId ? userIdOrFileId : `${userIdOrFileId}-profile`;
     const result = this.storage.getFileView(this.bucketId, fileId);
     return (result && result.href) ? result.href : result.toString();
   }
@@ -148,9 +164,10 @@ export class ProfileImageService {
    * Fetch a compressed/cropped PREVIEW URL from Appwrite
    * Useful for small avatars like 120x120
    */
-  getProfilePicturePreview(userId, width = 120, height = 120) {
-    if (!userId) return null;
-    const fileId = `${userId}-profile`;
+  getProfilePicturePreview(userIdOrFileId, width = 120, height = 120) {
+    if (!userIdOrFileId) return null;
+    const isFullFileId = userIdOrFileId.includes('-p-') || userIdOrFileId.includes('-profile');
+    const fileId = isFullFileId ? userIdOrFileId : `${userIdOrFileId}-profile`;
     const result = this.storage.getFilePreview(
       this.bucketId, 
       fileId, 
@@ -170,8 +187,16 @@ export class ProfileImageService {
   async deleteProfilePicture(userId) {
     try {
       if (!userId) throw new Error("userId required");
-      const fileId = `${userId}-profile`;
-      await this.storage.deleteFile(this.bucketId, fileId);
+      const safeUserId = userId.length > 20 ? userId.substring(0, 20) : userId;
+      const existingFiles = await this.storage.listFiles(this.bucketId, [
+         Query.startsWith('$id', safeUserId)
+      ]);
+      const filesToDelete = existingFiles.files.filter(f => 
+          f.$id.startsWith(`${safeUserId}-p-`) || f.$id === `${userId}-profile`
+      );
+      for (const existingFile of filesToDelete) {
+        await this.storage.deleteFile(this.bucketId, existingFile.$id);
+      }
       return true;
     } catch (error) {
       console.error("Appwrite error :: deleteProfilePicture :: error", error);

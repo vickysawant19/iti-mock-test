@@ -1,71 +1,31 @@
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { User, Phone, Mail, MapPin, Calendar, Image, Upload, Loader2, CheckCircle2, Trash2 } from "lucide-react";
+import { User, Phone, Mail, MapPin, Calendar } from "lucide-react";
 import CustomInput from "@/components/components/CustomInput";
-import profileImageService from "@/appwrite/profileImageService";
 import userProfileService from "@/appwrite/userProfileService";
-import { toast } from "react-toastify";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import { useDispatch, useSelector } from "react-redux";
+import { addProfile } from "@/store/profileSlice";
+import { selectUser } from "@/store/userSlice";
 
 const PersonalDetailsSection = ({ isFieldEditable, formMode, targetUserId }) => {
   const { register, watch, setValue } = useFormContext();
-  const [isUploading, setIsUploading] = useState(false);
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
 
   const currentImageUrl = watch("profileImage");
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpdate = async (newUrl) => {
+    setValue("profileImage", newUrl, { shouldDirty: true, shouldValidate: true });
 
-    if (!targetUserId) {
-      toast.error("Cannot resolve target user ID.");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      await profileImageService.uploadProfilePicture(file, targetUserId);
-      // Wait slightly to ensure Appwrite recognizes the new file instance view
-      await new Promise(res => setTimeout(res, 500));
-      
-      const newUrl = profileImageService.getProfilePictureView(targetUserId);
-      setValue("profileImage", newUrl, { shouldDirty: true, shouldValidate: true });
-
-      // Auto-save if editing an existing profile
-      if (formMode === "edit") {
-        const profile = await userProfileService.getUserProfile(targetUserId);
-        if (profile && profile.$id) {
-           await userProfileService.patchUserProfile(profile.$id, { profileImage: newUrl });
-        }
+    if (formMode === "edit") {
+      const profile = await userProfileService.getUserProfile(targetUserId);
+      if (profile && profile.$id) {
+         const updatedProfile = await userProfileService.patchUserProfile(profile.$id, { profileImage: newUrl });
+         if (user?.$id === targetUserId && updatedProfile) {
+           dispatch(addProfile({ data: updatedProfile }));
+         }
       }
-
-      toast.success("Profile image uploaded and saved successfully!");
-    } catch (error) {
-      toast.error(error.message || "Failed to upload profile picture.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDeleteImage = async () => {
-    if (!targetUserId) return;
-    try {
-      setIsUploading(true);
-      await profileImageService.deleteProfilePicture(targetUserId);
-      setValue("profileImage", "", { shouldDirty: true, shouldValidate: true });
-
-      // Auto-save empty string if editing an existing profile
-      if (formMode === "edit") {
-        const profile = await userProfileService.getUserProfile(targetUserId);
-        if (profile && profile.$id) {
-           await userProfileService.patchUserProfile(profile.$id, { profileImage: "" });
-        }
-      }
-
-      toast.success("Profile image removed");
-    } catch (error) {
-      toast.error("Failed to delete image.");
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -135,61 +95,18 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode, targetUserId }) => 
           placeholder="e.g. 9876543210"
         />
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 items-start">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Profile Picture
           </label>
-          <div className="relative group rounded-lg overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors h-[120px] bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
-            {isUploading ? (
-               <div className="flex flex-col items-center justify-center gap-2 text-blue-500">
-                 <Loader2 className="w-6 h-6 animate-spin" />
-                 <span className="text-xs font-semibold">Uploading & Optimizing...</span>
-               </div>
-            ) : currentImageUrl ? (
-               <div className="relative w-full h-full flex items-center justify-center bg-black/5 dark:bg-white/5">
-                 <img src={currentImageUrl} alt="Profile" className="w-auto h-full object-cover max-w-full" />
-                 {isFieldEditable("profileImage") && (
-                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
-                     {/* Change Button */}
-                     <div className="flex flex-col items-center justify-center cursor-pointer relative overflow-hidden py-2 px-3 rounded-lg hover:bg-white/20 transition-colors">
-                       <Upload className="w-5 h-5 mb-1" />
-                       <span className="text-[10px] font-medium uppercase tracking-wider">Change</span>
-                       <input
-                          type="file"
-                          accept="image/jpeg, image/png, image/webp, image/jpg"
-                          onChange={handleImageUpload}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          disabled={isUploading}
-                       />
-                     </div>
-                     {/* Remove Button */}
-                     <div 
-                        className="flex flex-col items-center justify-center cursor-pointer py-2 px-3 rounded-lg hover:bg-red-500/80 transition-colors"
-                        onClick={handleDeleteImage}
-                     >
-                        <Trash2 className="w-5 h-5 mb-1" />
-                        <span className="text-[10px] font-medium uppercase tracking-wider">Remove</span>
-                     </div>
-                   </div>
-                 )}
-               </div>
-            ) : (
-               <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 h-full w-full relative">
-                 <Image className="w-8 h-8 mb-2 opacity-50" />
-                 <span className="text-xs font-medium px-4 text-center">Click or drop to upload avatar</span>
-                 {isFieldEditable("profileImage") && (
-                   <input
-                     type="file"
-                     accept="image/jpeg, image/png, image/webp, image/jpg"
-                     onChange={handleImageUpload}
-                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                     disabled={isUploading}
-                   />
-                 )}
-               </div>
-            )}
-          </div>
-          {/* Hidden input to ensure react-hook-form tracks the value upon submission */}
+          <InteractiveAvatar 
+             src={currentImageUrl}
+             fallbackText={watch("userName")?.charAt(0) || "U"}
+             userId={targetUserId}
+             editable={isFieldEditable("profileImage")}
+             onImageUpdate={handleImageUpdate}
+             className="w-24 h-24 sm:w-28 sm:h-28"
+          />
           <input type="hidden" {...register("profileImage")} />
         </div>
 
