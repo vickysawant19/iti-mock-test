@@ -1,172 +1,464 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { ClipLoader } from "react-spinners";
-import { ArrowLeft, PlusCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Filter,
+  Search,
+  BookOpen,
+  Layers,
+  ChevronDown,
+  Check,
+  Loader2,
+  X,
+  AlertCircle,
+  FileQuestion,
+} from "lucide-react";
+import * as SelectPrimitive from "@radix-ui/react-select";
 
 import quesdbservice from "@/appwrite/database";
+import subjectService from "@/appwrite/subjectService";
+import moduleServices from "@/appwrite/moduleServices";
+import { useListTradesQuery } from "@/store/api/tradeApi";
+import { selectProfile } from "@/store/profileSlice";
 import Pagination from "./components/Pagination";
-import { addQuestions, selectQuestions }from "@/store/questionSlice"
-import { selectUser } from "@/store/userSlice";
 import QuestionCard from "./components/QuestionCard";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 20;
 
+// ─── Reusable Radix Select ───────────────────────────────────────────────────
+const AppSelect = ({ value, onValueChange, placeholder, disabled, children }) => (
+  <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+    <SelectPrimitive.Trigger className="w-full inline-flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
+      <SelectPrimitive.Value placeholder={placeholder} />
+      <SelectPrimitive.Icon>
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 max-h-64">
+        <SelectPrimitive.Viewport className="p-1">
+          {children}
+        </SelectPrimitive.Viewport>
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  </SelectPrimitive.Root>
+);
+
+const AppSelectItem = ({ value, children }) => (
+  <SelectPrimitive.Item
+    value={value}
+    className="relative flex items-center px-8 py-2 text-sm rounded-lg cursor-pointer hover:bg-blue-50 focus:bg-blue-50 outline-none text-gray-700"
+  >
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    <SelectPrimitive.ItemIndicator className="absolute left-2 text-blue-600">
+      <Check className="w-3.5 h-3.5" />
+    </SelectPrimitive.ItemIndicator>
+  </SelectPrimitive.Item>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 const ManageQuestions = () => {
-  const [questions, setQuestions] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(new Set());
-  const cachedQues = useRef(new Map());
-
-  const user = useSelector(selectUser);
-  const questionsStore = useSelector(selectQuestions);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const profile = useSelector(selectProfile);
 
+  // ── Filter state ────────────────────────────────────────────────────────
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedYear, setSelectedYear] = useState("");
+  const [modules, setModules] = useState([]);
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [loadingModules, setLoadingModules] = useState(false);
+
+  // ── Questions state ─────────────────────────────────────────────────────
+  const [questions, setQuestions] = useState([]);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(new Set());
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // ── Trades via RTK Query ────────────────────────────────────────────────
+  const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
+    undefined,
+    { skip: !profile }
+  );
+  const trades = tradesResponse?.documents || [];
+  const totalPages = Math.ceil(totalQuestions / ITEMS_PER_PAGE);
+
+  // ── Fetch subjects on mount ──────────────────────────────────────────────
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-      setIsLoading(true);
+    const load = async () => {
+      setLoadingSubjects(true);
       try {
-        if (cachedQues.current.has(currentPage)) {
-          const resp = cachedQues.current.get(currentPage);
-          setQuestions(resp.documents);
-          setTotalPages(Math.ceil(resp.total / ITEMS_PER_PAGE));
-          setIsLoading(false);
-          return;
-        }
-        const response = await quesdbservice.listQuestions([
-          Query.equal("userId", user.$id),
-          Query.orderDesc("$createdAt"),
-          Query.limit(ITEMS_PER_PAGE),
-          Query.offset(startIndex),
-        ]);
-        cachedQues.current.set(currentPage, response);
-        setTotalPages(Math.ceil(response.total / ITEMS_PER_PAGE));
-        dispatch(addQuestions(response.documents));
-        setQuestions(response.documents);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-        toast.error("Failed to fetch questions. Please try again later.");
+        const data = await subjectService.listSubjects();
+        setSubjects(data.documents || []);
+      } catch {
+        toast.error("Failed to load subjects.");
       } finally {
-        setIsLoading(false);
+        setLoadingSubjects(false);
       }
     };
-    fetchQuestions();
-  }, [user.$id, currentPage]);
+    if (profile) load();
+  }, [profile]);
 
-  const handleDelete = async (slug) => {
-    const confirmation = confirm(
-      "Are you sure you want to delete this question?"
-    );
-    if (!confirmation) return;
+  // ── Fetch modules when trade + subject + year are selected ──────────────
+  useEffect(() => {
+    setModules([]);
+    setSelectedModule(null);
+    if (!selectedTrade || !selectedSubject || !selectedYear) return;
 
-    setIsDeleting((prev) => new Set(prev).add(slug));
-    try {
-      const deleted = await quesdbservice.deleteQuestion(slug);
-      if (deleted) {
-        setQuestions((prevQuestions) =>
-          prevQuestions.filter((question) => question.$id !== slug)
+    const load = async () => {
+      setLoadingModules(true);
+      try {
+        const data = await moduleServices.getNewModulesData(
+          selectedTrade.$id,
+          selectedSubject.$id,
+          selectedYear
         );
-        // Update cache by removing the deleted item
-        if (cachedQues.current.has(currentPage)) {
-          const cachedData = cachedQues.current.get(currentPage);
-          const updatedDocuments = cachedData.documents.filter(
-            (test) => test.$id !== slug
-          );
-          cachedQues.current.set(currentPage, {
-            ...cachedData,
-            documents: updatedDocuments,
-          });
-        }
-        toast.success("Deleted successfully");
-      } else {
-        toast.error("Error deleting question");
+        const sorted = (data || []).sort(
+          (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0]
+        );
+        setModules(sorted);
+      } catch {
+        toast.error("Failed to load modules.");
+      } finally {
+        setLoadingModules(false);
       }
-    } catch (error) {
-      console.error("Error deleting question:", error);
-      toast.error("Error deleting question");
+    };
+    load();
+  }, [selectedTrade, selectedSubject, selectedYear]);
+
+  // ── Fetch questions when module or page changes ──────────────────────────
+  const fetchQuestions = useCallback(async (moduleDocId, page) => {
+    setIsLoading(true);
+    setHasSearched(true);
+    const offset = (page - 1) * ITEMS_PER_PAGE;
+    try {
+      const queries = [
+        Query.equal("moduleId", moduleDocId),
+        Query.orderDesc("$createdAt"),
+        Query.limit(ITEMS_PER_PAGE),
+        Query.offset(offset),
+      ];
+      const response = await quesdbservice.listQuestions(queries);
+      setQuestions(response.documents || []);
+      setTotalQuestions(response.total || 0);
+    } catch {
+      toast.error("Failed to fetch questions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedModule) {
+      fetchQuestions(selectedModule.$id, currentPage);
+    }
+  }, [selectedModule, currentPage, fetchQuestions]);
+
+  // ── Reset page when module changes ──────────────────────────────────────
+  const handleModuleChange = (moduleId) => {
+    const mod = modules.find((m) => m.$id === moduleId);
+    setSelectedModule(mod || null);
+    setCurrentPage(1);
+    setQuestions([]);
+    setHasSearched(false);
+  };
+
+  // ── Clear all filters ────────────────────────────────────────────────────
+  const clearFilters = () => {
+    setSelectedTrade(null);
+    setSelectedSubject(null);
+    setSelectedYear("");
+    setModules([]);
+    setSelectedModule(null);
+    setQuestions([]);
+    setHasSearched(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this question?")) return;
+    setIsDeleting((prev) => new Set(prev).add(id));
+    try {
+      await quesdbservice.deleteQuestion(id);
+      setQuestions((prev) => prev.filter((q) => q.$id !== id));
+      setTotalQuestions((prev) => prev - 1);
+      toast.success("Question deleted.");
+    } catch {
+      toast.error("Failed to delete question.");
     } finally {
       setIsDeleting((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(slug);
-        return newSet;
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
       });
     }
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  const getOptionIndex = (correctAnswer) =>
+    ["A", "B", "C", "D"].indexOf(correctAnswer);
 
-  const getOptionIndex = (correctAnswer) => {
-    return ["A", "B", "C", "D"].indexOf(correctAnswer);
-  };
+  const filtersActive = selectedTrade || selectedSubject || selectedYear || selectedModule;
 
   return (
-    <div className="min-h-screen bg-background text-foreground dark:bg-black dark:text-white">
-      <div className="container mx-auto px-4 py-8">
-        <Card className="w-full shadow-md dark:bg-gray-900 dark:border-gray-700">
-          <CardHeader>
-            <div className="flex flex-col lg:flex-row w-full justify-between items-center">
-              <div className="flex gap-4 items-center mb-4 lg:mb-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(-1)}
-                  className="text-primary dark:text-blue-400"
-                >
-                  <ArrowLeft size={20} />
-                </Button>
-                <CardTitle className="text-xl font-bold dark:text-white">
-                  Manage Questions
-                </CardTitle>
-              </div>
-              <Link to="/create-question">
-                <Button className="gap-2">
-                  <PlusCircle size={16} />
-                  Create New Question
-                </Button>
-              </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* ── Top Bar ── */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">Manage Questions</h1>
+              {selectedModule && (
+                <p className="text-xs text-blue-600 font-medium">
+                  {selectedModule.moduleId} — {selectedModule.moduleName}
+                </p>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-
-            {isLoading ? (
-              <div className="flex items-center justify-center min-h-[300px]">
-                <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
-              </div>
-            ) : questions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {questions.map((question) => (
-                  <QuestionCard
-                    key={question.$id}
-                    question={question}
-                    onDelete={handleDelete}
-                    isDeleting={isDeleting}
-                    getOptionIndex={getOptionIndex}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">
-                No questions found.
-              </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {totalQuestions > 0 && (
+              <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                {totalQuestions} question{totalQuestions !== 1 ? "s" : ""}
+              </span>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        {/* ── Filter Panel ── */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-800">Filter Questions</span>
+            </div>
+            {filtersActive && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+                Clear all
+              </button>
+            )}
+          </div>
+
+          <div className="p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {/* Trade */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                  Trade <span className="text-red-400">*</span>
+                </label>
+                <AppSelect
+                  value={selectedTrade?.$id || ""}
+                  onValueChange={(val) => {
+                    const t = trades.find((t) => t.$id === val);
+                    setSelectedTrade(t || null);
+                    setSelectedModule(null);
+                    setModules([]);
+                  }}
+                  placeholder={tradesLoading ? "Loading…" : trades.length === 0 ? "No trades" : "Select trade"}
+                  disabled={tradesLoading || trades.length === 0}
+                >
+                  {trades.map((t) => (
+                    <AppSelectItem key={t.$id} value={t.$id}>
+                      {t.tradeName || t.name}
+                    </AppSelectItem>
+                  ))}
+                </AppSelect>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                  Subject <span className="text-red-400">*</span>
+                </label>
+                <AppSelect
+                  value={selectedSubject?.$id || ""}
+                  onValueChange={(val) => {
+                    const s = subjects.find((s) => s.$id === val);
+                    setSelectedSubject(s || null);
+                    setSelectedModule(null);
+                    setModules([]);
+                  }}
+                  placeholder={loadingSubjects ? "Loading…" : subjects.length === 0 ? "No subjects" : "Select subject"}
+                  disabled={loadingSubjects || subjects.length === 0}
+                >
+                  {subjects.map((s) => (
+                    <AppSelectItem key={s.$id} value={s.$id}>
+                      {s.subjectName || s.name}
+                    </AppSelectItem>
+                  ))}
+                </AppSelect>
+              </div>
+
+              {/* Year */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                  Year <span className="text-red-400">*</span>
+                </label>
+                <AppSelect
+                  value={selectedYear}
+                  onValueChange={(val) => {
+                    setSelectedYear(val);
+                    setSelectedModule(null);
+                    setModules([]);
+                  }}
+                  placeholder="Select year"
+                >
+                  <AppSelectItem value="FIRST">First Year</AppSelectItem>
+                  <AppSelectItem value="SECOND">Second Year</AppSelectItem>
+                </AppSelect>
+              </div>
+
+              {/* Module */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                  Module <span className="text-red-400">*</span>
+                </label>
+                <AppSelect
+                  value={selectedModule?.$id || ""}
+                  onValueChange={handleModuleChange}
+                  placeholder={
+                    loadingModules
+                      ? "Loading…"
+                      : !selectedTrade || !selectedSubject || !selectedYear
+                      ? "Select above first"
+                      : modules.length === 0
+                      ? "No modules found"
+                      : "Select module"
+                  }
+                  disabled={loadingModules || modules.length === 0 || !selectedTrade || !selectedSubject || !selectedYear}
+                >
+                  {modules.map((m) => (
+                    <AppSelectItem key={m.$id} value={m.$id}>
+                      {m.moduleId} — {m.moduleName}
+                    </AppSelectItem>
+                  ))}
+                </AppSelect>
+                {loadingModules && (
+                  <p className="mt-1 text-xs text-blue-500 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Loading modules…
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Active filter chips */}
+            {filtersActive && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {selectedTrade && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    <Layers className="w-3 h-3" />
+                    {selectedTrade.tradeName || selectedTrade.name}
+                  </span>
+                )}
+                {selectedSubject && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-100">
+                    <BookOpen className="w-3 h-3" />
+                    {selectedSubject.subjectName || selectedSubject.name}
+                  </span>
+                )}
+                {selectedYear && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                    {selectedYear === "FIRST" ? "First Year" : "Second Year"}
+                  </span>
+                )}
+                {selectedModule && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                    {selectedModule.moduleId} — {selectedModule.moduleName}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Questions Area ── */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+            <p className="text-sm text-gray-500">Loading questions…</p>
+          </div>
+        ) : !hasSearched ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
+              <Search className="w-8 h-8 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-gray-700">Select a module to view questions</p>
+              <p className="text-sm text-gray-400 mt-1">Choose trade, subject, year and module above to get started.</p>
+            </div>
+          </div>
+        ) : questions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center">
+              <FileQuestion className="w-8 h-8 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-gray-700">No questions found</p>
+              <p className="text-sm text-gray-400 mt-1">No questions exist for this module yet.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Results header + pagination */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-sm text-gray-600">
+                Showing <span className="font-semibold text-gray-800">{questions.length}</span> of{" "}
+                <span className="font-semibold text-gray-800">{totalQuestions}</span> questions
+              </p>
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(p) => setCurrentPage(p)}
+                />
+              )}
+            </div>
+
+            {/* Question grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {questions.map((question) => (
+                <QuestionCard
+                  key={question.$id}
+                  question={question}
+                  onDelete={handleDelete}
+                  isDeleting={isDeleting}
+                  getOptionIndex={getOptionIndex}
+                />
+              ))}
+            </div>
+
+            {/* Bottom pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(p) => {
+                    setCurrentPage(p);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

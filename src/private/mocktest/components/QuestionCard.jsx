@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 
 const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
   const optionLabels = ["A", "B", "C", "D"];
-  const images = question.images.map((img) => JSON.parse(img));
+  const images = (question.images ?? []).map((img) => JSON.parse(img));
+  const options = question.options ?? [];
 
   return (
     <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
@@ -46,7 +47,7 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
 
         {/* Options list */}
         <div className="mt-4 space-y-2">
-          {question.options.map((option, index) => {
+          {options.map((option, index) => {
             const isCorrect = getOptionIndex(question.correctAnswer) === index;
             return (
               <div

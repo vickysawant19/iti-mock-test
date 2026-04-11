@@ -31,34 +31,90 @@ const AddBulkQuestions = () => {
   const [jsonError, setJsonError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [tagsInput, setTagsInput] = useState("nimi");
 
-  // Prompt template that can be copied into the textarea
-  const promptTemplate = `Act as a data formatting assistant. Your task is to convert the raw quiz questions provided below into a specific JSON array format.
+  const [rawQuestionsForPrompt, setRawQuestionsForPrompt] = useState("");
 
+  // Derive comma-separated tags string for use in prompts
+  const getTagsString = () =>
+    tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .join(", ") || "nimi";
+
+  const getDynamicPrompt = () => {
+    let moduleInfo = "";
+    if (modulesData.selectedModule) {
+      moduleInfo = `Module Information:
+- Module ID: ${modulesData.selectedModule.moduleId}
+- Module Name: ${modulesData.selectedModule.moduleName}
+- Module Duration: ${modulesData.selectedModule.moduleDuration || "N/A"}
+- Module Description: ${modulesData.selectedModule.moduleDescription || "N/A"}
+- Learning Outcome: ${modulesData.selectedModule.learningOutcome || "N/A"}
+- Assessment Criteria: ${modulesData.selectedModule.assessmentCriteria || "N/A"}
+`;
+    }
+
+    if (rawQuestionsForPrompt.trim()) {
+      return `Act as a bilingual data formatting assistant. Your task is to convert the raw quiz questions provided below into a specific JSON array format. All text must appear in BOTH English and Marathi.
+
+${moduleInfo}
 Target JSON Structure:
 [
   {
-    "question": "Question Text Here",
+    "question": "English question text | मराठी प्रश्न मजकूर",
     "correctAnswer": "A",
     "options": [
-      "Option A Text",
-      "Option B Text",
-      "Option C Text",
-      "Option D Text"
+      "English option A | मराठी पर्याय A",
+      "English option B | मराठी पर्याय B",
+      "English option C | मराठी पर्याय C",
+      "English option D | मराठी पर्याय D"
     ],
-    "tags": "nimi"
+    "tags": "${getTagsString()}"
   }
 ]
 
 Strict Rules:
-1. Merging Translations: If a question or option is provided in two languages (e.g., English on one line, Marathi on the next), you must combine them into a single string on the same line. Use a forward slash and a space to join the translations (e.g., "English text / मराठी शब्द ").
-2. Tags: The "tags" field must always be set to "nimi".
-3. Correct Answer: Extract only the option letter (A, B, C, or D).
-4. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.
+1. Bilingual Format: EVERY question and EVERY option MUST be written in both languages, separated by " | " (space, pipe, space). Format: "English text | मराठी मजकूर".
+2. Merging Translations: If a question or option is already provided in two languages (e.g., English on one line, Marathi on the next), combine them with " | " as the separator.
+3. If only one language is present in the input, translate it to the other language to produce the bilingual string.
+4. Tags: The "tags" field must ALWAYS be set to exactly "${getTagsString()}". Do not change this value.
+5. Correct Answer: Extract only the option letter (A, B, C, or D).
+6. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.
 
 Input Data:
-Paste your raw quiz questions below.
-`;
+${rawQuestionsForPrompt}`;
+    } else {
+      return `Act as an expert bilingual technical instructor and question setter. Your task is to generate high-quality, challenging multiple-choice questions for the specified module. ALL text (questions and options) MUST be written in BOTH English and Marathi.
+
+${moduleInfo}
+Target JSON Structure:
+[
+  {
+    "question": "English question text | मराठी प्रश्न मजकूर",
+    "correctAnswer": "A",
+    "options": [
+      "English option A | मराठी पर्याय A",
+      "English option B | मराठी पर्याय B",
+      "English option C | मराठी पर्याय C",
+      "English option D | मराठी पर्याय D"
+    ],
+    "tags": "${getTagsString()}"
+  }
+]
+
+Strict Rules:
+1. Bilingual Format: EVERY question and EVERY option MUST be written in both English and Marathi, separated by " | " (space, pipe, space). Example: "What is the melting point of copper? | तांब्याचा वितळण्याचा बिंदू किती आहे?"
+2. Generate high-quality, practical, and application-based questions strictly relevant to the Module Information provided above.
+3. Ensure the distractors (incorrect options) are plausible and test common misconceptions — all distractors must also be bilingual.
+4. Provide a balanced mix of difficulty levels: 30% easy, 50% medium, 20% hard.
+5. Questions should cover learning outcomes and assessment criteria listed in the Module Information.
+6. Tags: The "tags" field must ALWAYS be set to exactly "${getTagsString()}". Do not change this value.
+7. Correct Answer: Use only the option letter (A, B, C, or D).
+8. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.`;
+    }
+  };
 
   const profile = useSelector(selectProfile);
 
@@ -199,11 +255,11 @@ Paste your raw quiz questions below.
 
     try {
       const enrichedQuestions = parsedQuestions.map((q) => ({
-        ...q,
-        tradeId: tradeData.selectedTrade.$id,
-        subjectId: subjectData.selectedSubject.$id,
-        year: selectedTradeYear,
-        moduleId: modulesData.selectedModule.moduleId,
+        question: q.question,
+        correctAnswer: q.correctAnswer,
+        options: q.options,
+        moduleId: modulesData.selectedModule.$id,
+        tags: getTagsString(),
         userId: profile.userId,
         userName: profile.userName,
       }));
@@ -511,6 +567,75 @@ Paste your raw quiz questions below.
           )}
         </div>
 
+        {/* Generate / Format Prompt Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Generate / Format Prompt
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Provide raw questions to format them, or leave blank to generate new questions.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!modulesData.selectedModule) {
+                  toast.error("Please select a module first to get its context in the prompt.");
+                  return;
+                }
+                try {
+                  await navigator.clipboard.writeText(getDynamicPrompt());
+                  toast.success("Prompt copied to clipboard");
+                } catch (err) {
+                  console.error("Clipboard write failed", err);
+                  toast.error("Failed to copy prompt to clipboard");
+                }
+              }}
+              className="text-sm px-4 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium border border-blue-200 transition-colors"
+              aria-label="Copy prompt"
+            >
+              Copy Prompt
+            </button>
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+              <span className="ml-2 text-xs text-gray-400 font-normal">(comma-separated, e.g. nimi, electrician, theory)</span>
+            </label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="nimi, electrician, year1"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {tagsInput.trim() && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {tagsInput.split(",").map((t) => t.trim()).filter(Boolean).map((tag, i) => (
+                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Raw Questions (Optional)
+            </label>
+            <textarea
+              value={rawQuestionsForPrompt}
+              onChange={(e) => setRawQuestionsForPrompt(e.target.value)}
+              placeholder="Paste existing raw text questions here if you want the Prompt to format them. Leave empty if you want the Prompt to generate brand new questions using the selected module's data."
+              className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            />
+          </div>
+        </div>
+
         {/* JSON Input */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -518,29 +643,10 @@ Paste your raw quiz questions below.
           </h2>
 
           <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Paste your questions JSON here
-                <span className="text-red-500">*</span>
-              </label>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(promptTemplate);
-                    toast.success("Prompt copied to clipboard");
-                  } catch (err) {
-                    console.error("Clipboard write failed", err);
-                    toast.error("Failed to copy prompt to clipboard");
-                  }
-                }}
-                className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
-                aria-label="Copy prompt"
-              >
-                Copy Prompt
-              </button>
-            </div>
-
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Paste your formatted questions JSON here
+              <span className="text-red-500">*</span>
+            </label>
             <textarea
               value={jsonInput}
               onChange={(e) => handleJsonInput(e.target.value)}
