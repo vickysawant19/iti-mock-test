@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
@@ -13,7 +13,6 @@ import {
   Check,
   Loader2,
   X,
-  AlertCircle,
   FileQuestion,
 } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
@@ -30,7 +29,7 @@ const ITEMS_PER_PAGE = 20;
 
 // ─── Reusable Radix Select ───────────────────────────────────────────────────
 const AppSelect = ({ value, onValueChange, placeholder, disabled, children }) => (
-  <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+  <SelectPrimitive.Root value={value || ""} onValueChange={onValueChange} disabled={disabled}>
     <SelectPrimitive.Trigger className="w-full inline-flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">
       <SelectPrimitive.Value placeholder={placeholder} />
       <SelectPrimitive.Icon>
@@ -62,27 +61,38 @@ const AppSelectItem = ({ value, children }) => (
 // ─── Main Component ──────────────────────────────────────────────────────────
 const ManageQuestions = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
 
-  // ── Filter state ────────────────────────────────────────────────────────
-  const [selectedTrade, setSelectedTrade] = useState(null);
-  const [subjects, setSubjects] = useState([]);
+  // ── Read initial values from URL ─────────────────────────────────────────
+  const urlTradeId   = searchParams.get("tradeId")   || "";
+  const urlSubjectId = searchParams.get("subjectId") || "";
+  const urlYear      = searchParams.get("year")      || "";
+  const urlModuleId  = searchParams.get("moduleId")  || "";
+  const urlPage      = parseInt(searchParams.get("page") || "1", 10);
+
+  // ── Filter state ─────────────────────────────────────────────────────────
+  const [subjects,        setSubjects]        = useState([]);
+  const [selectedTrade,   setSelectedTrade]   = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedYear, setSelectedYear] = useState("");
-  const [modules, setModules] = useState([]);
-  const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedYear,    setSelectedYear]    = useState(urlYear);
+  const [modules,         setModules]         = useState([]);
+  const [selectedModule,  setSelectedModule]  = useState(null);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
-  const [loadingModules, setLoadingModules] = useState(false);
+  const [loadingModules,  setLoadingModules]  = useState(false);
 
-  // ── Questions state ─────────────────────────────────────────────────────
-  const [questions, setQuestions] = useState([]);
+  // ── Questions state ───────────────────────────────────────────────────────
+  const [questions,      setQuestions]      = useState([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(new Set());
-  const [hasSearched, setHasSearched] = useState(false);
+  const [currentPage,    setCurrentPage]    = useState(urlPage);
+  const [isLoading,      setIsLoading]      = useState(false);
+  const [isDeleting,     setIsDeleting]     = useState(new Set());
+  const [hasSearched,    setHasSearched]    = useState(false);
 
-  // ── Trades via RTK Query ────────────────────────────────────────────────
+  // Track whether we've done initial URL-restore pass
+  const restoredRef = useRef(false);
+
+  // ── Trades via RTK Query ──────────────────────────────────────────────────
   const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
     undefined,
     { skip: !profile }
@@ -90,8 +100,21 @@ const ManageQuestions = () => {
   const trades = tradesResponse?.documents || [];
   const totalPages = Math.ceil(totalQuestions / ITEMS_PER_PAGE);
 
-  // ── Fetch subjects on mount ──────────────────────────────────────────────
+  // ── Persist filter changes to URL ─────────────────────────────────────────
+  const updateParams = useCallback((patch) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(patch).forEach(([k, v]) => {
+        if (v) next.set(k, v);
+        else next.delete(k);
+      });
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ── Load subjects once ────────────────────────────────────────────────────
   useEffect(() => {
+    if (!profile) return;
     const load = async () => {
       setLoadingSubjects(true);
       try {
@@ -103,15 +126,36 @@ const ManageQuestions = () => {
         setLoadingSubjects(false);
       }
     };
-    if (profile) load();
+    load();
   }, [profile]);
 
-  // ── Fetch modules when trade + subject + year are selected ──────────────
+  // ── Restore selections from URL once trades + subjects are ready ──────────
   useEffect(() => {
-    setModules([]);
-    setSelectedModule(null);
-    if (!selectedTrade || !selectedSubject || !selectedYear) return;
+    if (restoredRef.current) return;
+    if (!trades.length || !subjects.length) return;
+    if (!urlTradeId && !urlSubjectId && !urlYear && !urlModuleId) {
+      restoredRef.current = true;
+      return;
+    }
 
+    const trade   = trades.find((t) => t.$id === urlTradeId)   || null;
+    const subject = subjects.find((s) => s.$id === urlSubjectId) || null;
+
+    setSelectedTrade(trade);
+    setSelectedSubject(subject);
+    setSelectedYear(urlYear);
+
+    restoredRef.current = true;
+    // modules + question load will follow via the effects below
+  }, [trades, subjects, urlTradeId, urlSubjectId, urlYear, urlModuleId]);
+
+  // ── Load modules when trade + subject + year are ready ───────────────────
+  useEffect(() => {
+    if (!selectedTrade || !selectedSubject || !selectedYear) {
+      setModules([]);
+      setSelectedModule(null);
+      return;
+    }
     const load = async () => {
       setLoadingModules(true);
       try {
@@ -121,9 +165,15 @@ const ManageQuestions = () => {
           selectedYear
         );
         const sorted = (data || []).sort(
-          (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0]
+          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0]
         );
         setModules(sorted);
+
+        // Restore selected module from URL if present
+        if (urlModuleId && !selectedModule) {
+          const mod = sorted.find((m) => m.$id === urlModuleId);
+          if (mod) setSelectedModule(mod);
+        }
       } catch {
         toast.error("Failed to load modules.");
       } finally {
@@ -131,21 +181,21 @@ const ManageQuestions = () => {
       }
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrade, selectedSubject, selectedYear]);
 
-  // ── Fetch questions when module or page changes ──────────────────────────
+  // ── Fetch questions when selectedModule or page changes ───────────────────
   const fetchQuestions = useCallback(async (moduleDocId, page) => {
     setIsLoading(true);
     setHasSearched(true);
     const offset = (page - 1) * ITEMS_PER_PAGE;
     try {
-      const queries = [
+      const response = await quesdbservice.listQuestions([
         Query.equal("moduleId", moduleDocId),
         Query.orderDesc("$createdAt"),
         Query.limit(ITEMS_PER_PAGE),
         Query.offset(offset),
-      ];
-      const response = await quesdbservice.listQuestions(queries);
+      ]);
       setQuestions(response.documents || []);
       setTotalQuestions(response.total || 0);
     } catch {
@@ -161,16 +211,54 @@ const ManageQuestions = () => {
     }
   }, [selectedModule, currentPage, fetchQuestions]);
 
-  // ── Reset page when module changes ──────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleTradeChange = (tradeId) => {
+    const trade = trades.find((t) => t.$id === tradeId) || null;
+    setSelectedTrade(trade);
+    setSelectedModule(null);
+    setModules([]);
+    setQuestions([]);
+    setHasSearched(false);
+    setCurrentPage(1);
+    updateParams({ tradeId, subjectId: "", year: "", moduleId: "", page: "" });
+  };
+
+  const handleSubjectChange = (subjectId) => {
+    const subject = subjects.find((s) => s.$id === subjectId) || null;
+    setSelectedSubject(subject);
+    setSelectedModule(null);
+    setModules([]);
+    setQuestions([]);
+    setHasSearched(false);
+    setCurrentPage(1);
+    updateParams({ subjectId, moduleId: "", page: "" });
+  };
+
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
+    setSelectedModule(null);
+    setModules([]);
+    setQuestions([]);
+    setHasSearched(false);
+    setCurrentPage(1);
+    updateParams({ year, moduleId: "", page: "" });
+  };
+
   const handleModuleChange = (moduleId) => {
-    const mod = modules.find((m) => m.$id === moduleId);
-    setSelectedModule(mod || null);
+    const mod = modules.find((m) => m.$id === moduleId) || null;
+    setSelectedModule(mod);
     setCurrentPage(1);
     setQuestions([]);
     setHasSearched(false);
+    updateParams({ moduleId, page: "1" });
   };
 
-  // ── Clear all filters ────────────────────────────────────────────────────
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    updateParams({ page: String(page) });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const clearFilters = () => {
     setSelectedTrade(null);
     setSelectedSubject(null);
@@ -179,6 +267,8 @@ const ManageQuestions = () => {
     setSelectedModule(null);
     setQuestions([]);
     setHasSearched(false);
+    setCurrentPage(1);
+    setSearchParams({}, { replace: true });
   };
 
   const handleDelete = async (id) => {
@@ -220,19 +310,17 @@ const ManageQuestions = () => {
             <div>
               <h1 className="text-lg font-bold text-gray-900 leading-tight">Manage Questions</h1>
               {selectedModule && (
-                <p className="text-xs text-blue-600 font-medium">
+                <p className="text-xs text-blue-600 font-medium truncate max-w-xs">
                   {selectedModule.moduleId} — {selectedModule.moduleName}
                 </p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {totalQuestions > 0 && (
-              <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                {totalQuestions} question{totalQuestions !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+          {totalQuestions > 0 && (
+            <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+              {totalQuestions} question{totalQuestions !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
       </div>
 
@@ -265,12 +353,7 @@ const ManageQuestions = () => {
                 </label>
                 <AppSelect
                   value={selectedTrade?.$id || ""}
-                  onValueChange={(val) => {
-                    const t = trades.find((t) => t.$id === val);
-                    setSelectedTrade(t || null);
-                    setSelectedModule(null);
-                    setModules([]);
-                  }}
+                  onValueChange={handleTradeChange}
                   placeholder={tradesLoading ? "Loading…" : trades.length === 0 ? "No trades" : "Select trade"}
                   disabled={tradesLoading || trades.length === 0}
                 >
@@ -289,12 +372,7 @@ const ManageQuestions = () => {
                 </label>
                 <AppSelect
                   value={selectedSubject?.$id || ""}
-                  onValueChange={(val) => {
-                    const s = subjects.find((s) => s.$id === val);
-                    setSelectedSubject(s || null);
-                    setSelectedModule(null);
-                    setModules([]);
-                  }}
+                  onValueChange={handleSubjectChange}
                   placeholder={loadingSubjects ? "Loading…" : subjects.length === 0 ? "No subjects" : "Select subject"}
                   disabled={loadingSubjects || subjects.length === 0}
                 >
@@ -313,11 +391,7 @@ const ManageQuestions = () => {
                 </label>
                 <AppSelect
                   value={selectedYear}
-                  onValueChange={(val) => {
-                    setSelectedYear(val);
-                    setSelectedModule(null);
-                    setModules([]);
-                  }}
+                  onValueChange={handleYearChange}
                   placeholder="Select year"
                 >
                   <AppSelectItem value="FIRST">First Year</AppSelectItem>
@@ -416,22 +490,17 @@ const ManageQuestions = () => {
           </div>
         ) : (
           <>
-            {/* Results header + pagination */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-sm text-gray-600">
                 Showing <span className="font-semibold text-gray-800">{questions.length}</span> of{" "}
                 <span className="font-semibold text-gray-800">{totalQuestions}</span> questions
+                {currentPage > 1 && <span className="text-gray-400"> · Page {currentPage}</span>}
               </p>
               {totalPages > 1 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(p) => setCurrentPage(p)}
-                />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
               )}
             </div>
 
-            {/* Question grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {questions.map((question) => (
                 <QuestionCard
@@ -444,17 +513,9 @@ const ManageQuestions = () => {
               ))}
             </div>
 
-            {/* Bottom pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(p) => {
-                    setCurrentPage(p);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
               </div>
             )}
           </>

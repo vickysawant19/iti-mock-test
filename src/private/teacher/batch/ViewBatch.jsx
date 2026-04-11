@@ -9,9 +9,9 @@ import {
   Calendar,
   BookOpen,
   Award,
-  ChevronDown,
   Loader2,
 } from "lucide-react";
+import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import { calculateStats } from "../../Attendance/CalculateStats";
 import userProfileService from "@/appwrite/userProfileService";
@@ -184,15 +184,17 @@ const ViewBatch = () => {
           ...studentData,
         };
       });
+      
 
-      // Calculate stats for each student
+      // Calculate stats for each student, including profileImage
       const stats = newEnrichedAttendance.map((item) => {
-        return calculateStats({
+        const s = calculateStats({
           userId: item.userId,
           studentId: item.studentId,
           userName: item.userName,
           data: item.attendanceRecords,
         });
+        return { ...s, profileImage: item.profileImage || null };
       });
 
       setData((prev) => ({
@@ -251,16 +253,16 @@ const ViewBatch = () => {
   const renderContent = () => {
     const isContentLoading =
       loadingStates.students ||
-          ([
-            "attendance",
-            "progress-card",
-            "leave-record",
-            "job-evaluation",
-          ].includes(activeTab) &&
-            loadingStates.attendance);
+      (["attendance", "progress-card", "leave-record", "job-evaluation"].includes(activeTab) &&
+        loadingStates.attendance);
 
     if (isContentLoading) {
-      return <LoadingState size={40} />;
+      return (
+        <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading {activeTab} data...</p>
+        </div>
+      );
     }
 
     switch (activeTab) {
@@ -298,8 +300,7 @@ const ViewBatch = () => {
         return (
           <JobEvaluation
             studentProfiles={
-              data.students?.filter((item) => item.role?.includes("Student")) ||
-              []
+              data.students?.filter((item) => item.role?.includes("Student")) || []
             }
             stats={data.attendanceStats}
             batchData={data.selectedBatchData}
@@ -310,57 +311,106 @@ const ViewBatch = () => {
         return (
           <Assignment
             studentProfiles={
-              data.students?.filter((item) => item.role?.includes("Student")) ||
-              []
+              data.students?.filter((item) => item.role?.includes("Student")) || []
             }
             batchData={data.selectedBatchData}
             students={data.students}
           />
         );
       case "achievements":
-        return (
-          <FeaturePlaceholder icon={Award} title="Achievements Coming Soon" />
-        );
+        return <FeaturePlaceholder icon={Award} title="Achievements Coming Soon" />;
       default:
         return null;
     }
   };
 
+
+  const { data: tradeData } = useGetTradeQuery(
+    data.selectedBatchData?.tradeId,
+    { skip: !data.selectedBatchData?.tradeId }
+  );
+
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-sm text-black dark:text-white dark:bg-gray-900">
-      {data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto dark:bg-gray-800 dark:border dark:border-gray-700">
-          <TabNavigation
-            tabs={TABS}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            className="dark:bg-gray-800 dark:text-white"
-          />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-12">
+      {/* Dashboard Header */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Left: Batch Info */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-2xl shrink-0">
+                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white truncate">
+                  {data.selectedBatchData?.BatchName || "Batch Details"}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  {tradeData?.tradeName && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-2.5 py-0.5 rounded-full">
+                      <TrendingUp className="w-3 h-3" />
+                      {tradeData.tradeName}
+                    </span>
+                  )}
+                  {data.selectedBatchData?.Year && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-2.5 py-0.5 rounded-full">
+                      <Calendar className="w-3 h-3" />
+                      {data.selectedBatchData.Year}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Student Count */}
+            {data.selectedBatchData && (
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
+                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Enrolled</p>
+                  <p className="text-xl font-black text-blue-700 dark:text-blue-300 leading-none">{data.students?.length || 0}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tab Navigation */}
+          {data.selectedBatchData && (
+            <div className="mt-4">
+              <TabNavigation
+                tabs={TABS}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {loadingStates.batchData && (
-        <LoadingState
-          size={50}
-          fullPage
-          className="dark:bg-gray-900 dark:text-white"
-        />
-      )}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        {loadingStates.batchData && (
+          <div className="flex flex-col items-center justify-center py-40">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
+            <p className="text-xl font-bold text-gray-900 dark:text-white">Loading dashboard...</p>
+          </div>
+        )}
 
-      {!loadingStates.batchData && !data.selectedBatchData && (
-        <EmptyState
-          icon={Users}
-          title="Please select a batch to view details"
-          description="No batch data currently available"
-          className="dark:bg-gray-800 dark:text-white dark:border dark:border-gray-700"
-        />
-      )}
+        {!loadingStates.batchData && !data.selectedBatchData && (
+          <div className="max-w-xl mx-auto mt-20">
+            <EmptyState
+              icon={Users}
+              title="Welcome Teacher"
+              description="Please select a batch from your dashboard or sidebar to view detailed student analytics and records."
+              className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 rounded-3xl"
+            />
+          </div>
+        )}
 
-      {!loadingStates.batchData && data.selectedBatchData && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden  dark:bg-gray-900 dark:border dark:border-gray-700 dark:text-white">
-          {renderContent()}
-        </div>
-      )}
+        {!loadingStates.batchData && data.selectedBatchData && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {renderContent()}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

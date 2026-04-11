@@ -161,6 +161,81 @@ export class ProfileImageService {
   }
 
   /**
+   * Resolve a profile picture URL directly from a userId.
+   * Lists the bucket for files matching the user's upload prefix
+   * (userId-p-*) and returns a preview URL for the latest file found.
+   *
+   * Use this when you only have a userId and the profileImage URL
+   * is not stored in the profile document.
+   *
+   * @param {string} userId
+   * @param {number} width  - preview width  (default 120)
+   * @param {number} height - preview height (default 120)
+   * @returns {Promise<string|null>}
+   */
+  async getProfileUrlByUserId(userId, width = 120, height = 120) {
+    if (!userId) return null;
+    try {
+      const safeUserId = userId.length > 20 ? userId.substring(0, 20) : userId;
+      const prefix = `${safeUserId}-p-`;
+
+      const response = await this.storage.listFiles(this.bucketId, [
+        Query.startsWith('$id', prefix),
+      ]);
+
+      const files = response?.files ?? [];
+      if (files.length === 0) return null;
+
+      const latest = files.sort((a, b) => b.$createdAt.localeCompare(a.$createdAt))[0];
+
+      const result = this.storage.getFilePreview(
+        this.bucketId,
+        latest.$id,
+        width,
+        height,
+        'center',
+        100
+      );
+      return (result && result.href) ? result.href : result.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Bulk-resolve profile picture URLs for multiple users in one shot.
+   * Runs all bucket lookups in parallel via Promise.all.
+   *
+   * Returns a Map<userId, url|null> so you can do O(1) lookups per row.
+   *
+   * Best used as a FALLBACK when profileImage is not stored in the DB.
+   * If you already have profileImage URLs from a DB fetch, use those instead.
+   *
+   * @param {string[]} userIds  - array of user IDs
+   * @param {number}   width    - preview width  (default 80)
+   * @param {number}   height   - preview height (default 80)
+   * @returns {Promise<Map<string, string|null>>}
+   *
+   * @example
+   * const urlMap = await profileImageService.getBulkProfileUrls(userIds);
+   * const avatarSrc = urlMap.get(userId); // string | null
+   */
+  async getBulkProfileUrls(userIds, width = 80, height = 80) {
+    if (!userIds?.length) return new Map();
+
+    const unique = [...new Set(userIds.filter(Boolean))];
+
+    const results = await Promise.all(
+      unique.map(async (uid) => {
+        const url = await this.getProfileUrlByUserId(uid, width, height);
+        return [uid, url];
+      })
+    );
+
+    return new Map(results);
+  }
+
+  /**
    * Fetch a compressed/cropped PREVIEW URL from Appwrite
    * Useful for small avatars like 120x120
    */

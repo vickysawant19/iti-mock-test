@@ -1,15 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-// import { Separator } from "@/components/ui/separator";
 import {
   PlayCircle,
   Eye,
@@ -19,44 +10,68 @@ import {
   Calendar,
   FileText,
   Target,
-  ListOrdered,
-  CheckCircle,
+  Hash,
+  CheckCircle2,
+  XCircle,
   Loader2,
-  Clock11,
+  Clock,
   Lock,
   Unlock,
+  GraduationCap,
 } from "lucide-react";
 import questionpaperservice from "@/appwrite/mockTest";
 
-const MockTestCard = ({
-  setMockTests,
-  test,
-  user,
-  handleDelete,
-  isDeleting,
-}) => {
+// ─── Small stat cell ──────────────────────────────────────────────────────────
+const Stat = ({ icon: Icon, label, value, iconClass = "text-gray-400" }) => (
+  <div className="flex items-center gap-2 min-w-0">
+    <Icon className={`w-3.5 h-3.5 shrink-0 ${iconClass}`} />
+    <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}:</span>
+    <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{value}</span>
+  </div>
+);
+
+// ─── Action button ────────────────────────────────────────────────────────────
+const ActionBtn = ({ onClick, asLink, to, color, icon: Icon, label, disabled, loading }) => {
+  const base =
+    "flex-1 inline-flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold text-white whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed";
+  const colors = {
+    blue:   "bg-blue-500 hover:bg-blue-600 active:bg-blue-700",
+    green:  "bg-green-500 hover:bg-green-600 active:bg-green-700",
+    purple: "bg-violet-500 hover:bg-violet-600 active:bg-violet-700",
+    gray:   "bg-gray-500 hover:bg-gray-600 active:bg-gray-700",
+    orange: "bg-orange-500 hover:bg-orange-600 active:bg-orange-700",
+    red:    "bg-red-500 hover:bg-red-600 active:bg-red-700",
+  };
+
+  const content = (
+    <>
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5" />}
+      <span>{loading ? "…" : label}</span>
+    </>
+  );
+
+  if (asLink && to) {
+    return (
+      <Link to={to} className={`${base} ${colors[color]}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} disabled={disabled || loading} className={`${base} ${colors[color]}`}>
+      {content}
+    </button>
+  );
+};
+
+// ─── MockTestCard ─────────────────────────────────────────────────────────────
+const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) => {
   const [isLoading, setIsLoading] = useState(false);
+
   const handleShare = async (paperId) => {
     const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
-    const shareText = `
-    🎉 *_MSQs Exam Paper_* 🎉
-    
-    _Hey there!_
-    _Check out this Exam Paper_
-     Paper ID: *${paperId}*
-    
-    📚 *Trade:* ${test.tradeName}
-    💯 *Total Questions:* ${test.quesCount}
-    ⏳ *Duration:* ${test.totalMinutes} Minutes
-    
-    👉 Click the link below to get started:
-    ${examUrl}
-    
-    *Remember to submit on complete!*
-    
-     Good luck and happy Exam!
-    `;
-
+    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*\n\n📚 *Trade:* ${test.tradeName}\n💯 *Total Questions:* ${test.quesCount}\n⏳ *Duration:* ${test.totalMinutes} Minutes\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Mock Test Paper", text: shareText });
@@ -75,9 +90,7 @@ const MockTestCard = ({
       const data = await questionpaperservice.updateQuestion(test.$id, {
         isProtected: !test.isProtected,
       });
-      setMockTests((prev) =>
-        prev.map((item) => (item.$id === data.$id ? data : item))
-      );
+      setMockTests((prev) => prev.map((item) => (item.$id === data.$id ? data : item)));
     } catch (error) {
       console.log(error);
     } finally {
@@ -85,171 +98,100 @@ const MockTestCard = ({
     }
   };
 
+  const isSubmitted = test.submitted;
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 dark:bg-gray-800 dark:border-gray-700">
-      <CardHeader className="p-4 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-3">
-          <Calendar className="w-4 h-4" />
-          {format(new Date(test.$createdAt), "PPpp")}
-        </div>
+    <div className="flex flex-col h-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
 
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-          {test.tradeName || "No Trade Name"}
-          {test.isOriginal && (
-            <Badge
-              variant="outline"
-              className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1"
-            >
-              Original
-            </Badge>
+      {/* ── Header ── */}
+      <div className="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+        {/* Date row */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-xs">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{format(new Date(test.$createdAt), "dd MMM yyyy, hh:mm a")}</span>
+          </div>
+          {/* Status pill */}
+          {isSubmitted ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+              <CheckCircle2 className="w-3 h-3" /> Submitted
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <XCircle className="w-3 h-3" /> Pending
+            </span>
           )}
-        </h2>
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-7">
-            {test.year || "-"} YEAR
-          </span>
         </div>
-      </CardHeader>
 
-      <CardContent className="p-4 grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-            <FileText className="w-4 h-4" />
-            <span className="text-sm">{test.paperId}</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-            <ListOrdered className="w-4 h-4" />
-            <span className="text-sm">Questions: {test.quesCount || "50"}</span>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-            <Target className="w-4 h-4" />
-            <span className="text-sm">Score: {test.score ?? "-"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle
-              className={`w-4 h-4 ${
-                test.submitted
-                  ? "text-green-500 dark:text-green-400"
-                  : "text-gray-400 dark:text-gray-500"
-              }`}
-            />
-            <span
-              className={`text-sm ${
-                test.submitted
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
-            >
-              {test.submitted ? "Submitted" : "Not Submitted"}
-            </span>
+        {/* Trade name */}
+        <div className="flex items-start gap-2">
+          <GraduationCap className="w-5 h-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 leading-snug line-clamp-2">
+              {test.tradeName || "No Trade Name"}
+            </h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {test.year ? `${test.year} Year` : ""}
+              {test.isOriginal && (
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                  Original
+                </span>
+              )}
+            </p>
           </div>
         </div>
-        {test.submitted && test.endTime && (
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-            <Clock11 className="w-4 h-4" />
-            <span className="text-sm">
-              Submitted: {format(new Date(test.endTime), "PPp")}
-            </span>
+      </div>
+
+      {/* ── Stats grid ── */}
+      <div className="flex-1 px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+        <Stat icon={Hash}         label="Paper ID"  value={test.paperId}                          iconClass="text-indigo-400" />
+        <Stat icon={FileText}     label="Questions"  value={test.quesCount ?? "50"}               iconClass="text-blue-400"   />
+        <Stat icon={Clock}        label="Duration"   value={`${test.totalMinutes ?? "—"} min`}    iconClass="text-violet-400" />
+        <Stat icon={Target}       label="Score"      value={test.score ?? "—"}                    iconClass="text-green-400"  />
+        {isSubmitted && test.endTime && (
+          <div className="col-span-2">
+            <Stat icon={CheckCircle2} label="Submitted" value={format(new Date(test.endTime), "dd MMM, hh:mm a")} iconClass="text-green-400" />
           </div>
         )}
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-          <Clock11 className="w-4 h-4" />
-          <span className="text-sm">
-            Time: {test.totalMinutes ?? "-"} Minutes
-          </span>
-        </div>
-      </CardContent>
+      </div>
 
-      <CardFooter className="p-4 flex flex-wrap gap-2 text-nowrap">
-        {test.submitted ? (
-          <Button
-            asChild
-            variant="secondary"
-            className="inline-flex sm:w-1/3 md:w-1/3 grow bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white"
-          >
-            <Link to={`/show-mock-test/${test.$id}`}>
-              <Eye className="w-4 h-4 mr-2" />
-              <span>Show Test</span>
-            </Link>
-          </Button>
+      {/* ── Action buttons ── */}
+      <div className="mt-auto p-3 flex flex-wrap gap-2">
+        {/* Start / Show */}
+        {isSubmitted ? (
+          <ActionBtn asLink to={`/show-mock-test/${test.$id}`} color="green" icon={Eye} label="Show Test" />
         ) : (
-          <Button
-            asChild
-            className="inline-flex sm:w-1/3 md:w-1/3 grow bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
-          >
-            <Link to={`/start-mock-test/${test.$id}`}>
-              <PlayCircle className="w-4 h-4 mr-2" />
-              <span>Start Test</span>
-            </Link>
-          </Button>
+          <ActionBtn asLink to={`/start-mock-test/${test.$id}`} color="blue" icon={PlayCircle} label="Start" />
         )}
 
-        <Button
-          asChild
-          variant="secondary"
-          className="inline-flex sm:w-1/3 md:w-1/3 grow bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 text-white"
-        >
-          <Link to={`/mock-test-result/${test.paperId}`}>
-            <ClipboardList className="w-4 h-4 mr-2" />
-            <span>Test Scores</span>
-          </Link>
-        </Button>
+        {/* Scores */}
+        <ActionBtn asLink to={`/mock-test-result/${test.paperId}`} color="purple" icon={ClipboardList} label="Scores" />
 
-        <Button
-          onClick={() => handleShare(test.paperId)}
-          variant="secondary"
-          className="inline-flex sm:w-1/3 md:w-1/3 grow bg-gray-500 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 text-white"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          <span>Share</span>
-        </Button>
+        {/* Share */}
+        <ActionBtn onClick={() => handleShare(test.paperId)} color="gray" icon={Share2} label="Share" />
 
+        {/* Original-only actions */}
         {test.isOriginal && (
           <>
-            <Button
-              onClick={() => onToggleProtection(test.$id)}
-              variant="secondary"
-              className="inline-flex sm:w-1/3 md:w-1/3 grow bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : test.isProtected ? (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  <span>Protected</span>
-                </>
-              ) : (
-                <>
-                  <Unlock className="w-4 h-4 mr-2" />
-                  <span>Unprotected</span>
-                </>
-              )}
-            </Button>
-            <Button
-              disabled={isDeleting[test.$id]}
+            <ActionBtn
+              onClick={onToggleProtection}
+              color="orange"
+              icon={test.isProtected ? Lock : Unlock}
+              label={test.isProtected ? "Protected" : "Unprotect"}
+              loading={isLoading}
+            />
+            <ActionBtn
               onClick={() => handleDelete(test.$id)}
-              variant="destructive"
-              className="inline-flex w-1/4 grow disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDeleting[test.$id] ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  <span>Delete</span>
-                </>
-              )}
-            </Button>
+              color="red"
+              icon={Trash2}
+              label="Delete"
+              disabled={!!isDeleting[test.$id]}
+              loading={!!isDeleting[test.$id]}
+            />
           </>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
 
