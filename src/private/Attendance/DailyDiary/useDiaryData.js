@@ -20,6 +20,7 @@ import { selectProfile } from "@/store/profileSlice";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import batchStudentService from "@/appwrite/batchStudentService";
 
 /**
  * @param {Object} options
@@ -45,13 +46,15 @@ export function useDiaryData({
   );
   const [currentDay, setCurrentDay] = useState(currentDayInitial);
 
+  const profile = useSelector(selectProfile);
+  const navigate = useNavigate();
+
   const [diaryData, setDiaryData] = useState({});
   const [attendance, setAttendance] = useState(new Map());
   const [holidays, setHolidays] = useState(new Map());
   const [isLoading, setIsLoading] = useState(false);
-
-  const profile = useSelector(selectProfile);
-  const navigate = useNavigate();
+  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
+  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
 
   const effectiveUserId = userIdOverride ?? profile?.userId;
 
@@ -59,7 +62,32 @@ export function useDiaryData({
     data: batchData,
     isLoading: isBatchLoading,
     isError,
-  } = useGetBatchQuery({ batchId: profile?.batchId });
+  } = useGetBatchQuery({ batchId: resolvedBatchId }, { skip: !resolvedBatchId });
+
+  useEffect(() => {
+    if (profile?.batchId) {
+      setResolvedBatchId(profile.batchId);
+      setIsResolvingBatch(false);
+      return;
+    }
+    if (!profile?.userId) {
+      setIsResolvingBatch(false);
+      return;
+    }
+    const resolve = async () => {
+      try {
+        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
+        if (enrollments.length > 0) {
+          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
+        }
+      } catch (e) {
+        console.warn("[useDiaryData] Could not resolve batchId", e);
+      } finally {
+        setIsResolvingBatch(false);
+      }
+    };
+    resolve();
+  }, [profile?.batchId, profile?.userId]);
 
   const periodAnchor = viewType === "daily" ? currentDay : currentWeekStart;
 
@@ -102,7 +130,7 @@ export function useDiaryData({
   }, [batchData, viewType, currentDay, weekNumber]);
 
   const fetchData = useCallback(async () => {
-    if (!enabled || !effectiveUserId || !profile?.batchId) return;
+    if (!enabled || !effectiveUserId || !resolvedBatchId) return;
 
     setIsLoading(true);
     try {
@@ -121,14 +149,14 @@ export function useDiaryData({
         role === "teacher"
           ? newAttendanceService.getTeacherAttendanceByDateRange(
               effectiveUserId,
-              profile.batchId,
+              resolvedBatchId,
               startDate,
               endDate,
               [Query.select(["date", "status"])]
             )
           : newAttendanceService.getStudentAttendanceByDateRange(
               effectiveUserId,
-              profile.batchId,
+              resolvedBatchId,
               startDate,
               endDate,
               [Query.select(["date", "status"])]
@@ -137,12 +165,12 @@ export function useDiaryData({
       const [attendanceRes, holidayData, diaryRes] = await Promise.all([
         attendancePromise,
         holidayService.getBatchHolidaysByDateRange(
-          profile.batchId,
+          resolvedBatchId,
           startDate,
           endDate
         ),
         dailyDiaryService.getBatchInstructorDiary(
-          profile.batchId,
+          resolvedBatchId,
           null,
           startDate,
           endDate
@@ -182,13 +210,8 @@ export function useDiaryData({
 
   useEffect(() => {
     if (!enabled) return;
-    if (profile && !profile.batchId) {
-      toast.error("You need to Create/Select a batch");
-      navigate("/profile");
-      return;
-    }
     fetchData();
-  }, [enabled, profile, fetchData, navigate]);
+  }, [enabled, resolvedBatchId, fetchData, navigate]);
 
   const handlePreviousWeek = useCallback(() => {
     if (!enabled || !canGoPreviousPeriod) return;
@@ -217,7 +240,7 @@ export function useDiaryData({
     batchData,
     attendance,
     holidays,
-    isLoading: enabled ? isLoading || isBatchLoading : false,
+    isLoading: enabled ? isLoading || isBatchLoading || isResolvingBatch : false,
     isError,
     handlePreviousWeek,
     handleNextWeek,

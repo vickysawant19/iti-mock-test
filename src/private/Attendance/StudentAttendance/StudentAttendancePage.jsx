@@ -53,17 +53,6 @@ const StudentAttendancePage = () => {
     Number.isFinite(distance) &&
     distance <= (batchData?.circleRadius || 1000);
 
-  if (!profile?.batchId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">No Batch Assigned</h2>
-        <p className="text-slate-500 mb-6">You need to be part of a batch to view and mark attendance.</p>
-        <Link to="/profile" className="px-6 py-2 bg-blue-600 text-white rounded-xl font-medium">
-          Go to Profile
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#f0f4ff] dark:bg-slate-950 px-3 py-4 md:px-5 md:py-6 xl:px-8 pb-20 font-sans">

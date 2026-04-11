@@ -30,9 +30,11 @@ import L from "leaflet";
 import useLocationManager from "@/hooks/useLocationManager";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import { useSelector } from "react-redux";
+import { Skeleton } from "@/components/ui/skeleton";
 import { selectProfile } from "@/store/profileSlice";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import holidayService from "@/appwrite/holidaysService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { avatarFallback } from "@/utils/avatarFallback";
@@ -83,16 +85,18 @@ const AttendanceTracker = () => {
   const [showMap, setShowMap] = useState(false);
   const [checkingAttendance, setCheckingAttendance] = useState(true);
   const [holiday, setHoliday] = useState(null);
-
   const profile = useSelector(selectProfile);
+  // resolvedBatchId: prefer profile.batchId, fall back to batchStudentService lookup
+  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
+  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
 
   const {
     data: batchData,
     isLoading: batchLoading,
     error: batchError,
   } = useGetBatchQuery(
-    { batchId: profile?.batchId },
-    { skip: !profile?.batchId }
+    { batchId: resolvedBatchId },
+    { skip: !resolvedBatchId }
   );
 
   const {
@@ -110,9 +114,35 @@ const AttendanceTracker = () => {
     }
   }, [batchData]);
 
+  // Resolve batchId: use profile.batchId first, fall back to batchStudentService
+  useEffect(() => {
+    if (profile?.batchId) {
+      setResolvedBatchId(profile.batchId);
+      setIsResolvingBatch(false);
+      return;
+    }
+    if (!profile?.userId) {
+      setIsResolvingBatch(false);
+      return;
+    }
+    const resolve = async () => {
+      try {
+        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
+        if (enrollments.length > 0) {
+          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
+        }
+      } catch (e) {
+        console.warn("[AttendanceTracker] Could not resolve batchId", e);
+      } finally {
+        setIsResolvingBatch(false);
+      }
+    };
+    resolve();
+  }, [profile?.batchId, profile?.userId]);
+
   // Check for holiday first
   useEffect(() => {
-    if (!profile?.batchId) {
+    if (!resolvedBatchId) {
       setCheckingAttendance(false);
       return;
     }
@@ -121,7 +151,7 @@ const AttendanceTracker = () => {
       try {
         const res = await holidayService.getHolidayByDate(
           format(new Date(), "yyyy-MM-dd"),
-          profile.batchId
+          resolvedBatchId
         );
         setHoliday(res);
       } catch (e) {
@@ -130,11 +160,11 @@ const AttendanceTracker = () => {
         setCheckingAttendance(false);
       }
     })();
-  }, [profile]);
+  }, [resolvedBatchId]);
 
   // Only check existing attendance if NOT a holiday and batch is joined
   useEffect(() => {
-    if (!profile?.batchId || holiday) {
+    if (!resolvedBatchId || holiday) {
       setCheckingAttendance(false);
       return;
     }
@@ -143,7 +173,7 @@ const AttendanceTracker = () => {
       try {
         const response = await newAttendanceService.getAttendanceByDate(
           profile.userId,
-          profile.batchId,
+          resolvedBatchId,
           new Date()
         );
         if (response) {
@@ -179,7 +209,7 @@ const AttendanceTracker = () => {
   const handleMarkAttendance = async () => {
     if (distance > circleRadius) return;
     if (attendanceMarked) return;
-    if (!profile?.batchId) return;
+    if (!resolvedBatchId) return;
 
     setMarking(true);
     try {
@@ -192,8 +222,8 @@ const AttendanceTracker = () => {
       } else {
         await newAttendanceService.createAttendance({
           userId: profile.userId,
-          batchId: profile.batchId,
-          tradeId: profile.tradeId,
+          batchId: resolvedBatchId,
+          tradeId: batchData?.tradeId || null,
           date: new Date(),
           status: "present",
           remarks: "",
@@ -216,11 +246,11 @@ const AttendanceTracker = () => {
 
   const isWithinRange = distance !== null && distance <= (circleRadius || 0);
   const loading =
-    batchLoading || (holiday ? false : locationLoading) || checkingAttendance;
+    isResolvingBatch || batchLoading || (holiday ? false : locationLoading) || checkingAttendance;
   const error = batchError || (!holiday && locationError);
 
-  // If user has no batch, show "No Batch Joined/Created" UI
-  if (!profile?.batchId) {
+  // If user truly has no batch (even after resolution), show "No Batch Joined/Created" UI
+  if (!resolvedBatchId && !batchLoading && !checkingAttendance && !isResolvingBatch) {
     const isTeacher = profile?.role?.includes("Teacher");
     
     return (
@@ -250,6 +280,58 @@ const AttendanceTracker = () => {
           >
             {isTeacher ? "Create Batch" : "Browse Batches"}
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading Skeleton for a premium first impression
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
+        <div className="max-w-xl mx-auto space-y-6">
+          {/* Header Skeleton */}
+          <div className="rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-5">
+              <Skeleton className="w-16 h-16 rounded-2xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-6 w-3/4 rounded-lg" />
+                <Skeleton className="h-4 w-1/2 rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Status Skeleton */}
+          <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
+            <CardContent className="p-8 space-y-8">
+              <div className="flex flex-col items-center space-y-4">
+                <Skeleton className="w-24 h-24 rounded-full" />
+                <div className="space-y-2 text-center w-full">
+                  <Skeleton className="h-6 w-1/2 mx-auto rounded-lg" />
+                  <Skeleton className="h-4 w-1/3 mx-auto rounded-lg" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-24 rounded-2xl" />
+                <Skeleton className="h-24 rounded-2xl" />
+              </div>
+
+              <Skeleton className="h-16 w-full rounded-2xl" />
+            </CardContent>
+          </Card>
+
+          {/* Loading status text */}
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm italic">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>
+              {checkingAttendance
+                ? "Verifying batch enrollment..."
+                : batchLoading
+                ? "Syncing batch schedules..."
+                : "Resolving your location..."}
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -318,26 +400,7 @@ const AttendanceTracker = () => {
           </Card>
         )}
 
-        {/* Loading State */}
-        {loading && (
-          <Card className="border-0 shadow-lg bg-white dark:bg-slate-900 rounded-3xl">
-            <CardContent className="py-20">
-              <div className="text-center space-y-4">
-                <div className="relative mx-auto w-16 h-16">
-                  <div className="absolute inset-0 rounded-full border-4 border-blue-100 dark:border-blue-900"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 font-medium">
-                  {checkingAttendance
-                    ? "Checking for holidays..."
-                    : batchLoading
-                    ? "Loading batch data..."
-                    : "Getting your location..."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Error State */}
         {!loading && error && (

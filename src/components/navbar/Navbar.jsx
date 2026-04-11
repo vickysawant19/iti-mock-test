@@ -80,6 +80,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
   const [studentBatchesList, setStudentBatchesList] = useState([]);
   const [teacherBatchesList, setTeacherBatchesList] = useState([]);
+
+  // A student is batch-enrolled only if they appear in batchStudents (approved).
+  // Teachers and admins always count as enrolled.
+  const isStudentEnrolled = !isStudent || studentBatchesList.length > 0;
   
   useEffect(() => {
     const fetchStudentBatches = async () => {
@@ -338,6 +342,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         {menuConfig.map((configItem, index) => {
           if (configItem.roles && !hasRole(configItem.roles)) return null;
           if (configItem.requiresAuth && !user) return null;
+          // Hide batch-required sections for unenrolled students
+          if (configItem.requiresBatch && !isStudentEnrolled) return null;
 
           if (configItem.group) {
             return (

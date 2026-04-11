@@ -14,6 +14,7 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import batchService from "@/appwrite/batchService";
 import tradeservice from "@/appwrite/tradedetails";
+import batchStudentService from "@/appwrite/batchStudentService";
 
 const STATUS_ALIASES = {
   p: "present",
@@ -164,6 +165,8 @@ export const useStudentAttendance = (profile) => {
   const [lastUpdatedDate, setLastUpdatedDate] = useState(null);
   const [overallStats, setOverallStats] = useState(null);
   const [tradeData, setTradeData] = useState(null);
+  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
+  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
 
   const fetchBatchData = useCallback(async (batchId) => {
     try {
@@ -184,12 +187,37 @@ export const useStudentAttendance = (profile) => {
   }, []);
 
   useEffect(() => {
-    if (profile?.batchId) fetchBatchData(profile.batchId);
-  }, [profile?.batchId, fetchBatchData]);
+    if (profile?.batchId) {
+      setResolvedBatchId(profile.batchId);
+      setIsResolvingBatch(false);
+      return;
+    }
+    if (!profile?.userId) {
+      setIsResolvingBatch(false);
+      return;
+    }
+    const resolve = async () => {
+      try {
+        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
+        if (enrollments.length > 0) {
+          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
+        }
+      } catch (e) {
+        console.warn("[useStudentAttendance] Could not resolve batchId from batchStudentService", e);
+      } finally {
+        setIsResolvingBatch(false);
+      }
+    };
+    resolve();
+  }, [profile?.batchId, profile?.userId]);
 
   useEffect(() => {
-    if (profile?.tradeId) fetchTradeData(profile.tradeId);
-  }, [profile?.tradeId, fetchTradeData]);
+    if (resolvedBatchId) fetchBatchData(resolvedBatchId);
+  }, [resolvedBatchId, fetchBatchData]);
+
+  useEffect(() => {
+    if (batchData?.tradeId) fetchTradeData(batchData.tradeId);
+  }, [batchData?.tradeId, fetchTradeData]);
 
   const getMonthRange = useCallback((monthLabel) => {
     const parsedDate = parse(monthLabel, "MMMM yyyy", new Date());
@@ -197,7 +225,7 @@ export const useStudentAttendance = (profile) => {
   }, []);
 
   const fetchMonthlyAttendance = useCallback(async () => {
-    if (!profile?.batchId || !profile?.userId) return;
+    if (!resolvedBatchId || !profile?.userId) return;
     setIsLoadingAttendance(true);
     try {
       const { start, end } = getMonthRange(currentMonth);
@@ -218,12 +246,12 @@ export const useStudentAttendance = (profile) => {
       const [attendanceRes, holidayRes] = await Promise.all([
         newAttendanceService.getStudentAttendanceByDateRange(
           profile.userId,
-          profile.batchId,
+          resolvedBatchId,
           startDate,
           endDate
         ),
         holidayService.getBatchHolidaysByDateRange(
-          profile.batchId,
+          resolvedBatchId,
           startDate,
           endDate
         ),
@@ -244,18 +272,18 @@ export const useStudentAttendance = (profile) => {
     } finally {
       setIsLoadingAttendance(false);
     }
-  }, [profile, currentMonth, getMonthRange, batchData]);
+  }, [profile, currentMonth, getMonthRange, batchData, resolvedBatchId]);
 
   useEffect(() => {
     fetchMonthlyAttendance();
   }, [fetchMonthlyAttendance, refreshStatsCounter]);
 
   const fetchOverallStats = useCallback(async () => {
-    if (!profile?.userId || !profile?.batchId) return;
+    if (!profile?.userId || !resolvedBatchId) return;
     try {
       const stats = await newAttendanceService.getStudentAttendanceStats(
         profile.userId,
-        profile.batchId
+        resolvedBatchId
       );
       setOverallStats({
         totalDays: stats.total,
@@ -267,7 +295,7 @@ export const useStudentAttendance = (profile) => {
     } catch (error) {
       console.error("Error fetching overall stats:", error);
     }
-  }, [profile]);
+  }, [profile, resolvedBatchId]);
 
   useEffect(() => {
     fetchOverallStats();
@@ -325,9 +353,9 @@ export const useStudentAttendance = (profile) => {
     () => ({
       ...profile,
       attendanceRecords: finalAttendanceRecords,
-      batchId: profile?.batchId,
+      batchId: resolvedBatchId,
     }),
-    [profile, finalAttendanceRecords]
+    [profile, finalAttendanceRecords, resolvedBatchId]
   );
 
   const markAttendance = async (dateStr, status = "present", remarks = "") => {
@@ -387,7 +415,7 @@ export const useStudentAttendance = (profile) => {
       } else {
         result = await newAttendanceService.createAttendance({
           userId: profile?.userId,
-          batchId: profile?.batchId,
+          batchId: resolvedBatchId,
           tradeId: profile?.tradeId || null,
           date: normalizedDate,
           status: safeStatus,
@@ -448,7 +476,7 @@ export const useStudentAttendance = (profile) => {
   ]);
 
   return {
-    isLoadingAttendance,
+    isLoadingAttendance: isLoadingAttendance || isResolvingBatch,
     batchData,
     tradeData,
     studentAttendance,

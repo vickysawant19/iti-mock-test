@@ -7,7 +7,9 @@ import subjectService from "@/appwrite/subjectService";
 import questionpaperservice from "@/appwrite/mockTest";
 import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Loader2 } from "lucide-react";
+import batchStudentService from "@/appwrite/batchStudentService";
+import { useGetBatchQuery } from "@/store/api/batchApi";
 
 const Assessment = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +27,39 @@ const Assessment = () => {
 
   const redirect = `/assessment?${searchParams.toString()}`;
   const profile = useSelector(selectProfile);
+
+  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
+  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
+
+  const { data: batchData, isLoading: batchLoading } = useGetBatchQuery(
+    { batchId: resolvedBatchId },
+    { skip: !resolvedBatchId }
+  );
+
+  useEffect(() => {
+    if (profile?.batchId) {
+      setResolvedBatchId(profile.batchId);
+      setIsResolvingBatch(false);
+      return;
+    }
+    if (!profile?.userId) {
+      setIsResolvingBatch(false);
+      return;
+    }
+    const resolve = async () => {
+      try {
+        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
+        if (enrollments.length > 0) {
+          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
+        }
+      } catch (e) {
+        console.warn("[Assessment] Could not resolve batchId", e);
+      } finally {
+        setIsResolvingBatch(false);
+      }
+    };
+    resolve();
+  }, [profile?.batchId, profile?.userId]);
 
   // Update search params when filters change
   useEffect(() => {
@@ -107,7 +142,7 @@ const Assessment = () => {
     setIsLoading(true);
     try {
       const data = await moduleServices.getNewModulesData(
-        profile.tradeId,
+        batchData?.tradeId,
         selectedSubject.$id,
         selectedTradeYear
       );
@@ -145,12 +180,12 @@ const Assessment = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedSubject && selectedTradeYear) {
+    if (selectedSubject && selectedTradeYear && batchData?.tradeId) {
       setModulesData(null);
       setPapersData(new Map());
       fetchModules();
     }
-  }, [selectedTradeYear, selectedSubject]);
+  }, [selectedTradeYear, selectedSubject, batchData?.tradeId]);
 
   return (
     <div className="container mx-auto bg-gray-50 min-h-screen dark:bg-black">

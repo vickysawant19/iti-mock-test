@@ -22,6 +22,10 @@ export class ModuleServices {
   }
 
   async getNewModulesData(tradeId, subjectId, year) {
+    if (!tradeId || !subjectId || !year) {
+      console.warn("[ModuleServices] Skipping fetch: missing required parameters", { tradeId, subjectId, year });
+      return [];
+    }
     try {
       let allDocuments = [];
       let offset = 0;

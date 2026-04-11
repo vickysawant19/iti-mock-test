@@ -293,10 +293,11 @@ const AttendanceRegister = () => {
           { status: newStatus },
         );
       } else {
+        const batch = batches.get(selectedBatch);
         attendanceResponse = await newAttendanceService.createAttendance({
           userId,
           batchId: selectedBatch,
-          tradeId: profile.tradeId,
+          tradeId: batch?.tradeId || null,
           date,
           status: newStatus,
           remarks: null,
@@ -345,7 +346,7 @@ const AttendanceRegister = () => {
       const records = Object.entries(statuses).map(([userId, status]) => ({
         userId,
         batchId: selectedBatch,
-        tradeId: batch?.tradeId || profile.tradeId,
+        tradeId: batch?.tradeId || null,
         date: selectedDate,
         status,
         marketAt: new Date().toISOString(),

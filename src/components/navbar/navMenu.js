@@ -96,6 +96,7 @@ export const menuConfig = [
     icon: ClipboardList,
     groupKey: "assessment",
     requiresAuth: true,
+    requiresBatch: true,
     children: [
       { label: "Show Assessment", path: "/assessment", icon: MdAddCard, requiresAuth: true },
     ],
@@ -138,6 +139,7 @@ export const menuConfig = [
     icon: FaCalendarCheck,
     groupKey: "attendance",
     requiresAuth: true,
+    requiresBatch: true,
     children: [
       { label: "Daily Diary", path: "/daily-diary", icon: FaBookReader, requiresAuth: true },
       {

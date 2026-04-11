@@ -45,6 +45,7 @@ import OnboardingWizard from "./components/onboarding/OnboardingWizard.jsx";
 import TeacherOnboardingWizard from "./components/onboarding/teacher/TeacherOnboardingWizard.jsx";
 import BatchEnrollmentStatus from "./pages/BatchEnrollmentStatus.jsx";
 import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
+import ProtectedStudentBatchRoute from "./private/ProtectedStudentBatchRoute.jsx";
 
 import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
 import Modules from "./private/admin/Modules.jsx";
@@ -98,7 +99,6 @@ const router = (
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
-          <Route path="daily-diary" element={<DailyDiary />} />
           <Route
             path="mock-test-result/:paperId"
             element={<MockTestResults />}
@@ -112,13 +112,18 @@ const router = (
             <Route path="edit/:batchId" element={<div>Edit</div>} />
             <Route path="delete/:batchId" element={<div>Delete</div>} />
           </Route>
-          <Route path="assessment">
-            <Route path="" element={<Assessment />} />
-          </Route>
-          <Route path="attendance">
-            <Route path="register" element={<AttendanceRegister />} />
-            <Route path="marktoday" element={<AttendanceTracker />} />
-            <Route path="college-attendance" element={<CollegeAttendance />} />
+          {/* Batch-required routes — students blocked if not enrolled */}
+          <Route element={<ProtectedStudentBatchRoute />}>
+            <Route path="student-attendance" element={<StudentAttendancePage />} />
+            <Route path="daily-diary" element={<DailyDiary />} />
+            <Route path="assessment">
+              <Route path="" element={<Assessment />} />
+            </Route>
+            <Route path="attendance">
+              <Route path="register" element={<AttendanceRegister />} />
+              <Route path="marktoday" element={<AttendanceTracker />} />
+              <Route path="college-attendance" element={<CollegeAttendance />} />
+            </Route>
           </Route>
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />

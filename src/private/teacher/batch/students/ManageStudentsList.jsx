@@ -187,6 +187,15 @@ export default function ManageStudentsList({ selectedBatch }) {
           student.userId,
           student.requestId,
         );
+        // Also clear batchId from the student's profile so their UI stays in sync
+        try {
+          const studentProfile = await userProfileService.getUserProfile(student.userId);
+          if (studentProfile && studentProfile.$id) {
+            await userProfileService.patchUserProfile(studentProfile.$id, { batchId: null });
+          }
+        } catch (profileErr) {
+          console.warn("Could not clear batchId from student profile:", profileErr);
+        }
         toast.info("Student approval revoked.");
       } else if (action === "delete") {
         await batchRequestService.deleteRequest(student.requestId);
