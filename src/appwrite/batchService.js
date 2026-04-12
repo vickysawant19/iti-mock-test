@@ -64,13 +64,17 @@ export class BatchService {
         queries,
       );
 
+      // Appwrite documents have non-serializable methods (e.g. toString via JSONbig).
+      // Sanitize to a plain object before returning so it's safe to store in Redux.
+      const plain = JSON.parse(JSON.stringify(data));
+
       return {
-        ...data,
-        attendanceTime: data.attendanceTime
-          ? JSON.parse(data.attendanceTime)
+        ...plain,
+        attendanceTime: plain.attendanceTime
+          ? JSON.parse(plain.attendanceTime)
           : {},
-        location: data.location
-          ? JSON.parse(data.location)
+        location: plain.location
+          ? JSON.parse(plain.location)
           : { lat: "", lon: "" },
       };
     } catch (error) {

@@ -29,6 +29,7 @@ const MatchFaceMode = ({
 }) => {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const isTeacher = user.labels.includes("Teacher");
 
   const [matchStatus, setMatchStatus] = useState(null); // {'matched', 'unknown', 'loading', null}
@@ -230,7 +231,7 @@ const MatchFaceMode = ({
 
         const response = await faceService.getMatches([
           Query.or(queries),
-          Query.equal("batchId", profile.batchId),
+          Query.equal("batchId", activeBatchId),
           Query.limit(2), // Increased limit to get more potential matches
         ]);
 
@@ -427,7 +428,7 @@ const MatchFaceMode = ({
       // Fetch current attendance data in one call
       const data = await attendanceService.getUserAttendance(
         userId,
-        profile.batchId
+        activeBatchId
       );
       const attendanceRecords = data?.attendanceRecords || [];
       const todaysAttendance = attendanceRecords.find(
@@ -446,7 +447,7 @@ const MatchFaceMode = ({
           // Update the existing record with outTime
           await attendanceService.markUserAttendance({
             userId,
-            batchId: profile.batchId,
+            batchId: activeBatchId,
             attendanceRecords: [updatedRecord],
           });
 
@@ -475,7 +476,7 @@ const MatchFaceMode = ({
       // Structure for the complete record
       const record = {
         userId,
-        batchId: profile.batchId,
+        batchId: activeBatchId,
         attendanceRecords: [newRecord], //PUSH THIS NEW RECORD
       };
 

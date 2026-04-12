@@ -49,6 +49,7 @@ import {
   selectUserLoading,
 } from "@/store/userSlice";
 import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
+import { setActiveBatch } from "@/store/activeBatchSlice";
 import userProfileService from "@/appwrite/userProfileService";
 import batchStudentService from "@/appwrite/batchStudentService";
 import batchService from "@/appwrite/batchService";
@@ -78,46 +79,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const isAdmin = user?.labels?.includes("admin");
   const isStudent = user && !isTeacher && !isAdmin;
 
-  const [studentBatchesList, setStudentBatchesList] = useState([]);
-  const [teacherBatchesList, setTeacherBatchesList] = useState([]);
-
-  // A student is batch-enrolled only if they appear in batchStudents (approved).
-  // Teachers and admins always count as enrolled.
-  const isStudentEnrolled = !isStudent || studentBatchesList.length > 0;
+  const { activeBatchId, userBatches } = useSelector((state) => state.activeBatch);
   
-  useEffect(() => {
-    const fetchStudentBatches = async () => {
-      if (isStudent && user?.$id) {
-        try {
-          const bsInfo = await batchStudentService.getStudentBatches(user.$id);
-          if (bsInfo.length > 0) {
-            const batchIds = bsInfo.map(b => b.batchId);
-            // Fetch names for these batches
-            const batches = await batchService.getBatchesByIds(batchIds);
-            if (batches && batches.length > 0) {
-               setStudentBatchesList(batches);
-            }
-          }
-        } catch (e) {
-          console.error("Error fetching student batches", e);
-        }
-      }
-    };
-    const fetchTeacherBatches = async () => {
-      if (isTeacher && user?.$id) {
-        try {
-          const batches = await batchService.listBatches([Query.equal("teacherId", [user.$id])]);
-          if (batches?.documents && batches.documents.length > 0) {
-             setTeacherBatchesList(batches.documents);
-          }
-        } catch (e) {
-          console.error("Error fetching teacher batches", e);
-        }
-      }
-    };
-    fetchStudentBatches();
-    fetchTeacherBatches();
-  }, [isStudent, isTeacher, user]);
+  // A student is batch-enrolled only if they have an approved batch Request.
+  // Teachers and admins always count as enrolled.
+  const isStudentEnrolled = !isStudent || userBatches?.length > 0;
 
   const currentHeading = pathToHeading[location.pathname] || "";
 
@@ -161,15 +127,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   const handleBatchSwitch = async (batchId) => {
-    if (!batchId || batchId === profile?.batchId) return;
-    try {
-      const updatedProfile = await userProfileService.updateUserProfile(profile.$id, {
-        batchId: batchId,
-      });
-      dispatch(addProfile({ data: updatedProfile }));
-    } catch (error) {
-      console.error("Error switching batch:", error);
-    }
+    if (!batchId || batchId === activeBatchId) return;
+    dispatch(setActiveBatch({ batchId, userId: user.$id, isTeacher, currentBatches: userBatches }));
   };
 
   const MenuGroup = ({ title, icon: Icon, children, groupKey }) => (
@@ -276,17 +235,17 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
 
         {/* Batch Switcher for Teachers & Students */}
-        {isTeacher && teacherBatchesList.length > 0 && (
+        {isTeacher && userBatches?.length > 0 && (
           <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Active Batch
             </span>
-            <Select value={profile?.batchId || ""} onValueChange={handleBatchSwitch}>
+            <Select value={activeBatchId || ""} onValueChange={handleBatchSwitch}>
               <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {teacherBatchesList.map((b) => {
+                {userBatches.map((b) => {
                   if (!b?.$id) return null;
                   return (
                     <SelectItem key={b.$id} value={b.$id}>
@@ -299,17 +258,17 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </div>
         )}
         
-        {isStudent && studentBatchesList.length > 0 && (
+        {isStudent && userBatches?.length > 0 && (
           <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Active Batch
             </span>
-            <Select value={profile?.batchId || ""} onValueChange={handleBatchSwitch}>
+            <Select value={activeBatchId || ""} onValueChange={handleBatchSwitch}>
               <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {studentBatchesList.map((b) => (
+                {userBatches.map((b) => (
                   <SelectItem key={b.$id} value={b.$id}>
                     {b.BatchName || b.$id}
                   </SelectItem>

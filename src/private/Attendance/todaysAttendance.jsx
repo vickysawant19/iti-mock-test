@@ -86,9 +86,8 @@ const AttendanceTracker = () => {
   const [checkingAttendance, setCheckingAttendance] = useState(true);
   const [holiday, setHoliday] = useState(null);
   const profile = useSelector(selectProfile);
-  // resolvedBatchId: prefer profile.batchId, fall back to batchStudentService lookup
-  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
-  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
+  const { activeBatchId: resolvedBatchId, isLoading: batchStateLoading } = useSelector((state) => state.activeBatch);
+  const isResolvingBatch = batchStateLoading;
 
   const {
     data: batchData,
@@ -114,31 +113,7 @@ const AttendanceTracker = () => {
     }
   }, [batchData]);
 
-  // Resolve batchId: use profile.batchId first, fall back to batchStudentService
-  useEffect(() => {
-    if (profile?.batchId) {
-      setResolvedBatchId(profile.batchId);
-      setIsResolvingBatch(false);
-      return;
-    }
-    if (!profile?.userId) {
-      setIsResolvingBatch(false);
-      return;
-    }
-    const resolve = async () => {
-      try {
-        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
-        if (enrollments.length > 0) {
-          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
-        }
-      } catch (e) {
-        console.warn("[AttendanceTracker] Could not resolve batchId", e);
-      } finally {
-        setIsResolvingBatch(false);
-      }
-    };
-    resolve();
-  }, [profile?.batchId, profile?.userId]);
+  // activeBatchSlice handles batch resolution automatically
 
   // Check for holiday first
   useEffect(() => {
@@ -190,7 +165,7 @@ const AttendanceTracker = () => {
     };
 
     fetchExistingAttendance();
-  }, [profile?.userId, profile?.batchId, holiday]);
+  }, [profile?.userId, resolvedBatchId, holiday]);
 
   // Calculate distance when location updates (only if not a holiday)
   useEffect(() => {

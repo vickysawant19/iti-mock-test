@@ -5,6 +5,7 @@ import { Edit, Save, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import Loader from "@/components/components/Loader";
 import { avatarFallback } from "@/utils/avatarFallback";
@@ -28,6 +29,7 @@ function TeacherDiaryView() {
   const [activeTab, setActiveTab] = useState("monthly");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector(selectActiveBatchId);
   const {
     weekDays,
     weekNumber,
@@ -103,7 +105,7 @@ function TeacherDiaryView() {
           hours: entry.hours ? Number(entry.hours) : null,
           remarks: entry.remarks || "-",
           instructorId: profile.userId,
-          batchId: profile.batchId,
+          batchId: activeBatchId,
         });
         updatedEntry.$id = newDoc.$id;
       }

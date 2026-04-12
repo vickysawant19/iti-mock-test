@@ -178,7 +178,6 @@ export const menuConfig = [
   },
 ];
 
-// This object maps current paths to headings
 export const pathToHeading = {
   "/": "Home",
   "/dash": "Dashboard",
@@ -192,13 +191,13 @@ export const pathToHeading = {
   "/mock-exam": "Create Mock Exam",
   "/all-mock-tests": "My Mock Tests",
   "/attain-test": "Attain Test",
+  "/assessment": "Assessment Portal",
   "/daily-diary": "Daily Diary",
-  "/attendance/face": "Face Attendance",
-  "/attendance/mark-holidays": "Mark Holidays",
-  "/attendance/mark-attendance": "Mark Daywise Attendance",
   "/student-attendance": "My Attendance",
-  "/attendance/tracer": "Attendance Register",
-  "/attendance/check-attendance": "Check My Attendance",
+  "/attendance/register": "Attendance Register",
+  "/attendance/marktoday": "Quick Mark Attendance",
+  "/attendance/college-attendance": "College Attendance",
+  "/browse-batches": "Browse Batches",
   "/about": "About",
   "/login": "Login",
   "/signup": "SignUp",

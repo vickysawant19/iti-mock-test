@@ -28,12 +28,13 @@ function InstructorDailyDiary() {
   const [isExporting, setIsExporting] = useState(false);
 
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
 
   const {
     data: batchData,
     isLoading: isBatchLoading,
     isError,
-  } = useGetBatchQuery({ batchId: profile.batchId });
+  } = useGetBatchQuery({ batchId: activeBatchId }, { skip: !activeBatchId });
 
   const monthDays = useMemo(() => {
     return eachDayOfInterval({
@@ -43,7 +44,7 @@ function InstructorDailyDiary() {
   }, [currentMonth]);
 
   const fetchDataForMonth = useCallback(async () => {
-    if (!profile?.userId || !profile?.batchId) return;
+    if (!profile?.userId || !activeBatchId) return;
 
     setIsLoadingData(true);
     try {
@@ -53,7 +54,7 @@ function InstructorDailyDiary() {
       const attendanceRes =
         await newAttendanceService.getTeacherAttendanceByDateRange(
           profile.userId,
-          profile.batchId,
+          activeBatchId,
           startDate,
           endDate,
           [Query.select(["date", "status"])],
@@ -66,7 +67,7 @@ function InstructorDailyDiary() {
 
       // Fetch holidays
       const holidayData = await holidayService.getBatchHolidaysByDateRange(
-        profile.batchId,
+        activeBatchId,
         startDate,
         endDate,
       );
@@ -75,7 +76,7 @@ function InstructorDailyDiary() {
       setHolidays(holidayMap);
       // Fetch daily diary
       const diaryRes = await dailyDiaryService.getBatchInstructorDiary(
-        profile.batchId,
+        activeBatchId,
         profile.userId,
         startDate,
         endDate,
@@ -98,7 +99,7 @@ function InstructorDailyDiary() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [profile, currentMonth]);
+  }, [profile, activeBatchId, currentMonth]);
 
   useEffect(() => {
     fetchDataForMonth();

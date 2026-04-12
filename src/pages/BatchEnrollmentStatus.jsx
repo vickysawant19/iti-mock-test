@@ -5,6 +5,7 @@ import { Clock, Building, BookOpen, Users, RefreshCw, LogOut, ArrowRight, Shield
 
 import { selectProfile, addProfile, removeProfile } from "@/store/profileSlice";
 import { selectUser, removeUser } from "@/store/userSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import authService from "@/appwrite/auth";
 import userProfileService from "@/appwrite/userProfileService";
 import batchRequestService from "@/appwrite/batchRequestService";
@@ -20,6 +21,7 @@ import batchService from "@/appwrite/batchService";
 export default function BatchEnrollmentStatus() {
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
+  const activeBatchId = useSelector(selectActiveBatchId);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +33,7 @@ export default function BatchEnrollmentStatus() {
   const { data: collegesData } = useListCollegesQuery();
   const { data: tradesData } = useListTradesQuery();
 
-  const batchId = profile?.batchId?.$id || profile?.batchId;
+  const batchId = activeBatchId;
   const [targetBatch, setTargetBatch] = useState(null);
 
   useEffect(() => {
@@ -223,7 +225,7 @@ export default function BatchEnrollmentStatus() {
               </div>
             </div>
 
-            {profile?.batchId && (
+            {batchId && (
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0">
                   <Users className="w-4 h-4 text-green-500" />

@@ -43,6 +43,7 @@ const TABS = [
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const [loadingStates, setLoadingStates] = useState({
     batchData: false,
     students: false,
@@ -55,17 +56,17 @@ const ViewBatch = () => {
     attendanceStats: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
-    searchParams.get("batchid") || profile?.batchId || ""
+    searchParams.get("batchid") || activeBatchId || ""
   );
 
   // Sync selectedBatch from search params 
   useEffect(() => {
     if (searchParams.get("batchid")) {
       setSelectedBatch(searchParams.get("batchid"));
-    } else if (profile?.batchId) {
-      setSelectedBatch(profile.batchId);
+    } else if (activeBatchId) {
+      setSelectedBatch(activeBatchId);
     }
-  }, [searchParams.get("batchid"), profile?.batchId]);
+  }, [searchParams.get("batchid"), activeBatchId]);
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );

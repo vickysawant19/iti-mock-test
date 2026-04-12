@@ -1,35 +1,39 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addProfile, selectProfile } from "@/store/profileSlice";
-import userProfileService from "@/appwrite/userProfileService";
+import { selectUser } from "@/store/userSlice";
+import { setActiveBatch as setGlobalActiveBatch } from "@/store/activeBatchSlice";
 
 /**
- * Manages the student/teacher's "active batch" context stored in their profile.
+ * Manages the student/teacher's "active batch" context.
+ * Now acts as a wrapper around the global activeBatch Redux slice.
  *
- * - `activeBatchId`       : the currently active batchId from profile
- * - `setActiveBatch(id)` : patches profile.batchId and syncs Redux
- * - `clearActiveBatch()`  : sets batchId to null
+ * - `activeBatchId`       : the currently active batchId
+ * - `setActiveBatch(id)` : dispatches the global batch update thunk
+ * - `clearActiveBatch()`  : unused/deprecated, sets batchId to null
  */
 export function useActiveBatch() {
   const dispatch = useDispatch();
-  const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
+  const { activeBatchId, userBatches } = useSelector((state) => state.activeBatch);
 
-  const activeBatchId = profile?.batchId?.$id ?? profile?.batchId ?? null;
+  const isTeacher = user?.labels?.includes("Teacher");
 
   const setActiveBatch = useCallback(
     async (batchId) => {
-      if (!profile?.$id) return;
-      const updated = await userProfileService.patchUserProfile(profile.$id, { batchId });
-      dispatch(addProfile({ data: updated }));
+      if (!user?.$id) return;
+      dispatch(setGlobalActiveBatch({ 
+        batchId, 
+        userId: user.$id, 
+        isTeacher, 
+        currentBatches: userBatches 
+      }));
     },
-    [profile, dispatch]
+    [user, userBatches, isTeacher, dispatch]
   );
 
   const clearActiveBatch = useCallback(async () => {
-    if (!profile?.$id) return;
-    const updated = await userProfileService.patchUserProfile(profile.$id, { batchId: null });
-    dispatch(addProfile({ data: updated }));
-  }, [profile, dispatch]);
+     // Deprecated. Do nothing.
+  }, []);
 
   return {
     activeBatchId,

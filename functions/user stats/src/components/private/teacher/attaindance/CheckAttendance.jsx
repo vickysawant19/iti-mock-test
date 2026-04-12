@@ -34,6 +34,7 @@ const CheckAttendance = () => {
   const [workingDays, setWorkingDays] = useState(new Map());
 
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
 
   const fetchBatchData = async (batchId) => {
     try {
@@ -65,11 +66,11 @@ const CheckAttendance = () => {
   };
 
   useEffect(() => {
-    if (profile) {
+    if (profile && activeBatchId) {
       fetchAttendance();
-      fetchBatchData(profile.batchId);
+      fetchBatchData(activeBatchId);
     }
-  }, [profile]);
+  }, [profile, activeBatchId]);
 
   useEffect(() => {
     const monthData = attendanceStats.monthlyAttendance[currentMonth] || {

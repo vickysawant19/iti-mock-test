@@ -8,6 +8,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
 import authService from "@/appwrite/auth";
+import batchStudentService from "@/appwrite/batchStudentService";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { Query } from "appwrite";
@@ -48,19 +49,29 @@ const ProfileView = ({ profileProps }) => {
   };
 
   const fetchData = async () => {
-    if (!profile?.batchId) {
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
     try {
-      const batchRes = await batchService.getBatch(profile.batchId, [
-          Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
-      ]);
-      if (batchRes) {
-        setBatches(batchRes);
-        setCollegeIdFromBatch(batchRes.collegeId?.$id || batchRes.collegeId);
-        setTradeIdFromBatch(batchRes.tradeId?.$id || batchRes.tradeId);
+      // Fetch batches using batchStudentService instead of legacy profile.batchId
+      let fetchedBatches = [];
+      if (profile?.role?.includes("Teacher")) {
+        const teacherBatches = await batchService.listBatches([Query.equal("teacherId", profile.userId || userId)]);
+        if (teacherBatches && teacherBatches.documents.length > 0) {
+           fetchedBatches = teacherBatches.documents[0]; // just grab the first one for display natively
+        }
+      } else {
+         const studentBatches = await batchStudentService.getStudentBatches(profile?.userId || userId);
+         if (studentBatches && studentBatches.length > 0) {
+            const firstBatchRes = await batchService.getBatch(studentBatches[0].batchId, [
+              Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
+            ]);
+            fetchedBatches = firstBatchRes;
+         }
+      }
+      
+      if (fetchedBatches && fetchedBatches.$id) {
+        setBatches(fetchedBatches);
+        setCollegeIdFromBatch(fetchedBatches.collegeId?.$id || fetchedBatches.collegeId);
+        setTradeIdFromBatch(fetchedBatches.tradeId?.$id || fetchedBatches.tradeId);
       }
     } catch (error) {
       console.log(error);
@@ -68,6 +79,7 @@ const ProfileView = ({ profileProps }) => {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchProfile();

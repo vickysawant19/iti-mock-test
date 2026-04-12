@@ -109,18 +109,22 @@ export class BatchRequestService {
   }
 
   // Update request status (e.g., approve or reject)
-  async updateRequestStatus(requestId, status) {
+  async updateRequestStatus(requestId, status, isCurrentBatch = undefined) {
     if (!requestId || !status) throw new Error("requestId and status are required");
 
     try {
+      const payload = {
+        status,
+        updatedAt: new Date().toISOString()
+      };
+      if (isCurrentBatch !== undefined) {
+        payload.isCurrentBatch = isCurrentBatch;
+      }
       return await this.database.updateDocument(
         conf.databaseId,
         conf.batchRequestsCollectionId,
         requestId,
-        {
-          status,
-          updatedAt: new Date().toISOString()
-        }
+        payload
       );
     } catch (error) {
       console.error("Appwrite error: updateRequestStatus:", error);

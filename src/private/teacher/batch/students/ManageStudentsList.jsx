@@ -64,38 +64,19 @@ export default function ManageStudentsList({ selectedBatch }) {
       requests.forEach((r) => studentIds.add(r.studentId));
       activeStudents.forEach((s) => studentIds.add(s.studentId));
 
-      // 4. Also fetch profiles directly tied to this batchId, and cache them immediately
-      const targetProfiles =
-        await userProfileService.getProfilesByBatchId(selectedBatch);
-      
-      const profileMap = {};
-      targetProfiles.forEach((p) => {
-        profileMap[p.userId] = p; // populate profileMap directly
-        
-        const roles = Array.isArray(p.role) ? p.role : [p.role];
-        const hasStudentRole = roles.some(
-          (role) => String(role || "").toLowerCase() === "student",
-        );
-        const isTeacherProfile = p.userId === teacherId;
-
-        if (hasStudentRole && !isTeacherProfile) {
-          studentIds.add(p.userId);
-        }
-      });
-
       const uniqueIds = Array.from(studentIds);
       if (uniqueIds.length === 0) {
         setStudents([]);
         return;
       }
 
-      // 5. Fetch full profiles ONLY for missing IDs
-      const missingIds = uniqueIds.filter(id => !profileMap[id]);
-      if (missingIds.length > 0) {
+      // 4. Fetch full profiles ONLY for the collected relevant IDs
+      const profileMap = {};
+      if (uniqueIds.length > 0) {
         const profilesRes = await userProfileService.database.listDocuments(
           conf.databaseId,
           conf.userProfilesCollectionId,
-          [Query.equal("userId", missingIds), Query.limit(100)],
+          [Query.equal("userId", uniqueIds), Query.limit(100)],
         );
 
         profilesRes.documents.forEach((p) => {
@@ -103,7 +84,7 @@ export default function ManageStudentsList({ selectedBatch }) {
         });
       }
 
-      // 6. Map everything correctly
+      // 5. Map everything correctly
       const list = uniqueIds.map((id) => {
         const profile = profileMap[id] || {};
         const req = requestMap[id];

@@ -7,6 +7,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 
 import { addUser, selectUser } from "./store/userSlice";
 import { addProfile, selectProfile } from "./store/profileSlice";
+import { initializeActiveBatch } from "./store/activeBatchSlice";
 import authService from "./appwrite/auth";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/navbar/Navbar";
@@ -34,6 +35,7 @@ function App() {
           );
           if (profileRes) {
             dispatch(addProfile({ data: profileRes, isLoading: false }));
+            dispatch(initializeActiveBatch(profileRes));
             if (window.location.pathname === "/") {
               navigate("/");
             }
@@ -44,6 +46,9 @@ function App() {
               navigate("/onboarding");
             }
           }
+        } else {
+            // Re-initialize active batch whenever App mounts and profile already exists
+            dispatch(initializeActiveBatch(profile));
         }
       }
     } catch (error) {

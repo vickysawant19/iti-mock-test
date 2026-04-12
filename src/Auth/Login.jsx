@@ -11,6 +11,7 @@ import authImg from "@/assets/auth-illustration.png";
 import authService from "@/appwrite/auth";
 import userProfileService from "@/appwrite/userProfileService";
 import { addProfile, selectProfile } from "@/store/profileSlice";
+import { initializeActiveBatch } from "@/store/activeBatchSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,7 @@ const Login = () => {
       const res = await userProfileService.getUserProfile(user?.$id);
       if (res) {
         dispatch(addProfile({ data: res, isLoading: false }));
+        dispatch(initializeActiveBatch(res));
         toast.success("Welcome back! Login successful.");
         navigate("/", { replace: true });
       } else {

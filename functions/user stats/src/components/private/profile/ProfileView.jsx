@@ -10,6 +10,8 @@ import batchService from "../../../appwrite/batchService";
 import collegeService from "../../../appwrite/collageService";
 import userProfileService from "../../../appwrite/userProfileService";
 import authService from "../../../appwrite/auth";
+import batchStudentService from "../../../appwrite/batchStudentService";
+import { Query } from "appwrite";
 
 const ProfileView = ({ profileProps }) => {
   const [tradedata, setTradeData] = useState([]);
@@ -40,15 +42,36 @@ const ProfileView = ({ profileProps }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [tradesRes, batchesRes, collegesRes] = await Promise.all([
-        tradeservice.getTrade(profile.tradeId),
-        batchService.getBatch(profile.batchId),
-        collegeService.getCollege(profile.collegeId),
-      ]);
+      let fetchedBatch = null;
+      if (profile?.role?.includes("Teacher")) {
+        const teacherBatches = await batchService.listBatches([
+          Query.equal("teacherId", profile.userId || userId)
+        ]);
+        if (teacherBatches && teacherBatches.documents.length > 0) {
+           fetchedBatch = teacherBatches.documents[0];
+        }
+      } else {
+         const studentBatches = await batchStudentService.getStudentBatches(profile?.userId || userId);
+         if (studentBatches && studentBatches.length > 0) {
+            const resolvedBatchId = studentBatches[0].batchId?.$id || studentBatches[0].batchId;
+            fetchedBatch = await batchService.getBatch(resolvedBatchId);
+         }
+      }
 
-      setTradeData(tradesRes);
-      setBatches(batchesRes);
-      setColleges(collegesRes);
+      setBatches(fetchedBatch || null);
+
+      if (fetchedBatch) {
+        const resolvedTradeId = fetchedBatch.tradeId?.$id || fetchedBatch.tradeId;
+        const resolvedCollegeId = fetchedBatch.collegeId?.$id || fetchedBatch.collegeId;
+        
+        const [tradesRes, collegesRes] = await Promise.all([
+          resolvedTradeId ? tradeservice.getTrade(resolvedTradeId) : Promise.resolve(null),
+          resolvedCollegeId ? collegeService.getCollege(resolvedCollegeId) : Promise.resolve(null),
+        ]);
+        
+        setTradeData(tradesRes);
+        setColleges(collegesRes);
+      }
     } catch (error) {
       console.log(error);
     } finally {

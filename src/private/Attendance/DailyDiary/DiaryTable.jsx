@@ -15,6 +15,7 @@ import { highlightAbsentRow, TEACHER_ABSENT_ROW_CLASS } from "./diaryAbsentHighl
 
 function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText, onUpdateEntry }) {
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const isMissing = !entry;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -92,7 +93,7 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
             hours: formData.hours ? Number(formData.hours) : null,
             remarks: formData.remarks || "-",
             instructorId: profile.userId,
-            batchId: profile.batchId,
+            batchId: activeBatchId,
         });
         toast.success("Entry added successfully");
         setIsEditing(false);

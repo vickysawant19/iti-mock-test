@@ -17,11 +17,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import { selectProfile } from "@/store/profileSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 
 export default function AddDiaryForm({ onRefresh }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector(selectActiveBatchId);
 
   const [formData, setFormData] = useState({
     date: format(new Date(), "yyyy-MM-dd"),
@@ -52,7 +54,7 @@ export default function AddDiaryForm({ onRefresh }) {
       
       // Before creating, check if an entry already exists for this date.
       const existingEntries = await dailyDiaryService.getBatchInstructorDiary(
-          profile.batchId,
+          activeBatchId,
           null,
           formData.date,
           formData.date
@@ -76,7 +78,7 @@ export default function AddDiaryForm({ onRefresh }) {
         hours: formData.hours ? Number(formData.hours) : null,
         remarks: formData.remarks,
         instructorId: profile.userId,
-        batchId: profile.batchId,
+        batchId: activeBatchId,
       });
 
       toast.success("Diary entry created successfully");

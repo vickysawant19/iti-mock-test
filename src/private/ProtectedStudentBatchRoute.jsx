@@ -14,7 +14,6 @@ import { Outlet, Navigate } from "react-router-dom";
 import { selectUser, selectUserLoading } from "@/store/userSlice";
 import { selectProfileLoading } from "@/store/profileSlice";
 import batchStudentService from "@/appwrite/batchStudentService";
-
 const ProtectedStudentBatchRoute = () => {
   const user = useSelector(selectUser);
   const userLoading = useSelector(selectUserLoading);
@@ -24,28 +23,15 @@ const ProtectedStudentBatchRoute = () => {
   const isAdmin = user?.labels?.includes("admin");
   const isStudent = user && !isTeacher && !isAdmin;
 
-  const [isEnrolled, setIsEnrolled] = useState(null); // null = checking
-
-  useEffect(() => {
-    if (!isStudent || !user?.$id) {
-      setIsEnrolled(true); // Teachers/admins always pass
-      return;
-    }
-
-    const check = async () => {
-      try {
-        const bsInfo = await batchStudentService.getStudentBatches(user.$id);
-        setIsEnrolled(bsInfo.length > 0);
-      } catch {
-        setIsEnrolled(false);
-      }
-    };
-
-    check();
-  }, [isStudent, user]);
-
-  // Still loading auth/profile or checking enrollment
-  if (userLoading || profileLoading || isEnrolled === null) return null;
+  const { userBatches, isLoading: batchLoading } = useSelector((state) => state.activeBatch);
+  
+  // Teachers and Admins don't need batch to pass this route (always allowed)
+  // For students, check if userBatches array has items
+  
+  // Still loading auth/profile or global batch state
+  if (userLoading || profileLoading || batchLoading) return null;
+  
+  const isEnrolled = !isStudent || userBatches?.length > 0;
 
   // Unenrolled student — redirect to browse batches
   if (isStudent && !isEnrolled) {

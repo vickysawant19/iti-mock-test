@@ -193,24 +193,10 @@ const BatchForm = ({ onClose }) => {
         setAllBatches((prev) => [...prev, data]);
         toast.success("Batch created successfully!");
         
-        // Link the new batch to the teacher's profile (Primary batchId only)
-        try {
-          // Set as primary active batch if it's their first one
-          if (!profile?.batchId) {
-             const payload = { batchId: data.$id };
-             const updatedProfile = await userProfileService.patchUserProfile(profile.$id, payload);
-             // We merge with current profile so Redux isn't overwritten sparsely
-             dispatch(addProfile({ data: { ...profile, ...updatedProfile } }));
-          }
-        } catch (profileErr) {
-          console.error("Error linking batch to profile:", profileErr);
-          toast.warning("Batch created, but failed to link to your profile.");
-        }
-        
         reset();
 
         // If this was their very first batch, securely redirect them out to the batch view
-        if (!profile?.batchId) {
+        if (allBatches.length === 0) {
            navigate("/manage-batch/view");
         }
       }

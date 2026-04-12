@@ -53,10 +53,15 @@ const Dashboard = () => {
 
   const profile = useSelector(selectProfile);
 
-  const fetchTrades = async () => {
+  const activeBatchData = useSelector((state) => state.activeBatch.activeBatchData);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
 
+  const fetchTrades = async () => {
     try {
-      const res = await tradeservice.getTrade(profile.tradeId);
+      const tradeId = activeBatchData?.tradeId?.$id || activeBatchData?.tradeId;
+      if (!tradeId) return;
+      
+      const res = await tradeservice.getTrade(tradeId);
       if (res) {
         setTrades(res);
       }
@@ -67,10 +72,16 @@ const Dashboard = () => {
 
   const fetchAllUsersStats = async () => {
     try {
+      const tradeId = activeBatchData?.tradeId?.$id || activeBatchData?.tradeId;
+      const collegeId = activeBatchData?.collegeId?.$id || activeBatchData?.collegeId;
+      const batchId = activeBatchId;
+
+      if (!tradeId || !collegeId || !batchId) return;
+
       const stats = await userStatsService.getAllStats([
-        Query.equal("tradeId", profile.tradeId),
-        Query.equal("collegeId", profile.collegeId),
-        Query.equal("batchId", profile.batchId),
+        Query.equal("tradeId", tradeId),
+        Query.equal("collegeId", collegeId),
+        Query.equal("batchId", batchId),
       ]);
 
       if (stats.documents.length > 0) {
@@ -147,11 +158,11 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (profile) {
+    if (activeBatchData && activeBatchId) {
       fetchTrades();
       fetchAllUsersStats();
     }
-  }, [profile]);
+  }, [activeBatchData, activeBatchId]);
 
   useEffect(() => {
     if (allUsersStats.length === 0) return;

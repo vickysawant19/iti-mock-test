@@ -27,40 +27,15 @@ const Assessment = () => {
 
   const redirect = `/assessment?${searchParams.toString()}`;
   const profile = useSelector(selectProfile);
-
-  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
-  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
+  const { activeBatchId: resolvedBatchId, isLoading: batchStateLoading } = useSelector((state) => state.activeBatch);
+  const isResolvingBatch = batchStateLoading;
 
   const { data: batchData, isLoading: batchLoading } = useGetBatchQuery(
     { batchId: resolvedBatchId },
     { skip: !resolvedBatchId }
   );
 
-  useEffect(() => {
-    if (profile?.batchId) {
-      setResolvedBatchId(profile.batchId);
-      setIsResolvingBatch(false);
-      return;
-    }
-    if (!profile?.userId) {
-      setIsResolvingBatch(false);
-      return;
-    }
-    const resolve = async () => {
-      try {
-        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
-        if (enrollments.length > 0) {
-          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
-        }
-      } catch (e) {
-        console.warn("[Assessment] Could not resolve batchId", e);
-      } finally {
-        setIsResolvingBatch(false);
-      }
-    };
-    resolve();
-  }, [profile?.batchId, profile?.userId]);
-
+  // Global batch state handles resolution automatically
   // Update search params when filters change
   useEffect(() => {
     if (selectedTradeYear && selectedSubject) {

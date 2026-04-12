@@ -10,11 +10,12 @@ import {
   startOfMonth,
 } from "date-fns";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import batchService from "@/appwrite/batchService";
 import tradeservice from "@/appwrite/tradedetails";
-import batchStudentService from "@/appwrite/batchStudentService";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 
 const STATUS_ALIASES = {
   p: "present",
@@ -103,7 +104,7 @@ const generateWorkingDays = ({ startDate, endDate, holidaysMap }) => {
     .map(({ date }) => date);
 };
 
-const buildAttendanceMap = ({ workingDaysList, attendanceByDate, profile }) => {
+const buildAttendanceMap = ({ workingDaysList, attendanceByDate, profile, batchId }) => {
   const finalMap = new Map();
   workingDaysList.forEach((date) => {
     const existing = attendanceByDate.get(date);
@@ -113,7 +114,7 @@ const buildAttendanceMap = ({ workingDaysList, attendanceByDate, profile }) => {
     }
     finalMap.set(date, {
       userId: profile?.userId || null,
-      batchId: profile?.batchId || null,
+      batchId: batchId || null,
       tradeId: profile?.tradeId || null,
       date,
       status: "absent",
@@ -154,6 +155,10 @@ const toMinutes = (time, fallback) => {
 };
 
 export const useStudentAttendance = (profile) => {
+  const activeBatchId = useSelector(selectActiveBatchId);
+  const resolvedBatchId = activeBatchId;
+  const isResolvingBatch = !activeBatchId && !!profile?.userId;
+
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [batchData, setBatchData] = useState(null);
   const [rawMonthlyRecords, setRawMonthlyRecords] = useState([]);
@@ -165,8 +170,6 @@ export const useStudentAttendance = (profile) => {
   const [lastUpdatedDate, setLastUpdatedDate] = useState(null);
   const [overallStats, setOverallStats] = useState(null);
   const [tradeData, setTradeData] = useState(null);
-  const [resolvedBatchId, setResolvedBatchId] = useState(profile?.batchId || null);
-  const [isResolvingBatch, setIsResolvingBatch] = useState(!profile?.batchId);
 
   const fetchBatchData = useCallback(async (batchId) => {
     try {
@@ -186,30 +189,6 @@ export const useStudentAttendance = (profile) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (profile?.batchId) {
-      setResolvedBatchId(profile.batchId);
-      setIsResolvingBatch(false);
-      return;
-    }
-    if (!profile?.userId) {
-      setIsResolvingBatch(false);
-      return;
-    }
-    const resolve = async () => {
-      try {
-        const enrollments = await batchStudentService.getStudentBatches(profile.userId);
-        if (enrollments.length > 0) {
-          setResolvedBatchId(enrollments[0].batchId?.$id || enrollments[0].batchId);
-        }
-      } catch (e) {
-        console.warn("[useStudentAttendance] Could not resolve batchId from batchStudentService", e);
-      } finally {
-        setIsResolvingBatch(false);
-      }
-    };
-    resolve();
-  }, [profile?.batchId, profile?.userId]);
 
   useEffect(() => {
     if (resolvedBatchId) fetchBatchData(resolvedBatchId);
@@ -335,8 +314,9 @@ export const useStudentAttendance = (profile) => {
         workingDaysList,
         attendanceByDate: normalized.byDate,
         profile,
+        batchId: resolvedBatchId,
       }),
-    [workingDaysList, normalized.byDate, profile]
+    [workingDaysList, normalized.byDate, profile, resolvedBatchId]
   );
 
   const finalAttendanceRecords = useMemo(

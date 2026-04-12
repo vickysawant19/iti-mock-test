@@ -28,15 +28,16 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const isTeacher = user.labels?.includes("Teacher");
 
   // Memoize student data fetch to prevent unnecessary re-fetches
   const fetchStudentsProfiles = async () => {
-    if (!profile?.batchId) return;
+    if (!activeBatchId) return;
     setIsProfilesLoading(true);
     try {
       const data = await userProfileService.getBatchUserProfile([
-        Query.equal("batchId", profile.batchId),
+        Query.equal("batchId", activeBatchId),
         Query.select(["userId", "userName", "studentId"]),
         Query.equal("status", "Active"),
       ]);
@@ -192,7 +193,7 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           name,
           userId: selectedStudentProfile.userId,
           userName: selectedStudentProfile.userName,
-          batchId: profile.batchId, // Teacher batchId associated with the student
+          batchId: activeBatchId, // Teacher batchId associated with the student
           hash: hashes,
           descriptor: stringDescriptors,
         });

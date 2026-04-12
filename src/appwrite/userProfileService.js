@@ -242,25 +242,13 @@ export class UserProfileService {
   }
 
   /**
-   * Get all user profiles that have a specific batch target configured.
-   * Useful for finding targeted students who haven't generated requests.
+   * DEPRECATED: getProfilesByBatchId.
+   * batchId attribute was removed from userProfiles during normalization.
+   * Student-Batch mappings must exclusively use batchStudentService or batchRequestService.
    */
   async getProfilesByBatchId(batchId) {
-    if (!batchId) return [];
-    try {
-      const response = await this.database.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [
-          Query.equal("batchId", batchId),
-          Query.limit(100)
-        ]
-      );
-      return response.documents;
-    } catch (error) {
-      console.error(`Appwrite error: getProfilesByBatchId(${batchId}):`, error);
-      return [];
-    }
+    console.warn("DEPRECATED: getProfilesByBatchId called. Returning empty array [] to prevent schema crash.");
+    return [];
   }
 }
 

@@ -26,7 +26,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
       status: "Active",
       enrollmentStatus: "Active",
       isActive: true,
-      batchId: defaultBatchId || ""
     }
   });
 
@@ -52,7 +51,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     "profileImage",
     "registerId",
     "studentId",
-    "batchId",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -90,7 +88,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
             enrolledAt: profileData.enrolledAt
               ? profileData.enrolledAt.split("T")[0]
               : "",
-            batchId: profileData.batchId || defaultBatchId || ""
           };
           methods.reset(formattedData);
         } else if (!isUserProfile) {
@@ -99,7 +96,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
             userName: user.name,
             email: user.email,
             phone: user.phone,
-            batchId: defaultBatchId || ""
           });
         }
       } catch (err) {

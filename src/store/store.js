@@ -6,6 +6,7 @@ import { userSlice } from "./userSlice";
 import { profileSlice } from "./profileSlice";
 import { questionsSlice } from "./questionSlice";
 import { batchApi } from "./api/batchApi";
+import activeBatchReducer from "./activeBatchSlice";
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     [userSlice.name]: userSlice.reducer,
     [profileSlice.name]: profileSlice.reducer,
     [questionsSlice.name]: questionsSlice.reducer,
+    activeBatch: activeBatchReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -34,6 +36,7 @@ export const store = configureStore({
           "collegeApi",
           "tradeApi",
           "batchApi",
+          "activeBatch.activeBatchData"
         ],
       },
     }).concat(collegeApi.middleware, tradeApi.middleware, batchApi.middleware),
