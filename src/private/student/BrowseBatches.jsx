@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
-import { Loader2, Users, Search, Clock, CheckCircle, Trash2, XCircle, RefreshCw } from "lucide-react";
+import { Loader2, Users, Search, Clock, CheckCircle, Trash2, XCircle, RefreshCw, GraduationCap, Building, Briefcase } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { Button } from "@/components/ui/button";
@@ -151,23 +151,46 @@ export default function BrowseBatches() {
   const activeRequests = requests.filter(r => r.status === "pending" || r.status === "approved" || r.status === "rejected");
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Search className="w-6 h-6 text-blue-500" /> Browse Batches
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Select an Institute and Trade to discover available learning batches.
-        </p>
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
+      {/* Ambient Animated Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse"></div>
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse"></div>
       </div>
 
+      <div className="relative z-10 max-w-5xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl">
+          <div className="h-20 bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500"></div>
+          <div className="px-6 py-5 -mt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-white/80 dark:bg-slate-800 rounded-2xl shadow-lg border border-white/40">
+                <Search className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  Browse Batches
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-0.5">
+                  Select an Institute and Trade to discover available learning batches.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       {/* Filter Options */}
-      <Card className="border border-slate-200 dark:border-slate-800">
-        <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4">
+      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/40 dark:border-slate-800 flex items-center gap-3">
+          <Building className="w-5 h-5 text-amber-500" />
+          <h2 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Filter by Institute & Trade</h2>
+        </div>
+        <div className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Institute / College</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Institute / College</label>
             <Select onValueChange={setSelectedCollegeId} value={selectedCollegeId}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border-slate-200/50 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
                 <SelectValue placeholder={isCollegesLoading ? "Loading Colleges..." : "Select Institute"} />
               </SelectTrigger>
               <SelectContent>
@@ -179,9 +202,9 @@ export default function BrowseBatches() {
           </div>
 
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Primary Trade</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Primary Trade</label>
             <Select onValueChange={setSelectedTradeId} value={selectedTradeId} disabled={!selectedCollegeId}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border-slate-200/50 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
                 <SelectValue placeholder={!selectedCollegeId ? "Select Institute First" : (isTradesLoading ? "Loading Trades..." : "Select Trade")} />
               </SelectTrigger>
               <SelectContent>
@@ -191,38 +214,40 @@ export default function BrowseBatches() {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* My Requests & Joined Batches Section */}
       {isLoadingRequests ? (
-        <div className="flex items-center gap-2 text-slate-400 text-sm py-2">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading your requests...
+        <div className="flex items-center gap-2 text-slate-400 text-sm font-medium py-2">
+          <Loader2 className="w-4 h-4 animate-spin text-pink-500" /> Loading your requests...
         </div>
       ) : activeRequests.length > 0 && (
-        <div className="pt-2">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">My Requests & Batches</h2>
+        <div>
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-purple-500" /> My Requests & Batches
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeRequests.map(req => {
               const batchDoc = requestBatchMap[req.batchId];
               return (
-                <Card key={req.$id} className="border border-slate-200 dark:border-slate-800 flex flex-col">
-                  <CardHeader className="pb-2">
+                <div key={req.$id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-2xl flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-default">
+                  <div className="p-4 pb-2">
                     <div className="flex items-center justify-between gap-2">
-                      <CardTitle className="text-base leading-tight">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight truncate">
                         {batchDoc?.BatchName || "Loading..."}
-                      </CardTitle>
+                      </h3>
                       {req.status === "approved"
-                        ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                        ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
                         : req.status === "rejected"
                         ? <XCircle className="w-4 h-4 text-red-500 shrink-0" />
                         : <Clock className="w-4 h-4 text-amber-500 shrink-0" />}
                     </div>
-                    <CardDescription className="mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {batchDoc?.teacherName ? `Teacher: ${batchDoc.teacherName}` : "—"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-1 space-y-2">
+                    </p>
+                  </div>
+                  <div className="px-4 pb-4 pt-1 space-y-2 mt-auto">
                     {batchDoc?.start_date && (
                       <p className="text-xs text-slate-500">
                         Duration:{" "}
@@ -260,7 +285,7 @@ export default function BrowseBatches() {
                       <div className="flex gap-2 mt-1">
                         <Button
                           size="sm"
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                          className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs rounded-xl font-semibold shadow-sm"
                           disabled={isSendingAgain === req.$id || isDeletingRequest === req.$id}
                           onClick={() => handleSendAgain(req)}
                         >
@@ -283,8 +308,8 @@ export default function BrowseBatches() {
                         </Button>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -293,31 +318,37 @@ export default function BrowseBatches() {
 
       {/* Available Batches Section */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Available Batches</h2>
+        <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-amber-500" /> Available Batches
+        </h2>
         
         {!selectedCollegeId || !selectedTradeId ? (
-          <Card className="border-dashed border-2 bg-transparent text-center py-12">
-            <CardContent className="flex flex-col items-center">
-              <Search className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-4" />
-              <p className="text-slate-500 dark:text-slate-400">
+          <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-2 border-dashed border-white/60 dark:border-slate-700 rounded-3xl text-center py-14">
+            <div className="flex flex-col items-center">
+              <div className="p-4 bg-white/60 dark:bg-slate-800/60 rounded-2xl mb-4">
+                <Search className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
                 Please select both an Institute and a Trade to view available batches.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : isLoadingBatches ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <div className="flex justify-center items-center py-14">
+            <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
           </div>
         ) : batches.length === 0 ? (
-          <Card className="border-dashed border-2 bg-transparent text-center py-12">
-            <CardContent className="flex flex-col items-center">
-              <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-4" />
-              <h3 className="font-semibold text-slate-700 dark:text-slate-300">No active batches available</h3>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-2 border-dashed border-white/60 dark:border-slate-700 rounded-3xl text-center py-14">
+            <div className="flex flex-col items-center">
+              <div className="p-4 bg-white/60 dark:bg-slate-800/60 rounded-2xl mb-4">
+                <Users className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+              </div>
+              <h3 className="font-bold text-slate-700 dark:text-slate-300">No active batches available</h3>
+              <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
                 Try selecting a different Trade or check back later.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {batches.map((batch) => {
@@ -325,14 +356,14 @@ export default function BrowseBatches() {
               const status = req ? req.status : null;
 
               return (
-                <Card key={batch.$id} className="border border-slate-200 dark:border-slate-800 flex flex-col">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">{batch.BatchName}</CardTitle>
-                    <CardDescription>
+                <div key={batch.$id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-2xl flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-default group">
+                  <div className="p-5 pb-3">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">{batch.BatchName}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       Teacher: {batch.teacherName || "Assigned Teacher"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="mt-auto pt-3">
+                    </p>
+                  </div>
+                  <div className="px-5 pb-5 mt-auto pt-2">
                     <div className="flex justify-between items-center text-sm mb-4">
                       <span className="text-slate-500">Duration</span>
                       <span className="font-medium text-slate-800 dark:text-slate-200">
@@ -362,18 +393,19 @@ export default function BrowseBatches() {
                       <Button
                         onClick={() => handleRequestJoin(batch.$id)}
                         disabled={isRequesting === batch.$id}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 transition-all hover:-translate-y-0.5"
                       >
                         {isRequesting === batch.$id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                         Join Batch
                       </Button>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

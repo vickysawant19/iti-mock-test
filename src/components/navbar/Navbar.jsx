@@ -140,7 +140,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full justify-between font-medium text-sm"
+          className="w-full justify-between font-semibold text-sm hover:bg-primary/5 transition-colors rounded-xl"
         >
           <div className="flex items-center gap-2">
             <Icon className="w-4 h-4" />
@@ -153,7 +153,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           />
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="ml-6 space-y-1 pt-1">
+      <CollapsibleContent className="ml-6 space-y-0.5 pt-1 border-l-2 border-primary/10 pl-2">
         {children}
       </CollapsibleContent>
     </Collapsible>
@@ -173,11 +173,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       <NavLink
         to={to}
         className={({ isActive }) =>
-          `flex items-center gap-2 p-2 text-sm rounded-md transition-colors ${
+          `flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl transition-all duration-200 ${
             isActive
-              ? "bg-primary/10 text-primary font-medium"
-              : "hover:bg-muted"
-          } ${isLoading ? "pointer-events-none opacity-50" : ""}`
+              ? "bg-gradient-to-r from-pink-500/10 to-purple-500/10 text-primary font-semibold shadow-sm"
+              : "hover:bg-muted/60 hover:translate-x-0.5"
+          } ${isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"}`
         }
         onClick={(e) => {
           e.preventDefault();
@@ -206,8 +206,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     }
 
     return user ? (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-50/60 to-purple-50/60 dark:from-pink-950/20 dark:to-purple-950/20 rounded-2xl border border-pink-100/50 dark:border-pink-900/30">
           <InteractiveAvatar
             src={profile?.profileImage}
             fallbackText={profile?.userName?.charAt(0) || "U"}
@@ -220,13 +220,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                  await userProfileService.patchUserProfile(profile.$id, { profileImage: newUrl });
                }
             }}
-            className="h-10 w-10 shrink-0"
+            className="h-11 w-11 shrink-0 ring-2 ring-pink-200/50 dark:ring-pink-800/30 rounded-xl"
           />
-          <div>
-            <p className="text-sm font-medium">{profile?.userName || "User"}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{profile?.userName || "User"}</p>
             <NavLink
               to="/profile"
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-pink-600 dark:text-pink-400 hover:underline font-semibold"
               onClick={() => setIsNavOpen(false)}
             >
               View Profile
@@ -236,12 +236,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
         {/* Batch Switcher for Teachers & Students */}
         {isTeacher && userBatches?.length > 0 && (
-          <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="space-y-2 pt-1">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Active Batch
             </span>
             <Select value={activeBatchId || ""} onValueChange={handleBatchSwitch}>
-              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectTrigger className="w-full h-9 text-xs rounded-xl bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-700 backdrop-blur-sm font-medium">
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
@@ -259,12 +259,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         )}
         
         {isStudent && userBatches?.length > 0 && (
-          <div className="space-y-1.5 mt-2 pt-2 border-t dark:border-slate-800">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="space-y-2 pt-1">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Active Batch
             </span>
             <Select value={activeBatchId || ""} onValueChange={handleBatchSwitch}>
-              <SelectTrigger className="w-full h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectTrigger className="w-full h-9 text-xs rounded-xl bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-700 backdrop-blur-sm font-medium">
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
@@ -284,20 +284,27 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   const renderNavContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="border-b p-4">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="ITI" className="h-6 w-6 rounded-md" />
-          <SheetTitle>{currentHeading || "Navigation"}</SheetTitle>
-          <SheetDescription className="sr-only">
-            Navigation menu for the application
-          </SheetDescription>
+    <div className="flex flex-col h-full bg-white/90 dark:bg-slate-950/95 backdrop-blur-2xl">
+      {/* Sidebar Gradient Banner */}
+      <div className="h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
+      </div>
+      <div className="-mt-5 px-4 pb-3">
+        <div className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl px-3 py-2.5 shadow-sm border border-white/40 dark:border-slate-800">
+          <img src={logo} alt="ITI" className="h-7 w-7 rounded-lg ring-2 ring-white/80 dark:ring-slate-800 shadow-sm" />
+          <div>
+            <SheetTitle className="text-sm font-extrabold tracking-tight">{currentHeading || "Navigation"}</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navigation menu for the application
+            </SheetDescription>
+          </div>
         </div>
       </div>
 
-      <div className="p-4 border-b">{renderUserProfile()}</div>
+      <div className="px-4 py-3 border-b border-slate-200/30 dark:border-slate-800/50">{renderUserProfile()}</div>
 
-      <ScrollArea className="flex-1 px-2 py-4 h-full overflow-y-auto">
+      <ScrollArea className="flex-1 px-3 py-3 h-full overflow-y-auto">
+        <div className="space-y-0.5">
         {menuConfig.map((configItem, index) => {
           if (configItem.roles && !hasRole(configItem.roles)) return null;
           if (configItem.requiresAuth && !user) return null;
@@ -344,13 +351,14 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           }
           return null;
         })}
+        </div>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      <div className="border-t border-slate-200/50 dark:border-slate-800 p-4 space-y-2">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2"
+          className="w-full justify-start gap-2 rounded-xl hover:bg-primary/5 transition-colors"
           onClick={toggleTheme}
         >
           {theme === "dark" ? (
@@ -369,7 +377,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2 mt-2 text-destructive hover:bg-destructive/10"
+            className="w-full justify-start gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400 rounded-xl transition-colors"
             onClick={() => {
               if (!isLoading) {
                 handleLogout();
@@ -405,7 +413,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             <Button
               variant="default"
               size="sm"
-              className="w-full justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full justify-start gap-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-semibold shadow-sm transition-all"
               onClick={() => {
                 if (!isLoading) {
                   setIsNavOpen(false);
@@ -437,7 +445,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-colors">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={profile?.profileImage} />
                 <AvatarFallback>
@@ -446,7 +454,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 rounded-xl border border-slate-200/50 dark:border-slate-800 shadow-xl">
             <div className="flex items-center justify-start gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
                 {profile?.userName && (
@@ -487,7 +495,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         <Button variant="ghost" size="sm" asChild disabled={isLoading} className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">
           <NavLink to="/login">Login</NavLink>
         </Button>
-        <Button size="sm" asChild disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button size="sm" asChild disabled={isLoading} className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-semibold shadow-sm transition-all">
           <NavLink to="/signup">SignUp</NavLink>
         </Button>
       </div>
@@ -495,7 +503,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/50 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-2 md:gap-4">
           {/* Mobile Menu Trigger */}
@@ -518,7 +526,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             {/* Navigation content - same for both mobile and desktop */}
             <SheetContent
               side="left"
-              className="p-0 w-72"
+              className="p-0 w-72 border-l border-slate-200/50 dark:border-slate-800 shadow-2xl"
               onInteractOutside={() => setIsNavOpen(false)}
             >
               {renderNavContent()}
@@ -527,11 +535,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
           {/* Logo and App Title */}
           <NavLink to="/" className="flex items-center gap-2">
-            <img src={logo} alt="ITI" className="h-6 w-6 rounded-md" />
+            <img src={logo} alt="ITI" className="h-7 w-7 rounded-lg ring-2 ring-pink-200/40 dark:ring-purple-800/40 shadow-sm" />
             {isLoading ? (
               <Skeleton className="h-4 w-32 hidden sm:block" />
             ) : (
-              <span className="font-medium text-sm hidden sm:block">
+              <span className="font-bold text-sm hidden sm:block text-slate-800 dark:text-white tracking-tight">
                 {currentHeading || "ITI Dashboard"}
               </span>
             )}
@@ -540,7 +548,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
         <div className="flex items-center gap-2">
           {/* Theme Toggle Button */}
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
             {theme === "dark" ? (
               <Sun className="h-5 w-5" />
             ) : (

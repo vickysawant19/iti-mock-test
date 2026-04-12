@@ -210,13 +210,13 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
                 formMode={formMode}
             />
 
-            <div className="flex gap-4 pt-4 sticky bottom-0 z-10 bg-white/95 backdrop-blur-sm dark:bg-gray-900/95 border-t border-gray-100 dark:border-gray-800 p-4 -mx-4 px-4 sm:-mx-6 sm:px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="flex gap-4 pt-4 sticky bottom-4 z-40 bg-white/70 backdrop-blur-xl dark:bg-slate-900/70 border border-white/40 dark:border-slate-800 p-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] mt-8 mx-auto">
                  {onCancel && (
                     <button
                         type="button"
                         onClick={onCancel}
                         disabled={isSubmitting}
-                        className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-all font-semibold disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="flex-1 bg-white/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 py-3 px-6 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-all font-semibold disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         Cancel
                     </button>
@@ -224,11 +224,11 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
                 <button
                     disabled={isSubmitting}
                     type="submit"
-                    className="flex-[2] bg-blue-600 dark:bg-blue-600 text-white py-3 px-6 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 dark:hover:bg-blue-700 transition-all font-semibold disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center transform active:scale-[0.99]"
+                    className="flex-[2] bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white py-3 px-6 rounded-xl shadow-lg shadow-pink-500/30 transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center transform hover:-translate-y-0.5 active:scale-[0.99]"
                 >
                     {isSubmitting ? (
                     <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3"></div>
+                        <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin mr-3"></div>
                         Saving...
                     </>
                     ) : (

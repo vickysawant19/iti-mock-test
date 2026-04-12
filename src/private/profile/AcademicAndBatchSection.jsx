@@ -25,13 +25,13 @@ const AcademicAndBatchSection = ({
     <div className="space-y-6">
       {/* --- Section 1: Professional Details (Teachers Only) --- */}
       {isTeacher && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
-              <Activity className="text-blue-600 dark:text-blue-400" size={24} />
+        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+          <div className="flex items-center mb-6 border-b border-white/40 dark:border-slate-800 pb-4 relative z-10">
+            <div className="p-2.5 bg-purple-100/80 dark:bg-purple-900/40 rounded-xl mr-3 shadow-inner">
+              <Activity className="text-purple-600 dark:text-purple-400" size={22} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                 Professional Details
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -64,13 +64,13 @@ const AcademicAndBatchSection = ({
       )}
 
       {/* --- Section 2: Student Identification --- */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-          <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg mr-3">
-            <IdCard className="text-purple-600 dark:text-purple-400" size={24} />
+      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+        <div className="flex items-center mb-6 border-b border-white/40 dark:border-slate-800 pb-4 relative z-10">
+          <div className="p-2.5 bg-amber-100/80 dark:bg-amber-900/40 rounded-xl mr-3 shadow-inner">
+            <IdCard className="text-amber-600 dark:text-amber-400" size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
               Student Identification
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -101,16 +101,13 @@ const AcademicAndBatchSection = ({
       </div>
 
       {/* --- Section 3: Enrollment Details --- */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg mr-3">
-            <Activity
-              className="text-emerald-600 dark:text-emerald-400"
-              size={24}
-            />
+      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+        <div className="flex items-center mb-6 border-b border-white/40 dark:border-slate-800 pb-4 relative z-10">
+          <div className="p-2.5 bg-blue-100/80 dark:bg-blue-900/40 rounded-xl mr-3 shadow-inner">
+            <Activity className="text-blue-600 dark:text-blue-400" size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
               Enrollment & Status
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">

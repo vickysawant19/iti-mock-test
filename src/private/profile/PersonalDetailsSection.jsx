@@ -30,13 +30,13 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode, targetUserId }) => 
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-      <div className="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg mr-3">
-          <User className="text-blue-600 dark:text-blue-400" size={24} />
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm mb-6 relative overflow-hidden">
+      <div className="flex items-center mb-6 border-b border-white/40 dark:border-slate-800 pb-4 relative z-10">
+        <div className="p-2.5 bg-pink-100/80 dark:bg-pink-900/40 rounded-xl mr-3 shadow-inner">
+          <User className="text-pink-600 dark:text-pink-400" size={22} />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
             Personal Details
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -132,11 +132,11 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode, targetUserId }) => 
 
       {/* Conditional help text for edit mode */}
       {formMode === "edit" && !isFieldEditable("userName") && (
-        <div className="mt-6 flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
-          <div className="p-1 bg-gray-200 dark:bg-gray-800 rounded-full">
-            <User size={14} className="text-gray-500 dark:text-gray-400" />
+        <div className="mt-8 flex items-start gap-4 p-5 bg-slate-100/50 dark:bg-slate-900/40 rounded-2xl border border-white/60 dark:border-slate-800 backdrop-blur-sm">
+          <div className="p-2 bg-slate-200 dark:bg-slate-800 rounded-full mt-0.5 shadow-inner">
+            <User size={16} className="text-slate-500 dark:text-slate-400" />
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
             Some fields are read-only based on your role. Please contact your administrator if you need to update locked information.
           </p>
         </div>

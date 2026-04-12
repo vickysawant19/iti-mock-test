@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { format } from "date-fns";
-import { UserCircle } from "lucide-react";
+import { UserCircle, GraduationCap, MapPin, Phone, Building, Briefcase, Calendar, ShieldCheck, User } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { AiOutlineEdit } from "react-icons/ai";
 
@@ -106,196 +106,186 @@ const ProfileView = ({ profileProps }) => {
 
   if (isLoading || collegeDataLoading || tradeDataLoading) {
     return (
-      <Loader isLoading={isLoading || collegeDataLoading || tradeDataLoading} />
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-pink-100 dark:border-slate-800"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-pink-500 border-t-transparent animate-spin"></div>
+        </div>
+      </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
-        <p className="text-gray-500 dark:text-gray-400">
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <p className="text-slate-500 dark:text-slate-400 font-medium">
           No profile data available.
         </p>
       </div>
     );
   }
 
-  const renderField = (label, value) => (
-    <div className="flex flex-col space-y-1">
-      <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="font-medium text-gray-900 dark:text-white">
-        {value || "Not provided"}
-      </span>
+  const renderField = (icon, label, value) => (
+    <div className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors border border-transparent hover:border-white/20">
+      <div className="p-2 bg-pink-50 text-pink-600 dark:bg-slate-800 dark:text-pink-400 rounded-lg shrink-0">
+        {icon}
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
+        <span className="font-medium text-slate-900 dark:text-white mt-1 break-words">
+          {value || "Not provided"}
+        </span>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 w-full">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs mb-6 p-6 relative">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            {profile.profileImage ? (
-              <img
-                src={profile.profileImage}
-                alt="Profile"
-                className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-50 dark:ring-gray-700"
-              />
-            ) : (
-              <UserCircle className="w-24 h-24 text-gray-300 dark:text-gray-500" />
-            )}
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {profile.userName}
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {profile.email}
-              </p>
-              <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-                {profile.role.map((label, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 text-sm rounded-full bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-300 font-medium"
-                  >
-                    {label}
-                  </span>
-                ))}
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 font-sans">
+      {/* Ambient Animated Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse delay-1000"></div>
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse delay-700"></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {/* Glassmorphism Hero Section */}
+        <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl shadow-xl overflow-hidden mb-8">
+          <div className="h-32 bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500"></div>
+          
+          <div className="px-6 sm:px-10 pb-10 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:-mt-12 -mt-16 mb-4">
+              <div className="relative group">
+                {profile.profileImage ? (
+                  <img
+                    src={profile.profileImage}
+                    alt="Profile"
+                    className="w-32 h-32 rounded-2xl object-cover ring-8 ring-white/80 dark:ring-slate-900 shadow-xl transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-2xl bg-slate-100 dark:bg-slate-800 ring-8 ring-white/80 dark:ring-slate-900 shadow-xl flex items-center justify-center">
+                    <UserCircle className="w-16 h-16 text-slate-300" />
+                  </div>
+                )}
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-4 border-white/80 dark:border-slate-900 flex items-center justify-center shrink-0">
+                  <div className={`w-full h-full rounded-full ${profile.status === "Active" ? "bg-emerald-500" : "bg-slate-300" } shadow-inner shadow-current`} />
+                </div>
               </div>
-            </div>
-            <Link
-              to={
-                profileProps ? "/profile/edit" : `/manage-batch/edit/${userId}`
-              }
-              className="absolute top-4 right-4 flex gap-2"
-            >
-              <AiOutlineEdit
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                size={24}
-              />
-              <h1 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                Edit
-              </h1>
-            </Link>
 
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  profile.status === "Active"
-                    ? "bg-green-500"
-                    : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              />
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {profile.status}
-              </span>
-            </div>
-          </div>
+              <div className="flex-1 text-center sm:text-left mt-4 sm:mt-0">
+                <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  {profile.userName}
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">{profile.email}</p>
+                <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-2">
+                  {profile.role?.map((label, index) => (
+                    <span
+                      key={index}
+                      className="px-4 py-1.5 text-xs rounded-full bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 font-semibold uppercase tracking-wider"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                  <span className="px-4 py-1.5 text-xs rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 font-semibold uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                    {profile.status || "Unknown"}
+                  </span>
+                </div>
+              </div>
 
-          {userId === undefined && (
-            <div className="mt-4 flex gap-6 justify-center sm:justify-start border-t-2 border-gray-200 dark:border-gray-700 pt-2">
               <Link
-                to="/change-password"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
+                to={profileProps ? "/profile/edit" : `/manage-batch/edit/${userId}`}
+                className="shrink-0 flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-slate-200"
               >
-                Change Password
+                <AiOutlineEdit size={18} />
+                <span>Edit Profile</span>
               </Link>
-              <button className="text-red-600 dark:text-red-400 hover:underline">
-                Logout
-              </button>
             </div>
-          )}
+
+            {userId === undefined && (
+              <div className="mt-6 flex flex-wrap gap-4 justify-center sm:justify-start border-t border-slate-200/50 dark:border-slate-800/50 pt-5">
+                <Link to="/change-password" className="text-sm font-medium text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300 hover:underline underline-offset-4 transition-all">
+                  Change Password
+                </Link>
+                <button
+                  className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 hover:underline underline-offset-4 transition-all"
+                >
+                  Sign Out Securely
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Personal Information */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Personal Information
-              </h2>
-              <div className="space-y-4">
-                {renderField("Phone", profile.phone)}
+        {/* Modular KPI Ribbon */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "Enrollment Duration", value: profile.enrolledAt ? `${format(new Date(profile.enrolledAt), "MMM yyyy")} - Present` : "N/A" },
+            { label: "Profile Status", value: profile.status || "N/A" },
+            { label: "Primary Role", value: profile.role?.[0] || "User" },
+            { label: "Last Updated", value: format(new Date(), "dd MMM yyyy") }
+          ].map((stat, idx) => (
+             <div key={idx} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/40 dark:border-slate-800/50 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{stat.label}</div>
+                <div className="mt-2 text-lg font-bold text-slate-900 dark:text-white truncate">{stat.value}</div>
+             </div>
+          ))}
+        </div>
+
+        {/* Content Grids */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column - Personal Info */}
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-3xl shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-white/40 dark:border-slate-800/50 flex items-center gap-3">
+                <User className="text-pink-500" size={20} />
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Personal Info</h2>
+              </div>
+              <div className="p-4 grid gap-1 divide-y divide-slate-100/50 dark:divide-slate-800/30">
+                {renderField(<Phone size={18}/>, "Phone", profile.phone)}
                 {renderField(
+                  <Calendar size={18}/>,
                   "Date of Birth",
-                  profile.DOB
-                    ? format(new Date(profile.DOB), "dd MMMM yyyy")
-                    : null
+                  profile.DOB ? format(new Date(profile.DOB), "dd MMMM yyyy") : null
                 )}
-                {renderField("Parent Contact", profile.parentContact)}
-                {renderField("Address", profile.address)}
+                {renderField(<Phone size={18}/>, "Parent Contact", profile.parentContact)}
+                {renderField(<MapPin size={18}/>, "Address", profile.address)}
               </div>
             </div>
           </div>
 
-          {/* Academic Information */}
-          <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Academic Information
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {renderField("Student ID", profile.studentId)}
-                {renderField("Registration ID", profile.registerId)}
-                {renderField("College", college?.collageName)}
-                {renderField("Trade", trade?.tradeName)}
-                {renderField("Batch", batches?.BatchName)}
-                {renderField("Enrollment Status", profile.enrollmentStatus)}
-                {renderField(
-                  "Enrolled At",
-                  profile.enrolledAt
-                    ? format(new Date(profile.enrolledAt), "dd MMMM yyyy")
-                    : null
-                )}
-
+          {/* Right Column - Academic / Teaching Info */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-3xl shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-white/40 dark:border-slate-800/50 flex items-center gap-3">
+                <GraduationCap className="text-amber-500" size={20} />
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Academic Profile</h2>
+              </div>
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-1 gap-x-4">
+                {renderField(<ShieldCheck size={18}/>, "Student ID", profile.studentId)}
+                {renderField(<ShieldCheck size={18}/>, "Registration ID", profile.registerId)}
+                {renderField(<Building size={18}/>, "College", college?.collageName)}
+                {renderField(<Briefcase size={18}/>, "Trade Overview", trade?.tradeName)}
+                {renderField(<GraduationCap size={18}/>, "Assigned Batch", batches?.BatchName)}
+                {renderField(<ShieldCheck size={18}/>, "Enrollment Status", profile.enrollmentStatus)}
               </div>
             </div>
 
-            {/* Teacher-specific Information */}
-            {profile.role.includes("Teacher") && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6 mt-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Teaching Information
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {renderField("Grade Level", profile.gradeLevel)}
+            {profile.role?.includes("Teacher") && (
+              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-3xl shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/40 dark:border-slate-800/50 flex items-center gap-3">
+                  <Briefcase className="text-purple-500" size={20} />
+                  <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Teaching Credentials</h2>
+                </div>
+                <div className="p-4 grid grid-cols-1 gap-1">
+                  {renderField(<GraduationCap size={18}/>, "Specialization", profile.specialization)}
+                  {renderField(<Building size={18}/>, "Grade Level", profile.gradeLevel)}
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Statistics/Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Enrollment Duration
-            </div>
-            <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-              {format(new Date(profile.enrolledAt), "MMM yyyy")} - Present
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Profile Status
-            </div>
-            <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-              {profile.status}
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Role</div>
-            <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-              {profile.role.join(", ")}
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs p-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Last Updated
-            </div>
-            <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-              {format(new Date(), "dd MMM yyyy")}
-            </div>
+            
           </div>
         </div>
       </div>

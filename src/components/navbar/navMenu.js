@@ -54,25 +54,30 @@ export const menuConfig = [
   },
   {
     // Teacher-only group for batch management
-    group: "Batch",
+    group: "Batches",
     roles: ["teacher"],
     icon: FaLayerGroup,
     groupKey: "manageBatch",
     requiresAuth: true,
     children: [
       {
-        label: "Students",
+        label: "Create / Update Batch",
+        path: "/manage-batch/create",
+        icon: MdGroupAdd,
+        requiresAuth: true,
+      },
+      {
+        label: "Manage Students",
         path: "/manage-batch/students",
         icon: FaUserPlus,
         requiresAuth: true,
       },
-      {
-        label: "Manage Batch",
-        path: "/manage-batch/create",
-        icon: FaUserPlus,
-        requiresAuth: true,
+      { 
+        label: "View Batch Records", 
+        path: "/manage-batch/view", 
+        icon: FaList, 
+        requiresAuth: true 
       },
-      { label: "View Batch", path: "/manage-batch/view", icon: FaUserPlus, requiresAuth: true },
     ],
   },
   {
@@ -98,7 +103,7 @@ export const menuConfig = [
     requiresAuth: true,
     requiresBatch: true,
     children: [
-      { label: "Show Assessment", path: "/assessment", icon: MdAddCard, requiresAuth: true },
+      { label: "My Assessments", path: "/assessment", icon: MdAddCard, requiresAuth: true },
     ],
   },
   {
@@ -129,8 +134,18 @@ export const menuConfig = [
         roles: ["teacher", "student"],
         requiresAuth: true,
       },
-      { label: "My Mock Tests", path: "/all-mock-tests", icon: FaFileAlt, requiresAuth: true },
-      { label: "Attain Test", path: "/attain-test", icon: FaKey, requiresAuth: true },
+      { 
+        label: "Take Mock Exam", 
+        path: "/attain-test", 
+        icon: FaKey, 
+        requiresAuth: true 
+      },
+      { 
+        label: "My Mock Exams", 
+        path: "/all-mock-tests", 
+        icon: FaFileAlt, 
+        requiresAuth: true 
+      },
     ],
   },
   {
@@ -141,12 +156,11 @@ export const menuConfig = [
     requiresAuth: true,
     requiresBatch: true,
     children: [
-      { label: "Daily Diary", path: "/daily-diary", icon: FaBookReader, requiresAuth: true },
       {
-        label: "My Attendance",
-        path: "/student-attendance",
-        icon: FaCalendarCheck,
-        roles: ["student"],
+        label: "Mark Attendance",
+        path: "/attendance/marktoday",
+        icon: FaRegCalendarCheck,
+        roles: ["teacher", "student"],
         requiresAuth: true,
       },
       {
@@ -157,11 +171,17 @@ export const menuConfig = [
         requiresAuth: true,
       },
       {
-        label: "Quick Mark",
-        path: "/attendance/marktoday",
-        icon: FaRegCalendarCheck,
-        roles: ["teacher", "student"],
+        label: "My Attendance",
+        path: "/student-attendance",
+        icon: FaCalendarCheck,
+        roles: ["student"],
         requiresAuth: true,
+      },
+      { 
+        label: "Daily Diary", 
+        path: "/daily-diary", 
+        icon: FaBookReader, 
+        requiresAuth: true 
       },
       {
         label: "College Attendance",
@@ -182,20 +202,21 @@ export const pathToHeading = {
   "/": "Home",
   "/dash": "Dashboard",
   "/profile": "Profile",
-  "/manage-batch/create": "Create/Update Batch",
-  "/manage-batch/view": "View Batch Students",
+  "/manage-batch/create": "Create / Update Batch",
+  "/manage-batch/students": "Manage Batch Students",
+  "/manage-batch/view": "View Batch Records",
   "/create-question": "Create Question",
   "/manage-questions": "Manage Questions",
   "/manage-colleges": "Manage Colleges",
   "/manage-trades": "Manage Trades",
   "/mock-exam": "Create Mock Exam",
-  "/all-mock-tests": "My Mock Tests",
-  "/attain-test": "Attain Test",
-  "/assessment": "Assessment Portal",
+  "/attain-test": "Take Mock Exam",
+  "/all-mock-tests": "My Mock Exams",
+  "/assessment": "My Assessments",
   "/daily-diary": "Daily Diary",
   "/student-attendance": "My Attendance",
   "/attendance/register": "Attendance Register",
-  "/attendance/marktoday": "Quick Mark Attendance",
+  "/attendance/marktoday": "Mark Attendance",
   "/attendance/college-attendance": "College Attendance",
   "/browse-batches": "Browse Batches",
   "/about": "About",

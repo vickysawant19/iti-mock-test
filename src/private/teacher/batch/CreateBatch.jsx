@@ -124,8 +124,8 @@ const BatchForm = ({ onClose }) => {
       setValue("BatchName", data.BatchName);
       setValue("start_date", data.start_date?.split("T")[0] || data.start_date);
       setValue("end_date", data.end_date?.split("T")[0] || data.end_date);
-      setValue("collegeId", data.collegeId);
-      setValue("tradeId", data.tradeId);
+      setValue("collegeId", data.collegeId?.$id || data.collegeId);
+      setValue("tradeId", data.tradeId?.$id || data.tradeId);
       setValue("isActive", data.isActive ?? false);
 
       setValue("canEditAttendance", data.canEditAttendance ?? false);
@@ -143,6 +143,19 @@ const BatchForm = ({ onClose }) => {
       setIsBatchDataLoading(false);
     }
   };
+
+  // Rehydrate tradeId securely once the lazily loaded RTK Query trade options actually arrive in the DOM
+  useEffect(() => {
+    if (batchData && tradesData?.length > 0) {
+      const originalCollegeId = batchData.collegeId?.$id || batchData.collegeId;
+      const originalTradeId = batchData.tradeId?.$id || batchData.tradeId;
+      
+      // Ensure we only force the previous trade if they haven't explicitly swapped the College away
+      if (selectedCollegeId === originalCollegeId && originalTradeId) {
+        setValue("tradeId", originalTradeId);
+      }
+    }
+  }, [tradesData, batchData, selectedCollegeId, setValue]);
 
   useEffect(() => {
     if (profile) {

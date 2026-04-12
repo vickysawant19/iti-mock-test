@@ -21,6 +21,9 @@ import {
   Clock,
   Search,
   Plus,
+  GraduationCap,
+  Building,
+  Briefcase,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,8 @@ import { useSelector } from "react-redux";
 import { Skeleton } from "@/components/ui/skeleton";
 import { selectProfile } from "@/store/profileSlice";
 import { useGetBatchQuery } from "@/store/api/batchApi";
+import { useGetTradeQuery } from "@/store/api/tradeApi";
+import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import holidayService from "@/appwrite/holidaysService";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { format } from "date-fns";
@@ -97,6 +102,12 @@ const AttendanceTracker = () => {
     { batchId: resolvedBatchId },
     { skip: !resolvedBatchId }
   );
+
+  const tradeId = batchData?.tradeId?.$id || batchData?.tradeId;
+  const collegeId = batchData?.collegeId?.$id || batchData?.collegeId;
+
+  const { data: tradeData } = useGetTradeQuery(tradeId, { skip: !tradeId });
+  const { data: collegeData } = useGetCollegeQuery(collegeId, { skip: !collegeId });
 
   const {
     deviceLocation,
@@ -229,32 +240,39 @@ const AttendanceTracker = () => {
     const isTeacher = profile?.role?.includes("Teacher");
     
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
-        <div className="max-w-xl mx-auto space-y-6 flex flex-col items-center justify-center min-h-[70vh]">
-          <div className="w-24 h-24 rounded-3xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-            {isTeacher ? (
-              <Plus className="w-10 h-10 text-blue-600 dark:text-blue-400" />
-            ) : (
-              <Search className="w-10 h-10 text-blue-600 dark:text-blue-400" />
-            )}
+      <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden">
+        {/* Ambient Background */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse"></div>
+        </div>
+        <div className="relative z-10 max-w-xl mx-auto space-y-6 flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-10 shadow-xl text-center space-y-6">
+            <div className="w-20 h-20 rounded-2xl bg-pink-100/80 dark:bg-pink-900/30 flex items-center justify-center mx-auto">
+              {isTeacher ? (
+                <Plus className="w-10 h-10 text-pink-600 dark:text-pink-400" />
+              ) : (
+                <Search className="w-10 h-10 text-pink-600 dark:text-pink-400" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                {isTeacher ? "Create Your Batch" : "No Batch Joined"}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto text-sm leading-relaxed">
+                {isTeacher 
+                  ? "As an instructor, you need to create a batch before you can manage attendance and track student progress."
+                  : "You haven't joined any batch yet. To mark your attendance, you first need to join a batch."}
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate(isTeacher ? "/batches" : "/batches/browse")} 
+              size="lg"
+              className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-2xl px-8 shadow-lg shadow-pink-500/20 font-bold transition-all hover:-translate-y-0.5"
+            >
+              {isTeacher ? "Create Batch" : "Browse Batches"}
+            </Button>
           </div>
-          <div className="text-center space-y-3">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {isTeacher ? "Create Your Batch" : "No Batch Joined"}
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              {isTeacher 
-                ? "As an instructor, you need to create a batch before you can manage attendance and track student progress."
-                : "You haven't joined any batch yet. To mark your attendance, you first need to join a batch."}
-            </p>
-          </div>
-          <Button 
-            onClick={() => navigate(isTeacher ? "/batches" : "/batches/browse")} 
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-8 shadow-xl shadow-blue-500/20"
-          >
-            {isTeacher ? "Create Batch" : "Browse Batches"}
-          </Button>
         </div>
       </div>
     );
@@ -263,10 +281,15 @@ const AttendanceTracker = () => {
   // Loading Skeleton for a premium first impression
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
-        <div className="max-w-xl mx-auto space-y-6">
+      <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden">
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse"></div>
+          <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse"></div>
+        </div>
+        <div className="relative z-10 max-w-xl mx-auto space-y-6">
           {/* Header Skeleton */}
-          <div className="rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+          <div className="rounded-3xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-6 shadow-sm">
             <div className="flex items-center gap-5">
               <Skeleton className="w-16 h-16 rounded-2xl shrink-0" />
               <div className="flex-1 space-y-2">
@@ -274,31 +297,28 @@ const AttendanceTracker = () => {
                 <Skeleton className="h-4 w-1/2 rounded-lg" />
               </div>
             </div>
+            <div className="grid grid-cols-3 gap-3 mt-5">
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-16 rounded-2xl" />
+            </div>
           </div>
 
           {/* Main Status Skeleton */}
-          <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
-            <CardContent className="p-8 space-y-8">
-              <div className="flex flex-col items-center space-y-4">
-                <Skeleton className="w-24 h-24 rounded-full" />
-                <div className="space-y-2 text-center w-full">
-                  <Skeleton className="h-6 w-1/2 mx-auto rounded-lg" />
-                  <Skeleton className="h-4 w-1/3 mx-auto rounded-lg" />
-                </div>
+          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-8 shadow-sm space-y-8">
+            <div className="flex flex-col items-center space-y-4">
+              <Skeleton className="w-24 h-24 rounded-full" />
+              <div className="space-y-2 text-center w-full">
+                <Skeleton className="h-6 w-1/2 mx-auto rounded-lg" />
+                <Skeleton className="h-4 w-1/3 mx-auto rounded-lg" />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-24 rounded-2xl" />
-                <Skeleton className="h-24 rounded-2xl" />
-              </div>
-
-              <Skeleton className="h-16 w-full rounded-2xl" />
-            </CardContent>
-          </Card>
+            </div>
+            <Skeleton className="h-16 w-full rounded-2xl" />
+          </div>
 
           {/* Loading status text */}
-          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm italic">
-            <Loader2 className="w-3 h-3 animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm font-medium">
+            <Loader2 className="w-4 h-4 animate-spin text-pink-500" />
             <span>
               {checkingAttendance
                 ? "Verifying batch enrollment..."
@@ -313,35 +333,68 @@ const AttendanceTracker = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24">
-      <div className="max-w-xl mx-auto space-y-6 animate-in fade-in duration-500">
-        {/* Header Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white shadow-xl shadow-blue-500/20">
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute bottom-0 left-0 -mb-8 -ml-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
-          <div className="relative flex items-center gap-5">
-            <div className="flex items-center justify-center flex-shrink-0">
-               <InteractiveAvatar
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden font-sans">
+      {/* Ambient Animated Gradient Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse"></div>
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse"></div>
+      </div>
+
+      <div className="relative z-10 max-w-xl mx-auto space-y-5">
+        {/* Enhanced Hero Card */}
+        <div className="relative overflow-hidden rounded-3xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl">
+          {/* Gradient Banner */}
+          <div className="h-24 bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
+          </div>
+
+          <div className="px-5 sm:px-6 pb-6 relative">
+            {/* Avatar + Name Row */}
+            <div className="flex items-end gap-4 -mt-10 mb-4">
+              <div className="relative shrink-0">
+                <InteractiveAvatar
                   src={profile?.profileImage}
                   fallbackText={profile?.userName?.charAt(0) || profile?.name?.charAt(0) || "U"}
                   userId={profile?.userId}
                   editable={false}
-                  className="w-16 h-16 shadow-inner border border-white/10"
-               />
+                  className="w-20 h-20 ring-4 ring-white/80 dark:ring-slate-900 shadow-xl rounded-2xl"
+                />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white dark:border-slate-900 bg-emerald-500 shadow-sm"></div>
+              </div>
+              <div className="flex-1 min-w-0 pb-1">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                  {profile?.userName || profile?.name || "Student"}
+                </h2>
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mt-0.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <p className="text-xs font-semibold">
+                    {new Date().toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold tracking-tight truncate">
-                {profile?.userName || profile?.name || "Student"}
-              </h2>
-              <div className="mt-1 flex items-center gap-2 text-blue-100">
-                <Calendar className="h-4 w-4" />
-                <p className="font-medium text-sm">
-                  {new Date().toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
+
+            {/* Batch Detail Chips */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/30 dark:border-slate-700 rounded-2xl p-3 text-center transition-all hover:shadow-md hover:bg-white/70 cursor-default">
+                <GraduationCap className="w-4 h-4 text-pink-500 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Batch</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-white truncate mt-0.5">{batchData?.BatchName || "—"}</p>
+              </div>
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/30 dark:border-slate-700 rounded-2xl p-3 text-center transition-all hover:shadow-md hover:bg-white/70 cursor-default">
+                <Briefcase className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trade</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-white truncate mt-0.5">{tradeData?.tradeName || "—"}</p>
+              </div>
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/30 dark:border-slate-700 rounded-2xl p-3 text-center transition-all hover:shadow-md hover:bg-white/70 cursor-default">
+                <Building className="w-4 h-4 text-purple-500 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">College</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-white truncate mt-0.5">{collegeData?.collageName || "—"}</p>
               </div>
             </div>
           </div>
@@ -349,69 +402,64 @@ const AttendanceTracker = () => {
 
         {/* Holiday Notice */}
         {holiday && !loading && (
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500 dark:bg-amber-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
-                  <Calendar className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-amber-900 dark:text-amber-100">
-                    Holiday Today
-                  </h3>
-                  <p className="text-amber-800 dark:text-amber-200 mt-1 font-medium">
-                    {holiday?.holidayText ||
-                      holiday?.day ||
-                      (holiday?.date
-                        ? format(new Date(holiday.date), "EEEE")
-                        : "Enjoy your day off!")}
-                  </p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-2">
-                    No attendance required today
-                  </p>
-                </div>
+          <div className="bg-amber-50/60 dark:bg-amber-950/30 backdrop-blur-xl border border-amber-200/50 dark:border-amber-800/50 rounded-3xl p-6 shadow-sm overflow-hidden">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500 dark:bg-amber-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
+                <Calendar className="w-6 h-6 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex-1">
+                <h3 className="font-extrabold text-lg text-amber-900 dark:text-amber-100 tracking-tight">
+                  Holiday Today
+                </h3>
+                <p className="text-amber-800 dark:text-amber-200 mt-1 font-medium">
+                  {holiday?.holidayText ||
+                    holiday?.day ||
+                    (holiday?.date
+                      ? format(new Date(holiday.date), "EEEE")
+                      : "Enjoy your day off!")}
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-2 font-medium">
+                  No attendance required today
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
 
 
         {/* Error State */}
         {!loading && error && (
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40 rounded-3xl">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/20">
-                  <XCircle className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-red-900 dark:text-red-100">
-                    Unable to Load
-                  </h3>
-                  <p className="text-red-700 dark:text-red-300 mt-1">
-                    {batchError?.message ||
-                      locationError?.message ||
-                      "Failed to get your location."}
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 bg-white/50 border-red-200 hover:bg-white/80 text-red-700"
-                    onClick={() => window.location.reload()}
-                  >
-                    Try Again
-                  </Button>
-                </div>
+          <div className="bg-red-50/60 dark:bg-red-950/30 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-500/20">
+                <XCircle className="w-6 h-6 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h3 className="font-extrabold text-lg text-red-900 dark:text-red-100 tracking-tight">
+                  Unable to Load
+                </h3>
+                <p className="text-red-700 dark:text-red-300 mt-1 font-medium">
+                  {batchError?.message ||
+                    locationError?.message ||
+                    "Failed to get your location."}
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4 bg-white/60 backdrop-blur-sm border-red-200 hover:bg-white/80 text-red-700 rounded-xl font-semibold"
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Main Status Card - Only show if NOT a holiday */}
         {!loading && !error && batchData && !holiday && (
           <>
-            <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 overflow-hidden rounded-3xl">
-              <CardContent className="p-0">
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
                 {attendanceMarked ? (
                   <div className="p-8">
                     <div className="flex flex-col items-center justify-center text-center space-y-6">
@@ -422,7 +470,7 @@ const AttendanceTracker = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                        <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                           Attendance Marked
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
@@ -430,7 +478,7 @@ const AttendanceTracker = () => {
                         </p>
                       </div>
                       <div className="w-full pt-2">
-                         <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 text-green-700 px-4 py-3 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-900/50">
+                         <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50/60 text-emerald-700 px-4 py-3 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100/50 dark:border-emerald-900/50 backdrop-blur-sm">
                             <Clock className="w-5 h-5" />
                             <span className="font-semibold">
                               Marked at {existingAttendance?.$createdAt ? format(new Date(existingAttendance.$createdAt), "hh:mm a") : format(new Date(), "hh:mm a")}
@@ -447,7 +495,7 @@ const AttendanceTracker = () => {
                         onClick={() => setShowMap(!showMap)}
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-3 text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                        className="h-8 px-3 text-xs font-semibold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-full transition-colors"
                       >
                         <Map className="h-3.5 w-3.5 mr-1.5" />
                         {showMap ? "Hide Map" : "View Map"}
@@ -491,7 +539,7 @@ const AttendanceTracker = () => {
 
                     {/* Warning Message */}
                     {!isWithinRange && distance !== null && (
-                      <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50">
+                      <div className="p-4 rounded-2xl bg-red-50/60 dark:bg-red-900/20 border border-red-100/50 dark:border-red-900/50 backdrop-blur-sm">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
                             <Navigation className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -513,9 +561,9 @@ const AttendanceTracker = () => {
                       <Button
                         onClick={handleMarkAttendance}
                         disabled={!isWithinRange || marking || distance === null}
-                        className={`w-full h-16 text-lg font-bold rounded-2xl shadow-lg shadow-blue-500/20 transition-all duration-300 ${
+                        className={`w-full h-16 text-lg font-bold rounded-2xl shadow-lg transition-all duration-300 ${
                           isWithinRange 
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98]" 
+                            ? "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 shadow-pink-500/20 hover:scale-[1.02] active:scale-[0.98] hover:-translate-y-0.5" 
                             : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
                         }`}
                       >
@@ -548,7 +596,7 @@ const AttendanceTracker = () => {
 
                 {/* Map Section */}
                 {showMap && !attendanceMarked && (
-                  <div className="border-t border-slate-100 dark:border-slate-800">
+                  <div className="border-t border-white/30 dark:border-slate-800">
                     <div className="h-[350px] w-full relative">
                       <MapContainer
                         center={[
@@ -637,9 +685,8 @@ const AttendanceTracker = () => {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </>
+              </div>
+            </>
         )}
       </div>
     </div>
