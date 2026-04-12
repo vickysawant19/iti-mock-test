@@ -28,10 +28,10 @@ class HolidayService {
     }
   }
 
-  async getBatchHolidays(batchId) {
+  async getBatchHolidays(batchId, customQueries = []) {
     if (!batchId) return [];
     try {
-      const data = this.getAllHolidays([Query.equal("batchId", batchId)]);
+      const data = this.getAllHolidays([Query.equal("batchId", batchId), ...customQueries]);
       return data;
     } catch (error) {
       throw new Error(error.message);

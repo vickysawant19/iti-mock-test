@@ -125,6 +125,7 @@ export default async ({ req, res, log, error }) => {
       .setKey(req.headers['x-appwrite-key']);
 
     const users = new Users(client);
+    const databases = new Databases(client);
     let response;
 
     switch (action) {
@@ -283,6 +284,97 @@ export default async ({ req, res, log, error }) => {
           `[searchUsers] Returning ${response.length} unified unique results.`
         );
 
+        break;
+      }
+      case 'updateBatchStatsFromTest': {
+        const { userId, batchId, score, quesCount } = req.bodyJson;
+        if (!userId || !batchId || score === undefined || quesCount === undefined) {
+          throw new Error('Missing required fields for updateBatchStatsFromTest');
+        }
+
+        const percentageScore = quesCount > 0 ? (score / quesCount) * 100 : 0;
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || "itimocktest";
+        const STATS_COLLECTION_ID = "userBatchStats";
+
+        // Fetch existing stats
+        const existingDocs = await databases.listDocuments(DB_ID, STATS_COLLECTION_ID, [
+          Query.equal('userId', userId),
+          Query.equal('batchId', batchId)
+        ]);
+
+        if (existingDocs.total > 0) {
+          const existing = existingDocs.documents[0];
+          response = await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
+            testsSubmitted: existing.testsSubmitted + 1,
+            cumulativeScore: existing.cumulativeScore + percentageScore,
+            latestScore: percentageScore
+          });
+          log(`Updated test stats for user ${userId} in batch ${batchId}`);
+        } else {
+          response = await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
+            userId,
+            batchId,
+            testsSubmitted: 1,
+            cumulativeScore: percentageScore,
+            latestScore: percentageScore,
+            totalWorkingDays: 0,
+            presentDays: 0,
+            monthlyAttendance: '{}'
+          });
+          log(`Created test stats for user ${userId} in batch ${batchId}`);
+        }
+        break;
+      }
+      case 'updateBatchStatsFromAttendance': {
+        const { userId, batchId, status, date } = req.bodyJson;
+        if (!userId || !batchId || !status || !date) {
+          throw new Error('Missing required fields for updateBatchStatsFromAttendance');
+        }
+
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || "itimocktest";
+        const STATS_COLLECTION_ID = "userBatchStats";
+        const monthKey = date.substring(0, 7); // YYYY-MM
+
+        // Fetch existing stats
+        const existingDocs = await databases.listDocuments(DB_ID, STATS_COLLECTION_ID, [
+          Query.equal('userId', userId),
+          Query.equal('batchId', batchId)
+        ]);
+
+        let isPresent = status === 'present' ? 1 : 0;
+
+        if (existingDocs.total > 0) {
+          const existing = existingDocs.documents[0];
+          
+          let monthlyData = {};
+          try {
+            monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
+          } catch(e) {}
+          
+          if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+          monthlyData[monthKey] += isPresent;
+
+          response = await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
+            presentDays: existing.presentDays + isPresent,
+            monthlyAttendance: JSON.stringify(monthlyData)
+          });
+          log(`Updated attendance stats for user ${userId} in batch ${batchId}`);
+        } else {
+          let monthlyData = {};
+          monthlyData[monthKey] = isPresent;
+
+          response = await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
+            userId,
+            batchId,
+            totalWorkingDays: 0,
+            presentDays: isPresent,
+            monthlyAttendance: JSON.stringify(monthlyData),
+            testsSubmitted: 0,
+            cumulativeScore: 0,
+            latestScore: 0
+          });
+          log(`Created attendance stats for user ${userId} in batch ${batchId}`);
+        }
         break;
       }
       default: {

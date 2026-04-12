@@ -172,12 +172,13 @@ class NewAttendanceService {
   }
 
   // Get all batch attendance (fetch all pages)
-  async getAllBatchAttendance(batchId) {
+  async getAllBatchAttendance(batchId, customQueries = []) {
     if (!batchId) return { documents: [], total: 0 };
     try {
       const queries = [
         Query.equal("batchId", batchId),
         Query.orderDesc("date"),
+        ...customQueries,
       ];
 
       return await this.fetchAllDocuments(queries);
@@ -605,6 +606,27 @@ class NewAttendanceService {
             createdCount++;
           } else if (type === "updated") {
             updatedCount++;
+          }
+
+          if (type === "created" || type === "updated") {
+            try {
+              const functions = appwriteService.getFunctions();
+              const payload = JSON.stringify({
+                action: "updateBatchStatsFromAttendance",
+                userId: data.userId,
+                batchId: data.batchId,
+                status: data.status,
+                date: data.date
+              });
+
+              functions.createExecution(
+                "678e7277002e1d5c9b9b",
+                payload,
+                false
+              );
+            } catch (err) {
+              console.error("Failed to trigger updateBatchStatsFromAttendance", err);
+            }
           }
         } else {
           // Handle errors

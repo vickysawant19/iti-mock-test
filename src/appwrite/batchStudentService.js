@@ -44,14 +44,14 @@ export class BatchStudentService {
   }
 
   // Get all students for a specific batch
-  async getBatchStudents(batchId) {
+  async getBatchStudents(batchId, customQueries = []) {
     if (!batchId) throw new Error("batchId is required");
 
     try {
       const response = await this.database.listDocuments(
         conf.databaseId,
         conf.batchStudentsCollectionId,
-        [Query.equal("batchId", batchId), Query.limit(100)]
+        [Query.equal("batchId", batchId), Query.limit(100), ...customQueries]
       );
       return response.documents;
     } catch (error) {

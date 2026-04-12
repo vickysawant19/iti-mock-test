@@ -199,7 +199,7 @@ class QuestionPaperService {
             });
       });
 
-      return await this.database.updateDocument(
+      const result = await this.database.updateDocument(
         this.databaseId,
         this.questionPapersCollectionId,
         paperId,
@@ -210,6 +210,28 @@ class QuestionPaperService {
           endTime: data.endTime,
         },
       );
+
+      // Async update stats without blocking
+      try {
+        const functions = appwriteService.getFunctions();
+        const payload = JSON.stringify({
+          action: "updateBatchStatsFromTest",
+          userId: paper.userId,
+          batchId: paper.batchId,
+          score: score,
+          quesCount: paper.quesCount
+        });
+        
+        functions.createExecution(
+            "678e7277002e1d5c9b9b",
+            payload,
+            false
+        );
+      } catch (err) {
+        console.error("Failed to trigger updateBatchStatsFromTest", err);
+      }
+      
+      return result;
     } catch (error) {
       console.error("Error updating all responses:", error);
       throw error;
