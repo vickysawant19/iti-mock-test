@@ -1,4 +1,4 @@
-import { Client, Users, ID, Query, Databases } from 'node-appwrite';
+import { Client, Users, ID, Query, Databases, TablesDB } from 'node-appwrite';
 
 // Validation functions
 const validateUserId = (userId) => {
@@ -153,6 +153,7 @@ export default async ({ req, res, log, error }) => {
 
   const bulkUpdateBatchStats = async (
     databases,
+    tablesDB,
     batchId,
     date,
     statsDataList
@@ -192,8 +193,14 @@ export default async ({ req, res, log, error }) => {
 
         statsToUpdate.push({
           $id: existing.$id,
+          userId: existing.userId,
+          batchId: existing.batchId,
+          totalWorkingDays: existing.totalWorkingDays,
           presentDays: existing.presentDays + isPresent,
           monthlyAttendance: JSON.stringify(monthlyData),
+          testsSubmitted: existing.testsSubmitted,
+          cumulativeScore: existing.cumulativeScore,
+          latestScore: existing.latestScore,
         });
       } else {
         let monthlyData = {};
@@ -214,18 +221,10 @@ export default async ({ req, res, log, error }) => {
     });
 
     if (statsToCreate.length > 0) {
-      await databases.createDocuments(
-        DB_ID,
-        STATS_COLLECTION_ID,
-        statsToCreate
-      );
+      await tablesDB.createRows(DB_ID, STATS_COLLECTION_ID, statsToCreate);
     }
     if (statsToUpdate.length > 0) {
-      await databases.updateDocuments(
-        DB_ID,
-        STATS_COLLECTION_ID,
-        statsToUpdate
-      );
+      await tablesDB.upsertRows(DB_ID, STATS_COLLECTION_ID, statsToUpdate);
     }
   };
 
@@ -256,6 +255,7 @@ export default async ({ req, res, log, error }) => {
 
     const users = new Users(client);
     const databases = new Databases(client);
+    const tablesDB = new TablesDB(client);
     let response;
 
     switch (action) {
@@ -503,7 +503,7 @@ export default async ({ req, res, log, error }) => {
             'Missing required fields for bulkUpdateBatchStatsFromAttendance'
           );
         }
-        await bulkUpdateBatchStats(databases, batchId, date, statsDataList);
+        await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsDataList);
         response = { success: true };
         log(`Bulk updated attendance stats for batch ${batchId}`);
         break;
@@ -545,6 +545,11 @@ export default async ({ req, res, log, error }) => {
             if (needsUpdate) {
               existingToUpdate.push({
                 $id: existing.$id,
+                userId: existing.userId,
+                batchId: existing.batchId,
+                tradeId: existing.tradeId || null,
+                date: existing.date,
+                markedAt: existing.markedAt,
                 status: record.status,
                 remarks: record.remarks || null,
               });
@@ -575,29 +580,28 @@ export default async ({ req, res, log, error }) => {
         };
 
         if (newRecords.length > 0) {
-          const createdRes = await databases.createDocuments(
+          const createdRes = await tablesDB.createRows(
             DB_ID,
             NEW_ATTENDANCE_COL_ID,
             newRecords
           );
-          // Assuming createdRes is an array or has a documents array
           const createdDocs = Array.isArray(createdRes)
             ? createdRes
-            : createdRes.documents || newRecords;
+            : createdRes.rows || newRecords;
           results.created = createdDocs.length;
           results.newDocs = createdDocs;
           results.success.push(...createdDocs);
         }
 
         if (existingToUpdate.length > 0) {
-          const updatedRes = await databases.updateDocuments(
+          const updatedRes = await tablesDB.upsertRows(
             DB_ID,
             NEW_ATTENDANCE_COL_ID,
             existingToUpdate
           );
           const updatedDocs = Array.isArray(updatedRes)
             ? updatedRes
-            : updatedRes.documents || existingToUpdate;
+            : updatedRes.rows || existingToUpdate;
           results.updated = updatedDocs.length;
           results.updatedDocs = updatedDocs;
           results.success.push(...updatedDocs);
@@ -605,7 +609,7 @@ export default async ({ req, res, log, error }) => {
 
         // Update stats
         try {
-          await bulkUpdateBatchStats(databases, batchId, date, statsToUpdate);
+          await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
         } catch (err) {
           log(`Failed bulk stats update: ${err.message}`);
         }
@@ -637,20 +641,21 @@ export default async ({ req, res, log, error }) => {
           markedAt: new Date().toISOString(),
         }));
 
-        const createdRes = await databases.createDocuments(
+        const createdRes = await tablesDB.createRows(
           DB_ID,
           NEW_ATTENDANCE_COL_ID,
           recordsToInsert
         );
         const createdDocs = Array.isArray(createdRes)
           ? createdRes
-          : createdRes.documents || recordsToInsert;
+          : createdRes.rows || recordsToInsert;
 
         // update stats in bulk
         if (recordsToInsert.length > 0) {
           try {
             await bulkUpdateBatchStats(
               databases,
+              tablesDB,
               recordsToInsert[0].batchId,
               recordsToInsert[0].date,
               recordsToInsert
@@ -678,10 +683,14 @@ export default async ({ req, res, log, error }) => {
         const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
         const NEW_ATTENDANCE_COL_ID = 'newAttendance';
 
-        await databases.deleteDocuments(
+        const chunkedQueries = [
+          Query.equal('$id', documentIds)
+        ];
+
+        await tablesDB.deleteRows(
           DB_ID,
           NEW_ATTENDANCE_COL_ID,
-          documentIds
+          chunkedQueries
         );
         response = { deletedIds: documentIds };
         break;
