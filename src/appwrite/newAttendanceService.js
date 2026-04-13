@@ -277,48 +277,26 @@ class NewAttendanceService {
     }
   }
 
-  // Create multiple attendance records (client-side loop)
+  // Create multiple attendance records via cloud function using Bulk API
   async createMultipleAttendance(attendanceRecords) {
     try {
-      const results = [];
-      const errors = [];
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "createMultipleAttendance",
+        attendanceRecords
+      });
 
-      for (const record of attendanceRecords) {
-        try {
-          const formattedDate = this.formatDate(record.date);
-
-          const data = await this.database.createDocument(
-            conf.databaseId,
-            conf.newAttendanceCollectionId,
-            ID.unique(),
-            {
-              userId: record.userId,
-              batchId: record.batchId,
-              tradeId: record.tradeId || null,
-              date: formattedDate,
-              status: record.status,
-              remarks: record.remarks || null,
-            },
-          );
-          results.push(data);
-        } catch (error) {
-          // Skip duplicates (409 error)
-          if (error.code !== 409) {
-            errors.push({
-              record,
-              error: error.message,
-            });
-          }
-        }
+      const response = await functions.createExecution(
+        "678e7277002e1d5c9b9b",
+        payload,
+        false
+      );
+      
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to create multiple attendance");
       }
-
-      return {
-        success: results,
-        errors,
-        total: attendanceRecords.length,
-        created: results.length,
-        failed: errors.length,
-      };
+      return resData.data;
     } catch (error) {
       throw error;
     }
@@ -384,14 +362,23 @@ class NewAttendanceService {
         return []; // Nothing to delete, return empty array immediately
       }
 
-      // Promise.all will throw an error if ANY of the deletions fail
-      // This ensures we catch failures in the component's catch block
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "deleteMultipleAttendance",
+        documentIds
+      });
 
-      const res = await Promise.all(
-        documentIds.map((id) => this.deleteAttendance(id)),
+      const response = await functions.createExecution(
+        "678e7277002e1d5c9b9b",
+        payload,
+        false
       );
-
-      return res; // Returns array of deleted IDs
+      
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to delete multiple attendance");
+      }
+      return resData.data.deletedIds;
     } catch (error) {
       console.error("Error in deleteMultipleAttendance:", error);
       throw error;
@@ -510,7 +497,7 @@ class NewAttendanceService {
     }
   }
 
-  // Mark batch attendance for a specific date (optimized approach)
+  // Mark batch attendance via cloud function using Bulk API
   async markBatchAttendance(batchId, date, attendanceData) {
     if (!batchId) return { success: [], errors: [], total: 0, created: 0, updated: 0, failed: 0 };
     try {
@@ -528,131 +515,25 @@ class NewAttendanceService {
         };
       }
 
-      // Fetch existing records once
-      const existingDocs = await this.getBatchAttendanceByDate(
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "markBatchAttendance",
         batchId,
-        formattedDate,
-      );
-
-      // Create a Map for O(1) lookup instead of array.find() in loop
-      const existingRecordsMap = new Map(
-        existingDocs.documents.map((doc) => [doc.userId, doc]),
-      );
-
-      const results = [];
-      const errors = [];
-      let createdCount = 0;
-      let updatedCount = 0;
-
-      // Use Promise.allSettled for parallel processing instead of sequential loop
-      const operations = attendanceData.map(async (record) => {
-        const existingRecord = existingRecordsMap.get(record.userId);
-
-        if (existingRecord) {
-          // Check if update is actually needed
-          const needsUpdate =
-            existingRecord.status !== record.status ||
-            existingRecord.remarks !== record.remarks;
-
-          if (needsUpdate) {
-            // Update existing record
-            const data = await this.database.updateDocument(
-              conf.databaseId,
-              conf.newAttendanceCollectionId,
-              existingRecord.$id,
-              {
-                status: record.status,
-                remarks: record.remarks || null,
-              },
-            );
-            return { type: "updated", data, userId: record.userId };
-          } else {
-            // No changes needed, return existing record
-            return {
-              type: "unchanged",
-              data: existingRecord,
-              userId: record.userId,
-            };
-          }
-        } else {
-          // Create new record
-          const data = await this.database.createDocument(
-            conf.databaseId,
-            conf.newAttendanceCollectionId,
-            ID.unique(),
-            {
-              userId: record.userId,
-              batchId,
-              tradeId: record.tradeId || null,
-              date: formattedDate,
-              status: record.status,
-              remarks: record.remarks || null,
-            },
-          );
-          return { type: "created", data, userId: record.userId };
-        }
+        date: formattedDate,
+        attendanceData
       });
 
-      // Wait for all operations to complete
-      const settledResults = await Promise.allSettled(operations);
+      const response = await functions.createExecution(
+        "678e7277002e1d5c9b9b",
+        payload,
+        false
+      );
 
-      // Process results
-      settledResults.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          const { type, data } = result.value;
-          results.push(data);
-
-          if (type === "created") {
-            createdCount++;
-          } else if (type === "updated") {
-            updatedCount++;
-          }
-
-          if (type === "created" || type === "updated") {
-            try {
-              const functions = appwriteService.getFunctions();
-              const payload = JSON.stringify({
-                action: "updateBatchStatsFromAttendance",
-                userId: data.userId,
-                batchId: data.batchId,
-                status: data.status,
-                date: data.date
-              });
-
-              functions.createExecution(
-                "678e7277002e1d5c9b9b",
-                payload,
-                false
-              );
-            } catch (err) {
-              console.error("Failed to trigger updateBatchStatsFromAttendance", err);
-            }
-          }
-        } else {
-          // Handle errors
-          const error = result.reason;
-          const userId = attendanceData[index].userId;
-
-          // Ignore conflict errors (409)
-          if (error.code !== 409) {
-            errors.push({
-              userId,
-              error: error.message || "Unknown error",
-              code: error.code,
-            });
-          }
-        }
-      });
-
-      return {
-        success: results,
-        errors,
-        total: attendanceData.length,
-        created: createdCount,
-        updated: updatedCount,
-        unchanged: results.length - createdCount - updatedCount,
-        failed: errors.length,
-      };
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to mark batch attendance");
+      }
+      return resData.data;
     } catch (error) {
       console.error("markBatchAttendance error:", error);
       throw new Error(`Failed to mark batch attendance: ${error.message}`);

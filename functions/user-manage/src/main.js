@@ -99,6 +99,136 @@ export default async ({ req, res, log, error }) => {
     debugLogs.push(msg);
   };
 
+  const updateBatchStatsHelper = async (
+    databases,
+    userId,
+    batchId,
+    status,
+    date
+  ) => {
+    const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+    const STATS_COLLECTION_ID = 'userBatchStats';
+    const monthKey = date.substring(0, 7); // YYYY-MM
+
+    // Fetch existing stats
+    const existingDocs = await databases.listDocuments(
+      DB_ID,
+      STATS_COLLECTION_ID,
+      [Query.equal('userId', userId), Query.equal('batchId', batchId)]
+    );
+
+    let isPresent = status === 'present' ? 1 : 0;
+
+    if (existingDocs.total > 0) {
+      const existing = existingDocs.documents[0];
+
+      let monthlyData = {};
+      try {
+        monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
+      } catch (e) {}
+
+      if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+      monthlyData[monthKey] += isPresent;
+
+      await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
+        presentDays: existing.presentDays + isPresent,
+        monthlyAttendance: JSON.stringify(monthlyData),
+      });
+    } else {
+      let monthlyData = {};
+      monthlyData[monthKey] = isPresent;
+
+      await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
+        userId,
+        batchId,
+        totalWorkingDays: 0,
+        presentDays: isPresent,
+        monthlyAttendance: JSON.stringify(monthlyData),
+        testsSubmitted: 0,
+        cumulativeScore: 0,
+        latestScore: 0,
+      });
+    }
+  };
+
+  const bulkUpdateBatchStats = async (
+    databases,
+    batchId,
+    date,
+    statsDataList
+  ) => {
+    if (!statsDataList || statsDataList.length === 0) return;
+
+    const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+    const STATS_COLLECTION_ID = 'userBatchStats';
+    const monthKey = date.substring(0, 7); // YYYY-MM
+
+    // Fetch all existing stats for this batch
+    const existingDocs = await databases.listDocuments(
+      DB_ID,
+      STATS_COLLECTION_ID,
+      [Query.equal('batchId', batchId), Query.limit(500)]
+    );
+
+    const existingStatsMap = new Map(
+      existingDocs.documents.map((doc) => [doc.userId, doc])
+    );
+
+    const statsToCreate = [];
+    const statsToUpdate = [];
+
+    statsDataList.forEach((record) => {
+      let isPresent = record.status === 'present' ? 1 : 0;
+      const existing = existingStatsMap.get(record.userId);
+
+      if (existing) {
+        let monthlyData = {};
+        try {
+          monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
+        } catch (e) {}
+
+        if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+        monthlyData[monthKey] += isPresent;
+
+        statsToUpdate.push({
+          $id: existing.$id,
+          presentDays: existing.presentDays + isPresent,
+          monthlyAttendance: JSON.stringify(monthlyData),
+        });
+      } else {
+        let monthlyData = {};
+        monthlyData[monthKey] = isPresent;
+
+        statsToCreate.push({
+          $id: ID.unique(),
+          userId: record.userId,
+          batchId: batchId,
+          totalWorkingDays: 0,
+          presentDays: isPresent,
+          monthlyAttendance: JSON.stringify(monthlyData),
+          testsSubmitted: 0,
+          cumulativeScore: 0,
+          latestScore: 0,
+        });
+      }
+    });
+
+    if (statsToCreate.length > 0) {
+      await databases.createDocuments(
+        DB_ID,
+        STATS_COLLECTION_ID,
+        statsToCreate
+      );
+    }
+    if (statsToUpdate.length > 0) {
+      await databases.updateDocuments(
+        DB_ID,
+        STATS_COLLECTION_ID,
+        statsToUpdate
+      );
+    }
+  };
+
   try {
     if (!req.bodyJson) {
       throw new Error('Request body is required');
@@ -221,10 +351,16 @@ export default async ({ req, res, log, error }) => {
         }
 
         // Search using robust startsWith matching to bypass tokenization limitations
-        trace(`[getUserIdByEmail] Executing strict structured Appwrite auth list queries...`);
+        trace(
+          `[getUserIdByEmail] Executing strict structured Appwrite auth list queries...`
+        );
         const [emailList, nameList] = await Promise.all([
-          users.list([Query.startsWith("email", emailOrName), Query.limit(1)]).catch(() => ({ total: 0, users: [] })),
-          users.list([Query.startsWith("name", emailOrName), Query.limit(1)]).catch(() => ({ total: 0, users: [] }))
+          users
+            .list([Query.startsWith('email', emailOrName), Query.limit(1)])
+            .catch(() => ({ total: 0, users: [] })),
+          users
+            .list([Query.startsWith('name', emailOrName), Query.limit(1)])
+            .catch(() => ({ total: 0, users: [] })),
         ]);
 
         let user = null;
@@ -259,25 +395,30 @@ export default async ({ req, res, log, error }) => {
         // Instead of the native search parameter which tokenizes poorly for emails, use strict startsWith
         trace(`[searchUsers] Running structured queries for name and email...`);
         const [emailList, nameList] = await Promise.all([
-          users.list([Query.startsWith("email", searchTerm), Query.limit(10)]).catch(() => ({ total: 0, users: [] })),
-          users.list([
-            Query.startsWith("name", searchTerm), 
-            Query.limit(10)
-          ]).catch(() => ({ total: 0, users: [] }))
+          users
+            .list([Query.startsWith('email', searchTerm), Query.limit(10)])
+            .catch(() => ({ total: 0, users: [] })),
+          users
+            .list([Query.startsWith('name', searchTerm), Query.limit(10)])
+            .catch(() => ({ total: 0, users: [] })),
         ]);
 
-        trace(`[searchUsers] Found ${emailList.total} email matches and ${nameList.total} name matches.`);
-        
+        trace(
+          `[searchUsers] Found ${emailList.total} email matches and ${nameList.total} name matches.`
+        );
+
         // Merge without duplicates based on $id
         const userMap = new Map();
-        [...(emailList.users || []), ...(nameList.users || [])].forEach((user) => {
-          userMap.set(user.$id, {
-            $id: user.$id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-          });
-        });
+        [...(emailList.users || []), ...(nameList.users || [])].forEach(
+          (user) => {
+            userMap.set(user.$id, {
+              $id: user.$id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone,
+            });
+          }
+        );
 
         response = Array.from(userMap.values());
         trace(
@@ -288,39 +429,57 @@ export default async ({ req, res, log, error }) => {
       }
       case 'updateBatchStatsFromTest': {
         const { userId, batchId, score, quesCount } = req.bodyJson;
-        if (!userId || !batchId || score === undefined || quesCount === undefined) {
-          throw new Error('Missing required fields for updateBatchStatsFromTest');
+        if (
+          !userId ||
+          !batchId ||
+          score === undefined ||
+          quesCount === undefined
+        ) {
+          throw new Error(
+            'Missing required fields for updateBatchStatsFromTest'
+          );
         }
 
         const percentageScore = quesCount > 0 ? (score / quesCount) * 100 : 0;
-        const DB_ID = process.env.APPWRITE_DATABASE_ID || "itimocktest";
-        const STATS_COLLECTION_ID = "userBatchStats";
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+        const STATS_COLLECTION_ID = 'userBatchStats';
 
         // Fetch existing stats
-        const existingDocs = await databases.listDocuments(DB_ID, STATS_COLLECTION_ID, [
-          Query.equal('userId', userId),
-          Query.equal('batchId', batchId)
-        ]);
+        const existingDocs = await databases.listDocuments(
+          DB_ID,
+          STATS_COLLECTION_ID,
+          [Query.equal('userId', userId), Query.equal('batchId', batchId)]
+        );
 
         if (existingDocs.total > 0) {
           const existing = existingDocs.documents[0];
-          response = await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
-            testsSubmitted: existing.testsSubmitted + 1,
-            cumulativeScore: existing.cumulativeScore + percentageScore,
-            latestScore: percentageScore
-          });
+          response = await databases.updateDocument(
+            DB_ID,
+            STATS_COLLECTION_ID,
+            existing.$id,
+            {
+              testsSubmitted: existing.testsSubmitted + 1,
+              cumulativeScore: existing.cumulativeScore + percentageScore,
+              latestScore: percentageScore,
+            }
+          );
           log(`Updated test stats for user ${userId} in batch ${batchId}`);
         } else {
-          response = await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
-            userId,
-            batchId,
-            testsSubmitted: 1,
-            cumulativeScore: percentageScore,
-            latestScore: percentageScore,
-            totalWorkingDays: 0,
-            presentDays: 0,
-            monthlyAttendance: '{}'
-          });
+          response = await databases.createDocument(
+            DB_ID,
+            STATS_COLLECTION_ID,
+            ID.unique(),
+            {
+              userId,
+              batchId,
+              testsSubmitted: 1,
+              cumulativeScore: percentageScore,
+              latestScore: percentageScore,
+              totalWorkingDays: 0,
+              presentDays: 0,
+              monthlyAttendance: '{}',
+            }
+          );
           log(`Created test stats for user ${userId} in batch ${batchId}`);
         }
         break;
@@ -328,53 +487,203 @@ export default async ({ req, res, log, error }) => {
       case 'updateBatchStatsFromAttendance': {
         const { userId, batchId, status, date } = req.bodyJson;
         if (!userId || !batchId || !status || !date) {
-          throw new Error('Missing required fields for updateBatchStatsFromAttendance');
+          throw new Error(
+            'Missing required fields for updateBatchStatsFromAttendance'
+          );
+        }
+        await updateBatchStatsHelper(databases, userId, batchId, status, date);
+        response = { updatedId: userId };
+        log(`Updated attendance stats for user ${userId} in batch ${batchId}`);
+        break;
+      }
+      case 'bulkUpdateBatchStatsFromAttendance': {
+        const { batchId, date, statsDataList } = req.bodyJson;
+        if (!batchId || !date || !statsDataList) {
+          throw new Error(
+            'Missing required fields for bulkUpdateBatchStatsFromAttendance'
+          );
+        }
+        await bulkUpdateBatchStats(databases, batchId, date, statsDataList);
+        response = { success: true };
+        log(`Bulk updated attendance stats for batch ${batchId}`);
+        break;
+      }
+      case 'markBatchAttendance': {
+        const { batchId, date, attendanceData } = req.bodyJson;
+        if (!batchId || !date || !attendanceData) {
+          throw new Error('Missing required fields for markBatchAttendance');
         }
 
-        const DB_ID = process.env.APPWRITE_DATABASE_ID || "itimocktest";
-        const STATS_COLLECTION_ID = "userBatchStats";
-        const monthKey = date.substring(0, 7); // YYYY-MM
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+        const NEW_ATTENDANCE_COL_ID = 'newAttendance';
 
-        // Fetch existing stats
-        const existingDocs = await databases.listDocuments(DB_ID, STATS_COLLECTION_ID, [
-          Query.equal('userId', userId),
-          Query.equal('batchId', batchId)
-        ]);
+        // 1. Fetch existing attendance docs for that batch and date
+        const existingDocsRes = await databases.listDocuments(
+          DB_ID,
+          NEW_ATTENDANCE_COL_ID,
+          [
+            Query.equal('batchId', batchId),
+            Query.equal('date', date),
+            Query.limit(500),
+          ]
+        );
 
-        let isPresent = status === 'present' ? 1 : 0;
+        const existingRecordsMap = new Map(
+          existingDocsRes.documents.map((doc) => [doc.userId, doc])
+        );
 
-        if (existingDocs.total > 0) {
-          const existing = existingDocs.documents[0];
-          
-          let monthlyData = {};
+        const newRecords = [];
+        const existingToUpdate = [];
+        const statsToUpdate = [];
+
+        attendanceData.forEach((record) => {
+          const existing = existingRecordsMap.get(record.userId);
+          if (existing) {
+            const needsUpdate =
+              existing.status !== record.status ||
+              existing.remarks !== record.remarks;
+            if (needsUpdate) {
+              existingToUpdate.push({
+                $id: existing.$id,
+                status: record.status,
+                remarks: record.remarks || null,
+              });
+              statsToUpdate.push(record);
+            }
+          } else {
+            newRecords.push({
+              $id: ID.unique(),
+              userId: record.userId,
+              batchId: batchId,
+              tradeId: record.tradeId || null,
+              date: date,
+              status: record.status,
+              remarks: record.remarks || null,
+              markedAt: new Date().toISOString(),
+            });
+            statsToUpdate.push(record);
+          }
+        });
+
+        const results = {
+          created: 0,
+          updated: 0,
+          newDocs: [],
+          updatedDocs: [],
+          errors: [],
+          success: [],
+        };
+
+        if (newRecords.length > 0) {
+          const createdRes = await databases.createDocuments(
+            DB_ID,
+            NEW_ATTENDANCE_COL_ID,
+            newRecords
+          );
+          // Assuming createdRes is an array or has a documents array
+          const createdDocs = Array.isArray(createdRes)
+            ? createdRes
+            : createdRes.documents || newRecords;
+          results.created = createdDocs.length;
+          results.newDocs = createdDocs;
+          results.success.push(...createdDocs);
+        }
+
+        if (existingToUpdate.length > 0) {
+          const updatedRes = await databases.updateDocuments(
+            DB_ID,
+            NEW_ATTENDANCE_COL_ID,
+            existingToUpdate
+          );
+          const updatedDocs = Array.isArray(updatedRes)
+            ? updatedRes
+            : updatedRes.documents || existingToUpdate;
+          results.updated = updatedDocs.length;
+          results.updatedDocs = updatedDocs;
+          results.success.push(...updatedDocs);
+        }
+
+        // Update stats
+        try {
+          await bulkUpdateBatchStats(databases, batchId, date, statsToUpdate);
+        } catch (err) {
+          log(`Failed bulk stats update: ${err.message}`);
+        }
+
+        response = {
+          success: results.success,
+          errors: [],
+          total: attendanceData.length,
+          created: results.created,
+          updated: results.updated,
+          unchanged: attendanceData.length - results.created - results.updated,
+          failed: 0,
+        };
+        break;
+      }
+      case 'createMultipleAttendance': {
+        const { attendanceRecords } = req.bodyJson;
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+        const NEW_ATTENDANCE_COL_ID = 'newAttendance';
+
+        const recordsToInsert = attendanceRecords.map((r) => ({
+          $id: ID.unique(),
+          userId: r.userId,
+          batchId: r.batchId,
+          tradeId: r.tradeId || null,
+          date: r.date,
+          status: r.status,
+          remarks: r.remarks || null,
+          markedAt: new Date().toISOString(),
+        }));
+
+        const createdRes = await databases.createDocuments(
+          DB_ID,
+          NEW_ATTENDANCE_COL_ID,
+          recordsToInsert
+        );
+        const createdDocs = Array.isArray(createdRes)
+          ? createdRes
+          : createdRes.documents || recordsToInsert;
+
+        // update stats in bulk
+        if (recordsToInsert.length > 0) {
           try {
-            monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
-          } catch(e) {}
-          
-          if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
-          monthlyData[monthKey] += isPresent;
-
-          response = await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
-            presentDays: existing.presentDays + isPresent,
-            monthlyAttendance: JSON.stringify(monthlyData)
-          });
-          log(`Updated attendance stats for user ${userId} in batch ${batchId}`);
-        } else {
-          let monthlyData = {};
-          monthlyData[monthKey] = isPresent;
-
-          response = await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
-            userId,
-            batchId,
-            totalWorkingDays: 0,
-            presentDays: isPresent,
-            monthlyAttendance: JSON.stringify(monthlyData),
-            testsSubmitted: 0,
-            cumulativeScore: 0,
-            latestScore: 0
-          });
-          log(`Created attendance stats for user ${userId} in batch ${batchId}`);
+            await bulkUpdateBatchStats(
+              databases,
+              recordsToInsert[0].batchId,
+              recordsToInsert[0].date,
+              recordsToInsert
+            );
+          } catch (err) {
+            log(`Failed bulk stats update: ${err.message}`);
+          }
         }
+
+        response = {
+          success: createdDocs,
+          errors: [],
+          total: attendanceRecords.length,
+          created: createdDocs.length,
+          failed: 0,
+        };
+        break;
+      }
+      case 'deleteMultipleAttendance': {
+        const { documentIds } = req.bodyJson;
+        if (!documentIds || !Array.isArray(documentIds)) {
+          throw new Error('Missing documentIds for deleteMultipleAttendance');
+        }
+
+        const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+        const NEW_ATTENDANCE_COL_ID = 'newAttendance';
+
+        await databases.deleteDocuments(
+          DB_ID,
+          NEW_ATTENDANCE_COL_ID,
+          documentIds
+        );
+        response = { deletedIds: documentIds };
         break;
       }
       default: {
@@ -385,7 +694,7 @@ export default async ({ req, res, log, error }) => {
     return res.json({
       success: true,
       data: response,
-      logs: debugLogs
+      logs: debugLogs,
     });
   } catch (err) {
     if (error) error(`Error performing action: ${err}`);
@@ -393,7 +702,7 @@ export default async ({ req, res, log, error }) => {
       {
         success: false,
         error: err.message,
-        logs: debugLogs
+        logs: debugLogs,
       },
       400
     );
