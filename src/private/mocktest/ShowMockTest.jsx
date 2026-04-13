@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -63,7 +63,7 @@ const ShowMockTest = () => {
       localStorage.removeItem(paperId);
       setIsLoading(true);
       try {
-        const userPaperResponse = await questionpaperservice.listQuestions([
+        const userPaperResponse = await mockTestService.listQuestions([
           Query.equal("$id", paperId),
         ]);
         if (!userPaperResponse.length) throw new Error("Paper not found");
@@ -74,7 +74,7 @@ const ShowMockTest = () => {
           .filter(Boolean);
 
         if (userPaper.isOriginal !== null && !userPaper.isOriginal) {
-          const originalPaperResponse = await questionpaperservice.listQuestions([
+          const originalPaperResponse = await mockTestService.listQuestions([
             Query.equal("paperId", userPaper.paperId),
             Query.equal("isOriginal", true),
           ]);

@@ -1,18 +1,18 @@
 import { Client, Databases, ID } from "appwrite";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import conf from "../config/config";
 
 class FaceService {
   constructor() {
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async getFaces() {
     try {
-      return this.database.listDocuments(
-        conf.databaseId,
-        conf.faceAttendanceCollectionId
-      );
+      return this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.faceAttendanceCollectionId
+      });
     } catch (error) {
       throw Error("get faces:", error);
     }
@@ -20,11 +20,11 @@ class FaceService {
 
   async getMatches(queries = []) {
     try {
-      return this.database.listDocuments(
-        conf.databaseId,
-        conf.faceAttendanceCollectionId,
-        queries
-      );
+      return this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.faceAttendanceCollectionId,
+        queries: queries
+      });
     } catch (error) {
       throw Error("get match", error);
     }
@@ -32,12 +32,12 @@ class FaceService {
 
   async storeFaces(data) {
     try {
-      return this.database.createDocument(
-        conf.databaseId,
-        conf.faceAttendanceCollectionId,
-        ID.unique(),
-        data
-      );
+      return this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.faceAttendanceCollectionId,
+        rowId: ID.unique(),
+        data: data
+      });
     } catch (error) {
       throw Error("get match", error);
     }
@@ -45,11 +45,12 @@ class FaceService {
 
   async updateFaceData(documentId, newFaceData) {
     try {
-      return this.database.updateDocument(
-        conf.databaseId,
-        conf.faceAttendanceCollectionId,
-        documentId, newFaceData
-      );
+      return this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.faceAttendanceCollectionId,
+        rowId: documentId,
+        data: newFaceData
+      });
     } catch (error) {
       throw Error("Delete Error", error);
     }
@@ -57,11 +58,11 @@ class FaceService {
 
   async deleteFaceData(documentId) {
     try {
-      return this.database.deleteDocument(
-        conf.databaseId,
-        conf.faceAttendanceCollectionId,
-        documentId
-      );
+      return this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.faceAttendanceCollectionId,
+        rowId: documentId
+      });
     } catch (error) {
       throw Error("Delete Error", error);
     }

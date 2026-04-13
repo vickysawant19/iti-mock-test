@@ -1,5 +1,5 @@
 import { Query } from "appwrite";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import userProfileService from "./userProfileService";
 import conf from "../config/config";
 
@@ -41,14 +41,15 @@ export class StudentSearchService {
       
       let profileResults = [];
       try {
-        const profileDocs = await userProfileService.database.listDocuments(
-          conf.databaseId,
-          conf.userProfilesCollectionId,
-          [
+        const profileDocs = await userProfileService.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.userProfilesCollectionId,
+
+          queries: [
             Query.equal("userId", targetUserIds)
           ]
-        );
-        profileResults = profileDocs.documents || [];
+        });
+        profileResults = profileDocs.rows || [];
       } catch (err) {
         console.warn("Could not query user profiles by userIds:", err);
       }

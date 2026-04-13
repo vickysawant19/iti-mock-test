@@ -7,7 +7,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";

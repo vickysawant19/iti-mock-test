@@ -12,7 +12,7 @@ import {
 import { format } from "date-fns";
 import {  Link, useNavigate } from "react-router-dom";
 import ViewPaper from "./ViewPaper";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import { toast } from "react-toastify";
 
 const RenderModule = ({ module, papersData, redirect }) => {
@@ -24,7 +24,7 @@ const RenderModule = ({ module, papersData, redirect }) => {
   const attemptAssessmentAgain = async () => {
     try {
       if (!selectedPaper?.isOriginal) {
-        await questionpaperservice.deleteQuestionPaper(selectedPaper.$id);
+        await mockTestService.deleteQuestionPaper(selectedPaper.$id);
         navigate(
           `/attain-test?paperid=${
             module.assessmentPaperId

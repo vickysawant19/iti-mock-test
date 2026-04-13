@@ -1,5 +1,5 @@
 import { useState } from "react";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 
 import geminiServiceV2 from "@/geminiAi/geminiServiceV2";
 
@@ -72,7 +72,7 @@ const useModuleTestGenerator = ({
       setIsLoading(true);
       setIsError(false);
       setError("");
-      const createdPaper = await questionpaperservice.createPaper(paperData);
+      const createdPaper = await mockTestService.createPaper(paperData);
       setData(createdPaper);
       return createdPaper;
     } catch (err) {

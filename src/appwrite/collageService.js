@@ -1,11 +1,11 @@
 import { ID, Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 
 export class CollegeService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async createCollege(collegeData) {
@@ -17,12 +17,12 @@ export class CollegeService {
         tradeIds: tradeIds || [],
         isActive: isActive ?? true,
       };
-      return await this.database.createDocument(
-        conf.databaseId,
-        conf.collegesCollectionId,
-        ID.unique(),
-        data,
-      );
+      return await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.collegesCollectionId,
+        rowId: ID.unique(),
+        data: data
+      });
     } catch (error) {
       console.error("Appwrite error: creating college:", error);
       throw new Error(error.message);
@@ -31,12 +31,12 @@ export class CollegeService {
 
   async updateCollege(collegeId, updatedData) {
     try {
-      return await this.database.updateDocument(
-        conf.databaseId,
-        conf.collegesCollectionId,
-        collegeId,
-        updatedData,
-      );
+      return await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.collegesCollectionId,
+        rowId: collegeId,
+        data: updatedData
+      });
     } catch (error) {
       console.error("Appwrite error: updating college:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -45,11 +45,11 @@ export class CollegeService {
 
   async deleteCollege(collegeId) {
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        conf.collegesCollectionId,
-        collegeId,
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.collegesCollectionId,
+        rowId: collegeId
+      });
     } catch (error) {
       console.error("Appwrite error: deleting college:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -58,11 +58,11 @@ export class CollegeService {
 
   async getCollege(collegeId) {
     try {
-      const res = await this.database.getDocument(
-        conf.databaseId,
-        conf.collegesCollectionId,
-        collegeId,
-      );
+      const res = await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.collegesCollectionId,
+        rowId: collegeId
+      });
 
       return res;
     } catch (error) {
@@ -75,11 +75,11 @@ export class CollegeService {
     queries = [Query.orderDesc("$createdAt"), Query.limit(100)],
   ) {
     try {
-      return await this.database.listDocuments(
-        conf.databaseId,
-        conf.collegesCollectionId,
-        queries,
-      );
+      return await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.collegesCollectionId,
+        queries: queries
+      });
     } catch (error) {
       console.error("Appwrite error: fetching colleges:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);

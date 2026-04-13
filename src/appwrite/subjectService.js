@@ -1,23 +1,23 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 
 export class SubjectService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async createSubject(name, $id) {
     try {
       const data = { name };
 
-      return await this.database.createDocument(
-        conf.databaseId,
-        conf.subjectsCollectionId,
-        "unique()",
-        data,
-      );
+      return await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        rowId: "unique()",
+        data: data
+      });
     } catch (error) {
       console.error("Appwrite error: creating subject:", error);
       throw new Error(`${error.message}`);
@@ -26,12 +26,12 @@ export class SubjectService {
 
   async updateSubject(subjectId, updatedData) {
     try {
-      return await this.database.updateDocument(
-        conf.databaseId,
-        conf.subjectsCollectionId,
-        subjectId,
-        updatedData,
-      );
+      return await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        rowId: subjectId,
+        data: updatedData
+      });
     } catch (error) {
       console.error("Appwrite error: updating subject:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -40,11 +40,11 @@ export class SubjectService {
 
   async deleteSubject(subjectId) {
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        conf.subjectsCollectionId,
-        subjectId,
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        rowId: subjectId
+      });
     } catch (error) {
       console.error("Appwrite error: deleting subject:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -53,11 +53,11 @@ export class SubjectService {
 
   async getSubject(subjectId) {
     try {
-      return await this.database.getDocument(
-        conf.databaseId,
-        conf.subjectsCollectionId,
-        subjectId,
-      );
+      return await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        rowId: subjectId
+      });
     } catch (error) {
       console.log("Appwrite error: get subject:", error);
       return false;
@@ -70,13 +70,13 @@ export class SubjectService {
     let allDocuments = [];
     try {
       while (true) {
-        const data = await this.database.listDocuments(
-          conf.databaseId,
-          conf.subjectsCollectionId,
-          [...queries, Query.limit(limit), Query.offset(offset)],
-        );
-        allDocuments = allDocuments.concat(data.documents);
-        if (data.documents.length < limit) {
+        const data = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.subjectsCollectionId,
+          queries: [...queries, Query.limit(limit), Query.offset(offset)]
+        });
+        allDocuments = allDocuments.concat(data.rows);
+        if (data.rows.length < limit) {
           break;
         }
         offset += limit;
@@ -90,11 +90,11 @@ export class SubjectService {
 
   async listSubjects(queries = [Query.orderAsc("$createdAt")]) {
     try {
-      return await this.database.listDocuments(
-        conf.databaseId,
-        conf.subjectsCollectionId,
-        queries,
-      );
+      return await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        queries: queries
+      });
     } catch (error) {
       console.error("Appwrite error: fetching subjects:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);

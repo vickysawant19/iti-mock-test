@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Query } from "appwrite";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 
 const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-slate-700/50">
@@ -62,7 +62,7 @@ const StudentDashboard = ({
       try {
         const [attStats, tests] = await Promise.all([
           newAttendanceService.getStudentAttendanceStats(user.$id, activeBatchId),
-          questionpaperservice.listQuestions([
+          mockTestService.listQuestions([
             Query.equal("userId", user.$id),
             Query.equal("submitted", true),
             Query.select(["score", "quesCount", "paperId", "tradeName", "$createdAt"]),

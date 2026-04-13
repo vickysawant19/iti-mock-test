@@ -16,7 +16,7 @@ import {
   Medal,
 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import userProfileService from "@/appwrite/userProfileService";
 import profileImageService from "@/appwrite/profileImageService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
@@ -179,7 +179,7 @@ const MockTestResults = () => {
   useEffect(() => {
     const getData = async () => {
       try {
-        const res = await questionpaperservice.getUserResults(paperId);
+        const res = await mockTestService.getUserResults(paperId);
         const baseResults = (res ?? [])
           .map((item) => ({
             timeTaken: differenceInMinutes(new Date(item.endTime), new Date(item.startTime)),

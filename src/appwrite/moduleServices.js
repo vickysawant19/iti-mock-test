@@ -1,20 +1,20 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 
 export class ModuleServices {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async getModule(moduleId) {
     try {
-      return await this.database.getDocument(
-        conf.databaseId,
-        "newmodulesdata",
-        moduleId
-      );
+      return await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: "newmodulesdata",
+        rowId: moduleId
+      });
     } catch (error) {
       console.error("Error getting module", error);
       throw new Error(error);
@@ -32,21 +32,22 @@ export class ModuleServices {
       const limit = 100; // Max documents per request
 
       while (true) {
-        const response = await this.database.listDocuments(
-          conf.databaseId,
-          "newmodulesdata",
-          [
+        const response = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: "newmodulesdata",
+
+          queries: [
             Query.equal("tradeId", tradeId),
             Query.equal("subjectId", subjectId),
             Query.equal("year", year),
             Query.limit(limit),
             Query.offset(offset),
-          ],
-        );
+          ]
+        });
 
-        allDocuments = allDocuments.concat(response.documents);
+        allDocuments = allDocuments.concat(response.rows);
 
-        if (response.documents.length < limit) {
+        if (response.rows.length < limit) {
           // No more documents to fetch
           break;
         }
@@ -69,11 +70,12 @@ export class ModuleServices {
   async createNewModulesData(newModulesData) {
     try {
       const { subjectName, ...cleanData } = newModulesData;
-      const response = await this.database.createDocument(
-        conf.databaseId,
-        "newmodulesdata",
-        "unique()",
-        {
+      const response = await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: "newmodulesdata",
+        rowId: "unique()",
+
+        data: {
           ...cleanData,
           evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
             JSON.stringify(item)
@@ -81,7 +83,7 @@ export class ModuleServices {
           images: (cleanData.images || []).map((item) => JSON.stringify(item)),
           topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
         }
-      );
+      });
       return {
         ...response,
         evalutionsPoints: (response.evalutionsPoints || []).map((item) =>
@@ -108,11 +110,12 @@ export class ModuleServices {
         $permissions,
         ...cleanData
       } = newModulesData;
-      const response = await this.database.updateDocument(
-        conf.databaseId,
-        "newmodulesdata",
-        newModulesData.$id,
-        {
+      const response = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: "newmodulesdata",
+        rowId: newModulesData.$id,
+
+        data: {
           ...cleanData,
           evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
             JSON.stringify(item)
@@ -120,7 +123,7 @@ export class ModuleServices {
           images: (cleanData.images || []).map((item) => JSON.stringify(item)),
           topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
         }
-      );
+      });
 
       return {
         ...response,
@@ -181,11 +184,11 @@ export class ModuleServices {
 
   async deleteNewModulesData(moduleId) {
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        "newmodulesdata",
-        moduleId,
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: "newmodulesdata",
+        rowId: moduleId
+      });
     } catch (error) {
       console.error("Appwrite error: delete new Data", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);

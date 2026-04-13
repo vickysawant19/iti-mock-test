@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import conf from "@/config/config";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 
 import {
   ChevronDown,
@@ -24,7 +24,7 @@ import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import quesdbservice from "@/appwrite/database";
+import questionService from "@/services/question.service";
 
 const Select = ({ label, error, icon: Icon, register, ...props }) => (
   <div className="space-y-2">
@@ -99,7 +99,7 @@ const CreateMockTest = () => {
       if (searchTags.trim()) {
         setIsLoading(true);
         try {
-          const response = await quesdbservice.getAllTags(searchTags);
+          const response = await questionService.getAllTags(searchTags);
           setTags(response.slice(0, 5));
         } catch (error) {
           console.error("Error fetching tags:", error);

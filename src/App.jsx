@@ -8,7 +8,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { addUser, selectUser } from "./store/userSlice";
 import { addProfile, selectProfile } from "./store/profileSlice";
 import { initializeActiveBatch } from "./store/activeBatchSlice";
-import authService from "./appwrite/auth";
+import authService from "./services/auth.service";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/navbar/Navbar";
 import { Analytics } from "@vercel/analytics/react";

@@ -24,7 +24,7 @@
 
 import { Query } from "appwrite";
 import conf from "@/config/config";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import userProfileService from "@/appwrite/userProfileService";
 
 /**

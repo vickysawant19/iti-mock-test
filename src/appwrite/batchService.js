@@ -1,11 +1,11 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 
 export class BatchService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async createBatch(data) {
@@ -16,12 +16,12 @@ export class BatchService {
         ...data,
       };
 
-      return await this.database.createDocument(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        "unique()",
-        batchData,
-      );
+      return await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        rowId: "unique()",
+        data: batchData
+      });
     } catch (error) {
       console.error("Appwrite error: creating batch:", error);
       throw new Error(`${error.message}`);
@@ -30,12 +30,12 @@ export class BatchService {
 
   async updateBatch(batchId, updatedData) {
     try {
-      return await this.database.updateDocument(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        batchId,
-        updatedData,
-      );
+      return await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        rowId: batchId,
+        data: updatedData
+      });
     } catch (error) {
       console.error("Appwrite error: updating batch:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -44,11 +44,11 @@ export class BatchService {
 
   async deleteBatch(batchId) {
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        batchId,
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        rowId: batchId
+      });
     } catch (error) {
       console.error("Appwrite error: deleting batch:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -57,12 +57,11 @@ export class BatchService {
 
   async getBatch(batchId, queries = []) {
     try {
-      const data = await this.database.getDocument(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        batchId,
-        queries,
-      );
+      const data = await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        rowId: batchId
+      });
 
       // Appwrite documents have non-serializable methods (e.g. toString via JSONbig).
       // Sanitize to a plain object before returning so it's safe to store in Redux.
@@ -87,11 +86,11 @@ export class BatchService {
 
   async listBatches(queries = [Query.orderDesc("$createdAt")]) {
     try {
-      return await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        queries,
-      );
+      return await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        queries: queries
+      });
     } catch (error) {
       console.error("Appwrite error: fetching batches:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -103,12 +102,12 @@ export class BatchService {
     try {
       // Chunking might be needed if batchIds > 100, assuming it's a small array.
       const queries = [Query.equal("$id", batchIds)];
-      const response = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchesCollectionId,
-        queries
-      );
-      return response.documents;
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchesCollectionId,
+        queries: queries
+      });
+      return response.rows;
     } catch (error) {
       console.error("Appwrite error: getBatchesByIds:", error);
       return [];

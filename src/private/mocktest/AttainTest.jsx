@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-import { appwriteService } from "@/appwrite/appwriteConfig"
+import { appwriteService } from "@/services/appwriteClient"
 import conf from "@/config/config";
 import { selectUser } from "@/store/userSlice";
 

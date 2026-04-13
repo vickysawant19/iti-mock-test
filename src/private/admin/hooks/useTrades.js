@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Query } from "appwrite";
-import { appwriteService } from "../../../appwrite/appwriteConfig";
+import { appwriteService } from "../../../services/appwriteClient";
 import conf from "../../../config/config";
 
 const LIMIT = 100;

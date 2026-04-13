@@ -6,7 +6,7 @@ import { Clock, Building, BookOpen, Users, RefreshCw, LogOut, ArrowRight, Shield
 import { selectProfile, addProfile, removeProfile } from "@/store/profileSlice";
 import { selectUser, removeUser } from "@/store/userSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 import userProfileService from "@/appwrite/userProfileService";
 import batchRequestService from "@/appwrite/batchRequestService";
 import studentBatchAccessService from "@/appwrite/studentBatchAccess";

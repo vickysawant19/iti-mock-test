@@ -1,12 +1,12 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import batchStudentService from "./batchStudentService";
 
 export class StudentBatchAccessService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   /**
@@ -21,14 +21,15 @@ export class StudentBatchAccessService {
 
     try {
       // 1. Check if the user is ALREADY ACTIVE in the batch via batchStudents collection
-      const activeCheck = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchStudentsCollectionId,
-        [
+      const activeCheck = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchStudentsCollectionId,
+
+        queries: [
           Query.equal("batchId", batchId),
           Query.equal("studentId", studentId),
         ]
-      );
+      });
 
       // We don't strictly require status="active" internally yet unless the schema is updated,
       // but if the document exists in batchStudents, they are essentially active in the batch.
@@ -37,19 +38,20 @@ export class StudentBatchAccessService {
       }
 
       // 2. If not active, check batchRequests lifecycle
-      const requestCheck = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        [
+      const requestCheck = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+
+        queries: [
           Query.equal("batchId", batchId),
           Query.equal("studentId", studentId),
         ]
-      );
+      });
 
       if (requestCheck.total > 0) {
         // Find the most recent/relevant request
         // Prioritize approved > pending > rejected
-        const req = requestCheck.documents[0];
+        const req = requestCheck.rows[0];
 
         if (req.status === "pending") {
           return "PENDING";

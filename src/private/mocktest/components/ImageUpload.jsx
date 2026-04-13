@@ -3,7 +3,7 @@ import { IKContext, IKUpload, IKImage } from "imagekitio-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LoaderCircle, XCircle, Upload, X } from "lucide-react";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 
 const ImageUploader = ({ folderName = "img", images, setImages }) => {
   const [isUploading, setIsUploading] = useState(false);

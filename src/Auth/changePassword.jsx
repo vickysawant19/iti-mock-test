@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 
 const ChangePassword = () => {
   const [isLoading, setIsLoading] = useState(false);

@@ -1,11 +1,11 @@
 import { Query, ID } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import { format } from "date-fns";
 
 class NewAttendanceService {
   constructor() {
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   // Fetch all documents using pagination (handles documents.total automatically)
@@ -14,17 +14,17 @@ class NewAttendanceService {
       const limit = 100;
 
       // Fetch first page with max limit
-      const firstResponse = await this.database.listDocuments(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        [...queries, Query.limit(limit), Query.offset(0)],
-      );
+      const firstResponse = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries: [...queries, Query.limit(limit), Query.offset(0)]
+      });
 
       const total = firstResponse.total;
-      const allDocuments = [...firstResponse.documents];
+      const allDocuments = [...firstResponse.rows];
 
       // If all documents fetched in first call, return early
-      if (firstResponse.documents.length >= total) {
+      if (firstResponse.rows.length >= total) {
         return { documents: allDocuments, total };
       }
 
@@ -33,11 +33,11 @@ class NewAttendanceService {
 
       // Create promises for remaining pages
       const fetchPromises = Array.from({ length: remainingPages }, (_, i) =>
-        this.database.listDocuments(
-          conf.databaseId,
-          conf.newAttendanceCollectionId,
-          [...queries, Query.limit(limit), Query.offset((i + 1) * limit)],
-        ),
+        this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.newAttendanceCollectionId,
+          queries: [...queries, Query.limit(limit), Query.offset((i + 1) * limit)]
+        }),
       );
 
       // Fetch all remaining pages concurrently
@@ -45,7 +45,7 @@ class NewAttendanceService {
 
       // Add remaining documents
       responses.forEach((response) => {
-        allDocuments.push(...response.documents);
+        allDocuments.push(...response.rows);
       });
 
       return {
@@ -66,7 +66,7 @@ class NewAttendanceService {
         Query.orderDesc("date"),
       ];
 
-      const result = (await this.fetchAllDocuments(queries)).documents;
+      const result = (await this.fetchAllDocuments(queries)).rows;
 
       return result;
     } catch (error) {
@@ -119,17 +119,18 @@ class NewAttendanceService {
   async getAttendanceByDate(userId, batchId, date) {
     if (!batchId) return null;
     try {
-      const data = await this.database.listDocuments(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        [
+      const data = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+
+        queries: [
           Query.equal("userId", userId),
           Query.equal("batchId", batchId),
           Query.equal("date", this.formatDate(date)),
           Query.limit(1),
-        ],
-      );
-      return data.documents.length > 0 ? data.documents[0] : null;
+        ]
+      });
+      return data.rows.length > 0 ? data.rows[0] : null;
     } catch (error) {
       throw error;
     }
@@ -155,16 +156,17 @@ class NewAttendanceService {
   async getBatchAttendance(batchId, limit = 100, offset = 0) {
     if (!batchId) return { documents: [], total: 0 };
     try {
-      const data = await this.database.listDocuments(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        [
+      const data = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+
+        queries: [
           Query.equal("batchId", batchId),
           Query.orderDesc("date"),
           Query.limit(limit),
           Query.offset(offset),
-        ],
-      );
+        ]
+      });
       return data;
     } catch (error) {
       throw error;
@@ -256,11 +258,12 @@ class NewAttendanceService {
     try {
       // Ensure date is in YYYY-MM-DD format (10 characters)
       const formattedDate = this.formatDate(date);
-      const data = await this.database.createDocument(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        ID.unique(),
-        {
+      const data = await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: ID.unique(),
+
+        data: {
           userId,
           batchId,
           tradeId,
@@ -269,8 +272,8 @@ class NewAttendanceService {
           remarks: remarks || null,
           markedAt: markedAt || new Date().toISOString(),
           markedBy: markedBy || null,
-        },
-      );
+        }
+      });
       return data;
     } catch (error) {
       throw error;
@@ -310,12 +313,12 @@ class NewAttendanceService {
         updates.date = this.formatDate(updates.date);
       }
 
-      const data = await this.database.updateDocument(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        documentId,
-        updates,
-      );
+      const data = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId,
+        data: updates
+      });
       return data;
     } catch (error) {
       throw error;
@@ -330,12 +333,12 @@ class NewAttendanceService {
         updates.remarks = remarks;
       }
 
-      const data = await this.database.updateDocument(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        documentId,
-        updates,
-      );
+      const data = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId,
+        data: updates
+      });
       return data;
     } catch (error) {
       throw error;
@@ -345,11 +348,11 @@ class NewAttendanceService {
   // Delete attendance record
   async deleteAttendance(documentId) {
     try {
-      await this.database.deleteDocument(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        documentId,
-      );
+      await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId
+      });
       return documentId;
     } catch (error) {
       throw error;
@@ -412,19 +415,29 @@ class NewAttendanceService {
       const lateCount = 0;
       const [presentCount, absentCount] = await Promise.all([
         this.database
-          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
-            ...baseQueries,
-            Query.equal("status", "present"),
-            Query.limit(1),
-          ])
+          .listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.newAttendanceCollectionId,
+
+          queries: [
+              ...baseQueries,
+              Query.equal("status", "present"),
+              Query.limit(1),
+            ]
+        })
           .then((res) => res.total),
 
         this.database
-          .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
-            ...baseQueries,
-            Query.equal("status", "absent"),
-            Query.limit(1),
-          ])
+          .listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.newAttendanceCollectionId,
+
+          queries: [
+              ...baseQueries,
+              Query.equal("status", "absent"),
+              Query.limit(1),
+            ]
+        })
           .then((res) => res.total),
 
         // this.database
@@ -478,7 +491,7 @@ class NewAttendanceService {
         percentage: 0,
       };
 
-      data.documents.forEach((doc) => {
+      data.rows.forEach((doc) => {
         if (doc.status === "present") stats.present++;
         else if (doc.status === "absent") stats.absent++;
         else if (doc.status === "late") stats.late++;
@@ -584,7 +597,7 @@ class NewAttendanceService {
 
       // Group by userId
       const userAttendance = {};
-      data.documents.forEach((doc) => {
+      data.rows.forEach((doc) => {
         if (!userAttendance[doc.userId]) {
           userAttendance[doc.userId] = {
             userId: doc.userId,
@@ -633,17 +646,18 @@ class NewAttendanceService {
     try {
       const formattedDate = this.formatDate(date);
 
-      const data = await this.database.listDocuments(
-        conf.databaseId,
-        conf.newAttendanceCollectionId,
-        [
+      const data = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+
+        queries: [
           Query.equal("userId", userId),
           Query.equal("batchId", batchId),
           Query.equal("date", formattedDate),
           Query.limit(1),
-        ],
-      );
-      return data.documents.length > 0;
+        ]
+      });
+      return data.rows.length > 0;
     } catch (error) {
       throw error;
     }
@@ -661,7 +675,7 @@ class NewAttendanceService {
       const data = await this.fetchAllDocuments(queries);
 
       // Get unique dates
-      const dates = [...new Set(data.documents.map((doc) => doc.date))].slice(
+      const dates = [...new Set(data.rows.map((doc) => doc.date))].slice(
         0,
         limit,
       );
@@ -720,7 +734,7 @@ class NewAttendanceService {
         const response = await this.fetchAllDocuments(queryParams);
 
         // 3. Calculate Stats in Memory (JavaScript is faster than a 2nd Network Request)
-        const documents = response.documents;
+        const documents = response.rows;
 
         const presentCount = documents.filter(
           (doc) => doc.status === "present",

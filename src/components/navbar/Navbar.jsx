@@ -42,7 +42,7 @@ import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react"
 import logo from "@/assets/iti-logo.jpg"
 
 // Import services and store actions
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 import {
   removeUser,
   selectUser,

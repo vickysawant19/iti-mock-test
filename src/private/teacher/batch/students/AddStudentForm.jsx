@@ -12,7 +12,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import batchService from "@/appwrite/batchService";
 import { Query } from "appwrite";
 import studentSearchService from "@/appwrite/studentSearchService";

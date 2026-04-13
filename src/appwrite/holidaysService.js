@@ -1,10 +1,10 @@
 import conf from "@/config/config";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import { ID, Query } from "appwrite";
 
 class HolidayService {
   constructor() {
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async getAllHolidays(queries) {
@@ -14,14 +14,14 @@ class HolidayService {
       const allDocuments = [];
       let response;
       do {
-        response = await this.database.listDocuments(
-          conf.databaseId,
-          conf.holidayDaysCollectionId,
-          [...queries, Query.limit(limit), Query.offset(offset)],
-        );
-        allDocuments.push(...response.documents);
-        offset += response.documents.length;
-      } while (response.documents.length > 0);
+        response = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.holidayDaysCollectionId,
+          queries: [...queries, Query.limit(limit), Query.offset(offset)]
+        });
+        allDocuments.push(...response.rows);
+        offset += response.rows.length;
+      } while (response.rows.length > 0);
       return allDocuments;
     } catch (error) {
       throw new Error(`Error fetching all holidays: ${error.message}`);
@@ -68,11 +68,11 @@ class HolidayService {
 
   async removeHoliday(holidayId) {
     try {
-      await this.database.deleteDocument(
-        conf.databaseId,
-        conf.holidayDaysCollectionId,
-        holidayId,
-      );
+      await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.holidayDaysCollectionId,
+        rowId: holidayId
+      });
     } catch (error) {
       throw new Error(error.message);
     }
@@ -80,12 +80,12 @@ class HolidayService {
 
   async addHoliday(holidayData) {
     try {
-      const data = await this.database.createDocument(
-        conf.databaseId,
-        conf.holidayDaysCollectionId,
-        ID.unique(),
-        holidayData,
-      );
+      const data = await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.holidayDaysCollectionId,
+        rowId: ID.unique(),
+        data: holidayData
+      });
       return data;
     } catch (error) {
       throw new Error(error.message);
@@ -94,12 +94,12 @@ class HolidayService {
 
   async updateHoliday(holidayId, holidayData) {
     try {
-      const data = await this.database.updateDocument(
-        conf.databaseId,
-        conf.holidayDaysCollectionId,
-        holidayId,
-        holidayData,
-      );
+      const data = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.holidayDaysCollectionId,
+        rowId: holidayId,
+        data: holidayData
+      });
       return data;
     } catch (error) {
       throw new Error(error.message);

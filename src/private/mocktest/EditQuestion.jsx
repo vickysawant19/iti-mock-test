@@ -21,7 +21,7 @@ import {
 
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
-import quesdbservice from "@/appwrite/database";
+import questionService from "@/services/question.service";
 import moduleServices from "@/appwrite/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectQuestions } from "@/store/questionSlice";
@@ -125,7 +125,7 @@ const EditQuestion = () => {
       setIsLoading(true);
       try {
         const [question, subjectsRes] = await Promise.all([
-          quesdbservice.getQuestion(quesId),
+          questionService.getQuestion(quesId),
           subjectService.listSubjects(),
         ]);
 
@@ -166,7 +166,7 @@ const EditQuestion = () => {
     }
     setIsSubmitting(true);
     try {
-      await quesdbservice.updateQuestion(quesId, {
+      await questionService.updateQuestion(quesId, {
         question:      data.question,
         options:       data.options,
         correctAnswer: data.correctAnswer,

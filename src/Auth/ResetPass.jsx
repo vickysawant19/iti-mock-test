@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 
 const ResetPass = () => {
   const [searchParams] = useSearchParams();

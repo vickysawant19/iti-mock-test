@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import conf from "@/config/config";
 import { format } from "date-fns";
 import * as Appwrite from "appwrite";

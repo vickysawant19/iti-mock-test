@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfDay, endOfD
 import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import holidayService from "@/appwrite/holidaysService";
 
 /**
@@ -73,7 +73,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
           // Precomputed Stats
           (async () => {
              // We can just use databases.listDocuments here manually or let's import it
-             const { appwriteService } = await import("@/appwrite/appwriteConfig");
+             const { appwriteService } = await import("@/services/appwriteClient");
              const conf = (await import("@/config/config")).default;
              return appwriteService.getDatabases().listDocuments(
                  conf.databaseId,

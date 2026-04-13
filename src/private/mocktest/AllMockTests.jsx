@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import MockTestCard from "./components/MockTestCard";
 import { Query } from "appwrite";
 import Pagination from "./components/Pagination";
@@ -37,7 +37,7 @@ const AllMockTests = () => {
         return;
       }
 
-      const response = await questionpaperservice.getQuestionPaperByUserId(
+      const response = await mockTestService.getQuestionPaperByUserId(
         user.$id,
         [
           Query.limit(ITEMS_PER_PAGE),
@@ -84,7 +84,7 @@ const AllMockTests = () => {
 
     setIsDeleting((prev) => ({ ...prev, [paperId]: true }));
     try {
-      await questionpaperservice.deleteQuestionPaper(paperId);
+      await mockTestService.deleteQuestionPaper(paperId);
       setMockTests((prev) => prev.filter((test) => test.$id !== paperId));
       if (cachedMockTests.current.has(currentPage)) {
         const cachedData = cachedMockTests.current.get(currentPage);

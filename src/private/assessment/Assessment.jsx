@@ -4,7 +4,7 @@ import { Query } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice"
 import subjectService from "@/appwrite/subjectService";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
 import { ClipboardList, Loader2 } from "lucide-react";
@@ -56,7 +56,7 @@ const Assessment = () => {
         batches.push(paperIds.slice(i, i + batchSize));
       }
       const requests = batches.map(async (batch) => {
-        return questionpaperservice.listQuestions([
+        return mockTestService.listQuestions([
           Query.equal("paperId", batch),
           Query.equal("userId", profile.userId),
           Query.select([

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 
-import quesdbservice from "@/appwrite/database";
+import questionService from "@/services/question.service";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import { useListTradesQuery } from "@/store/api/tradeApi";
@@ -190,7 +190,7 @@ const ManageQuestions = () => {
     setHasSearched(true);
     const offset = (page - 1) * ITEMS_PER_PAGE;
     try {
-      const response = await quesdbservice.listQuestions([
+      const response = await questionService.listQuestions([
         Query.equal("moduleId", moduleDocId),
         Query.orderDesc("$createdAt"),
         Query.limit(ITEMS_PER_PAGE),
@@ -275,7 +275,7 @@ const ManageQuestions = () => {
     if (!confirm("Are you sure you want to delete this question?")) return;
     setIsDeleting((prev) => new Set(prev).add(id));
     try {
-      await quesdbservice.deleteQuestion(id);
+      await questionService.deleteQuestion(id);
       setQuestions((prev) => prev.filter((q) => q.$id !== id));
       setTotalQuestions((prev) => prev - 1);
       toast.success("Question deleted.");

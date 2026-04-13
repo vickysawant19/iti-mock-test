@@ -12,7 +12,7 @@ import { Card, CardContent} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import MockTestGreet from "./components/MockTestGreet";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import { toast } from "react-toastify";
 import { Query } from "appwrite";
 import Loader from "@/components/components/Loader";
@@ -45,7 +45,7 @@ const StartMockTest = () => {
         selectedAnswer: question.response,
       }));
 
-      await questionpaperservice.updateAllResponses(paperId, {
+      await mockTestService.updateAllResponses(paperId, {
         responses: responseArray,
         endTime: new Date(),
       });
@@ -92,7 +92,7 @@ const StartMockTest = () => {
           return;
         }
 
-        const userTestResponse = await questionpaperservice.listQuestions([
+        const userTestResponse = await mockTestService.listQuestions([
           Query.equal("$id", paperId),
           Query.limit(1),
         ]);
@@ -114,7 +114,7 @@ const StartMockTest = () => {
         );
 
         if (userTest.isOriginal !== null && !userTest.isOriginal) {
-          const originalTestResponse = await questionpaperservice.listQuestions(
+          const originalTestResponse = await mockTestService.listQuestions(
             [
               Query.equal("paperId", userTest.paperId),
               Query.equal("isOriginal", true),
@@ -202,7 +202,7 @@ const StartMockTest = () => {
   const handleStartExam = async () => {
     try {
       const startTime = new Date();
-      const res = await questionpaperservice.updateTime(mockTest.$id, {
+      const res = await mockTestService.updateTime(mockTest.$id, {
         startTime,
       });
       setRemainingSeconds((mockTest.totalMinutes || 60) * 60); // Convert minutes to seconds

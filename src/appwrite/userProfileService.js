@@ -1,12 +1,12 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import batchService from "./batchService";
 
 export class UserProfileService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   async createUserProfile({
@@ -51,12 +51,12 @@ export class UserProfileService {
         isProfileComplete,
       };
 
-      const response = await this.database.createDocument(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        "unique()",
-        userProfile,
-      );
+      const response = await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        rowId: "unique()",
+        data: userProfile
+      });
 
       return response;
     } catch (error) {
@@ -149,12 +149,12 @@ export class UserProfileService {
     if (isProfileComplete !== undefined) updatedData.isProfileComplete = isProfileComplete;
 
     try {
-      const response = await this.database.updateDocument(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        profileId,
-        updatedData,
-      );
+      const response = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        rowId: profileId,
+        data: updatedData
+      });
 
       return response;
     } catch (error) {
@@ -179,12 +179,12 @@ export class UserProfileService {
     const payload = { ...fields };
 
     try {
-      const response = await this.database.updateDocument(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        profileId,
-        payload,
-      );
+      const response = await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        rowId: profileId,
+        data: payload
+      });
 
       return response;
     } catch (error) {
@@ -195,11 +195,11 @@ export class UserProfileService {
 
   async deleteUserProfile(profileId) {
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        profileId,
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        rowId: profileId
+      });
     } catch (error) {
       console.error("Appwrite error: deleting user profile:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -208,13 +208,13 @@ export class UserProfileService {
 
   async getBatchUserProfile(query) {
     try {
-      const userProfiles = await this.database.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [...query],
-      );
+      const userProfiles = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        queries: [...query]
+      });
 
-      return userProfiles.documents;
+      return userProfiles.rows;
     } catch (error) {
       console.error("Appwrite error: get batch user profiles:", error);
       throw new Error(`Error: ${error.message.split(".")[0]}`);
@@ -223,17 +223,17 @@ export class UserProfileService {
 
   async getUserProfile(userId) {
     try {
-      const userProfile = await this.database.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [Query.equal("userId", userId)],
-      );
+      const userProfile = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        queries: [Query.equal("userId", userId)]
+      });
 
       if (userProfile.total === 0) {
         throw new Error("User profile not found.");
       }
 
-      const profile = userProfile.documents[0];
+      const profile = userProfile.rows[0];
       return profile; // Assuming user profile is unique per userId
     } catch (error) {
       console.log("Appwrite error: get user profile:", error);

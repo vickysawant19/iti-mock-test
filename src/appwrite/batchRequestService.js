@@ -1,12 +1,12 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import batchStudentService from "./batchStudentService";
 
 export class BatchRequestService {
   constructor() {
     this.client = appwriteService.getClient();
-    this.database = appwriteService.getDatabases();
+    this.database = appwriteService.getTablesDB();
   }
 
   // Send a request to join a batch
@@ -15,32 +15,34 @@ export class BatchRequestService {
 
     try {
       // 1. Check if the user is ALREADY ACTIVE in the batch (via batchStudents)
-      const activeCheck = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchStudentsCollectionId,
-        [
+      const activeCheck = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchStudentsCollectionId,
+
+        queries: [
           Query.equal("batchId", batchId),
           Query.equal("studentId", studentId),
         ]
-      );
+      });
 
       if (activeCheck.total > 0) {
         return { alreadyJoined: true }; // Custom state instead of throwing error if preferred by UI
       }
 
       // 2. check if a pending or approved request already exists
-      const existing = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        [
+      const existing = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+
+        queries: [
           Query.equal("batchId", batchId),
           Query.equal("studentId", studentId),
         ]
-      );
+      });
 
       // If exists, handle based on status
       if (existing.total > 0) {
-        const req = existing.documents[0];
+        const req = existing.rows[0];
         if (req.status === "pending" || req.status === "approved") {
           return req; // Already pending or approved, do nothing new
         } else if (req.status === "rejected") {
@@ -50,18 +52,19 @@ export class BatchRequestService {
       }
 
       // Create new request
-      return await this.database.createDocument(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        "unique()",
-        {
+      return await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        rowId: "unique()",
+
+        data: {
           batchId,
           studentId,
           status: "pending",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
-      );
+      });
     } catch (error) {
       console.error("Appwrite error: sendRequest:", error);
       throw new Error(`Error: ${error.message}`);
@@ -79,12 +82,12 @@ export class BatchRequestService {
       }
       queries.push(Query.orderDesc("$createdAt"));
 
-      const response = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        queries
-      );
-      return response.documents;
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        queries: queries
+      });
+      return response.rows;
     } catch (error) {
       console.error(`Appwrite error: getRequests for batch ${batchId}:`, error);
       throw new Error(`Error: ${error.message}`);
@@ -96,12 +99,12 @@ export class BatchRequestService {
     if (!studentId) throw new Error("studentId is required");
 
     try {
-      const response = await this.database.listDocuments(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        [Query.equal("studentId", studentId)]
-      );
-      return response.documents;
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        queries: [Query.equal("studentId", studentId)]
+      });
+      return response.rows;
     } catch (error) {
       console.error(`Appwrite error: getStudentRequests:`, error);
       throw new Error(`Error: ${error.message}`);
@@ -120,12 +123,12 @@ export class BatchRequestService {
       if (isCurrentBatch !== undefined) {
         payload.isCurrentBatch = isCurrentBatch;
       }
-      return await this.database.updateDocument(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        requestId,
-        payload
-      );
+      return await this.database.updateRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        rowId: requestId,
+        data: payload
+      });
     } catch (error) {
       console.error("Appwrite error: updateRequestStatus:", error);
       throw new Error(`Error: ${error.message}`);
@@ -137,21 +140,21 @@ export class BatchRequestService {
     if (!studentId || !batchId) return "unrequested";
     
     // First check if they are already in the batch
-    const activeCheck = await this.database.listDocuments(
-      conf.databaseId,
-      conf.batchStudentsCollectionId,
-      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
-    );
+    const activeCheck = await this.database.listRows({
+      databaseId: conf.databaseId,
+      tableId: conf.batchStudentsCollectionId,
+      queries: [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    });
     if (activeCheck.total > 0) return "approved";
 
     // Second check their request status
-    const reqCheck = await this.database.listDocuments(
-      conf.databaseId,
-      conf.batchRequestsCollectionId,
-      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
-    );
+    const reqCheck = await this.database.listRows({
+      databaseId: conf.databaseId,
+      tableId: conf.batchRequestsCollectionId,
+      queries: [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    });
     if (reqCheck.total > 0) {
-      return reqCheck.documents[0].status; // "pending", "approved", or "rejected"
+      return reqCheck.rows[0].status; // "pending", "approved", or "rejected"
     }
 
     return "unrequested";
@@ -182,27 +185,29 @@ export class BatchRequestService {
   // Teacher specific: direct assign (skip request process via auto-approve)
   async assignStudentDirectly(studentId, batchId) {
     // 1. Try to fetch existing request, create one if not existing
-    const existing = await this.database.listDocuments(
-      conf.databaseId,
-      conf.batchRequestsCollectionId,
-      [
+    const existing = await this.database.listRows({
+      databaseId: conf.databaseId,
+      tableId: conf.batchRequestsCollectionId,
+
+      queries: [
         Query.equal("batchId", batchId),
         Query.equal("studentId", studentId),
       ]
-    );
+    });
 
     let request;
     if (existing.total > 0) {
-      request = existing.documents[0];
+      request = existing.rows[0];
       if (request.status !== "approved") {
         request = await this.updateRequestStatus(request.$id, "approved");
       }
     } else {
-      request = await this.database.createDocument(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        "unique()",
-        {
+      request = await this.database.createRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        rowId: "unique()",
+
+        data: {
           batchId,
           studentId,
           status: "approved",
@@ -210,7 +215,7 @@ export class BatchRequestService {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
-      );
+      });
     }
 
     // 2. Add to batch
@@ -232,22 +237,23 @@ export class BatchRequestService {
       return await this.updateRequestStatus(requestId, "rejected");
     }
 
-    const existing = await this.database.listDocuments(
-      conf.databaseId,
-      conf.batchRequestsCollectionId,
-      [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
-    );
+    const existing = await this.database.listRows({
+      databaseId: conf.databaseId,
+      tableId: conf.batchRequestsCollectionId,
+      queries: [Query.equal("batchId", batchId), Query.equal("studentId", studentId)]
+    });
 
     if (existing.total > 0) {
-      return await this.updateRequestStatus(existing.documents[0].$id, "rejected");
+      return await this.updateRequestStatus(existing.rows[0].$id, "rejected");
     }
 
     // Keep request history consistent when no prior request exists
-    return await this.database.createDocument(
-      conf.databaseId,
-      conf.batchRequestsCollectionId,
-      "unique()",
-      {
+    return await this.database.createRow({
+      databaseId: conf.databaseId,
+      tableId: conf.batchRequestsCollectionId,
+      rowId: "unique()",
+
+      data: {
         batchId,
         studentId,
         status: "rejected",
@@ -255,7 +261,7 @@ export class BatchRequestService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-    );
+    });
   }
 
   // Delete a request completely from the database
@@ -263,11 +269,11 @@ export class BatchRequestService {
     if (!requestId) throw new Error("requestId is required");
 
     try {
-      return await this.database.deleteDocument(
-        conf.databaseId,
-        conf.batchRequestsCollectionId,
-        requestId
-      );
+      return await this.database.deleteRow({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        rowId: requestId
+      });
     } catch (error) {
       console.error("Appwrite error: deleteRequest:", error);
       throw new Error(`Error: ${error.message}`);

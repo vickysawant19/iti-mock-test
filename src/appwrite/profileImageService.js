@@ -1,6 +1,6 @@
 import { ID, Permission, Role, Query } from "appwrite";
 import conf from "../config/config";
-import { appwriteService } from "./appwriteConfig";
+import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 
 export class ProfileImageService {
   constructor() {

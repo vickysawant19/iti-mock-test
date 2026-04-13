@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import { Query } from "appwrite";
 import { format } from "date-fns";
 import {
@@ -24,7 +24,7 @@ const ViewPaper = ({ paperId, showPaper }) => {
   const fetchPaper = async () => {
     setIsLoading(true);
     try {
-      const data = await questionpaperservice.listQuestions([
+      const data = await mockTestService.listQuestions([
         Query.equal("paperId", paperId),
         Query.or([
           Query.equal("isOriginal", true),

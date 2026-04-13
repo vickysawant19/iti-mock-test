@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { FaArrowLeft } from "react-icons/fa";
 
-import quesdbservice from "@/appwrite/database";
+import questionService from "@/services/question.service";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
@@ -61,7 +61,7 @@ const CreateQuestion = () => {
       if (watch("question").trim()) {
         setIsLoading(true);
         try {
-          const response = await quesdbservice.getSimilarQuestions({
+          const response = await questionService.getSimilarQuestions({
             question: watch("question"),
             tradeId,
           });
@@ -137,7 +137,7 @@ const CreateQuestion = () => {
       delete data.tradeId;
       delete data.subjectId;
       delete data.year;
-      await quesdbservice.createQuestion(data);
+      await questionService.createQuestion(data);
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options

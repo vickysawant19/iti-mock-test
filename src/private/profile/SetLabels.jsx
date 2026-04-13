@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser, selectUser } from "@/store/userSlice";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import { toast } from "react-toastify";
 
 const SetLabels = () => {

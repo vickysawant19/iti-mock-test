@@ -7,7 +7,7 @@ import { selectProfile } from "@/store/profileSlice";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check, Loader2, Upload, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import quesdbservice from "@/appwrite/database";
+import questionService from "@/services/question.service";
 import moduleServices from "@/appwrite/moduleServices";
 
 const AddBulkQuestions = () => {
@@ -269,7 +269,7 @@ Strict Rules:
         questions: enrichedQuestions,
       };
       console.log("Submitting payload:", payload);
-      const response = await quesdbservice.bulkaddQuestions(
+      const response = await questionService.bulkaddQuestions(
         JSON.stringify(payload)
       );
       setSubmitStatus("success");

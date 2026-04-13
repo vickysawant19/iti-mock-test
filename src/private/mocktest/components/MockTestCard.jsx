@@ -19,7 +19,7 @@ import {
   Unlock,
   GraduationCap,
 } from "lucide-react";
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 
 // ─── Small stat cell ──────────────────────────────────────────────────────────
 const Stat = ({ icon: Icon, label, value, iconClass = "text-gray-400" }) => (
@@ -87,7 +87,7 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
   const onToggleProtection = async () => {
     setIsLoading(true);
     try {
-      const data = await questionpaperservice.updateQuestion(test.$id, {
+      const data = await mockTestService.updateQuestion(test.$id, {
         isProtected: !test.isProtected,
       });
       setMockTests((prev) => prev.map((item) => (item.$id === data.$id ? data : item)));

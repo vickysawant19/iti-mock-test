@@ -20,7 +20,7 @@ import ImageUploader from "./image-upload/ImageUpload";
 import { IKImage } from "imagekitio-react";
 import { FaMagic } from "react-icons/fa";
 import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import { generatePaperId } from "./util";
 import moduleServices from "@/appwrite/moduleServices";
 

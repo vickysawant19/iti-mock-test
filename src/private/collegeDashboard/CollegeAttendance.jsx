@@ -29,7 +29,7 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListBatchesQuery } from "@/store/api/batchApi";
 import { Query } from "appwrite";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import batchStudentService from "@/appwrite/batchStudentService";
 import batchService from "@/appwrite/batchService";

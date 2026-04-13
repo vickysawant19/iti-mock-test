@@ -8,7 +8,7 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-import { appwriteService } from "@/appwrite/appwriteConfig";
+import { appwriteService } from "@/services/appwriteClient";
 
 const ImageUploader = ({
   folderName,

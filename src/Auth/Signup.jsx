@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
-import authService from "@/appwrite/auth";
+import authService from "@/services/auth.service";
 import { selectUser } from "@/store/userSlice";
 import authImg from "@/assets/auth-illustration.png";
 import { Button } from "@/components/ui/button";

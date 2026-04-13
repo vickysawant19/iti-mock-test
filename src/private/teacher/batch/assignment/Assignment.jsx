@@ -1,4 +1,4 @@
-import questionpaperservice from "@/appwrite/mockTest";
+import mockTestService from "@/services/mocktest.service";
 import moduleServices from "@/appwrite/moduleServices";
 import subjectService from "@/appwrite/subjectService";
 import { Query } from "appwrite";
@@ -141,7 +141,7 @@ const Assignment = ({ students, batchData }) => {
           (m) => m.assessmentPaperId
         );
 
-        const paperData = await questionpaperservice.listQuestions([
+        const paperData = await mockTestService.listQuestions([
           Query.equal("paperId", assessmentPaperIds),
           Query.orderDesc("$updatedAt"),
           Query.equal("userId", studentsIds),
