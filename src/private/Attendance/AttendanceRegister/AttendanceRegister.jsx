@@ -168,24 +168,37 @@ const AttendanceRegister = () => {
         (async () => {
           const batchMembers =
             await batchStudentService.getBatchStudents(selectedBatch);
-          const studentIds = batchMembers
-            .map((member) => member.studentId)
-            .filter(Boolean);
+            
+          const memberMap = new Map();
+          const studentIds = [];
+          
+          batchMembers.forEach((member) => {
+            if (member.studentId) {
+              memberMap.set(member.studentId, member);
+              studentIds.push(member.studentId);
+            }
+          });
 
           if (studentIds.length === 0) {
             return [];
           }
 
-          const students = await userProfileService.getBatchUserProfile([
+          const profiles = await userProfileService.getBatchUserProfile([
             Query.equal("userId", studentIds),
-            Query.orderAsc("studentId"),
-            Query.select(["$id", "userId", "userName", "studentId", "profileImage"]),
+            Query.select(["$id", "userId", "userName", "profileImage"]),
             Query.limit(100),
           ]);
 
-          return students.sort(
-            (a, b) => parseInt(a.studentId) - parseInt(b.studentId),
-          );
+          const mappedStudents = profiles.map(profile => ({
+             ...profile,
+             studentId: memberMap.get(profile.userId)?.rollNumber || null
+          }));
+
+          return mappedStudents.sort((a, b) => {
+             const valA = a.studentId ? parseInt(a.studentId) : Infinity;
+             const valB = b.studentId ? parseInt(b.studentId) : Infinity;
+             return valA - valB;
+          });
         })(),
       ]);
 
@@ -202,8 +215,8 @@ const AttendanceRegister = () => {
         const teacherProfile = {
           $id: profile.$id || profile.userId,
           userId: profile.userId,
-          userName: `${profile.userName || profile.name || "Instructor"} - ${profile.studentId || "Teacher"}`,
-          studentId: profile.studentId || "Teacher",
+          userName: `${profile.userName || profile.name || "Instructor"} - Teacher`,
+          studentId: "Teacher",
           profileImage: profile.profileImage || "",
           isTeacher: true,
         };

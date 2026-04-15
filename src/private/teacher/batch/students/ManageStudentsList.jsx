@@ -32,6 +32,7 @@ import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
+import EditEnrollmentTab from "./EditEnrollmentTab";
 import { Query } from "appwrite";
 
 // ─── Pre-Approval Modal ───────────────────────────────────────────────────────
@@ -51,6 +52,9 @@ function ApprovalReviewModal({
 
   const [enrollmentDate, setEnrollmentDate] = useState(defaultDate);
   const [status, setStatus] = useState("active");
+  const [remarks, setRemarks] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [registerId, setRegisterId] = useState("");
   const [errors, setErrors] = useState({});
 
   // Reset form when modal opens
@@ -58,9 +62,17 @@ function ApprovalReviewModal({
     if (isOpen) {
       setEnrollmentDate(defaultDate);
       setStatus("active");
+      setRemarks("");
+      setRollNumber("");
+      setRegisterId("");
       setErrors({});
     }
   }, [isOpen, defaultDate]);
+
+  // Pre-fill from profile when loaded
+  useEffect(() => {
+    // Legacy mapping removed as studentId is now managed per-batch in batchStudents
+  }, [profile]);
 
   const validate = () => {
     const e = {};
@@ -72,7 +84,7 @@ function ApprovalReviewModal({
 
   const handleConfirm = () => {
     if (!validate()) return;
-    onConfirmApprove({ enrollmentDate, status });
+    onConfirmApprove({ enrollmentDate, status, remarks, rollNumber, registerId });
   };
 
   if (!isOpen) return null;
@@ -128,9 +140,8 @@ function ApprovalReviewModal({
           ) : profile ? (
             <div className="grid grid-cols-2 gap-3">
               <ProfileField icon={User} label="Full Name" value={profile.userName} />
-              <ProfileField icon={Hash} label="Student ID" value={profile.studentId} />
-              <ProfileField icon={Phone} label="Phone" value={profile.phone} />
               <ProfileField icon={Mail} label="Email" value={profile.email} />
+              <ProfileField icon={Phone} label="Phone" value={profile.phone} />
               {profile.DOB && (
                 <ProfileField icon={CalendarDays} label="Date of Birth" value={profile.DOB} />
               )}
@@ -213,6 +224,50 @@ function ApprovalReviewModal({
                 <p className="text-rose-500 text-xs mt-1">{errors.status}</p>
               )}
             </div>
+
+            {/* Remarks (Optional) */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                Remarks <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+              </label>
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Any special notes about this enrollment..."
+                rows={2}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Roll Number */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Roll Number <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={rollNumber}
+                  onChange={(e) => setRollNumber(e.target.value)}
+                  placeholder="e.g. 01"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+
+              {/* Registration ID */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Registration ID <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={registerId}
+                  onChange={(e) => setRegisterId(e.target.value)}
+                  placeholder="e.g. REG-2023-001"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -269,6 +324,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
   const [filter, setFilter] = useState("all");
   const [processingId, setProcessingId] = useState(null);
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
+  const [activeProfileTab, setActiveProfileTab] = useState("profile");
 
   // ── Approval Review Modal state ──
   const [approvalModal, setApprovalModal] = useState(null); // { student }
@@ -319,11 +375,16 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
         });
       }
 
+      // Create map of active batch students
+      const activeMap = {};
+      activeStudents.forEach((s) => { activeMap[s.studentId] = s; });
+
       // 5. Map everything correctly
       const list = uniqueIds.map((id) => {
         const profile = profileMap[id] || {};
         const req = requestMap[id];
         const isActive = activeSet.has(id);
+        const activeRecord = activeMap[id];
 
         let status = "unrequested";
         let requestId = req ? req.$id : null;
@@ -343,6 +404,8 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           profileImage: profile.profileImage || null,
           status,
           requestId,
+          enrollmentDate: activeRecord ? activeRecord.enrollmentDate : null,
+          enrollmentStatus: activeRecord ? activeRecord.status : null,
         };
       });
 
@@ -380,26 +443,26 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
     }
   };
 
-  // ── Confirm approval: patch profile then call approveRequest ──
-  const handleConfirmApprove = async ({ enrollmentDate, status }) => {
+  // ── Confirm approval: store enrollment details in batchStudents ──
+  const handleConfirmApprove = async ({ enrollmentDate, status, remarks, rollNumber, registerId }) => {
     if (!approvalModal?.student) return;
     const student = approvalModal.student;
 
     setIsApproving(true);
     try {
-      // 1. Patch the student profile with enrollment details
-      if (approvalProfile?.$id) {
-        await userProfileService.patchUserProfile(approvalProfile.$id, {
-          enrolledAt: new Date(enrollmentDate).toISOString(),
-          status,
-        });
-      }
-
-      // 2. Approve the request
+      // Approve + write enrollment details into batchStudents in one call
       await batchRequestService.approveRequest(
         student.requestId,
         selectedBatch,
         student.userId,
+        {
+          enrollmentDate: new Date(enrollmentDate).toISOString(),
+          status,
+          approvedBy: user?.$id || null,
+          remarks: remarks || null,
+          rollNumber: rollNumber || null,
+          registerId: registerId || null,
+        },
       );
 
       toast.success(`${student.userName} approved successfully!`);
@@ -444,14 +507,6 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           student.userId,
           student.requestId,
         );
-        try {
-          const studentProfile = await userProfileService.getUserProfile(student.userId);
-          if (studentProfile && studentProfile.$id) {
-            await userProfileService.patchUserProfile(studentProfile.$id, { batchId: null });
-          }
-        } catch (profileErr) {
-          console.warn("Could not clear batchId from student profile:", profileErr);
-        }
         toast.info("Student approval revoked.");
       } else if (action === "delete") {
         await batchRequestService.deleteRequest(student.requestId);
@@ -626,19 +681,34 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                       <div className="text-gray-400">{student.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
-                          student.status === "approved"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : student.status === "pending"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                              : student.status === "rejected"
-                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                        }`}
-                      >
-                        {student.status}
-                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize w-fit ${
+                            student.status === "approved"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : student.status === "pending"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                                : student.status === "rejected"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}
+                        >
+                          {student.status}
+                        </span>
+                        
+                        {student.status === "approved" && student.enrollmentStatus && (
+                          <div className="flex flex-col gap-0.5 text-[10px]">
+                            <span className="text-gray-500 font-medium">
+                              Status: <span className="text-gray-800 dark:text-gray-200 capitalize">{student.enrollmentStatus}</span>
+                            </span>
+                            {student.enrollmentDate && (
+                              <span className="text-gray-500">
+                                Enrolled: {format(new Date(student.enrollmentDate), 'MMM d, yyyy')}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
@@ -735,15 +805,42 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
         <Dialog
           open={!!viewProfileUserId}
           onOpenChange={(open) => {
-            if (!open) setViewProfileUserId(null);
+            if (!open) {
+              setViewProfileUserId(null);
+              setActiveProfileTab("profile");
+            }
           }}
         >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full p-0 gap-0">
-            <DialogHeader className="p-6 pb-2 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
-              <DialogTitle className="text-xl">Student Profile</DialogTitle>
+            <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <DialogTitle className="text-xl">Student Management</DialogTitle>
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-max shadow-inner">
+                  <button
+                    onClick={() => setActiveProfileTab("profile")}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      activeProfileTab === "profile"
+                        ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                        : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
+                    }`}
+                  >
+                    Profile Details
+                  </button>
+                  <button
+                    onClick={() => setActiveProfileTab("enrollment")}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      activeProfileTab === "enrollment"
+                        ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                        : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
+                    }`}
+                  >
+                    Enrollment Record
+                  </button>
+                </div>
+              </div>
             </DialogHeader>
             <div className="p-6">
-              {viewProfileUserId && (
+              {viewProfileUserId && activeProfileTab === "profile" && (
                 <EmbeddedProfileForm
                   explicitUserId={viewProfileUserId}
                   defaultBatchId={selectedBatch}
@@ -766,6 +863,9 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                   }}
                   onCancel={() => setViewProfileUserId(null)}
                 />
+              )}
+              {viewProfileUserId && activeProfileTab === "enrollment" && (
+                <EditEnrollmentTab batchId={selectedBatch} studentId={viewProfileUserId} />
               )}
             </div>
           </DialogContent>

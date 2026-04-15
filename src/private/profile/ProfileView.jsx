@@ -20,6 +20,7 @@ const ProfileView = ({ profileProps }) => {
   const [profile, setProfile] = useState(null);
   const { userId } = useParams();
 
+  const [studentBatchData, setStudentBatchData] = useState(null);
   const [collegeIdFromBatch, setCollegeIdFromBatch] = useState(null);
   const [tradeIdFromBatch, setTradeIdFromBatch] = useState(null);
 
@@ -61,6 +62,7 @@ const ProfileView = ({ profileProps }) => {
       } else {
          const studentBatches = await batchStudentService.getStudentBatches(profile?.userId || userId);
          if (studentBatches && studentBatches.length > 0) {
+            setStudentBatchData(studentBatches[0]);
             const firstBatchRes = await batchService.getBatch(studentBatches[0].batchId, [
               Query.select(["$id", "BatchName", "collegeId", "tradeId"]),
             ]);
@@ -168,9 +170,6 @@ const ProfileView = ({ profileProps }) => {
                     <UserCircle className="w-16 h-16 text-slate-300" />
                   </div>
                 )}
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-4 border-white/80 dark:border-slate-900 flex items-center justify-center shrink-0">
-                  <div className={`w-full h-full rounded-full ${profile.status === "Active" ? "bg-emerald-500" : "bg-slate-300" } shadow-inner shadow-current`} />
-                </div>
               </div>
 
               <div className="flex-1 text-center sm:text-left mt-4 sm:mt-0">
@@ -184,12 +183,8 @@ const ProfileView = ({ profileProps }) => {
                       key={index}
                       className="px-4 py-1.5 text-xs rounded-full bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 font-semibold uppercase tracking-wider"
                     >
-                      {label}
                     </span>
                   ))}
-                  <span className="px-4 py-1.5 text-xs rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 font-semibold uppercase tracking-wider border border-slate-200 dark:border-slate-700">
-                    {profile.status || "Unknown"}
-                  </span>
                 </div>
               </div>
 
@@ -220,8 +215,6 @@ const ProfileView = ({ profileProps }) => {
         {/* Modular KPI Ribbon */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Enrollment Duration", value: profile.enrolledAt ? `${format(new Date(profile.enrolledAt), "MMM yyyy")} - Present` : "N/A" },
-            { label: "Profile Status", value: profile.status || "N/A" },
             { label: "Primary Role", value: profile.role?.[0] || "User" },
             { label: "Last Updated", value: format(new Date(), "dd MMM yyyy") }
           ].map((stat, idx) => (
@@ -264,12 +257,11 @@ const ProfileView = ({ profileProps }) => {
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Academic Profile</h2>
               </div>
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-1 gap-x-4">
-                {renderField(<ShieldCheck size={18}/>, "Student ID", profile.studentId)}
-                {renderField(<ShieldCheck size={18}/>, "Registration ID", profile.registerId)}
+                {renderField(<ShieldCheck size={18}/>, "Roll Number", studentBatchData?.rollNumber)}
+                {renderField(<ShieldCheck size={18}/>, "Registration ID", studentBatchData?.registerId)}
                 {renderField(<Building size={18}/>, "College", college?.collageName)}
                 {renderField(<Briefcase size={18}/>, "Trade Overview", trade?.tradeName)}
                 {renderField(<GraduationCap size={18}/>, "Assigned Batch", batches?.BatchName)}
-                {renderField(<ShieldCheck size={18}/>, "Enrollment Status", profile.enrollmentStatus)}
               </div>
             </div>
 

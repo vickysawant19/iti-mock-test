@@ -23,8 +23,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
   const dispatch = useDispatch();
   const methods = useForm({
     defaultValues: {
-      status: "Active",
-      enrollmentStatus: "Active",
       isActive: true,
     }
   });
@@ -35,11 +33,15 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
   const targetUserId = explicitUserId || user?.$id;
   const isUserProfile = !!explicitUserId && explicitUserId !== user?.$id;
 
+  // Determine role of the profile we are editing
+  const profileToEdit = isUserProfile ? othersProfile : existingProfile;
+  const targetRole = profileToEdit?.role || [];
+  
+  const isTargetTeacher = targetRole.includes("Teacher");
+  const isTargetStudent = targetRole.includes("Student") || (!isTargetTeacher && targetUserId);
+
   const isTeacher = user.labels.includes("Teacher");
   const isStudent = !isTeacher;
-
-  const isEditingOwnProfile = !isUserProfile && existingProfile;
-  const isEditingStudentProfile = isTeacher && isUserProfile;
 
   // Define which fields students can edit
   const studentEditableFields = [
@@ -49,11 +51,6 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     "parentContact",
     "address",
     "profileImage",
-    "registerId",
-    "studentId",
-    "status",
-    "enrollmentStatus",
-    "enrolledAt",
   ];
 
   const isFieldEditable = (fieldName) => {
@@ -206,8 +203,8 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
             />
 
             <AcademicAndBatchSection
-                isTeacher={isTeacher}
-                isStudent={isStudent}
+                isTeacher={isTargetTeacher}
+                isStudent={isTargetStudent}
                 isUserProfile={isUserProfile}
                 isFieldEditable={isFieldEditable}
                 formMode={formMode}

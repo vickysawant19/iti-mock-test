@@ -116,8 +116,6 @@ const AddStudentForm = ({ defaultBatchId }) => {
           email: userResult.email || "",
           phone: userResult.phone || "",
           role: ["Student"],
-          status: "Active",
-          enrollmentStatus: "Active",
           onboardingStep: 1, 
           isProfileComplete: false
         });

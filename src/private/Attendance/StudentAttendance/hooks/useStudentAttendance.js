@@ -148,7 +148,7 @@ const calculateStats = (attendanceMap, holidayDays = 0) => {
     else absentDays += 1;
   });
 
-  const totalDays = attendanceMap.size;
+  const totalDays = presentDays + absentDays;
   return {
     totalDays,
     presentDays,
@@ -229,16 +229,13 @@ export const useStudentAttendance = (profile) => {
       const batchEnd = batchData?.end_date
         ? endOfDay(new Date(batchData.end_date))
         : endOfDay(end);
-      const todayEnd = endOfDay(new Date());
-
       const rangeStart = new Date(
         Math.max(start.getTime(), batchStart.getTime()),
       );
       const rangeEnd = new Date(
         Math.min(
           endOfDay(end).getTime(),
-          batchEnd.getTime(),
-          todayEnd.getTime(),
+          batchEnd.getTime()
         ),
       );
 
@@ -318,14 +315,13 @@ export const useStudentAttendance = (profile) => {
     const batchStart = startOfDay(new Date(batchData.start_date));
     const batchEnd = batchData?.end_date
       ? endOfDay(new Date(batchData.end_date))
-      : endOfDay(new Date());
-    const today = endOfDay(new Date());
+      : monthEnd;
 
     const rangeStart = new Date(
       Math.max(monthStart.getTime(), batchStart.getTime()),
     );
     const rangeEnd = new Date(
-      Math.min(monthEnd.getTime(), batchEnd.getTime(), today.getTime()),
+      Math.min(monthEnd.getTime(), batchEnd.getTime()),
     );
 
     return generateWorkingDays({

@@ -2,6 +2,8 @@ import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
+import batchStudentService from "@/appwrite/batchStudentService";
+import { useState, useEffect } from "react";
 
 import Loader from "@/components/components/Loader";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,16 @@ import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 function StudentDailyDiary() {
   const profile = useSelector(selectProfile);
+  const [rollNumber, setRollNumber] = useState(null);
+
+  useEffect(() => {
+    if (profile?.userId) {
+      batchStudentService.getStudentBatches(profile.userId).then(res => {
+         if (res && res.length > 0) setRollNumber(res[0].rollNumber);
+      }).catch(console.error);
+    }
+  }, [profile?.userId]);
+
   const {
     weekDays,
     weekNumber,
@@ -67,10 +79,10 @@ function StudentDailyDiary() {
                 <h1 className="text-xl sm:text-2xl font-extrabold leading-tight shadow-sm">My Diary</h1>
                 <div className="text-xs text-white/80 mt-1 flex items-center gap-2 flex-wrap">
                   <span>{profile?.userName || profile?.name || "Student"}</span>
-                  {profile?.studentId && (
+                  {rollNumber && (
                     <>
                       <span className="opacity-50">·</span>
-                      <span>ID: {profile.studentId}</span>
+                      <span>ID: {rollNumber}</span>
                     </>
                   )}
                   {batchData?.BatchName && (

@@ -51,7 +51,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
     try {
       // 1. Get batch students
       const studentDocs = await batchStudentService.getBatchStudents(batchId, [
-        Query.select(["studentId", "joinedAt"]),
+        Query.select(["studentId", "joinedAt", "rollNumber", "registerId"]),
       ]);
       setStudents(studentDocs);
       const studentIds = studentDocs.map((s) => s.studentId);
@@ -68,7 +68,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
           userProfileService.getBatchUserProfile([
             Query.equal("userId", studentIds),
             Query.limit(100),
-            Query.select(["userId", "userName", "profileImage", "registerId"]),
+            Query.select(["userId", "userName", "profileImage"]),
           ]),
           // Precomputed Stats
           (async () => {
@@ -189,7 +189,8 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         studentId: sid,
         userName: profile.userName || "Unknown",
         profileImage: profile.profileImage || null,
-        registerId: profile.registerId || null,
+        registerId: s.registerId || null,
+        rollNumber: s.rollNumber || null,
         totalAttendancePercent: totalAtt,
         monthlyAttendancePercent: monthAtt,
         presentDays: stat.presentDays,

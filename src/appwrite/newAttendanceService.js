@@ -66,7 +66,7 @@ class NewAttendanceService {
         Query.orderDesc("date"),
       ];
 
-      const result = (await this.fetchAllDocuments(queries)).rows;
+      const result = (await this.fetchAllDocuments(queries)).documents;
 
       return result;
     } catch (error) {
@@ -491,7 +491,7 @@ class NewAttendanceService {
         percentage: 0,
       };
 
-      data.rows.forEach((doc) => {
+      data.documents.forEach((doc) => {
         if (doc.status === "present") stats.present++;
         else if (doc.status === "absent") stats.absent++;
         else if (doc.status === "late") stats.late++;
@@ -597,7 +597,7 @@ class NewAttendanceService {
 
       // Group by userId
       const userAttendance = {};
-      data.rows.forEach((doc) => {
+      data.documents.forEach((doc) => {
         if (!userAttendance[doc.userId]) {
           userAttendance[doc.userId] = {
             userId: doc.userId,
@@ -675,7 +675,7 @@ class NewAttendanceService {
       const data = await this.fetchAllDocuments(queries);
 
       // Get unique dates
-      const dates = [...new Set(data.rows.map((doc) => doc.date))].slice(
+      const dates = [...new Set(data.documents.map((doc) => doc.date))].slice(
         0,
         limit,
       );
@@ -734,7 +734,7 @@ class NewAttendanceService {
         const response = await this.fetchAllDocuments(queryParams);
 
         // 3. Calculate Stats in Memory (JavaScript is faster than a 2nd Network Request)
-        const documents = response.rows;
+        const documents = response.documents;
 
         const presentCount = documents.filter(
           (doc) => doc.status === "present",

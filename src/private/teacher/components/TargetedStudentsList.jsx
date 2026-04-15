@@ -33,8 +33,13 @@ export default function TargetedStudentsList({ selectedBatch }) {
     
     setIsLoading(true);
     try {
-      // 1. Fetch all profiles mapped to this batchId natively
-      const profiles = await userProfileService.getProfilesByBatchId(selectedBatch);
+      // 1. Fetch recently active student profiles (Pool of potential students)
+      const profiles = await userProfileService.getBatchUserProfile([
+        Query.equal("role", ["Student"]),
+        Query.limit(100),
+        Query.orderDesc("$createdAt")
+      ]);
+
       if (profiles.length === 0) {
         setStudents([]);
         return;

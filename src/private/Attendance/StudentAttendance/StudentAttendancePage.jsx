@@ -121,6 +121,7 @@ const StudentAttendancePage = () => {
           presentDays={overallStats?.presentDays || 0}
           absentDays={overallStats?.absentDays || 0}
           attendancePercentage={overallStats?.attendancePercentage || 0}
+          monthlyStats={monthlyStats}
         />
 
         {/* View Tabs */}

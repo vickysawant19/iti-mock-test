@@ -20,36 +20,8 @@ const AcademicInformationSection = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        <CustomInput
-          label="Student ID/Roll Number"
-          type="number"
-          icon={
-            <Clipboard size={18} className="text-gray-500 dark:text-gray-400" />
-          }
-          {...register("studentId")}
-          disabled={!isFieldEditable("studentId")}
-        />
+        {/* Student ID and Registration ID removed — managed separately */}
 
-        <CustomInput
-          label="Registration ID"
-          type="text"
-          icon={
-            <Clipboard size={18} className="text-gray-500 dark:text-gray-400" />
-          }
-          {...register("registerId")}
-          disabled={!isFieldEditable("registerId")}
-        />
-
-        <CustomInput
-          required={true}
-          label="Enrollment Date"
-          type="date"
-          icon={
-            <Calendar size={18} className="text-gray-500 dark:text-gray-400" />
-          }
-          {...register("enrolledAt", { required: true })}
-          disabled={!isFieldEditable("enrolledAt")}
-        />
       </div>
 
     </div>

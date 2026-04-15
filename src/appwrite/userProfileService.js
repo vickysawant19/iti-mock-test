@@ -12,20 +12,16 @@ export class UserProfileService {
   async createUserProfile({
     DOB,
     address,
-    batchId,
     email,
-    enrolledAt = new Date().toISOString(),
-    enrollmentStatus,
     gradeLevel,
     parentContact,
     phone,
     profileImage,
     role,
     experience,
-    status,
-    studentId,
     userId,
     userName,
+    specialization = [],
     onboardingStep = 0,
     isProfileComplete = false,
   }) {
@@ -33,20 +29,16 @@ export class UserProfileService {
       const userProfile = {
         DOB: DOB || null,
         address: address || null,
-        batchId: batchId || null,
         email: email || null,
-        enrolledAt: enrolledAt || null,
-        enrollmentStatus: enrollmentStatus || "enrolled",
         gradeLevel: gradeLevel || null,
         parentContact: parseInt(parentContact) || null,
         phone: parseInt(phone) || null,
         profileImage: profileImage || null,
         role: role || null,
         experience: experience || null,
-        status: status || "active",
-        studentId: studentId || null,
         userId: userId || null,
         userName: userName || null,
+        specialization: specialization || [],
         onboardingStep,
         isProfileComplete,
       };
@@ -78,8 +70,6 @@ export class UserProfileService {
         isProfileComplete: false,
         onboardingStep: 0,
         role: ["Student"], // Default role
-        status: "Active",
-        enrollmentStatus: "Pending", // Needs full profile to be fully active
       });
     } catch (error) {
       console.error("Appwrite error: creating stub profile:", error);
@@ -98,25 +88,17 @@ export class UserProfileService {
     const {
       DOB,
       address,
-      batchId,
       email,
-      enrolledAt,
-      enrollmentStatus,
       gradeLevel,
       parentContact,
       phone,
       profileImage,
       experience,
-      status,
-      studentId,
       userName,
       role,
-      registerId,
+      specialization,
       onboardingStep,
       isProfileComplete,
-      isApproved,
-      approvalStatus,
-      approvedBy,
     } = data;
 
     // Build the payload — only include keys that were explicitly provided in `data`.
@@ -126,25 +108,18 @@ export class UserProfileService {
     // String / nullable fields — only write when key is present in data object
     if ("DOB" in data) updatedData.DOB = DOB || null;
     if ("address" in data) updatedData.address = address || null;
-    if ("batchId" in data) updatedData.batchId = batchId || null;
     if ("email" in data) updatedData.email = email || null;
-    if ("enrolledAt" in data) updatedData.enrolledAt = enrolledAt || null;
-    if ("enrollmentStatus" in data) updatedData.enrollmentStatus = enrollmentStatus || null;
     if ("gradeLevel" in data) updatedData.gradeLevel = gradeLevel || null;
     if ("parentContact" in data) updatedData.parentContact = parseInt(parentContact) || null;
     if ("phone" in data) updatedData.phone = parseInt(phone) || null;
     if ("profileImage" in data) updatedData.profileImage = profileImage || null;
     if ("experience" in data) updatedData.experience = experience || null;
-    if ("status" in data) updatedData.status = status || null;
-    if ("studentId" in data) updatedData.studentId = studentId || null;
 
     if ("userName" in data) updatedData.userName = userName || null;
     if ("role" in data) updatedData.role = role || null;
-    if ("registerId" in data) updatedData.registerId = registerId || null;
+    if ("specialization" in data) updatedData.specialization = specialization || [];
 
-
-
-    // Boolean / approval fields — preserve only when explicitly provided
+    // Boolean / profile fields — preserve only when explicitly provided
     if (onboardingStep !== undefined) updatedData.onboardingStep = onboardingStep;
     if (isProfileComplete !== undefined) updatedData.isProfileComplete = isProfileComplete;
 

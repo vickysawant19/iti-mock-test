@@ -36,28 +36,50 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
     if (!activeBatchId) return;
     setIsProfilesLoading(true);
     try {
-      const data = await userProfileService.getBatchUserProfile([
-        Query.equal("batchId", activeBatchId),
-        Query.select(["userId", "userName", "studentId"]),
-        Query.equal("status", "Active"),
+      // 1. Fetch active members from batchStudents
+      const batchMembers = await batchStudentService.getBatchStudents(activeBatchId, [
+        Query.equal("status", "active"),
+        Query.limit(100)
       ]);
 
-      const studentIds = data.map((student) => student.userId);
+      if (batchMembers.length === 0) {
+        setStudentsProfile([]);
+        return;
+      }
+
+      const studentIds = batchMembers.map(m => m.studentId);
+
+      // 2. Fetch profiles for these students
+      const profiles = await userProfileService.getBatchUserProfile([
+        Query.equal("userId", studentIds),
+        Query.select(["userId", "userName"]),
+        Query.limit(100)
+      ]);
+
+      const profileMap = {};
+      profiles.forEach(p => { profileMap[p.userId] = p; });
+
+      // 3. Fetch face mapping data
       const faceData = await faceService.getMatches([
         Query.equal("userId", studentIds),
         Query.select(["$id", "userId", "name"]),
       ]);
 
-      const newData = data.map((student) => ({
-        ...student,
-        faceData: faceData.documents.find(
-          (user) => user.userId === student.userId
-        ),
-      }));
+      const newData = batchMembers.map((member) => {
+        const profile = profileMap[member.studentId] || {};
+        return {
+          ...profile,
+          userId: member.studentId, // Ensure userId is mapped correctly
+          rollNumber: member.rollNumber,
+          faceData: faceData.documents.find(
+            (f) => f.userId === member.studentId
+          ),
+        };
+      }).filter(s => s.userName); // Only include those with a profile
 
       setStudentsProfile(newData);
     } catch (error) {
-      console.log(error);
+      console.error("AddFaces: error fetching students:", error);
     } finally {
       setIsProfilesLoading(false);
     }
@@ -301,6 +323,9 @@ const AddFaceMode = ({ captureFace, captureLoading, faceDetected }) => {
           options={studentsProfile || []}
           renderOptionLabel={(option) => (
             <div className="flex justify-between items-center w-full gap-4">
+              <span className="text-gray-800 dark:text-gray-100 italic mr-2 text-xs opacity-60">
+                #{option.rollNumber || "NA"}
+              </span>
               <span className="text-gray-800 dark:text-gray-100">
                 {option.userName}
               </span>

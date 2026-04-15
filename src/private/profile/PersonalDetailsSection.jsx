@@ -130,17 +130,6 @@ const PersonalDetailsSection = ({ isFieldEditable, formMode, targetUserId }) => 
         </div>
       </div>
 
-      {/* Conditional help text for edit mode */}
-      {formMode === "edit" && !isFieldEditable("userName") && (
-        <div className="mt-8 flex items-start gap-4 p-5 bg-slate-100/50 dark:bg-slate-900/40 rounded-2xl border border-white/60 dark:border-slate-800 backdrop-blur-sm">
-          <div className="p-2 bg-slate-200 dark:bg-slate-800 rounded-full mt-0.5 shadow-inner">
-            <User size={16} className="text-slate-500 dark:text-slate-400" />
-          </div>
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
-            Some fields are read-only based on your role. Please contact your administrator if you need to update locked information.
-          </p>
-        </div>
-      )}
     </div>
   );
 };

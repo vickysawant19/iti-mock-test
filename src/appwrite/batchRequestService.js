@@ -161,18 +161,16 @@ export class BatchRequestService {
   }
 
   // Teacher specific: Approve a request & map to batch
-  async approveRequest(requestId, batchId, studentId) {
+  async approveRequest(requestId, batchId, studentId, enrollmentDetails = {}) {
     if (!requestId || !batchId || !studentId) {
-       // if we only have requestId, we need to fetch it first to get batchId and studentId, 
-       // but typically we can pass all 3 if known from UI
-       throw new Error("Missing params for complete approval");
+      throw new Error("Missing params for complete approval");
     }
     
     // 1. Mark request as approved
     const updatedRequest = await this.updateRequestStatus(requestId, "approved");
     
-    // 2. Add student to batch
-    await batchStudentService.addStudent(batchId, studentId);
+    // 2. Add student to batch with enrollment details
+    await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
     
     return updatedRequest;
   }

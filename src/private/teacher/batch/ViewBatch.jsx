@@ -128,12 +128,31 @@ const ViewBatch = () => {
       // 2. Fetch the actual user profiles using the member IDs
       const result = await userProfileService.getBatchUserProfile([
         Query.equal("userId", studentIds),
-        Query.orderAsc("studentId"),
         Query.limit(100)
       ]);
-      const sortedStudents = result.sort(
-        (a, b) => parseInt(a.studentId) - parseInt(b.studentId)
-      );
+
+      // 3. Merge batch-specific enrollment info (rollNumber, stats, etc.)
+      const memberMap = {};
+      batchMembers.forEach(m => { memberMap[m.studentId] = m; });
+
+      const enrichedStudents = result.map(profile => {
+        const member = memberMap[profile.userId] || {};
+        return {
+          ...profile,
+          studentId: member.rollNumber || "NA", // mapping rollNumber to studentId for component compat
+          registerId: member.registerId || "NA",
+          status: member.status || "Inactive", // use batch-specific status
+          enrolledAt: member.enrollmentDate || member.joinedAt || "N/A",
+        };
+      });
+
+      // Sort by rollNumber
+      const sortedStudents = enrichedStudents.sort((a, b) => {
+        const numA = parseInt(a.studentId) || 999;
+        const numB = parseInt(b.studentId) || 999;
+        return numA - numB;
+      });
+
       setData((prev) => ({ ...prev, students: sortedStudents }));
     } catch (error) {
       console.error("Error fetching batch students:", error);
@@ -150,7 +169,7 @@ const ViewBatch = () => {
     setLoading("attendance", true);
     try {
       const activeStudents = data.students.filter(
-        (student) => student.status === "Active"
+        (student) => student.status?.toLowerCase() === "active"
       );
       const studentIds = activeStudents.map((student) => student.userId);
       if (studentIds.length <= 0) {
@@ -268,7 +287,7 @@ const ViewBatch = () => {
 
     switch (activeTab) {
       case "profiles":
-        return <ViewProfiles students={data.students} />;
+        return <ViewProfiles students={data.students} batchId={selectedBatch} />;
       case "attendance":
         return (
           <ViewAttendance

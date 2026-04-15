@@ -2,17 +2,22 @@ import React from "react";
 import { Award } from "lucide-react";
 import { parse, getDaysInMonth } from "date-fns";
 
-export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePercentage }) => {
+export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePercentage, monthlyStats }) => {
+  const prevPresent = Math.max(0, presentDays - (monthlyStats?.presentDays || 0));
+  const prevAbsent = Math.max(0, absentDays - (monthlyStats?.absentDays || 0));
+  const prevTotal = prevPresent + prevAbsent;
+  const prevPercentage = prevTotal > 0 ? ((prevPresent / prevTotal) * 100).toFixed(1) : 0;
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
       {/* Total Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between">
-        <div className="absolute top-0 inset-x-0 h-1bg-slate-200 dark:bg-slate-700"></div>
+        <div className="absolute top-0 inset-x-0 h-1 bg-slate-200 dark:bg-slate-700"></div>
         <div>
-          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Overall Classes</h4>
-          <p className="text-3xl font-extrabold text-slate-900 dark:text-white leading-none">{totalDays}</p>
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Overall Days</h4>
+          <p className="text-3xl font-extrabold text-slate-900 dark:text-white leading-none">{presentDays + absentDays}</p>
         </div>
-        <p className="text-xs text-slate-400 font-medium mt-3">Total recorded across batch</p>
+        <p className="text-xs text-slate-400 font-medium mt-3">Till last month: {prevTotal}</p>
       </div>
 
       {/* Present Card */}
@@ -22,7 +27,7 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
           <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">Present</h4>
           <p className="text-3xl font-extrabold text-emerald-500 leading-none">{presentDays}</p>
         </div>
-        <p className="text-xs text-slate-400 font-medium mt-3">Days attended</p>
+        <p className="text-xs text-slate-400 font-medium mt-3">Till last month: {prevPresent}</p>
       </div>
 
       {/* Absent Card */}
@@ -32,7 +37,7 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
           <h4 className="text-xs font-bold text-rose-600 dark:text-rose-500 uppercase tracking-widest mb-1">Absent</h4>
           <p className="text-3xl font-extrabold text-rose-500 leading-none">{absentDays}</p>
         </div>
-        <p className="text-xs text-slate-400 font-medium mt-3">Days missed</p>
+        <p className="text-xs text-slate-400 font-medium mt-3">Till last month: {prevAbsent}</p>
       </div>
 
       {/* Rate Card */}
@@ -42,7 +47,7 @@ export const TopStatsRow = ({ totalDays, presentDays, absentDays, attendancePerc
           <p className="text-3xl font-extrabold leading-none">{attendancePercentage}%</p>
         </div>
         <p className="text-xs text-indigo-100 font-medium mt-3 flex items-center gap-1">
-           {attendancePercentage >= 75 ? "Good standing ★" : "Needs improvement"}
+           Till last month: {prevPercentage}%
         </p>
       </div>
     </div>
@@ -87,7 +92,7 @@ export const RightPanelStats = ({ stats, currentMonth }) => {
       {/* Mini Stats Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden text-sm">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-          <div className="flex justify-between font-bold"><span className="text-slate-500 text-xs">Total Classes</span><span className="text-slate-900 dark:text-white">{totalDays}</span></div>
+          <div className="flex justify-between font-bold"><span className="text-slate-500 text-xs">Overall Days</span><span className="text-slate-900 dark:text-white">{presentDays + absentDays}</span></div>
           <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-slate-300 dark:bg-slate-600 rounded-full w-full"></div></div>
         </div>
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2">
