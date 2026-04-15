@@ -82,7 +82,7 @@ export const RightPanelStats = ({ stats, currentMonth }) => {
         </div>
         <div>
           <h4 className="font-bold text-slate-900 dark:text-white text-sm mb-1">Attendance Performance</h4>
-          <p className="text-xs text-slate-500 mb-2">Overall rate based on present days vs scheduled days</p>
+          <p className="text-xs text-slate-500 mb-2">Overall rate based on present days vs recorded days</p>
           <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${attendancePercentage >= 75 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
             <Award size={12} /> {attendancePercentage >= 75 ? 'Good Standing' : 'Risk Warning'}
           </div>

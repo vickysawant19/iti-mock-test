@@ -137,15 +137,15 @@ const buildAttendanceMap = ({
   return finalMap;
 };
 
-const calculateStats = (attendanceMap, holidayDays = 0) => {
+const calculateStats = (records = [], holidayDays = 0) => {
   let presentDays = 0;
   let absentDays = 0;
   let leaveDays = 0;
 
-  attendanceMap.forEach((record) => {
+  records.forEach((record) => {
     if (record.status === "present") presentDays += 1;
     else if (record.status === "leave") leaveDays += 1;
-    else absentDays += 1;
+    else if (record.status === "absent") absentDays += 1;
   });
 
   const totalDays = presentDays + absentDays;
@@ -351,8 +351,8 @@ export const useStudentAttendance = (profile) => {
   );
 
   const stats = useMemo(
-    () => calculateStats(finalAttendanceMap, holidays.size),
-    [finalAttendanceMap, holidays.size],
+    () => calculateStats(normalized.records, holidays.size),
+    [normalized.records, holidays.size],
   );
 
   const studentAttendance = useMemo(
@@ -458,6 +458,7 @@ export const useStudentAttendance = (profile) => {
       setLastUpdatedDate(normalizedDate);
       setTimeout(() => setLastUpdatedDate(null), 2200);
 
+      setRefreshStatsCounter((prev) => prev + 1);
       toast.success("Attendance saved successfully!");
       return result;
     } catch (error) {
@@ -528,6 +529,7 @@ export const useStudentAttendance = (profile) => {
         toast.success(
           `${daysToMark.length} day${daysToMark.length > 1 ? "s" : ""} marked as ${status}!`,
         );
+        setRefreshStatsCounter((prev) => prev + 1);
       } catch (err) {
         console.error("Bulk mark error:", err);
         toast.error("Bulk marking failed.");
