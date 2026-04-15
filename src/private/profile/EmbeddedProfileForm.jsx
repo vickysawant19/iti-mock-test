@@ -51,6 +51,9 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     "profileImage",
     "registerId",
     "studentId",
+    "status",
+    "enrollmentStatus",
+    "enrolledAt",
   ];
 
   const isFieldEditable = (fieldName) => {

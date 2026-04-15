@@ -28,6 +28,7 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import Legent from "./components/Legent";
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
+import { toast } from "react-toastify";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
@@ -469,11 +470,63 @@ const AttendanceRegister = () => {
     setSelectedDate(null);
   };
 
-  // Month navigation
-  const handlePrevMonth = () => setSelectedMonth(subMonths(selectedMonth, 1));
-  const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1));
-  const handleMonthChange = (event) =>
-    setSelectedMonth(new Date(event.target.value));
+  // ── Stable batch start date ──────────────────────────────────────────────
+  const batchStartDate = useMemo(() => {
+    const data = batches.get(selectedBatch);
+    if (!data?.start_date) return null;
+    const d = new Date(data.start_date);
+    // Normalise to local midnight of the 1st of that month (used for nav clamping)
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }, [batches, selectedBatch]);
+
+  // Raw start date preserving the actual day — used for column filtering
+  const rawBatchStartDate = useMemo(() => {
+    const data = batches.get(selectedBatch);
+    if (!data?.start_date) return null;
+    const d = new Date(data.start_date);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }, [batches, selectedBatch]);
+
+  // When batch changes, clamp selectedMonth into the valid window
+  // (batchStart → current month). This prevents the header from ever
+  // showing a month that pre-dates the batch.
+  useEffect(() => {
+    if (!batchStartDate) return;
+    const now = new Date();
+    const maxMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (selectedMonth < batchStartDate) {
+      setSelectedMonth(batchStartDate);
+    } else if (selectedMonth > maxMonth) {
+      setSelectedMonth(maxMonth);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batchStartDate]); // only run when the batch (and its start) changes
+
+  // ── Month navigation ─────────────────────────────────────────────────────
+  const handlePrevMonth = useCallback(() => {
+    const prev = subMonths(selectedMonth, 1);
+    if (batchStartDate && prev < batchStartDate) return;
+    setSelectedMonth(prev);
+  }, [selectedMonth, batchStartDate]);
+
+  const handleNextMonth = useCallback(() => {
+    const next = addMonths(selectedMonth, 1);
+    const maxMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    if (next > maxMonth) return;
+    setSelectedMonth(next);
+  }, [selectedMonth]);
+
+  const handleMonthChange = useCallback((event) => {
+    // Called from AttendanceHeader with { target: { value: "yyyy-MM" } }
+    const raw   = event.target.value; // "yyyy-MM"
+    const parts = raw.split("-");
+    // Build a LOCAL midnight date to avoid UTC parse surprises
+    const next  = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+    const maxMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    if (batchStartDate && next < batchStartDate) return;
+    if (next > maxMonth) return;
+    setSelectedMonth(next);
+  }, [batchStartDate]);
 
   // Effect: Fetch batches only once on mount
   useEffect(() => {
@@ -536,6 +589,7 @@ const AttendanceRegister = () => {
           holidays={holidays}
           handleAddHoliday={handleAddHoliday}
           handleRemoveHoliday={handleRemoveHoliday}
+          batchStartDate={batchStartDate}
         />
 
         <AttendanceTable
@@ -554,6 +608,7 @@ const AttendanceRegister = () => {
           isStudentUpdating={isStudentUpdating}
           loading={loading}
           selectedBatch={selectedBatch}
+          batchStartDate={rawBatchStartDate}
         />
 
         <Legent />

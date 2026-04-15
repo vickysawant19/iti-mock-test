@@ -16,6 +16,8 @@ const AddStudents = () => {
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
 
+  const selectedBatchData = teacherBatches.find((b) => b.$id === selectedBatch) || null;
+
   // Load teacher batches
   useEffect(() => {
     if (!teacherId) return;
@@ -101,7 +103,7 @@ const AddStudents = () => {
         {/* Content Area */}
         <div className="transition-all duration-300">
           {activeTab === "manage" ? (
-            <ManageStudentsList selectedBatch={selectedBatch} />
+            <ManageStudentsList selectedBatch={selectedBatch} batchData={selectedBatchData} />
           ) : (
              <AddStudentForm defaultBatchId={selectedBatch} />
           )}

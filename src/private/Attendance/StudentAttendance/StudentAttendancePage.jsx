@@ -28,6 +28,7 @@ const StudentAttendancePage = () => {
     workingDays,
     finalAttendanceRecords,
     attendanceByDate,
+    rawAttendanceByDate,
     overallStats,
     monthlyStats,
     currentMonth,
@@ -142,8 +143,8 @@ const StudentAttendancePage = () => {
           </button>
         </div>
 
-        {/* Bulk-mark banner — only shown when canMarkPrevious is on and there are blank days */}
-        {batchData?.canMarkAttendance && batchData?.canMarkPrevious && blankDays.length > 0 && (
+        {/* Bulk-mark banner — only shown when canMarkPrevious is on, attendance loaded, and there are blank days */}
+        {!isLoadingAttendance && batchData?.canMarkAttendance && batchData?.canMarkPrevious && blankDays.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 mb-4 shadow-sm">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Users size={14} className="text-slate-400 flex-shrink-0" />
@@ -186,7 +187,38 @@ const StudentAttendancePage = () => {
               </div>
               <div className="p-0">
                 {isLoadingAttendance ? (
-                  <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" /></div>
+                  // Calendar skeleton
+                  <div className="p-3 animate-pulse">
+                    {/* Month/year picker row skeleton */}
+                    <div className="flex items-center justify-between gap-2 mb-3 px-1">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                      <div className="flex gap-2 flex-1 justify-center">
+                        <div className="h-8 w-28 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                        <div className="h-8 w-16 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                      </div>
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800" />
+                    </div>
+                    {/* Day-of-week header */}
+                    <div className="grid grid-cols-7 mb-1">
+                      {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
+                        <div key={d} className="flex justify-center py-1.5">
+                          <div className="h-3 w-6 rounded bg-slate-100 dark:bg-slate-800" />
+                        </div>
+                      ))}
+                    </div>
+                    {/* 5 rows × 7 tiles */}
+                    {Array.from({ length: 5 }).map((_, row) => (
+                      <div key={row} className="grid grid-cols-7">
+                        {Array.from({ length: 7 }).map((_, col) => (
+                          <div
+                            key={col}
+                            className="border border-white dark:border-slate-900 bg-slate-50 dark:bg-slate-800/60"
+                            style={{ height: 72 }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 ) : viewMode === "table" ? (
                   <AttendanceTable attendanceRecords={tableRecords} holidays={holidays} />
                 ) : (
@@ -199,6 +231,7 @@ const StudentAttendancePage = () => {
                     holidays={holidays}
                     workingDays={workingDays}
                     attendanceByDate={attendanceByDate}
+                    rawAttendanceByDate={rawAttendanceByDate}
                     lastUpdatedDate={lastUpdatedDate}
                     openMarkModal={(dateKey) => {
                       setModalDate(dateKey || todayStr);

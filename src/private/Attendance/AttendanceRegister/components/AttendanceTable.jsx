@@ -24,9 +24,25 @@ const AttendanceTable = ({
   selectedBatch,
   handleAddHoliday,
   handleRemoveHoliday,
+  batchStartDate,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
-  const monthDates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // Filter out days before the batch start date
+  const firstValidDay = (() => {
+    if (!batchStartDate) return 1;
+    const sy = selectedMonth.getFullYear();
+    const sm = selectedMonth.getMonth();
+    const by = batchStartDate.getFullYear();
+    const bm = batchStartDate.getMonth();
+    // Only filter if viewing the exact batch start month
+    if (sy === by && sm === bm) return batchStartDate.getDate();
+    return 1;
+  })();
+  const monthDates = firstValidDay > 1
+    ? allDays.filter((d) => d >= firstValidDay)
+    : allDays;
 
   // Column group visibility state
   const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);

@@ -29,13 +29,16 @@ const STATUS_ALIASES = {
 };
 
 const normalizeStatus = (rawStatus) => {
-  const value = String(rawStatus || "").trim().toLowerCase();
+  const value = String(rawStatus || "")
+    .trim()
+    .toLowerCase();
   return STATUS_ALIASES[value] || value;
 };
 
 const normalizeDate = (value) => {
   if (!value) return null;
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
+    return value;
   try {
     const dateObj =
       typeof value === "string" && value.includes("T")
@@ -80,10 +83,13 @@ const normalizeAttendanceData = (records = []) => {
     }
 
     const currentTs = new Date(
-      current?.$updatedAt || current?.markedAt || current?.$createdAt || 0
+      current?.$updatedAt || current?.markedAt || current?.$createdAt || 0,
     ).getTime();
     const candidateTs = new Date(
-      normalized?.$updatedAt || normalized?.markedAt || normalized?.$createdAt || 0
+      normalized?.$updatedAt ||
+        normalized?.markedAt ||
+        normalized?.$createdAt ||
+        0,
     ).getTime();
     if (candidateTs >= currentTs) byDate.set(date, normalized);
   });
@@ -104,7 +110,12 @@ const generateWorkingDays = ({ startDate, endDate, holidaysMap }) => {
     .map(({ date }) => date);
 };
 
-const buildAttendanceMap = ({ workingDaysList, attendanceByDate, profile, batchId }) => {
+const buildAttendanceMap = ({
+  workingDaysList,
+  attendanceByDate,
+  profile,
+  batchId,
+}) => {
   const finalMap = new Map();
   workingDaysList.forEach((date) => {
     const existing = attendanceByDate.get(date);
@@ -150,7 +161,9 @@ const calculateStats = (attendanceMap, holidayDays = 0) => {
 };
 
 const toMinutes = (time, fallback) => {
-  const [h, m] = String(time || fallback).split(":").map((v) => Number(v || 0));
+  const [h, m] = String(time || fallback)
+    .split(":")
+    .map((v) => Number(v || 0));
   return h * 60 + m;
 };
 
@@ -165,7 +178,9 @@ export const useStudentAttendance = (profile) => {
   const [holidays, setHolidays] = useState(new Map());
   const [invalidRecords, setInvalidRecords] = useState([]);
   const [refreshStatsCounter, setRefreshStatsCounter] = useState(0);
-  const [currentMonth, setCurrentMonth] = useState(format(new Date(), "MMMM yyyy"));
+  const [currentMonth, setCurrentMonth] = useState(
+    format(new Date(), "MMMM yyyy"),
+  );
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [lastUpdatedDate, setLastUpdatedDate] = useState(null);
   const [overallStats, setOverallStats] = useState(null);
@@ -188,7 +203,7 @@ export const useStudentAttendance = (profile) => {
       console.log(error);
     }
   }, []);
-
+  console.log(profile);
 
   useEffect(() => {
     if (resolvedBatchId) fetchBatchData(resolvedBatchId);
@@ -216,8 +231,16 @@ export const useStudentAttendance = (profile) => {
         : endOfDay(end);
       const todayEnd = endOfDay(new Date());
 
-      const rangeStart = new Date(Math.max(start.getTime(), batchStart.getTime()));
-      const rangeEnd = new Date(Math.min(endOfDay(end).getTime(), batchEnd.getTime(), todayEnd.getTime()));
+      const rangeStart = new Date(
+        Math.max(start.getTime(), batchStart.getTime()),
+      );
+      const rangeEnd = new Date(
+        Math.min(
+          endOfDay(end).getTime(),
+          batchEnd.getTime(),
+          todayEnd.getTime(),
+        ),
+      );
 
       const startDate = format(rangeStart, "yyyy-MM-dd");
       const endDate = format(rangeEnd, "yyyy-MM-dd");
@@ -227,12 +250,12 @@ export const useStudentAttendance = (profile) => {
           profile.userId,
           resolvedBatchId,
           startDate,
-          endDate
+          endDate,
         ),
         holidayService.getBatchHolidaysByDateRange(
           resolvedBatchId,
           startDate,
-          endDate
+          endDate,
         ),
       ]);
 
@@ -262,7 +285,7 @@ export const useStudentAttendance = (profile) => {
     try {
       const stats = await newAttendanceService.getStudentAttendanceStats(
         profile.userId,
-        resolvedBatchId
+        resolvedBatchId,
       );
       setOverallStats({
         totalDays: stats.total,
@@ -282,7 +305,7 @@ export const useStudentAttendance = (profile) => {
 
   const normalized = useMemo(
     () => normalizeAttendanceData(rawMonthlyRecords),
-    [rawMonthlyRecords]
+    [rawMonthlyRecords],
   );
 
   useEffect(() => {
@@ -298,8 +321,12 @@ export const useStudentAttendance = (profile) => {
       : endOfDay(new Date());
     const today = endOfDay(new Date());
 
-    const rangeStart = new Date(Math.max(monthStart.getTime(), batchStart.getTime()));
-    const rangeEnd = new Date(Math.min(monthEnd.getTime(), batchEnd.getTime(), today.getTime()));
+    const rangeStart = new Date(
+      Math.max(monthStart.getTime(), batchStart.getTime()),
+    );
+    const rangeEnd = new Date(
+      Math.min(monthEnd.getTime(), batchEnd.getTime(), today.getTime()),
+    );
 
     return generateWorkingDays({
       startDate: rangeStart,
@@ -316,18 +343,21 @@ export const useStudentAttendance = (profile) => {
         profile,
         batchId: resolvedBatchId,
       }),
-    [workingDaysList, normalized.byDate, profile, resolvedBatchId]
+    [workingDaysList, normalized.byDate, profile, resolvedBatchId],
   );
 
   const finalAttendanceRecords = useMemo(
     () =>
       Array.from(finalAttendanceMap.values()).sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
+        (a, b) => new Date(b.date) - new Date(a.date),
       ),
-    [finalAttendanceMap]
+    [finalAttendanceMap],
   );
 
-  const stats = useMemo(() => calculateStats(finalAttendanceMap, holidays.size), [finalAttendanceMap, holidays.size]);
+  const stats = useMemo(
+    () => calculateStats(finalAttendanceMap, holidays.size),
+    [finalAttendanceMap, holidays.size],
+  );
 
   const studentAttendance = useMemo(
     () => ({
@@ -335,7 +365,7 @@ export const useStudentAttendance = (profile) => {
       attendanceRecords: finalAttendanceRecords,
       batchId: resolvedBatchId,
     }),
-    [profile, finalAttendanceRecords, resolvedBatchId]
+    [profile, finalAttendanceRecords, resolvedBatchId],
   );
 
   const markAttendance = async (dateStr, status = "present", remarks = "") => {
@@ -370,7 +400,10 @@ export const useStudentAttendance = (profile) => {
         toast.warn("Date is before batch start.");
         return null;
       }
-      if (batchData?.end_date && normalizedDate > normalizeDate(batchData.end_date)) {
+      if (
+        batchData?.end_date &&
+        normalizedDate > normalizeDate(batchData.end_date)
+      ) {
         toast.warn("Date is after batch end.");
         return null;
       }
@@ -378,7 +411,10 @@ export const useStudentAttendance = (profile) => {
       const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
       const startMins = toMinutes(batchData?.attendanceTime?.start, "09:00");
       const endMins = toMinutes(batchData?.attendanceTime?.end, "18:00");
-      if (normalizedDate === today && (nowMins < startMins || nowMins > endMins)) {
+      if (
+        normalizedDate === today &&
+        (nowMins < startMins || nowMins > endMins)
+      ) {
         toast.warn("Attendance can only be marked within attendance time.");
         return null;
       }
@@ -407,7 +443,9 @@ export const useStudentAttendance = (profile) => {
       // Update only the changed date locally to avoid full-month refetch flicker.
       setRawMonthlyRecords((prev) => {
         const next = Array.isArray(prev) ? [...prev] : [];
-        const idx = next.findIndex((r) => normalizeDate(r?.date) === normalizedDate);
+        const idx = next.findIndex(
+          (r) => normalizeDate(r?.date) === normalizedDate,
+        );
         const merged = {
           ...(idx >= 0 ? next[idx] : {}),
           ...(result || {}),
@@ -433,28 +471,6 @@ export const useStudentAttendance = (profile) => {
     }
   };
 
-  useEffect(() => {
-    console.groupCollapsed("[StudentAttendance][Debug] Core data snapshot");
-    console.log("Student profile:", profile || {});
-    console.log("Batch data:", batchData || {});
-    console.log("Holidays:", Array.from(holidays.entries()));
-    console.log("Raw monthly records:", rawMonthlyRecords);
-    console.log("Normalized records:", normalized.records);
-    console.log("Working days:", workingDaysList);
-    console.log("Final attendance map:", finalAttendanceMap);
-    console.log("Invalid records:", invalidRecords);
-    console.groupEnd();
-  }, [
-    profile,
-    batchData,
-    holidays,
-    rawMonthlyRecords,
-    normalized.records,
-    workingDaysList,
-    finalAttendanceMap,
-    invalidRecords,
-  ]);
-
   // Collect all blank (auto-generated) days for the current month view
   const blankDays = useMemo(
     () =>
@@ -462,7 +478,7 @@ export const useStudentAttendance = (profile) => {
         .filter(([, rec]) => rec.autoGenerated)
         .map(([date]) => date)
         .sort(),
-    [finalAttendanceMap]
+    [finalAttendanceMap],
   );
 
   const [isBulkMarking, setIsBulkMarking] = useState(false);
@@ -504,7 +520,9 @@ export const useStudentAttendance = (profile) => {
         setRawMonthlyRecords((prev) => {
           const next = Array.isArray(prev) ? [...prev] : [];
           records.forEach((rec) => {
-            const idx = next.findIndex((r) => normalizeDate(r?.date) === rec.date);
+            const idx = next.findIndex(
+              (r) => normalizeDate(r?.date) === rec.date,
+            );
             if (idx >= 0) next[idx] = { ...next[idx], ...rec };
             else next.push(rec);
           });
@@ -512,7 +530,7 @@ export const useStudentAttendance = (profile) => {
         });
 
         toast.success(
-          `${daysToMark.length} day${daysToMark.length > 1 ? "s" : ""} marked as ${status}!`
+          `${daysToMark.length} day${daysToMark.length > 1 ? "s" : ""} marked as ${status}!`,
         );
       } catch (err) {
         console.error("Bulk mark error:", err);
@@ -521,7 +539,7 @@ export const useStudentAttendance = (profile) => {
         setIsBulkMarking(false);
       }
     },
-    [batchData, blankDays, isBulkMarking, profile, resolvedBatchId]
+    [batchData, blankDays, isBulkMarking, profile, resolvedBatchId],
   );
 
   return {
@@ -535,6 +553,10 @@ export const useStudentAttendance = (profile) => {
     finalAttendanceRecords,
     workingDaysList,
     attendanceByDate: finalAttendanceMap,
+    // Raw DB records keyed by date — includes Sundays, 2nd/4th Saturdays etc.
+    // Used by the calendar to display records on non-working days without
+    // affecting stats which are calculated from finalAttendanceMap only.
+    rawAttendanceByDate: normalized.byDate,
     attendanceStats: stats,
     monthlyStats: stats,
     overallStats,
@@ -543,7 +565,9 @@ export const useStudentAttendance = (profile) => {
     setSelectedDate,
     handleMonthChange: (dateOrStr) => {
       const month =
-        typeof dateOrStr === "string" ? dateOrStr : format(dateOrStr, "MMMM yyyy");
+        typeof dateOrStr === "string"
+          ? dateOrStr
+          : format(dateOrStr, "MMMM yyyy");
       setCurrentMonth(month);
       if (typeof dateOrStr !== "string") setSelectedDate(dateOrStr);
     },

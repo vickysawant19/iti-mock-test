@@ -29,6 +29,18 @@ const getStatusDotColor = (status) => {
   }
 };
 
+// Subtle full-row tint matching the status colour
+const getRowBgClass = (status) => {
+  switch (status) {
+    case "present": return "bg-emerald-50/60 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20";
+    case "absent":  return "bg-rose-50/60    dark:bg-rose-900/10    hover:bg-rose-50    dark:hover:bg-rose-900/20";
+    case "late":    return "bg-amber-50/60   dark:bg-amber-900/10   hover:bg-amber-50   dark:hover:bg-amber-900/20";
+    case "leave":   return "bg-violet-50/60  dark:bg-violet-900/10  hover:bg-violet-50  dark:hover:bg-violet-900/20";
+    case "holiday": return "bg-amber-50/70   dark:bg-amber-900/15   hover:bg-amber-100  dark:hover:bg-amber-900/25";
+    default:        return "hover:bg-slate-50 dark:hover:bg-slate-800/50";
+  }
+};
+
 const AttendanceTable = ({ attendanceRecords, holidays }) => {
   const normalizeStatus = (rawStatus) => {
     const value = String(rawStatus || "").trim().toLowerCase();
@@ -103,8 +115,8 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
 
             if (isHoliday) {
               return (
-                <tr key={record.$id || record.date} className="hover:bg-[#fafbff] dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-2.5 border-t border-[#f1f5f9] dark:border-slate-800">
+                <tr key={record.$id || record.date} className={`transition-colors ${getRowBgClass("holiday")}`}>
+                  <td className="px-4 py-2.5 border-t border-amber-100 dark:border-amber-900/20">
                      <div className="font-bold text-[13px] text-slate-900 dark:text-white">{dateFmt}</div>
                      <div className="text-[10px] text-slate-400">{dayFmt}</div>
                   </td>
@@ -122,22 +134,31 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
               );
             }
 
+            const rowStatus = isHoliday ? "holiday" : status;
+            const borderColor = {
+              present: "border-emerald-100 dark:border-emerald-900/20",
+              absent:  "border-rose-100    dark:border-rose-900/20",
+              late:    "border-amber-100   dark:border-amber-900/20",
+              leave:   "border-violet-100  dark:border-violet-900/20",
+              holiday: "border-amber-100   dark:border-amber-900/20",
+            }[rowStatus] || "border-slate-100 dark:border-slate-800";
+
             return (
-               <tr key={record.$id || record.date} className="hover:bg-[#fafbff] dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-2.5 border-t border-[#f1f5f9] dark:border-slate-800">
+               <tr key={record.$id || record.date} className={`transition-colors ${getRowBgClass(rowStatus)}`}>
+                  <td className={`px-4 py-2.5 border-t ${borderColor}`}>
                      <div className="font-bold text-[13px] text-slate-900 dark:text-white">{dateFmt}</div>
                      <div className="text-[10px] text-slate-400">{dayFmt}</div>
                   </td>
-                  <td className="px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 truncate">
+                  <td className={`px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300 truncate border-t ${borderColor}`}>
                      {isHoliday ? holidayText || record.remarks || "Public Holiday" : record.remarks || "-"}
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-[12px] text-slate-500 truncate">
+                  <td className={`px-4 py-2.5 font-mono text-[12px] text-slate-500 truncate border-t ${borderColor}`}>
                      {record.$updatedAt ? format(new Date(record.$updatedAt), "h:mm a") : "—"}
                   </td>
-                  <td className="px-4 py-2.5">
-                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(isHoliday ? "holiday" : status)}`}>
-                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(isHoliday ? "holiday" : status)}`} />
-                       <span className="capitalize">{isHoliday ? "holiday" : status || "unknown"}</span>
+                  <td className={`px-4 py-2.5 border-t ${borderColor}`}>
+                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(rowStatus)}`}>
+                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(rowStatus)}`} />
+                       <span className="capitalize">{rowStatus || "unknown"}</span>
                      </span>
                   </td>
                 </tr>
