@@ -26,14 +26,26 @@ export const calculateStats = ({
   }
   setAttendance && setAttendance(data);
   // Calculate attendance statistics
+  const normalizeStatus = (rawStatus) => {
+    const value = String(rawStatus || "").trim().toLowerCase();
+    if (["present", "p"].includes(value)) return "present";
+    if (["absent", "a"].includes(value)) return "absent";
+    if (["leave", "l"].includes(value)) return "leave";
+    return value;
+  };
+
   let presentDays = 0;
   let absentDays = 0;
   let holidayDays = 0;
   const monthlyAttendance = {};
 
   data.forEach((record) => {
-    if (typeof record === "string") return;
-    const month = format(new Date(record.date), "MMMM yyyy");
+    if (!record || typeof record === "string") return;
+    const dateStr = record.date;
+    if (!dateStr) return;
+
+    const month = format(new Date(dateStr), "MMMM yyyy");
+    const status = normalizeStatus(record.status);
 
     if (!monthlyAttendance[month]) {
       monthlyAttendance[month] = {
@@ -46,16 +58,18 @@ export const calculateStats = ({
     if (record.isHoliday) {
       holidayDays++;
       monthlyAttendance[month].holidayDays++;
-    } else if (record.status === "present") {
+    }
+
+    if (status === "present") {
       presentDays++;
       monthlyAttendance[month].presentDays++;
-    } else if (record.status === "absent") {
+    } else if (status === "absent") {
       absentDays++;
       monthlyAttendance[month].absentDays++;
     }
   });
 
-  let totalDays = presentDays + absentDays;
+  const totalDays = presentDays + absentDays;
 
   const attendancePercentage =
     totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
