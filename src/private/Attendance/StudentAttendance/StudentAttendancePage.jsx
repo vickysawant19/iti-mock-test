@@ -52,8 +52,10 @@ const StudentAttendancePage = () => {
   const todayAttendance = workingDays?.get(todayStr);
   const modalAttendance = workingDays?.get(modalDate);
   const tableRecords = finalAttendanceRecords || studentAttendance?.attendanceRecords || [];
-  const canOpenTodayMarkModal =
-    Boolean(batchData?.canMarkAttendance) &&
+  // Allow calendar double-click on today as long as marking is enabled — the modal enforces location
+  const canOpenTodayMarkModal = Boolean(batchData?.canMarkAttendance);
+  // Full location check used by the modal button itself (passed as prop)
+  const isInLocationRange =
     Number.isFinite(distance) &&
     distance <= (batchData?.circleRadius || 1000);
 
@@ -90,9 +92,10 @@ const StudentAttendancePage = () => {
             </div>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="bg-white text-blue-600 font-bold text-sm px-5 py-2.5 rounded-[14px] flex items-center gap-2 shadow-sm hover:-translate-y-0.5 transition-transform active:scale-95 whitespace-nowrap"
+              disabled={!batchData?.canMarkAttendance}
+              className="bg-white text-blue-600 font-bold text-sm px-5 py-2.5 rounded-[14px] flex items-center gap-2 shadow-sm hover:-translate-y-0.5 transition-transform active:scale-95 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_0_0_rgba(16,185,129,0.5)]" />
+              <div className={`w-2 h-2 ${batchData?.canMarkAttendance ? 'bg-emerald-500 animate-pulse shadow-[0_0_0_0_rgba(16,185,129,0.5)]' : 'bg-slate-300'} rounded-full`} />
               Mark Attendance
             </button>
           </div>
@@ -103,7 +106,7 @@ const StudentAttendancePage = () => {
                <MapPin className="w-4 h-4 text-emerald-300" />
              </div>
              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold">{locLoading ? "Checking Location..." : (distance <= (batchData?.circleRadius || 1000) ? "Inside College Area" : "Outside Area")}</div>
+                <div className="text-[13px] font-bold">{locLoading ? "Checking Location..." : (isInLocationRange ? "Inside College Area" : "Outside Area")}</div>
                 <div className="text-[11px] text-white/70 truncate">{distance === Infinity || locLoading ? locationText || "Locating..." : `${Math.round(distance)}m from institute`}</div>
              </div>
              {todayAttendance?.status === 'present' && (
@@ -117,11 +120,11 @@ const StudentAttendancePage = () => {
 
         {/* Top Stats Row */}
         <TopStatsRow 
-          totalDays={overallStats?.totalDays || 0}
-          presentDays={overallStats?.presentDays || 0}
-          absentDays={overallStats?.absentDays || 0}
-          attendancePercentage={overallStats?.attendancePercentage || 0}
+          overallStats={overallStats}
           monthlyStats={monthlyStats}
+          currentMonth={currentMonth}
+          batchData={batchData}
+          selectedDate={selectedDate}
         />
 
         {/* View Tabs */}
@@ -144,7 +147,7 @@ const StudentAttendancePage = () => {
           </button>
         </div>
 
-        {/* Bulk-mark banner — only shown when canMarkPrevious is on, attendance loaded, and there are blank days */}
+        {/* Bulk-mark banner — only shown when both marking and past-marking are on, and there are blank days */}
         {!isLoadingAttendance && batchData?.canMarkAttendance && batchData?.canMarkPrevious && blankDays.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 mb-4 shadow-sm">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -247,7 +250,7 @@ const StudentAttendancePage = () => {
 
           {/* Right Column (Analytics) */}
           <div className="w-full xl:w-[320px] xl:sticky xl:top-4">
-            <RightPanelStats stats={monthlyStats || {}} currentMonth={currentMonth} />
+            <RightPanelStats stats={monthlyStats || {}} overallStats={overallStats} currentMonth={currentMonth} />
           </div>
 
         </div>

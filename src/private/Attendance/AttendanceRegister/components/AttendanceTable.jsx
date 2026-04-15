@@ -46,7 +46,7 @@ const AttendanceTable = ({
 
   // Column group visibility state
   const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
-  const [compactView, setCompactView] = useState(false);
+  const [compactView, setCompactView] = useState(true);
 
   const toggleGroup = (group) =>
     setColumnVisibility((prev) => ({ ...prev, [group]: !prev[group] }));

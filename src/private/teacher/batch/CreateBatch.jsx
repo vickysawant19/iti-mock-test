@@ -63,8 +63,16 @@ const BatchForm = ({ onClose }) => {
   } = useForm();
 
   const selectedCollegeId = watch("collegeId");
+  const canMarkAttendance = watch("canMarkAttendance");
   const selectedCollege = collegesData.find((c) => c.$id === selectedCollegeId);
   const tradeIds = selectedCollege?.tradeIds || [];
+
+  // When canMarkAttendance is disabled, also disable canMarkPrevious
+  useEffect(() => {
+    if (!canMarkAttendance) {
+      setValue("canMarkPrevious", false);
+    }
+  }, [canMarkAttendance, setValue]);
 
   const { data: tradesResponse } = useListTradesQuery(
     [Query.equal("$id", tradeIds)],
@@ -128,7 +136,7 @@ const BatchForm = ({ onClose }) => {
       setValue("tradeId", data.tradeId?.$id || data.tradeId);
       setValue("isActive", data.isActive ?? false);
 
-      setValue("canEditAttendance", data.canEditAttendance ?? false);
+      setValue("canMarkAttendance", data.canMarkAttendance ?? true);
       setValue("attendanceTime", {
         start: data.attendanceTime?.start || "",
         end: data.attendanceTime?.end || "",
@@ -189,7 +197,9 @@ const BatchForm = ({ onClose }) => {
           end: data.attendanceTime.end,
         }),
         location: JSON.stringify(data.location),
+        canMarkAttendance: data.canMarkAttendance ?? true,
         canMarkPrevious: data.canMarkPrevious,
+        isCurrentBatch: data.isCurrentBatch ?? true,
       };
 
       if (selectedBatchId) {
@@ -505,14 +515,40 @@ const BatchForm = ({ onClose }) => {
                   </label>
 
                   <label className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Allow Previous Attendance
-                    </span>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Allow Attendance Marking
+                      </span>
+                      <p className="text-xs text-gray-400 mt-0.5">Students can mark today's attendance</p>
+                    </div>
+                    <div className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        {...register("canMarkAttendance")}
+                        className="sr-only peer"
+                        disabled={isBatchDataLoading}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer ${
+                    !canMarkAttendance
+                      ? 'border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed'
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Allow Previous Attendance
+                      </span>
+                      <p className="text-xs text-gray-400 mt-0.5">Students can mark past days (batch start → yesterday)</p>
+                    </div>
                     <div className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         {...register("canMarkPrevious")}
                         className="sr-only peer"
+                        disabled={!canMarkAttendance}
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                     </div>
@@ -581,12 +617,12 @@ const BatchForm = ({ onClose }) => {
                       <input
                         type="range"
                         min={10}
-                        max={1000}
+                        max={10000}
                         {...register("circleRadius", {})}
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Allowed distance from center (10m - 1000m)
+                        Allowed distance from center (10m - 10,000m)
                       </p>
                     </div>
                   </div>
