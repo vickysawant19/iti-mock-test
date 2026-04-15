@@ -223,12 +223,17 @@ const AttendanceTableBody = ({
                   return null;
                 }
 
+                const todayStr = formatDate(new Date(), "yyyy-MM-dd");
+                const isFuture = fullDate > todayStr;
+
                 return (
                   <td
                     key={date}
                     className={`${cell} border border-slate-300 dark:border-slate-600 text-center relative ${
                       editStudentId === student.userId && !isHoliday
                         ? "bg-amber-50 dark:bg-amber-900/20"
+                        : isFuture
+                        ? "bg-slate-50/50 dark:bg-slate-800/30"
                         : ""
                     } ${cellUpdating ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
                   >
@@ -247,8 +252,9 @@ const AttendanceTableBody = ({
                             status === "present" ? "absent" : "present"
                           )
                         }
-                        disabled={loadingAttendance || studentUpdating || cellUpdating}
-                        className={`px-2 py-1 text-xs font-bold rounded shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[2rem] ${
+                        title={isFuture ? "Use header 'Mark' to set a holiday for this date" : ""}
+                        disabled={loadingAttendance || studentUpdating || cellUpdating || isFuture}
+                        className={`px-2 py-1 text-xs font-bold rounded shadow-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed min-w-[2rem] ${
                           status === "present"
                             ? "bg-green-600 text-white hover:bg-green-700 shadow-md"
                             : status === "absent"
@@ -264,6 +270,8 @@ const AttendanceTableBody = ({
                       ) : (
                         <span className="text-red-700 font-bold text-sm dark:text-red-400">A</span>
                       )
+                    ) : isFuture ? (
+                      <span className="text-slate-300 dark:text-slate-600 font-medium text-xs">✕</span>
                     ) : (
                       <span className="text-slate-400 dark:text-slate-500">-</span>
                     )}

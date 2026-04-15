@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
 import {
   X,
   Check,
@@ -28,6 +29,9 @@ const MarkAttendanceModal = ({
   const [filter, setFilter] = useState("all");
 
   // Holiday States
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const isFuture = date > todayStr;
+
   // Check if current date exists in holidays (support Map, Set, or Object)
   const isExistingHoliday = holidays instanceof Map || holidays instanceof Set 
     ? holidays.has(date) 
@@ -51,7 +55,7 @@ const MarkAttendanceModal = ({
       setAttendanceStatuses(statuses);
 
       // 2. Reset holiday form
-      setIsMarkingHoliday(false);
+      setIsMarkingHoliday(isFuture && !isExistingHoliday);
       setHolidayReason("");
     }
   }, [isOpen, students, date, existingAttendance]);
@@ -104,6 +108,7 @@ const MarkAttendanceModal = ({
   };
 
   const handleHolidayToggle = () => {
+    if (isFuture) return; // Block toggling off if it's the future
     setIsMarkingHoliday(!isMarkingHoliday);
     setHolidayReason(""); // Reset text on toggle
   };
@@ -196,8 +201,8 @@ const MarkAttendanceModal = ({
           </div>
         </div>
 
-        {/* Quick Actions / Stats (Only show if NOT a holiday) */}
-        {!isExistingHoliday && !isMarkingHoliday && (
+        {/* Quick Actions / Stats (Only show if NOT a holiday and NOT a future date) */}
+        {!isExistingHoliday && !isMarkingHoliday && !isFuture && (
           <>
             {/* Stats Bar */}
             <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b dark:border-gray-600 flex gap-3">
@@ -332,7 +337,9 @@ const MarkAttendanceModal = ({
                   Set as Holiday
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
-                  This will mark all students as exempted for today.
+                  {isFuture 
+                    ? "Attendance marking is restricted to today or earlier. You may still set this future date as a holiday."
+                    : "This will mark all students as exempted for today."}
                 </p>
                 <textarea
                   value={holidayReason}
@@ -342,14 +349,16 @@ const MarkAttendanceModal = ({
                   rows="3"
                   autoFocus
                 />
-                <div className="mt-4 flex justify-end">
-                    <button 
-                        onClick={() => setIsMarkingHoliday(false)}
-                        className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
-                    >
-                        Back to Attendance
-                    </button>
-                </div>
+                {!isFuture && (
+                  <div className="mt-4 flex justify-end">
+                      <button 
+                          onClick={() => setIsMarkingHoliday(false)}
+                          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                      >
+                          Back to Attendance
+                      </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -507,7 +516,7 @@ const MarkAttendanceModal = ({
                   onClick={handleMainSave}
                   disabled={isLoading}
                   className={`flex-1 px-4 py-2 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2
-                    ${isMarkingHoliday 
+                    ${isMarkingHoliday || isFuture
                         ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700" 
                         : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                     }`}
@@ -519,8 +528,8 @@ const MarkAttendanceModal = ({
                     </>
                   ) : (
                     <>
-                      {isMarkingHoliday ? <Palmtree className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                      <span>{isMarkingHoliday ? "Save Holiday" : "Save Attendance"}</span>
+                      {isMarkingHoliday || isFuture ? <Palmtree className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                      <span>{isMarkingHoliday || isFuture ? "Save Holiday" : "Save Attendance"}</span>
                     </>
                   )}
                 </button>

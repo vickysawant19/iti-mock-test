@@ -221,6 +221,8 @@ const AttendanceTableHead = ({
             const fullDate = formatDate(currentDate, "yyyy-MM-dd");
             const isHoliday = holidays.has(fullDate);
             const isSunday = currentDate.getDay() === 0;
+            const todayStr = formatDate(new Date(), "yyyy-MM-dd");
+            const isFuture = fullDate > todayStr;
 
             return (
               <th
@@ -235,7 +237,8 @@ const AttendanceTableHead = ({
                 <button
                   disabled={loadingAttendance}
                   onClick={() => onMarkAttendance(fullDate)}
-                  className="px-1.5 py-0.5 text-xs font-medium bg-white text-sky-700 rounded shadow-sm hover:bg-sky-50 hover:shadow-md transition-all duration-200 border border-sky-200"
+                  title={isFuture ? "Mark Holiday (Attendance blocked)" : "Mark Attendance / Holiday"}
+                  className="px-1.5 py-0.5 text-xs font-medium bg-white text-sky-700 rounded shadow-sm hover:bg-sky-50 hover:shadow-md transition-all duration-200 border border-sky-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Mark
                 </button>

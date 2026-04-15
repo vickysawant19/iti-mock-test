@@ -292,6 +292,13 @@ const AttendanceRegister = () => {
 
   // Handle attendance status change
   const onAttendanceStatusChange = async (userId, date, newStatus) => {
+    // Block marking for future dates
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    if (date > todayStr) {
+      toast.error("Cannot mark attendance for future dates");
+      return;
+    }
+
     const key = `${userId}-${date}`;
     setUpdatingAttendance((prev) => new Map(prev).set(key, true));
 
