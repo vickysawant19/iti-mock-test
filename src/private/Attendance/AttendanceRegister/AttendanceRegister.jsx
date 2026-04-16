@@ -24,6 +24,7 @@ import {
   endOfMonth,
 } from "date-fns";
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
+import StudentAttendanceEditModal from "./components/StudentAttendanceEditModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import Legent from "./components/Legent";
@@ -61,7 +62,7 @@ const AttendanceRegister = () => {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [editStudentId, setEditStudentId] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [updatingAttendance, setUpdatingAttendance] = useState(new Map());
 
   // Helper to update loading states
@@ -490,6 +491,14 @@ const AttendanceRegister = () => {
     setSelectedDate(null);
   };
 
+  const handleOpenStudentModal = (student) => {
+    setSelectedStudent(student);
+  };
+
+  const handleCloseStudentModal = () => {
+    setSelectedStudent(null);
+  };
+
   // ── Stable batch start date ──────────────────────────────────────────────
   const batchStartDate = useMemo(() => {
     const data = batches.get(selectedBatch);
@@ -621,17 +630,27 @@ const AttendanceRegister = () => {
           formatDate={format}
           getDaysInMonth={getDaysInMonth}
           onMarkAttendance={handleOpenModal}
-          setEditStudentId={setEditStudentId}
-          editStudentId={editStudentId}
           onAttendanceStatusChange={onAttendanceStatusChange}
           updatingAttendance={updatingAttendance}
           isStudentUpdating={isStudentUpdating}
           loading={loading}
           selectedBatch={selectedBatch}
           batchStartDate={rawBatchStartDate}
+          onOpenStudentAttendanceModal={handleOpenStudentModal}
         />
 
         <Legent />
+
+        <StudentAttendanceEditModal
+          isOpen={!!selectedStudent}
+          onClose={handleCloseStudentModal}
+          student={selectedStudent}
+          selectedMonth={selectedMonth}
+          attendanceMap={newAttendanceMap.get(selectedStudent?.userId) || new Map()}
+          holidays={holidays}
+          onAttendanceStatusChange={onAttendanceStatusChange}
+          updatingAttendance={updatingAttendance}
+        />
 
         <MarkAttendanceModal
           isOpen={isModalOpen}
