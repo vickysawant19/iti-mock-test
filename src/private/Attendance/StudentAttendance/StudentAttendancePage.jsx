@@ -21,6 +21,7 @@ const StudentAttendancePage = () => {
 
   const {
     isLoadingAttendance,
+    isLoadingOverallStats,
     batchData,
     tradeData,
     studentAttendance,
@@ -118,14 +119,6 @@ const StudentAttendancePage = () => {
           </div>
         </div>
 
-        {/* Top Stats Row */}
-        <TopStatsRow 
-          overallStats={overallStats}
-          monthlyStats={monthlyStats}
-          currentMonth={currentMonth}
-          batchData={batchData}
-          selectedDate={selectedDate}
-        />
 
         {/* View Tabs */}
         <div className="flex bg-white dark:bg-slate-900 rounded-[14px] p-1 border border-slate-200 dark:border-slate-800 mb-4 gap-1">
@@ -191,7 +184,7 @@ const StudentAttendancePage = () => {
               </div>
               <div className="p-0">
                 {isLoadingAttendance ? (
-                  // Calendar skeleton
+                  // Calendar skeleton — mirrors full real calendar structure top-to-bottom
                   <div className="p-3 animate-pulse">
                     {/* Month/year picker row skeleton */}
                     <div className="flex items-center justify-between gap-2 mb-3 px-1">
@@ -210,7 +203,7 @@ const StudentAttendancePage = () => {
                         </div>
                       ))}
                     </div>
-                    {/* 5 rows × 7 tiles */}
+                    {/* 5 rows × 7 tiles — height matches real tile height: 72px */}
                     {Array.from({ length: 5 }).map((_, row) => (
                       <div key={row} className="grid grid-cols-7">
                         {Array.from({ length: 7 }).map((_, col) => (
@@ -222,6 +215,22 @@ const StudentAttendancePage = () => {
                         ))}
                       </div>
                     ))}
+                    {/* Legend row — matches real calendar: mt-4, colored dots + labels */}
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      {[
+                        { color: "bg-emerald-500", label: "Present" },
+                        { color: "bg-rose-500",    label: "Absent" },
+                        { color: "bg-violet-500",  label: "Leave" },
+                        { color: "bg-amber-400",   label: "Holiday" },
+                      ].map(({ color, label }) => (
+                        <span key={label} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                          <span className={`h-2.5 w-2.5 rounded-full ${color} opacity-40`} />
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                    {/* "Click a date…" hint placeholder — matches real calendar: mt-3, text-xs */}
+                    <div className="mt-3 h-3 w-56 rounded bg-slate-100 dark:bg-slate-800" />
                   </div>
                 ) : viewMode === "table" ? (
                   <AttendanceTable attendanceRecords={tableRecords} holidays={holidays} />
@@ -250,7 +259,16 @@ const StudentAttendancePage = () => {
 
           {/* Right Column (Analytics) */}
           <div className="w-full xl:w-[320px] xl:sticky xl:top-4">
-            <RightPanelStats stats={monthlyStats || {}} overallStats={overallStats} currentMonth={currentMonth} />
+            <RightPanelStats
+              stats={monthlyStats || {}}
+              overallStats={overallStats}
+              monthlyStats={monthlyStats}
+              currentMonth={currentMonth}
+              batchData={batchData}
+              selectedDate={selectedDate}
+              isLoadingMonthly={isLoadingAttendance}
+              isLoadingOverall={isLoadingOverallStats}
+            />
           </div>
 
         </div>

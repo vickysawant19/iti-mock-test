@@ -174,11 +174,11 @@ export const useStudentAttendance = (profile) => {
   const isResolvingBatch = !activeBatchId && !!profile?.userId;
 
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [isLoadingOverallStats, setIsLoadingOverallStats] = useState(false);
   const [batchData, setBatchData] = useState(null);
   const [rawMonthlyRecords, setRawMonthlyRecords] = useState([]);
   const [holidays, setHolidays] = useState(new Map());
   const [invalidRecords, setInvalidRecords] = useState([]);
-  const [refreshStatsCounter, setRefreshStatsCounter] = useState(0);
   const [currentMonth, setCurrentMonth] = useState(
     format(new Date(), "MMMM yyyy"),
   );
@@ -276,14 +276,18 @@ export const useStudentAttendance = (profile) => {
 
   useEffect(() => {
     fetchMonthlyAttendance();
-  }, [fetchMonthlyAttendance, refreshStatsCounter]);
+  }, [fetchMonthlyAttendance]);
 
   const fetchOverallStats = useCallback(async () => {
     if (!profile?.userId || !resolvedBatchId) return;
+    setIsLoadingOverallStats(true);
     try {
-      // Historical Overall = From batch start up to end of previous month
+      // Historical Overall = From batch start up to end of previous month.
+      // Using currentMonth (not selectedDate) so clicking individual dates within
+      // the same month does NOT re-trigger this fetch.
       const batchStart = batchData?.start_date ? batchData.start_date : null;
-      const prevMonthEnd = format(endOfMonth(subMonths(selectedDate, 1)), "yyyy-MM-dd");
+      const currentMonthDate = parse(currentMonth, "MMMM yyyy", new Date());
+      const prevMonthEnd = format(endOfMonth(subMonths(currentMonthDate, 1)), "yyyy-MM-dd");
 
       const stats = await newAttendanceService.getStudentAttendanceStats(
         profile.userId,
@@ -301,12 +305,14 @@ export const useStudentAttendance = (profile) => {
       });
     } catch (error) {
       console.error("Error fetching overall stats:", error);
+    } finally {
+      setIsLoadingOverallStats(false);
     }
-  }, [profile, resolvedBatchId, batchData?.start_date, selectedDate]);
+  }, [profile, resolvedBatchId, batchData?.start_date, currentMonth]);
 
   useEffect(() => {
     fetchOverallStats();
-  }, [fetchOverallStats, refreshStatsCounter]);
+  }, [fetchOverallStats]);
 
   const normalized = useMemo(
     () => normalizeAttendanceData(rawMonthlyRecords),
@@ -467,7 +473,6 @@ export const useStudentAttendance = (profile) => {
       setLastUpdatedDate(normalizedDate);
       setTimeout(() => setLastUpdatedDate(null), 2200);
 
-      setRefreshStatsCounter((prev) => prev + 1);
       toast.success("Attendance saved successfully!");
       return result;
     } catch (error) {
@@ -539,7 +544,6 @@ export const useStudentAttendance = (profile) => {
         toast.success(
           `${daysToMark.length} day${daysToMark.length > 1 ? "s" : ""} marked as ${status}!`,
         );
-        setRefreshStatsCounter((prev) => prev + 1);
       } catch (err) {
         console.error("Bulk mark error:", err);
         toast.error("Bulk marking failed.");
@@ -552,6 +556,7 @@ export const useStudentAttendance = (profile) => {
 
   return {
     isLoadingAttendance: isLoadingAttendance || isResolvingBatch,
+    isLoadingOverallStats,
     batchData,
     tradeData,
     studentAttendance,
@@ -584,7 +589,6 @@ export const useStudentAttendance = (profile) => {
     isBulkMarking,
     blankDays,
     lastUpdatedDate,
-    refreshStats: () => setRefreshStatsCounter((prev) => prev + 1),
     invalidRecords,
   };
 };
