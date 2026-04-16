@@ -362,37 +362,67 @@ const AttendanceCalendar = ({
           border: 1px solid #ffffff !important;
           box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
           height: 72px;
+          background: #ffffff;
+          transition: all 0.2s ease;
+        }
+        .dark .attendance-calendar .react-calendar__tile {
+          background: #0f172a;
+          border: 1px solid #1e293b !important;
+          box-shadow: none;
         }
         .attendance-calendar .attendance-calendar-present {
           background: #dcfce7 !important;
           color: #166534 !important;
         }
+        .dark .attendance-calendar .attendance-calendar-present {
+          background: rgba(16, 185, 129, 0.15) !important;
+          color: #34d399 !important;
+        }
         .attendance-calendar .attendance-calendar-absent {
           background: #fee2e2 !important;
           color: #991b1b !important;
+        }
+        .dark .attendance-calendar .attendance-calendar-absent {
+          background: rgba(244, 63, 94, 0.15) !important;
+          color: #fb7185 !important;
         }
         .attendance-calendar .attendance-calendar-leave {
           background: #ede9fe !important;
           color: #5b21b6 !important;
         }
+        .dark .attendance-calendar .attendance-calendar-leave {
+          background: rgba(139, 92, 246, 0.15) !important;
+          color: #a78bfa !important;
+        }
         .attendance-calendar .attendance-calendar-holiday {
           background: #fef3c7 !important;
           color: #92400e !important;
         }
+        .dark .attendance-calendar .attendance-calendar-holiday {
+          background: rgba(245, 158, 11, 0.15) !important;
+          color: #fbbf24 !important;
+        }
         .attendance-calendar .attendance-calendar-today {
           border: 2px solid #3b82f6 !important;
-          background-color: #eff6ff;
+          background-color: #eff6ff !important;
+        }
+        .dark .attendance-calendar .attendance-calendar-today {
+          border: 2px solid #60a5fa !important;
+          background-color: rgba(59, 130, 246, 0.1) !important;
         }
         .attendance-calendar .attendance-calendar-selected {
-          border: 2px solid #a855f7 !important; /* purple-500 */
+          border: 2px solid #a855f7 !important;
           position: relative;
           z-index: 10;
           animation: shapeShift 2s infinite ease-in-out;
         }
+        .dark .attendance-calendar .attendance-calendar-selected {
+          border: 2px solid #c084fc !important;
+        }
         @keyframes shapeShift {
-          0% { border-radius: 30px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
-          50% { border-radius: 0px; box-shadow: 0 0 0 6px rgba(168, 85, 247, 0); }
-          100% { border-radius: 30px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+          0% { border-radius: 20px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+          50% { border-radius: 4px; box-shadow: 0 0 0 6px rgba(168, 85, 247, 0); }
+          100% { border-radius: 20px; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
         }
         .attendance-calendar .attendance-calendar-updated {
           animation: attendanceTilePulse 1.6s ease-out;

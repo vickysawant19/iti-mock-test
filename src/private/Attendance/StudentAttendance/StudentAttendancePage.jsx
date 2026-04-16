@@ -6,7 +6,7 @@ import { useStudentAttendance } from "./hooks/useStudentAttendance";
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import AttendanceTable from "./components/AttendanceTable";
 import AttendanceCalendar from "./components/AttendanceCalendar";
-import { TopStatsRow, RightPanelStats } from "./components/AttendanceStatsSummary";
+import { RightPanelStats } from "./components/AttendanceStatsSummary";
 import { Loader2, Calendar as CalendarIcon, Table as TableIcon, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import useLocationManager from "@/hooks/useLocationManager";

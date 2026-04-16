@@ -66,7 +66,7 @@ export const RightPanelStats = ({
   isLoadingMonthly = false,
   isLoadingOverall = false,
 }) => {
-  // Monthly stats
+  // Monthly stats (current month, derived from local records)
   const curWorking = (monthlyStats?.presentDays || 0) + (monthlyStats?.absentDays || 0);
   const curPresent = monthlyStats?.presentDays || 0;
   const curAbsent  = monthlyStats?.absentDays  || 0;
@@ -75,25 +75,36 @@ export const RightPanelStats = ({
   // Detail from stats prop (includes holiday / leave)
   const { holidayDays: curHolidayDays = 0 } = stats || {};
 
-  // Overall stats
-  const ovWorking = (overallStats?.presentDays || 0) + (overallStats?.absentDays || 0);
+  // Historical stats: batch start → end of previous month
   const ovPresent = overallStats?.presentDays || 0;
   const ovAbsent  = overallStats?.absentDays  || 0;
+
+  // ── Combined performance: batch start → TODAY ──────────────────────────────
+  // No extra API call needed — we add historical (prev months) + current month.
+  const totalPresent = ovPresent + curPresent;
+  const totalAbsent  = ovAbsent  + curAbsent;
+  const totalWorking = totalPresent + totalAbsent;
+  const totalRate    = totalWorking > 0
+    ? Number(((totalPresent / totalWorking) * 100).toFixed(1))
+    : 0;
+
+  const isGoodStanding = totalRate >= 75;
+
+  // Historical Breakdown stats (Batch Start → Prev Month End)
+  const ovWorking = ovPresent + ovAbsent;
   const ovRate    = overallStats?.attendancePercentage || 0;
 
-  const overallPercentage = ovRate;
-  const isGoodStanding = overallPercentage >= 75;
-
-  // Date range label for overall
+  // Labels
   const batchStartLabel = batchData?.start_date
     ? format(parseISO(batchData.start_date), "MMM yyyy")
     : "Batch Start";
+  const todayLabel = format(new Date(), "dd MMM yyyy");
   const prevMonthLabel = format(subMonths(selectedDate || new Date(), 1), "MMM yyyy");
 
   // Ring circumference
   const R = 36;
   const CIRC = 2 * Math.PI * R;
-  const dash = (overallPercentage / 100) * CIRC;
+  const dash = (totalRate / 100) * CIRC;
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,7 +128,7 @@ export const RightPanelStats = ({
               </svg>
               <div className="absolute inset-0 flex flex-col justify-center items-center">
                 <span className={`font-black text-[15px] leading-none ${isGoodStanding ? "text-indigo-600 dark:text-indigo-400" : "text-rose-500"}`}>
-                  {overallPercentage}%
+                  {totalRate}%
                 </span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Overall</span>
               </div>
@@ -129,7 +140,7 @@ export const RightPanelStats = ({
                 Attendance Performance
               </h4>
               <p className="text-[11px] text-slate-400 mb-2 leading-snug">
-                {batchStartLabel} → {prevMonthLabel}
+                {batchStartLabel} → {todayLabel}
               </p>
               <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${isGoodStanding ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"}`}>
                 <Award size={10} />
@@ -138,12 +149,12 @@ export const RightPanelStats = ({
             </div>
           </div>
 
-          {/* Overall quick stats */}
+          {/* Combined quick stats (batch start → today) */}
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 dark:border-slate-800 pt-4">
             {[
-              { label: "Working", value: ovWorking, valueColor: "text-slate-700 dark:text-slate-200" },
-              { label: "Present", value: ovPresent, valueColor: "text-emerald-600" },
-              { label: "Absent",  value: ovAbsent,  valueColor: "text-rose-600" },
+              { label: "Working", value: totalWorking, valueColor: "text-slate-700 dark:text-slate-200" },
+              { label: "Present", value: totalPresent, valueColor: "text-emerald-600" },
+              { label: "Absent",  value: totalAbsent,  valueColor: "text-rose-600" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className={`text-xl font-black ${s.valueColor}`}>{s.value}</div>
@@ -215,5 +226,4 @@ export const RightPanelStats = ({
   );
 };
 
-// Keep TopStatsRow exported so old imports don't break
-export const TopStatsRow = () => null;
+

@@ -109,7 +109,7 @@ const MarkAttendanceModal = ({
           {!showSuccess ? (
             <div className="mt-5 space-y-4">
               {/* Location Block */}
-              <div className="flex items-center gap-4 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl">
+              <div className="flex items-center gap-4 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/30">
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
                   <MapPin size={24} />
                 </div>
@@ -140,8 +140,8 @@ const MarkAttendanceModal = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-slate-500">Distance from institute</span>
+                  <div className="flex justify-between items-center text-[13px]">
+                    <span className="font-semibold text-slate-500">Distance from institute</span>
                     <span className="font-bold text-indigo-600 dark:text-indigo-400">
                       {locLoading || distance === Infinity ? "..." : `${Math.round(distance)} m`}
                     </span>
@@ -182,11 +182,11 @@ const MarkAttendanceModal = ({
                     id="modal-mark-present-btn"
                     onClick={() => handleMark("present")}
                     disabled={!isMarkingAllowed || isMarking || (isToday && isPresent)}
-                    className={`flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                    className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[13px] font-bold transition-all active:scale-95 ${
                       isPresent
-                        ? "bg-emerald-500 text-white ring-2 ring-emerald-400 ring-offset-1 shadow-lg shadow-emerald-500/25"
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-500/20"
                         : isMarkingAllowed && !(isToday && isPresent)
-                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600"
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 hover:shadow-lg"
                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                     }`}
                   >
@@ -201,11 +201,11 @@ const MarkAttendanceModal = ({
                     id="modal-mark-absent-btn"
                     onClick={() => handleMark("absent")}
                     disabled={!isMarkingAllowed || isMarking}
-                    className={`flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                    className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[13px] font-bold transition-all active:scale-95 ${
                       isAbsent
-                        ? "bg-rose-500 text-white ring-2 ring-rose-400 ring-offset-1 shadow-lg shadow-rose-500/25"
+                        ? "bg-rose-600 text-white shadow-lg shadow-rose-500/25 ring-4 ring-rose-500/20"
                         : isMarkingAllowed
-                        ? "bg-rose-500 text-white shadow-md shadow-rose-500/20 hover:bg-rose-600"
+                        ? "bg-rose-600 text-white shadow-md shadow-rose-600/20 hover:bg-rose-700 hover:shadow-lg"
                         : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
                     }`}
                   >

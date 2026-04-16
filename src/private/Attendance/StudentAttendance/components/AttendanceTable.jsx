@@ -4,17 +4,17 @@ import { format } from "date-fns";
 const getStatusClasses = (status) => {
   switch (status) {
     case "present":
-      return "bg-emerald-50 text-emerald-600 border-emerald-200";
+      return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50";
     case "absent":
-      return "bg-rose-50 text-rose-600 border-rose-200";
+      return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50";
     case "late":
-      return "bg-amber-50 text-amber-600 border-amber-200";
+      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50";
     case "leave":
-      return "bg-violet-50 text-violet-600 border-violet-200";
+      return "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800/50";
     case "holiday":
-      return "bg-amber-50 text-amber-600 border-amber-200";
+      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50";
     default:
-      return "bg-slate-50 text-slate-500 border-slate-200";
+      return "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700";
   }
 };
 
@@ -115,17 +115,17 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
           <col className="w-[110px]" />
         </colgroup>
         <thead>
-          <tr>
-            <th className="bg-[#f8fafc] dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-4 py-2.5 text-[11px] uppercase tracking-wider">
+          <tr className="border-b border-slate-100 dark:border-slate-800">
+            <th className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold px-4 py-3 text-[10px] uppercase tracking-widest">
               Date
             </th>
-            <th className="bg-[#f8fafc] dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-4 py-2.5 text-[11px] uppercase tracking-wider">
+            <th className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold px-4 py-3 text-[10px] uppercase tracking-widest">
               Remarks
             </th>
-            <th className="bg-[#f8fafc] dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-4 py-2.5 text-[11px] uppercase tracking-wider">
+            <th className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold px-4 py-3 text-[10px] uppercase tracking-widest">
               Time In
             </th>
-            <th className="bg-[#f8fafc] dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-4 py-2.5 text-[11px] uppercase tracking-wider">
+            <th className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold px-4 py-3 text-[10px] uppercase tracking-widest">
               Status
             </th>
           </tr>
