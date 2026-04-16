@@ -15,8 +15,6 @@ const AttendanceTable = ({
   formatDate,
   getDaysInMonth,
   onMarkAttendance,
-  setEditStudentId,
-  editStudentId,
   onAttendanceStatusChange,
   updatingAttendance,
   isStudentUpdating,
@@ -25,6 +23,7 @@ const AttendanceTable = ({
   handleAddHoliday,
   handleRemoveHoliday,
   batchStartDate,
+  onOpenStudentAttendanceModal,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -179,9 +178,6 @@ const AttendanceTable = ({
                 attendanceMap={attendanceMap}
                 calculatePreviousMonthsData={calculatePreviousMonthsData}
                 formatDate={formatDate}
-                getDaysInMonth={getDaysInMonth}
-                setEditStudentId={setEditStudentId}
-                editStudentId={editStudentId}
                 onAttendanceStatusChange={onAttendanceStatusChange}
                 updatingAttendance={updatingAttendance}
                 isStudentUpdating={isStudentUpdating}
@@ -189,6 +185,7 @@ const AttendanceTable = ({
                 loadingStats={loadingStats}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
+                onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
               />
               <AttendanceTableFooter
                 students={students}
