@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUserBatches, selectActiveBatchLoading } from "@/store/activeBatchSlice";
 import { Query } from "appwrite";
 import batchRequestService from "@/appwrite/batchRequestService";
-import batchService from "@/appwrite/batchService";
+
 
 /**
  * Lightweight notification system.
@@ -33,18 +34,19 @@ export function useNotifications() {
   const isTeacher = user?.labels?.includes("Teacher");
   const isStudent = user && !isTeacher && !user?.labels?.includes("admin");
 
+  const userBatches = useSelector(selectUserBatches);
+  const isBatchLoading = useSelector(selectActiveBatchLoading);
+
   const fetchNotifications = useCallback(async () => {
     if (!user?.$id) return;
+    if (isTeacher && isBatchLoading) return; // Wait until Redux loads the batches
+    
     setIsLoading(true);
 
     try {
       if (isTeacher) {
-        // Fetch all batches for this teacher
-        const batchRes = await batchService.listBatches([
-          Query.equal("teacherId", user.$id),
-          Query.select(["$id", "BatchName"]),
-        ]);
-        const batches = batchRes?.documents ?? [];
+        // Use batches already loaded by activeBatchSlice instead of duplicating API calls
+        const batches = userBatches ?? [];
 
         if (!batches.length) {
           setNotifications([]);
@@ -91,7 +93,7 @@ export function useNotifications() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isTeacher, isStudent]);
+  }, [user, isTeacher, isStudent, userBatches, isBatchLoading]);
 
   useEffect(() => {
     fetchNotifications();

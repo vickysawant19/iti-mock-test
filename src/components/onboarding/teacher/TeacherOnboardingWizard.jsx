@@ -80,23 +80,28 @@ export default function TeacherOnboardingWizard() {
       const merged = { ...formData, ...stepData };
       setFormData(merged);
 
-      const { isComplete } = checkProfileCompletion(merged);
-      console.log("[WIZARD saveProgress] checkProfileCompletion result:", isComplete);
-
       const roleLabels =
         user.labels && user.labels.includes("Teacher")
           ? user.labels
           : [...(user.labels || []), "Teacher"];
 
-      const payload = {
+      const basePayload = {
         ...merged,
         userId: user.$id,
         role: roleLabels,
         onboardingStep: nextStep,
-        isProfileComplete: isComplete,
         enrollmentStatus: merged.enrollmentStatus || "enrolled",
         status: merged.status || "active",
       };
+
+      const { isComplete } = checkProfileCompletion(basePayload);
+      console.log("[WIZARD saveProgress] checkProfileCompletion result:", isComplete);
+
+      const payload = {
+        ...basePayload,
+        isProfileComplete: isComplete,
+      };
+
 
       let updated;
       if (existingProfile) {

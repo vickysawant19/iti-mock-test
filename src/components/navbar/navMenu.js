@@ -70,12 +70,14 @@ export const menuConfig = [
         label: "Manage Students",
         path: "/manage-batch/students",
         icon: FaUserPlus,
+        hideIfNoBatch: true,
         requiresAuth: true,
       },
       { 
         label: "View Batch Records", 
         path: "/manage-batch/view", 
         icon: FaList, 
+        hideIfNoBatch: true,
         requiresAuth: true 
       },
     ],

@@ -29,6 +29,7 @@ import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
 import Assignment from "./assignment/Assignment";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
@@ -43,7 +44,7 @@ const TABS = [
 const ViewBatch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector(selectProfile);
-  const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
+  const { activeBatchId, userBatches, isLoading: batchesLoading } = useSelector((state) => state.activeBatch);
   const [loadingStates, setLoadingStates] = useState({
     batchData: false,
     students: false,
@@ -416,12 +417,18 @@ const ViewBatch = () => {
 
         {!loadingStates.batchData && !data.selectedBatchData && (
           <div className="max-w-xl mx-auto mt-20">
-            <EmptyState
-              icon={Users}
-              title="Welcome Teacher"
-              description="Please select a batch from your dashboard or sidebar to view detailed student analytics and records."
-              className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 rounded-3xl"
-            />
+            {(!batchesLoading && userBatches?.length === 0) ? (
+              <div className="-mt-20">
+                <NoBatchTeacherView isTeacher={true} />
+              </div>
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="Welcome Teacher"
+                description="Please select a batch from your dashboard or sidebar to view detailed student analytics and records."
+                className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 rounded-3xl"
+              />
+            )}
           </div>
         )}
 

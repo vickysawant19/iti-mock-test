@@ -17,6 +17,22 @@ import {
 import { CalendarDays, MapPin, Upload, Loader2, Image as ImageIcon, Trash2 } from "lucide-react";
 
 export default function StepPersonalInfo({ initialData, onNext, onBack, isSaving, userId }) {
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      profileImage: initialData?.profileImage || "",
+      DOB: initialData?.DOB || "",
+      address: initialData?.address || "",
+    },
+  });
+
+  const currentImageUrl = watch("profileImage");
+
   const handleImageUpdate = (newUrl) => {
     setValue("profileImage", newUrl, { shouldDirty: true, shouldValidate: true });
   };

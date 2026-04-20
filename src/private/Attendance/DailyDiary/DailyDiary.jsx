@@ -17,6 +17,7 @@ import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import StudentDailyDiary from "./StudentDailyDiary";
 import DiaryWeekView from "./DiaryWeekView";
 import { useDiaryData } from "./useDiaryData";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 function DailyDiary() {
   const user = useSelector(selectUser);
@@ -161,6 +162,14 @@ function TeacherDiaryView() {
             </p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!activeBatchId && !isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <NoBatchTeacherView isTeacher={true} />
       </div>
     );
   }

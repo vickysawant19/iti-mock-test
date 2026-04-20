@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { Upload, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, Trash2, Loader2, Image as ImageIcon, Camera, RefreshCw, X } from "lucide-react";
 import profileImageService from "@/appwrite/profileImageService";
 
 const InteractiveAvatar = forwardRef(({
@@ -16,33 +16,115 @@ const InteractiveAvatar = forwardRef(({
 }, ref) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isCameraMode, setIsCameraMode] = useState(false);
+  const [facingMode, setFacingMode] = useState("user");
   const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Clean up camera on unmount or close
+  React.useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
+  // Ensure stream is attached to video element when camera mode is activated
+  React.useEffect(() => {
+    if (isCameraMode && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isCameraMode]);
+
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (!open) {
+      stopCamera();
+    }
+  };
+
+  const startCamera = async (mode = facingMode) => {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: mode } 
+      });
+      streamRef.current = stream;
+      setIsCameraMode(true);
+      
+      // Also try attaching immediately if ref exists
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      toast.error("Could not access camera. Please check permissions.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraMode(false);
+  };
+
+  const switchCamera = () => {
+    const newMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newMode);
+    startCamera(newMode);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext("2d");
+    
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    
+    ctx.drawImage(videoRef.current, 0, 0);
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+      stopCamera();
+      await uploadFile(file);
+    }, "image/jpeg", 0.9);
+  };
+
+  const uploadFile = async (file) => {
     if (!userId) {
       toast.error("User context missing.");
       return;
     }
-
     try {
       setIsUploading(true);
       const uploadedFile = await profileImageService.uploadProfilePicture(file, userId);
-      // Wait to ensure Appwrite recognizes new view
       await new Promise((res) => setTimeout(res, 500));
       const newUrl = profileImageService.getProfilePictureView(uploadedFile.$id);
-      
       toast.success("Profile image updated successfully!");
       if (onImageUpdate) onImageUpdate(newUrl);
     } catch (error) {
       toast.error(error.message || "Failed to upload picture.");
     } finally {
       setIsUploading(false);
-      // reset input
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
   };
 
   const handleDeleteImage = async () => {
@@ -61,7 +143,7 @@ const InteractiveAvatar = forwardRef(({
 
   return (
     <div ref={ref}>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <div className={`cursor-pointer hover:opacity-80 transition-opacity rounded-full ring-2 ring-transparent outline-none hover:ring-blue-500/50 ${className}`}>
             <Avatar className="w-full h-full">
@@ -81,6 +163,43 @@ const InteractiveAvatar = forwardRef(({
                <Loader2 className="w-8 h-8 animate-spin mb-2" />
                <span className="text-xs font-medium">Processing...</span>
              </div>
+          ) : isCameraMode ? (
+            <div className="relative w-full h-full">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+              />
+              <div className="absolute inset-0 flex items-end justify-center pb-4 gap-2">
+                <Button 
+                   size="icon" 
+                   variant="secondary" 
+                   className="rounded-full w-12 h-12 bg-white/20 hover:bg-white/40 backdrop-blur-md border-white/30 text-white" 
+                   onClick={capturePhoto}
+                >
+                  <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-white" />
+                  </div>
+                </Button>
+              </div>
+              <Button 
+                 size="icon" 
+                 variant="ghost" 
+                 className="absolute top-2 right-2 text-white bg-black/20 hover:bg-black/40 rounded-full" 
+                 onClick={stopCamera}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+              <Button 
+                 size="icon" 
+                 variant="ghost" 
+                 className="absolute top-2 left-2 text-white bg-black/20 hover:bg-black/40 rounded-full" 
+                 onClick={switchCamera}
+              >
+                <RefreshCw className="w-5 h-5" />
+              </Button>
+            </div>
           ) : src ? (
             <img src={src} alt="Profile Large" className="w-full h-full object-cover" />
           ) : (
@@ -105,10 +224,19 @@ const InteractiveAvatar = forwardRef(({
                variant="outline" 
                className="gap-2" 
                onClick={() => fileInputRef.current?.click()}
-               disabled={isUploading}
+               disabled={isUploading || isCameraMode}
             >
               <Upload className="w-4 h-4" />
-              Change
+              {src ? "Change" : "Upload"}
+            </Button>
+            <Button 
+               variant="outline" 
+               className="gap-2" 
+               onClick={() => isCameraMode ? capturePhoto() : startCamera()}
+               disabled={isUploading}
+            >
+              <Camera className="w-4 h-4" />
+              {isCameraMode ? "Capture" : "Take Photo"}
             </Button>
             {src && (
               <Button 

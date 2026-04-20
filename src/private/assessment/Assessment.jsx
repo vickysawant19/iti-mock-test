@@ -10,6 +10,7 @@ import { useSearchParams } from "react-router-dom";
 import { ClipboardList, Loader2 } from "lucide-react";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { useGetBatchQuery } from "@/store/api/batchApi";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const Assessment = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -161,6 +162,16 @@ const Assessment = () => {
       fetchModules();
     }
   }, [selectedTradeYear, selectedSubject, batchData?.tradeId]);
+
+  const isTeacher = profile?.role?.includes("Teacher") || profile?.role?.includes("Admin");
+
+  if (!resolvedBatchId && !batchLoading && !isResolvingBatch) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <NoBatchTeacherView isTeacher={isTeacher} />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto bg-gray-50 min-h-screen dark:bg-black">

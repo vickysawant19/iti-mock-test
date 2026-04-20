@@ -15,7 +15,7 @@ import userProfileService from "@/appwrite/userProfileService";
 import AttendanceHeader from "./components/AttendanceHeader";
 import AttendanceTable from "./components/AttendanceTable";
 import LoadingSpinner from "./components/LoadingSpinner";
-import EmptyState from "./components/EmptyState";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 import {
   format,
   getDaysInMonth,
@@ -595,9 +595,10 @@ const AttendanceRegister = () => {
 
   // Check if no batches
   if (batches.size === 0) {
+    const isTeacher = user?.labels?.includes("Teacher") || user?.labels?.includes("admin");
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center">
-        <EmptyState message="No batches available. Please create a batch first." />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden flex items-center justify-center">
+         <NoBatchTeacherView isTeacher={isTeacher} />
       </div>
     );
   }

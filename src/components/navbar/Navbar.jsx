@@ -84,6 +84,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   // A student is batch-enrolled only if they have an approved batch Request.
   // Teachers and admins always count as enrolled.
   const isStudentEnrolled = !isStudent || userBatches?.length > 0;
+  const hasNoBatches = !userBatches || userBatches.length === 0;
 
   const currentHeading = pathToHeading[location.pathname] || "";
 
@@ -322,6 +323,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 {configItem.children.map((child, idx) => {
                   if (child.requiresAuth && !user) return null;
                   if (child.roles && !hasRole(child.roles)) return null;
+                  if (child.requiresBatch && !isStudentEnrolled) return null;
+                  if (child.hideIfNoBatch && hasNoBatches) return null;
                   let label = child.label;
                   if (child.teacherLabel && child.studentLabel) {
                     label = isTeacher ? child.teacherLabel : child.studentLabel;

@@ -44,6 +44,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { avatarFallback } from "@/utils/avatarFallback";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 // Custom marker icons
 const campusIcon = new L.DivIcon({
@@ -237,7 +238,7 @@ const AttendanceTracker = () => {
 
   // If user truly has no batch (even after resolution), show "No Batch Joined/Created" UI
   if (!resolvedBatchId && !batchLoading && !checkingAttendance && !isResolvingBatch) {
-    const isTeacher = profile?.role?.includes("Teacher");
+    const isTeacher = profile?.role?.includes("Teacher") || profile?.role?.includes("Admin");
     
     return (
       <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden">
@@ -246,34 +247,7 @@ const AttendanceTracker = () => {
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-400/10 blur-[100px] animate-pulse"></div>
         </div>
-        <div className="relative z-10 max-w-xl mx-auto space-y-6 flex flex-col items-center justify-center min-h-[70vh]">
-          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-10 shadow-xl text-center space-y-6">
-            <div className="w-20 h-20 rounded-2xl bg-pink-100/80 dark:bg-pink-900/30 flex items-center justify-center mx-auto">
-              {isTeacher ? (
-                <Plus className="w-10 h-10 text-pink-600 dark:text-pink-400" />
-              ) : (
-                <Search className="w-10 h-10 text-pink-600 dark:text-pink-400" />
-              )}
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {isTeacher ? "Create Your Batch" : "No Batch Joined"}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto text-sm leading-relaxed">
-                {isTeacher 
-                  ? "As an instructor, you need to create a batch before you can manage attendance and track student progress."
-                  : "You haven't joined any batch yet. To mark your attendance, you first need to join a batch."}
-              </p>
-            </div>
-            <Button 
-              onClick={() => navigate(isTeacher ? "/batches" : "/batches/browse")} 
-              size="lg"
-              className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-2xl px-8 shadow-lg shadow-pink-500/20 font-bold transition-all hover:-translate-y-0.5"
-            >
-              {isTeacher ? "Create Batch" : "Browse Batches"}
-            </Button>
-          </div>
-        </div>
+        <NoBatchTeacherView isTeacher={isTeacher} />
       </div>
     );
   }

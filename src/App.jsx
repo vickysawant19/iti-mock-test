@@ -62,7 +62,8 @@ function App() {
 
   useEffect(() => {
     checkUserStatus();
-  }, [navigate, dispatch, profile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, dispatch]);
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">

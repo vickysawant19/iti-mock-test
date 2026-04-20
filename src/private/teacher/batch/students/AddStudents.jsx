@@ -7,6 +7,7 @@ import { Query } from "appwrite";
 
 import ManageStudentsList from "./ManageStudentsList";
 import AddStudentForm from "./AddStudentForm";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const AddStudents = () => {
   const user = useSelector(selectUser);
@@ -15,6 +16,7 @@ const AddStudents = () => {
   const [activeTab, setActiveTab] = useState("manage"); // 'manage' or 'add'
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const selectedBatchData = teacherBatches.find((b) => b.$id === selectedBatch) || null;
 
@@ -33,10 +35,20 @@ const AddStudents = () => {
         }
       } catch (err) {
         console.error("AddStudents: error fetching batches:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchBatches();
   }, [teacherId]);
+
+  if (!isLoading && teacherBatches.length === 0) {
+    return (
+      <div className="p-4 md:p-6 pb-24">
+        <NoBatchTeacherView isTeacher={true} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-slate-50 text-slate-900 min-h-screen dark:bg-slate-950 dark:text-slate-100">

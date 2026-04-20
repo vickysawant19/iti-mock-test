@@ -8,6 +8,8 @@ import React, {
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUserBatches } from "@/store/activeBatchSlice";
+import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 import {
   Calendar,
   Users,
@@ -325,10 +327,20 @@ const AttendanceDashboard = () => {
     };
   }, [selectedCollege, batchData]);
 
+  const userBatches = useSelector(selectUserBatches);
+
   if (collegeLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin && userBatches.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden flex items-center justify-center">
+         <NoBatchTeacherView isTeacher={true} />
       </div>
     );
   }
