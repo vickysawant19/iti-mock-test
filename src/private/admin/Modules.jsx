@@ -136,10 +136,10 @@ const Modules = () => {
 
     if (isPractical) {
       evaluationCriteriaSection = `assessmentCriteria: Extract the exact text from the corresponding "Assessment Criteria" mapped to this ${itemType}.
-evalutionsPoints[]: Generate exactly 5 unique evaluation criteria specifically tailored to the ${itemType} (e.g., evaluate joint quality, logic, safety, etc). Each criteria is worth 20 points. Format this strictly as a stringified JSON array:
-["{\\"id\\":1,\\"evaluation\\":\\"[Criterion 1]\\",\\"points\\":\\"20\\"}","{\\"id\\":2,\\"evaluation\\":\\"[Criterion 2]\\",\\"points\\":\\"20\\"}","{\\"id\\":3,\\"evaluation\\":\\"[Criterion 3]\\",\\"points\\":\\"20\\"}","{\\"id\\":4,\\"evaluation\\":\\"[Criterion 4]\\",\\"points\\":\\"20\\"}","{\\"id\\":5,\\"evaluation\\":\\"[Criterion 5]\\",\\"points\\":\\"20\\"}"]`;
+evalutionsPoints[]: Generate exactly 5 unique evaluation criteria specifically tailored to the ${itemType} (e.g., evaluate joint quality, logic, safety, etc). Each criteria is worth 20 points. Format this strictly as a standard JSON array of objects WITHOUT wrapping the inner objects in strings:
+[{"id":1,"evaluation":"[Criterion 1]","points":"20"},{"id":2,"evaluation":"[Criterion 2]","points":"20"},{"id":3,"evaluation":"[Criterion 3]","points":"20"},{"id":4,"evaluation":"[Criterion 4]","points":"20"},{"id":5,"evaluation":"[Criterion 5]","points":"20"}]`;
       markdownHeaders += " assessmentCriteria | evalutionsPoints[] |";
-      markdownRow += ` [Extracted Criteria] | ["{\\"id\\":1,\\"evaluation\\":\\"...\\",\\"points\\":\\"20\\"}",...] |`;
+      markdownRow += ` [Extracted Criteria] | [{"id":1,"evaluation":"...","points":"20"},...] |`;
     } else {
       evaluationCriteriaSection = `assessmentCriteria: Output "NA" as this is a theory subject.
 evalutionsPoints[]: Output "[]" (an empty JSON array) as this is a theory subject.`;
@@ -211,7 +211,7 @@ ${markdownRow}`;
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container flex h-16 items-center px-6">
+        <div className="w-full flex h-16 items-center px-6">
           <div className="flex items-center gap-3">
             <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-semibold">Module Manager</h1>
@@ -221,7 +221,7 @@ ${markdownRow}`;
 
       {/* Mobile Filters */}
       <div className="lg:hidden border-b bg-background ">
-        <div className="container px-4 py-4 space-y-4">
+        <div className="w-full px-4 py-4 space-y-4">
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs">
               <Filter className="h-3.5 w-3.5 text-primary" />
@@ -307,8 +307,8 @@ ${markdownRow}`;
       </div>
 
       {/* Desktop Filters */}
-      <div className="hidden lg:block sticky top-16 z-30 mx-auto  border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container mx-auto px-6 py-4">
+      <div className="hidden lg:block sticky top-16 z-30 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="w-full px-6 py-4">
           <div className="grid grid-cols-3 items-center gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-xs">
@@ -397,7 +397,7 @@ ${markdownRow}`;
 
       {/* Main Content */}
       {selectedTradeID && selectedSubjectID && (
-        <div className="container px-6 py-6  overflow-y-auto mx-auto ">
+        <div className="w-full px-6 py-6 overflow-y-auto">
           {/* Action Buttons */}
           <div className="mb-6 flex flex-wrap gap-3">
             <Button
@@ -440,7 +440,7 @@ ${markdownRow}`;
             <div
               className={`${
                 hasActiveView && !showModulesList ? "hidden lg:block" : "block"
-              } w-full lg:w-80 shrink-0`}
+              } w-full lg:w-96 xl:w-[420px] shrink-0`}
             >
               <Card className="overflow-hidden py-0">
                 <CardContent className="p-0">

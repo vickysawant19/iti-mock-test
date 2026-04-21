@@ -117,7 +117,7 @@ const ModuleList = ({
 
               return (
                 <Collapsible
-                  key={module.moduleId || index}
+                  key={module.$id || module.moduleId || index}
                   open={isExpanded}
                   onOpenChange={() => toggleModule(module.moduleId)}
                 >
@@ -207,7 +207,7 @@ const ModuleList = ({
                               const isTopicSelected = topicId === topic.topicId;
                               return (
                                 <div
-                                  key={topic.topicId || topicIndex}
+                                  key={`${topic.topicId}-${topicIndex}`}
                                   onClick={() => handleTopicClick(module, topic)}
                                   className={cn(
                                     "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 border-2",

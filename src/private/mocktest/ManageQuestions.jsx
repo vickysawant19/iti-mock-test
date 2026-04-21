@@ -184,14 +184,14 @@ const ManageQuestions = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTrade, selectedSubject, selectedYear]);
 
-  // ── Fetch questions when selectedModule or page changes ───────────────────
-  const fetchQuestions = useCallback(async (moduleDocId, page) => {
+  // ── Fetch questions ────────────────────────────────────────────────────────
+  const fetchQuestions = useCallback(async (additionalQueries, page) => {
     setIsLoading(true);
     setHasSearched(true);
     const offset = (page - 1) * ITEMS_PER_PAGE;
     try {
       const response = await questionService.listQuestions([
-        Query.equal("moduleId", moduleDocId),
+        ...additionalQueries,
         Query.orderDesc("$createdAt"),
         Query.limit(ITEMS_PER_PAGE),
         Query.offset(offset),
@@ -207,9 +207,23 @@ const ManageQuestions = () => {
 
   useEffect(() => {
     if (selectedModule) {
-      fetchQuestions(selectedModule.$id, currentPage);
+      // Specific module selected
+      fetchQuestions([Query.equal("moduleId", selectedModule.$id)], currentPage);
+    } else if (selectedTrade || selectedSubject || selectedYear) {
+      // Filters applied, but no specific module yet
+      if (modules.length > 0) {
+        const ids = modules.map((m) => m.$id);
+        fetchQuestions([Query.equal("moduleId", ids)], currentPage);
+      } else if (!loadingModules) {
+        // Done loading but no modules found
+        setQuestions([]);
+        setTotalQuestions(0);
+      }
+    } else {
+      // No filters at all -> Fetch ALL questions
+      fetchQuestions([], currentPage);
     }
-  }, [selectedModule, currentPage, fetchQuestions]);
+  }, [selectedModule, selectedTrade, selectedSubject, selectedYear, modules, loadingModules, currentPage, fetchQuestions]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleTradeChange = (tradeId) => {
@@ -468,14 +482,13 @@ const ManageQuestions = () => {
             <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
             <p className="text-sm text-gray-500">Loading questions…</p>
           </div>
-        ) : !hasSearched ? (
+        ) : !hasSearched && filtersActive ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center">
               <Search className="w-8 h-8 text-blue-400" />
             </div>
             <div>
-              <p className="text-base font-semibold text-gray-700">Select a module to view questions</p>
-              <p className="text-sm text-gray-400 mt-1">Choose trade, subject, year and module above to get started.</p>
+              <p className="text-base font-semibold text-gray-700">Loading your questions...</p>
             </div>
           </div>
         ) : questions.length === 0 ? (

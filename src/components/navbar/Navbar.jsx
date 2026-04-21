@@ -448,45 +448,64 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-colors">
-              <Avatar className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-all ring-2 ring-transparent hover:ring-pink-200 dark:hover:ring-pink-900/50">
+              <Avatar className="h-9 w-9">
                 <AvatarImage src={profile?.profileImage} />
-                <AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-tr from-pink-600 to-purple-600 text-white font-medium text-xs">
                   {profile?.userName?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-xl border border-slate-200/50 dark:border-slate-800 shadow-xl">
-            <div className="flex items-center justify-start gap-2 p-2">
-              <div className="flex flex-col space-y-1 leading-none">
-                {profile?.userName && (
-                  <p className="font-medium">{profile.userName}</p>
+          <DropdownMenuContent align="end" className="w-64 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-2xl p-2 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl mt-1">
+            <div className="flex items-center justify-start gap-3 p-3 bg-gradient-to-br from-pink-500/10 to-purple-500/10 dark:from-pink-500/20 dark:to-purple-500/20 rounded-xl mb-2 border border-pink-100/50 dark:border-pink-900/30">
+              <Avatar className="h-12 w-12 ring-2 ring-pink-500/30 dark:ring-pink-500/50 shadow-sm">
+                <AvatarImage src={profile?.profileImage} />
+                <AvatarFallback className="bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold shadow-inner">
+                  {profile?.userName?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-1 overflow-hidden">
+                {profile?.userName ? (
+                  <p className="font-bold text-sm text-slate-900 dark:text-white truncate" title={profile.userName}>{profile.userName}</p>
+                ) : (
+                  <p className="font-bold text-sm text-slate-900 dark:text-white truncate">User</p>
                 )}
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium capitalize truncate">
+                  {isTeacher ? "Teacher" : isAdmin ? "Admin" : "Student"}
+                </p>
               </div>
             </div>
-            <DropdownMenuSeparator />
+            
             <DropdownMenuItem asChild>
               <NavLink
                 to="/profile"
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors duration-200 group"
               >
-                <User className="h-4 w-4" />
-                <span>Profile</span>
+                <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform duration-200 shadow-sm">
+                  <User className="h-4 w-4" />
+                </div>
+                <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">My Profile</span>
               </NavLink>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            
+            <div className="px-2 my-1">
+              <div className="h-px bg-slate-200/50 dark:bg-slate-800 w-full" />
+            </div>
+            
             <DropdownMenuItem
-              className="text-destructive focus:text-destructive cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer p-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors duration-200 group text-red-600 dark:text-red-400"
               onClick={handleLogout}
               disabled={isLogoutLoading}
             >
-              {isLogoutLoading ? (
-                <div className="h-4 w-4 mr-2 border-2 border-current border-r-transparent rounded-full animate-spin" />
-              ) : (
-                <LogOut className="h-4 w-4 mr-2" />
-              )}
-              <span>{isLogoutLoading ? "Logging out..." : "Log out"}</span>
+              <div className="bg-red-100 dark:bg-red-900/40 p-2 rounded-lg text-red-600 dark:text-red-400 group-hover:scale-105 transition-transform duration-200 shadow-sm">
+                {isLogoutLoading ? (
+                  <div className="h-4 w-4 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
+              </div>
+              <span className="font-semibold text-sm">{isLogoutLoading ? "Signing Out..." : "Sign Out"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -506,23 +525,22 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/50 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
-      <div className="flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-2 md:gap-4">
+    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/50 dark:border-slate-800/80 bg-white/70 dark:bg-slate-950/70 backdrop-blur-2xl shadow-sm transition-all duration-300">
+      <div className="flex h-16 items-center justify-between px-4 md:px-6 relative">
+        <div className="flex items-center gap-3 md:gap-5">
           {/* Mobile Menu Trigger */}
           <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" className="mr-2">
-                <Menu className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="mr-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-xl">
+                <Menu className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
 
             {/* Desktop Menu Trigger - Gmail style always visible sidebar button */}
             <SheetTrigger asChild className="hidden md:flex">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Menu className="h-4 w-4" />
-                {/* <span>Menu</span> */}
+              <Button variant="ghost" size="icon" className="hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-xl h-9 w-9 data-[state=open]:bg-slate-100 dark:data-[state=open]:bg-slate-800">
+                <Menu className="h-[18px] w-[18px] text-slate-700 dark:text-slate-300" />
               </Button>
             </SheetTrigger>
 
@@ -537,25 +555,28 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </Sheet>
 
           {/* Logo and App Title */}
-          <NavLink to="/" className="flex items-center gap-2">
-            <img src={logo} alt="ITI" className="h-7 w-7 rounded-lg ring-2 ring-pink-200/40 dark:ring-purple-800/40 shadow-sm" />
+          <NavLink to="/" className="flex items-center gap-3 ml-1 md:ml-0 group transition-all duration-200 hover:opacity-90">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
+              <img src={logo} alt="ITI" className="h-[30px] w-[30px] relative rounded-xl ring-2 ring-white dark:ring-slate-800 shadow-md transform group-hover:scale-105 transition-transform duration-200" />
+            </div>
             {isLoading ? (
-              <Skeleton className="h-4 w-32 hidden sm:block" />
+              <Skeleton className="h-5 w-32 hidden sm:block rounded-md" />
             ) : (
-              <span className="font-bold text-sm hidden sm:block text-slate-800 dark:text-white tracking-tight">
+              <span className="font-extrabold text-[15px] hidden sm:block bg-gradient-to-br from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent tracking-tight">
                 {currentHeading || "ITI Dashboard"}
               </span>
             )}
           </NavLink>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Theme Toggle Button */}
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors">
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors h-9 w-9 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
             {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
+              <Sun className="h-4 w-4" />
             ) : (
-              <Moon className="h-5 w-5" />
+              <Moon className="h-4 w-4" />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>
@@ -567,12 +588,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsNotifOpen((o) => !o)}
-                className="relative"
+                className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors h-9 w-9 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                 aria-label="Notifications"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4" />
                 {notifCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none animate-in zoom-in-75 duration-200">
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none animate-in zoom-in-75 duration-200 shadow-sm border border-white dark:border-slate-900">
                     {notifCount > 9 ? "9+" : notifCount}
                   </span>
                 )}

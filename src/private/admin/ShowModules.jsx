@@ -14,7 +14,7 @@ import moduleServices from "@/appwrite/moduleServices";
 
 const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
   const [module, setModule] = useState(
-    newModules.find((m) => m.moduleId === moduleId) || {}
+    newModules.find((m) => m.moduleId === moduleId) || {},
   );
 
   useEffect(() => {
@@ -24,16 +24,17 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
   const [previewImage, setPreviewImage] = useState();
 
   const handleDeleteModule = async () => {
-    if (!moduleId) return;
-    if (!confirm("Deleteing Module with Module Id:", moduleId)) return;
+    if (!module || !module.$id) return;
+    if (!confirm(`Are you sure you want to delete Module ID: ${moduleId}?`))
+      return;
     try {
-      const response = await moduleServices.deleteNewModulesData(module.$id);
-      setNewModules((prev) => prev.filter((m) => m.moduleId !== moduleId));
-      setModule(null);
+      await moduleServices.deleteNewModulesData(module.$id);
+      setNewModules((prev) => prev.filter((m) => m.$id !== module.$id));
       setShow(new Set());
       toast.success("Module deleted successfully!");
     } catch (error) {
       console.log("Module Delete Error", error);
+      toast.error("Failed to delete module.");
     }
   };
 
@@ -133,13 +134,22 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300"
+                      >
                         #
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300"
+                      >
                         Evaluation
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300"
+                      >
                         Points
                       </th>
                     </tr>
@@ -147,16 +157,24 @@ const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
                   <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                     {module.evalutionsPoints.map((item) => (
                       <tr key={item.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">{item.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{item.evaluation}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{item.points}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                          {item.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          {item.evaluation}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          {item.points}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-gray-600 dark:text-gray-400">No evaluation points available.</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                No evaluation points available.
+              </p>
             )}
           </div>
         </div>

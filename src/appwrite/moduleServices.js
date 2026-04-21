@@ -13,7 +13,7 @@ export class ModuleServices {
       return await this.database.getRow({
         databaseId: conf.databaseId,
         tableId: "newmodulesdata",
-        rowId: moduleId
+        rowId: moduleId,
       });
     } catch (error) {
       console.error("Error getting module", error);
@@ -23,7 +23,10 @@ export class ModuleServices {
 
   async getNewModulesData(tradeId, subjectId, year) {
     if (!tradeId || !subjectId || !year) {
-      console.warn("[ModuleServices] Skipping fetch: missing required parameters", { tradeId, subjectId, year });
+      console.warn(
+        "[ModuleServices] Skipping fetch: missing required parameters",
+        { tradeId, subjectId, year },
+      );
       return [];
     }
     try {
@@ -42,7 +45,7 @@ export class ModuleServices {
             Query.equal("year", year),
             Query.limit(limit),
             Query.offset(offset),
-          ]
+          ],
         });
 
         allDocuments = allDocuments.concat(response.rows);
@@ -78,16 +81,16 @@ export class ModuleServices {
         data: {
           ...cleanData,
           evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
-            JSON.stringify(item)
+            JSON.stringify(item),
           ),
           images: (cleanData.images || []).map((item) => JSON.stringify(item)),
           topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
-        }
+        },
       });
       return {
         ...response,
         evalutionsPoints: (response.evalutionsPoints || []).map((item) =>
-          JSON.parse(item)
+          JSON.parse(item),
         ),
         images: (response.images || []).map((item) => JSON.parse(item)),
         topics: (response.topics || []).map((item) => JSON.parse(item)),
@@ -118,17 +121,17 @@ export class ModuleServices {
         data: {
           ...cleanData,
           evalutionsPoints: (cleanData.evalutionsPoints || []).map((item) =>
-            JSON.stringify(item)
+            JSON.stringify(item),
           ),
           images: (cleanData.images || []).map((item) => JSON.stringify(item)),
           topics: (cleanData.topics || []).map((item) => JSON.stringify(item)),
-        }
+        },
       });
 
       return {
         ...response,
         evalutionsPoints: (response.evalutionsPoints || []).map((item) =>
-          JSON.parse(item)
+          JSON.parse(item),
         ),
         images: (response.images || []).map((item) => JSON.parse(item)),
         topics: (response.topics || []).map((item) => JSON.parse(item)),
@@ -171,9 +174,7 @@ export class ModuleServices {
       const addPromises = modulesToAdd.map((newModuleData) =>
         this.createNewModulesData(newModuleData),
       );
-      const finalResponses = await Promise.all([
-        ...addPromises,
-      ]);
+      const finalResponses = await Promise.all([...addPromises]);
 
       return finalResponses;
     } catch (error) {
@@ -187,7 +188,7 @@ export class ModuleServices {
       return await this.database.deleteRow({
         databaseId: conf.databaseId,
         tableId: "newmodulesdata",
-        rowId: moduleId
+        rowId: moduleId,
       });
     } catch (error) {
       console.error("Appwrite error: delete new Data", error);
