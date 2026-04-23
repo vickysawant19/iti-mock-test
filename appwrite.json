@@ -1,6 +1,6 @@
 {
     "projectId": "itimocktest",
-    "projectName": "Mock-Test",
+    "projectName": "ITI MOCK TEST",
     "settings": {
         "services": {
             "account": true,
@@ -11,10 +11,12 @@
             "storage": true,
             "teams": true,
             "users": true,
+            "sites": true,
             "functions": true,
             "graphql": true,
             "messaging": true
         },
+        "protocols": {},
         "auth": {
             "methods": {
                 "jwt": true,
@@ -39,72 +41,20 @@
     },
     "functions": [
         {
-            "$id": "668fac1d0021947c2f64",
+            "$id": "678e7277002e1d5c9b9b",
+            "name": "user-manage",
+            "runtime": "node-22",
+            "path": "functions/user-manage",
+            "entrypoint": "src/main.js",
             "execute": [
                 "any"
             ],
-            "name": "user stats",
             "enabled": true,
             "logging": true,
-            "runtime": "node-18.0",
-            "scopes": [
-                "databases.read",
-                "databases.write",
-                "collections.read",
-                "collections.write",
-                "attributes.read",
-                "attributes.write",
-                "indexes.read",
-                "indexes.write",
-                "documents.read",
-                "documents.write"
-            ],
-            "events": [],
-            "schedule": "0 6 * * *",
-            "timeout": 30,
-            "entrypoint": "userStats.js",
-            "commands": "npm install",
-            "specification": "s-1vcpu-512mb",
-            "path": "functions/user stats"
-        },
-        {
-            "$id": "669a154e000aef6c0ba6",
-            "execute": [
-                "any"
-            ],
-            "name": "mock test",
-            "enabled": true,
-            "logging": true,
-            "runtime": "node-18.0",
-            "scopes": [
-                "databases.read",
-                "databases.write",
-                "collections.read",
-                "collections.write",
-                "attributes.read",
-                "attributes.write",
-                "indexes.read",
-                "indexes.write",
-                "documents.read",
-                "documents.write"
-            ],
             "events": [],
             "schedule": "",
             "timeout": 15,
-            "entrypoint": "mockTest.js",
             "commands": "npm install",
-            "specification": "s-1vcpu-512mb",
-            "path": "functions/mock test"
-        },
-        {
-            "$id": "678e7277002e1d5c9b9b",
-            "execute": [
-                "any"
-            ],
-            "name": "user-manage",
-            "enabled": true,
-            "logging": true,
-            "runtime": "node-22",
             "scopes": [
                 "sessions.write",
                 "users.read",
@@ -128,13 +78,6 @@
                 "rows.write",
                 "documents.write"
             ],
-            "events": [],
-            "schedule": "",
-            "timeout": 15,
-            "entrypoint": "src/main.js",
-            "commands": "npm install",
-            "specification": "s-0.5vcpu-512mb",
-            "path": "functions/user-manage",
             "buildSpecification": "s-0.5vcpu-512mb",
             "runtimeSpecification": "s-0.5vcpu-512mb",
             "deploymentRetention": 0
@@ -143,11 +86,17 @@
             "$id": "67a88715003234e3617a",
             "name": "Mock-Test-Service",
             "runtime": "node-18.0",
-            "specification": "s-0.5vcpu-512mb",
+            "path": "functions/mock-test-service",
+            "entrypoint": "src/main.js",
             "execute": [
                 "any"
             ],
+            "enabled": true,
+            "logging": true,
             "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "commands": "npm install",
             "scopes": [
                 "users.read",
                 "databases.read",
@@ -161,13 +110,6 @@
                 "documents.read",
                 "documents.write"
             ],
-            "schedule": "",
-            "timeout": 15,
-            "enabled": true,
-            "logging": true,
-            "entrypoint": "src/main.js",
-            "commands": "npm install",
-            "path": "functions/Mock-Test-Service",
             "buildSpecification": "s-0.5vcpu-512mb",
             "runtimeSpecification": "s-0.5vcpu-512mb",
             "deploymentRetention": 0
@@ -176,187 +118,33 @@
             "$id": "67d3fa29000adc329a4a",
             "name": "imageUpload",
             "runtime": "node-18.0",
-            "specification": "s-0.5vcpu-512mb",
+            "path": "functions/imageupload",
+            "entrypoint": "src/main.js",
             "execute": [
                 "any"
             ],
+            "enabled": true,
+            "logging": true,
             "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "commands": "npm install",
             "scopes": [
                 "users.read"
             ],
-            "schedule": "",
-            "timeout": 15,
-            "enabled": true,
-            "logging": true,
-            "entrypoint": "src/main.js",
-            "commands": "npm install",
-            "path": "functions/imageUpload",
             "buildSpecification": "s-0.5vcpu-512mb",
             "runtimeSpecification": "s-0.5vcpu-512mb",
             "deploymentRetention": 0
-        },
-        {
-            "$id": "6921c1550003e4e220c0",
-            "execute": [
-                "any"
-            ],
-            "name": "manage-attendance",
-            "enabled": true,
-            "logging": true,
-            "runtime": "node-22",
-            "scopes": [
-                "users.read"
-            ],
-            "events": [],
-            "schedule": "",
-            "timeout": 15,
-            "entrypoint": "src/main.js",
-            "commands": "npm install",
-            "specification": "s-0.5vcpu-512mb",
-            "path": "functions/manage-attendance"
-        },
-        {
-            "$id": "6921c245003a3bd702ba",
-            "execute": [
-                "any"
-            ],
-            "name": "manage-attendance",
-            "enabled": true,
-            "logging": true,
-            "runtime": "node-22",
-            "scopes": [
-                "users.read",
-                "databases.read",
-                "databases.write",
-                "tables.read",
-                "collections.read",
-                "tables.write",
-                "collections.write",
-                "columns.read",
-                "attributes.read",
-                "columns.write",
-                "attributes.write",
-                "indexes.read",
-                "indexes.write",
-                "rows.read",
-                "documents.read",
-                "rows.write",
-                "documents.write"
-            ],
-            "events": [],
-            "schedule": "",
-            "timeout": 15,
-            "entrypoint": "src/main.js",
-            "commands": "npm install",
-            "specification": "s-0.5vcpu-512mb",
-            "path": "functions/manage-attendance"
         }
     ],
-    "databases": [
+    "tablesDB": [
         {
             "$id": "itimocktest",
-            "name": "iti mock test ",
+            "name": "iti mock test",
             "enabled": true
         }
     ],
-    "collections": [
-        {
-            "$id": "667932c5000ff8e2d769",
-            "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")",
-                "read(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "questionData",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "options",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "correctAnswer",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "imageId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "userName",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "year",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 10,
-                    "default": null
-                },
-                {
-                    "key": "question",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 500,
-                    "default": null
-                },
-                {
-                    "key": "subjectId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "moduleId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 20,
-                    "default": null
-                }
-            ],
-            "indexes": []
-        },
+    "tables": [
         {
             "$id": "667e7755002efc107f60",
             "$permissions": [
@@ -370,506 +158,129 @@
             "databaseId": "itimocktest",
             "name": "tradesTable",
             "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
+            "rowSecurity": false,
+            "columns": [
                 {
                     "key": "tradeName",
                     "type": "string",
                     "required": true,
                     "array": false,
                     "size": 100,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "duration",
                     "type": "integer",
                     "required": false,
                     "array": false,
+                    "default": 1,
                     "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": 1
-                }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "667e8b800015a7ece741",
-            "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")",
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")",
-                "delete(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "questionPaperData",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
+                    "max": 9223372036854775807
                 },
                 {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "year",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 10,
-                    "default": null
-                },
-                {
-                    "key": "score",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "submitted",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": null
-                },
-                {
-                    "key": "questions",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 3000,
-                    "default": null
-                },
-                {
-                    "key": "userName",
+                    "key": "description",
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "tradeName",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "paperId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "quesCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": 0
-                },
-                {
-                    "key": "startTime",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "endTime",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "totalMinutes",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "isOriginal",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
-                    "key": "isProtected",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": true
-                }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "668fa985001e955e54f5",
-            "$permissions": [
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "userStats",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "userName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "day_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "day_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "day_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "week_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "week_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "week_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "month_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "month_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "month_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "year_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "year_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "year_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "allTime_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "allTime_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "allTime_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
-                },
-                {
-                    "key": "questions",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null
-                },
-                {
-                    "key": "tests",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "collegeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "66936df000108d8e2364",
-            "$permissions": [
-                "read(\"users\")",
-                "create(\"label:Teacher\")",
-                "read(\"label:Teacher\")",
-                "update(\"label:Teacher\")",
-                "delete(\"label:Teacher\")",
-                "read(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "batchesTable",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "end_date",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "BatchName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "start_date",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "teacherId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "teacherName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "collegeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 48,
-                    "default": null
-                },
-                {
-                    "key": "studentIds",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 48,
-                    "default": null
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "isActive",
                     "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "tradeCode",
+                    "type": "string",
                     "required": true,
                     "array": false,
-                    "default": null
+                    "size": 20,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "66ac5fcd002dc106c5bb",
+            "$permissions": [
+                "read(\"users\")",
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "tradeSubjects",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "subjectName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "66964e180017101cd8aa",
+            "$permissions": [
+                "create(\"label:admin\")",
+                "read(\"label:admin\")",
+                "update(\"label:admin\")",
+                "delete(\"label:admin\")",
+                "read(\"users\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "collagesTable",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "collageName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 100,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeIds",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "location",
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 50,
-                    "default": null
+                    "size": 100,
+                    "default": null,
+                    "encrypt": false
                 },
                 {
-                    "key": "attendanceTime",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "canMarkAttendance",
+                    "key": "isActive",
                     "type": "boolean",
                     "required": false,
                     "array": false,
                     "default": true
-                },
-                {
-                    "key": "canMarkPrevious",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
-                    "key": "circleRadius",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": 10,
-                    "max": 10000,
-                    "default": 1000
-                },
-                {
-                    "key": "attendanceHolidays",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null
                 }
             ],
             "indexes": []
@@ -893,15 +304,16 @@
             "databaseId": "itimocktest",
             "name": "userProfile",
             "enabled": true,
-            "documentSecurity": true,
-            "attributes": [
+            "rowSecurity": true,
+            "columns": [
                 {
                     "key": "userId",
                     "type": "string",
                     "required": true,
                     "array": false,
                     "size": 50,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "userName",
@@ -909,39 +321,8 @@
                     "required": false,
                     "array": false,
                     "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "enrolledAt",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "collegeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "role",
@@ -949,32 +330,26 @@
                     "required": false,
                     "array": true,
                     "size": 47,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "email",
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "format": "email",
-                    "default": null
-                },
-                {
-                    "key": "phone",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "profileImage",
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "format": "url",
-                    "default": null
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "address",
@@ -982,32 +357,16 @@
                     "required": false,
                     "array": false,
                     "size": 498,
-                    "default": null
-                },
-                {
-                    "key": "enrollmentStatus",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "parentContact",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "DOB",
                     "type": "datetime",
                     "required": false,
                     "array": false,
-                    "format": "",
-                    "default": null
+                    "default": null,
+                    "format": ""
                 },
                 {
                     "key": "gradeLevel",
@@ -1015,15 +374,8 @@
                     "required": false,
                     "array": false,
                     "size": 50,
-                    "default": null
-                },
-                {
-                    "key": "studentId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 40,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "specialization",
@@ -1031,31 +383,26 @@
                     "required": false,
                     "array": true,
                     "size": 37,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
-                    "key": "assignedBatches",
-                    "type": "string",
+                    "key": "phone",
+                    "type": "integer",
                     "required": false,
                     "array": false,
-                    "size": 37,
-                    "default": null
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
                 },
                 {
-                    "key": "status",
-                    "type": "string",
+                    "key": "parentContact",
+                    "type": "integer",
                     "required": false,
                     "array": false,
-                    "size": 20,
-                    "default": null
-                },
-                {
-                    "key": "registerId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 40,
-                    "default": null
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
                 },
                 {
                     "key": "experience",
@@ -1063,24 +410,17 @@
                     "required": false,
                     "array": false,
                     "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "allBatchIds",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 5000,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "onboardingStep",
                     "type": "integer",
                     "required": false,
                     "array": false,
+                    "default": 0,
                     "min": 0,
-                    "max": 10,
-                    "default": 0
+                    "max": 10
                 },
                 {
                     "key": "isProfileComplete",
@@ -1088,221 +428,170 @@
                     "required": false,
                     "array": false,
                     "default": false
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "66936df000108d8e2364",
+            "$permissions": [
+                "read(\"users\")",
+                "create(\"label:Teacher\")",
+                "read(\"label:Teacher\")",
+                "update(\"label:Teacher\")",
+                "delete(\"label:Teacher\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "batchesTable",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "end_date",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
                 },
                 {
-                    "key": "isApproved",
+                    "key": "BatchName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "start_date",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "teacherId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "teacherName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 100,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "collegeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 48,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "location",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "attendanceTime",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "canMarkAttendance",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "canMarkPrevious",
                     "type": "boolean",
                     "required": false,
                     "array": false,
                     "default": false
                 },
                 {
-                    "key": "approvalStatus",
-                    "type": "string",
+                    "key": "circleRadius",
+                    "type": "integer",
                     "required": false,
                     "array": false,
-                    "size": 20,
-                    "default": "pending"
+                    "default": 1000,
+                    "min": 10,
+                    "max": 10000
                 },
                 {
-                    "key": "approvedBy",
-                    "type": "string",
+                    "key": "isCurrentBatch",
+                    "type": "boolean",
                     "required": false,
                     "array": false,
-                    "size": 50,
-                    "default": null
+                    "default": true
                 }
             ],
-            "indexes": []
-        },
-        {
-            "$id": "6693f8300003b08374b2",
-            "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "create(\"label:Teacher\")",
-                "read(\"label:Teacher\")",
-                "update(\"label:Teacher\")",
-                "delete(\"label:Teacher\")",
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "read(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "userAttaindance",
-            "enabled": true,
-            "documentSecurity": true,
-            "attributes": [
+            "indexes": [
                 {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
+                    "key": "teacherId_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "teacherId",
+                        "start_date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
                 },
                 {
-                    "key": "userName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "attendanceRecords",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null
-                },
-                {
-                    "key": "admissionDate",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "format": "",
-                    "default": null
-                },
-                {
-                    "key": "studentId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 40,
-                    "default": null
+                    "key": "isActive_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "isActive",
+                        "end_date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
                 }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "66964e180017101cd8aa",
-            "$permissions": [
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "read(\"users\")",
-                "read(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "collagesTable",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "collageName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 100,
-                    "default": null
-                },
-                {
-                    "key": "CollageId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null
-                },
-                {
-                    "key": "TradeIds",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 50,
-                    "default": null
-                }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "66ac5fcd002dc106c5bb",
-            "$permissions": [
-                "read(\"users\")",
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")",
-                "read(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "tradeSubjects",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "subjectName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null
-                }
-            ],
-            "indexes": []
-        },
-        {
-            "$id": "67a470d40039eacbd794",
-            "$permissions": [
-                "read(\"any\")",
-                "create(\"label:admin\")",
-                "read(\"label:admin\")",
-                "update(\"label:admin\")",
-                "delete(\"label:admin\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "modulesData",
-            "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "subjectId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 40,
-                    "default": null
-                },
-                {
-                    "key": "syllabus",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 100000,
-                    "default": null
-                },
-                {
-                    "key": "year",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 20,
-                    "default": null
-                }
-            ],
-            "indexes": []
+            ]
         },
         {
             "$id": "batchRequests",
@@ -1315,15 +604,16 @@
             "databaseId": "itimocktest",
             "name": "batchRequests",
             "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
+            "rowSecurity": false,
+            "columns": [
                 {
                     "key": "batchId",
                     "type": "string",
                     "required": true,
                     "array": false,
                     "size": 36,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "studentId",
@@ -1331,7 +621,24 @@
                     "required": true,
                     "array": false,
                     "size": 36,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "createdAt",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "updatedAt",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
                 },
                 {
                     "key": "status",
@@ -1339,30 +646,33 @@
                     "required": true,
                     "array": false,
                     "size": 20,
-                    "default": "pending"
+                    "default": null,
+                    "encrypt": false
                 },
                 {
-                    "key": "createdAt",
+                    "key": "isCurrentBatch",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "joinedAt",
                     "type": "datetime",
                     "required": false,
                     "array": false,
-                    "default": null
-                },
-                {
-                    "key": "updatedAt",
-                    "type": "datetime",
-                    "required": false,
-                    "array": false,
-                    "default": null
+                    "default": null,
+                    "format": ""
                 }
             ],
             "indexes": [
                 {
-                    "key": "idx_batch_status",
-                    "type": "key",
-                    "attributes": [
-                        "batchId",
-                        "status"
+                    "key": "idx_student_batch",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "studentId",
+                        "batchId"
                     ],
                     "orders": [
                         "ASC",
@@ -1370,11 +680,12 @@
                     ]
                 },
                 {
-                    "key": "idx_student_batch",
-                    "type": "unique",
-                    "attributes": [
-                        "studentId",
-                        "batchId"
+                    "key": "idx_batch_status",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "status"
                     ],
                     "orders": [
                         "ASC",
@@ -1394,15 +705,16 @@
             "databaseId": "itimocktest",
             "name": "batchStudents",
             "enabled": true,
-            "documentSecurity": false,
-            "attributes": [
+            "rowSecurity": false,
+            "columns": [
                 {
                     "key": "batchId",
                     "type": "string",
                     "required": true,
                     "array": false,
                     "size": 36,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "studentId",
@@ -1410,21 +722,77 @@
                     "required": true,
                     "array": false,
                     "size": 36,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "joinedAt",
                     "type": "datetime",
                     "required": false,
                     "array": false,
-                    "default": null
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "enrollmentDate",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 20,
+                    "default": "active",
+                    "encrypt": false
+                },
+                {
+                    "key": "approvedBy",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "remarks",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "rollNumber",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "registerId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": [
                 {
                     "key": "idx_batch",
                     "type": "key",
-                    "attributes": [
+                    "status": "available",
+                    "columns": [
                         "batchId"
                     ],
                     "orders": [
@@ -1434,7 +802,8 @@
                 {
                     "key": "idx_student",
                     "type": "key",
-                    "attributes": [
+                    "status": "available",
+                    "columns": [
                         "studentId"
                     ],
                     "orders": [
@@ -1444,7 +813,8 @@
                 {
                     "key": "idx_unique_membership",
                     "type": "unique",
-                    "attributes": [
+                    "status": "available",
+                    "columns": [
                         "batchId",
                         "studentId"
                     ],
@@ -1454,14 +824,1047 @@
                     ]
                 }
             ]
+        },
+        {
+            "$id": "667932c5000ff8e2d769",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "questionData",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "options",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "correctAnswer",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 10,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "imageId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "userName",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "question",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "moduleId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tags",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "tags_search",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "tags"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "moduleId_index",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "moduleId"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "667e8b800015a7ece741",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "questionPaperData",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "year",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 10,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "submitted",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "questions",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 3000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "userName",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeName",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "paperId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "startTime",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "endTime",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "isOriginal",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                },
+                {
+                    "key": "isProtected",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                },
+                {
+                    "key": "score",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "quesCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "totalMinutes",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "668fa985001e955e54f5",
+            "$permissions": [
+                "create(\"any\")",
+                "read(\"any\")",
+                "update(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "userStats",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "userName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "questions",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tests",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "collegeId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 30,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "day_questionsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "day_testsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "day_maxScore",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "week_questionsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "week_testsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "week_maxScore",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "month_questionsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "month_testsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "month_maxScore",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "year_questionsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "year_testsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "year_maxScore",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "allTime_questionsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "allTime_testsCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "allTime_maxScore",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "newAttendance",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "create(\"any\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "newAttendance",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "date",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 10,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "remarks",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "markedAt",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "markedBy",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_user_batch",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "userId",
+                        "batchId"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
+                },
+                {
+                    "key": "idx_batch_date",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
+                },
+                {
+                    "key": "idx_user_batch_date",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "userId",
+                        "batchId",
+                        "date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC",
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "dailyDiary",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "dailyDiary",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "instructorId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "date",
+                    "type": "datetime",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "format": ""
+                },
+                {
+                    "key": "theoryWork",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 2000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "practicalWork",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 2000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "extraWork",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "hours",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": 0,
+                    "max": 24
+                },
+                {
+                    "key": "remarks",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "practicalNumbers",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 10,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_batch_date",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "DESC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "holidayDays",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "holidayDays",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "date",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "holidayText",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_batch_date",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "date"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "newmodulesdata",
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "newModulesData",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "moduleId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "moduleName",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 500,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "moduleDuration",
+                    "type": "integer",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "moduleDescription",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 2000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "learningOutcome",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 2000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "assessmentCriteria",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 2000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "assessmentPaperId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "evalutionsPoints",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "images",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "hours",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": 0,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "topics",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "subjectId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "year",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 20,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_trade_subject_year",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "tradeId",
+                        "subjectId",
+                        "year"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC",
+                        "ASC"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "userBatchStats",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "userBatchStats",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "monthlyAttendance",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "totalWorkingDays",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 10000
+                },
+                {
+                    "key": "presentDays",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 10000
+                },
+                {
+                    "key": "testsSubmitted",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 10000
+                },
+                {
+                    "key": "cumulativeScore",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 1000000
+                },
+                {
+                    "key": "latestScore",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 100
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_batch_user",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "userId"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "ASC"
+                    ]
+                }
+            ]
         }
     ],
-    "tablesDB": [],
-    "tables": [],
     "buckets": [
         {
             "$id": "mocktestimages",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")"
+            ],
             "fileSecurity": false,
             "name": "images",
             "enabled": true,
@@ -1475,11 +1878,19 @@
     "teams": [
         {
             "$id": "678d2eaf00394e9cf871",
-            "name": "instructor"
+            "$createdAt": "2026-04-23T09:52:13.482+00:00",
+            "$updatedAt": "2026-04-23T09:52:13.877+00:00",
+            "name": "instructor",
+            "total": 1,
+            "prefs": {}
         },
         {
             "$id": "678d3021000b4b403cef",
-            "name": "student"
+            "$createdAt": "2026-04-23T09:52:13.503+00:00",
+            "$updatedAt": "2026-04-23T09:52:13.503+00:00",
+            "name": "student",
+            "total": 0,
+            "prefs": {}
         }
     ]
 }
