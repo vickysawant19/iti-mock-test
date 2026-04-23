@@ -1,6 +1,7 @@
 {
     "projectId": "itimocktest",
-    "projectName": "ITI MOCK TEST",
+    "projectName": "Mock-Test",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
     "settings": {
         "services": {
             "account": true,
@@ -16,7 +17,11 @@
             "graphql": true,
             "messaging": true
         },
-        "protocols": {},
+        "protocols": {
+            "rest": true,
+            "graphql": true,
+            "websocket": true
+        },
         "auth": {
             "methods": {
                 "jwt": true,
@@ -204,7 +209,30 @@
                     "encrypt": false
                 }
             ],
-            "indexes": []
+            "indexes": [
+                {
+                    "key": "unique_tradeName",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "tradeName"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "unique_tradeCode",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "tradeCode"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ]
         },
         {
             "$id": "66ac5fcd002dc106c5bb",
@@ -430,7 +458,50 @@
                     "default": false
                 }
             ],
-            "indexes": []
+            "indexes": [
+                {
+                    "key": "userId_unique",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "userId"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "email_unique",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "email"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "enrollmentStatus_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "enrollmentStatus"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "userName_fulltext",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "userName"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ]
         },
         {
             "$id": "66936df000108d8e2364",
@@ -589,6 +660,17 @@
                     "orders": [
                         "ASC",
                         "ASC"
+                    ]
+                },
+                {
+                    "key": "BatchName_fulltext",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "BatchName"
+                    ],
+                    "orders": [
+                        "asc"
                     ]
                 }
             ]
@@ -1749,6 +1831,21 @@
                         "ASC",
                         "ASC"
                     ]
+                },
+                {
+                    "key": "index_2",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "tradeId",
+                        "subjectId",
+                        "moduleId"
+                    ],
+                    "orders": [
+                        "asc",
+                        "asc",
+                        "asc"
+                    ]
                 }
             ]
         },
@@ -1878,16 +1975,16 @@
     "teams": [
         {
             "$id": "678d2eaf00394e9cf871",
-            "$createdAt": "2026-04-23T09:52:13.482+00:00",
-            "$updatedAt": "2026-04-23T09:52:13.877+00:00",
+            "$createdAt": "2025-01-19T16:56:18.106+00:00",
+            "$updatedAt": "2025-01-19T16:57:24.903+00:00",
             "name": "instructor",
             "total": 1,
             "prefs": {}
         },
         {
             "$id": "678d3021000b4b403cef",
-            "$createdAt": "2026-04-23T09:52:13.503+00:00",
-            "$updatedAt": "2026-04-23T09:52:13.503+00:00",
+            "$createdAt": "2025-01-19T17:02:27.330+00:00",
+            "$updatedAt": "2025-01-19T17:02:27.330+00:00",
             "name": "student",
             "total": 0,
             "prefs": {}
