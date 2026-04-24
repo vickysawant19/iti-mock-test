@@ -20,6 +20,8 @@ import Signup from "./Auth/Signup.jsx";
 
 import ProtectedRoute from "./private/ProtectedRoute.jsx";
 
+import QuotaExceeded from "./pages/QuotaExceeded.jsx";
+
 import CreateQuestion from "./private/mocktest/CreateQuestion.jsx";
 import ManageQuestions from "./private/mocktest/ManageQuestions.jsx";
 import EditQuestion from "./private/mocktest/EditQuestion.jsx";
@@ -76,8 +78,9 @@ const router = (
     <Routes>
       <Route path="/" element={<App />}>
         <Route index element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/quota-exceeded" element={<QuotaExceeded />} />
         <Route path="forget-password" element={<ForgetPass />} />
         <Route path="reset-pass" element={<ResetPass />} />
         <Route path="about" element={<About />} />

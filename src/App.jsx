@@ -53,6 +53,9 @@ function App() {
       }
     } catch (error) {
       console.error("Error checking user status: ", error);
+      if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+        navigate("/quota-exceeded");
+      }
     } finally {
       setIsLoading(false);
       dispatch(addUser({ isLoading: false }));

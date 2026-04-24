@@ -212,6 +212,9 @@ export class UserProfileService {
       return profile; // Assuming user profile is unique per userId
     } catch (error) {
       console.log("Appwrite error: get user profile:", error);
+      if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+        throw error;
+      }
       return false;
     }
   }

@@ -59,6 +59,10 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login Error:", error);
+      if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+        navigate("/quota-exceeded");
+        return;
+      }
       toast.error(error?.message || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
