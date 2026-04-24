@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { appwriteService } from "@/services/appwriteClient";
+import conf from "@/config/config";
 
 const ImageUploader = ({
   folderName,
@@ -97,7 +98,7 @@ const ImageUploader = ({
     try {
       const func = appwriteService.getFunctions();
       const result = await func.createExecution(
-        "67d3fa29000adc329a4a",
+        conf.imageUploadFunctionId,
         JSON.stringify({ action: "auth" })
       );
       return JSON.parse(result.responseBody);

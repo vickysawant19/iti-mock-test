@@ -1,4 +1,5 @@
 import { account, functions } from "./appwriteClient";
+import conf from "../config/config";
 
 export interface CreateAccountPayload {
   email: string;
@@ -13,7 +14,7 @@ export class AuthService {
   async createAccount(payload: CreateAccountPayload) {
     try {
       const response = await functions.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         JSON.stringify({
           ...payload,
           action: "createAccount",

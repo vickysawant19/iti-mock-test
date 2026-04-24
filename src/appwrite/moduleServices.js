@@ -12,7 +12,7 @@ export class ModuleServices {
     try {
       return await this.database.getRow({
         databaseId: conf.databaseId,
-        tableId: "newmodulesdata",
+        tableId: conf.newModulesDataCollectionId,
         rowId: moduleId,
       });
     } catch (error) {
@@ -37,7 +37,7 @@ export class ModuleServices {
       while (true) {
         const response = await this.database.listRows({
           databaseId: conf.databaseId,
-          tableId: "newmodulesdata",
+          tableId: conf.newModulesDataCollectionId,
 
           queries: [
             Query.equal("tradeId", tradeId),
@@ -75,7 +75,7 @@ export class ModuleServices {
       const { subjectName, ...cleanData } = newModulesData;
       const response = await this.database.createRow({
         databaseId: conf.databaseId,
-        tableId: "newmodulesdata",
+        tableId: conf.newModulesDataCollectionId,
         rowId: "unique()",
 
         data: {
@@ -115,7 +115,7 @@ export class ModuleServices {
       } = newModulesData;
       const response = await this.database.updateRow({
         databaseId: conf.databaseId,
-        tableId: "newmodulesdata",
+        tableId: conf.newModulesDataCollectionId,
         rowId: newModulesData.$id,
 
         data: {
@@ -187,7 +187,7 @@ export class ModuleServices {
     try {
       return await this.database.deleteRow({
         databaseId: conf.databaseId,
-        tableId: "newmodulesdata",
+        tableId: conf.newModulesDataCollectionId,
         rowId: moduleId,
       });
     } catch (error) {

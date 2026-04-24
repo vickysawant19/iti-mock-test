@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addUser, selectUser } from "@/store/userSlice";
 import { appwriteService } from "@/services/appwriteClient";
 import { toast } from "react-toastify";
+import conf from "@/config/config";
 
 const SetLabels = () => {
   const user = useSelector(selectUser);
@@ -25,7 +26,7 @@ const SetLabels = () => {
 
     try {
       const response = await appwriteService.functions.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         JSON.stringify({
           action: "updateLabels",
           userId: user.$id,

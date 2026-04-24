@@ -1,4 +1,5 @@
 import { GoogleGenAI,  } from "@google/genai";
+import conf from "../config/config";
 
 class GeminiService {
   constructor(apiKey) {
@@ -175,6 +176,6 @@ Ensure that:
 }
 
 // Initialize service with environment variable
-const geminiServiceV2 = new GeminiService(import.meta.env.VITE_GEMINI_API_KEY);
+const geminiServiceV2 = new GeminiService(conf.geminiApiKey);
 
 export default geminiServiceV2;

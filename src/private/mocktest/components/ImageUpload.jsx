@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LoaderCircle, XCircle, Upload, X } from "lucide-react";
 import { appwriteService } from "@/services/appwriteClient";
+import conf from "@/config/config";
 
 const ImageUploader = ({ folderName = "img", images, setImages }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -57,7 +58,7 @@ const ImageUploader = ({ folderName = "img", images, setImages }) => {
     try {
       const func = appwriteService.getFunctions();
       const res = await func.createExecution(
-        "67d3fa29000adc329a4a",
+        conf.imageUploadFunctionId,
         JSON.stringify({ action: "delete", fileId })
       );
 
@@ -88,7 +89,7 @@ const ImageUploader = ({ folderName = "img", images, setImages }) => {
     try {
       const func = appwriteService.getFunctions();
       const result = await func.createExecution(
-        "67d3fa29000adc329a4a",
+        conf.imageUploadFunctionId,
         JSON.stringify({ action: "auth" })
       );
       return JSON.parse(result.responseBody);

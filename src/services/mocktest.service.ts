@@ -189,7 +189,7 @@ class MockTestService extends DatabaseService {
         score: score,
         quesCount: paper.quesCount
       });
-      functions.createExecution("678e7277002e1d5c9b9b", payload, false);
+      functions.createExecution(conf.userManageFunctionId, payload, false);
     } catch (err) {
       console.error("Failed to trigger updateBatchStatsFromTest", err);
     }

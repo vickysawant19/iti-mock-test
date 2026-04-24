@@ -20,6 +20,7 @@ import userProfileService from "@/appwrite/userProfileService";
 import batchRequestService from "@/appwrite/batchRequestService";
 import { toast } from "react-toastify";
 import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
+import conf from "@/config/config";
 
 const AddStudentForm = ({ defaultBatchId }) => {
   // State for tracking search/create mode and data
@@ -144,7 +145,7 @@ const AddStudentForm = ({ defaultBatchId }) => {
     try {
       const func = appwriteService.getFunctions();
       const { responseBody } = await func.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         JSON.stringify({
           action: "createAccount",
           ...data,

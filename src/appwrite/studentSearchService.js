@@ -18,7 +18,7 @@ export class StudentSearchService {
       let authResults = [];
       const func = appwriteService.getFunctions();
       const { responseBody } = await func.createExecution(
-        "678e7277002e1d5c9b9b", // user-manage function ID
+        conf.userManageFunctionId, // user-manage function ID
         JSON.stringify({ action: "searchUsers", searchTerm })
       );
 

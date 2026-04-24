@@ -21,7 +21,7 @@ class QuestionService extends DatabaseService {
   async bulkaddQuestions(payload: any) {
     try {
       const response = await functions.createExecution({
-        functionId: "67a88715003234e3617a",
+        functionId: conf.mockTestFunctionId,
         body: JSON.stringify(payload)
       });
 

@@ -23,6 +23,7 @@ import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotifi
 import { appwriteService } from "@/services/appwriteClient";
 import { generatePaperId } from "./util";
 import moduleServices from "@/appwrite/moduleServices";
+import conf from "@/config/config";
 
 const AddModules = ({
   setShow,
@@ -207,7 +208,7 @@ const AddModules = ({
     try {
       const func = appwriteService.getFunctions();
       const res = await func.createExecution(
-        "67d3fa29000adc329a4a",
+        conf.imageUploadFunctionId,
         JSON.stringify({ action: "delete", fileId })
       );
 

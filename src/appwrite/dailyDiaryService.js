@@ -6,7 +6,7 @@ export class DailyDiaryService {
   constructor() {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getTablesDB();
-    this.collectionId = "dailyDiary"; // Hardcoded as per migration
+    this.collectionId = conf.dailyDiaryCollectionId;
   }
 
   async getDatesByPracticalNumber(batchId, practicalNumber) {

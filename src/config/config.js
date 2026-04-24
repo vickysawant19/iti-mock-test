@@ -15,12 +15,17 @@ const conf = {
   modulesesCollectionId: import.meta.env.VITE_MODULES_COLLECTION_ID || "",
   mockTestFunctionId: import.meta.env.VITE_MOCKTEST_FUNCTION_ID || "",
   studentAttendanceCollectionId: import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID || "",
-  faceAttendanceCollectionId: "6800d3c9000712f842e3",
+  faceAttendanceCollectionId: import.meta.env.VITE_FACE_ATTENDANCE_COLLECTION_ID || "",
   newAttendanceCollectionId: import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID || "",
   holidayDaysCollectionId: import.meta.env.VITE_HOLIDAY_DAYS_COLLECTION_ID || "",
-  batchRequestsCollectionId: import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "batchRequests",
-  batchStudentsCollectionId: import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "batchStudents",
-  profileImagesBucketId: "mocktestimages",
+  batchRequestsCollectionId: import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "",
+  batchStudentsCollectionId: import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "",
+  profileImagesBucketId: import.meta.env.VITE_PROFILE_IMAGES_BUCKET_ID || "",
+  dailyDiaryCollectionId: import.meta.env.VITE_DAILY_DIARY_COLLECTION_ID || "",
+  userManageFunctionId: import.meta.env.VITE_USER_MANAGE_FUNCTION_ID || "",
+  imageUploadFunctionId: import.meta.env.VITE_IMAGE_UPLOAD_FUNCTION_ID || "",
+  newModulesDataCollectionId: import.meta.env.VITE_NEW_MODULES_DATA_COLLECTION_ID || "",
+  geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
 };
 
 export default conf;

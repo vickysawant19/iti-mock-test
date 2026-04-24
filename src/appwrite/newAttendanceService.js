@@ -290,7 +290,7 @@ class NewAttendanceService {
       });
 
       const response = await functions.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         payload,
         false
       );
@@ -372,7 +372,7 @@ class NewAttendanceService {
       });
 
       const response = await functions.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         payload,
         false
       );
@@ -537,7 +537,7 @@ class NewAttendanceService {
       });
 
       const response = await functions.createExecution(
-        "678e7277002e1d5c9b9b",
+        conf.userManageFunctionId,
         payload,
         false
       );
