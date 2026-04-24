@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Edit2, Printer } from "lucide-react";
-import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
-import ProgressCardPDF from "./ProgressCardPDF";
+import { useReactToPrint } from "react-to-print";
+import ProgressCardPrint from "./ProgressCardPrint";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { getMonthsArray } from "../util/util";
@@ -29,8 +29,10 @@ const ProgressCard = ({
   const [progressData, setProgressData] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // ref for the printable area
+  const printRef = useRef(null);
 
   // Get college and trade data
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
@@ -39,6 +41,12 @@ const ProgressCard = ({
   const { data: trade, isLoading: tradeDataLoading } = useGetTradeQuery(
     batchData.tradeId
   );
+
+  // react-to-print hook
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `progress-card-${progressData?.userName || "student"}`,
+  });
 
   // Update search params when a student is selected
   useEffect(() => {
@@ -65,13 +73,11 @@ const ProgressCard = ({
       foundStudent &&
       (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
     ) {
-      // Create a structured object with the student data
       const newSelectedStudent = {
         ...foundStudent,
         collageName: college.collageName,
         tradeName: trade.tradeName,
       };
-
       setSelectedStudent(newSelectedStudent);
     }
   }, [studentProfiles, college, trade, searchParams, selectedStudent]);
@@ -81,41 +87,34 @@ const ProgressCard = ({
     return (student, batch, studentStats) => {
       if (!student || !batch || !studentStats.length) return null;
 
-      // Parse batch marks data
       const batchMarksParsed = (batch.batchMarks || []).map((item) =>
         typeof item === "string" ? JSON.parse(item) : item
       );
 
-      // Find student's marks
       const studentMarks = batchMarksParsed.find(
         ({ userId }) => userId === student.userId
       );
 
       const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
 
-      // Get monthly attendance records for the student
       const monthlyRecords =
         studentStats.find((item) => item.userId === student.userId)
           ?.monthlyAttendance || {};
 
-      // Get quarterly tests data
       const quarterlyTests = student.quarterlyTests || new Array(3).fill({});
 
-      // Get all months in the batch duration
       const allMonths = getMonthsArray(
         batch.start_date,
         batch.end_date,
         "MMMM yyyy"
       );
 
-      // Merge marks and attendance records
       const completeRecords = {};
       allMonths.forEach((monthKey) => {
         completeRecords[monthKey] =
           { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
       });
 
-      // Organize data into pages
       const monthlyRecordArray = Object.entries(completeRecords);
       let pages = [];
       const monthsPerPage = 12;
@@ -152,46 +151,9 @@ const ProgressCard = ({
       setProgressData(null);
       return;
     }
-
     const data = processProgressData(selectedStudent, batchData, stats);
     setProgressData(data);
   }, [selectedStudent, batchData, stats, processProgressData]);
-
-  // Generate PDF preview
-  const generatePreview = async () => {
-    if (
-      !progressData ||
-      !progressData.pages ||
-      progressData.pages.length === 0
-    ) {
-      setPdfUrl("");
-      return;
-    }
-
-    try {
-      const blob = await pdf(<ProgressCardPDF data={progressData} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      setPdfUrl("");
-    }
-  };
-
-  // Update PDF preview when progress data changes
-  useEffect(() => {
-    let url = "";
-
-    if (progressData) {
-      generatePreview();
-    }
-
-    return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [progressData]);
 
   // Handle student selection
   const handleStudentSelect = (student) => {
@@ -265,18 +227,13 @@ const ProgressCard = ({
           )}
 
           {progressData && (
-            <PDFDownloadLink
-              document={<ProgressCardPDF data={progressData} />}
-              fileName={`progress-card-${progressData.userName}.pdf`}
+            <button
+              onClick={handlePrint}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
-              {({ loading }) => (
-                <>
-                  <Printer className="h-4 w-4" />
-                  {loading ? "Generating..." : "Download"}
-                </>
-              )}
-            </PDFDownloadLink>
+              <Printer className="h-4 w-4" />
+              Print / Save PDF
+            </button>
           )}
         </div>
       </div>
@@ -293,21 +250,10 @@ const ProgressCard = ({
           />
         </div>
       ) : (
-        <div className="overflow-hidden border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800">
+        <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800 bg-white">
           {progressData ? (
-            pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                className="w-full h-[600px] sm:h-[842px] border-0"
-                title="Progress Card Preview"
-              />
-            ) : (
-              <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
-                <p className="text-gray-500 dark:text-gray-400">
-                  Generating preview...
-                </p>
-              </div>
-            )
+            /* Live preview — instant, no blob generation */
+            <ProgressCardPrint ref={printRef} data={progressData} />
           ) : (
             <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-400">

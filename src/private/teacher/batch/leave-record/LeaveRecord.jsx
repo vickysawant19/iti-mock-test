@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Printer } from "lucide-react";
-import { pdf, PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
-import TraineeLeaveRecordPDF from "./TranieeLeaveRecordPDF";
+import { useReactToPrint } from "react-to-print";
+import TraineeLeaveRecordPrint from "./TraineeLeaveRecordPrint";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { getMonthsArray } from "../util/util";
@@ -10,7 +10,6 @@ import LoadingState from "../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
-  // Early check for missing data
   if (!stats || !stats.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -22,10 +21,10 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [leaveData, setLeaveData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Get college and trade data
+  const printRef = useRef(null);
+
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
@@ -33,13 +32,15 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     batchData.tradeId
   );
 
-  // Process data when a student is selected
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `leave-record-${leaveData?.userName || "student"}`,
+  });
+
   const processStudentData = useMemo(() => {
     return (student, leaveRecords, batch) => {
-      // Skip processing if any data is missing
       if (!student || !leaveRecords || !batch) return null;
 
-      // Process attendance records
       const processAttendanceRecords = () => {
         let attendanceMap = {};
 
@@ -116,38 +117,22 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
 
       const { pages } = processAttendanceRecords();
 
-      // Ensure we're explicitly capturing the college and trade information
-      const collegeInfo = college
-        ? {
-            collageName: college.collageName,
-          }
-        : {};
+      const collegeInfo = college ? { collageName: college.collageName } : {};
+      const tradeInfo = trade ? { tradeName: trade.name || trade.tradeName } : {};
 
-      const tradeInfo = trade
-        ? {
-            tradeName: trade.name || trade.tradeName,
-          }
-        : {};
-
-      const defaultData = {
+      return {
+        ...student,
+        ...collegeInfo,
+        ...tradeInfo,
         pages,
         stipend: "Yes",
         casualLeaveRecords: [],
         medicalLeaveRecords: [],
         parentMeetings: [],
       };
-
-      // Create a structured data object with explicit properties
-      return {
-        ...student,
-        ...collegeInfo,
-        ...tradeInfo,
-        ...defaultData,
-      };
     };
   }, [college, trade]);
 
-  // Update URL when a student is selected
   useEffect(() => {
     if (selectedStudent) {
       setSearchParams((prevData) => {
@@ -157,7 +142,6 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
     }
   }, [selectedStudent, setSearchParams]);
 
-  // Handle student selection from URL
   useEffect(() => {
     if (selectedStudent) return;
 
@@ -172,82 +156,43 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
       foundStudent &&
       (!selectedStudent || selectedStudent.userId !== userIdFromUrl)
     ) {
-      // Create a structured object with the student data
       const newSelectedStudent = {
         ...foundStudent,
         collageName: college?.collageName,
-
         tradeName: trade?.tradeName,
       };
-
       setSelectedStudent(newSelectedStudent);
     }
   }, [studentProfiles, college, trade, searchParams, selectedStudent]);
 
-  // Process leave data when student is selected
   useEffect(() => {
     if (!selectedStudent) return;
 
     const studentStats = stats.find(
       (stat) => stat.userId === selectedStudent.userId
     );
-
     if (!studentStats) return;
 
     const data = processStudentData(selectedStudent, studentStats, batchData);
     setLeaveData(data);
   }, [selectedStudent, stats, batchData, processStudentData]);
 
-  // Generate PDF preview
-  useEffect(() => {
-    let currentUrl = "";
-
-    const generatePreview = async () => {
-      if (!leaveData) {
-        setPdfUrl("");
-        return;
-      }
-
-      try {
-        const blob = await pdf(
-          <TraineeLeaveRecordPDF data={leaveData} />
-        ).toBlob();
-        currentUrl = URL.createObjectURL(blob);
-        setPdfUrl(currentUrl);
-      } catch (error) {
-        console.error("Error generating PDF:", error);
-        setPdfUrl("");
-      }
-    };
-
-    generatePreview();
-
-    return () => {
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-      }
-    };
-  }, [leaveData]);
-
-  // Display loading state
-  if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
-
-  // Handle student selection
   const handleStudentSelect = (student) => {
     const newSelectedStudent = {
       ...student,
       collageName: college?.collageName,
       tradeName: trade?.tradeName,
     };
-
     setSelectedStudent(newSelectedStudent);
     setIsDropdownOpen(false);
   };
 
+  if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
+
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 dark:bg-gray-900">
+    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 dark:bg-gray-900">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        {/* Student Selector Dropdown */}
+        {/* Student Selector */}
         <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -286,39 +231,24 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
           )}
         </div>
 
-        {/* PDF Download Button */}
+        {/* Print Button */}
         <div className="flex gap-2 w-full sm:w-auto">
           {leaveData && (
-            <PDFDownloadLink
-              document={<TraineeLeaveRecordPDF data={leaveData} />}
-              fileName={`leave-record-${leaveData.userName}.pdf`}
+            <button
+              onClick={handlePrint}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
-              {({ loading }) => (
-                <>
-                  <Printer className="h-4 w-4" />
-                  {loading ? "Generating..." : "Download"}
-                </>
-              )}
-            </PDFDownloadLink>
+              <Printer className="h-4 w-4" />
+              Print / Save PDF
+            </button>
           )}
         </div>
       </div>
 
-      {/* Leave Record Preview or Placeholder */}
-      <div className="overflow-hidden border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800">
+      {/* Live Preview */}
+      <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
         {leaveData ? (
-          pdfUrl ? (
-            <PDFViewer width="100%" height="842px">
-              <TraineeLeaveRecordPDF data={leaveData} />
-            </PDFViewer>
-          ) : (
-            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
-              <p className="text-gray-500 dark:text-gray-400">
-                Generating preview...
-              </p>
-            </div>
-          )
+          <TraineeLeaveRecordPrint ref={printRef} data={leaveData} />
         ) : (
           <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-400">

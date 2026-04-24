@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Printer } from "lucide-react";
 import { Query } from "appwrite";
 import { ClipLoader } from "react-spinners";
-import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
+import { useReactToPrint } from "react-to-print";
 import { format, max, min, parseISO } from "date-fns";
 
-import JobEvaluationReportPDF from "./JobEvalutionPDF";
+import JobEvaluationPrint from "./JobEvaluationPrint";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import moduleServices from "@/appwrite/moduleServices";
@@ -24,7 +24,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   }
 
   const [isLoading, setIsLoading] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState("");
+  const printRef = useRef(null);
   const [modules, setModules] = useState(null);
 
   const [selectedYear, setSelectedYear] = useState("FIRST");
@@ -71,37 +71,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   }, [studentProfiles]);
 
 
-  const generatePreview = async () => {
-    if (!selectedModuleWithDates) {
-      setPdfUrl("");
-      return;
-    }
-    try {
-      const blob = await pdf(
-        <JobEvaluationReportPDF
-          college={college}
-          studentsMap={studentsMap}
-          selectedModule={selectedModuleWithDates}
-          studentAttendance={studentAttendance}
-        />,
-      ).toBlob();
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      setPdfUrl("");
-    }
-  };
-
-  // Generate/re-generate PDF preview when selected student or module with dates changes
-  useEffect(() => {
-    generatePreview();
-    return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [selectedModuleWithDates]);
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `job-evaluation-${selectedModuleWithDates?.moduleName?.slice(0, 40).split(" ").join("-") || "report"}`,
+  });
 
   useEffect(() => {
     if (!selectedModule) {
@@ -307,48 +280,27 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         </div>
       </div>
 
-      {/* PDF Download Link */}
+      {/* Print Button */}
       {Array.isArray(modules) && selectedModuleWithDates && (
-        <PDFDownloadLink
-          document={
-            <JobEvaluationReportPDF
-              college={college}
-              studentsMap={studentsMap}
-              selectedModule={selectedModuleWithDates}
-              studentAttendance={studentAttendance}
-            />
-          }
-          fileName={`job-evaluation-${selectedModuleWithDates?.moduleName
-            .slice(0, 40)
-            .split(" ")
-            .join("-")}.pdf`}
+        <button
+          onClick={handlePrint}
           className="w-full sm:w-64 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
         >
-          {({ loading }) => (
-            <>
-              <Printer className="h-5 w-5" />
-              {loading ? "Generating PDF..." : "Download PDF"}
-            </>
-          )}
-        </PDFDownloadLink>
+          <Printer className="h-5 w-5" />
+          Print / Save PDF
+        </button>
       )}
 
-      {/* Preview or Placeholder */}
-      <div className="overflow-hidden border rounded-lg shadow-xs mt-6 dark:border-gray-700 dark:bg-gray-800">
-        {selectedModule ? (
-          pdfUrl ? (
-            <iframe
-              src={pdfUrl}
-              className="w-full h-[600px] sm:h-[842px] border-0"
-              title="Job Evaluation Report Preview"
-            />
-          ) : (
-            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center dark:bg-gray-800">
-              <p className="text-gray-500 dark:text-gray-400">
-                Generating preview...
-              </p>
-            </div>
-          )
+      {/* Live Preview */}
+      <div className="overflow-auto border rounded-lg shadow-xs mt-6 dark:border-gray-700 bg-white">
+        {selectedModuleWithDates ? (
+          <JobEvaluationPrint
+            ref={printRef}
+            college={college}
+            studentsMap={studentsMap}
+            selectedModule={selectedModuleWithDates}
+            studentAttendance={studentAttendance}
+          />
         ) : (
           <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-400">
