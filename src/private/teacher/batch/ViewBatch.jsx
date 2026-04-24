@@ -53,8 +53,8 @@ const ViewBatch = () => {
   const [data, setData] = useState({
     selectedBatchData: null,
     students: null,
-    studentsAttendance: [],
-    attendanceStats: null,
+    selectedBatchData: null,
+    students: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
     searchParams.get("batchid") || activeBatchId || ""
@@ -164,73 +164,6 @@ const ViewBatch = () => {
     }
   }, [data.selectedBatchData]);
 
-  // Fetch students attendance
-  const fetchStudentsAttendance = useCallback(async () => {
-    if (!data.students || !data.selectedBatchData) return;
-    setLoading("attendance", true);
-    try {
-      const activeStudents = data.students.filter(
-        (student) => student.status?.toLowerCase() === "active"
-      );
-      const studentIds = activeStudents.map((student) => student.userId);
-      if (studentIds.length <= 0) {
-        setData((prev) => ({ ...prev, attendanceStats: [] }));
-        return;
-      }
-
-      const newAttendance = data.students.map(async (student) => {
-        return await newAttendanceService.getStudentAttendance(
-          student.userId,
-          data.selectedBatchData.$id
-        );
-      });
-
-      const result = await Promise.all(newAttendance);
-      // Create student lookup map
-      const studentMap = new Map();
-      data.students.forEach((student) => {
-        studentMap.set(student.userId, student);
-      });
-
-      const newEnrichedAttendance = result.map((recordsObj, index) => {
-        const originalStudent = data.students[index];
-        const studentData = studentMap.get(originalStudent.userId);
-
-        return {
-          attendanceRecords: recordsObj,
-          batchId: data.selectedBatchData.$id,
-          studentId: studentData?.studentId || "NA",
-          userName: studentData?.userName || "Unknown",
-          userId: studentData?.userId || "NA",
-          ...studentData,
-        };
-      });
-      
-
-      // Calculate stats for each student, including profileImage
-      const stats = newEnrichedAttendance.map((item) => {
-        const s = calculateStats({
-          userId: item.userId,
-          studentId: item.studentId,
-          userName: item.userName,
-          data: item.attendanceRecords,
-        });
-        return { ...s, profileImage: item.profileImage || null };
-      });
-
-      setData((prev) => ({
-        ...prev,
-        studentsAttendance: newEnrichedAttendance,
-        attendanceStats: stats,
-      }));
-    } catch (error) {
-      console.error("Error fetching batch attendance:", error);
-      setData((prev) => ({ ...prev, attendanceStats: [] }));
-    } finally {
-      setLoading("attendance", false);
-    }
-  }, [data.students, data.selectedBatchData]);
-
   // Fetch batch data when selected batch changes
   useEffect(() => {
     if (selectedBatch) {
@@ -245,37 +178,9 @@ const ViewBatch = () => {
     }
   }, [data.selectedBatchData]);
 
-  // Fetch attendance when needed for specific tabs
-  useEffect(() => {
-    const needsAttendance = [
-      "attendance",
-      "progress-card",
-      "leave-record",
-      "job-evaluation",
-    ].includes(activeTab);
-    if (
-      data.students &&
-      selectedBatch &&
-      needsAttendance &&
-      !loadingStates.attendance &&
-      data.attendanceStats === null
-    ) {
-      fetchStudentsAttendance();
-    }
-  }, [
-    data.students,
-    activeTab,
-    selectedBatch,
-    data.attendanceStats?.length,
-    // loadingStates.attendance,
-  ]);
-
   // Render content based on active tab
   const renderContent = () => {
-    const isContentLoading =
-      loadingStates.students ||
-      (["attendance", "progress-card", "leave-record", "job-evaluation"].includes(activeTab) &&
-        loadingStates.attendance);
+    const isContentLoading = loadingStates.students;
 
     if (isContentLoading) {
       return (
@@ -293,27 +198,23 @@ const ViewBatch = () => {
         return (
           <ViewAttendance
             students={data.students}
-            stats={data.attendanceStats}
-            isLoading={loadingStates.attendance}
+            batchData={data.selectedBatchData}
           />
         );
       case "progress-card":
         return (
           <ProgressCard
             studentProfiles={data.students}
-            stats={data.attendanceStats}
             batchData={data.selectedBatchData}
             setBatchData={(newData) =>
               setData((prev) => ({ ...prev, selectedBatchData: newData }))
             }
-            isLoading={loadingStates.attendance}
           />
         );
       case "leave-record":
         return (
           <TraineeLeaveRecord
             studentProfiles={data.students}
-            stats={data.attendanceStats}
             batchData={data.selectedBatchData}
           />
         );
@@ -325,7 +226,6 @@ const ViewBatch = () => {
             }
             stats={data.attendanceStats}
             batchData={data.selectedBatchData}
-            attendance={data.studentsAttendance}
           />
         );
       case "assignments":

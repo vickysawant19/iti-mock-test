@@ -8,9 +8,12 @@ import { getMonthsArray } from "../util/util";
 import { addMonths, differenceInMonths, format } from "date-fns";
 import LoadingState from "../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { calculateStats } from "@/private/Attendance/CalculateStats";
+import { Query } from "appwrite";
 
-const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
-  if (!stats || !stats.length) {
+const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
+  if (!studentProfiles || !studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
         No students found in this batch
@@ -21,6 +24,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [leaveData, setLeaveData] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const printRef = useRef(null);
@@ -166,16 +170,38 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   }, [studentProfiles, college, trade, searchParams, selectedStudent]);
 
   useEffect(() => {
-    if (!selectedStudent) return;
+    const fetchAndProcessData = async () => {
+      if (!selectedStudent || !batchData) {
+        setLeaveData(null);
+        return;
+      }
 
-    const studentStats = stats.find(
-      (stat) => stat.userId === selectedStudent.userId
-    );
-    if (!studentStats) return;
+      setIsFetchingStats(true);
+      try {
+        const attendanceRecords = await newAttendanceService.getStudentAttendance(
+          selectedStudent.userId,
+          batchData.$id,
+          [Query.select(["date", "status"])]
+        );
+        
+        const studentStat = calculateStats({
+          userId: selectedStudent.userId,
+          studentId: selectedStudent.studentId,
+          userName: selectedStudent.userName,
+          data: attendanceRecords,
+        });
 
-    const data = processStudentData(selectedStudent, studentStats, batchData);
-    setLeaveData(data);
-  }, [selectedStudent, stats, batchData, processStudentData]);
+        const data = processStudentData(selectedStudent, studentStat, batchData);
+        setLeaveData(data);
+      } catch (error) {
+        console.error("Error fetching leave stats:", error);
+      } finally {
+        setIsFetchingStats(false);
+      }
+    };
+
+    fetchAndProcessData();
+  }, [selectedStudent, batchData, processStudentData]);
 
   const handleStudentSelect = (student) => {
     const newSelectedStudent = {
@@ -190,13 +216,18 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 dark:bg-gray-900">
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        {/* Student Selector */}
-        <div className="relative w-full sm:w-auto">
+    <div className="w-full h-full flex flex-col lg:flex-row gap-6 p-4 sm:p-6 dark:bg-gray-900 bg-gray-50 min-h-screen">
+      
+      {/* Left Sidebar */}
+      <div className="w-full lg:w-80 shrink-0 flex flex-col gap-6">
+        {/* Student Selector Dropdown */}
+        <div className="relative w-full">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Select Student
+          </label>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full sm:w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
             <span className="text-gray-700 dark:text-white truncate">
               {selectedStudent ? selectedStudent.userName : "Select student"}
@@ -231,31 +262,33 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData, stats }) => {
           )}
         </div>
 
-        {/* Print Button */}
-        <div className="flex gap-2 w-full sm:w-auto">
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3 w-full">
           {leaveData && (
             <button
               onClick={handlePrint}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
-              <Printer className="h-4 w-4" />
+              <Printer className="h-5 w-5" />
               Print / Save PDF
             </button>
           )}
         </div>
       </div>
 
-      {/* Live Preview */}
-      <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
-        {leaveData ? (
-          <TraineeLeaveRecordPrint ref={printRef} data={leaveData} />
-        ) : (
-          <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
-              Select a student to view their leave record
-            </p>
-          </div>
-        )}
+      {/* Right Side: Live Preview */}
+      <div className="w-full lg:flex-1 min-w-0">
+        <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
+          {leaveData ? (
+            <TraineeLeaveRecordPrint ref={printRef} data={leaveData} />
+          ) : (
+            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400">
+                Select a student to view their leave record
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

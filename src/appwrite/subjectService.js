@@ -100,6 +100,19 @@ export class SubjectService {
       throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
+  async getSubjectByName(name){
+    try {
+      const data = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.subjectsCollectionId,
+        queries: [Query.equal("subjectName", name)]
+      });
+      return data.rows[0];
+    } catch (error) {
+      console.error("Appwrite error: fetching subject by name " + name + ":", error);
+      throw new Error(`Error: ${error.message.split(".")[0]}`);
+    }
+  }
 }
 
 const subjectService = new SubjectService();

@@ -20,7 +20,7 @@ const labelStyle = {
   fontWeight: "bold",
   marginRight: "6px",
   whiteSpace: "nowrap",
-  fontSize: "10px",
+  fontSize: "14px",
   color: "#333",
 };
 
@@ -28,7 +28,7 @@ const valueStyle = {
   borderBottom: "1px solid #999",
   flex: 1,
   paddingBottom: "2px",
-  fontSize: "10px",
+  fontSize: "14px",
   minWidth: "100px",
   color: "#000",
 };

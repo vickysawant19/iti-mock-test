@@ -31,7 +31,7 @@ const PrintHeader = ({ heading, collageName }) => {
       <div style={{ flex: 1, textAlign: "center", padding: "0 15px" }}>
         <div
           style={{
-            fontSize: "14px",
+            fontSize: "18px",
             fontWeight: "bold",
             textTransform: "uppercase",
             marginBottom: "6px",
@@ -43,7 +43,7 @@ const PrintHeader = ({ heading, collageName }) => {
         </div>
         <div 
           style={{ 
-            fontSize: "12px", 
+            fontSize: "16px", 
             fontWeight: "bold", 
             textTransform: "uppercase",
             color: "#333" 

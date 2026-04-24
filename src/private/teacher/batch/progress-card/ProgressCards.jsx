@@ -9,15 +9,17 @@ import EditProgressCard from "./EditProgressCard";
 import { addMonths, differenceInMonths, format } from "date-fns";
 import LoadingState from "../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { calculateStats } from "@/private/Attendance/CalculateStats";
+import { Query } from "appwrite";
 
 const ProgressCard = ({
   studentProfiles = [],
-  stats,
   batchData,
   setBatchData,
 }) => {
   // Early check for missing data
-  if (!stats || !stats.length) {
+  if (!studentProfiles || !studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
         No students found in this batch
@@ -29,6 +31,7 @@ const ProgressCard = ({
   const [progressData, setProgressData] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ref for the printable area
@@ -147,13 +150,38 @@ const ProgressCard = ({
 
   // Update progress data when selected student changes
   useEffect(() => {
-    if (!selectedStudent || !batchData || !stats || stats.length === 0) {
-      setProgressData(null);
-      return;
-    }
-    const data = processProgressData(selectedStudent, batchData, stats);
-    setProgressData(data);
-  }, [selectedStudent, batchData, stats, processProgressData]);
+    const fetchAndProcessData = async () => {
+      if (!selectedStudent || !batchData) {
+        setProgressData(null);
+        return;
+      }
+      
+      setIsFetchingStats(true);
+      try {
+        const attendanceRecords = await newAttendanceService.getStudentAttendance(
+          selectedStudent.userId,
+          batchData.$id,
+          [Query.select(["date", "status"])]
+        );
+        
+        const studentStat = calculateStats({
+          userId: selectedStudent.userId,
+          studentId: selectedStudent.studentId,
+          userName: selectedStudent.userName,
+          data: attendanceRecords,
+        });
+
+        const data = processProgressData(selectedStudent, batchData, [studentStat]);
+        setProgressData(data);
+      } catch (error) {
+        console.error("Error fetching progress stats:", error);
+      } finally {
+        setIsFetchingStats(false);
+      }
+    };
+    
+    fetchAndProcessData();
+  }, [selectedStudent, batchData, processProgressData]);
 
   // Handle student selection
   const handleStudentSelect = (student) => {
@@ -173,13 +201,18 @@ const ProgressCard = ({
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 relative dark:bg-gray-900">
-      <div className="mb-6 flex flex-col md:flex-row justify-start items-start md:justify-between md:items-center gap-4">
+    <div className="w-full h-full flex flex-col lg:flex-row gap-6 p-4 sm:p-6 dark:bg-gray-900 bg-gray-50 min-h-screen">
+      
+      {/* Left Sidebar */}
+      <div className="w-full lg:w-80 shrink-0 flex  flex-col gap-6">
         {/* Student Selector Dropdown */}
-        <div className="relative w-full md:w-auto">
+        <div className="relative w-full">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Select Student
+          </label>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full md:w-[280px] flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
           >
             <span className="text-gray-700 dark:text-white truncate">
               {selectedStudent ? selectedStudent.userName : "Select student"}
@@ -215,54 +248,56 @@ const ProgressCard = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center items-center gap-4 w-full md:w-auto">
+        <div className="flex flex-col gap-3 w-full">
           {progressData && (
             <button
               onClick={() => setEditMode((prev) => !prev)}
-              className="flex-1 md:flex-none bg-blue-600 p-2 rounded-md text-white flex items-center justify-center gap-2 px-4 py-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="w-full bg-white border border-blue-600 text-blue-600 p-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors dark:bg-gray-800 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-gray-700"
             >
               <Edit2 className="h-4 w-4" />{" "}
-              {editMode ? "Close Edit" : "Open Edit"}
+              {editMode ? "Close Edit" : "Edit Progress Data"}
             </button>
           )}
 
-          {progressData && (
+          {progressData && !editMode && (
             <button
               onClick={handlePrint}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
             >
-              <Printer className="h-4 w-4" />
+              <Printer className="h-5 w-5" />
               Print / Save PDF
             </button>
           )}
         </div>
       </div>
 
-      {/* Edit Mode or Progress Card Preview */}
-      {editMode ? (
-        <div className="w-full h-full rounded-md dark:bg-gray-800">
-          <EditProgressCard
-            progressData={progressData}
-            setProgressdata={setProgressData}
-            setEditMode={setEditMode}
-            batchData={batchData}
-            setBatchData={setBatchData}
-          />
-        </div>
-      ) : (
-        <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800 bg-white">
-          {progressData ? (
-            /* Live preview — instant, no blob generation */
-            <ProgressCardPrint ref={printRef} data={progressData} />
-          ) : (
-            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
-              <p className="text-gray-500 dark:text-gray-400">
-                Select a student to view their progress card
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Right Side: Edit Mode or Progress Card Preview */}
+      <div className="w-full lg:flex-1 min-w-0">
+        {editMode ? (
+          <div className="w-full h-full rounded-md dark:bg-gray-800">
+            <EditProgressCard
+              progressData={progressData}
+              setProgressdata={setProgressData}
+              setEditMode={setEditMode}
+              batchData={batchData}
+              setBatchData={setBatchData}
+            />
+          </div>
+        ) : (
+          <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800 bg-white">
+            {progressData ? (
+              /* Live preview — instant, no blob generation */
+              <ProgressCardPrint ref={printRef} data={progressData} />
+            ) : (
+              <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Select a student to view their progress card
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

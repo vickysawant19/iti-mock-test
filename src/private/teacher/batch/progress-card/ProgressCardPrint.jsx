@@ -6,34 +6,9 @@ import PrintStudentInfo from "../components/PrintStudentInfo";
 import PrintLayout from "../components/PrintLayout";
 
 /* ─── Shared table cell styles ─── */
-const th = {
-  border: "1.5px solid #000",
-  padding: "5px 6px",
-  fontWeight: "bold",
-  fontSize: "10px",
-  textAlign: "center",
-  backgroundColor: "#f3f4f6",
-  verticalAlign: "middle",
-  lineHeight: "1.4",
-};
-
-const td = {
-  border: "1px solid #333",
-  padding: "5px 6px",
-  fontSize: "10px",
-  textAlign: "center",
-  verticalAlign: "middle",
-  lineHeight: "1.4",
-};
-
-const sectionLabel = {
-  fontWeight: "bold",
-  textAlign: "center",
-  textTransform: "uppercase",
-  marginBottom: "6px",
-  fontSize: "11px",
-  letterSpacing: "0.5px",
-};
+const thClass = "border-2 border-black font-bold px-1.5 py-1 text-center bg-gray-100 align-middle text-sm leading-tight";
+const tdClass = "border border-gray-800 px-1.5 py-1 text-center align-middle text-sm leading-tight";
+const sectionLabelClass = "font-bold text-center uppercase mb-1.5 text-base tracking-wide text-black";
 
 /**
  * ProgressCardPrint (HTML version)
@@ -47,19 +22,14 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
       {data.pages.map(({ data: allRecords, yearRange }, pageIndex) => (
         <div
           key={pageIndex}
-          className={pageIndex < data.pages.length - 1 ? "page-break" : ""}
-          style={{
-            /* Generous margins: more on left for binding/filing */
-            padding: "28px 32px 28px 44px",
-            fontFamily: "'Roboto', Arial, sans-serif",
-            fontSize: "10px",
-            minHeight: "100vh",
-            backgroundColor: "white",
-            color: "black",
-            boxSizing: "border-box",
-          }}
+          className={`w-full h-full bg-white text-black box-border p-4 ${
+            pageIndex < data.pages.length - 1 ? "page-break" : ""
+          }`}
+          style={{ fontFamily: "'Roboto', Arial, sans-serif" }}
         >
-          {/* ─── Header ─── */}
+          {/* Thick outer frame */}
+          <div className="h-full border-[3px] border-black flex flex-col pt-4 px-6 pb-4 box-border">
+            {/* ─── Header ─── */}
           <PrintHeader
             collageName={data.collageName}
             heading="PROGRESS CARD"
@@ -69,16 +39,9 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
           <PrintStudentInfo data={data} yearRange={yearRange} />
 
           {/* ─── Monthly Record Table ─── */}
-          <div style={{ marginBottom: "20px" }}>
-            <div style={sectionLabel}>Monthly Record</div>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                tableLayout: "fixed",
-                border: "1.5px solid #000",
-              }}
-            >
+          <div className="mb-5 flex-1 min-h-0">
+            <div className={sectionLabelClass}>Monthly Record</div>
+            <table className="w-full border-collapse border-[1.5px] border-black table-fixed text-sm">
               <colgroup>
                 <col style={{ width: "5%" }} />
                 <col style={{ width: "11%" }} />
@@ -93,34 +56,34 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
               </colgroup>
               <thead>
                 <tr>
-                  <th rowSpan={2} style={th}>Sr.<br />No.</th>
-                  <th rowSpan={2} style={th}>Month</th>
-                  <th rowSpan={2} style={th}>Theory<br />(100)</th>
-                  <th rowSpan={2} style={th}>Practical<br />(250)</th>
-                  <th colSpan={2} style={th}>Attendance</th>
-                  <th rowSpan={2} style={th}>Progress<br />%</th>
-                  <th colSpan={2} style={th}>Signature</th>
-                  <th rowSpan={2} style={th}>Remarks</th>
+                  <th rowSpan={2} className={thClass}>Sr.<br />No.</th>
+                  <th rowSpan={2} className={thClass}>Month</th>
+                  <th rowSpan={2} className={thClass}>Theory<br />(100)</th>
+                  <th rowSpan={2} className={thClass}>Practical<br />(250)</th>
+                  <th colSpan={2} className={thClass}>Attendance</th>
+                  <th rowSpan={2} className={thClass}>Progress<br />%</th>
+                  <th colSpan={2} className={thClass}>Signature</th>
+                  <th rowSpan={2} className={thClass}>Remarks</th>
                 </tr>
                 <tr>
-                  <th style={th}>Possible<br />Days</th>
-                  <th style={th}>Present<br />Days</th>
-                  <th style={th}>Trade<br />Instructor</th>
-                  <th style={th}>Group<br />Instructor</th>
+                  <th className={thClass}>Possible<br />Days</th>
+                  <th className={thClass}>Present<br />Days</th>
+                  <th className={thClass}>Trade<br />Instructor</th>
+                  <th className={thClass}>Group<br />Instructor</th>
                 </tr>
               </thead>
               <tbody>
                 {allRecords?.map(([month, record], index) => (
-                  <tr key={index} style={{ height: "28px" }}>
-                    <td style={td}>{index + 1}</td>
-                    <td style={td}>{format(new Date(month), "MMM-yyyy")}</td>
-                    <td style={td}>{record.theory ?? "-"}</td>
-                    <td style={td}>{record.practical ?? "-"}</td>
-                    <td style={td}>
+                  <tr key={index} style={{ height: "36px" }}>
+                    <td className={tdClass}>{index + 1}</td>
+                    <td className={tdClass}>{format(new Date(month), "MMM-yyyy")}</td>
+                    <td className={tdClass}>{record.theory ?? "-"}</td>
+                    <td className={tdClass}>{record.practical ?? "-"}</td>
+                    <td className={tdClass}>
                       {(record.presentDays ?? 0) + (record.absentDays ?? 0) || "-"}
                     </td>
-                    <td style={td}>{record.presentDays || "-"}</td>
-                    <td style={td}>
+                    <td className={tdClass}>{record.presentDays || "-"}</td>
+                    <td className={tdClass}>
                       {record.presentDays && record.presentDays + record.absentDays
                         ? (
                             (record.presentDays /
@@ -129,9 +92,9 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
                           ).toFixed(1)
                         : "-"}
                     </td>
-                    <td style={td}></td>
-                    <td style={td}></td>
-                    <td style={td}>{record.remarks || "-"}</td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}>{record.remarks || "-"}</td>
                   </tr>
                 ))}
                 {/* Average row */}
@@ -139,19 +102,19 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
                   style={{
                     fontWeight: "bold",
                     backgroundColor: "#f0f4f8",
-                    height: "30px",
+                    height: "38px",
                   }}
                 >
-                  <td style={td}></td>
-                  <td style={{ ...td, fontWeight: "bold" }}>Average</td>
-                  <td style={td}>{calculateAverage(allRecords, "theory", 100)}</td>
-                  <td style={td}>{calculateAverage(allRecords, "practical", 250)}</td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}>{calculateTotalAttendance(allRecords)}</td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}></td>
+                  <td className={tdClass}></td>
+                  <td className={`${tdClass} font-bold`}>Average</td>
+                  <td className={tdClass}>{calculateAverage(allRecords, "theory", 100)}</td>
+                  <td className={tdClass}>{calculateAverage(allRecords, "practical", 250)}</td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}>{calculateTotalAttendance(allRecords)}</td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
                 </tr>
               </tbody>
             </table>
@@ -159,15 +122,8 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
 
           {/* ─── Quarterly Tests Table ─── */}
           <div>
-            <div style={sectionLabel}>Quarterly Tests</div>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                tableLayout: "fixed",
-                border: "1.5px solid #000",
-              }}
-            >
+            <div className={sectionLabelClass}>Quarterly Tests</div>
+            <table className="w-full border-collapse border-[1.5px] border-black table-fixed text-sm">
               <colgroup>
                 <col style={{ width: "10%" }} />
                 <col style={{ width: "10%" }} />
@@ -181,40 +137,40 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
               </colgroup>
               <thead>
                 <tr>
-                  <th rowSpan={2} style={th}>Quart.<br />No.</th>
-                  <th colSpan={3} style={th}>Marks</th>
-                  <th rowSpan={2} style={th}>Character &amp;<br />Communication</th>
-                  <th colSpan={3} style={th}>Signature</th>
-                  <th rowSpan={2} style={th}>Remarks</th>
+                  <th rowSpan={2} className={thClass}>Quart.<br />No.</th>
+                  <th colSpan={3} className={thClass}>Marks</th>
+                  <th rowSpan={2} className={thClass}>Character &amp;<br />Communication</th>
+                  <th colSpan={3} className={thClass}>Signature</th>
+                  <th rowSpan={2} className={thClass}>Remarks</th>
                 </tr>
                 <tr>
-                  <th style={th}>Practical</th>
-                  <th style={th}>Theory</th>
-                  <th style={th}>Empl.<br />Skills</th>
-                  <th style={th}>Trade<br />Instructor</th>
-                  <th style={th}>Group<br />Instructor</th>
-                  <th style={th}>Principal</th>
+                  <th className={thClass}>Practical</th>
+                  <th className={thClass}>Theory</th>
+                  <th className={thClass}>Empl.<br />Skills</th>
+                  <th className={thClass}>Trade<br />Instructor</th>
+                  <th className={thClass}>Group<br />Instructor</th>
+                  <th className={thClass}>Principal</th>
                 </tr>
               </thead>
               <tbody>
                 {data?.quarterlyTests?.map((test, index) => (
-                  <tr key={index} style={{ height: "30px" }}>
-                    <td style={td}>Q{test.quarter || index + 1}</td>
-                    <td style={td}>{test.practical || "-"}</td>
-                    <td style={td}>{test.theory || "-"}</td>
-                    <td style={td}>{test.skills || "-"}</td>
-                    <td style={td}>{test.characterCom || "-"}</td>
-                    <td style={td}>{test.signature || "-"}</td>
-                    <td style={td}>-</td>
-                    <td style={td}>-</td>
-                    <td style={td}>{test.remarks || "-"}</td>
+                  <tr key={index} style={{ height: "36px" }}>
+                    <td className={tdClass}>Q{test.quarter || index + 1}</td>
+                    <td className={tdClass}>{test.practical || "-"}</td>
+                    <td className={tdClass}>{test.theory || "-"}</td>
+                    <td className={tdClass}>{test.skills || "-"}</td>
+                    <td className={tdClass}>{test.characterCom || "-"}</td>
+                    <td className={tdClass}>{test.signature || "-"}</td>
+                    <td className={tdClass}>-</td>
+                    <td className={tdClass}>-</td>
+                    <td className={tdClass}>{test.remarks || "-"}</td>
                   </tr>
                 ))}
                 {/* Average row */}
                 {data?.quarterlyTests?.length > 0 && (
-                  <tr style={{ fontWeight: "bold", backgroundColor: "#f0f4f8", height: "30px" }}>
-                    <td style={{ ...td, fontWeight: "bold" }}>Average</td>
-                    <td style={td}>
+                  <tr style={{ fontWeight: "bold", backgroundColor: "#f0f4f8", height: "38px" }}>
+                    <td className={`${tdClass} font-bold`}>Average</td>
+                    <td className={tdClass}>
                       {(
                         data.quarterlyTests.reduce(
                           (sum, t) => sum + (t.practical || 0),
@@ -222,7 +178,7 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
                         ) / data.quarterlyTests.length
                       ).toFixed(2)}
                     </td>
-                    <td style={td}>
+                    <td className={tdClass}>
                       {(
                         data.quarterlyTests.reduce(
                           (sum, t) => sum + (t.theory || 0),
@@ -230,7 +186,7 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
                         ) / data.quarterlyTests.length
                       ).toFixed(2)}
                     </td>
-                    <td style={td}>
+                    <td className={tdClass}>
                       {(
                         data.quarterlyTests.reduce(
                           (sum, t) => sum + (t.skills || 0),
@@ -238,16 +194,17 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
                         ) / data.quarterlyTests.length
                       ).toFixed(2)}
                     </td>
-                    <td style={td}></td>
-                    <td style={td}></td>
-                    <td style={td}></td>
-                    <td style={td}></td>
-                    <td style={td}></td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}></td>
+                    <td className={tdClass}></td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       ))}
     </PrintLayout>

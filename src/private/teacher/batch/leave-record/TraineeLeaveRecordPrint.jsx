@@ -3,35 +3,10 @@ import PrintLayout from "../components/PrintLayout";
 import PrintHeader from "../components/PrintHeader";
 import PrintStudentInfo from "../components/PrintStudentInfo";
 
-const th = {
-  border: "1.5px solid #000",
-  padding: "4px 2px",
-  fontWeight: "bold",
-  fontSize: "9px",
-  textAlign: "center",
-  backgroundColor: "#f3f4f6",
-  verticalAlign: "middle",
-  whiteSpace: "nowrap",
-  lineHeight: "1.1",
-};
-
-const td = {
-  border: "1px solid #333",
-  padding: "4px 2px",
-  fontSize: "9px",
-  textAlign: "center",
-  verticalAlign: "middle",
-  lineHeight: "1.1",
-};
-
-const sectionTitle = {
-  fontWeight: "bold",
-  textTransform: "uppercase",
-  fontSize: "10px",
-  marginBottom: "4px",
-  marginTop: "10px",
-  letterSpacing: "0.5px",
-};
+/* ─── Shared table cell styles ─── */
+const thClass = "border-2 border-black font-bold px-1.5 py-1 text-center bg-gray-100 align-middle text-sm leading-tight";
+const tdClass = "border border-gray-800 px-1.5 py-1 text-center align-middle text-sm leading-tight";
+const sectionTitleClass = "font-bold text-center uppercase mb-1.5 mt-2.5 text-base tracking-wide text-black";
 
 const calculatePercentage = (attendanceData) => {
   if (!attendanceData || !attendanceData.possibleDays) return "-";
@@ -55,20 +30,13 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
       {data?.pages?.map((pageData, pageIndex) => (
         <div
           key={pageIndex}
-          className={pageIndex < data.pages.length - 1 ? "page-break" : ""}
-          style={{
-            /* Adjusted for Portrait fit */
-            padding: "20px 24px 20px 44px",
-            fontFamily: "'Roboto', Arial, sans-serif",
-            fontSize: "9px",
-            backgroundColor: "white",
-            color: "black",
-            minHeight: "100vh",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-          }}
+          className={`w-full h-full bg-white text-black box-border p-4 ${
+            pageIndex < data.pages.length - 1 ? "page-break" : ""
+          }`}
+          style={{ fontFamily: "'Roboto', Arial, sans-serif" }}
         >
+          {/* Thick outer frame */}
+          <div className="h-full border-[3px] border-black flex flex-col pt-4 px-6 pb-4 box-border">
           <PrintHeader
             collageName={data.collageName}
             heading="TRAINEE LEAVE RECORD"
@@ -77,7 +45,7 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
           <PrintStudentInfo data={data} yearRange={pageData.yearRange} />
 
           {/* ─── Attendance Details ─── */}
-          <div style={sectionTitle}>Attendance Details</div>
+          <div className={sectionTitleClass}>Attendance Details</div>
           <table
             style={{
               width: "100%",
@@ -89,9 +57,9 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
           >
             <thead>
               <tr>
-                <th style={{ ...th, width: "16%" }}>Months</th>
+                <th className={`${thClass} w-[16%]`}>Months</th>
                 {pageData.months.map((month, i) => (
-                  <th key={i} style={{ ...th, width: "7%", fontSize: "8px" }}>
+                  <th key={i} className={`${thClass} w-[7%] text-xs`}>
                     {month.slice(0, 3)}
                   </th>
                 ))}
@@ -100,55 +68,55 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
             <tbody>
               {/* Possible Days */}
               <tr>
-                <td style={{ ...td, fontWeight: "bold", textAlign: "left", paddingLeft: "4px", fontSize: "8px" }}>
+                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
                   Possible Days
                 </td>
                 {pageData.months.map((month, i) => (
-                  <td key={i} style={td}>
+                  <td key={i} className={tdClass}>
                     {pageData?.data[month]?.possibleDays || ""}
                   </td>
                 ))}
               </tr>
               {/* Present Days */}
               <tr>
-                <td style={{ ...td, fontWeight: "bold", textAlign: "left", paddingLeft: "4px", fontSize: "8px" }}>
+                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
                   Present Days
                 </td>
                 {pageData.months.map((month, i) => (
-                  <td key={i} style={td}>
+                  <td key={i} className={tdClass}>
                     {pageData?.data[month]?.presentDays || ""}
                   </td>
                 ))}
               </tr>
               {/* Sick Leave */}
               <tr>
-                <td style={{ ...td, fontWeight: "bold", textAlign: "left", paddingLeft: "4px", fontSize: "8px" }}>
+                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
                   Sick Leave
                 </td>
                 {pageData.months.map((month, i) => (
-                  <td key={i} style={td}>
+                  <td key={i} className={tdClass}>
                     {pageData?.data[month]?.sickLeave ?? ""}
                   </td>
                 ))}
               </tr>
               {/* Casual Leave */}
               <tr>
-                <td style={{ ...td, fontWeight: "bold", textAlign: "left", paddingLeft: "4px", fontSize: "8px" }}>
+                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
                   Casual Leave
                 </td>
                 {pageData.months.map((month, i) => (
-                  <td key={i} style={td}>
+                  <td key={i} className={tdClass}>
                     {pageData?.data[month]?.casualLeave ?? ""}
                   </td>
                 ))}
               </tr>
               {/* Percentage */}
               <tr style={{ backgroundColor: "#f0f4f8" }}>
-                <td style={{ ...td, fontWeight: "bold", textAlign: "left", paddingLeft: "4px", fontSize: "8px" }}>
+                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
                   Percentage %
                 </td>
                 {pageData.months.map((month, i) => (
-                  <td key={i} style={{ ...td, fontSize: "8px" }}>
+                  <td key={i} className={`${tdClass} text-xs`}>
                     {calculatePercentage(pageData?.data[month])}
                   </td>
                 ))}
@@ -157,56 +125,42 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
           </table>
 
           {/* ─── Casual Leave Record ─── */}
-          <div style={sectionTitle}>Casual Leave Record</div>
-          <table
-            style={{ 
-              width: "100%", 
-              borderCollapse: "collapse", 
-              marginBottom: "10px",
-              border: "1.5px solid #000",
-            }}
-          >
+          <div className={sectionTitleClass}>Casual Leave Record</div>
+          <table className="w-full border-collapse mb-2 border-[1.5px] border-black">
             <thead>
               <tr>
                 {["Sr.", "Date", "Reason", "CI", "GI",
                   "Sr.", "Date", "Reason", "CI", "GI"].map(
-                  (h, i) => <th key={i} style={{ ...th, fontSize: "8px" }}>{h}</th>
+                  (h, i) => <th key={i} className={`${thClass} text-xs`}>{h}</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} style={{ height: "24px" }}>
-                  <td style={td}>{12 - i}</td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}>{6 - i}</td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}></td>
-                  <td style={td}></td>
+                <tr key={i} className="h-[26px]">
+                  <td className={tdClass}>{12 - i}</td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}>{6 - i}</td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
+                  <td className={tdClass}></td>
                 </tr>
               ))}
             </tbody>
           </table>
 
           {/* ─── Medical Leave Record ─── */}
-          <div style={sectionTitle}>Medical Leave Record</div>
-          <table
-            style={{ 
-              width: "100%", 
-              borderCollapse: "collapse", 
-              marginBottom: "10px",
-              border: "1.5px solid #000",
-            }}
-          >
+          <div className={sectionTitleClass}>Medical Leave Record</div>
+          <table className="w-full border-collapse mb-2 border-[1.5px] border-black">
             <thead>
               <tr>
                 {["Date", "From To", "Days", "Reason", "Order",
                   "Trai.", "Inst.", "G.I."].map((h, i) => (
-                  <th key={i} style={{ ...th, fontSize: "8px" }}>{h}</th>
+                  <th key={i} className={`${thClass} text-xs`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -214,7 +168,7 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
               {Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 8 }).map((__, j) => (
-                    <td key={j} style={{ ...td, height: "24px" }}></td>
+                    <td key={j} className={`${tdClass} h-[26px]`}></td>
                   ))}
                 </tr>
               ))}
@@ -222,31 +176,28 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
           </table>
 
           {/* ─── Meeting with Parents ─── */}
-          <div style={sectionTitle}>Meeting with Parents</div>
-          <table style={{ 
-            width: "100%", 
-            borderCollapse: "collapse",
-            border: "1.5px solid #000",
-          }}>
+          <div className={sectionTitleClass}>Meeting with Parents</div>
+          <table className="w-full border-collapse border-[1.5px] border-black">
             <thead>
               <tr>
                 {["Sr.", "Reason", "Report",
                   "Par.", "Ins.", "GI", "Pri."].map(
-                  (h, i) => <th key={i} style={{ ...th, fontSize: "8px" }}>{h}</th>
+                  (h, i) => <th key={i} className={`${thClass} text-xs`}>{h}</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  <td style={{ ...td, height: "24px" }}>{i + 1}</td>
+                  <td className={`${tdClass} h-[26px]`}>{i + 1}</td>
                   {Array.from({ length: 6 }).map((__, j) => (
-                    <td key={j} style={{ ...td, height: "24px" }}></td>
+                    <td key={j} className={`${tdClass} h-[26px]`}></td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       ))}
     </PrintLayout>

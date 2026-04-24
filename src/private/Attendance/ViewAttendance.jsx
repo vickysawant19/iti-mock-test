@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { format } from "date-fns";
+import React, { useState, useEffect } from "react";
+import { format, startOfMonth, endOfMonth, parse } from "date-fns";
+import { Query } from "appwrite";
 import {
   Calendar,
   Percent,
@@ -13,6 +14,8 @@ import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { getMonthsArray } from "@/private/teacher/batch/util/util";
 
 const StatCard = ({ icon: Icon, label, value, colorClass, borderClass }) => (
   <div className={`p-3 sm:p-4 rounded-2xl border ${borderClass} ${colorClass} transition-shadow hover:shadow-md`}>
@@ -36,14 +39,85 @@ const AttendanceBadge = ({ pct }) => {
   );
 };
 
-const ViewAttendance = ({ isLoading, stats }) => {
+const ViewAttendance = ({ students = [], batchData }) => {
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "MMMM yyyy")
   );
+  
+  const [overallStats, setOverallStats] = useState({});
+  const [monthlyStats, setMonthlyStats] = useState({});
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const profile = useSelector(selectProfile);
 
-  if (!stats || !stats.length) {
+  const sortedMonths = batchData 
+    ? getMonthsArray(batchData.start_date, batchData.end_date, "MMMM yyyy")
+    : [];
+
+  useEffect(() => {
+    if (!batchData || !students || students.length === 0) return;
+    
+    const fetchOverall = async () => {
+      setIsLoadingStats(true);
+      try {
+        const statsMap = {};
+        
+        // Fetch present/absent count per student concurrently utilizing .total
+        const fetchPromises = students.map(async (student) => {
+          const [presentDays, absentDays] = await Promise.all([
+            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "present"),
+            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "absent")
+          ]);
+          
+          const total = presentDays + absentDays;
+          const attendancePercentage = total > 0 ? ((presentDays / total) * 100).toFixed(0) : 0;
+          
+          statsMap[student.userId] = { presentDays, absentDays, attendancePercentage };
+        });
+        
+        await Promise.all(fetchPromises);
+        setOverallStats(statsMap);
+      } catch (err) {
+        console.error("Error fetching overall stats:", err);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+    
+    fetchOverall();
+  }, [batchData, students]);
+
+  useEffect(() => {
+    if (!batchData || !selectedMonth || !students || students.length === 0) return;
+    
+    const fetchMonth = async () => {
+      try {
+        const dateObj = parse(selectedMonth, "MMMM yyyy", new Date());
+        const minDate = format(startOfMonth(dateObj), "yyyy-MM-dd");
+        const maxDate = format(endOfMonth(dateObj), "yyyy-MM-dd");
+        
+        const statsMap = {};
+        
+        const fetchPromises = students.map(async (student) => {
+          const [presentDays, absentDays] = await Promise.all([
+            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "present", minDate, maxDate),
+            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "absent", minDate, maxDate)
+          ]);
+          
+          statsMap[student.userId] = { presentDays, absentDays };
+        });
+        
+        await Promise.all(fetchPromises);
+        setMonthlyStats(statsMap);
+      } catch (err) {
+        console.error("Error fetching monthly stats:", err);
+      }
+    };
+    
+    fetchMonth();
+  }, [batchData, selectedMonth, students]);
+
+  if (!students || !students.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <Calendar className="w-12 h-12 text-gray-300 mb-4" />
@@ -53,9 +127,9 @@ const ViewAttendance = ({ isLoading, stats }) => {
     );
   }
 
-  const filteredStats = stats.filter((item) => item.userId !== profile.userId);
+  const filteredStudents = students.filter((item) => item.userId !== profile.userId);
 
-  if (isLoading) {
+  if (isLoadingStats) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -64,19 +138,10 @@ const ViewAttendance = ({ isLoading, stats }) => {
     );
   }
 
-  const availableMonths = filteredStats.reduce((months, student) => {
-    Object.keys(student.monthlyAttendance || {}).forEach((month) => {
-      if (month !== "prototype") months.add(month);
-    });
-    return months;
-  }, new Set());
-
-  const sortedMonths = Array.from(availableMonths).sort((a, b) => new Date(a) - new Date(b));
-
   // --- aggregate stats for selected month ---
-  const totalStats = filteredStats.reduce(
+  const totalStats = filteredStudents.reduce(
     (acc, student) => {
-      const m = student.monthlyAttendance[selectedMonth] || { presentDays: 0, absentDays: 0 };
+      const m = monthlyStats[student.userId] || { presentDays: 0, absentDays: 0 };
       return {
         present: acc.present + (m.presentDays || 0),
         absent: acc.absent + (m.absentDays || 0),
@@ -126,21 +191,21 @@ const ViewAttendance = ({ isLoading, stats }) => {
             <StatCard
               icon={CheckCircle}
               label="Avg Present"
-              value={`${(totalStats.present / (filteredStats.length || 1)).toFixed(1)}d`}
+              value={`${(totalStats.present / (filteredStudents.length || 1)).toFixed(1)}d`}
               colorClass="bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400"
               borderClass="border-green-100 dark:border-green-800/30"
             />
             <StatCard
               icon={XCircle}
               label="Avg Absent"
-              value={`${(totalStats.absent / (filteredStats.length || 1)).toFixed(1)}d`}
+              value={`${(totalStats.absent / (filteredStudents.length || 1)).toFixed(1)}d`}
               colorClass="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400"
               borderClass="border-red-100 dark:border-red-800/30"
             />
             <StatCard
               icon={Users}
               label="Students"
-              value={filteredStats.length}
+              value={filteredStudents.length}
               colorClass="bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400"
               borderClass="border-blue-100 dark:border-blue-800/30"
             />
@@ -171,10 +236,12 @@ const ViewAttendance = ({ isLoading, stats }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                {filteredStats.map((student, idx) => {
-                  const m = student.monthlyAttendance[selectedMonth] || { presentDays: 0, absentDays: 0 };
+                {filteredStudents.map((student, idx) => {
+                  const m = monthlyStats[student.userId] || { presentDays: 0, absentDays: 0 };
                   const mTotal = (m.presentDays || 0) + (m.absentDays || 0);
                   const mPct = mTotal > 0 ? ((m.presentDays / mTotal) * 100).toFixed(0) : 0;
+                  
+                  const o = overallStats[student.userId] || { presentDays: 0, absentDays: 0, attendancePercentage: 0 };
 
                   return (
                     <tr key={student.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors group">
@@ -203,13 +270,13 @@ const ViewAttendance = ({ isLoading, stats }) => {
                         <AttendanceBadge pct={mPct} />
                       </td>
                       <td className="px-4 py-3 text-center bg-green-50/30 dark:bg-green-900/5 whitespace-nowrap">
-                        <span className="font-bold text-gray-600 dark:text-gray-400">{student.presentDays || 0}</span>
+                        <span className="font-bold text-gray-600 dark:text-gray-400">{o.presentDays || 0}</span>
                       </td>
                       <td className="px-4 py-3 text-center bg-orange-50/30 dark:bg-orange-900/5 whitespace-nowrap">
-                        <span className="font-bold text-gray-600 dark:text-gray-400">{student.absentDays || 0}</span>
+                        <span className="font-bold text-gray-600 dark:text-gray-400">{o.absentDays || 0}</span>
                       </td>
                       <td className="px-4 py-3 text-center bg-purple-50/30 dark:bg-purple-900/5 whitespace-nowrap">
-                        <span className="font-black text-purple-600 dark:text-purple-400">{student.attendancePercentage || 0}%</span>
+                        <span className="font-black text-purple-600 dark:text-purple-400">{o.attendancePercentage || 0}%</span>
                       </td>
                     </tr>
                   );

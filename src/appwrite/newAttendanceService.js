@@ -56,14 +56,15 @@ class NewAttendanceService {
       throw error;
     }
   }
-  // Get student attendance by userId and batchId
-  async getStudentAttendance(userId, batchId) {
+  // Get student attendance
+  async getStudentAttendance(userId, batchId, additionalQueries = []) {
     if (!batchId) return [];
     try {
       const queries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
         Query.orderDesc("date"),
+        ...additionalQueries
       ];
 
       const result = (await this.fetchAllDocuments(queries)).documents;
@@ -575,6 +576,37 @@ class NewAttendanceService {
       return await this.fetchAllDocuments(queries);
     } catch (error) {
       throw error;
+    }
+  }
+
+  // Get direct count for student attendance
+  async getStudentAttendanceCount(userId, batchId, status, startDate = null, endDate = null) {
+    if (!userId || !batchId || !status) return 0;
+    try {
+      const queries = [
+        Query.equal("userId", userId),
+        Query.equal("batchId", batchId),
+        Query.equal("status", status),
+        Query.limit(1)
+      ];
+
+      if (startDate) {
+        queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+      }
+      if (endDate) {
+        queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+      }
+
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries
+      });
+      
+      return response.total;
+    } catch (error) {
+      console.error("Error fetching attendance count:", error);
+      return 0;
     }
   }
 

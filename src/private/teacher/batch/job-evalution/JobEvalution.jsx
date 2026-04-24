@@ -5,7 +5,8 @@ import { ClipLoader } from "react-spinners";
 import { useReactToPrint } from "react-to-print";
 import { format, max, min, parseISO } from "date-fns";
 
-import JobEvaluationPrint from "./JobEvaluationPrint";
+import JobEvaluationPrintDynamic from "./JobEvaluationPrintDynamic";
+import { jobEvaluationDataAdapter } from "./jobEvaluationDataAdapter";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import moduleServices from "@/appwrite/moduleServices";
@@ -13,8 +14,9 @@ import useScrollToItem from "@/hooks/useScrollToItem";
 import Loader from "@/components/components/Loader";
 import subjectService from "@/appwrite/subjectService";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
-const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
+const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   if (!studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -42,19 +44,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
   const { scrollToItem, itemRefs } = useScrollToItem(modules || [], "moduleId");
 
-  useEffect(() => {
-    if (!attendance || attendance.length === 0) return;
-    const dateKeysAttendance = attendance.reduce((acc, doc) => {
-      acc[doc.userId] = doc.attendanceRecords.reduce((a, d) => {
-        a[d.date] = !a[d.date] ? d.status : a[d.date];
-        return a;
-      }, {});
-
-      return acc;
-    }, {});
-
-    setStudentAttendance(dateKeysAttendance);
-  }, [attendance]);
+  // Removed global attendance prop dependency
 
   useEffect(() => {
     if (selectedModule && isModuleDropdownOpen) {
@@ -106,6 +96,30 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           maxDate = dateObjects.length
             ? format(max(dateObjects), "yyyy-MM-dd")
             : null;
+
+          if (minDate && maxDate) {
+            // Fetch attendance only for this date range
+            const queries = [
+              Query.greaterThanEqual("date", minDate),
+              Query.lessThanEqual("date", maxDate),
+              Query.select(["userId", "date", "status"])
+            ];
+            
+            const attendanceRes = await newAttendanceService.getAllBatchAttendance(batchData.$id, queries);
+            
+            // Map flat attendance records to { userId: { date: status } }
+            const dateKeysAttendance = attendanceRes.documents.reduce((acc, doc) => {
+              if (!acc[doc.userId]) acc[doc.userId] = {};
+              if (!acc[doc.userId][doc.date]) {
+                acc[doc.userId][doc.date] = doc.status;
+              }
+              return acc;
+            }, {});
+            
+            setStudentAttendance(dateKeysAttendance);
+          } else {
+            setStudentAttendance({});
+          }
         }
 
         setSelectedModuleWithDates({
@@ -114,7 +128,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
           endDate: maxDate,
         });
       } catch (err) {
-        console.error("Failed to map module practical dates:", err);
+        console.error("Failed to map module practical dates or fetch attendance:", err);
       } finally {
         setIsLoading(false);
       }
@@ -125,11 +139,9 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
 
   const fetchSubject = async () => {
     try {
-      const res = await subjectService.listAllSubjects([
-        Query.equal("subjectName", "TRADE PRACTICAL"),
-      ]);
-
-      return res[0];
+      const res = await subjectService.getSubjectByName("Trade Practical");
+      console.log("subject",res);
+      return res;
     } catch (error) {
       console.log(error);
     }
@@ -140,6 +152,11 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
     try {
       if (!selectedYear) return;
       const subject = await fetchSubject();
+      if (!subject || !subject.$id) {
+        console.warn("No Practical subject found for this trade.");
+        setModules([]);
+        return;
+      }
       const data = await moduleServices.getNewModulesData(
         batchData.tradeId,
         subject.$id,
@@ -167,20 +184,22 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 text-sm dark:bg-gray-900">
-      {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs mb-6 dark:bg-gray-800 dark:border-gray-700 dark:text-blue-300">
-        <ul className="list-disc ml-6 space-y-2 dark:text-gray-300">
-          <li>Add students attendance to ensure accurate evaluations.</li>
-          <li>
-            Include daily diary entries with Practical Number to support a
-            correct job evaluation report.
-          </li>
-        </ul>
-      </div>
+    <div className="w-full mx-auto p-4 sm:p-6 text-sm dark:bg-gray-900 flex flex-col lg:flex-row gap-6 items-start">
+      {/* Left Side: Menus & Controls */}
+      <div className="w-full lg:w-1/3 flex flex-col gap-6 lg:sticky top-6">
+        {/* Info Box */}
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md shadow-xs dark:bg-gray-800 dark:border-gray-700 dark:text-blue-300">
+          <ul className="list-disc ml-6 space-y-2 dark:text-gray-300">
+            <li>Add students attendance to ensure accurate evaluations.</li>
+            <li>
+              Include daily diary entries with Practical Number to support a
+              correct job evaluation report.
+            </li>
+          </ul>
+        </div>
 
-      {/* Dropdowns for Subject, Year, Module, and Student */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Dropdowns for Subject, Year, Module, and Student */}
+        <div className="grid grid-cols-1 gap-4">
         {/* Year Dropdown */}
         <div className="relative">
           <h1 className="text-gray-700 dark:text-white mb-1">Select Year:</h1>
@@ -291,23 +310,35 @@ const JobEvaluation = ({ studentProfiles = [], batchData, attendance }) => {
         </button>
       )}
 
-      {/* Live Preview */}
-      <div className="overflow-auto border rounded-lg shadow-xs mt-6 dark:border-gray-700 bg-white">
-        {selectedModuleWithDates ? (
-          <JobEvaluationPrint
-            ref={printRef}
-            college={college}
-            studentsMap={studentsMap}
-            selectedModule={selectedModuleWithDates}
-            studentAttendance={studentAttendance}
-          />
-        ) : (
-          <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
-              Select a module to view the job evaluation report.
-            </p>
-          </div>
-        )}
+      {/* Page capacity hint */}
+      {selectedModuleWithDates && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          Showing {studentsMap.size} student{studentsMap.size !== 1 ? "s" : ""} — pagination auto-applied ({Math.min(studentsMap.size || 1, 24)} per page).
+        </p>
+      )}
+        </div>
+      {/* Right Side: Live Preview */}
+      <div className="w-full lg:w-2/3">
+        <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
+          {selectedModuleWithDates ? (
+            <JobEvaluationPrintDynamic
+              ref={printRef}
+              data={jobEvaluationDataAdapter.adaptLegacyData(
+                studentsMap,
+                college,
+                selectedModuleWithDates,
+                studentAttendance,
+              )}
+              studentsPerPage={Math.min(studentsMap.size || 1, 24)}
+            />
+          ) : (
+            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+              <p className="text-gray-500 dark:text-gray-400">
+                Select a module to view the job evaluation report.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

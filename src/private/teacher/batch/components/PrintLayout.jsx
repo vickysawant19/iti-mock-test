@@ -1,104 +1,177 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState, useEffect, useRef } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 /**
- * PrintLayout
- * A shared wrapper for all printable documents.
- * Wrap the printable content in this component and pass the ref to useReactToPrint.
+ * PrintLayout - Print-ready wrapper for A4/Legal documents.
  *
  * Props:
  *  - pageSize: "a4" | "legal" (default "a4")
  *  - orientation: "portrait" | "landscape" (default "portrait")
- *  - children: the document content
+ *  - children: one or more page elements (each should be sized to the page)
+ *
+ * The ref is passed to the inner wrapper div for useReactToPrint.
+ * Each child is expected to be exactly one page in size.
+ * In preview mode, pages are shown stacked vertically with a shadow.
+ * In print mode, each child page gets a page-break-after.
  */
 const PrintLayout = forwardRef(function PrintLayout(
   { children, pageSize = "a4", orientation = "portrait" },
-  ref
+  ref,
 ) {
-  // Dimensions for preview and print enforcement
+  const [scale, setScale] = useState(null);
+  const containerRef = useRef(null);
+
   const dims = {
     a4: {
-      portrait: "210mm",
-      landscape: "297mm",
+      portrait: { width: "210mm", height: "297mm", targetWidth: 794 - 100 },
+      landscape: { width: "297mm", height: "210mm", targetWidth: 1122 - 100 },
     },
     legal: {
-      portrait: "216mm",
-      landscape: "356mm",
+      portrait: { width: "216mm", height: "356mm", targetWidth: 816 - 100 },
+      landscape: { width: "356mm", height: "216mm", targetWidth: 1344 - 100 },
     },
   };
 
-  const pageWidth = dims[pageSize]?.[orientation] || "210mm";
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width } = entries[0].contentRect;
+      const targetWidth = dims[pageSize]?.[orientation]?.targetWidth || 1122;
+      // 40px accounts for the padding inside preview-container
+      setScale(Math.min(1, (width - 40) / targetWidth));
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [pageSize, orientation]);
+
+  const pageDims = dims[pageSize]?.[orientation] || dims.a4.portrait;
 
   return (
     <>
       <style>{`
+        /* ── Print styles ── */
         @media print {
           @page {
             size: ${pageSize} ${orientation};
             margin: 0;
           }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+          }
           body * {
             visibility: hidden;
           }
-          .print-area,
-          .print-area * {
+          .print-root,
+          .print-root * {
             visibility: visible;
           }
-          .print-area {
+          .print-root {
             position: absolute;
-            left: 0 !important;
-            top: 0 !important;
-            width: ${pageWidth} !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            color: black !important;
-            box-shadow: none !important;
-            display: block !important;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white;
+            color: black;
           }
           .no-print {
             display: none !important;
           }
-          .page-break {
-            break-after: page;
+          .print-page {
+            width: ${pageDims.width};
+            height: ${pageDims.height};
+            overflow: hidden;
             page-break-after: always;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+          }
+          .print-page:last-child {
+            page-break-after: auto;
+          }
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+          table {
+            border-collapse: collapse;
           }
         }
 
-        /* Preview styles (non-print) */
-        .preview-container {
-          background-color: #f3f4f6;
-          padding: 30px 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 100%;
-          min-height: 400px;
-          overflow-x: auto;
-        }
-        
-        .print-area-preview {
-          background: white;
-          width: ${pageWidth};
-          min-height: auto;
-          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-          margin-bottom: 30px;
-          color: black;
-          flex-shrink: 0;
-        }
+        /* ── Preview styles (screen only) ── */
+        @media screen {
+          .preview-container {
+            background-color: #e5e7eb;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            min-height: 200px;
+            overflow-x: auto;
+            box-sizing: border-box;
+          }
 
-        .dark .preview-container {
-          background-color: #111827;
+          .dark .preview-container {
+            background-color: #1f2937;
+          }
+
+          .print-page {
+            background: white;
+            color: black;
+            width: ${pageDims.width};
+            height: ${pageDims.height};
+            box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+            flex-shrink: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+          }
+
+          .print-root {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 20px;
+          }
+
+          .dark .print-page {
+            background: white;
+            color: black;
+          }
         }
       `}</style>
-      
-      <div className="preview-container no-print">
-        <div
-          ref={ref}
-          className="print-area print-area-preview font-sans"
-          style={{ fontFamily: "'Roboto', Arial, sans-serif" }}
-        >
-          {children}
-        </div>
+
+      {/* Preview wrapper (hidden during print via no-print) */}
+      <div ref={containerRef} className="preview-container no-print overflow-hidden">
+        {scale !== null && (
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.1}
+            maxScale={4}
+            centerOnInit={true}
+            wheel={{ step: 0.1 }}
+            pinch={{ step: 5 }}
+          >
+            <TransformComponent wrapperClass="!w-full !h-full flex justify-center" contentClass="w-full flex justify-center">
+              {/* Scaling wrapper applied ONLY for preview. zoom natively scales document flow */}
+              <div style={{ zoom: scale }}>
+                {/* The ref is on the root element that useReactToPrint will capture. Unaffected by outer scaling. */}
+                <div ref={ref} className="print-root">
+                  {React.Children.map(children, (child, idx) =>
+                    child ? (
+                      <div key={idx} className="print-page">
+                        {child}
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            </TransformComponent>
+          </TransformWrapper>
+        )}
       </div>
     </>
   );
