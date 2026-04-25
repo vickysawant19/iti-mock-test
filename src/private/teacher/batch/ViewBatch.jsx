@@ -305,7 +305,7 @@ const ViewBatch = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <div className={`${activeTab === "attendance" ? "w-full px-2 sm:px-4 lg:px-8" : "container mx-auto px-4 sm:px-6 lg:px-8"} mt-8`}>
         {loadingStates.batchData && (
           <div className="flex flex-col items-center justify-center py-40">
             <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />

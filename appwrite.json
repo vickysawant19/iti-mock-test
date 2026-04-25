@@ -1,7 +1,7 @@
 {
-  "projectId": "itimocktest",
+  "projectId": "itimocktest1",
   "projectName": "Mock-Test",
-  "endpoint": "http://3.108.44.8/v1",
+  "endpoint": "https://cloud.appwrite.io/v1",
   "settings": {
     "services": {
       "account": true,
