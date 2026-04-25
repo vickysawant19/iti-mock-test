@@ -53,8 +53,6 @@ const ViewBatch = () => {
   const [data, setData] = useState({
     selectedBatchData: null,
     students: null,
-    selectedBatchData: null,
-    students: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
     searchParams.get("batchid") || activeBatchId || ""

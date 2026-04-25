@@ -3,7 +3,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { useDispatch, useSelector } from "react-redux";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
 import { addUser, selectUser } from "./store/userSlice";
 import { addProfile, selectProfile } from "./store/profileSlice";
@@ -20,7 +20,10 @@ function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const profile = useSelector(selectProfile);
+  
+  const isQuotaExceededPage = location.pathname === "/quota-exceeded";
 
   const checkUserStatus = async () => {
     dispatch(addUser({ isLoading: true }));
@@ -71,11 +74,13 @@ function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
       <div className="bg-gray-100 w-full min-h-screen dark:bg-black">
-        <Navbar
-          isNavOpen={isNavOpen}
-          setIsNavOpen={setIsNavOpen}
-          isLoading={!isLoading}
-        />
+        {!isQuotaExceededPage && (
+          <Navbar
+            isNavOpen={isNavOpen}
+            setIsNavOpen={setIsNavOpen}
+            isLoading={!isLoading}
+          />
+        )}
 
         <div className="mx-auto">
           <Outlet />
