@@ -9,7 +9,7 @@ export default async ({ req, res, log, error }) => {
 
   if (req.method === 'OPTIONS') {
     return res.send('', 200, {
-      'Access-Control-Allow-Origin': 'https://itimocktest.vercel.app',
+      'Access-Control-Allow-Origin': 'https://itimitra.in',
       'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     })

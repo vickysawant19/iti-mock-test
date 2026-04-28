@@ -61,7 +61,7 @@ export class AuthService {
     try {
       const redirectUrl =
         process.env.NODE_ENV === "production"
-          ? "https://itimocktest.vercel.app/reset-pass"
+          ? "https://itimitra.in/reset-pass"
           : "http://localhost:5173/reset-pass";
       const res = await account.createRecovery(email, redirectUrl);
       return res;
