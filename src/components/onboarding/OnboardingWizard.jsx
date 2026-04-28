@@ -122,7 +122,7 @@ export default function OnboardingWizard() {
       <div className="w-full max-w-2xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-white mb-6">
-            Welcome to ITI Mock Test
+            Welcome to ITI Mitra
           </h1>
 
           {/* Stepper */}

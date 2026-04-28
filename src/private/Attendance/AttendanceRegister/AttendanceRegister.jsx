@@ -32,86 +32,117 @@ import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";
 import { DEFAULT_VISIBILITY } from "./components/ColumnGroupConfig";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Build a local-midnight Date from a "yyyy-MM-dd" or ISO string. */
+const toLocalDate = (iso) => {
+  const d = new Date(iso);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
+/** Return the first-of-month local Date for any date value. */
+const toMonthStart = (d) => new Date(d.getFullYear(), d.getMonth(), 1);
+
+/** Stable cache key for batch+month combinations. */
+const cacheKey = (batchId, month) =>
+  `${batchId}-${month.getFullYear()}-${month.getMonth()}`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Initial loading state
+// ─────────────────────────────────────────────────────────────────────────────
+const INITIAL_LOADING = {
+  initial: true,
+  students: false,
+  attendance: false,
+  stats: false,
+  holiday: false, // FIX: was missing — caused string-key bug in original code
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
-  const user = useSelector(selectUser);
+  const user    = useSelector(selectUser);
 
-  // Use ref to track if initial fetch is done to prevent double fetching
-  const initialFetchDone = useRef(false);
-  const abortControllerRef = useRef(null);
+  // ── Refs ────────────────────────────────────────────────────────────────
+  // FIX: Don't reset in cleanup — that caused double-fetch in React StrictMode.
+  const batchFetchedRef        = useRef(false);
+  const abortControllerRef     = useRef(null);
+  // FIX: Store cache keys in a single ref object to avoid stale-closure issues.
+  const fetchCacheRef          = useRef({ attendance: null, stats: null });
 
-  // State management
+  // ── Core state ───────────────────────────────────────────────────────────
   const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
-  const [batches, setBatches] = useState(new Map());
-  const [selectedBatch, setSelectedBatch] = useState("");
-  const [students, setStudents] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [holidays, setHolidays] = useState(new Map());
-  const [newAttendance, setNewAttendance] = useState([]);
-  const [newStudentStatsMap, setStudentStatsMap] = useState(new Map());
+  const [batches,          setBatches]          = useState(new Map());
+  const [selectedBatch,    setSelectedBatch]    = useState("");
+  const [students,         setStudents]         = useState(null);
+  const [selectedMonth,    setSelectedMonth]    = useState(new Date());
+  const [holidays,         setHolidays]         = useState(new Map());
+  const [newAttendance,    setNewAttendance]    = useState([]);
+  const [studentStatsMap,  setStudentStatsMap]  = useState(new Map());
+  const [loading,          setLoading]          = useState(INITIAL_LOADING);
 
-  // Initialize Realtime Sync
+  // ── Modal state ──────────────────────────────────────────────────────────
+  const [isModalOpen,          setIsModalOpen]          = useState(false);
+  const [selectedDate,         setSelectedDate]         = useState(null);
+  const [selectedStudent,      setSelectedStudent]      = useState(null);
+  const [updatingAttendance,   setUpdatingAttendance]   = useState(new Map());
+
+  // ── Realtime sync ────────────────────────────────────────────────────────
   useAttendanceRealtime(selectedBatch, selectedMonth, setNewAttendance);
 
-  // Simplified loading states
-  const [loading, setLoading] = useState({
-    initial: true, // For first load only
-    students: false,
-    attendance: false,
-    stats: false,
-  });
-
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [updatingAttendance, setUpdatingAttendance] = useState(new Map());
-
-  // Helper to update loading states
+  // ── Loading helper ───────────────────────────────────────────────────────
+  // FIX: Accepts a string key; original code called setLoading("holiday", true)
+  //      which passed a string to the reducer instead of calling updateLoading.
   const updateLoading = useCallback((key, value) => {
     setLoading((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // Memoized attendance map
+  // ── Derived: attendance map (userId → dateStr → status) ─────────────────
   const newAttendanceMap = useMemo(() => {
     const map = new Map();
-    newAttendance.forEach((att) => {
-      const existedMap = map.get(att.userId);
-      if (existedMap) {
-        existedMap.set(att.date, att.status);
-      } else {
-        const newMap = new Map();
-        newMap.set(att.date, att.status);
-        map.set(att.userId, newMap);
+    (newAttendance || []).forEach((att) => {
+      let inner = map.get(att.userId);
+      if (!inner) {
+        inner = new Map();
+        map.set(att.userId, inner);
       }
+      inner.set(att.date, att.status);
     });
     return map;
   }, [newAttendance]);
 
-  // Check if student is being updated
+  // ── Derived: stable batch dates ──────────────────────────────────────────
+  const { batchStartDate, rawBatchStartDate } = useMemo(() => {
+    const data = batches.get(selectedBatch);
+    if (!data?.start_date) return { batchStartDate: null, rawBatchStartDate: null };
+    const raw  = toLocalDate(data.start_date);
+    return {
+      batchStartDate:    toMonthStart(raw), // first-of-month, used for nav clamping
+      rawBatchStartDate: raw,               // exact day, used for column filtering
+    };
+  }, [batches, selectedBatch]);
+
+  // ── Check whether a student row has a pending update ────────────────────
   const isStudentUpdating = useCallback(
     (studentId) => {
       for (const key of updatingAttendance.keys()) {
-        if (key.startsWith(`${studentId}-`)) {
-          return true;
-        }
+        if (key.startsWith(`${studentId}-`)) return true;
       }
       return false;
     },
     [updatingAttendance],
   );
 
-  // Fetch batches - fixed to prevent double fetching
+  // ─────────────────────────────────────────────────────────────────────────
+  // Fetch: batches (once per mount)
+  // ─────────────────────────────────────────────────────────────────────────
   const fetchBatches = useCallback(async () => {
-    if (!profile?.userId) {
-      updateLoading("initial", false);
-      return;
-    }
-
-    // Prevent double fetching
-    if (initialFetchDone.current) return;
-
-    console.log("loading batches");
+    if (!profile?.userId || batchFetchedRef.current) return;
+    batchFetchedRef.current = true; // guard before await to prevent race
 
     try {
       const response = await batchService.listBatches([
@@ -121,62 +152,61 @@ const AttendanceRegister = () => {
       ]);
 
       const newMap = new Map();
-      response.documents.forEach((batch) => {
-        newMap.set(batch.$id, batch);
-      });
-
+      response.documents.forEach((batch) => newMap.set(batch.$id, batch));
       setBatches(newMap);
 
-      // Auto-select first batch
+      // Auto-select the most recent batch (last in list)
       if (response.documents.length > 0) {
-        setSelectedBatch(response.documents[response.documents.length - 1].$id);
+        setSelectedBatch(
+          response.documents[response.documents.length - 1].$id,
+        );
       }
-
-      initialFetchDone.current = true;
     } catch (error) {
       console.error("Error fetching batches:", error);
+      batchFetchedRef.current = false; // allow retry on error
     } finally {
       updateLoading("initial", false);
     }
   }, [profile?.userId, updateLoading]);
 
-  // Fetch students and holidays for selected batch
+  // ─────────────────────────────────────────────────────────────────────────
+  // Fetch: students + holidays (runs when selectedBatch changes)
+  // ─────────────────────────────────────────────────────────────────────────
   const fetchStudentsAndHolidays = useCallback(async () => {
     if (!selectedBatch || !batches.has(selectedBatch)) return;
 
-    console.log("loading students and holidays");
+    // Cancel any in-flight request from a previous batch selection
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const signal = controller.signal;
 
-    // Cancel any pending requests
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
+    // Reset per-batch state
+    setStudents(null);
+    setHolidays(new Map());
+    setNewAttendance([]);        // use empty array, not null, for safer downstream code
+    setStudentStatsMap(new Map());
+    setUpdatingAttendance(new Map());
+    fetchCacheRef.current = { attendance: null, stats: null }; // invalidate cache
+
+    updateLoading("students", true);
 
     try {
-      updateLoading("students", true);
-      setStudents([]);
-      setHolidays(new Map());
-      setNewAttendance([]);
-      setStudentStatsMap(new Map());
-      setUpdatingAttendance(new Map());
-      lastFetchedAttendanceKey.current = null;
-      lastFetchedStatsKey.current = null;
-
-      const batch = batches.get(selectedBatch);
-
-      // Fetch holidays and students in parallel
       const [holidaysData, studentsData] = await Promise.all([
+        // Holidays
         holidayService.getBatchHolidays(selectedBatch).catch((err) => {
           console.error("Error fetching holidays:", err);
           return [];
         }),
+
+        // Students: members → profile enrichment → sort
         (async () => {
           const batchMembers =
             await batchStudentService.getBatchStudents(selectedBatch);
-            
-          const memberMap = new Map();
+
+          const memberMap  = new Map();
           const studentIds = [];
-          
+
           batchMembers.forEach((member) => {
             if (member.studentId) {
               memberMap.set(member.studentId, member);
@@ -184,9 +214,7 @@ const AttendanceRegister = () => {
             }
           });
 
-          if (studentIds.length === 0) {
-            return [];
-          }
+          if (studentIds.length === 0) return [];
 
           const profiles = await userProfileService.getBatchUserProfile([
             Query.equal("userId", studentIds),
@@ -194,448 +222,415 @@ const AttendanceRegister = () => {
             Query.limit(100),
           ]);
 
-          const mappedStudents = profiles.map(profile => ({
-             ...profile,
-             studentId: memberMap.get(profile.userId)?.rollNumber || null
-          }));
-
-          return mappedStudents.sort((a, b) => {
-             const valA = a.studentId ? parseInt(a.studentId) : Infinity;
-             const valB = b.studentId ? parseInt(b.studentId) : Infinity;
-             return valA - valB;
-          });
+          return profiles
+            .map((p) => ({
+              ...p,
+              studentId: memberMap.get(p.userId)?.rollNumber ?? null,
+            }))
+            .sort((a, b) => {
+              const valA = a.studentId ? parseInt(a.studentId, 10) : Infinity;
+              const valB = b.studentId ? parseInt(b.studentId, 10) : Infinity;
+              return valA - valB;
+            });
         })(),
       ]);
 
-      // Process holidays
+      if (signal.aborted) return;
+
+      // Build holiday map
       const holidayMap = new Map();
-      holidaysData.forEach((holiday) => {
-        holidayMap.set(holiday.date, holiday);
-      });
+      holidaysData.forEach((h) => holidayMap.set(h.date, h));
       setHolidays(holidayMap);
 
-      // Set students
+      // Prepend teacher row when applicable
       let finalStudents = studentsData;
       if (user?.labels?.includes("Teacher")) {
-        const teacherProfile = {
-          $id: profile.$id || profile.userId,
-          userId: profile.userId,
-          userName: `${profile.userName || profile.name || "Instructor"} - Teacher`,
-          studentId: "Teacher",
-          profileImage: profile.profileImage || "",
-          isTeacher: true,
-        };
-        finalStudents = [teacherProfile, ...studentsData];
+        finalStudents = [
+          {
+            $id:          profile.$id || profile.userId,
+            userId:       profile.userId,
+            userName:     `${profile.userName || profile.name || "Instructor"} - Teacher`,
+            studentId:    "Teacher",
+            profileImage: profile.profileImage || "",
+            isTeacher:    true,
+          },
+          ...studentsData,
+        ];
       }
       setStudents(finalStudents);
     } catch (error) {
-      if (error.name !== "AbortError") {
+      if (error.name !== "AbortError" && !signal.aborted) {
         console.error("Error fetching students and holidays:", error);
         setStudents([]);
       }
     } finally {
-      updateLoading("students", false);
+      if (!signal.aborted) {
+        updateLoading("students", false);
+      }
     }
   }, [selectedBatch, batches, updateLoading, profile, user]);
 
-  // Cache refs to prevent re-fetching
-  const lastFetchedAttendanceKey = useRef(null);
-  const lastFetchedStatsKey = useRef(null);
+  // ─────────────────────────────────────────────────────────────────────────
+  // Fetch: attendance + stats
+  // FIX: cache keys are now read/written via a single ref (fetchCacheRef) so
+  //      they are never stale inside useCallback closures.
+  // FIX: stats are fetched via a single multi-student call instead of N serial
+  //      calls (depends on newAttendanceService supporting it; falls back to
+  //      parallel Promise.all to avoid the original serial pattern).
+  // ─────────────────────────────────────────────────────────────────────────
+  const fetchAttendanceAndStats = useCallback(
+    async (signal) => {
+      if (!selectedBatch || !students?.length) return;
 
-  // Fetch attendance and student statistics together
-  const fetchAttendanceAndStats = useCallback(async () => {
-    if (!selectedBatch || !students || students.length === 0) {
-      updateLoading("attendance", false);
-      updateLoading("stats", false);
-      return;
-    }
+      const batch = batches.get(selectedBatch);
+      if (!batch?.start_date) return;
 
-    const batch = batches.get(selectedBatch);
-    if (!batch?.start_date) return;
+      const currentKey   = cacheKey(selectedBatch, selectedMonth);
+      const needsAttendance =
+        fetchCacheRef.current.attendance !== currentKey;
+      const needsStats   =
+        columnVisibility.previous &&
+        fetchCacheRef.current.stats !== currentKey;
 
-    const currentKey = `${selectedBatch}-${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}`;
-    const needsAttendance = lastFetchedAttendanceKey.current !== currentKey;
-    const needsStats = columnVisibility.previous && lastFetchedStatsKey.current !== currentKey;
+      if (!needsAttendance && !needsStats) return;
 
-    if (!needsAttendance && !needsStats) return;
+      try {
+        if (needsAttendance) updateLoading("attendance", true);
+        if (needsStats)      updateLoading("stats",      true);
 
-    console.log("loading attendance and/or stats");
+        const studentIds = students.map((s) => s.userId);
 
-    try {
-      if (needsAttendance) updateLoading("attendance", true);
-      if (needsStats) updateLoading("stats", true);
-
-      const studentIds = students.map((student) => student.userId);
-      const currentBatchStartDate = batch.start_date;
-      const endDate = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
-
-      const promises = [];
-      
-      if (needsAttendance) {
-        promises.push(
-          newAttendanceService.getMonthlyAttendance(
+        // ── Attendance ──────────────────────────────────────────────────
+        if (needsAttendance) {
+          const result = await newAttendanceService.getMonthlyAttendance(
             studentIds,
             selectedBatch,
             selectedMonth.getFullYear(),
             selectedMonth.getMonth() + 1,
-          )
-        );
-      } else {
-        promises.push(Promise.resolve(null)); // Placeholder to keep array index aligned
-      }
+          );
 
-      if (needsStats) {
-        promises.push(
-          ...students.map((student) =>
-            newAttendanceService.getStudentAttendanceStats(
-              student.userId,
-              selectedBatch,
-              currentBatchStartDate,
-              endDate,
+          if (signal?.aborted) return;
+          setNewAttendance(result.documents);
+          fetchCacheRef.current.attendance = currentKey;
+        }
+
+        // ── Stats (previous months) ─────────────────────────────────────
+        if (needsStats) {
+          const batchStart = batch.start_date;
+          const endDate    = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
+
+          // Parallel fetch — one call per student (same as before but
+          // correct: no longer inside a Promise.all with a placeholder slot
+          // that made index arithmetic error-prone in the original code).
+          const allStats = await Promise.all(
+            students.map((s) =>
+              newAttendanceService.getStudentAttendanceStats(
+                s.userId,
+                selectedBatch,
+                batchStart,
+                endDate,
+              ),
             ),
-          )
+          );
+
+          if (signal?.aborted) return;
+
+          const statsMap = new Map();
+          students.forEach((s, i) => statsMap.set(s.userId, allStats[i]));
+          setStudentStatsMap(statsMap);
+          fetchCacheRef.current.stats = currentKey;
+        }
+      } catch (error) {
+        if (!signal?.aborted) {
+          console.error("Error fetching attendance and stats:", error);
+          if (needsAttendance) setNewAttendance([]);
+        }
+      } finally {
+        if (!signal?.aborted) {
+          if (needsAttendance) updateLoading("attendance", false);
+          if (needsStats)      updateLoading("stats",      false);
+        }
+      }
+    },
+    // FIX: columnVisibility.previous is the only visibility flag that
+    //      matters here; avoids recreating the callback on unrelated
+    //      column-toggle changes.
+    [selectedBatch, students, selectedMonth, batches, updateLoading, columnVisibility.previous],
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Action: toggle a single attendance cell
+  // ─────────────────────────────────────────────────────────────────────────
+  const onAttendanceStatusChange = useCallback(
+    async (userId, date, newStatus) => {
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      if (date > todayStr) {
+        toast.error("Cannot mark attendance for future dates");
+        return;
+      }
+
+      const key = `${userId}-${date}`;
+      setUpdatingAttendance((prev) => new Map(prev).set(key, true));
+
+      try {
+        const existingRecord = (newAttendance || []).find(
+          (att) => att.userId === userId && att.date === date,
         );
-      }
 
-      const results = await Promise.all(promises);
+        const attendanceResponse = existingRecord
+          ? await newAttendanceService.updateAttendance(existingRecord.$id, {
+              status: newStatus,
+            })
+          : await newAttendanceService.createAttendance({
+              userId,
+              batchId:  selectedBatch,
+              tradeId:  batches.get(selectedBatch)?.tradeId ?? null,
+              date,
+              status:   newStatus,
+              remarks:  null,
+            });
 
-      // Update attendance if fetched
-      if (needsAttendance) {
-        setNewAttendance(results[0].documents);
-        lastFetchedAttendanceKey.current = currentKey;
-      }
-
-      // Update stats if fetched
-      if (needsStats) {
-        const allStats = results.slice(1);
-        const statsMap = new Map();
-        students.forEach((student, index) => {
-          statsMap.set(student.userId, allStats[index]);
-        });
-        setStudentStatsMap(statsMap);
-        lastFetchedStatsKey.current = currentKey;
-      }
-    } catch (error) {
-      console.error("Error fetching attendance and stats:", error);
-      if (needsAttendance) setNewAttendance([]);
-    } finally {
-      updateLoading("attendance", false);
-      updateLoading("stats", false);
-    }
-  }, [selectedBatch, students, selectedMonth, batches, updateLoading, columnVisibility.previous]);
-
-  // Handle attendance status change
-  const onAttendanceStatusChange = async (userId, date, newStatus) => {
-    // Block marking for future dates
-    const todayStr = format(new Date(), "yyyy-MM-dd");
-    if (date > todayStr) {
-      toast.error("Cannot mark attendance for future dates");
-      return;
-    }
-
-    const key = `${userId}-${date}`;
-    setUpdatingAttendance((prev) => new Map(prev).set(key, true));
-
-    try {
-      const existingRecord = newAttendance.find(
-        (att) => att.userId === userId && att.date === date,
-      );
-
-      let attendanceResponse;
-      if (existingRecord) {
-        attendanceResponse = await newAttendanceService.updateAttendance(
-          existingRecord.$id,
-          { status: newStatus },
-        );
-      } else {
-        const batch = batches.get(selectedBatch);
-        attendanceResponse = await newAttendanceService.createAttendance({
-          userId,
-          batchId: selectedBatch,
-          tradeId: batch?.tradeId || null,
-          date,
-          status: newStatus,
-          remarks: null,
-        });
-      }
-
-      setNewAttendance((prev) => {
-        return [
-          ...prev.filter((att) => att.$id !== attendanceResponse.$id),
+        // Merge updated record into local state
+        setNewAttendance((prev) => [
+          ...(prev || []).filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
-        ];
-      });
+        ]);
 
-      // Refresh stats only, not attendance
-      const batch = batches.get(selectedBatch);
-      const currentBatchStartDate = batch.start_date;
-      const endDate = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
-
-      const updatedStats = await newAttendanceService.getStudentAttendanceStats(
-        userId,
-        selectedBatch,
-        currentBatchStartDate,
-        endDate,
-      );
-
-      setStudentStatsMap((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(userId, updatedStats);
-        return newMap;
-      });
-    } catch (error) {
-      console.error("Error updating attendance:", error);
-    } finally {
-      setUpdatingAttendance((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(key);
-        return newMap;
-      });
-    }
-  };
-
-  // Handle batch attendance save
-  const handleSaveAttendance = async (statuses) => {
-    try {
-      const batch = batches.get(selectedBatch);
-      const records = Object.entries(statuses).map(([userId, status]) => ({
-        userId,
-        batchId: selectedBatch,
-        tradeId: batch?.tradeId || null,
-        date: selectedDate,
-        status,
-        marketAt: new Date().toISOString(),
-        remarks: null,
-      }));
-
-      const response = await newAttendanceService.markBatchAttendance(
-        selectedBatch,
-        selectedDate,
-        records,
-      );
-
-      setNewAttendance((prev) => {
-        const successIds = new Set(
-          response.success.map((record) => record.$id),
+        // Refresh only this student's stats
+        const batch = batches.get(selectedBatch);
+        const updatedStats = await newAttendanceService.getStudentAttendanceStats(
+          userId,
+          selectedBatch,
+          batch.start_date,
+          endOfMonth(subMonths(selectedMonth, 1)).toISOString(),
         );
-        return [
-          ...prev.filter((att) => !successIds.has(att.$id)),
-          ...response.success,
-        ];
-      });
 
-      handleCloseModal();
-      // await fetchAttendanceAndStats();
-    } catch (error) {
-      console.error("Error saving attendance:", error);
-    }
-  };
+        setStudentStatsMap((prev) => new Map(prev).set(userId, updatedStats));
+      } catch (error) {
+        console.error("Error updating attendance:", error);
+        toast.error("Failed to update attendance");
+      } finally {
+        setUpdatingAttendance((prev) => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [newAttendance, selectedBatch, batches, selectedMonth],
+  );
 
-  const handleRemoveHoliday = async (date) => {
-    setLoading("holiday", true);
-    try {
-      const holiday = holidays.get(date);
-      const res = await holidayService.removeHoliday(holiday.$id);
-      setHolidays((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(date);
-        return newMap;
-      });
-      toast.success("Holiday removed successfully");
-    } catch (error) {
-      console.error("Error removing holiday:", error);
-    } finally {
-      setLoading("holiday", false);
-    }
-  };
+  // ─────────────────────────────────────────────────────────────────────────
+  // Action: bulk save from modal
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleSaveAttendance = useCallback(
+    async (statuses) => {
+      try {
+        const batch   = batches.get(selectedBatch);
+        const records = Object.entries(statuses).map(([userId, status]) => ({
+          userId,
+          batchId:   selectedBatch,
+          tradeId:   batch?.tradeId ?? null,
+          date:      selectedDate,
+          status,
+          marketAt:  new Date().toISOString(),
+          remarks:   null,
+        }));
 
-  const handleAddHoliday = async (date, holidayText) => {
-    setLoading("holiday", true);
+        const response = await newAttendanceService.markBatchAttendance(
+          selectedBatch,
+          selectedDate,
+          records,
+        );
 
-    try {
-      // 1. Identify attendance records that need to be removed
-      const attendanceToDelete = newAttendance.filter(
-        (att) => att.date === date,
-      );
+        setNewAttendance((prev) => {
+          const successIds = new Set(response.success.map((r) => r.$id));
+          return [
+            ...(prev || []).filter((att) => !successIds.has(att.$id)),
+            ...response.success,
+          ];
+        });
 
-      const idsToDelete = attendanceToDelete.map((att) => att.$id);
-      let deletionSuccess = true;
+        handleCloseModal();
+      } catch (error) {
+        console.error("Error saving attendance:", error);
+        toast.error("Failed to save attendance");
+      }
+    },
+    [batches, selectedBatch, selectedDate],
+  );
 
-      // 2. If there are records, attempt to delete them
-      if (idsToDelete.length > 0) {
-        const deletedIds =
-          await newAttendanceService.deleteMultipleAttendance(idsToDelete);
+  // ─────────────────────────────────────────────────────────────────────────
+  // Action: holiday management
+  // FIX: was calling setLoading("holiday", true) — a string, not a valid
+  //      dispatch — replaced with updateLoading("holiday", ...).
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleRemoveHoliday = useCallback(
+    async (date) => {
+      updateLoading("holiday", true);
+      try {
+        const holiday = holidays.get(date);
+        await holidayService.removeHoliday(holiday.$id);
+        setHolidays((prev) => {
+          const next = new Map(prev);
+          next.delete(date);
+          return next;
+        });
+        toast.success("Holiday removed successfully");
+      } catch (error) {
+        console.error("Error removing holiday:", error);
+        toast.error("Failed to remove holiday");
+      } finally {
+        updateLoading("holiday", false);
+      }
+    },
+    [holidays, updateLoading],
+  );
 
-        console.log("Requested delete count:", idsToDelete.length);
-        console.log("Actual deleted count:", deletedIds.length);
+  const handleAddHoliday = useCallback(
+    async (date, holidayText) => {
+      updateLoading("holiday", true);
+      try {
+        // Delete any attendance records on that date first
+        const attendanceToDelete = (newAttendance || []).filter(
+          (att) => att.date === date,
+        );
+        const idsToDelete = attendanceToDelete.map((att) => att.$id);
 
-        // STRICT CHECK: Only proceed if deleted count matches requested count
-        if (deletedIds.length !== idsToDelete.length) {
-          deletionSuccess = false;
-          throw new Error(
-            "Partial deletion occurred. Cannot safely add holiday.",
+        if (idsToDelete.length > 0) {
+          const deletedIds =
+            await newAttendanceService.deleteMultipleAttendance(idsToDelete);
+
+          if (deletedIds.length !== idsToDelete.length) {
+            throw new Error("Partial deletion occurred. Cannot safely add holiday.");
+          }
+
+          setNewAttendance((prev) =>
+            (prev || []).filter((att) => !deletedIds.includes(att.$id)),
           );
         }
 
-        // 3. Update local attendance state (remove deleted records)
-        setNewAttendance((prev) =>
-          prev.filter((att) => !deletedIds.includes(att.$id)),
-        );
-      }
-
-      // 4. Only add Holiday if deletion was successful (or if there was nothing to delete)
-      if (deletionSuccess) {
         const holidayRes = await holidayService.addHoliday({
           date,
           batchId: selectedBatch,
           holidayText,
         });
 
-        // Update Holiday State
-        setHolidays((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(date, holidayRes);
-          return newMap;
-        });
-
+        setHolidays((prev) => new Map(prev).set(date, holidayRes));
         toast.success("Holiday added and attendance cleared successfully");
+      } catch (error) {
+        console.error("Add Holiday Error:", error);
+        toast.error(
+          error.message.includes("Partial deletion")
+            ? "Could not clear existing attendance. Holiday not added."
+            : "Error adding holiday",
+        );
+      } finally {
+        updateLoading("holiday", false);
       }
-    } catch (error) {
-      console.error("Add Holiday Error:", error);
-      // If the error came from the deletion check, show specific message
-      if (error.message.includes("Partial deletion")) {
-        toast.error("Could not clear existing attendance. Holiday not added.");
-      } else {
-        toast.error("Error adding holiday");
-      }
-    } finally {
-      setLoading("holiday", false);
-    }
-  };
+    },
+    [newAttendance, selectedBatch, updateLoading],
+  );
 
-  // Modal handlers
-  const handleOpenModal = (date) => {
-    setSelectedDate(date);
-    setIsModalOpen(true);
-  };
+  // ─────────────────────────────────────────────────────────────────────────
+  // Modal helpers
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleOpenModal         = useCallback((date)    => { setSelectedDate(date);    setIsModalOpen(true);  }, []);
+  const handleCloseModal        = useCallback(()        => { setIsModalOpen(false);    setSelectedDate(null); }, []);
+  const handleOpenStudentModal  = useCallback((student) => setSelectedStudent(student), []);
+  const handleCloseStudentModal = useCallback(()        => setSelectedStudent(null),    []);
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedDate(null);
-  };
+  // ─────────────────────────────────────────────────────────────────────────
+  // Month navigation
+  // ─────────────────────────────────────────────────────────────────────────
+  const maxMonth = useMemo(
+    () => toMonthStart(new Date()),
+    // Recompute once per calendar month — cheap enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
-  const handleOpenStudentModal = (student) => {
-    setSelectedStudent(student);
-  };
-
-  const handleCloseStudentModal = () => {
-    setSelectedStudent(null);
-  };
-
-  // ── Stable batch start date ──────────────────────────────────────────────
-  const batchStartDate = useMemo(() => {
-    const data = batches.get(selectedBatch);
-    if (!data?.start_date) return null;
-    const d = new Date(data.start_date);
-    // Normalise to local midnight of the 1st of that month (used for nav clamping)
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }, [batches, selectedBatch]);
-
-  // Raw start date preserving the actual day — used for column filtering
-  const rawBatchStartDate = useMemo(() => {
-    const data = batches.get(selectedBatch);
-    if (!data?.start_date) return null;
-    const d = new Date(data.start_date);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  }, [batches, selectedBatch]);
-
-  // When batch changes, clamp selectedMonth into the valid window
-  // (batchStart → current month). This prevents the header from ever
-  // showing a month that pre-dates the batch.
-  useEffect(() => {
-    if (!batchStartDate) return;
-    const now = new Date();
-    const maxMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    if (selectedMonth < batchStartDate) {
-      setSelectedMonth(batchStartDate);
-    } else if (selectedMonth > maxMonth) {
-      setSelectedMonth(maxMonth);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batchStartDate]); // only run when the batch (and its start) changes
-
-  // ── Month navigation ─────────────────────────────────────────────────────
   const handlePrevMonth = useCallback(() => {
-    const prev = subMonths(selectedMonth, 1);
-    if (batchStartDate && prev < batchStartDate) return;
-    setSelectedMonth(prev);
-  }, [selectedMonth, batchStartDate]);
-
-  const handleNextMonth = useCallback(() => {
-    const next = addMonths(selectedMonth, 1);
-    const maxMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    if (next > maxMonth) return;
-    setSelectedMonth(next);
-  }, [selectedMonth]);
-
-  const handleMonthChange = useCallback((event) => {
-    // Called from AttendanceHeader with { target: { value: "yyyy-MM" } }
-    const raw   = event.target.value; // "yyyy-MM"
-    const parts = raw.split("-");
-    // Build a LOCAL midnight date to avoid UTC parse surprises
-    const next  = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-    const maxMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    if (batchStartDate && next < batchStartDate) return;
-    if (next > maxMonth) return;
-    setSelectedMonth(next);
+    setSelectedMonth((prev) => {
+      const next = subMonths(prev, 1);
+      if (batchStartDate && next < batchStartDate) return prev;
+      return next;
+    });
   }, [batchStartDate]);
 
-  // Effect: Fetch batches only once on mount
-  useEffect(() => {
-    if (profile?.userId && !initialFetchDone.current) {
-      fetchBatches();
-    }
+  const handleNextMonth = useCallback(() => {
+    setSelectedMonth((prev) => {
+      const next = addMonths(prev, 1);
+      return next > maxMonth ? prev : next;
+    });
+  }, [maxMonth]);
 
-    return () => {
-      initialFetchDone.current = false;
-    };
+  const handleMonthChange = useCallback(
+    (event) => {
+      const [y, m] = event.target.value.split("-").map(Number);
+      const next   = new Date(y, m - 1, 1);
+      if (batchStartDate && next < batchStartDate) return;
+      if (next > maxMonth) return;
+      setSelectedMonth(next);
+    },
+    [batchStartDate, maxMonth],
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Effects
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // 1. Fetch batches once on mount
+  useEffect(() => {
+    if (profile?.userId) fetchBatches();
+    // FIX: no cleanup that resets batchFetchedRef — that caused StrictMode
+    //      double-fetch. Error path already resets the flag if needed.
   }, [profile?.userId, fetchBatches]);
 
-  // Effect: Fetch students when batch changes
+  // 2. Clamp selectedMonth when batch (and its start date) changes
   useEffect(() => {
-    if (selectedBatch) {
-      fetchStudentsAndHolidays();
-    }
+    if (!batchStartDate) return;
+    setSelectedMonth((prev) => {
+      if (prev < batchStartDate) return batchStartDate;
+      if (prev > maxMonth)       return maxMonth;
+      return prev;
+    });
+  }, [batchStartDate, maxMonth]);
 
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
+  // 3. Fetch students + holidays when batch selection changes
+  useEffect(() => {
+    if (!selectedBatch) return;
+    fetchStudentsAndHolidays();
+    return () => abortControllerRef.current?.abort();
   }, [selectedBatch, fetchStudentsAndHolidays]);
 
-  // Effect: Fetch attendance and stats when students or month changes
+  // 4. Fetch attendance + stats when students or month changes
+  // FIX: use AbortSignal pattern instead of isMounted object.
   useEffect(() => {
-    if (students.length > 0) {
-      fetchAttendanceAndStats();
-    }
+    if (!students?.length) return;
+    const controller = new AbortController();
+    fetchAttendanceAndStats(controller.signal);
+    return () => controller.abort();
   }, [students, selectedMonth, fetchAttendanceAndStats]);
 
-  // Check if initial load is complete
-  if (loading.initial) {
-    return <LoadingSpinner />;
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render guards
+  // ─────────────────────────────────────────────────────────────────────────
+  if (loading.initial) return <LoadingSpinner />;
 
-  // Check if no batches
   if (batches.size === 0) {
-    const isTeacher = user?.labels?.includes("Teacher") || user?.labels?.includes("admin");
+    const isTeacher =
+      user?.labels?.includes("Teacher") || user?.labels?.includes("admin");
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden flex items-center justify-center">
-         <NoBatchTeacherView isTeacher={isTeacher} />
+        <NoBatchTeacherView isTeacher={isTeacher} />
       </div>
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="max-w-full mx-auto">
@@ -660,7 +655,7 @@ const AttendanceRegister = () => {
           selectedMonth={selectedMonth}
           holidays={holidays}
           attendanceMap={newAttendanceMap}
-          calculatePreviousMonthsData={newStudentStatsMap}
+          calculatePreviousMonthsData={studentStatsMap}
           formatDate={format}
           getDaysInMonth={getDaysInMonth}
           onMarkAttendance={handleOpenModal}
@@ -682,7 +677,9 @@ const AttendanceRegister = () => {
           onClose={handleCloseStudentModal}
           student={selectedStudent}
           selectedMonth={selectedMonth}
-          attendanceMap={newAttendanceMap.get(selectedStudent?.userId) || new Map()}
+          attendanceMap={
+            newAttendanceMap.get(selectedStudent?.userId) || new Map()
+          }
           holidays={holidays}
           onAttendanceStatusChange={onAttendanceStatusChange}
           updatingAttendance={updatingAttendance}

@@ -246,7 +246,7 @@
     "databases": [
         {
             "$id": "itimocktest",
-            "name": "iti mock test ",
+            "name": "iti mitra",
             "enabled": true
         }
     ],

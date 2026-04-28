@@ -1,6 +1,6 @@
 {
-  "name": "ITI Mock Test",
-  "short_name": "ITI Mock Test",
+  "name": "ITI Mitra",
+  "short_name": "ITI Mitra",
   "description": "Online platform for ITI students to practice mock exams and track attendance.",
   "start_url": "/",
   "display": "standalone",

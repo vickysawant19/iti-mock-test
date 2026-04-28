@@ -218,7 +218,7 @@ async function rebuildSchema() {
     } catch (error) {
         if (error.code === 404) {
             console.log(`Creating database: ${targetDatabaseId}`);
-            await withRetry(() => databases.create(targetDatabaseId, 'iti mock test', true), 'createDatabase');
+            await withRetry(() => databases.create(targetDatabaseId, 'iti mitra', true), 'createDatabase');
             console.log(`✔ Database '${targetDatabaseId}' created.`);
         } else {
             throw error;

@@ -119,7 +119,7 @@ const Footer = () => {
       <hr className="mt-5 mx-5 border-gray-500 dark:border-gray-700" />
       <div className="m-5">
         <p className="text-center text-gray-200 dark:text-gray-400">
-          &copy; {new Date().getFullYear()} ITI Mock Test. All Rights Reserved.
+          &copy; {new Date().getFullYear()} ITI Mitra. All Rights Reserved.
         </p>
       </div>
     </footer>

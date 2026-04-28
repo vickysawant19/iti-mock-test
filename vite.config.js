@@ -33,7 +33,7 @@ export default defineConfig({
       },
       manifest: {
         id: "/",
-        name: "ITI Mock Test",
+        name: "ITI Mitra",
         short_name: "ITI Test",
         description: "An online platform for ITI students to take mock exams.",
         theme_color: "#ffffff",

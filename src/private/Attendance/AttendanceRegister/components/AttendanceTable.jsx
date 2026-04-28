@@ -76,7 +76,7 @@ const AttendanceTable = ({
   }
 
   // Show empty state when not loading and no students
-  if (!loadingStudents && students.length === 0) {
+  if (!loadingStudents && (!students || students.length === 0)) {
     return (
       <div className="p-8">
         <EmptyState message="No students found in this batch." />
@@ -149,7 +149,7 @@ const AttendanceTable = ({
         )}
 
         {/* Table Container */}
-        {students.length > 0 && (
+        {students && students.length > 0 && (
           <div
             className={`max-h-[80vh] overflow-y-auto transition-opacity duration-300 ${
               isTableDataLoading

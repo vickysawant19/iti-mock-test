@@ -39,31 +39,32 @@ export function useAttendanceRealtime(
 
       // 2. Optimized Local State Update
       setAttendanceData((prev) => {
+        const safePrev = prev || [];
         const isCreate = events.some((e) => e.includes(".create"));
         const isUpdate = events.some((e) => e.includes(".update"));
         const isDelete = events.some((e) => e.includes(".delete"));
 
         if (isCreate) {
           // Guard against duplicate records
-          if (prev.some((item) => item.$id === payload.$id)) return prev;
-          return [...prev, payload];
+          if (safePrev.some((item) => item.$id === payload.$id)) return safePrev;
+          return [...safePrev, payload];
         }
 
         if (isUpdate) {
-          const index = prev.findIndex((i) => i.$id === payload.$id);
-          if (index === -1) return prev; // Document not in current view
+          const index = safePrev.findIndex((i) => i.$id === payload.$id);
+          if (index === -1) return safePrev; // Document not in current view
 
           // Only update if there's an actual change to avoid unnecessary re-renders
-          const updated = [...prev];
+          const updated = [...safePrev];
           updated[index] = payload;
           return updated;
         }
 
         if (isDelete) {
-          return prev.filter((item) => item.$id !== payload.$id);
+          return safePrev.filter((item) => item.$id !== payload.$id);
         }
 
-        return prev;
+        return safePrev;
       });
     };
 
