@@ -26,6 +26,7 @@ export const jobEvaluationDataAdapter = {
     college,
     selectedModule,
     studentAttendance = {},
+    customImages = []
   ) {
     // Extract students array
     const studentsArray = this._extractStudentsArray(studentsMap);
@@ -63,7 +64,7 @@ export const jobEvaluationDataAdapter = {
         // Support both new (time/page) and legacy (duration/pageNumber) field names
         time: selectedModule?.moduleDuration || "____",
         page: "1",
-        images: selectedModule?.images || [],
+        images: [...(selectedModule?.images || []), ...customImages],
       },
       evaluationPoints,
       students,

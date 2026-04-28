@@ -176,7 +176,7 @@ const ModulePagePrint = ({
         {/* ═══ MAIN CONTENT: Two-column layout ═══ */}
         <div className="flex gap-2 flex-1 min-h-0">
           {/* ─── LEFT PANEL: Images + Evaluation Points ─── */}
-          <div className="w-1/3 flex flex-col gap-2 min-h-0">
+          <div className="w-[40%] flex flex-col gap-2 min-h-0">
             {/* Images Container */}
             <div
               className="border border-gray-800 bg-gray-50 p-1 shrink-0"
@@ -187,17 +187,20 @@ const ModulePagePrint = ({
                   No images
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-0.5 h-full items-start content-start">
+                <div 
+                  className="w-full h-full grid gap-0.5"
+                  style={{
+                    gridTemplateColumns: images.length > 2 ? "repeat(2, minmax(0, 1fr))" : "minmax(0, 1fr)",
+                    gridTemplateRows: `repeat(${Math.ceil(images.length / (images.length > 2 ? 2 : 1))}, minmax(0, 1fr))`
+                  }}
+                >
                   {images.map((img, i) => (
                     <img
                       key={i}
                       src={img?.url}
                       alt=""
-                      className="object-contain p-0.5"
-                      style={{
-                        width: `${100 / Math.min(2, images.length)}%`,
-                        maxHeight: "75px",
-                      }}
+                      className="w-full h-full object-contain p-0.5"
+                      style={{ objectFit: "contain" }}
                     />
                   ))}
                 </div>
@@ -258,7 +261,7 @@ const ModulePagePrint = ({
           </div>
 
           {/* ─── RIGHT PANEL: Student Marks Table ─── */}
-          <div className="w-2/3 flex flex-col border border-gray-800 min-h-0 overflow-hidden">
+          <div className="w-[60%] flex flex-col border border-gray-800 min-h-0 overflow-hidden">
             <table className="w-full border-collapse text-xs">
               <thead className="shrink-0">
                 <tr className="bg-indigo-100">

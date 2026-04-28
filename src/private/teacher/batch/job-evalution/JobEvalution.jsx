@@ -37,6 +37,34 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
   const [studentsMap, setStudentsMap] = useState(new Map());
   const [studentAttendance, setStudentAttendance] = useState({});
+  const [tempImages, setTempImages] = useState([]);
+
+  const tempImagesRef = useRef(tempImages);
+  useEffect(() => {
+    tempImagesRef.current = tempImages;
+  }, [tempImages]);
+
+  useEffect(() => {
+    return () => {
+      tempImagesRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  const handleImageUpload = (e) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const newImages = files.map((file) => URL.createObjectURL(file));
+    setTempImages((prev) => [...prev, ...newImages]);
+  };
+
+  const removeTempImage = (indexToRemove) => {
+    setTempImages((prev) => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[indexToRemove]); // Free memory
+      newImages.splice(indexToRemove, 1);
+      return newImages;
+    });
+  };
 
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId,
@@ -316,6 +344,36 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
           Showing {studentsMap.size} student{studentsMap.size !== 1 ? "s" : ""} — pagination auto-applied ({Math.min(studentsMap.size || 1, 24)} per page).
         </p>
       )}
+
+      {/* Temporary Image Upload Menu */}
+      <div className="mt-4 border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-white dark:bg-gray-800">
+        <h2 className="text-gray-700 dark:text-white font-semibold mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Attach Report Images
+        </h2>
+        <label className="block w-full cursor-pointer text-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Click to add local images</span>
+          <input type="file" className="hidden" multiple accept="image/*" onChange={handleImageUpload} />
+        </label>
+        
+        {tempImages.length > 0 && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {tempImages.map((imgUrl, idx) => (
+              <div key={idx} className="relative group rounded border border-gray-200 dark:border-gray-600 overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
+                <img src={imgUrl} alt={`Preview ${idx + 1}`} className="w-full h-full object-contain" />
+                <button
+                  onClick={() => removeTempImage(idx)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  title="Remove Image"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
         </div>
       {/* Right Side: Live Preview */}
       <div className="w-full lg:w-2/3">
@@ -328,6 +386,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
                 college,
                 selectedModuleWithDates,
                 studentAttendance,
+                tempImages
               )}
               studentsPerPage={Math.min(studentsMap.size || 1, 24)}
             />

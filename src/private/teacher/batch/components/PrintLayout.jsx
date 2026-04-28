@@ -89,10 +89,6 @@ const PrintLayout = forwardRef(function PrintLayout(
           .print-page:last-child {
             page-break-after: auto;
           }
-          img {
-            max-width: 100%;
-            height: auto;
-          }
           table {
             border-collapse: collapse;
           }
@@ -152,8 +148,10 @@ const PrintLayout = forwardRef(function PrintLayout(
             minScale={0.1}
             maxScale={4}
             centerOnInit={true}
-            wheel={{ step: 0.1 }}
+            wheel={{ step: 0.1, smoothStep: 0.005 }}
             pinch={{ step: 5 }}
+            doubleClick={{ mode: "reset" }}
+            panning={{ disabled: false, velocityDisabled: false }}
           >
             <TransformComponent wrapperClass="!w-full !h-full flex justify-center" contentClass="w-full flex justify-center">
               {/* Scaling wrapper applied ONLY for preview. zoom natively scales document flow */}

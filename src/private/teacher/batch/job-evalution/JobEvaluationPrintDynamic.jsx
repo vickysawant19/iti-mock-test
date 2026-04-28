@@ -73,7 +73,9 @@ const ReportHeader = ({ institute, job, isCompact = false }) => {
           </div>
           <div className="flex items-start">
             <span className="font-bold w-20 shrink-0">Job Title:</span>
-            <span className="ml-1 break-words whitespace-normal">{job?.title || "________________________________"}</span>
+            <span className="ml-1 break-words whitespace-normal">
+              {job?.title || "________________________________"}
+            </span>
           </div>
           <div className="flex">
             <span className="font-bold w-20 shrink-0">Time:</span>
@@ -121,9 +123,15 @@ const EvaluationPointsTable = ({ evaluationPoints = [] }) => {
         </colgroup>
         <thead>
           <tr className="bg-blue-100">
-            <th className="border border-black font-bold px-1 py-0.5 text-center">Code</th>
-            <th className="border border-black font-bold px-1 py-0.5 text-left">Evaluation Point</th>
-            <th className="border border-black font-bold px-1 py-0.5 text-center">Marks</th>
+            <th className="border border-black font-bold px-1 py-0.5 text-center">
+              Code
+            </th>
+            <th className="border border-black font-bold px-1 py-0.5 text-left">
+              Evaluation Point
+            </th>
+            <th className="border border-black font-bold px-1 py-0.5 text-center">
+              Marks
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -141,10 +149,15 @@ const EvaluationPointsTable = ({ evaluationPoints = [] }) => {
             </tr>
           ))}
           <tr className="bg-blue-100 font-bold">
-            <td colSpan={2} className="border border-black px-1 py-0.5 text-right pr-2">
+            <td
+              colSpan={2}
+              className="border border-black px-1 py-0.5 text-right pr-2"
+            >
               Total:
             </td>
-            <td className="border border-black px-1 py-0.5 text-center">{totalMarks}</td>
+            <td className="border border-black px-1 py-0.5 text-center">
+              {totalMarks}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -159,14 +172,16 @@ const EvaluationPointsTable = ({ evaluationPoints = [] }) => {
 
 const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
   const codes = useMemo(
-    () => evaluationPoints.map((p, idx) => p.code || String.fromCharCode(65 + idx)),
+    () =>
+      evaluationPoints.map((p, idx) => p.code || String.fromCharCode(65 + idx)),
     [evaluationPoints],
   );
 
-  const srW    = "5%";
-  const totalW = "8%";
-  const scoreW = `${Math.floor(47 / Math.max(1, codes.length))}%`;
-  const nameW  = `${100 - 5 - 8 - Math.floor(47 / Math.max(1, codes.length)) * codes.length}%`;
+  const srW = "5%";
+  const totalW = "6%";
+  const scoreTotalW = 30; // 30% for all evaluation points (6% each for 5 points)
+  const scoreW = `${Math.floor(scoreTotalW / Math.max(1, codes.length))}%`;
+  const nameW = `${100 - 5 - 6 - Math.floor(scoreTotalW / Math.max(1, codes.length)) * codes.length}%`;
 
   return (
     // flex-1 + h-full makes this div fill the right column completely
@@ -189,7 +204,9 @@ const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
 
         <thead>
           <tr className="bg-blue-100">
-            <th className="border border-black font-bold px-1 py-0.5 text-center">Sr.</th>
+            <th className="border border-black font-bold px-1 py-0.5 text-center">
+              Sr.
+            </th>
             <th className="border border-black font-bold px-1 py-0.5 text-left pl-2">
               Name of Trainee
             </th>
@@ -202,7 +219,9 @@ const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
                 {code}
               </th>
             ))}
-            <th className="border border-black font-bold px-1 py-0.5 text-center">Total</th>
+            <th className="border border-black font-bold px-1 py-0.5 text-center">
+              Total
+            </th>
           </tr>
         </thead>
 
@@ -211,7 +230,7 @@ const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
           {students.map((student, idx) => (
             <tr
               key={`student-${student.sr ?? idx}`}
-              style={{ height: "1px" }}  // expands evenly to fill tbody
+              style={{ height: "1px" }} // expands evenly to fill tbody
             >
               <td className="border border-black px-1 py-0.5 text-center align-middle">
                 {student.sr ?? idx + 1}
@@ -243,7 +262,11 @@ const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
 // ─── Signature Section ─────────────────────────────────────────────────────────
 
 const SignatureSection = ({
-  signatures = ["Instructor Signature", "Group Instructor Signature", "Principal"],
+  signatures = [
+    "Instructor Signature",
+    "Group Instructor Signature",
+    "Principal",
+  ],
 }) => (
   <div className="border border-black bg-gray-50 flex shrink-0 mt-1 h-14">
     {signatures.map((sig, idx) => (
@@ -279,28 +302,45 @@ const PageContent = ({
     <div className="w-full h-full bg-white text-black box-border p-4">
       {/* Thick outer frame */}
       <div className="h-full border-[3px] border-black flex flex-col p-2 box-border">
-
         {/* Header — fixed height */}
-        <ReportHeader institute={institute} job={job} isCompact={isCompactHeader} />
+        <ReportHeader
+          institute={institute}
+          job={job}
+          isCompact={isCompactHeader}
+        />
 
         {/* ── Two-column body — flex-1 takes ALL remaining space ── */}
         <div className="flex gap-2 flex-1 min-h-0 pt-2">
-          
           {/* LEFT column — justify-end pushes eval table to bottom */}
-          <div className="w-96 shrink-0 flex flex-col justify-end overflow-hidden">
-            
+          <div className="w-[50%] shrink-0 flex flex-col justify-end overflow-hidden">
             {job?.images && job.images.length > 0 && (
-              <div className="flex-1 flex flex-col gap-2 pb-2 min-h-0 overflow-hidden justify-center pr-2">
-                {job.images.slice(0, 2).map((imgUrl, idx) => (
-                  <div key={idx} className="flex-1 w-full border border-gray-300 bg-gray-50 rounded flex flex-col items-center justify-center overflow-hidden relative">
-                    <img src={imgUrl} alt={`Job Diagram ${idx + 1}`} className="absolute inset-0 w-full h-full object-contain p-1" />
+              <div 
+                className="flex-1 pb-2 min-h-0 overflow-hidden pr-2 grid gap-2"
+                style={{
+                  gridTemplateColumns: job.images.length > 2 ? "repeat(2, minmax(0, 1fr))" : "minmax(0, 1fr)",
+                  gridTemplateRows: `repeat(${Math.ceil(job.images.length / (job.images.length > 2 ? 2 : 1))}, minmax(0, 1fr))`
+                }}
+              >
+                {job.images.map((imgUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="w-full h-full border border-gray-300 bg-gray-50 rounded flex items-center justify-center overflow-hidden relative"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Job Diagram ${idx + 1}`}
+                      className="absolute inset-0 w-full h-full object-contain p-1"
+                      style={{ objectFit: "contain" }}
+                    />
                   </div>
                 ))}
               </div>
             )}
 
             <div className="pr-2">
-              <EvaluationPointsTable evaluationPoints={evaluationPoints || []} />
+              <EvaluationPointsTable
+                evaluationPoints={evaluationPoints || []}
+              />
             </div>
           </div>
 
