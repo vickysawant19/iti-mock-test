@@ -39,7 +39,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
 import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react";
-import logo from "@/assets/iti-logo.jpg"
+import logo from "@/assets/itimitra-logo.png"
 
 // Import services and store actions
 import authService from "@/services/auth.service";
@@ -292,7 +292,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       </div>
       <div className="-mt-5 px-4 pb-3">
         <div className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl px-3 py-2.5 shadow-sm border border-white/40 dark:border-slate-800">
-          <img src={logo} alt="ITI" className="h-7 w-7 rounded-lg ring-2 ring-white/80 dark:ring-slate-800 shadow-sm" />
+          <img src={logo} alt="ITI" className="h-[46px] w-[46px] object-contain" />
           <div>
             <SheetTitle className="text-sm font-extrabold tracking-tight">{currentHeading || "Navigation"}</SheetTitle>
             <SheetDescription className="sr-only">
@@ -556,10 +556,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
           {/* Logo and App Title */}
           <NavLink to="/" className="flex items-center gap-3 ml-1 md:ml-0 group transition-all duration-200 hover:opacity-90">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl blur-sm opacity-20 group-hover:opacity-40 transition-opacity"></div>
-              <img src={logo} alt="ITI" className="h-[30px] w-[30px] relative rounded-xl ring-2 ring-white dark:ring-slate-800 shadow-md transform group-hover:scale-105 transition-transform duration-200" />
-            </div>
+            <img src={logo} alt="ITI" className="h-[52px] w-[52px] object-contain transform group-hover:scale-105 transition-transform duration-200" />
             {isLoading ? (
               <Skeleton className="h-5 w-32 hidden sm:block rounded-md" />
             ) : (

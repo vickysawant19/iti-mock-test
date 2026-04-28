@@ -30,6 +30,7 @@ import holidayService from "@/appwrite/holidaysService";
 import Legent from "./components/Legent";
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";
+import { DEFAULT_VISIBILITY } from "./components/ColumnGroupConfig";
 
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
@@ -40,6 +41,7 @@ const AttendanceRegister = () => {
   const abortControllerRef = useRef(null);
 
   // State management
+  const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
   const [batches, setBatches] = useState(new Map());
   const [selectedBatch, setSelectedBatch] = useState("");
   const [students, setStudents] = useState([]);
@@ -157,6 +159,8 @@ const AttendanceRegister = () => {
       setNewAttendance([]);
       setStudentStatsMap(new Map());
       setUpdatingAttendance(new Map());
+      lastFetchedAttendanceKey.current = null;
+      lastFetchedStatsKey.current = null;
 
       const batch = batches.get(selectedBatch);
 
@@ -234,6 +238,10 @@ const AttendanceRegister = () => {
     }
   }, [selectedBatch, batches, updateLoading, profile, user]);
 
+  // Cache refs to prevent re-fetching
+  const lastFetchedAttendanceKey = useRef(null);
+  const lastFetchedStatsKey = useRef(null);
+
   // Fetch attendance and student statistics together
   const fetchAttendanceAndStats = useCallback(async () => {
     if (!selectedBatch || !students || students.length === 0) {
@@ -245,51 +253,76 @@ const AttendanceRegister = () => {
     const batch = batches.get(selectedBatch);
     if (!batch?.start_date) return;
 
-    console.log("loading attendance and stats");
+    const currentKey = `${selectedBatch}-${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}`;
+    const needsAttendance = lastFetchedAttendanceKey.current !== currentKey;
+    const needsStats = columnVisibility.previous && lastFetchedStatsKey.current !== currentKey;
+
+    if (!needsAttendance && !needsStats) return;
+
+    console.log("loading attendance and/or stats");
 
     try {
-      updateLoading("attendance", true);
-      updateLoading("stats", true);
+      if (needsAttendance) updateLoading("attendance", true);
+      if (needsStats) updateLoading("stats", true);
 
       const studentIds = students.map((student) => student.userId);
       const currentBatchStartDate = batch.start_date;
       const endDate = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
 
-      // Fetch attendance and all stats in parallel
-      const [attendanceData, ...allStats] = await Promise.all([
-        newAttendanceService.getMonthlyAttendance(
-          studentIds,
-          selectedBatch,
-          selectedMonth.getFullYear(),
-          selectedMonth.getMonth() + 1,
-        ),
-        ...students.map((student) =>
-          newAttendanceService.getStudentAttendanceStats(
-            student.userId,
+      const promises = [];
+      
+      if (needsAttendance) {
+        promises.push(
+          newAttendanceService.getMonthlyAttendance(
+            studentIds,
             selectedBatch,
-            currentBatchStartDate,
-            endDate,
-          ),
-        ),
-      ]);
+            selectedMonth.getFullYear(),
+            selectedMonth.getMonth() + 1,
+          )
+        );
+      } else {
+        promises.push(Promise.resolve(null)); // Placeholder to keep array index aligned
+      }
 
-      // Update attendance
-      setNewAttendance(attendanceData.documents);
+      if (needsStats) {
+        promises.push(
+          ...students.map((student) =>
+            newAttendanceService.getStudentAttendanceStats(
+              student.userId,
+              selectedBatch,
+              currentBatchStartDate,
+              endDate,
+            ),
+          )
+        );
+      }
 
-      // Create stats map
-      const statsMap = new Map();
-      students.forEach((student, index) => {
-        statsMap.set(student.userId, allStats[index]);
-      });
-      setStudentStatsMap(statsMap);
+      const results = await Promise.all(promises);
+
+      // Update attendance if fetched
+      if (needsAttendance) {
+        setNewAttendance(results[0].documents);
+        lastFetchedAttendanceKey.current = currentKey;
+      }
+
+      // Update stats if fetched
+      if (needsStats) {
+        const allStats = results.slice(1);
+        const statsMap = new Map();
+        students.forEach((student, index) => {
+          statsMap.set(student.userId, allStats[index]);
+        });
+        setStudentStatsMap(statsMap);
+        lastFetchedStatsKey.current = currentKey;
+      }
     } catch (error) {
       console.error("Error fetching attendance and stats:", error);
-      setNewAttendance([]);
+      if (needsAttendance) setNewAttendance([]);
     } finally {
       updateLoading("attendance", false);
       updateLoading("stats", false);
     }
-  }, [selectedBatch, students, selectedMonth, batches, updateLoading]);
+  }, [selectedBatch, students, selectedMonth, batches, updateLoading, columnVisibility.previous]);
 
   // Handle attendance status change
   const onAttendanceStatusChange = async (userId, date, newStatus) => {
@@ -638,6 +671,8 @@ const AttendanceRegister = () => {
           selectedBatch={selectedBatch}
           batchStartDate={rawBatchStartDate}
           onOpenStudentAttendanceModal={handleOpenStudentModal}
+          columnVisibility={columnVisibility}
+          setColumnVisibility={setColumnVisibility}
         />
 
         <Legent />

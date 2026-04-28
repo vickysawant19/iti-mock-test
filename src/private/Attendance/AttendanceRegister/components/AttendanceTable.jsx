@@ -24,6 +24,8 @@ const AttendanceTable = ({
   handleRemoveHoliday,
   batchStartDate,
   onOpenStudentAttendanceModal,
+  columnVisibility,
+  setColumnVisibility,
 }) => {
   const daysInMonth = getDaysInMonth(selectedMonth);
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
@@ -43,8 +45,6 @@ const AttendanceTable = ({
     ? allDays.filter((d) => d >= firstValidDay)
     : allDays;
 
-  // Column group visibility state
-  const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
   const [compactView, setCompactView] = useState(true);
 
   const toggleGroup = (group) =>
