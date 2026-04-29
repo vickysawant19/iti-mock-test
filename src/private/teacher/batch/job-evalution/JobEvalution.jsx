@@ -4,6 +4,9 @@ import { Query } from "appwrite";
 import { useReactToPrint } from "react-to-print";
 import { format, max, min, parseISO } from "date-fns";
 
+import ManageScoresModal from "./ManageScoresModal";
+import { Settings2 } from "lucide-react";
+
 import JobEvaluationPrintDynamic from "./JobEvaluationPrintDynamic";
 import { jobEvaluationDataAdapter } from "./jobEvaluationDataAdapter";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
@@ -36,6 +39,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const [studentsMap, setStudentsMap] = useState(new Map());
   const [studentAttendance, setStudentAttendance] = useState({});
   const [tempImages, setTempImages] = useState([]);
+
+  // Local scores state
+  const [customScores, setCustomScores] = useState({});
+  const [isManageScoresOpen, setIsManageScoresOpen] = useState(false);
 
   const tempImagesRef = useRef(tempImages);
   useEffect(() => {
@@ -88,14 +95,20 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: `job-evaluation-${selectedModuleWithDates?.moduleName?.slice(0, 40).split(" ").join("-") || "report"}`,
+    documentTitle: `P${selectedModuleWithDates?.moduleId?.slice(1)}-${selectedModuleWithDates?.moduleName?.slice(0, 40).split(" ").join("-") || "report"}`,
   });
 
   useEffect(() => {
     if (!selectedModule) {
       setSelectedModuleWithDates(null);
+      setCustomScores({});
+      setTempImages([]);
       return;
     }
+
+    // Reset local custom scores and images on module change
+    setCustomScores({});
+    setTempImages([]);
 
     const fetchDatesForModule = async () => {
       setIsLoading(true);
@@ -213,6 +226,50 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
     setModules([]);
     fetchModules();
   }, [selectedYear, batchData.tradeId]);
+
+  // Generate base data via adapter
+  const baseData = React.useMemo(() => {
+    if (!selectedModuleWithDates) return null;
+    return jobEvaluationDataAdapter.adaptLegacyData(
+      studentsMap,
+      college,
+      selectedModuleWithDates,
+      studentAttendance,
+      tempImages,
+    );
+  }, [studentsMap, college, selectedModuleWithDates, studentAttendance, tempImages]);
+
+  // Apply custom scores and recalculate totals
+  const finalData = React.useMemo(() => {
+    if (!baseData) return null;
+
+    const newStudents = baseData.students.map((std) => {
+      const custom = customScores[std.userId];
+      if (custom) {
+        if (custom.isAbsent) {
+          const emptyScores = {};
+          Object.keys(std.scores).forEach((k) => {
+            emptyScores[k] = "-";
+          });
+          return { ...std, scores: emptyScores, total: "AB" };
+        } else {
+          const mergedScores = { ...std.scores, ...custom.scores };
+          let sum = 0;
+          Object.values(mergedScores).forEach((val) => {
+            const n = Number(val);
+            if (!isNaN(n)) sum += n;
+          });
+          return { ...std, scores: mergedScores, total: sum };
+        }
+      }
+      return std;
+    });
+
+    return {
+      ...baseData,
+      students: newStudents,
+    };
+  }, [baseData, customScores]);
 
   if (isLoading || collegeDataLoading) {
     return <Loader isLoading={isLoading} />;
@@ -334,15 +391,34 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
           </div>
         </div>
 
-        {/* Print Button */}
-        {Array.isArray(modules) && selectedModuleWithDates && (
-          <button
-            onClick={handlePrint}
-            className="w-full sm:w-64 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
-          >
-            <Printer className="h-5 w-5" />
-            Print / Save PDF
-          </button>
+        {/* Print Button & Manage Scores */}
+        {Array.isArray(modules) && selectedModuleWithDates && finalData && (
+          <div className="flex flex-col gap-3 w-full sm:w-64">
+            <button
+              onClick={() => setIsManageScoresOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors dark:bg-indigo-700 dark:hover:bg-indigo-800 shadow-sm"
+            >
+              <Settings2 className="h-5 w-5" />
+              Manage Scores
+            </button>
+            <button
+              onClick={handlePrint}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800 shadow-sm"
+            >
+              <Printer className="h-5 w-5" />
+              Print / Save PDF
+            </button>
+
+            <ManageScoresModal
+              isOpen={isManageScoresOpen}
+              setIsOpen={setIsManageScoresOpen}
+              evaluationPoints={finalData.evaluationPoints}
+              students={baseData.students} // Original adapted data as base
+              customScores={customScores}
+              setCustomScores={setCustomScores}
+              jobData={finalData.job}
+            />
+          </div>
         )}
 
         {/* Page capacity hint */}
@@ -425,16 +501,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
       {/* Right Side: Live Preview */}
       <div className="w-full lg:w-2/3">
         <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
-          {selectedModuleWithDates ? (
+          {finalData ? (
             <JobEvaluationPrintDynamic
               ref={printRef}
-              data={jobEvaluationDataAdapter.adaptLegacyData(
-                studentsMap,
-                college,
-                selectedModuleWithDates,
-                studentAttendance,
-                tempImages,
-              )}
+              data={finalData}
               studentsPerPage={Math.min(studentsMap.size || 1, 24)}
             />
           ) : (

@@ -35,6 +35,9 @@ export const jobEvaluationDataAdapter = {
     const evaluationPoints = this._generateEvaluationPoints(selectedModule);
     const evalCodes = evaluationPoints.map((p) => p.code);
 
+    // Calculate total working days in this module's date range
+    const workingDays = this._getWorkingDays(studentAttendance);
+
     // Generate student records with scores
     const students = studentsArray.map((student, idx) => {
       const isPresent = this._checkStudentPresence(
@@ -42,10 +45,15 @@ export const jobEvaluationDataAdapter = {
         selectedModule,
         studentAttendance,
       );
+      const attendanceStats = this._calculateAttendanceStats(student, studentAttendance, workingDays);
+
       const scores = this._generateStudentScores(isPresent, evalCodes);
       return {
         sr: idx + 1,
+        userId: student.userId,
+        profileImage: student.profileImage,
         name: student.userName || student.name || "Unknown",
+        attendanceStats,
         scores,
         total: isPresent ? this._calculateTotal(scores) : "AB",
       };
@@ -151,6 +159,28 @@ export const jobEvaluationDataAdapter = {
     }
 
     return false;
+  },
+
+  _getWorkingDays(studentAttendance) {
+    if (!studentAttendance) return 0;
+    const dates = new Set();
+    Object.values(studentAttendance).forEach((records) => {
+      Object.keys(records).forEach((date) => dates.add(date));
+    });
+    return dates.size;
+  },
+
+  _calculateAttendanceStats(student, studentAttendance, workingDays) {
+    const records = studentAttendance?.[student.userId] || {};
+    let presentCount = 0;
+    Object.values(records).forEach((status) => {
+      if (status === "present" || status === "Present") presentCount++;
+    });
+    return {
+      present: presentCount,
+      total: workingDays,
+      percentage: workingDays > 0 ? presentCount / workingDays : 0,
+    };
   },
 
   _generateStudentScores(isPresent, evaluationCodes = ["A", "B", "C", "D", "E"]) {
