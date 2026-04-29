@@ -162,7 +162,7 @@ const AttendanceTableHead = ({
                   isHoliday || currentDate.getDay() === 0
                     ? "bg-rose-500 border-rose-400 dark:bg-rose-600 dark:border-rose-500"
                     : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
-                } w-12 min-w-12`}
+                } w-9 min-w-9`}
               >
                 <div className="text-center">
                   <div className="font-bold text-sm leading-tight">{date}</div>

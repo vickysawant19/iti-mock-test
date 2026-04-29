@@ -5,10 +5,11 @@ import {
   format,
   getDay,
   isAfter,
+  isBefore,
   isSameMonth,
   startOfMonth,
 } from "date-fns";
-import { CalendarDays, User, X, BriefcaseBusiness } from "lucide-react";
+import { CalendarDays, User, X, BriefcaseBusiness, LoaderCircle, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -22,6 +23,11 @@ const StudentAttendanceEditModal = ({
   holidays,
   onAttendanceStatusChange,
   updatingAttendance,
+  studentStats,
+  onFetchStats,
+  loadingStats,
+  batchStartDate,
+  batchEndDate,
 }) => {
   const monthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth]);
   const monthEnd = useMemo(() => endOfMonth(selectedMonth), [selectedMonth]);
@@ -54,6 +60,16 @@ const StudentAttendanceEditModal = ({
         return;
       }
 
+      // Check if date is before batch start
+      if (batchStartDate && isBefore(date, batchStartDate)) {
+        return;
+      }
+
+      // Check if date is after batch end
+      if (batchEndDate && isAfter(date, batchEndDate)) {
+        return;
+      }
+
       workingDays += 1;
       const status = attendanceMap.get(key);
       if (status === "present") presentDays += 1;
@@ -61,7 +77,7 @@ const StudentAttendanceEditModal = ({
     });
 
     return { workingDays, presentDays, absentDays, holidaysCount };
-  }, [monthDays, holidays, attendanceMap]);
+  }, [monthDays, holidays, attendanceMap, batchStartDate, batchEndDate]);
 
   if (!isOpen || !student) return null;
 
@@ -109,11 +125,43 @@ const StudentAttendanceEditModal = ({
                 const dateKey = format(day, "yyyy-MM-dd");
                 const isHoliday = holidays.has(dateKey);
                 const isFuture = isAfter(day, new Date());
+                const isBeforeBatch = batchStartDate ? isBefore(day, batchStartDate) : false;
+                const isAfterBatch = batchEndDate ? isAfter(day, batchEndDate) : false;
                 const status = attendanceMap.get(dateKey);
                 const isUpdating = updatingAttendance.get(`${student.userId}-${dateKey}`);
 
-                const canEdit = !isHoliday && !isFuture;
+                const canEdit = !isHoliday && !isFuture && !isBeforeBatch && !isAfterBatch;
                 const nextStatus = status === "present" ? "absent" : "present";
+
+                if (!status && canEdit) {
+                  return (
+                    <div
+                      key={dateKey}
+                      className="h-[62px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 flex flex-col justify-between transition shadow-sm"
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{format(day, "d")}</span>
+                        {isUpdating && <LoaderCircle className="h-3 w-3 animate-spin text-indigo-500" />}
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        <button
+                          disabled={isUpdating}
+                          onClick={() => onAttendanceStatusChange(student.userId, dateKey, "present")}
+                          className="flex-1 py-1 rounded bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 text-[10px] font-black border border-emerald-200 transition-all dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white disabled:opacity-50"
+                        >
+                          P
+                        </button>
+                        <button
+                          disabled={isUpdating}
+                          onClick={() => onAttendanceStatusChange(student.userId, dateKey, "absent")}
+                          className="flex-1 py-1 rounded bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 text-[10px] font-black border border-rose-200 transition-all dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-600 dark:hover:text-white disabled:opacity-50"
+                        >
+                          A
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <button
@@ -123,18 +171,26 @@ const StudentAttendanceEditModal = ({
                     className={`h-[62px] rounded-md border text-left p-2 transition disabled:cursor-not-allowed disabled:opacity-60 ${
                       isHoliday
                         ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/30 dark:border-rose-700"
+                        : (isBeforeBatch || isAfterBatch)
+                        ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
                         : status === "present"
                         ? "bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700"
                         : status === "absent"
                         ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700"
                         : "bg-white border-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800"
                     }`}
-                    title={isHoliday ? holidays.get(dateKey)?.holidayText || "Holiday" : "Toggle attendance"}
+                    title={isHoliday ? holidays.get(dateKey)?.holidayText || "Holiday" : isBeforeBatch ? "Date is before batch start" : isAfterBatch ? "Date is after batch end" : "Toggle attendance"}
                   >
-                    <p className="text-xs font-semibold">{format(day, "d")}</p>
+                    <p className={`text-xs font-semibold ${isAfterBatch ? "line-through opacity-50" : ""}`}>
+                      {format(day, "d")}
+                    </p>
                     <p className="text-[10px] mt-1 uppercase tracking-wide">
                       {isHoliday
                         ? "Holiday"
+                        : isBeforeBatch
+                        ? "Pre-Batch"
+                        : isAfterBatch
+                        ? "Post-Batch"
                         : isFuture
                         ? "Future"
                         : status || "Unmarked"}
@@ -164,6 +220,47 @@ const StudentAttendanceEditModal = ({
                 <span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-rose-600" /> Holidays</span>
                 <strong>{monthStats.holidaysCount}</strong>
               </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                <History className="h-4 w-4 text-indigo-500" /> Previous Stats
+              </h3>
+              
+              {!studentStats ? (
+                <button
+                  onClick={() => onFetchStats(student.userId)}
+                  disabled={loadingStats}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 transition-all dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-800 disabled:opacity-50"
+                >
+                  {loadingStats ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Show Previous Count"
+                  )}
+                </button>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2">
+                    <span className="text-slate-500 dark:text-slate-400 text-xs">Total Working</span>
+                    <strong className="text-slate-700 dark:text-slate-200">{studentStats.workingDays}</strong>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2 border-l-2 border-emerald-500">
+                    <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">Present</span>
+                    <strong className="text-emerald-800 dark:text-emerald-100">{studentStats.presentDays}</strong>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2 border-l-2 border-amber-500">
+                    <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">Absent</span>
+                    <strong className="text-amber-800 dark:text-amber-100">{studentStats.absentDays}</strong>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-indigo-600 p-2 text-white shadow-sm">
+                    <span className="text-xs font-medium">Overall %</span>
+                    <strong className="text-base">
+                      {studentStats.percentage}%
+                    </strong>
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         </div>

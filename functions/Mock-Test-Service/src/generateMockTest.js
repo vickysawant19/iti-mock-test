@@ -17,56 +17,46 @@ const generateMockTest = async ({
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
 
-    // 1. Fetch relevant module IDs based on trade, subject, year
-    let moduleIdsToQuery = selectedModules || [];
-    
-    if (moduleIdsToQuery.length === 0) {
-      let modOffset = 0;
-      let hasMoreMods = true;
-      while (hasMoreMods) {
-        const modResponse = await database.listDocuments(
-          process.env.APPWRITE_DATABASE_ID,
-          "newmodulesdata",
-          [
-            Query.equal("tradeId", tradeId),
-            Query.equal("subjectId", subjectId),
-            Query.equal("year", year),
-            Query.limit(100),
-            Query.offset(modOffset),
-            Query.select(["$id"])
-          ]
-        );
-        moduleIdsToQuery = moduleIdsToQuery.concat(modResponse.documents.map(d => d.$id));
-        modOffset += modResponse.documents.length;
-        hasMoreMods = modOffset < modResponse.total;
+    const queries = [
+      Query.equal("tradeId", tradeId),
+      Query.equal("subjectId", subjectId),
+      Query.equal("year", year)
+    ];
+
+    // If specific modules are selected, we need to filter by their logical moduleId strings
+    if (selectedModules && selectedModules.length > 0) {
+      const moduleDocs = await database.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        "newmodulesdata",
+        [
+          Query.equal("$id", selectedModules),
+          Query.select(["moduleId"])
+        ]
+      );
+      const logicalModuleIds = moduleDocs.documents.map(d => d.moduleId);
+      if (logicalModuleIds.length > 0) {
+        queries.push(Query.equal("moduleId", logicalModuleIds));
       }
     }
-
-    if (moduleIdsToQuery.length === 0) return [];
-
-    // 2. Query questions by the module IDs
-    let offset = 0;
-    let hasMore = true;
-    const queries = [
-      Query.equal("moduleId", moduleIdsToQuery)
-    ];
 
     if (Array.isArray(tags) && tags.length > 0) {
       queries.push(Query.contains("tags", tags));
     }
 
-    queries.push(Query.limit(100), Query.select(["$id"]));
+    let offset = 0;
+    let hasMore = true;
+    const batchLimit = 100;
 
     while (hasMore) {
       const response = await database.listDocuments(
         process.env.APPWRITE_DATABASE_ID,
         process.env.APPWRITE_QUES_COLLECTION_ID,
-        [...queries, Query.offset(offset)]
+        [...queries, Query.limit(batchLimit), Query.offset(offset), Query.select(["$id"])]
       );
 
       documents = documents.concat(response.documents);
       offset += response.documents.length;
-      hasMore = offset < response.total;
+      hasMore = offset < response.total && response.documents.length > 0;
     }
 
     return documents;

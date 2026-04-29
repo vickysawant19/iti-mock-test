@@ -258,7 +258,10 @@ Strict Rules:
         question: q.question,
         correctAnswer: q.correctAnswer,
         options: q.options,
-        moduleId: modulesData.selectedModule.$id,
+        moduleId: modulesData.selectedModule.moduleId,
+        tradeId: tradeData.selectedTrade.$id,
+        subjectId: subjectData.selectedSubject.$id,
+        year: selectedTradeYear,
         tags: getTagsString(),
         userId: profile.userId,
         userName: profile.userName,
@@ -269,9 +272,7 @@ Strict Rules:
         questions: enrichedQuestions,
       };
       console.log("Submitting payload:", payload);
-      const response = await questionService.bulkaddQuestions(
-        JSON.stringify(payload)
-      );
+      const response = await questionService.bulkaddQuestions(payload);
       setSubmitStatus("success");
       toast.success(
         `${parsedQuestions.length} question${

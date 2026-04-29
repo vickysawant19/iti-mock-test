@@ -11,6 +11,9 @@ export interface QuestionData {
   userName: string;
   tags?: string;
   moduleId?: string;
+  tradeId?: string;
+  subjectId?: string;
+  year?: string;
 }
 
 class QuestionService extends DatabaseService {

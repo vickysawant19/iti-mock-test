@@ -1,4 +1,4 @@
-import { Client,Databases  } from 'node-appwrite';
+import { Client, Databases, ID } from 'node-appwrite';
 import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
 import { bulkaddQuestions } from './bulkActions.js';
@@ -79,6 +79,7 @@ export default async ({ req, res, log, error }) => {
           questions,
           error,
           database,
+          ID
         });
         break;
     

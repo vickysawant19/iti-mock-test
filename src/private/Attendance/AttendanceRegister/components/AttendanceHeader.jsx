@@ -17,6 +17,7 @@ const AttendanceHeader = ({
   handleMonthChange,
   loading,
   batchStartDate,
+  batchEndDate,
 }) => {
   const loadingAttendance = loading.attendance;
   const loadingStats     = loading.stats;
@@ -31,24 +32,27 @@ const AttendanceHeader = ({
   const minYear  = batchStartDate ? getYear(batchStartDate)  : curYear;
   const minMonth = batchStartDate ? getMonth(batchStartDate) : 0; // 0-indexed
 
+  const maxYear  = batchEndDate ? getYear(batchEndDate)  : curYear;
+  const maxMonth = batchEndDate ? getMonth(batchEndDate) : curMonth;
+
   const activeYear  = getYear(selectedMonth);
   const activeMonth = getMonth(selectedMonth); // 0-indexed
 
-  // Years: batch start year → current year only
+  // Years: batch start year → batch end year (or current year)
   const yearOptions = useMemo(() => {
     const yrs = [];
-    for (let y = minYear; y <= curYear; y++) yrs.push(y);
+    for (let y = minYear; y <= Math.max(curYear, maxYear); y++) yrs.push(y);
     return yrs;
-  }, [minYear, curYear]);
+  }, [minYear, curYear, maxYear]);
 
   // Months: filter based on selected year
   const availableMonths = useMemo(() => {
     return MONTH_NAMES.map((label, index) => ({ label, index })).filter(({ index }) => {
       if (activeYear === minYear && index < minMonth) return false;
-      if (activeYear === curYear && index > curMonth) return false;
+      if (activeYear === maxYear && index > maxMonth) return false;
       return true;
     });
-  }, [activeYear, minYear, minMonth, curYear, curMonth]);
+  }, [activeYear, minYear, minMonth, maxYear, maxMonth]);
 
   // Navigate to a new Date — always clamp
   const navigateTo = (newDate) => {
@@ -57,22 +61,32 @@ const AttendanceHeader = ({
 
   const onMonthSelect = (monthIndex) => {
     let d = setMonth(new Date(selectedMonth), monthIndex);
-    // clamp
-    if (d > now) d = new Date(now.getFullYear(), now.getMonth(), 1);
+    // clamp min
+    if (batchStartDate && d < batchStartDate) d = new Date(batchStartDate);
+    // clamp max
+    const maxDate = batchEndDate || now;
+    if (d > maxDate) d = new Date(maxDate);
+    
     navigateTo(d);
   };
 
   const onYearSelect = (year) => {
     let month = activeMonth;
     if (year === minYear && month < minMonth) month = minMonth;
-    if (year === curYear && month > curMonth) month = curMonth;
+    if (year === maxYear && month > maxMonth) month = maxMonth;
     let d = setYear(setMonth(new Date(selectedMonth), month), year);
-    if (d > now) d = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // clamp min
+    if (batchStartDate && d < batchStartDate) d = new Date(batchStartDate);
+    // clamp max
+    const maxDate = batchEndDate || now;
+    if (d > maxDate) d = new Date(maxDate);
+
     navigateTo(d);
   };
 
   const isAtMin = activeYear === minYear && activeMonth <= minMonth;
-  const isAtMax = activeYear === curYear  && activeMonth >= curMonth;
+  const isAtMax = activeYear === maxYear  && activeMonth >= maxMonth;
 
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">

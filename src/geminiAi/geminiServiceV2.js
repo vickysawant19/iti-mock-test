@@ -1,4 +1,4 @@
-import { GoogleGenAI,  } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import conf from "../config/config";
 
 class GeminiService {
@@ -8,8 +8,8 @@ class GeminiService {
     }
 
     this.ai = new GoogleGenAI({ apiKey });
-    this.primaryModel = "gemini-2.5-flash";
-    this.fallbackModel = "gemini-2.0-flash"; // Fallback model
+    this.primaryModel = "gemini-3-flash-preview";
+    this.fallbackModel = "gemini-2.5-flash"; // Fallback model
     this.maxRetries = 3;
     this.retryDelay = 2000; // 2 seconds
   }

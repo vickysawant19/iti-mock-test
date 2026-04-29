@@ -23,6 +23,7 @@ const AttendanceTable = ({
   handleAddHoliday,
   handleRemoveHoliday,
   batchStartDate,
+  batchEndDate,
   onOpenStudentAttendanceModal,
   columnVisibility,
   setColumnVisibility,
@@ -30,20 +31,33 @@ const AttendanceTable = ({
   const daysInMonth = getDaysInMonth(selectedMonth);
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Filter out days before the batch start date
-  const firstValidDay = (() => {
-    if (!batchStartDate) return 1;
-    const sy = selectedMonth.getFullYear();
-    const sm = selectedMonth.getMonth();
-    const by = batchStartDate.getFullYear();
-    const bm = batchStartDate.getMonth();
-    // Only filter if viewing the exact batch start month
-    if (sy === by && sm === bm) return batchStartDate.getDate();
-    return 1;
+  // Filter out days before the batch start date or after the batch end date
+  const { firstValidDay, lastValidDay } = (() => {
+    let start = 1;
+    let end = daysInMonth;
+
+    if (batchStartDate) {
+      const sy = selectedMonth.getFullYear();
+      const sm = selectedMonth.getMonth();
+      const by = batchStartDate.getFullYear();
+      const bm = batchStartDate.getMonth();
+      // Only filter if viewing the exact batch start month
+      if (sy === by && sm === bm) start = batchStartDate.getDate();
+    }
+
+    if (batchEndDate) {
+      const sy = selectedMonth.getFullYear();
+      const sm = selectedMonth.getMonth();
+      const ey = batchEndDate.getFullYear();
+      const em = batchEndDate.getMonth();
+      // Only filter if viewing the exact batch end month
+      if (sy === ey && sm === em) end = batchEndDate.getDate();
+    }
+
+    return { firstValidDay: start, lastValidDay: end };
   })();
-  const monthDates = firstValidDay > 1
-    ? allDays.filter((d) => d >= firstValidDay)
-    : allDays;
+
+  const monthDates = allDays.filter((d) => d >= firstValidDay && d <= lastValidDay);
 
   const [compactView, setCompactView] = useState(true);
 

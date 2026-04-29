@@ -116,13 +116,17 @@ const AttendanceRegister = () => {
   }, [newAttendance]);
 
   // ── Derived: stable batch dates ──────────────────────────────────────────
-  const { batchStartDate, rawBatchStartDate } = useMemo(() => {
+  const { batchStartDate, rawBatchStartDate, batchEndDate, rawBatchEndDate } = useMemo(() => {
     const data = batches.get(selectedBatch);
-    if (!data?.start_date) return { batchStartDate: null, rawBatchStartDate: null };
-    const raw  = toLocalDate(data.start_date);
+    if (!data?.start_date) return { batchStartDate: null, rawBatchStartDate: null, batchEndDate: null, rawBatchEndDate: null };
+    const rawStart = toLocalDate(data.start_date);
+    const rawEnd   = data.end_date ? toLocalDate(data.end_date) : null;
+
     return {
-      batchStartDate:    toMonthStart(raw), // first-of-month, used for nav clamping
-      rawBatchStartDate: raw,               // exact day, used for column filtering
+      batchStartDate:    toMonthStart(rawStart), // first-of-month, used for nav clamping
+      rawBatchStartDate: rawStart,               // exact day, used for column filtering
+      batchEndDate:      rawEnd ? toMonthStart(rawEnd) : null,
+      rawBatchEndDate:   rawEnd,                 // exact day
     };
   }, [batches, selectedBatch]);
 
@@ -395,17 +399,6 @@ const AttendanceRegister = () => {
           ...(prev || []).filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
         ]);
-
-        // Refresh only this student's stats
-        const batch = batches.get(selectedBatch);
-        const updatedStats = await newAttendanceService.getStudentAttendanceStats(
-          userId,
-          selectedBatch,
-          batch.start_date,
-          endOfMonth(subMonths(selectedMonth, 1)).toISOString(),
-        );
-
-        setStudentStatsMap((prev) => new Map(prev).set(userId, updatedStats));
       } catch (error) {
         console.error("Error updating attendance:", error);
         toast.error("Failed to update attendance");
@@ -532,6 +525,30 @@ const AttendanceRegister = () => {
     [newAttendance, selectedBatch, updateLoading],
   );
 
+  const handleFetchSingleStudentStats = useCallback(
+    async (userId) => {
+      if (!selectedBatch || !batches.has(selectedBatch)) return;
+      const batch = batches.get(selectedBatch);
+
+      updateLoading("stats", true);
+      try {
+        const stats = await newAttendanceService.getStudentAttendanceStats(
+          userId,
+          selectedBatch,
+          batch.start_date,
+          endOfMonth(subMonths(selectedMonth, 1)).toISOString(),
+        );
+        setStudentStatsMap((prev) => new Map(prev).set(userId, stats));
+      } catch (error) {
+        console.error("Error fetching single student stats:", error);
+        toast.error("Failed to fetch statistics");
+      } finally {
+        updateLoading("stats", false);
+      }
+    },
+    [selectedBatch, batches, selectedMonth, updateLoading],
+  );
+
   // ─────────────────────────────────────────────────────────────────────────
   // Modal helpers
   // ─────────────────────────────────────────────────────────────────────────
@@ -543,12 +560,10 @@ const AttendanceRegister = () => {
   // ─────────────────────────────────────────────────────────────────────────
   // Month navigation
   // ─────────────────────────────────────────────────────────────────────────
-  const maxMonth = useMemo(
-    () => toMonthStart(new Date()),
-    // Recompute once per calendar month — cheap enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  const maxMonth = useMemo(() => {
+    const today = toMonthStart(new Date());
+    return batchEndDate || today;
+  }, [batchEndDate]);
 
   const handlePrevMonth = useCallback(() => {
     setSelectedMonth((prev) => {
@@ -648,6 +663,7 @@ const AttendanceRegister = () => {
           handleAddHoliday={handleAddHoliday}
           handleRemoveHoliday={handleRemoveHoliday}
           batchStartDate={batchStartDate}
+          batchEndDate={batchEndDate}
         />
 
         <AttendanceTable
@@ -665,6 +681,7 @@ const AttendanceRegister = () => {
           loading={loading}
           selectedBatch={selectedBatch}
           batchStartDate={rawBatchStartDate}
+          batchEndDate={rawBatchEndDate}
           onOpenStudentAttendanceModal={handleOpenStudentModal}
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
@@ -683,6 +700,11 @@ const AttendanceRegister = () => {
           holidays={holidays}
           onAttendanceStatusChange={onAttendanceStatusChange}
           updatingAttendance={updatingAttendance}
+          studentStats={studentStatsMap.get(selectedStudent?.userId)}
+          onFetchStats={handleFetchSingleStudentStats}
+          loadingStats={loading.stats}
+          batchStartDate={rawBatchStartDate}
+          batchEndDate={rawBatchEndDate}
         />
 
         <MarkAttendanceModal

@@ -129,16 +129,32 @@ const EditQuestion = () => {
           subjectService.listSubjects(),
         ]);
 
-        const module = await moduleServices.getModule(question.moduleId);
-        const trade   = trades.find((t) => t.$id === module?.tradeId);
-        const subject = subjectsRes.documents?.find((s) => s.$id === module?.subjectId);
+        let module = null;
+        if (question.tradeId && question.subjectId && question.year) {
+          module = await moduleServices.getModuleByLogicalId(
+            question.tradeId,
+            question.subjectId,
+            question.year,
+            question.moduleId
+          );
+        } else {
+          // Fallback for legacy questions that only have moduleId as $id
+          try {
+            module = await moduleServices.getModule(question.moduleId);
+          } catch (e) {
+            console.warn("Legacy module lookup failed", e);
+          }
+        }
+
+        const trade   = trades.find((t) => t.$id === (module?.tradeId || question.tradeId));
+        const subject = subjectsRes.documents?.find((s) => s.$id === (module?.subjectId || question.subjectId));
 
         setModuleInfo({
-          tradeName:   trade?.tradeName   || trade?.name   || module?.tradeId,
-          subjectName: subject?.subjectName || subject?.name || module?.subjectId,
-          year:        module?.year,
-          moduleId:    module?.moduleId,
-          moduleName:  module?.moduleName,
+          tradeName:   trade?.tradeName   || trade?.name   || (module?.tradeId || question.tradeId),
+          subjectName: subject?.subjectName || subject?.name || (module?.subjectId || question.subjectId),
+          year:        module?.year || question.year,
+          moduleId:    module?.moduleId || question.moduleId,
+          moduleName:  module?.moduleName || "Module Link Lost",
         });
 
         reset({

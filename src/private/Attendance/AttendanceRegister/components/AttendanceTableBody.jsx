@@ -141,7 +141,7 @@ const AttendanceTableBody = ({
                   )}
                 </div>
                 {studentUpdating && !loadingAttendance && (
-                  <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                  <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400 shrink-0" />
                 )}
               </div>
             </td>
@@ -209,12 +209,12 @@ const AttendanceTableBody = ({
                     )}
 
                     <span
-                      className={`inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded min-w-[2rem] ${
+                      className={`inline-flex items-center justify-center font-black text-base ${
                         status === "present"
-                          ? "bg-green-600 text-white"
+                          ? "text-emerald-600 dark:text-emerald-400"
                           : status === "absent"
-                          ? "bg-red-600 text-white"
-                          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-gray-300 dark:text-gray-600"
                       }`}
                     >
                       {status === "present" ? "P" : status === "absent" ? "A" : "-"}

@@ -134,9 +134,7 @@ const CreateQuestion = () => {
       data.userId = user.$id;
       data.userName = user.name;
       data.tags = (data.tags || []).join(",");
-      delete data.tradeId;
-      delete data.subjectId;
-      delete data.year;
+      // data.tradeId, data.subjectId, and data.year are now kept to maintain logical links
       await questionService.createQuestion(data);
       reset({
         question: "",
@@ -374,7 +372,7 @@ const CreateQuestion = () => {
                 >
                   <option value="">Select Module</option>
                   {modules.map((m) => (
-                    <option key={m.$id} value={m.$id}>
+                    <option key={m.$id} value={m.moduleId}>
                       {m.moduleId} {m.moduleName}
                     </option>
                   ))}

@@ -21,6 +21,26 @@ export class ModuleServices {
     }
   }
 
+  async getModuleByLogicalId(tradeId, subjectId, year, moduleIdString) {
+    try {
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newModulesDataCollectionId,
+        queries: [
+          Query.equal("tradeId", tradeId),
+          Query.equal("subjectId", subjectId),
+          Query.equal("year", year),
+          Query.equal("moduleId", moduleIdString),
+          Query.limit(1),
+        ],
+      });
+      return response.rows[0] || null;
+    } catch (error) {
+      console.error("Error getting module by logical ID", error);
+      return null;
+    }
+  }
+
   async getNewModulesData(tradeId, subjectId, year) {
     if (!tradeId || !subjectId || !year) {
       console.warn(
