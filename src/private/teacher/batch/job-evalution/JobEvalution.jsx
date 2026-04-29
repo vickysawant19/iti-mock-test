@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Printer } from "lucide-react";
 import { Query } from "appwrite";
-import { ClipLoader } from "react-spinners";
 import { useReactToPrint } from "react-to-print";
 import { format, max, min, parseISO } from "date-fns";
 
 import JobEvaluationPrintDynamic from "./JobEvaluationPrintDynamic";
 import { jobEvaluationDataAdapter } from "./jobEvaluationDataAdapter";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
-import { useGetTradeQuery } from "@/store/api/tradeApi";
 import moduleServices from "@/appwrite/moduleServices";
 import useScrollToItem from "@/hooks/useScrollToItem";
 import Loader from "@/components/components/Loader";
