@@ -137,16 +137,19 @@ const Assignment = ({ students, batchData }) => {
         const endIndex = startIndex + pagination.pageSize;
         const paginatedModules = modules.data.slice(startIndex, endIndex);
 
-        const assessmentPaperIds = paginatedModules.map(
-          (m) => m.assessmentPaperId
-        );
+        const assessmentPaperIds = paginatedModules
+          .map((m) => m.assessmentPaperId)
+          .filter((id) => id && typeof id === "string" && id.trim() !== "");
 
-        const paperData = await mockTestService.listQuestions([
-          Query.equal("paperId", assessmentPaperIds),
-          Query.orderDesc("$updatedAt"),
-          Query.equal("userId", studentsIds),
-          Query.select(["$id", "paperId", "userName", "userId", "score"]),
-        ]);
+        let paperData = [];
+        if (assessmentPaperIds.length > 0) {
+          paperData = await mockTestService.listQuestions([
+            Query.equal("paperId", assessmentPaperIds),
+            Query.orderDesc("$updatedAt"),
+            Query.equal("userId", studentsIds),
+            Query.select(["$id", "paperId", "userName", "userId", "score"]),
+          ]);
+        }
 
         // Group papers by paperId for O(1) lookup
         const paperMap = new Map();

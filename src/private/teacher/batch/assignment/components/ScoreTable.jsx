@@ -31,8 +31,8 @@ const ScoreTable = ({
                 </th>
                 {assignmentScore.map((assignment, idx) => (
                   <th
-                    key={`${assignment.assessmentPaperId}-${idx}`}
-                    onClick={() => handleSort(assignment.assessmentPaperId)}
+                    key={`${assignment.assessmentPaperId || assignment.moduleId}-${idx}`}
+                    onClick={() => handleSort(assignment.assessmentPaperId || assignment.moduleId)}
                     className="px-3 py-3 text-center min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors"
                   >
                     <div
@@ -42,7 +42,7 @@ const ScoreTable = ({
                       {assignment.moduleId}
                     </div>
                     <div className="text-indigo-100 mt-1 font-mono truncate">
-                      {assignment.assessmentPaperId.substring(0, 8)}...
+                      {assignment.assessmentPaperId ? `${assignment.assessmentPaperId.substring(0, 8)}...` : "N/A"}
                     </div>
                   </th>
                 ))}
