@@ -83,11 +83,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   useEffect(() => {
     if (studentProfiles) {
       setStudentsMap(
-        new Map(studentProfiles.map((item,itm) => [itm+1, item])),
+        new Map(studentProfiles.map((item, itm) => [itm + 1, item])),
       );
     }
   }, [studentProfiles]);
-
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -130,20 +129,27 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
             const queries = [
               Query.greaterThanEqual("date", minDate),
               Query.lessThanEqual("date", maxDate),
-              Query.select(["userId", "date", "status"])
+              Query.select(["userId", "date", "status"]),
             ];
-            
-            const attendanceRes = await newAttendanceService.getAllBatchAttendance(batchData.$id, queries);
-            
+
+            const attendanceRes =
+              await newAttendanceService.getAllBatchAttendance(
+                batchData.$id,
+                queries,
+              );
+
             // Map flat attendance records to { userId: { date: status } }
-            const dateKeysAttendance = attendanceRes.documents.reduce((acc, doc) => {
-              if (!acc[doc.userId]) acc[doc.userId] = {};
-              if (!acc[doc.userId][doc.date]) {
-                acc[doc.userId][doc.date] = doc.status;
-              }
-              return acc;
-            }, {});
-            
+            const dateKeysAttendance = attendanceRes.documents.reduce(
+              (acc, doc) => {
+                if (!acc[doc.userId]) acc[doc.userId] = {};
+                if (!acc[doc.userId][doc.date]) {
+                  acc[doc.userId][doc.date] = doc.status;
+                }
+                return acc;
+              },
+              {},
+            );
+
             setStudentAttendance(dateKeysAttendance);
           } else {
             setStudentAttendance({});
@@ -156,7 +162,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
           endDate: maxDate,
         });
       } catch (err) {
-        console.error("Failed to map module practical dates or fetch attendance:", err);
+        console.error(
+          "Failed to map module practical dates or fetch attendance:",
+          err,
+        );
       } finally {
         setIsLoading(false);
       }
@@ -168,7 +177,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   const fetchSubject = async () => {
     try {
       const res = await subjectService.getSubjectByName("Trade Practical");
-      console.log("subject",res);
+      console.log("subject", res);
       return res;
     } catch (error) {
       console.log(error);
@@ -228,18 +237,130 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
         {/* Dropdowns for Subject, Year, Module, and Student */}
         <div className="grid grid-cols-1 gap-4">
-        {/* Year Dropdown */}
-        <div className="relative">
-          <h1 className="text-gray-700 dark:text-white mb-1">Select Year:</h1>
+          {/* Year Dropdown */}
+          <div className="relative">
+            <h1 className="text-gray-700 dark:text-white mb-1">Select Year:</h1>
+            <button
+              onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+              className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            >
+              <span className="text-gray-700 dark:text-white">
+                {selectedYear}
+              </span>
+              <svg
+                className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {isYearDropdownOpen && (
+              <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                {["FIRST", "SECOND"].map((year) => (
+                  <div
+                    key={year}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white"
+                    onClick={() => {
+                      setIsYearDropdownOpen(false);
+                      setSelectedYear(year);
+                      setSelectedModule(null);
+                    }}
+                  >
+                    {year}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Module Dropdown */}
+          <div className="relative">
+            <h1 className="text-gray-700 dark:text-white mb-1">Select Job:</h1>
+            <button
+              onClick={() => setIsModuleDropdownOpen(!isModuleDropdownOpen)}
+              className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            >
+              <span className="text-gray-700 dark:text-white truncate">
+                {selectedModule
+                  ? selectedModule.moduleId.slice(1) +
+                    "-" +
+                    selectedModule.moduleName
+                  : "Select Module"}
+              </span>
+              <svg
+                className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <div
+              className={`${
+                isModuleDropdownOpen ? "block" : "hidden"
+              } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white`}
+            >
+              {modules &&
+                modules?.map((module) => (
+                  <div
+                    ref={(el) => (itemRefs.current[module.moduleId] = el)}
+                    key={module.moduleId}
+                    className={`${
+                      selectedModule?.moduleId === module?.moduleId
+                        ? "bg-gray-200 dark:bg-gray-700"
+                        : "bg-white dark:bg-gray-800"
+                    } px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white`}
+                    onClick={() => {
+                      setSelectedModule(module);
+                      setIsModuleDropdownOpen(false);
+                    }}
+                  >
+                    {module.moduleId.slice(1)}.{module.moduleName}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Print Button */}
+        {Array.isArray(modules) && selectedModuleWithDates && (
           <button
-            onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+            onClick={handlePrint}
+            className="w-full sm:w-64 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
           >
-            <span className="text-gray-700 dark:text-white">
-              {selectedYear}
-            </span>
+            <Printer className="h-5 w-5" />
+            Print / Save PDF
+          </button>
+        )}
+
+        {/* Page capacity hint */}
+        {selectedModuleWithDates && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            Showing {studentsMap.size} student
+            {studentsMap.size !== 1 ? "s" : ""} — pagination auto-applied (
+            {Math.min(studentsMap.size || 1, 24)} per page).
+          </p>
+        )}
+
+        {/* Temporary Image Upload Menu */}
+        <div className="mt-4 border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-white dark:bg-gray-800">
+          <h2 className="text-gray-700 dark:text-white font-semibold mb-3 flex items-center gap-2">
             <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-400"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -248,133 +369,61 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              />
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
             </svg>
-          </button>
-          {isYearDropdownOpen && (
-            <div className="absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-              {["FIRST", "SECOND"].map((year) => (
+            Attach Report Images
+          </h2>
+          <label className="block w-full cursor-pointer text-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Click to add local images
+            </span>
+            <input
+              type="file"
+              className="hidden"
+              multiple
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+          </label>
+
+          {tempImages.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {tempImages.map((imgUrl, idx) => (
                 <div
-                  key={year}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white"
-                  onClick={() => {
-                    setIsYearDropdownOpen(false);
-                    setSelectedYear(year);
-                    setSelectedModule(null);
-                  }}
+                  key={idx}
+                  className="relative group rounded border border-gray-200 dark:border-gray-600 overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700"
                 >
-                  {year}
+                  <img
+                    src={imgUrl}
+                    alt={`Preview ${idx + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                  <button
+                    onClick={() => removeTempImage(idx)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    title="Remove Image"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Module Dropdown */}
-        <div className="relative">
-          <h1 className="text-gray-700 dark:text-white mb-1">Select Job:</h1>
-          <button
-            onClick={() => setIsModuleDropdownOpen(!isModuleDropdownOpen)}
-            className="w-full flex justify-between items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
-          >
-            <span className="text-gray-700 dark:text-white truncate">
-              {selectedModule
-                ? selectedModule.moduleId.slice(1) +
-                  "-" +
-                  selectedModule.moduleName
-                : "Select Module"}
-            </span>
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-
-          <div
-            className={`${
-              isModuleDropdownOpen ? "block" : "hidden"
-            } absolute w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700 dark:text-white`}
-          >
-            {modules &&
-              modules?.map((module) => (
-                <div
-                  ref={(el) => (itemRefs.current[module.moduleId] = el)}
-                  key={module.moduleId}
-                  className={`${
-                    selectedModule?.moduleId === module?.moduleId
-                      ? "bg-gray-200 dark:bg-gray-700"
-                      : "bg-white dark:bg-gray-800"
-                  } px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700 dark:text-white`}
-                  onClick={() => {
-                    setSelectedModule(module);
-                    setIsModuleDropdownOpen(false);
-                  }}
-                >
-                  {module.moduleId.slice(1)}.{module.moduleName}
-                </div>
-              ))}
-          </div>
-        </div>
       </div>
-
-      {/* Print Button */}
-      {Array.isArray(modules) && selectedModuleWithDates && (
-        <button
-          onClick={handlePrint}
-          className="w-full sm:w-64 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
-        >
-          <Printer className="h-5 w-5" />
-          Print / Save PDF
-        </button>
-      )}
-
-      {/* Page capacity hint */}
-      {selectedModuleWithDates && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          Showing {studentsMap.size} student{studentsMap.size !== 1 ? "s" : ""} — pagination auto-applied ({Math.min(studentsMap.size || 1, 24)} per page).
-        </p>
-      )}
-
-      {/* Temporary Image Upload Menu */}
-      <div className="mt-4 border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-white dark:bg-gray-800">
-        <h2 className="text-gray-700 dark:text-white font-semibold mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          Attach Report Images
-        </h2>
-        <label className="block w-full cursor-pointer text-center px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Click to add local images</span>
-          <input type="file" className="hidden" multiple accept="image/*" onChange={handleImageUpload} />
-        </label>
-        
-        {tempImages.length > 0 && (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {tempImages.map((imgUrl, idx) => (
-              <div key={idx} className="relative group rounded border border-gray-200 dark:border-gray-600 overflow-hidden aspect-video bg-gray-100 dark:bg-gray-700">
-                <img src={imgUrl} alt={`Preview ${idx + 1}`} className="w-full h-full object-contain" />
-                <button
-                  onClick={() => removeTempImage(idx)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  title="Remove Image"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-        </div>
       {/* Right Side: Live Preview */}
       <div className="w-full lg:w-2/3">
         <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
@@ -386,7 +435,7 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
                 college,
                 selectedModuleWithDates,
                 studentAttendance,
-                tempImages
+                tempImages,
               )}
               studentsPerPage={Math.min(studentsMap.size || 1, 24)}
             />

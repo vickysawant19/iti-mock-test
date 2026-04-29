@@ -23,12 +23,12 @@ const PrintLayout = forwardRef(function PrintLayout(
 
   const dims = {
     a4: {
-      portrait: { width: "210mm", height: "297mm", targetWidth: 794 - 100 },
-      landscape: { width: "297mm", height: "210mm", targetWidth: 1122 - 100 },
+      portrait: { width: "210mm", height: "297mm", targetWidth: 794 },
+      landscape: { width: "297mm", height: "210mm", targetWidth: 1122 },
     },
     legal: {
-      portrait: { width: "216mm", height: "356mm", targetWidth: 816 - 100 },
-      landscape: { width: "356mm", height: "216mm", targetWidth: 1344 - 100 },
+      portrait: { width: "216mm", height: "356mm", targetWidth: 816 },
+      landscape: { width: "356mm", height: "216mm", targetWidth: 1344 },
     },
   };
 
@@ -37,8 +37,8 @@ const PrintLayout = forwardRef(function PrintLayout(
     const observer = new ResizeObserver((entries) => {
       const { width } = entries[0].contentRect;
       const targetWidth = dims[pageSize]?.[orientation]?.targetWidth || 1122;
-      // 40px accounts for the padding inside preview-container
-      setScale(Math.min(1, (width - 40) / targetWidth));
+      // 16px accounts for a small safe margin since container padding is removed
+      setScale(Math.min(1, (width - 16) / targetWidth));
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
@@ -98,7 +98,7 @@ const PrintLayout = forwardRef(function PrintLayout(
         @media screen {
           .preview-container {
             background-color: #e5e7eb;
-            padding: 24px 16px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -129,8 +129,9 @@ const PrintLayout = forwardRef(function PrintLayout(
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
+            width: fit-content;
             gap: 20px;
+            margin: 0 auto;
           }
 
           .dark .print-page {
@@ -141,19 +142,20 @@ const PrintLayout = forwardRef(function PrintLayout(
       `}</style>
 
       {/* Preview wrapper (hidden during print via no-print) */}
-      <div ref={containerRef} className="preview-container no-print overflow-hidden">
+      <div ref={containerRef} className="preview-container no-print">
         {scale !== null && (
           <TransformWrapper
             initialScale={1}
             minScale={0.1}
             maxScale={4}
             centerOnInit={true}
-            wheel={{ step: 0.1, smoothStep: 0.005 }}
+            centerZoomedOut={true}
+            wheel={{ wheelDisabled: true }}
             pinch={{ step: 5 }}
             doubleClick={{ mode: "reset" }}
             panning={{ disabled: false, velocityDisabled: false }}
           >
-            <TransformComponent wrapperClass="!w-full !h-full flex justify-center" contentClass="w-full flex justify-center">
+            <TransformComponent wrapperClass="!w-full">
               {/* Scaling wrapper applied ONLY for preview. zoom natively scales document flow */}
               <div style={{ zoom: scale }}>
                 {/* The ref is on the root element that useReactToPrint will capture. Unaffected by outer scaling. */}

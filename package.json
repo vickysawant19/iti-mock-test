@@ -40,6 +40,7 @@
     "dotenv": "^16.4.7",
     "face-api.js": "^0.20.0",
     "framer-motion": "^12.4.7",
+    "html2pdf.js": "^0.14.0",
     "imagekit": "^6.0.0",
     "imagekitio-react": "^4.3.0",
     "lucide-react": "^0.473.0",

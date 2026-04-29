@@ -42,7 +42,7 @@ const paginate = (students = [], perPage = 30) => {
 const ReportHeader = ({ institute, job, isCompact = false }) => {
   if (isCompact) {
     return (
-      <div className="border border-black bg-gray-50 px-3 py-1 mb-1 shrink-0">
+      <div className="border border-black px-3 py-1 mb-1 shrink-0" style={{ backgroundColor: "#f9fafb" }}>
         <p className="text-center font-bold text-lg leading-tight mb-0.5">
           {institute?.name || "Government Industrial Training Institute"}
         </p>
@@ -54,7 +54,7 @@ const ReportHeader = ({ institute, job, isCompact = false }) => {
   }
 
   return (
-    <div className="border border-black bg-gray-50 px-3 py-1.5 mb-1 shrink-0">
+    <div className="border border-black px-3 py-1.5 mb-1 shrink-0" style={{ backgroundColor: "#f9fafb" }}>
       {/* College name — LARGEST */}
       <p className="text-center font-bold text-lg leading-tight mb-0.5">
         {institute?.name || "Government Industrial Training Institute"}
@@ -122,7 +122,7 @@ const EvaluationPointsTable = ({ evaluationPoints = [] }) => {
           <col style={{ width: "44px" }} />
         </colgroup>
         <thead>
-          <tr className="bg-blue-100">
+          <tr style={{ backgroundColor: "#dbeafe" }}>
             <th className="border border-black font-bold px-1 py-0.5 text-center">
               Code
             </th>
@@ -148,7 +148,7 @@ const EvaluationPointsTable = ({ evaluationPoints = [] }) => {
               </td>
             </tr>
           ))}
-          <tr className="bg-blue-100 font-bold">
+          <tr className="font-bold" style={{ backgroundColor: "#dbeafe" }}>
             <td
               colSpan={2}
               className="border border-black px-1 py-0.5 text-right pr-2"
@@ -203,7 +203,7 @@ const StudentEvaluationTable = ({ students = [], evaluationPoints = [] }) => {
         </colgroup>
 
         <thead>
-          <tr className="bg-blue-100">
+          <tr style={{ backgroundColor: "#dbeafe" }}>
             <th className="border border-black font-bold px-1 py-0.5 text-center">
               Sr.
             </th>
@@ -268,7 +268,7 @@ const SignatureSection = ({
     "Principal",
   ],
 }) => (
-  <div className="border border-black bg-gray-50 flex shrink-0 mt-1 h-14">
+  <div className="border border-black flex shrink-0 mt-1 h-14" style={{ backgroundColor: "#f9fafb" }}>
     {signatures.map((sig, idx) => (
       <div
         key={`sig-${idx}`}
@@ -324,7 +324,8 @@ const PageContent = ({
                 {job.images.map((imgUrl, idx) => (
                   <div
                     key={idx}
-                    className="w-full h-full border border-gray-300 bg-gray-50 rounded flex items-center justify-center overflow-hidden relative"
+                    className="w-full h-full border rounded flex items-center justify-center overflow-hidden relative"
+                    style={{ backgroundColor: "#f9fafb", borderColor: "#d1d5db" }}
                   >
                     <img
                       src={imgUrl}
