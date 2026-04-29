@@ -58,14 +58,14 @@ const ViewBatch = () => {
     searchParams.get("batchid") || activeBatchId || ""
   );
 
-  // Sync selectedBatch from search params 
+  // Sync selectedBatch from global activeBatchId or search params
   useEffect(() => {
-    if (searchParams.get("batchid")) {
-      setSelectedBatch(searchParams.get("batchid"));
-    } else if (activeBatchId) {
+    if (activeBatchId) {
       setSelectedBatch(activeBatchId);
+    } else if (searchParams.get("batchid")) {
+      setSelectedBatch(searchParams.get("batchid"));
     }
-  }, [searchParams.get("batchid"), activeBatchId]);
+  }, [activeBatchId, searchParams.get("batchid")]);
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );

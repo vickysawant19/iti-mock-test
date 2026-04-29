@@ -3,10 +3,47 @@ import PrintLayout from "../components/PrintLayout";
 import PrintHeader from "../components/PrintHeader";
 import PrintStudentInfo from "../components/PrintStudentInfo";
 
-/* ─── Shared table cell styles ─── */
-const thClass = "border-2 border-black font-bold px-1.5 py-1 text-center bg-gray-100 align-middle text-sm leading-tight";
-const tdClass = "border border-gray-800 px-1.5 py-1 text-center align-middle text-sm leading-tight";
-const sectionTitleClass = "font-bold text-center uppercase mb-1.5 mt-2.5 text-base tracking-wide text-black";
+/* ─── Design tokens ─── */
+const ACCENT = "#1a3a5c";       // deep navy
+const ACCENT_LIGHT = "#e8f0f7"; // soft blue tint for alternating rows
+const HEADER_BG = "#1a3a5c";
+const HEADER_TEXT = "#ffffff";
+const BORDER_OUTER = "#1a3a5c";
+const BORDER_INNER = "#b0c4d8";
+const SECTION_LINE = "#3b82f6"; // vivid blue rule
+
+/* ─── Table styles ─── */
+const thStyle = {
+  background: HEADER_BG,
+  color: HEADER_TEXT,
+  fontWeight: "700",
+  padding: "5px 6px",
+  textAlign: "center",
+  fontSize: "11px",
+  letterSpacing: "0.03em",
+  border: `1px solid ${BORDER_OUTER}`,
+  verticalAlign: "middle",
+};
+
+const tdStyle = {
+  padding: "4px 6px",
+  textAlign: "center",
+  fontSize: "11px",
+  border: `1px solid ${BORDER_INNER}`,
+  verticalAlign: "middle",
+  color: "#1e293b",
+};
+
+const tdLabelStyle = {
+  ...tdStyle,
+  textAlign: "left",
+  paddingLeft: "8px",
+  fontWeight: "600",
+  color: ACCENT,
+  background: ACCENT_LIGHT,
+  fontSize: "10.5px",
+  letterSpacing: "0.02em",
+};
 
 const calculatePercentage = (attendanceData) => {
   if (!attendanceData || !attendanceData.possibleDays) return "-";
@@ -14,10 +51,66 @@ const calculatePercentage = (attendanceData) => {
   return isNaN(pct) ? "-" : `${Math.round(pct)}%`;
 };
 
+/* ─── Section Header Component ─── */
+const SectionTitle = ({ children }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      margin: "12px 0 6px",
+    }}
+  >
+    <div
+      style={{
+        width: "4px",
+        height: "16px",
+        background: SECTION_LINE,
+        borderRadius: "2px",
+        flexShrink: 0,
+      }}
+    />
+    <span
+      style={{
+        fontWeight: "800",
+        fontSize: "11px",
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: ACCENT,
+      }}
+    >
+      {children}
+    </span>
+    <div
+      style={{
+        flex: 1,
+        height: "1px",
+        background: `linear-gradient(to right, ${SECTION_LINE}55, transparent)`,
+      }}
+    />
+  </div>
+);
+
+/* ─── Shared table wrapper ─── */
+const StyledTable = ({ style, children }) => (
+  <table
+    style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      tableLayout: "fixed",
+      border: `2px solid ${BORDER_OUTER}`,
+      borderRadius: "4px",
+      overflow: "hidden",
+      ...style,
+    }}
+  >
+    {children}
+  </table>
+);
+
 /**
- * TraineeLeaveRecordPrint (HTML version)
- * Replaces old @react-pdf/renderer TranieeLeaveRecordPDF.
- * Now using A4 Portrait as requested.
+ * TraineeLeaveRecordPrint — Modern redesign (HTML/Tailwind-free inline styles)
+ * All data bindings and logic preserved exactly.
  */
 const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
   { data },
@@ -30,173 +123,190 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
       {data?.pages?.map((pageData, pageIndex) => (
         <div
           key={pageIndex}
-          className={`w-full h-full bg-white text-black box-border p-4 ${
-            pageIndex < data.pages.length - 1 ? "page-break" : ""
-          }`}
-          style={{ fontFamily: "'Roboto', Arial, sans-serif" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            background: "#ffffff",
+            color: "#1e293b",
+            boxSizing: "border-box",
+            padding: "20px 24px",
+            fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+            pageBreakAfter:
+              pageIndex < data.pages.length - 1 ? "always" : "auto",
+          }}
         >
-          {/* Thick outer frame */}
-          <div className="h-full border-[3px] border-black flex flex-col pt-4 px-6 pb-4 box-border">
-          <PrintHeader
-            collageName={data.collageName}
-            heading="TRAINEE LEAVE RECORD"
-          />
-
-          <PrintStudentInfo data={data} yearRange={pageData.yearRange} />
-
-          {/* ─── Attendance Details ─── */}
-          <div className={sectionTitleClass}>Attendance Details</div>
-          <table
+          {/* ── Outer frame with accent top border ── */}
+          <div
             style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              tableLayout: "fixed",
-              marginBottom: "10px",
-              border: "1.5px solid #000",
+              height: "100%",
+              border: `2px solid ${BORDER_OUTER}`,
+              borderTop: `5px solid ${ACCENT}`,
+              borderRadius: "4px",
+              display: "flex",
+              flexDirection: "column",
+              padding: "16px 20px 16px",
+              boxSizing: "border-box",
+              background: "#ffffff",
             }}
           >
-            <thead>
-              <tr>
-                <th className={`${thClass} w-[16%]`}>Months</th>
-                {pageData.months.map((month, i) => (
-                  <th key={i} className={`${thClass} w-[7%] text-xs`}>
-                    {month.slice(0, 3)}
+            {/* Header */}
+            <PrintHeader
+              collageName={data.collageName}
+              heading="TRAINEE LEAVE RECORD"
+            />
+
+            {/* Student Info */}
+            <PrintStudentInfo data={data} yearRange={pageData.yearRange} />
+
+            {/* ─── Attendance Details ─── */}
+            <SectionTitle>Attendance Details</SectionTitle>
+            <StyledTable style={{ marginBottom: "4px" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thStyle, width: "16%", textAlign: "left", paddingLeft: "8px" }}>
+                    Months
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Possible Days */}
-              <tr>
-                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
-                  Possible Days
-                </td>
-                {pageData.months.map((month, i) => (
-                  <td key={i} className={tdClass}>
-                    {pageData?.data[month]?.possibleDays || ""}
-                  </td>
-                ))}
-              </tr>
-              {/* Present Days */}
-              <tr>
-                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
-                  Present Days
-                </td>
-                {pageData.months.map((month, i) => (
-                  <td key={i} className={tdClass}>
-                    {pageData?.data[month]?.presentDays || ""}
-                  </td>
-                ))}
-              </tr>
-              {/* Sick Leave */}
-              <tr>
-                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
-                  Sick Leave
-                </td>
-                {pageData.months.map((month, i) => (
-                  <td key={i} className={tdClass}>
-                    {pageData?.data[month]?.sickLeave ?? ""}
-                  </td>
-                ))}
-              </tr>
-              {/* Casual Leave */}
-              <tr>
-                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
-                  Casual Leave
-                </td>
-                {pageData.months.map((month, i) => (
-                  <td key={i} className={tdClass}>
-                    {pageData?.data[month]?.casualLeave ?? ""}
-                  </td>
-                ))}
-              </tr>
-              {/* Percentage */}
-              <tr style={{ backgroundColor: "#f0f4f8" }}>
-                <td className={`${tdClass} font-bold text-left pl-1 text-xs`}>
-                  Percentage %
-                </td>
-                {pageData.months.map((month, i) => (
-                  <td key={i} className={`${tdClass} text-xs`}>
-                    {calculatePercentage(pageData?.data[month])}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-
-          {/* ─── Casual Leave Record ─── */}
-          <div className={sectionTitleClass}>Casual Leave Record</div>
-          <table className="w-full border-collapse mb-2 border-[1.5px] border-black">
-            <thead>
-              <tr>
-                {["Sr.", "Date", "Reason", "CI", "GI",
-                  "Sr.", "Date", "Reason", "CI", "GI"].map(
-                  (h, i) => <th key={i} className={`${thClass} text-xs`}>{h}</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="h-[26px]">
-                  <td className={tdClass}>{12 - i}</td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}>{6 - i}</td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                  <td className={tdClass}></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* ─── Medical Leave Record ─── */}
-          <div className={sectionTitleClass}>Medical Leave Record</div>
-          <table className="w-full border-collapse mb-2 border-[1.5px] border-black">
-            <thead>
-              <tr>
-                {["Date", "From To", "Days", "Reason", "Order",
-                  "Trai.", "Inst.", "G.I."].map((h, i) => (
-                  <th key={i} className={`${thClass} text-xs`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}>
-                  {Array.from({ length: 8 }).map((__, j) => (
-                    <td key={j} className={`${tdClass} h-[26px]`}></td>
+                  {pageData.months.map((month, i) => (
+                    <th key={i} style={{ ...thStyle, width: "7%" }}>
+                      {month.slice(0, 3)}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* ─── Meeting with Parents ─── */}
-          <div className={sectionTitleClass}>Meeting with Parents</div>
-          <table className="w-full border-collapse border-[1.5px] border-black">
-            <thead>
-              <tr>
-                {["Sr.", "Reason", "Report",
-                  "Par.", "Ins.", "GI", "Pri."].map(
-                  (h, i) => <th key={i} className={`${thClass} text-xs`}>{h}</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
-                  <td className={`${tdClass} h-[26px]`}>{i + 1}</td>
-                  {Array.from({ length: 6 }).map((__, j) => (
-                    <td key={j} className={`${tdClass} h-[26px]`}></td>
+              </thead>
+              <tbody>
+                {[
+                  { label: "Possible Days", key: "possibleDays", fmt: (v) => v || "" },
+                  { label: "Present Days",  key: "presentDays",  fmt: (v) => v || "" },
+                  { label: "Sick Leave",    key: "sickLeave",    fmt: (v) => v ?? "" },
+                  { label: "Casual Leave",  key: "casualLeave",  fmt: (v) => v ?? "" },
+                ].map(({ label, key, fmt }, rowIdx) => (
+                  <tr
+                    key={label}
+                    style={{ background: rowIdx % 2 === 0 ? "#f8fafd" : "#ffffff" }}
+                  >
+                    <td style={tdLabelStyle}>{label}</td>
+                    {pageData.months.map((month, i) => (
+                      <td key={i} style={tdStyle}>
+                        {fmt(pageData?.data[month]?.[key])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {/* Percentage row — highlighted */}
+                <tr style={{ background: "#dbeafe" }}>
+                  <td
+                    style={{
+                      ...tdLabelStyle,
+                      background: "#bfdbfe",
+                      color: "#1e40af",
+                    }}
+                  >
+                    Percentage %
+                  </td>
+                  {pageData.months.map((month, i) => (
+                    <td
+                      key={i}
+                      style={{
+                        ...tdStyle,
+                        fontWeight: "700",
+                        fontSize: "10.5px",
+                        color: "#1e40af",
+                      }}
+                    >
+                      {calculatePercentage(pageData?.data[month])}
+                    </td>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </StyledTable>
+
+            {/* ─── Casual Leave Record ─── */}
+            <SectionTitle>Casual Leave Record</SectionTitle>
+            <StyledTable style={{ marginBottom: "4px" }}>
+              <thead>
+                <tr>
+                  {["Sr.", "Date", "Reason", "CI", "GI",
+                    "Sr.", "Date", "Reason", "CI", "GI"].map((h, i) => (
+                    <th key={i} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <tr
+                    key={i}
+                    style={{
+                      height: "26px",
+                      background: i % 2 === 0 ? "#f8fafd" : "#ffffff",
+                    }}
+                  >
+                    <td style={tdStyle}>{12 - i}</td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}>{6 - i}</td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
+                  </tr>
+                ))}
+              </tbody>
+            </StyledTable>
+
+            {/* ─── Medical Leave Record ─── */}
+            <SectionTitle>Medical Leave Record</SectionTitle>
+            <StyledTable style={{ marginBottom: "4px" }}>
+              <thead>
+                <tr>
+                  {["Date", "From To", "Days", "Reason", "Order",
+                    "Trai.", "Inst.", "G.I."].map((h, i) => (
+                    <th key={i} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr
+                    key={i}
+                    style={{ background: i % 2 === 0 ? "#f8fafd" : "#ffffff" }}
+                  >
+                    {Array.from({ length: 8 }).map((__, j) => (
+                      <td key={j} style={{ ...tdStyle, height: "26px" }}></td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </StyledTable>
+
+            {/* ─── Meeting with Parents ─── */}
+            <SectionTitle>Meeting with Parents</SectionTitle>
+            <StyledTable>
+              <thead>
+                <tr>
+                  {["Sr.", "Reason", "Report",
+                    "Par.", "Ins.", "GI", "Pri."].map((h, i) => (
+                    <th key={i} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr
+                    key={i}
+                    style={{ background: i % 2 === 0 ? "#f8fafd" : "#ffffff" }}
+                  >
+                    <td style={{ ...tdStyle, height: "26px", fontWeight: "600", color: ACCENT }}>
+                      {i + 1}
+                    </td>
+                    {Array.from({ length: 6 }).map((__, j) => (
+                      <td key={j} style={{ ...tdStyle, height: "26px" }}></td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </StyledTable>
           </div>
         </div>
       ))}
