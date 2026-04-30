@@ -67,10 +67,11 @@ import StudentAttendancePage from "./private/Attendance/StudentAttendance/Studen
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
 // and force client-side redirect since the cached SW bypassed Vercel's redirect
+console.log(window.location.hostname, "Redirecting from old domain");
 if (window.location.hostname === "itimocktest.vercel.app") {
   const forceRedirect = () => {
     window.location.replace(
-      "https://itimitra.in" + window.location.pathname + window.location.search
+      "https://itimitra.in" + window.location.pathname + window.location.search,
     );
   };
 
@@ -111,11 +112,17 @@ const router = (
         <Route path="about" element={<About />} />
         <Route element={<ProtectedRoute />}>
           <Route path="onboarding" element={<OnboardingWizard />} />
-          <Route path="onboarding/teacher" element={<TeacherOnboardingWizard />} />
+          <Route
+            path="onboarding/teacher"
+            element={<TeacherOnboardingWizard />}
+          />
           <Route path="batch-enroll" element={<BatchEnrollmentStatus />} />
           <Route path="dash" element={<Dash />} />
           <Route path="browse-batches" element={<BrowseBatches />} />
-          <Route path="student-attendance" element={<StudentAttendancePage />} />
+          <Route
+            path="student-attendance"
+            element={<StudentAttendancePage />}
+          />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="profile" element={<Profile />} />
           <Route path="profile/edit" element={<ProfileForm />} />
@@ -142,7 +149,10 @@ const router = (
           </Route>
           {/* Batch-required routes — students blocked if not enrolled */}
           <Route element={<ProtectedStudentBatchRoute />}>
-            <Route path="student-attendance" element={<StudentAttendancePage />} />
+            <Route
+              path="student-attendance"
+              element={<StudentAttendancePage />}
+            />
             <Route path="daily-diary" element={<DailyDiary />} />
             <Route path="assessment">
               <Route path="" element={<Assessment />} />
@@ -150,7 +160,10 @@ const router = (
             <Route path="attendance">
               <Route path="register" element={<AttendanceRegister />} />
               <Route path="marktoday" element={<AttendanceTracker />} />
-              <Route path="college-attendance" element={<CollegeAttendance />} />
+              <Route
+                path="college-attendance"
+                element={<CollegeAttendance />}
+              />
             </Route>
           </Route>
           <Route element={<ProtectedAdminRoutes />}>
@@ -168,6 +181,6 @@ const router = (
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   // <React.StrictMode>
-  <Provider store={store}>{router}</Provider>
+  <Provider store={store}>{router}</Provider>,
   // </React.StrictMode>
 );
