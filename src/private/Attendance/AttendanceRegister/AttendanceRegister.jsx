@@ -11,6 +11,7 @@ import batchStudentService from "@/appwrite/batchStudentService";
 import { Query } from "appwrite";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import userProfileService from "@/appwrite/userProfileService";
 import AttendanceHeader from "./components/AttendanceHeader";
 import AttendanceTable from "./components/AttendanceTable";
@@ -66,6 +67,7 @@ const INITIAL_LOADING = {
 const AttendanceRegister = () => {
   const profile = useSelector(selectProfile);
   const user    = useSelector(selectUser);
+  const activeBatchId = useSelector(selectActiveBatchId);
 
   // ── Refs ────────────────────────────────────────────────────────────────
   // FIX: Don't reset in cleanup — that caused double-fetch in React StrictMode.
@@ -159,11 +161,13 @@ const AttendanceRegister = () => {
       response.documents.forEach((batch) => newMap.set(batch.$id, batch));
       setBatches(newMap);
 
-      // Auto-select the most recent batch (last in list)
+      // Auto-select: prefer the globally active batch, fall back to last in list
       if (response.documents.length > 0) {
-        setSelectedBatch(
-          response.documents[response.documents.length - 1].$id,
-        );
+        const preferredId =
+          activeBatchId && newMap.has(activeBatchId)
+            ? activeBatchId
+            : response.documents[response.documents.length - 1].$id;
+        setSelectedBatch(preferredId);
       }
     } catch (error) {
       console.error("Error fetching batches:", error);
@@ -171,7 +175,7 @@ const AttendanceRegister = () => {
     } finally {
       updateLoading("initial", false);
     }
-  }, [profile?.userId, updateLoading]);
+  }, [profile?.userId, activeBatchId, updateLoading]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Fetch: students + holidays (runs when selectedBatch changes)
