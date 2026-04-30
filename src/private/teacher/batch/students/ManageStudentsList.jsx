@@ -924,7 +924,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
             }
           }}
         >
-          <DialogContent className="max-w-xl w-full max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogContent className="sm:!max-w-4xl w-full max-h-[90vh] overflow-y-auto p-0 gap-0">
             <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <DialogTitle className="text-xl font-bold">
