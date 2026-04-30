@@ -66,13 +66,27 @@ import BrowseBatches from "./private/student/BrowseBatches.jsx";
 import StudentAttendancePage from "./private/Attendance/StudentAttendance/StudentAttendancePage.jsx";
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
+// and force client-side redirect since the cached SW bypassed Vercel's redirect
 if (window.location.hostname === "itimocktest.vercel.app") {
+  const forceRedirect = () => {
+    window.location.replace(
+      "https://itimitra.in" + window.location.pathname + window.location.search
+    );
+  };
+
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (let registration of registrations) {
-        registration.unregister();
-      }
-    });
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => {
+        // Unregister all service workers
+        const unregisterPromises = registrations.map((reg) => reg.unregister());
+        Promise.all(unregisterPromises).finally(() => {
+          forceRedirect();
+        });
+      })
+      .catch(() => forceRedirect());
+  } else {
+    forceRedirect();
   }
 } else {
   const updateSW = registerSW({
