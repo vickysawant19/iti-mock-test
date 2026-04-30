@@ -65,13 +65,24 @@ import ManageColleges from "./private/admin/ManageColleges.jsx";
 import BrowseBatches from "./private/student/BrowseBatches.jsx";
 import StudentAttendancePage from "./private/Attendance/StudentAttendance/StudentAttendancePage.jsx";
 
-const updateSW = registerSW({
-  onNeedRefresh() {
-    if (confirm("New content available. Reload to update?")) {
-      updateSW(true);
-    }
-  },
-});
+// Disable PWA on the old domain to prevent it from hijacking redirects
+if (window.location.hostname === "itimocktest.vercel.app") {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+} else {
+  const updateSW = registerSW({
+    onNeedRefresh() {
+      if (confirm("New content available. Reload to update?")) {
+        updateSW(true);
+      }
+    },
+  });
+}
 
 const router = (
   <Router>
