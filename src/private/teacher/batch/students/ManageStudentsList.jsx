@@ -17,6 +17,8 @@ import {
   Phone,
   Mail,
   Hash,
+  Key,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -34,6 +36,7 @@ import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
 import EditEnrollmentTab from "./EditEnrollmentTab";
 import { Query } from "appwrite";
+import authService from "@/services/auth.service";
 
 // ─── Pre-Approval Modal ───────────────────────────────────────────────────────
 function ApprovalReviewModal({
@@ -84,7 +87,13 @@ function ApprovalReviewModal({
 
   const handleConfirm = () => {
     if (!validate()) return;
-    onConfirmApprove({ enrollmentDate, status, remarks, rollNumber, registerId });
+    onConfirmApprove({
+      enrollmentDate,
+      status,
+      remarks,
+      rollNumber,
+      registerId,
+    });
   };
 
   if (!isOpen) return null;
@@ -98,22 +107,24 @@ function ApprovalReviewModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 flex-shrink-0" />
             <div>
-              <h2 className="font-bold text-lg leading-tight">Review Before Approving</h2>
-              <p className="text-blue-200 text-sm">Verify student profile and set enrollment details</p>
+              <h2 className="font-bold text-lg leading-tight">
+                Review Before Approving
+              </h2>
+              <p className="text-blue-200 text-sm">
+                Verify student profile and set enrollment details
+              </p>
             </div>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-
           {/* Student Identity Card */}
           <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
             <InteractiveAvatar
@@ -127,7 +138,9 @@ function ApprovalReviewModal({
               <div className="font-bold text-base text-gray-900 dark:text-white truncate">
                 {student?.userName || "Unknown Student"}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{student?.email}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {student?.email}
+              </div>
             </div>
           </div>
 
@@ -139,14 +152,27 @@ function ApprovalReviewModal({
             </div>
           ) : profile ? (
             <div className="grid grid-cols-2 gap-3">
-              <ProfileField icon={User} label="Full Name" value={profile.userName} />
+              <ProfileField
+                icon={User}
+                label="Full Name"
+                value={profile.userName}
+              />
               <ProfileField icon={Mail} label="Email" value={profile.email} />
               <ProfileField icon={Phone} label="Phone" value={profile.phone} />
               {profile.DOB && (
-                <ProfileField icon={CalendarDays} label="Date of Birth" value={profile.DOB} />
+                <ProfileField
+                  icon={CalendarDays}
+                  label="Date of Birth"
+                  value={profile.DOB}
+                />
               )}
               {profile.address && (
-                <ProfileField icon={null} label="Address" value={profile.address} className="col-span-2" />
+                <ProfileField
+                  icon={null}
+                  label="Address"
+                  value={profile.address}
+                  className="col-span-2"
+                />
               )}
               {/* Profile completeness badge */}
               <div className="col-span-2">
@@ -163,7 +189,8 @@ function ApprovalReviewModal({
             </div>
           ) : (
             <div className="text-sm text-gray-500 text-center py-4 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-800">
-              Could not fetch profile details. You can still set enrollment info below.
+              Could not fetch profile details. You can still set enrollment info
+              below.
             </div>
           )}
 
@@ -171,21 +198,25 @@ function ApprovalReviewModal({
           <div className="border-t border-gray-200 dark:border-gray-700 pt-5 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-blue-500" />
-              Enrollment Details <span className="text-rose-500 text-xs">(Required)</span>
+              Enrollment Details{" "}
+              <span className="text-rose-500 text-xs">(Required)</span>
             </h3>
 
             {/* Enrollment Date */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                 Enrollment Date <span className="text-rose-500">*</span>
-                <span className="text-gray-400 font-normal ml-1">(defaults to batch start date)</span>
+                <span className="text-gray-400 font-normal ml-1">
+                  (defaults to batch start date)
+                </span>
               </label>
               <input
                 type="date"
                 value={enrollmentDate}
                 onChange={(e) => {
                   setEnrollmentDate(e.target.value);
-                  if (errors.enrollmentDate) setErrors((p) => ({ ...p, enrollmentDate: null }));
+                  if (errors.enrollmentDate)
+                    setErrors((p) => ({ ...p, enrollmentDate: null }));
                 }}
                 className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   errors.enrollmentDate
@@ -194,7 +225,9 @@ function ApprovalReviewModal({
                 }`}
               />
               {errors.enrollmentDate && (
-                <p className="text-rose-500 text-xs mt-1">{errors.enrollmentDate}</p>
+                <p className="text-rose-500 text-xs mt-1">
+                  {errors.enrollmentDate}
+                </p>
               )}
             </div>
 
@@ -228,7 +261,10 @@ function ApprovalReviewModal({
             {/* Remarks (Optional) */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                Remarks <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                Remarks{" "}
+                <span className="text-gray-400 font-normal ml-1">
+                  (Optional)
+                </span>
               </label>
               <textarea
                 value={remarks}
@@ -243,7 +279,10 @@ function ApprovalReviewModal({
               {/* Roll Number */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Roll Number <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                  Roll Number{" "}
+                  <span className="text-gray-400 font-normal ml-1">
+                    (Optional)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -257,7 +296,10 @@ function ApprovalReviewModal({
               {/* Registration ID */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Registration ID <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                  Registration ID{" "}
+                  <span className="text-gray-400 font-normal ml-1">
+                    (Optional)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -286,9 +328,13 @@ function ApprovalReviewModal({
             className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
           >
             {isApproving ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Approving...</>
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Approving...
+              </>
             ) : (
-              <><CheckCircle className="w-4 h-4" /> Approve Student</>
+              <>
+                <CheckCircle className="w-4 h-4" /> Approve Student
+              </>
             )}
           </button>
         </div>
@@ -300,10 +346,14 @@ function ApprovalReviewModal({
 // Small helper component for profile fields
 function ProfileField({ icon: Icon, label, value, className = "" }) {
   return (
-    <div className={`${className} bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 rounded-lg px-3 py-2`}>
+    <div
+      className={`${className} bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 rounded-lg px-3 py-2`}
+    >
       <div className="flex items-center gap-1.5 mb-0.5">
         {Icon && <Icon className="w-3 h-3 text-gray-400" />}
-        <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{label}</span>
+        <span className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">
+          {label}
+        </span>
       </div>
       <div className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
         {value || <span className="text-gray-400 italic text-xs">Not set</span>}
@@ -331,6 +381,11 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
   const [approvalProfile, setApprovalProfile] = useState(null);
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+
+  // ── Reset Password state (inline tab) ──
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [resetPasswordError, setResetPasswordError] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const fetchList = async () => {
     if (!selectedBatch) {
@@ -377,7 +432,9 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
 
       // Create map of active batch students
       const activeMap = {};
-      activeStudents.forEach((s) => { activeMap[s.studentId] = s; });
+      activeStudents.forEach((s) => {
+        activeMap[s.studentId] = s;
+      });
 
       // 5. Map everything correctly
       const list = uniqueIds.map((id) => {
@@ -444,7 +501,13 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
   };
 
   // ── Confirm approval: store enrollment details in batchStudents ──
-  const handleConfirmApprove = async ({ enrollmentDate, status, remarks, rollNumber, registerId }) => {
+  const handleConfirmApprove = async ({
+    enrollmentDate,
+    status,
+    remarks,
+    rollNumber,
+    registerId,
+  }) => {
     if (!approvalModal?.student) return;
     const student = approvalModal.student;
 
@@ -473,6 +536,31 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
       toast.error("Failed to approve student. Please try again.");
     } finally {
       setIsApproving(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (resetPasswordValue.length < 8) {
+      setResetPasswordError("Password must be at least 8 characters long");
+      return;
+    }
+    if (!viewProfileUserId) return;
+    const student = students.find((s) => s.userId === viewProfileUserId);
+    setIsResettingPassword(true);
+    try {
+      await authService.adminResetPassword(
+        viewProfileUserId,
+        resetPasswordValue,
+      );
+      toast.success(`Password updated for ${student?.userName || "student"}`);
+      setResetPasswordValue("");
+      setResetPasswordError("");
+    } catch (err) {
+      console.error("Password reset error:", err);
+      toast.error(err.message || "Failed to reset password.");
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -642,16 +730,24 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                  <td
+                    colSpan="4"
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
                     <div className="flex justify-center">
                       <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
                     </div>
-                    <span className="text-xs mt-2 block">Loading students...</span>
+                    <span className="text-xs mt-2 block">
+                      Loading students...
+                    </span>
                   </td>
                 </tr>
               ) : displayed.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                  <td
+                    colSpan="4"
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
                     <Users className="w-8 h-8 mx-auto text-gray-300 mb-2 dark:text-gray-600" />
                     No students found.
                   </td>
@@ -695,19 +791,27 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                         >
                           {student.status}
                         </span>
-                        
-                        {student.status === "approved" && student.enrollmentStatus && (
-                          <div className="flex flex-col gap-0.5 text-[10px]">
-                            <span className="text-gray-500 font-medium">
-                              Status: <span className="text-gray-800 dark:text-gray-200 capitalize">{student.enrollmentStatus}</span>
-                            </span>
-                            {student.enrollmentDate && (
-                              <span className="text-gray-500">
-                                Enrolled: {format(new Date(student.enrollmentDate), 'MMM d, yyyy')}
+
+                        {student.status === "approved" &&
+                          student.enrollmentStatus && (
+                            <div className="flex flex-col gap-0.5 text-[10px]">
+                              <span className="text-gray-500 font-medium">
+                                Status:{" "}
+                                <span className="text-gray-800 dark:text-gray-200 capitalize">
+                                  {student.enrollmentStatus}
+                                </span>
                               </span>
-                            )}
-                          </div>
-                        )}
+                              {student.enrollmentDate && (
+                                <span className="text-gray-500">
+                                  Enrolled:{" "}
+                                  {format(
+                                    new Date(student.enrollmentDate),
+                                    "MMM d, yyyy",
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                          )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -723,7 +827,9 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                             </button>
                             <button
                               disabled={processingId === student.userId}
-                              onClick={() => handleAction("direct-assign", student)}
+                              onClick={() =>
+                                handleAction("direct-assign", student)
+                              }
                               className="border border-blue-600 text-blue-600 px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
                             >
                               Assign Direct
@@ -758,7 +864,9 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           <>
                             <button
                               disabled={processingId === student.userId}
-                              onClick={() => handleAction("re-request", student)}
+                              onClick={() =>
+                                handleAction("re-request", student)
+                              }
                               className="bg-gray-600 text-white px-2 py-1 text-xs rounded hover:bg-gray-700 disabled:opacity-50"
                             >
                               Re-request
@@ -777,10 +885,15 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           <>
                             <button
                               disabled={processingId === student.userId}
-                              onClick={() => setViewProfileUserId(student.userId)}
+                              onClick={() =>
+                                setViewProfileUserId(student.userId)
+                              }
                               className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-2 flex items-center transition-colors"
                             >
-                              <Eye className="w-4 h-4 cursor-pointer" title="View/Edit Profile" />
+                              <Eye
+                                className="w-4 h-4 cursor-pointer"
+                                title="View/Edit Profile"
+                              />
                             </button>
                             <button
                               disabled={processingId === student.userId}
@@ -811,62 +924,188 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
             }
           }}
         >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full p-0 gap-0">
+          <DialogContent className="max-w-xl w-full max-h-[90vh] overflow-y-auto p-0 gap-0">
             <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <DialogTitle className="text-xl">Student Management</DialogTitle>
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-max shadow-inner">
+                <DialogTitle className="text-xl font-bold">
+                  Student Management
+                </DialogTitle>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-max shadow-inner">
+                    <button
+                      onClick={() => setActiveProfileTab("profile")}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                        activeProfileTab === "profile"
+                          ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-white/60 dark:hover:text-gray-100 dark:hover:bg-gray-700/50"
+                      }`}
+                    >
+                      Profile Details
+                    </button>
+                    <button
+                      onClick={() => setActiveProfileTab("enrollment")}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                        activeProfileTab === "enrollment"
+                          ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-white/60 dark:hover:text-gray-100 dark:hover:bg-gray-700/50"
+                      }`}
+                    >
+                      Enrollment Record
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveProfileTab("reset-password");
+                        setResetPasswordValue("");
+                        setResetPasswordError("");
+                      }}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                        activeProfileTab === "reset-password"
+                          ? "bg-amber-500 text-white shadow-sm"
+                          : "text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20"
+                      }`}
+                    >
+                      <Key className="w-3.5 h-3.5" /> Reset Password
+                    </button>
+                  </div>
+                  {/* Close button */}
                   <button
-                    onClick={() => setActiveProfileTab("profile")}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      activeProfileTab === "profile"
-                        ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                        : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
-                    }`}
+                    onClick={() => {
+                      setViewProfileUserId(null);
+                      setActiveProfileTab("profile");
+                    }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-all duration-200 active:scale-90"
+                    title="Close"
                   >
-                    Profile Details
-                  </button>
-                  <button
-                    onClick={() => setActiveProfileTab("enrollment")}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      activeProfileTab === "enrollment"
-                        ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                        : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
-                    }`}
-                  >
-                    Enrollment Record
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
             </DialogHeader>
-            <div className="p-6">
-              {viewProfileUserId && activeProfileTab === "profile" && (
-                <EmbeddedProfileForm
-                  explicitUserId={viewProfileUserId}
-                  defaultBatchId={selectedBatch}
-                  onSuccess={(updatedProfile) => {
-                    setViewProfileUserId(null);
-                    setStudents((prev) =>
-                      prev.map((s) => {
-                        if (s.userId === updatedProfile.userId) {
-                          return {
-                            ...s,
-                            userName: updatedProfile.userName || "Unknown",
-                            email: updatedProfile.email || "No email",
-                            phone: updatedProfile.phone || "No phone",
-                            profileImage: updatedProfile.profileImage || null,
-                          };
-                        }
-                        return s;
-                      }),
-                    );
-                  }}
-                  onCancel={() => setViewProfileUserId(null)}
-                />
-              )}
-              {viewProfileUserId && activeProfileTab === "enrollment" && (
-                <EditEnrollmentTab batchId={selectedBatch} studentId={viewProfileUserId} />
-              )}
+            {/* Tab panels — always rendered, toggled via CSS for smooth fade-in */}
+            <div className="relative p-6">
+              <div
+                className={`transition-all duration-200 ${
+                  activeProfileTab === "profile"
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-1 absolute inset-0 pointer-events-none"
+                }`}
+              >
+                {viewProfileUserId && (
+                  <EmbeddedProfileForm
+                    explicitUserId={viewProfileUserId}
+                    defaultBatchId={selectedBatch}
+                    onSuccess={(updatedProfile) => {
+                      setViewProfileUserId(null);
+                      setStudents((prev) =>
+                        prev.map((s) => {
+                          if (s.userId === updatedProfile.userId) {
+                            return {
+                              ...s,
+                              userName: updatedProfile.userName || "Unknown",
+                              email: updatedProfile.email || "No email",
+                              phone: updatedProfile.phone || "No phone",
+                              profileImage: updatedProfile.profileImage || null,
+                            };
+                          }
+                          return s;
+                        }),
+                      );
+                    }}
+                    onCancel={() => setViewProfileUserId(null)}
+                  />
+                )}
+              </div>
+
+              <div
+                className={`transition-all duration-200 ${
+                  activeProfileTab === "enrollment"
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-1 absolute inset-0 pointer-events-none"
+                }`}
+              >
+                {viewProfileUserId && (
+                  <EditEnrollmentTab
+                    batchId={selectedBatch}
+                    studentId={viewProfileUserId}
+                  />
+                )}
+              </div>
+
+              <div
+                className={`transition-all duration-200 ${
+                  activeProfileTab === "reset-password"
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-1 absolute inset-0 pointer-events-none"
+                }`}
+              >
+                {viewProfileUserId && (
+                  <div className="max-w-md mx-auto py-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <Key className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          Reset Student Password
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Set a new password for{" "}
+                          <strong>
+                            {
+                              students.find(
+                                (s) => s.userId === viewProfileUserId,
+                              )?.userName
+                            }
+                          </strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6 text-sm text-amber-800 dark:text-amber-300">
+                      ⚠️ The student will need to use this new password to log
+                      in. Make sure to share it securely.
+                    </div>
+                    <form onSubmit={handleResetPassword} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                          New Password <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          value={resetPasswordValue}
+                          onChange={(e) => {
+                            setResetPasswordValue(e.target.value);
+                            setResetPasswordError("");
+                          }}
+                          placeholder="Enter new password (min 8 characters)"
+                          className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                        />
+                        {resetPasswordError && (
+                          <p className="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />{" "}
+                            {resetPasswordError}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isResettingPassword}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-sm disabled:opacity-50 transition-all active:scale-95"
+                      >
+                        {isResettingPassword ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                            Updating...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4" /> Update Password
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>

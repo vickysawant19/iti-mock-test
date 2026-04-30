@@ -92,6 +92,27 @@ export class AuthService {
     }
   }
 
+  async adminResetPassword(userId: string, password?: string) {
+    try {
+      if (!password) throw new Error("A new password is required.");
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        JSON.stringify({
+          action: "updatePassword",
+          userId,
+          password
+        })
+      );
+      const result = JSON.parse(response.responseBody);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to reset student password");
+      }
+      return result;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   private handleError(error: any) {
     if (error instanceof Error) {
       throw new Error(`${error.message.split(".")[0]}`);

@@ -306,6 +306,15 @@ export default async ({ req, res, log, error }) => {
         log(`Account deleted for user ${userId}`);
         break;
       }
+      case 'updatePassword': {
+        // Expecting userId and password
+        const { userId, password } = req.bodyJson;
+        validateUserId(userId);
+        validatePassword(password);
+        response = await users.updatePassword(userId, password);
+        log(`Password updated for user ${userId} by an authorized teacher`);
+        break;
+      }
       case 'updateLabels': {
         // Expecting userId and labels array
         const { userId, labels } = req.bodyJson;
