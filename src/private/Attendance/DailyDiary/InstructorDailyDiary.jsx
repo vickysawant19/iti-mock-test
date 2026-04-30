@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
+import { useReactToPrint } from "react-to-print";
 
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
@@ -18,6 +19,7 @@ import Loader from "@/components/components/Loader";
 import DiaryHeader from "./DiaryHeader";
 import DiaryTable from "./DiaryTable";
 import { parseISO } from "date-fns";
+import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
 
 function InstructorDailyDiary() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -26,9 +28,12 @@ function InstructorDailyDiary() {
   const [holidays, setHolidays] = useState(new Map());
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [collegeName, setCollegeName] = useState("INDUSTRIAL TRAINING INSTITUTE");
+  const [tradeName, setTradeName] = useState("");
 
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
+  const printRef = useRef();
 
   const {
     data: batchData,
@@ -42,6 +47,34 @@ function InstructorDailyDiary() {
       end: endOfMonth(currentMonth),
     });
   }, [currentMonth]);
+
+  // Fetch dynamic names once
+  useEffect(() => {
+    const fetchNames = async () => {
+      const cId = profile?.collegeId || batchData?.collegeId;
+      if (cId) {
+        try {
+          const colRes = await collegeService.getCollege(cId);
+          if (colRes?.collageName) setCollegeName(colRes.collageName.toUpperCase());
+        } catch (e) {
+          console.error("Error fetching college name:", e);
+        }
+      }
+
+      const tId = profile?.tradeId || batchData?.tradeId;
+      if (tId) {
+        try {
+          const tradeRes = await tradeservice.getTrade(tId);
+          if (tradeRes?.tradeName) setTradeName(tradeRes.tradeName.toUpperCase());
+        } catch (e) {
+          console.error("Error fetching trade name:", e);
+        }
+      }
+    };
+    if (profile || batchData) {
+      fetchNames();
+    }
+  }, [profile, batchData]);
 
   const fetchDataForMonth = useCallback(async () => {
     if (!profile?.userId || !activeBatchId) return;
@@ -105,9 +138,6 @@ function InstructorDailyDiary() {
     fetchDataForMonth();
   }, [fetchDataForMonth]);
 
-  // Removed the useEffect that watched batchData.dailyDairy
-  // as we now fetch it in fetchDataForMonth
-
   const handleUpdateEntry = useCallback((dateKey, updatedDoc) => {
     setDiaryData((prev) => ({
       ...prev,
@@ -115,34 +145,14 @@ function InstructorDailyDiary() {
     }));
   }, []);
 
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Daily_Diary_${format(currentMonth, "MMM_yyyy")}`,
+  });
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Fetch dynamic names
-      let collegeName = "INDUSTRIAL TRAINING INSTITUTE";
-      let tradeName = "";
-
-      const cId = profile?.collegeId || batchData?.collegeId;
-      if (cId) {
-        try {
-          const colRes = await collegeService.getCollege(cId);
-          if (colRes?.collageName)
-            collegeName = colRes.collageName.toUpperCase();
-        } catch (e) {
-          console.error("Error fetching college name:", e);
-        }
-      }
-
-      const tId = profile?.tradeId || batchData?.tradeId;
-      if (tId) {
-        try {
-          const tradeRes = await tradeservice.getTrade(tId);
-          if (tradeRes?.tradeName) tradeName = tradeRes.tradeName.toUpperCase();
-        } catch (e) {
-          console.error("Error fetching trade name:", e);
-        }
-      }
-
       // Prepare data for Excel
       const exportData = monthDays.map((day) => {
         const dateKey = format(day, "yyyy-MM-dd");
@@ -278,6 +288,7 @@ function InstructorDailyDiary() {
         selectedMonth={currentMonth}
         onMonthChange={setCurrentMonth}
         onExport={handleExport}
+        onPrint={handlePrint}
         isExporting={isExporting}
         onRefresh={fetchDataForMonth}
         batchStartDate={batchData?.start_date}
@@ -290,8 +301,21 @@ function InstructorDailyDiary() {
         isLoadingData={isLoadingData}
         onUpdateEntry={handleUpdateEntry}
       />
+      <DailyDiaryPrintTemplate
+        ref={printRef}
+        monthDays={monthDays}
+        diaryData={diaryData}
+        holidays={holidays}
+        attendance={attendance}
+        profile={profile}
+        batchData={batchData}
+        currentMonth={currentMonth}
+        collegeName={collegeName}
+        tradeName={tradeName}
+      />
     </div>
   );
 }
 
 export default InstructorDailyDiary;
+

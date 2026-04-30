@@ -8,6 +8,7 @@ export default function DiaryHeader({
   selectedMonth,
   onMonthChange,
   onExport,
+  onPrint,
   isExporting,
   onRefresh, // Pass refresh callback for Add Diary Form
   batchStartDate,
@@ -43,16 +44,28 @@ export default function DiaryHeader({
             />
           </div>
 
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onExport}
-            disabled={isExporting}
-            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-[10px] shadow-sm transition-all active:scale-95 flex-shrink-0"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Exporting..." : "Export to Excel"}
-          </Button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPrint}
+              disabled={isExporting}
+              className="w-full sm:w-auto bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold px-4 rounded-[10px] shadow-sm transition-all active:scale-95 flex-shrink-0"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Print PDF
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onExport}
+              disabled={isExporting}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-[10px] shadow-sm transition-all active:scale-95 flex-shrink-0"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Exporting..." : "Export Excel"}
+            </Button>
+          </div>
         </div>
       </CardHeader>
     </Card>
