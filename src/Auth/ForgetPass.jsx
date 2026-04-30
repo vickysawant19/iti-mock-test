@@ -1,80 +1,126 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
-
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { FaArrowLeft, FaEnvelope } from "react-icons/fa";
+import { ClipLoader } from "react-spinners";
 import authService from "@/services/auth.service";
 
 const ForgetPass = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (cooldown > 0) return;
+    
+    setIsLoading(true);
     setMessage("");
     setError("");
+    
     try {
       await authService.forgotPassword(email);
       setMessage("Password reset email sent! Please check your inbox.");
+      setCooldown(60); // 60 seconds cooldown
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Back Arrow */}
-      <div
-        className="absolute top-20 left-5 text-3xl text-gray-700 dark:text-gray-300 cursor-pointer"
-        onClick={() => navigate(-1)}
-      >
-        <FaArrowLeft />
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 relative">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center">
+          <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+            <FaEnvelope className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          </div>
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+          Forgot your password?
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          No worries, we'll send you reset instructions.
+        </p>
       </div>
 
-      {/* Forgot Password Form */}
-      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-sm shadow-md dark:shadow-lg">
-        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
-          Forgot Password
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email Field */}
-          <div className="flex flex-col">
-            <label
-              htmlFor="email"
-              className="mb-1 font-medium text-gray-600 dark:text-gray-300"
-            >
-              Email:
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="px-4 py-2 border rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-xl sm:px-10 border border-gray-100 dark:border-gray-700">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email address
+              </label>
+              <div className="mt-2">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading || cooldown > 0}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isLoading ? (
+                  <ClipLoader size={20} color="#ffffff" />
+                ) : cooldown > 0 ? (
+                  `Resend email in ${cooldown}s`
+                ) : (
+                  "Reset Password"
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Success Message */}
+          {message && (
+            <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800">
+              <p className="text-sm text-green-800 dark:text-green-300 text-center font-medium">
+                {message}
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-800 dark:text-red-300 text-center font-medium">
+                {error}
+              </p>
+            </div>
+          )}
+          
+          <div className="mt-6 text-center">
+            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors text-sm">
+              Return to Login
+            </Link>
           </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-2 text-white bg-blue-500 dark:bg-blue-600 rounded-sm hover:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-          >
-            Reset Password
-          </button>
-        </form>
-
-        {/* Success Message */}
-        {message && (
-          <p className="mt-4 text-green-500 dark:text-green-400">{message}</p>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <p className="mt-4 text-red-500 dark:text-red-400">{error}</p>
-        )}
+        </div>
       </div>
     </div>
   );
