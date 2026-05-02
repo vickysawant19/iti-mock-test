@@ -20,6 +20,7 @@ import DiaryHeader from "./DiaryHeader";
 import DiaryTable from "./DiaryTable";
 import { parseISO } from "date-fns";
 import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
+import PrintConfigModal, { DEFAULT_PRINT_CONFIG } from "./PrintConfigModal";
 
 function InstructorDailyDiary() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -30,6 +31,8 @@ function InstructorDailyDiary() {
   const [isExporting, setIsExporting] = useState(false);
   const [collegeName, setCollegeName] = useState("INDUSTRIAL TRAINING INSTITUTE");
   const [tradeName, setTradeName] = useState("");
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printConfig, setPrintConfig] = useState({ ...DEFAULT_PRINT_CONFIG });
 
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
@@ -145,10 +148,19 @@ function InstructorDailyDiary() {
     }));
   }, []);
 
-  const handlePrint = useReactToPrint({
+  const triggerPrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Daily_Diary_${format(currentMonth, "MMM_yyyy")}`,
   });
+
+  // Opens the column-selector modal; actual print fires after user confirms
+  const handlePrint = () => setIsPrintModalOpen(true);
+
+  const handleConfiguredPrint = (config) => {
+    setPrintConfig(config);
+    // Allow React to re-render the template with new config before printing
+    setTimeout(() => triggerPrint(), 80);
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -284,6 +296,11 @@ function InstructorDailyDiary() {
 
   return (
     <div className="w-full h-full animate-in fade-in duration-500">
+      <PrintConfigModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        onPrint={handleConfiguredPrint}
+      />
       <DiaryHeader
         selectedMonth={currentMonth}
         onMonthChange={setCurrentMonth}
@@ -312,6 +329,7 @@ function InstructorDailyDiary() {
         currentMonth={currentMonth}
         collegeName={collegeName}
         tradeName={tradeName}
+        printConfig={printConfig}
       />
     </div>
   );
