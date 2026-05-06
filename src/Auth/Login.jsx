@@ -44,7 +44,11 @@ const Login = () => {
     try {
       // Login and get user
       const user = await authService.login(data);
-      dispatch(addUser(user));
+      console.log("Login user response:", user);
+      if (!user) {
+        throw new Error("Unable to retrieve user details. Please try again.");
+      }
+      dispatch(addUser({ data: user }));
 
       // Fetch user profile
       const res = await userProfileService.getUserProfile(user?.$id);

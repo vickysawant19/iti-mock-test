@@ -198,6 +198,9 @@ export class UserProfileService {
 
   async getUserProfile(userId) {
     try {
+      if (!userId) {
+        throw new Error("getUserProfile requires a valid userId");
+      }
       const userProfile = await this.database.listRows({
         databaseId: conf.databaseId,
         tableId: conf.userProfilesCollectionId,

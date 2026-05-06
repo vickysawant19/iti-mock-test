@@ -1,5 +1,5 @@
 const conf = {
-  appwriteUrl: import.meta.env.VITE_APPWRITE_URL || import.meta.env.VITE_APPWRITE_ENDPOINT || "",
+  appwriteUrl: import.meta.env.DEV ? (typeof window !== "undefined" ? window.location.origin + "/v1" : "http://localhost:5173/v1") : (import.meta.env.VITE_APPWRITE_URL || import.meta.env.VITE_APPWRITE_ENDPOINT || ""),
   projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || "",
   databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || "",
   quesCollectionId: import.meta.env.VITE_APPWRITE_QUES_COLLECTION_ID || "",

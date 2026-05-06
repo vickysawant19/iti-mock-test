@@ -16,6 +16,15 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    proxy: {
+      '/v1': {
+        target: 'https://api.itimitra.in',
+        changeOrigin: true,
+        cookieDomainRewrite: 'localhost',
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
