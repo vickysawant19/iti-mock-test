@@ -32,8 +32,13 @@ export class AuthService {
       if (!password) {
         throw new Error("Password is required for email login.");
       }
-      await account.createEmailPasswordSession(email, password);
-      return await this.getCurrentUser();
+      const session = await account.createEmailPasswordSession(email, password);
+      const user = await this.getCurrentUser();
+      if (!user) {
+        // Fallback: If getCurrentUser fails right after login, use the session's userId
+        return { $id: session.userId, email: email };
+      }
+      return user;
     } catch (error) {
       this.handleError(error);
     }
