@@ -62,7 +62,7 @@ class MockTestService extends DatabaseService {
         throw new Error("No paper available for selected ID or Test is ended");
       }
 
-      const { tradeId, tradeName, year, questions } = paper;
+      const { tradeId, tradeName, year, questions, totalMinutes, quesCount, batchId } = paper;
 
       const processedQuestions = questions.map((question: string) => {
         const parsedQuestion = JSON.parse(question);
@@ -101,6 +101,9 @@ class MockTestService extends DatabaseService {
         userName: userName || "Unknown",
         score: null,
         submitted: false,
+        totalMinutes: totalMinutes,
+        quesCount: quesCount || questions.length,
+        batchId: batchId,
       };
 
       const response = await this.createRow<MockTestPaper>(newPaperData);
@@ -266,6 +269,7 @@ class MockTestService extends DatabaseService {
     const response = await this.listRows<MockTestPaper>(
       [Query.equal("paperId", paperId)],
       [
+        "$id",
         "score",
         "answeredCount",
         "$updatedAt",

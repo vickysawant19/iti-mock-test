@@ -339,10 +339,10 @@ const MockTestResults = () => {
 
         const baseResults = (res ?? [])
           .map((item) => ({
-            timeTaken: differenceInMinutes(
+            timeTaken: item.endTime && item.startTime ? differenceInMinutes(
               new Date(item.endTime),
               new Date(item.startTime),
-            ),
+            ) : 0,
             ...item,
           }))
           .filter((item) => !item.isOriginal)
@@ -682,225 +682,232 @@ const MockTestResults = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 w-full overflow-x-hidden">
       {/* ── Header ── */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">
               Mock Test Results
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
               Paper ID: {paperId}
             </p>
           </div>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* ── Stats ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard
-            icon={Users}
-            label="Total Students"
-            value={stats.total}
-            sub={`${stats.submitted} submitted`}
-            iconClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Average Score"
-            value={stats.avgScore}
-            sub={`Top: ${stats.topScore}`}
-            iconClass="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-          />
-          <StatCard
-            icon={Clock}
-            label="Avg Time"
-            value={`${stats.avgTime} min`}
-            sub="Among submitted"
-            iconClass="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
-          />
-          <StatCard
-            icon={Award}
-            label="Completion"
-            value={`${stats.completionPct}%`}
-            sub={`${stats.notSubmitted} pending`}
-            iconClass="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-          />
-        </div>
-
-        {/* ── Search & Filter ── */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by student name…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+        {/* ── Left Section (Sidebar on Desktop) ── */}
+        <div className="w-full lg:w-80 xl:w-96 shrink-0 space-y-6 lg:sticky lg:top-24">
+          {/* ── Stats ── */}
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              icon={Users}
+              label="Total Students"
+              value={stats.total}
+              sub={`${stats.submitted} submitted`}
+              iconClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Average Score"
+              value={stats.avgScore}
+              sub={`Top: ${stats.topScore}`}
+              iconClass="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+            />
+            <StatCard
+              icon={Clock}
+              label="Avg Time"
+              value={`${stats.avgTime} min`}
+              sub="Among submitted"
+              iconClass="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+            />
+            <StatCard
+              icon={Award}
+              label="Completion"
+              value={`${stats.completionPct}%`}
+              sub={`${stats.notSubmitted} pending`}
+              iconClass="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
             />
           </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
-              <Filter className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Students</SelectItem>
-              <SelectItem value="submitted">Submitted Only</SelectItem>
-              <SelectItem value="not-submitted">Not Submitted</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* \u2500\u2500 Teacher's own score \u2014 pinned at top \u2500\u2500 */}
-        {isTeacher &&
-          myResult &&
-          (() => {
-            const tScore = myResult.score ?? 0;
-            const tScorePct =
-              stats.quesCount > 0
-                ? Math.round((tScore / stats.quesCount) * 100)
-                : 0;
-            const tAnswered = myResult.answeredCount ?? tScore;
-            const tProgressPct =
-              stats.quesCount > 0
-                ? Math.round((tAnswered / stats.quesCount) * 100)
-                : 0;
-            const tIsLive = !myResult.submitted && myResult.startTime;
-            const tBarColor = myResult.submitted
-              ? tScorePct >= 70
-                ? "bg-green-500"
-                : tScorePct >= 40
-                  ? "bg-amber-500"
-                  : "bg-red-500"
-              : "bg-blue-400";
-            return (
-              <div className="rounded-2xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30 overflow-hidden">
-                <div className="p-4 space-y-2">
-                  <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5" /> Your Score
-                    {tIsLive && (
-                      <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
-                        ● Live
-                      </span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 shrink-0 ring-2 ring-violet-400 rounded-full">
-                      <InteractiveAvatar
-                        src={myResult.profileImage}
-                        fallbackText={getInitials(myResult.userName) || "T"}
-                        userId={myResult.userId}
-                        editable={false}
-                        className="w-10 h-10"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {formatName(myResult.userName)}
-                      </p>
-                      {myResult.submitted && myResult.endTime ? (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          {format(
-                            new Date(myResult.endTime),
-                            "dd MMM, hh:mm a",
-                          )}{" "}
-                          · {myResult.timeTaken ?? 0} min
-                        </p>
-                      ) : myResult.startTime ? (
-                        <p className="text-xs text-blue-400 dark:text-blue-500">
-                          In progress · {tElapsed ?? "0 min"}
-                          {tRemaining && (
-                            <span className="text-blue-300 dark:text-blue-600 ml-1">
-                              ({tRemaining})
-                            </span>
-                          )}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-amber-500">
-                          Not started yet
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p
-                        className={`text-2xl font-extrabold ${
-                          tScorePct >= 70
-                            ? "text-green-600 dark:text-green-400"
-                            : tScorePct >= 40
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-red-500 dark:text-red-400"
-                        }`}
-                      >
-                        {tScore}
-                        <span className="text-sm font-semibold text-gray-400">
-                          /{stats.quesCount}
+          {/* ── Teacher's own score ── */}
+          {isTeacher &&
+            myResult &&
+            (() => {
+              const tScore = myResult.score ?? 0;
+              const tScorePct =
+                stats.quesCount > 0
+                  ? Math.round((tScore / stats.quesCount) * 100)
+                  : 0;
+              const tAnswered = myResult.answeredCount ?? tScore;
+              const tProgressPct =
+                stats.quesCount > 0
+                  ? Math.round((tAnswered / stats.quesCount) * 100)
+                  : 0;
+              const tIsLive = !myResult.submitted && myResult.startTime;
+              const tBarColor = myResult.submitted
+                ? tScorePct >= 70
+                  ? "bg-green-500"
+                  : tScorePct >= 40
+                    ? "bg-amber-500"
+                    : "bg-red-500"
+                : "bg-blue-400";
+              return (
+                <div className="rounded-2xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30 overflow-hidden shadow-sm">
+                  <div className="p-4 space-y-2">
+                    <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5" /> Your Score
+                      {tIsLive && (
+                        <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
+                          ● Live
                         </span>
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {myResult.submitted
-                          ? `${myResult.timeTaken ?? 0} min`
-                          : tIsLive
-                            ? `${tAnswered}/${stats.quesCount} attempted`
-                            : "—"}
-                      </p>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 shrink-0 ring-2 ring-violet-400 rounded-full">
+                        <InteractiveAvatar
+                          src={myResult.profileImage}
+                          fallbackText={getInitials(myResult.userName) || "T"}
+                          userId={myResult.userId}
+                          editable={false}
+                          className="w-10 h-10"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                          {formatName(myResult.userName)}
+                        </p>
+                        {myResult.submitted && myResult.endTime ? (
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            {format(
+                              new Date(myResult.endTime),
+                              "dd MMM, hh:mm a",
+                            )}{" "}
+                            · {myResult.timeTaken ?? 0} min
+                          </p>
+                        ) : myResult.startTime ? (
+                          <p className="text-xs text-blue-400 dark:text-blue-500">
+                            In progress · {tElapsed ?? "0 min"}
+                            {tRemaining && (
+                              <span className="text-blue-300 dark:text-blue-600 ml-1">
+                                ({tRemaining})
+                              </span>
+                            )}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-amber-500">
+                            Not started yet
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p
+                          className={`text-2xl font-extrabold ${
+                            tScorePct >= 70
+                              ? "text-green-600 dark:text-green-400"
+                              : tScorePct >= 40
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-red-500 dark:text-red-400"
+                          }`}
+                        >
+                          {tScore}
+                          <span className="text-sm font-semibold text-gray-400">
+                            /{stats.quesCount}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {myResult.submitted
+                            ? `${myResult.timeTaken ?? 0} min`
+                            : tIsLive
+                              ? `${tAnswered}/${stats.quesCount} attempted`
+                              : "—"}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                  {/* Progress bar — width = attempted/total, colour = score/total */}
+                  <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
+                    <div
+                      className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
+                      style={{ width: `${tProgressPct}%` }}
+                    />
+                  </div>
                 </div>
-                {/* Progress bar — width = attempted/total, colour = score/total */}
-                <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
-                  <div
-                    className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
-                    style={{ width: `${tProgressPct}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
+        </div>
 
-        {/* ── Results list ── */}
-        {filteredData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-              No results found
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1">
-              Showing {filteredData.length} of {data.length} student
-              {data.length !== 1 ? "s" : ""}
-            </p>
-            {filteredData.map((result, index) => (
-              <StudentRow
-                key={result.$id}
-                result={result}
-                index={index}
-                isMe={profile?.userId === result.userId}
-                quesCount={stats.quesCount}
+        {/* ── Right Section (Main Content) ── */}
+        <div className="flex-1 w-full min-w-0 space-y-6">
+          {/* ── Search & Filter ── */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by student name…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-4 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-            ))}
+            </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+                <Filter className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="submitted">Submitted Only</SelectItem>
+                <SelectItem value="not-submitted">Not Submitted</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {/* ── Results list ── */}
+          {filteredData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                No results found
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1 pb-1">
+                Showing {filteredData.length} of {data.length} student
+                {data.length !== 1 ? "s" : ""}
+              </p>
+              {filteredData.map((result, index) => (
+                <StudentRow
+                  key={result.$id}
+                  result={result}
+                  index={index}
+                  isMe={profile?.userId === result.userId}
+                  quesCount={stats.quesCount}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

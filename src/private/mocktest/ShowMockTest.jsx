@@ -238,7 +238,10 @@ const ShowMockTest = () => {
           <Chip icon={User}      label="Student"   value={mockTest.userName || "N/A"} />
           <Chip icon={TrendingUp}label="Trade"     value={mockTest.tradeName || "N/A"} />
           <Chip icon={Calendar}  label="Year"      value={mockTest.year || "N/A"} />
-          <Chip icon={Clock}     label="Submitted" value={new Date(mockTest.$createdAt).toLocaleString()} />
+          <Chip icon={Clock}     label="Submitted" value={mockTest.endTime ? new Date(mockTest.endTime).toLocaleString() : "Not Submitted"} />
+          {mockTest.startTime && mockTest.endTime && (
+            <Chip icon={Clock} label="Time Taken" value={`${Math.ceil((new Date(mockTest.endTime) - new Date(mockTest.startTime)) / 60000)} min`} />
+          )}
           <Chip icon={FileText}  label="Paper ID"  value={mockTest.paperId} />
         </div>
 
