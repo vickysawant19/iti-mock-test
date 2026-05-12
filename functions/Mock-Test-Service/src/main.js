@@ -32,7 +32,11 @@ export default async ({ req, res, log, error }) => {
     selectedModules,
     totalMinutes,
     tags,
-    questions
+    questions,
+    databaseId,
+    quesCollectionId,
+    questionPapersCollectionId,
+    newModulesDataCollectionId
   } = req.bodyJson;
   
 
@@ -59,7 +63,11 @@ export default async ({ req, res, log, error }) => {
         selectedModules,
         subjectId,
         totalMinutes,
-        tags
+        tags,
+        databaseId,
+        quesCollectionId,
+        questionPapersCollectionId,
+        newModulesDataCollectionId
       
       });
       break;
@@ -71,6 +79,8 @@ export default async ({ req, res, log, error }) => {
         userName,
         error,
         database,  
+        databaseId,
+        questionPapersCollectionId
       });
       break;
 
@@ -79,7 +89,9 @@ export default async ({ req, res, log, error }) => {
           questions,
           error,
           database,
-          ID
+          ID,
+          databaseId,
+          quesCollectionId
         });
         break;
     

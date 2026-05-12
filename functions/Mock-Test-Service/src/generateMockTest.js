@@ -12,8 +12,17 @@ const generateMockTest = async ({
   database,
   selectedModules,
   totalMinutes,
-  tags
+  tags,
+  databaseId: passedDatabaseId,
+  quesCollectionId: passedQuesCollectionId,
+  questionPapersCollectionId: passedQuestionPapersCollectionId,
+  newModulesDataCollectionId: passedNewModulesDataCollectionId
 }) => {
+  const databaseId = passedDatabaseId || process.env.APPWRITE_DATABASE_ID;
+  const quesCollectionId = passedQuesCollectionId || process.env.APPWRITE_QUES_COLLECTION_ID;
+  const questionPapersCollectionId = passedQuestionPapersCollectionId || process.env.QUESTIONPAPER_COLLECTION_ID;
+  const newModulesDataCollectionId = passedNewModulesDataCollectionId || "newmodulesdata";
+
   const fetchQuestions = async (tradeId, year) => {
     let documents = [];
 
@@ -26,8 +35,8 @@ const generateMockTest = async ({
     // If specific modules are selected, we need to filter by their logical moduleId strings
     if (selectedModules && selectedModules.length > 0) {
       const moduleDocs = await database.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        "newmodulesdata",
+        databaseId,
+        newModulesDataCollectionId,
         [
           Query.equal("$id", selectedModules),
           Query.select(["moduleId"])
@@ -49,8 +58,8 @@ const generateMockTest = async ({
 
     while (hasMore) {
       const response = await database.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        process.env.APPWRITE_QUES_COLLECTION_ID,
+        databaseId,
+        quesCollectionId,
         [...queries, Query.limit(batchLimit), Query.offset(offset), Query.select(["$id"])]
       );
 
@@ -110,8 +119,8 @@ const generateMockTest = async ({
     const randomQuestionIds = getRandomQuestions(questions, quesCount);
 
     const selectedQuestions = await database.listDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.APPWRITE_QUES_COLLECTION_ID,
+      databaseId,
+      quesCollectionId,
       [Query.limit(quesCount),
        Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
        Query.select(["$id","question","options" ,"userId","userName","correctAnswer","moduleId"])]
@@ -153,8 +162,8 @@ const generateMockTest = async ({
     };
 
     const response = await database.createDocument(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.QUESTIONPAPER_COLLECTION_ID,
+      databaseId,
+      questionPapersCollectionId,
       "unique()",
       questionPaper
     );

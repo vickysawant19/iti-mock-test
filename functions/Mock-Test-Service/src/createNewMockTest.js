@@ -6,11 +6,15 @@ const createNewMockTest = async ({
   userName = null,
   error,
   database,
+  databaseId: passedDatabaseId,
+  questionPapersCollectionId: passedQuestionPapersCollectionId,
 }) => {
+  const databaseId = passedDatabaseId || process.env.APPWRITE_DATABASE_ID;
+  const questionPapersCollectionId = passedQuestionPapersCollectionId || process.env.QUESTIONPAPER_COLLECTION_ID;
   try {
     const paperResponse = await database.listDocuments(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.QUESTIONPAPER_COLLECTION_ID,
+      databaseId,
+      questionPapersCollectionId,
       [Query.equal("paperId", paperId),Query.or([Query.equal("isOriginal", true), Query.equal("userId", userId)]) ]
     );
 
@@ -68,8 +72,8 @@ const createNewMockTest = async ({
 
     // Create a new document in the new collection
     const response = await database.createDocument(
-      process.env.APPWRITE_DATABASE_ID,
-      process.env.QUESTIONPAPER_COLLECTION_ID,
+      databaseId,
+      questionPapersCollectionId,
       "unique()",
       newPaperData
     );

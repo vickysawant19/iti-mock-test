@@ -2,11 +2,13 @@ const bulkaddQuestions = async ({
   questions,
   error,
   database,
-  ID
+  ID,
+  databaseId: passedDatabaseId,
+  quesCollectionId: passedQuesCollectionId
 }) => {
   try {
-    const databaseId = process.env.APPWRITE_DATABASE_ID || "itimocktest";
-    const collectionId = process.env.APPWRITE_QUES_COLLECTION_ID || "667932c5000ff8e2d769";
+    const databaseId = passedDatabaseId || process.env.APPWRITE_DATABASE_ID || "itimocktest";
+    const collectionId = passedQuesCollectionId || process.env.APPWRITE_QUES_COLLECTION_ID || "667932c5000ff8e2d769";
 
     const results = [];
     for (const q of questions) {

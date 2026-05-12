@@ -153,10 +153,9 @@ const CreateMockTest = () => {
 
   const isAdmin = profile?.role?.includes("admin") || false;
 
-  const { data: tradesResponse } = useListTradesQuery(
-    undefined,
-    { skip: !profile }
-  );
+  const { data: tradesResponse } = useListTradesQuery(undefined, {
+    skip: !profile,
+  });
   const tradesList = tradesResponse?.documents || [];
 
   const navigate = useNavigate();
@@ -180,18 +179,18 @@ const CreateMockTest = () => {
       const response = await moduleServices.getNewModulesData(
         tradeId,
         subjectId,
-        year
+        year,
       );
 
       setModules(
         response.sort(
-          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0]
-        )
+          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0],
+        ),
       );
       // Set selectedModules to all module IDs by default
       setValue(
         "selectedModules",
-        response.map((module) => module.$id)
+        response.map((module) => module.$id),
       );
     } catch (error) {
       console.log(error);
@@ -225,10 +224,7 @@ const CreateMockTest = () => {
 
   const handleSelectAllModules = (checked) => {
     if (checked) {
-      setValue(
-        "selectedModules",
-        modules?.map((module) => module.$id) || []
-      );
+      setValue("selectedModules", modules?.map((module) => module.$id) || []);
     } else {
       setValue("selectedModules", []);
     }
@@ -241,11 +237,15 @@ const CreateMockTest = () => {
     data.tradeName = selectedTrade.tradeName;
     data.action = "generateMockTest";
     data.tags = selectedTags;
+    data.databaseId = conf.databaseId;
+    data.quesCollectionId = conf.quesCollectionId;
+    data.questionPapersCollectionId = conf.questionPapersCollectionId;
+    data.newModulesDataCollectionId = conf.newModulesDataCollectionId;
     try {
       const functions = new Functions(appwriteService.getClient());
       const res = await functions.createExecution(
         conf.mockTestFunctionId,
-        JSON.stringify(data)
+        JSON.stringify(data),
       );
       const { responseBody } = res;
       if (!responseBody) {
@@ -489,15 +489,13 @@ const CreateMockTest = () => {
                               {modules.map((module) => (
                                 <Checkbox
                                   key={module.$id}
-                                  checked={field.value.includes(
-                                    module.$id
-                                  )}
+                                  checked={field.value.includes(module.$id)}
                                   onChange={() => {
                                     const newValue = field.value.includes(
-                                      module.$id
+                                      module.$id,
                                     )
                                       ? field.value.filter(
-                                          (id) => id !== module.$id
+                                          (id) => id !== module.$id,
                                         )
                                       : [...field.value, module.$id];
                                     field.onChange(newValue);
