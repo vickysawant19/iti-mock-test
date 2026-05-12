@@ -23,6 +23,8 @@ const StartMockTest = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const saveDebounceRef = useRef(null);
+  const pendingQuestionsRef = useRef(null);
   const [remainingSeconds, setRemainingSeconds] = useState(null);
 
   const [timeWarning, setTimeWarning] = useState(false);
@@ -37,8 +39,44 @@ const StartMockTest = () => {
 
   const navigate = useNavigate();
 
+  // ── Debounced cloud auto-save ────────────────────────────────────────────────
+  // 800 ms in dev (fast realtime feedback), 5 s in production (API quota friendly)
+  const SAVE_DEBOUNCE_MS = import.meta.env.DEV ? 800 : 5000;
+
+  const triggerSave = (questions) => {
+    pendingQuestionsRef.current = questions;
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(async () => {
+      if (!pendingQuestionsRef.current) return;
+      try {
+        await mockTestService.saveProgress(paperId, pendingQuestionsRef.current);
+        pendingQuestionsRef.current = null;
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+      }
+    }, SAVE_DEBOUNCE_MS);
+  };
+
+  const flushSave = async () => {
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+      saveDebounceRef.current = null;
+    }
+    if (pendingQuestionsRef.current) {
+      try {
+        await mockTestService.saveProgress(paperId, pendingQuestionsRef.current);
+        pendingQuestionsRef.current = null;
+      } catch (err) {
+        console.error("Flush save failed:", err);
+      }
+    }
+  };
+
   const handleSubmitExam = async () => {
     setIsSubmitLoading(true);
+    // Flush any pending auto-save before submit so updateAllResponses
+    // sees the latest responses in the cloud paper.
+    await flushSave();
     try {
       const responseArray = mockTest.questions.map((question) => ({
         questionId: question.$id,
@@ -50,24 +88,18 @@ const StartMockTest = () => {
         endTime: new Date(),
       });
       toast.success("Exam submitted successfully!");
-      localStorage.removeItem(paperId);
       setSubmitted(true);
       if (decodedRedirect) {
         navigate(decodedRedirect);
         return;
       }
       navigate(`/all-mock-tests`);
-      // navigate(`/show-mock-test/${paperId}`);
     } catch (error) {
       toast.error("Error submitting exam!");
       console.error("Error submitting exam:", error);
     } finally {
       setIsSubmitLoading(false);
     }
-  };
-
-  const saveMockTestToLocalStorage = (test) => {
-    localStorage.setItem(paperId, JSON.stringify(test));
   };
 
   useEffect(() => {
@@ -77,21 +109,6 @@ const StartMockTest = () => {
         return;
       }
       try {
-        const existingTest = JSON.parse(localStorage.getItem(paperId));
-        if (existingTest && existingTest.startTime) {
-          const startTime = new Date(existingTest.startTime);
-          const totalSeconds = (existingTest.totalMinutes || 60) * 60;
-          setRemainingSeconds(
-            Math.max(
-              0,
-              totalSeconds - differenceInSeconds(new Date(), startTime)
-            )
-          );
-          setIsGreetShown(true);
-          setMockTest(existingTest);
-          return;
-        }
-
         const userTestResponse = await mockTestService.listQuestions([
           Query.equal("$id", paperId),
           Query.limit(1),
@@ -149,7 +166,6 @@ const StartMockTest = () => {
           );
           setIsGreetShown(true);
         }
-        saveMockTestToLocalStorage(userTest);
         setMockTest(userTest);
       } catch (error) {
         console.error("Error fetching mock test:", error);
@@ -181,35 +197,49 @@ const StartMockTest = () => {
     };
   }, []);
 
+  // 1. Timer ticking effect based on absolute system time (fixes background tab pausing)
   useEffect(() => {
-    if (remainingSeconds === null || submitted) return;
+    if (!mockTest?.startTime || submitted) return;
+
+    const startMs = new Date(mockTest.startTime).getTime();
+    const totalSecs = (mockTest.totalMinutes || 60) * 60;
 
     timerRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 0) {
-          clearInterval(timerRef.current);
-          handleSubmitExam();
-          return 0;
-        }
-        if (prev === 300) setTimeWarning(true); // Show warning at 5 minutes
-        return prev - 1;
-      });
+      const elapsedSecs = Math.floor((Date.now() - startMs) / 1000);
+      const remaining = Math.max(0, totalSecs - elapsedSecs);
+      setRemainingSeconds(remaining);
+      
+      if (remaining <= 0) {
+        clearInterval(timerRef.current);
+      }
     }, 1000);
 
     return () => clearInterval(timerRef.current);
+  }, [mockTest?.startTime, mockTest?.totalMinutes, submitted]);
+
+  // 2. Watcher for timer thresholds
+  useEffect(() => {
+    if (remainingSeconds === null || submitted) return;
+
+    if (remainingSeconds <= 300 && remainingSeconds > 0) {
+      setTimeWarning(true);
+    }
+
+    if (remainingSeconds <= 0) {
+      handleSubmitExam();
+    }
   }, [remainingSeconds, submitted]);
 
   const handleStartExam = async () => {
     try {
       const startTime = new Date();
-      const res = await mockTestService.updateTime(mockTest.$id, {
-        startTime,
-      });
-      setRemainingSeconds((mockTest.totalMinutes || 60) * 60); // Convert minutes to seconds
-      setMockTest({
-        ...res,
-        questions: res.questions.map((item) => JSON.parse(item)),
-      });
+      // Only persist the startTime — do NOT spread the cloud response back into
+      // state, because saveProgress() already replaced cloud questions with
+      // lightweight { $id, response } pairs. The in-memory questions (merged
+      // from the original paper) are fully populated and must be kept.
+      await mockTestService.updateTime(mockTest.$id, { startTime });
+      setRemainingSeconds((mockTest.totalMinutes || 60) * 60);
+      setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
       setIsGreetShown(true);
     } catch (error) {
       toast.error("Error starting exam!");
@@ -232,19 +262,22 @@ const StartMockTest = () => {
 
   const handleOptionChange = (questionId, selectedAnswer) => {
     setMockTest((prevMockTest) => {
+      const current = prevMockTest.questions.find((q) => q.$id === questionId);
+      // Skip cloud write if the answer hasn't changed
+      if (current?.response === selectedAnswer) return prevMockTest;
+
       const updatedQuestions = prevMockTest.questions.map((ques) => {
         if (ques.$id === questionId) {
           return { ...ques, response: selectedAnswer };
         }
         return ques;
       });
-      saveMockTestToLocalStorage({
-        ...prevMockTest,
-        questions: updatedQuestions,
-      });
+      // Debounced cloud auto-save — only triggered on actual answer change
+      triggerSave(updatedQuestions);
       return { ...prevMockTest, questions: updatedQuestions };
     });
   };
+
 
   const handleNavigation = (step) => {
     setCurrentQuestionIndex((prev) => {
@@ -344,7 +377,7 @@ const StartMockTest = () => {
               </div>
 
               <div className="space-y-3">
-                {mockTest.questions[currentQuestionIndex].options.map(
+                {(mockTest.questions[currentQuestionIndex].options ?? []).map(
                   (option, index) => {
                     const isSelected =
                       mockTest.questions[currentQuestionIndex].response ===

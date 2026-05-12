@@ -22,6 +22,8 @@ export default defineConfig({
         target: 'https://api.itimitra.in',
         changeOrigin: true,
         cookieDomainRewrite: 'localhost',
+        ws: true,           // ← proxy WebSocket upgrades (Appwrite Realtime)
+        secure: false,      // allow self-signed certs if any
       }
     }
   },

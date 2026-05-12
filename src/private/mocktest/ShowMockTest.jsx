@@ -60,7 +60,6 @@ const ShowMockTest = () => {
   useEffect(() => {
     if (!paperId) return;
     const init = async () => {
-      localStorage.removeItem(paperId);
       setIsLoading(true);
       try {
         const userPaperResponse = await mockTestService.listQuestions([

@@ -197,6 +197,31 @@ class MockTestService extends DatabaseService {
     return result;
   }
 
+  /**
+   * Saves in-progress answers to the cloud without submitting.
+   * Receives the full in-memory questions array (with correctAnswer available),
+   * calculates the live score using the same logic as updateAllResponses,
+   * and writes lightweight { $id, response } pairs to avoid large payloads.
+   */
+  async saveProgress(paperId: string, questions: any[]) {
+    let score = 0;
+    let answeredCount = 0;
+
+    const serialized = questions.map((q) => {
+      const response = q.response ?? null;
+      if (response !== null) answeredCount += 1;
+      if (response && response === q.correctAnswer) score += 1;
+      const { result, ...questionData } = q;
+      return JSON.stringify({ ...questionData, response });
+    });
+
+    return await this.updateRow<MockTestPaper>(paperId, {
+      questions: serialized,
+      score,
+      answeredCount,
+    });
+  }
+
   async updateTime(paperId: string, timeData: any) {
     try {
       return await this.updateRow<MockTestPaper>(paperId, timeData);
@@ -242,6 +267,7 @@ class MockTestService extends DatabaseService {
       [Query.equal("paperId", paperId)],
       [
         "score",
+        "answeredCount",
         "$updatedAt",
         "userName",
         "quesCount",

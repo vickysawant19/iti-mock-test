@@ -1,6 +1,6 @@
 {
     "projectId": "itimocktest",
-    "projectName": "Mock-Test",
+    "projectName": "iti mitra",
     "endpoint": "https://api.itimitra.in/v1",
     "settings": {
         "services": {
@@ -17,11 +17,7 @@
             "graphql": true,
             "messaging": true
         },
-        "protocols": {
-            "rest": true,
-            "graphql": true,
-            "websocket": true
-        },
+        "protocols": {},
         "auth": {
             "methods": {
                 "jwt": true,
@@ -145,7 +141,7 @@
     "tablesDB": [
         {
             "$id": "itimocktest",
-            "name": "iti mitra",
+            "name": "iti mock test",
             "enabled": true
         }
     ],
@@ -259,7 +255,19 @@
                     "encrypt": false
                 }
             ],
-            "indexes": []
+            "indexes": [
+                {
+                    "key": "fulltext_name",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "subjectName"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ]
         },
         {
             "$id": "66964e180017101cd8aa",
@@ -983,6 +991,33 @@
                     "size": 500,
                     "default": null,
                     "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "subjectId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "year",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": [
@@ -1001,6 +1036,33 @@
                     "status": "available",
                     "columns": [
                         "moduleId"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "idx_tradeId",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "tradeId"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "idx_subjectId",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "subjectId"
+                    ],
+                    "orders": []
+                },
+                {
+                    "key": "idx_year",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "year"
                     ],
                     "orders": []
                 }
@@ -1143,6 +1205,15 @@
                 },
                 {
                     "key": "totalMinutes",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "answeredCount",
                     "type": "integer",
                     "required": false,
                     "array": false,

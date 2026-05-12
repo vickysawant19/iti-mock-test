@@ -20,10 +20,13 @@ import mockTestService from "@/services/mocktest.service";
 import userProfileService from "@/appwrite/userProfileService";
 import profileImageService from "@/appwrite/profileImageService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { Query } from "appwrite";
+import { Query, Channel } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUser } from "@/store/userSlice";
 import Loader from "@/components/components/Loader";
+import { realtime } from "@/services/appwriteClient";
+import conf from "@/config/config";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
@@ -53,6 +56,40 @@ const medalColors = {
   3: { bg: "bg-amber-600",  text: "text-amber-100",  ring: "ring-amber-600",  label: "🥉" },
 };
 
+// ─── Live time display hook ────────────────────────────────────────────────────
+// Calculates both elapsed and remaining time based on startTime and totalMinutes.
+// Updates every 30s to keep the UI fresh without performance hits.
+const useTimeDisplay = (startTime, totalMinutes) => {
+  const calc = () => {
+    if (!startTime) return { elapsedStr: null, remainingStr: null };
+    const elapsedSecs = Math.max(0, Math.floor((Date.now() - new Date(startTime).getTime()) / 1000));
+    
+    const eh = Math.floor(elapsedSecs / 3600);
+    const em = Math.floor((elapsedSecs % 3600) / 60);
+    const elapsedStr = eh > 0 ? `${eh} h ${em} min` : `${em} min`;
+
+    if (totalMinutes) {
+      const totalSecs = totalMinutes * 60;
+      const remSecs = Math.max(0, totalSecs - elapsedSecs);
+      const rh = Math.floor(remSecs / 3600);
+      const rm = Math.floor((remSecs % 3600) / 60);
+      const remainingStr = rh > 0 ? `${rh}h ${rm}m left` : `${rm}m left`;
+      return { elapsedStr, remainingStr };
+    }
+    return { elapsedStr, remainingStr: null };
+  };
+
+  const [time, setTime] = React.useState(calc);
+  React.useEffect(() => {
+    if (!startTime) return;
+    setTime(calc());
+    const id = setInterval(() => setTime(calc()), 30_000);
+    return () => clearInterval(id);
+  }, [startTime, totalMinutes]);
+
+  return time;
+};
+
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, sub, iconClass }) => (
   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex items-center gap-4">
@@ -71,95 +108,135 @@ const StatCard = ({ icon: Icon, label, value, sub, iconClass }) => (
 const StudentRow = ({ result, index, isMe, quesCount }) => {
   const rank = index + 1;
   const medal = medalColors[rank];
-  const pct = quesCount > 0 ? Math.round((result.score / quesCount) * 100) : 0;
+  const score = result.score ?? 0;
+  const isLive = !result.submitted && result.startTime;
+  const { elapsedStr, remainingStr } = useTimeDisplay(isLive ? result.startTime : null, result.totalMinutes);
+  // scorePct drives colour; progressPct drives bar width
+  const scorePct = quesCount > 0 ? Math.round((score / quesCount) * 100) : 0;
+  const answered = result.answeredCount ?? score; // fallback to score if field not yet stored
+  const progressPct = quesCount > 0 ? Math.round((answered / quesCount) * 100) : 0;
+
+
+  const barColor = result.submitted
+    ? scorePct >= 70 ? "bg-green-500" : scorePct >= 40 ? "bg-amber-500" : "bg-red-500"
+    : "bg-blue-400";
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all
+      className={`rounded-xl border transition-all overflow-hidden
         ${isMe
           ? "border-blue-300 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-700"
           : "border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600"
         }`}
     >
-      {/* Rank */}
-      <div className="w-8 shrink-0 text-center">
-        {medal ? (
-          <span className="text-xl leading-none">{medal.label}</span>
-        ) : (
-          <span className="text-sm font-bold text-gray-400 dark:text-gray-500">#{rank}</span>
-        )}
-      </div>
-
-      {/* Avatar */}
-      <div className={`w-9 h-9 shrink-0 ring-2 rounded-full ${medal ? medal.ring : "ring-gray-200 dark:ring-gray-600"}`}>
-        <InteractiveAvatar
-          src={result.profileImage}
-          fallbackText={getInitials(result.userName) || "U"}
-          userId={result.userId}
-          editable={false}
-          className="w-9 h-9"
-        />
-      </div>
-
-      {/* Name */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {result.submitted ? (
-            <Link
-              to={`/show-mock-test/${result.$id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1 truncate"
-            >
-              {formatName(result.userName)}
-              <ExternalLink className="w-3 h-3 shrink-0" />
-            </Link>
+      {/* Main row */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Rank */}
+        <div className="w-8 shrink-0 text-center">
+          {medal ? (
+            <span className="text-xl leading-none">{medal.label}</span>
           ) : (
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
-              {formatName(result.userName)}
-            </span>
-          )}
-          {isMe && (
-            <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-              You
-            </span>
+            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">#{rank}</span>
           )}
         </div>
-        {result.submitted && result.endTime ? (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            {format(new Date(result.endTime), "dd MMM, hh:mm a")}
-          </p>
-        ) : (
-          <p className="text-xs text-amber-500 mt-0.5">Not submitted</p>
-        )}
+
+        {/* Avatar */}
+        <div className={`w-9 h-9 shrink-0 ring-2 rounded-full ${medal ? medal.ring : "ring-gray-200 dark:ring-gray-600"}`}>
+          <InteractiveAvatar
+            src={result.profileImage}
+            fallbackText={getInitials(result.userName) || "U"}
+            userId={result.userId}
+            editable={false}
+            className="w-9 h-9"
+          />
+        </div>
+
+        {/* Name + time */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {result.submitted ? (
+              <Link
+                to={`/show-mock-test/${result.$id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1 truncate"
+              >
+                {formatName(result.userName)}
+                <ExternalLink className="w-3 h-3 shrink-0" />
+              </Link>
+            ) : (
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
+                {formatName(result.userName)}
+              </span>
+            )}
+            {isMe && (
+              <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                You
+              </span>
+            )}
+            {isLive && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
+                ● Live
+              </span>
+            )}
+          </div>
+          {result.submitted && result.endTime ? (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {format(new Date(result.endTime), "dd MMM, hh:mm a")}
+            </p>
+          ) : result.startTime ? (
+            <p className="text-xs text-blue-400 dark:text-blue-500 mt-0.5">
+              In progress · {elapsedStr ?? "0 min"} 
+              {remainingStr && <span className="text-blue-300 dark:text-blue-600 ml-1">({remainingStr})</span>}
+            </p>
+          ) : (
+            <p className="text-xs text-amber-500 mt-0.5">Not started</p>
+          )}
+        </div>
+
+        {/* Score */}
+        <div className="shrink-0 text-right">
+          <div className="flex items-baseline gap-0.5">
+            <span className={`text-base font-bold ${
+              scorePct >= 70 ? "text-green-600 dark:text-green-400"
+              : scorePct >= 40 ? "text-amber-600 dark:text-amber-400"
+              : "text-red-500 dark:text-red-400"
+            }`}>
+              {score}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">/{quesCount ?? "—"}</span>
+          </div>
+          <div className="text-xs text-gray-400 dark:text-gray-500">
+            {result.submitted
+              ? `${result.timeTaken ?? 0} min`
+              : isLive
+              ? `${answered}/${quesCount} attempted`
+              : "—"}
+          </div>
+        </div>
+
+        {/* Status pill */}
+        <div className="shrink-0">
+          {result.submitted ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+              <CheckCircle2 className="w-3 h-3" />
+              Done
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              <XCircle className="w-3 h-3" />
+              Pending
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Score */}
-      <div className="shrink-0 text-right">
-        <div className="flex items-baseline gap-0.5">
-          <span className={`text-base font-bold ${pct >= 70 ? "text-green-600 dark:text-green-400" : pct >= 40 ? "text-amber-600 dark:text-amber-400" : "text-red-500 dark:text-red-400"}`}>
-            {result.score ?? 0}
-          </span>
-          <span className="text-xs text-gray-400 dark:text-gray-500">/{quesCount ?? "—"}</span>
-        </div>
-        <div className="text-xs text-gray-400 dark:text-gray-500">
-          {result.submitted ? `${result.timeTaken ?? 0} min` : "—"}
-        </div>
-      </div>
-
-      {/* Status pill */}
-      <div className="shrink-0">
-        {result.submitted ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-            <CheckCircle2 className="w-3 h-3" />
-            Done
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-            <XCircle className="w-3 h-3" />
-            Pending
-          </span>
-        )}
+      {/* Progress bar — width = attempted/total, colour = correct/total */}
+      <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700">
+        <div
+          className={`h-full transition-all duration-700 ease-out ${barColor} ${isLive ? "opacity-80" : ""}`}
+          style={{ width: `${progressPct}%` }}
+        />
       </div>
     </div>
   );
@@ -174,12 +251,27 @@ const MockTestResults = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [teacherResult, setTeacherResult] = useState(null);
   const profile = useSelector(selectProfile);
+  const user = useSelector(selectUser);
+  const isTeacher = user?.labels?.includes("Teacher") || false;
 
   useEffect(() => {
     const getData = async () => {
       try {
         const res = await mockTestService.getUserResults(paperId);
+
+        // Compute teacher's own result from RAW data before any isOriginal filter.
+        // The teacher's own paper may have isOriginal:true (they took the test on
+        // the original document), so we must check the unfiltered list.
+        const teacherOwn = (res ?? []).find((r) => r.userId === profile?.userId);
+        if (teacherOwn) {
+          teacherOwn.timeTaken =
+            teacherOwn.endTime && teacherOwn.startTime
+              ? differenceInMinutes(new Date(teacherOwn.endTime), new Date(teacherOwn.startTime))
+              : 0;
+        }
+
         const baseResults = (res ?? [])
           .map((item) => ({
             timeTaken: differenceInMinutes(new Date(item.endTime), new Date(item.startTime)),
@@ -193,28 +285,35 @@ const MockTestResults = () => {
               new Date(a.endTime) - new Date(b.endTime)
           );
 
-        // Step 1 — fast path: get profileImage stored in the DB profile document
-        const userIds = [...new Set(baseResults.map((r) => r.userId).filter(Boolean))];
-        let profileImageMap = {};
-        if (userIds.length > 0) {
+        // Collect all unique user IDs (students + teacher)
+        const allUserIds = [...new Set([
+          ...baseResults.map((r) => r.userId),
+          teacherOwn?.userId
+        ].filter(Boolean))];
+
+        // Fetch all profile picture URLs from storage in one shot
+        let profileImageMap = new Map();
+        if (allUserIds.length > 0) {
           try {
-            const profiles = await userProfileService.getBatchUserProfile([
-              Query.equal("userId", userIds),
-              Query.select(["userId", "profileImage"]),
-              Query.limit(100),
-            ]);
-            profiles.forEach((p) => {
-              profileImageMap[p.userId] = p.profileImage || null;
-            });
+            profileImageMap = await profileImageService.getBulkProfileUrls(allUserIds);
           } catch (e) {
-            console.warn("DB profile fetch failed:", e);
+            console.warn("Bulk profile image fetch failed:", e);
           }
+        }
+
+        if (teacherOwn) {
+          setTeacherResult({
+            ...teacherOwn,
+            profileImage: profileImageMap.get(teacherOwn.userId) || null,
+          });
+        } else {
+          setTeacherResult(null);
         }
 
         setData(
           baseResults.map((r) => ({
             ...r,
-            profileImage: profileImageMap[r.userId] || null,
+            profileImage: profileImageMap.get(r.userId) || null,
           }))
         );
       } catch (error) {
@@ -224,6 +323,108 @@ const MockTestResults = () => {
       }
     };
     getData();
+
+    // ── Realtime leaderboard — server-side filtered ──────────────────────────────
+    // Channel: only rows in the questionPaperData table
+    // Queries: server filters to this paperId only, and excludes the original template
+    const rtChannel = Channel.tablesdb(conf.databaseId)
+      .table(conf.questionPapersCollectionId)
+      .row();
+
+    let unsubFn = null;
+
+    const setupRealtime = async () => {
+      console.log("[Realtime] Subscribing to channel:", rtChannel, "paperId:", paperId);
+
+      const handleEvent = (response) => {
+        const doc = response.payload;
+        if (!doc) return;
+
+        console.log("[RT] event paperId:", doc.paperId, "| isOriginal:", doc.isOriginal, "| score:", doc.score, "| answeredCount:", doc.answeredCount, "| $id:", doc.$id);
+
+        // Client-side paperId filter (needed when server-side filtering not active)
+        if (doc.paperId !== paperId) {
+          console.log("[RT] ignored — different paperId");
+          return;
+        }
+
+        // Update teacher's own result (includes isOriginal docs)
+        setTeacherResult((prev) => {
+          if (prev && prev.$id === doc.$id) {
+            const timeTaken =
+              doc.endTime && doc.startTime
+                ? differenceInMinutes(new Date(doc.endTime), new Date(doc.startTime))
+                : prev.timeTaken ?? 0;
+            console.log("[RT] teacherResult updated → score:", doc.score, "timeTaken:", timeTaken);
+            return { ...prev, ...doc, timeTaken };
+          }
+          return prev;
+        });
+
+        // Student leaderboard — exclude original paper (client-side only)
+        if (doc.isOriginal) {
+          console.log("[RT] skipped for leaderboard — isOriginal true");
+          return;
+        }
+
+        setData((prev) => {
+          const timeTaken =
+            doc.endTime && doc.startTime
+              ? differenceInMinutes(new Date(doc.endTime), new Date(doc.startTime))
+              : 0;
+          const updated = { ...doc, timeTaken };
+          const idx = prev.findIndex((r) => r.$id === doc.$id);
+          const next =
+            idx === -1
+              ? [...prev, updated]
+              : prev.map((r, i) => (i === idx ? updated : r));
+          return next.sort(
+            (a, b) =>
+              b.score - a.score ||
+              a.timeTaken - b.timeTaken ||
+              new Date(a.endTime) - new Date(b.endTime)
+          );
+        });
+      };
+
+      // realtime.subscribe (async) returns {unsubscribe: fn};
+      // older client.subscribe (sync) returns a plain function.
+      // Normalise to a callable.
+      const toUnsub = (result) => {
+        if (typeof result === "function") return result;
+        if (result && typeof result.unsubscribe === "function") return result.unsubscribe.bind(result);
+        return null;
+      };
+
+      try {
+        // Server-side: filter by paperId ONLY — NOT by isOriginal.
+        // If we also filtered isOriginal:false, the teacher's own paper
+        // (isOriginal:true) would never fire an event.
+        // The isOriginal distinction is handled client-side in handleEvent.
+        const sub = await realtime.subscribe(
+          rtChannel,
+          handleEvent,
+          [Query.equal("paperId", [paperId])]
+        );
+        console.log("[RT] subscribed with server-side paperId filter.", sub);
+        unsubFn = toUnsub(sub);
+      } catch (err) {
+        console.warn("[RT] server-side filter failed, plain subscribe:", err?.message);
+        try {
+          const sub = await realtime.subscribe(rtChannel, handleEvent);
+          unsubFn = toUnsub(sub);
+          console.log("[RT] subscribed (plain, client-side filter).");
+        } catch (err2) {
+          console.error("[RT] both subscribe attempts failed:", err2?.message);
+        }
+      }
+    };
+
+    setupRealtime();
+
+    return () => {
+      if (typeof unsubFn === "function") unsubFn();
+    };
   }, [paperId]);
 
   const filteredData = useMemo(() => {
@@ -246,7 +447,8 @@ const MockTestResults = () => {
         ? (submitted.reduce((s, i) => s + i.timeTaken, 0) / submitted.length).toFixed(1)
         : 0;
     const topScore = submitted.length > 0 ? Math.max(...submitted.map((i) => i.score)) : 0;
-    const quesCount = data[0]?.quesCount ?? 50;
+    // Use first student row, then teacher's result, then 0 — never fall back to a magic number
+    const quesCount = data[0]?.quesCount ?? teacherResult?.quesCount ?? 0;
     return {
       total: data.length,
       submitted: submitted.length,
@@ -258,7 +460,17 @@ const MockTestResults = () => {
       completionPct:
         data.length > 0 ? ((submitted.length / data.length) * 100).toFixed(0) : 0,
     };
-  }, [data]);
+  }, [data, teacherResult]);
+
+
+  // Teacher's own result — derived from raw results (before isOriginal filter)
+  // so it works even when the teacher took the test on the original document.
+  const myResult = isTeacher ? teacherResult : null;
+  // Live elapsed time for the teacher's own in-progress card
+  const { elapsedStr: tElapsed, remainingStr: tRemaining } = useTimeDisplay(
+    myResult && !myResult.submitted ? myResult.startTime : null,
+    myResult?.totalMinutes
+  );
 
   const exportCSV = () => {
     const csvContent =
@@ -387,6 +599,85 @@ const MockTestResults = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* \u2500\u2500 Teacher's own score \u2014 pinned at top \u2500\u2500 */}
+        {isTeacher && myResult && (() => {
+          const tScore = myResult.score ?? 0;
+          const tScorePct = stats.quesCount > 0 ? Math.round((tScore / stats.quesCount) * 100) : 0;
+          const tAnswered = myResult.answeredCount ?? tScore;
+          const tProgressPct = stats.quesCount > 0 ? Math.round((tAnswered / stats.quesCount) * 100) : 0;
+          const tIsLive = !myResult.submitted && myResult.startTime;
+          const tBarColor = myResult.submitted
+            ? tScorePct >= 70 ? "bg-green-500" : tScorePct >= 40 ? "bg-amber-500" : "bg-red-500"
+            : "bg-blue-400";
+          return (
+            <div className="rounded-2xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30 overflow-hidden">
+              <div className="p-4 space-y-2">
+                <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5" /> Your Score
+                  {tIsLive && (
+                    <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
+                      ● Live
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 ring-2 ring-violet-400 rounded-full">
+                    <InteractiveAvatar
+                      src={myResult.profileImage}
+                      fallbackText={getInitials(myResult.userName) || "T"}
+                      userId={myResult.userId}
+                      editable={false}
+                      className="w-10 h-10"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                      {formatName(myResult.userName)}
+                    </p>
+                    {myResult.submitted && myResult.endTime ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {format(new Date(myResult.endTime), "dd MMM, hh:mm a")} · {myResult.timeTaken ?? 0} min
+                      </p>
+                    ) : myResult.startTime ? (
+                      <p className="text-xs text-blue-400 dark:text-blue-500">
+                        In progress · {tElapsed ?? "0 min"}
+                        {tRemaining && <span className="text-blue-300 dark:text-blue-600 ml-1">({tRemaining})</span>}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-amber-500">Not started yet</p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className={`text-2xl font-extrabold ${
+                      tScorePct >= 70 ? "text-green-600 dark:text-green-400"
+                      : tScorePct >= 40 ? "text-amber-600 dark:text-amber-400"
+                      : "text-red-500 dark:text-red-400"
+                    }`}>
+                      {tScore}
+                      <span className="text-sm font-semibold text-gray-400">/{stats.quesCount}</span>
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      {myResult.submitted
+                        ? `${myResult.timeTaken ?? 0} min`
+                        : tIsLive
+                        ? `${tAnswered}/${stats.quesCount} attempted`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Progress bar — width = attempted/total, colour = score/total */}
+              <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
+                <div
+                  className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
+                  style={{ width: `${tProgressPct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })()}
+
 
         {/* ── Results list ── */}
         {filteredData.length === 0 ? (

@@ -201,7 +201,18 @@ const InteractiveAvatar = forwardRef(({
               </Button>
             </div>
           ) : src ? (
-            <img src={src} alt="Profile Large" className="w-full h-full object-cover" />
+            <img 
+              src={(() => {
+                try {
+                  const url = new URL(src);
+                  url.searchParams.delete("width");
+                  url.searchParams.delete("height");
+                  return url.toString();
+                } catch { return src; }
+              })()} 
+              alt="Profile Large" 
+              className="w-full h-full object-cover" 
+            />
           ) : (
             <div className="flex flex-col items-center justify-center text-slate-400">
                <ImageIcon className="w-16 h-16 opacity-30 mb-2" />

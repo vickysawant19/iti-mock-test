@@ -18,6 +18,8 @@ import {
   Lock,
   Unlock,
   GraduationCap,
+  Copy,
+  Check,
 } from "lucide-react";
 import mockTestService from "@/services/mocktest.service";
 
@@ -68,6 +70,25 @@ const ActionBtn = ({ onClick, asLink, to, color, icon: Icon, label, disabled, lo
 // ─── MockTestCard ─────────────────────────────────────────────────────────────
 const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = async () => {
+    try {
+      await navigator.clipboard.writeText(test.paperId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement("textarea");
+      el.value = test.paperId;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
 
   const handleShare = async (paperId) => {
     const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
@@ -144,7 +165,21 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
 
       {/* ── Stats grid ── */}
       <div className="flex-1 px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-        <Stat icon={Hash}         label="Paper ID"  value={test.paperId}                          iconClass="text-indigo-400" />
+        {/* Paper ID with copy button */}
+        <div className="flex items-center gap-2 min-w-0 col-span-2 sm:col-span-1">
+          <Hash className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+          <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Paper ID:</span>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate font-mono">{test.paperId}</span>
+          <button
+            onClick={handleCopyId}
+            title="Copy Paper ID"
+            className="shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {copied
+              ? <Check className="w-3 h-3 text-green-500" />
+              : <Copy className="w-3 h-3 text-gray-400 hover:text-indigo-500" />}
+          </button>
+        </div>
         <Stat icon={FileText}     label="Questions"  value={test.quesCount ?? "50"}               iconClass="text-blue-400"   />
         <Stat icon={Clock}        label="Duration"   value={`${test.totalMinutes ?? "—"} min`}    iconClass="text-violet-400" />
         <Stat icon={Target}       label="Score"      value={test.score ?? "—"}                    iconClass="text-green-400"  />
