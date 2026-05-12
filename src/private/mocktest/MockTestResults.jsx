@@ -14,8 +14,30 @@ import {
   CheckCircle2,
   XCircle,
   Medal,
+  MoreVertical,
+  Trash2,
+  Eye,
 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
+import { toast } from "react-toastify";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import mockTestService from "@/services/mocktest.service";
 import userProfileService from "@/appwrite/userProfileService";
 import profileImageService from "@/appwrite/profileImageService";
@@ -143,7 +165,7 @@ const StatCard = ({ icon: Icon, label, value, sub, iconClass }) => (
 );
 
 // ─── Student Row ──────────────────────────────────────────────────────────────
-const StudentRow = ({ result, index, isMe, quesCount }) => {
+const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onExtendTime, onDelete }) => {
   const rank = index + 1;
   const medal = medalColors[rank];
   const score = result.score ?? 0;
@@ -275,18 +297,39 @@ const StudentRow = ({ result, index, isMe, quesCount }) => {
           </div>
         </div>
 
-        {/* Status pill */}
-        <div className="shrink-0">
+        {/* Status pill & Admin Actions */}
+        <div className="shrink-0 flex items-center gap-2">
           {result.submitted ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <CheckCircle2 className="w-3 h-3" />
-              Done
+              <span className="hidden sm:inline">Done</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               <XCircle className="w-3 h-3" />
-              Pending
+              <span className="hidden sm:inline">Pending</span>
             </span>
+          )}
+          {isTeacher && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none">
+                <MoreVertical className="w-4 h-4 text-gray-500" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Admin Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onPreview(result.$id)} className="cursor-pointer">
+                  <Eye className="w-4 h-4 mr-2 text-gray-500" /> View Paper
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExtendTime(result)} className="cursor-pointer">
+                  <Clock className="w-4 h-4 mr-2 text-blue-500" /> Extend Time
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDelete(result.$id)} className="cursor-pointer text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 focus:text-red-700">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Result
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -311,6 +354,9 @@ const MockTestResults = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [previewId, setPreviewId] = useState(null);
+  const [extendState, setExtendState] = useState(null);
+  const [newMinutes, setNewMinutes] = useState(0);
   const [teacherResult, setTeacherResult] = useState(null);
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
@@ -453,6 +499,16 @@ const MockTestResults = () => {
         // Client-side paperId filter (needed when server-side filtering not active)
         if (doc.paperId !== paperId) {
           console.log("[RT] ignored — different paperId");
+          return;
+        }
+
+        const isDelete = response.events && response.events.some((e) => e.includes(".delete"));
+        if (isDelete) {
+          if (doc.isOriginal) {
+            setTeacherResult((prev) => (prev?.$id === doc.$id ? null : prev));
+          } else {
+            setData((prev) => prev.filter((r) => r.$id !== doc.$id));
+          }
           return;
         }
 
@@ -633,6 +689,28 @@ const MockTestResults = () => {
     myResult?.totalMinutes,
   );
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently delete this result?")) return;
+    try {
+      await mockTestService.deleteRow(id);
+      toast.success("Result deleted successfully");
+      // Note: RT will catch the .delete event and remove it from state.
+    } catch (err) {
+      toast.error(err.message || "Failed to delete result");
+    }
+  };
+
+  const handleExtendTimeSubmit = async () => {
+    if (!extendState) return;
+    try {
+      await mockTestService.updateRow(extendState.id, { totalMinutes: newMinutes });
+      toast.success("Time extended successfully");
+      setExtendState(null);
+    } catch (err) {
+      toast.error(err.message || "Failed to extend time");
+    }
+  };
+
   const exportCSV = () => {
     const csvContent =
       "data:text/csv;charset=utf-8," +
@@ -682,234 +760,281 @@ const MockTestResults = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 w-full overflow-x-hidden">
-      {/* ── Header ── */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-20">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">
-              Mock Test Results
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Paper ID: {paperId}
-            </p>
+    <>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 w-full overflow-x-hidden">
+        {/* ── Header ── */}
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-20">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">
+                Mock Test Results
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                Paper ID: {paperId}
+              </p>
+            </div>
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
+            </button>
           </div>
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export CSV</span>
-            <span className="sm:hidden">Export</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-        {/* ── Left Section (Sidebar on Desktop) ── */}
-        <div className="w-full lg:w-80 xl:w-96 shrink-0 space-y-6 lg:sticky lg:top-24">
-          {/* ── Stats ── */}
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={Users}
-              label="Total Students"
-              value={stats.total}
-              sub={`${stats.submitted} submitted`}
-              iconClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="Average Score"
-              value={stats.avgScore}
-              sub={`Top: ${stats.topScore}`}
-              iconClass="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-            />
-            <StatCard
-              icon={Clock}
-              label="Avg Time"
-              value={`${stats.avgTime} min`}
-              sub="Among submitted"
-              iconClass="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
-            />
-            <StatCard
-              icon={Award}
-              label="Completion"
-              value={`${stats.completionPct}%`}
-              sub={`${stats.notSubmitted} pending`}
-              iconClass="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-            />
-          </div>
-
-          {/* ── Teacher's own score ── */}
-          {isTeacher &&
-            myResult &&
-            (() => {
-              const tScore = myResult.score ?? 0;
-              const tScorePct =
-                stats.quesCount > 0
-                  ? Math.round((tScore / stats.quesCount) * 100)
-                  : 0;
-              const tAnswered = myResult.answeredCount ?? tScore;
-              const tProgressPct =
-                stats.quesCount > 0
-                  ? Math.round((tAnswered / stats.quesCount) * 100)
-                  : 0;
-              const tIsLive = !myResult.submitted && myResult.startTime;
-              const tBarColor = myResult.submitted
-                ? tScorePct >= 70
-                  ? "bg-green-500"
-                  : tScorePct >= 40
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-                : "bg-blue-400";
-              return (
-                <div className="rounded-2xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30 overflow-hidden shadow-sm">
-                  <div className="p-4 space-y-2">
-                    <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5" /> Your Score
-                      {tIsLive && (
-                        <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
-                          ● Live
-                        </span>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0 ring-2 ring-violet-400 rounded-full">
-                        <InteractiveAvatar
-                          src={myResult.profileImage}
-                          fallbackText={getInitials(myResult.userName) || "T"}
-                          userId={myResult.userId}
-                          editable={false}
-                          className="w-10 h-10"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                          {formatName(myResult.userName)}
-                        </p>
-                        {myResult.submitted && myResult.endTime ? (
-                          <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {format(
-                              new Date(myResult.endTime),
-                              "dd MMM, hh:mm a",
-                            )}{" "}
-                            · {myResult.timeTaken ?? 0} min
-                          </p>
-                        ) : myResult.startTime ? (
-                          <p className="text-xs text-blue-400 dark:text-blue-500">
-                            In progress · {tElapsed ?? "0 min"}
-                            {tRemaining && (
-                              <span className="text-blue-300 dark:text-blue-600 ml-1">
-                                ({tRemaining})
-                              </span>
-                            )}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-amber-500">
-                            Not started yet
-                          </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p
-                          className={`text-2xl font-extrabold ${
-                            tScorePct >= 70
-                              ? "text-green-600 dark:text-green-400"
-                              : tScorePct >= 40
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-red-500 dark:text-red-400"
-                          }`}
-                        >
-                          {tScore}
-                          <span className="text-sm font-semibold text-gray-400">
-                            /{stats.quesCount}
-                          </span>
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          {myResult.submitted
-                            ? `${myResult.timeTaken ?? 0} min`
-                            : tIsLive
-                              ? `${tAnswered}/${stats.quesCount} attempted`
-                              : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Progress bar — width = attempted/total, colour = score/total */}
-                  <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
-                    <div
-                      className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
-                      style={{ width: `${tProgressPct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })()}
         </div>
 
-        {/* ── Right Section (Main Content) ── */}
-        <div className="flex-1 w-full min-w-0 space-y-6">
-          {/* ── Search & Filter ── */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by student name…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-4 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+          {/* ── Left Section (Sidebar on Desktop) ── */}
+          <div className="w-full lg:w-80 xl:w-96 shrink-0 space-y-6 lg:sticky lg:top-24">
+            {/* ── Stats ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                icon={Users}
+                label="Total Students"
+                value={stats.total}
+                sub={`${stats.submitted} submitted`}
+                iconClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Average Score"
+                value={stats.avgScore}
+                sub={`Top: ${stats.topScore}`}
+                iconClass="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+              />
+              <StatCard
+                icon={Clock}
+                label="Avg Time"
+                value={`${stats.avgTime} min`}
+                sub="Among submitted"
+                iconClass="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400"
+              />
+              <StatCard
+                icon={Award}
+                label="Completion"
+                value={`${stats.completionPct}%`}
+                sub={`${stats.notSubmitted} pending`}
+                iconClass="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
               />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
-                <Filter className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Students</SelectItem>
-                <SelectItem value="submitted">Submitted Only</SelectItem>
-                <SelectItem value="not-submitted">Not Submitted</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* ── Teacher's own score ── */}
+            {isTeacher &&
+              myResult &&
+              (() => {
+                const tScore = myResult.score ?? 0;
+                const tScorePct =
+                  stats.quesCount > 0
+                    ? Math.round((tScore / stats.quesCount) * 100)
+                    : 0;
+                const tAnswered = myResult.answeredCount ?? tScore;
+                const tProgressPct =
+                  stats.quesCount > 0
+                    ? Math.round((tAnswered / stats.quesCount) * 100)
+                    : 0;
+                const tIsLive = !myResult.submitted && myResult.startTime;
+                const tBarColor = myResult.submitted
+                  ? tScorePct >= 70
+                    ? "bg-green-500"
+                    : tScorePct >= 40
+                      ? "bg-amber-500"
+                      : "bg-red-500"
+                  : "bg-blue-400";
+                return (
+                  <div className="rounded-2xl border-2 border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30 overflow-hidden shadow-sm">
+                    <div className="p-4 space-y-2">
+                      <p className="text-xs font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5" /> Your Score
+                        {tIsLive && (
+                          <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 animate-pulse">
+                            ● Live
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 shrink-0 ring-2 ring-violet-400 rounded-full">
+                          <InteractiveAvatar
+                            src={myResult.profileImage}
+                            fallbackText={getInitials(myResult.userName) || "T"}
+                            userId={myResult.userId}
+                            editable={false}
+                            className="w-10 h-10"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                            {formatName(myResult.userName)}
+                          </p>
+                          {myResult.submitted && myResult.endTime ? (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                              {format(
+                                new Date(myResult.endTime),
+                                "dd MMM, hh:mm a",
+                              )}{" "}
+                              · {myResult.timeTaken ?? 0} min
+                            </p>
+                          ) : myResult.startTime ? (
+                            <p className="text-xs text-blue-400 dark:text-blue-500">
+                              In progress · {tElapsed ?? "0 min"}
+                              {tRemaining && (
+                                <span className="text-blue-300 dark:text-blue-600 ml-1">
+                                  ({tRemaining})
+                                </span>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-amber-500">
+                              Not started yet
+                            </p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p
+                            className={`text-2xl font-extrabold ${
+                              tScorePct >= 70
+                                ? "text-green-600 dark:text-green-400"
+                                : tScorePct >= 40
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-red-500 dark:text-red-400"
+                            }`}
+                          >
+                            {tScore}
+                            <span className="text-sm font-semibold text-gray-400">
+                              /{stats.quesCount}
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            {myResult.submitted
+                              ? `${myResult.timeTaken ?? 0} min`
+                              : tIsLive
+                                ? `${tAnswered}/${stats.quesCount} attempted`
+                                : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Progress bar — width = attempted/total, colour = score/total */}
+                    <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
+                      <div
+                        className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
+                        style={{ width: `${tProgressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
           </div>
 
-          {/* ── Results list ── */}
-          {filteredData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                <Trophy className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                No results found
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1 pb-1">
-                Showing {filteredData.length} of {data.length} student
-                {data.length !== 1 ? "s" : ""}
-              </p>
-              {filteredData.map((result, index) => (
-                <StudentRow
-                  key={result.$id}
-                  result={result}
-                  index={index}
-                  isMe={profile?.userId === result.userId}
-                  quesCount={stats.quesCount}
+          {/* ── Right Section (Main Content) ── */}
+          <div className="flex-1 w-full min-w-0 space-y-6">
+            {/* ── Search & Filter ── */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by student name…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-9 pl-9 pr-4 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
-              ))}
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+                  <Filter className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Students</SelectItem>
+                  <SelectItem value="submitted">Submitted Only</SelectItem>
+                  <SelectItem value="not-submitted">Not Submitted</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
+
+            {/* ── Results list ── */}
+            {filteredData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <Trophy className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  No results found
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 font-medium px-1 pb-1">
+                  Showing {filteredData.length} of {data.length} student
+                  {data.length !== 1 ? "s" : ""}
+                </p>
+                {filteredData.map((result, index) => (
+                  <StudentRow
+                    key={result.$id}
+                    result={result}
+                    index={index}
+                    isMe={profile?.userId === result.userId}
+                    quesCount={stats.quesCount}
+                    isTeacher={isTeacher}
+                    onPreview={(id) => setPreviewId(id)}
+                    onExtendTime={(res) => {
+                      setExtendState({ id: res.$id, name: res.userName, currentMinutes: res.totalMinutes });
+                      setNewMinutes(res.totalMinutes || 0);
+                    }}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ── Dialogs ── */}
+      <Dialog open={!!previewId} onOpenChange={(open) => !open && setPreviewId(null)}>
+        <DialogContent className="max-w-5xl w-full h-[90vh] p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:text-white [&>button]:bg-black/50 hover:[&>button]:bg-black/70 [&>button]:p-2 [&>button]:rounded-full sm:[&>button]:right-4 sm:[&>button]:top-4">
+          <DialogTitle className="sr-only">Paper Preview</DialogTitle>
+          <DialogDescription className="sr-only">Inline preview of the mock test paper.</DialogDescription>
+          {previewId && (
+            <iframe src={`/show-mock-test/${previewId}`} className="w-full h-full bg-white dark:bg-gray-950 rounded-2xl shadow-2xl" />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!extendState} onOpenChange={(open) => !open && setExtendState(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Extend Time</DialogTitle>
+            <DialogDescription>
+              Increase the total allowed minutes for {formatName(extendState?.name || "this student")}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New Total Minutes</label>
+              <Input
+                type="number"
+                value={newMinutes}
+                onChange={(e) => setNewMinutes(Number(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500">Current total is {extendState?.currentMinutes ?? 0} minutes.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendState(null)}>Cancel</Button>
+            <Button onClick={handleExtendTimeSubmit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
