@@ -496,6 +496,16 @@ const MockTestResults = () => {
               : 0;
           const idx = prev.findIndex((r) => r.$id === doc.$id);
 
+          const safeSort = (a, b) => {
+            const scoreDiff = (b.score || 0) - (a.score || 0);
+            if (scoreDiff !== 0) return scoreDiff;
+            const timeDiff = (a.timeTaken || 0) - (b.timeTaken || 0);
+            if (timeDiff !== 0) return timeDiff;
+            const endA = a.endTime ? new Date(a.endTime).getTime() : 0;
+            const endB = b.endTime ? new Date(b.endTime).getTime() : 0;
+            return endA - endB;
+          };
+
           if (idx === -1) {
             // New entry: fix URL if present
             const updated = {
@@ -503,12 +513,19 @@ const MockTestResults = () => {
               timeTaken,
               profileImage: fixProfileImage(doc.profileImage),
             };
-            return [...prev, updated].sort(
-              (a, b) =>
-                b.score - a.score ||
-                a.timeTaken - b.timeTaken ||
-                new Date(a.endTime) - new Date(b.endTime),
-            );
+
+            // Fetch profile image asynchronously since questionPapers doesn't store it
+            if (doc.userId) {
+              userProfileService.getUserProfile(doc.userId).then(profile => {
+                if (profile && profile.profileImage) {
+                  setData(current => current.map(r => 
+                    r.$id === doc.$id ? { ...r, profileImage: fixProfileImage(profile.profileImage) } : r
+                  ));
+                }
+              }).catch(() => {});
+            }
+
+            return [...prev, updated].sort(safeSort);
           } else {
             // Existing entry: keep the profile image from previous state so it doesn't wipe
             const newImage =
@@ -516,12 +533,7 @@ const MockTestResults = () => {
             const updated = { ...doc, timeTaken, profileImage: newImage };
             return prev
               .map((r, i) => (i === idx ? updated : r))
-              .sort(
-                (a, b) =>
-                  b.score - a.score ||
-                  a.timeTaken - b.timeTaken ||
-                  new Date(a.endTime) - new Date(b.endTime),
-              );
+              .sort(safeSort);
           }
         });
       };
@@ -570,7 +582,7 @@ const MockTestResults = () => {
 
   const filteredData = useMemo(() => {
     let filtered = data.filter((item) =>
-      item.userName.toLowerCase().includes(searchQuery.toLowerCase()),
+      (item.userName || "").toLowerCase().includes(searchQuery.toLowerCase()),
     );
     if (filterStatus === "submitted")
       filtered = filtered.filter((i) => i.submitted);
