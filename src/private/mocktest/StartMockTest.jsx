@@ -33,7 +33,7 @@ const StartMockTest = () => {
 
   const [searchParams] = useSearchParams();
   const encodedRedirect = searchParams.get("redirect");
-  const decodedRedirect = encodedRedirect
+  const decodedRedirect = encodedRedirect && encodedRedirect !== "null"
     ? decodeURIComponent(encodedRedirect)
     : "";
 
