@@ -39,6 +39,8 @@ const AttainTest = () => {
         userId: user.$id,
         userName: user.name,
         paperId,
+        databaseId: conf.databaseId,
+        questionPapersCollectionId: conf.questionPapersCollectionId,
       };
 
       const functions = new Functions(appwriteService.getClient());

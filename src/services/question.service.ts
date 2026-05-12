@@ -25,7 +25,11 @@ class QuestionService extends DatabaseService {
     try {
       const response = await functions.createExecution({
         functionId: conf.mockTestFunctionId,
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          databaseId: conf.databaseId,
+          quesCollectionId: conf.quesCollectionId,
+        })
       });
 
       const result = JSON.parse(response.responseBody);
