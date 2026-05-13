@@ -1,19 +1,31 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X } from "lucide-react";
+import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
+import notificationService from "@/services/notification.service";
 
-function NotifItem({ notif, onClose }) {
+function NotifItem({ notif, onClose, user }) {
   const navigate = useNavigate();
   const isTeacher = notif.type === "pending_request";
   const isApproved = notif.type === "request_approved";
   const isRejected = notif.type === "request_rejected";
+  const isMockTest = notif.type === "mock_test_assigned";
 
-  const handleClick = () => {
-    onClose();
-    if (isTeacher) {
-      navigate("/manage-batch/approvals");
+  const handleClick = async () => {
+    if (isMockTest) {
+      try {
+        await notificationService.markAsRead(notif.id, user.$id);
+      } catch (error) {
+        console.error("Failed to mark as read", error);
+      }
+      onClose();
+      navigate(`/attain-test?paperid=${notif.paperId}`);
+    } else {
+      onClose();
+      if (isTeacher) {
+        navigate("/manage-batch/approvals");
+      }
     }
   };
 
@@ -30,12 +42,15 @@ function NotifItem({ notif, onClose }) {
             ? "bg-green-100 dark:bg-green-900/30"
             : isRejected
             ? "bg-red-100 dark:bg-red-900/30"
+            : isMockTest
+            ? "bg-blue-100 dark:bg-blue-900/30"
             : "bg-amber-100 dark:bg-amber-900/30"
         }`}
       >
         {isApproved && <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />}
         {isRejected && <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />}
         {isTeacher && <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+        {isMockTest && <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -54,7 +69,7 @@ function NotifItem({ notif, onClose }) {
           </p>
         )}
       </div>
-      {isTeacher && <ArrowRight className="w-4 h-4 text-slate-400 mt-1 shrink-0" />}
+      {(isTeacher || isMockTest) && <ArrowRight className="w-4 h-4 text-slate-400 mt-1 shrink-0" />}
     </button>
   );
 }
@@ -122,7 +137,7 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
         ) : (
           <div className="p-2 space-y-1">
             {notifications.map((notif) => (
-              <NotifItem key={notif.id} notif={notif} onClose={onClose} />
+              <NotifItem key={notif.id} notif={notif} onClose={onClose} user={user} />
             ))}
           </div>
         )}

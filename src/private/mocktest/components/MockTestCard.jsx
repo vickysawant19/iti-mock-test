@@ -20,10 +20,14 @@ import {
   GraduationCap,
   Copy,
   Check,
+  BellRing,
 } from "lucide-react";
 import mockTestService from "@/services/mocktest.service";
+import notificationService from "@/services/notification.service";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
+import { selectUserBatches } from "@/store/activeBatchSlice";
 
 // ─── Small stat cell ──────────────────────────────────────────────────────────
 const Stat = ({ icon: Icon, label, value, iconClass = "text-gray-400" }) => (
@@ -73,7 +77,9 @@ ActionBtn.displayName = "ActionBtn";
 // ─── MockTestCard ─────────────────────────────────────────────────────────────
 const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const userBatches = useSelector(selectUserBatches);
 
   const handleCopyId = async () => {
     try {
@@ -121,6 +127,30 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
       }
     } catch (error) {
       console.error("Share failed:", error);
+    }
+  };
+
+  const handleNotifyBatch = async () => {
+    if (!userBatches || userBatches.length === 0) {
+      toast.error("No active batches found to notify.");
+      return;
+    }
+    setIsNotifying(true);
+    try {
+      for (const batch of userBatches) {
+        await notificationService.createNotification({
+          message: `New Mock Test: ${test.tradeName} (ID: ${test.paperId})`,
+          type: "mock_test_assigned",
+          batchId: batch.$id,
+          teacherId: user.$id,
+          paperId: test.paperId,
+        });
+      }
+      toast.success("Notified all your batches!");
+    } catch (error) {
+      toast.error("Failed to notify batches.");
+    } finally {
+      setIsNotifying(false);
     }
   };
 
@@ -244,6 +274,14 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
         {/* Original-only actions */}
         {test.isOriginal && (
           <>
+            <ActionBtn
+              onClick={handleNotifyBatch}
+              color="blue"
+              icon={BellRing}
+              label="Notify"
+              loading={isNotifying}
+              disabled={isNotifying}
+            />
             <ActionBtn
               onClick={onToggleProtection}
               color="orange"

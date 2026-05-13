@@ -86,7 +86,15 @@ Strict Rules:
 Input Data:
 ${rawQuestionsForPrompt}`;
     } else {
-      return `Act as an expert bilingual technical instructor and question setter. Your task is to generate high-quality, challenging multiple-choice questions for the specified module. ALL text (questions and options) MUST be written in BOTH English and Marathi.
+      const targetContext = modulesData.selectedModule ? "the specified module" : "the general subject matter";
+      const instructionRule = modulesData.selectedModule 
+        ? "2. Generate high-quality, practical, and application-based questions strictly relevant to the Module Information provided above."
+        : "2. Generate high-quality, practical, and application-based questions relevant to the subject.";
+      const criteriaRule = modulesData.selectedModule
+        ? "5. Questions should cover learning outcomes and assessment criteria listed in the Module Information."
+        : "5. Ensure questions are well-rounded and test fundamental concepts.";
+
+      return `Act as an expert bilingual technical instructor and question setter. Your task is to generate high-quality, challenging multiple-choice questions for ${targetContext}. ALL text (questions and options) MUST be written in BOTH English and Marathi.
 
 ${moduleInfo}
 Target JSON Structure:
@@ -106,10 +114,10 @@ Target JSON Structure:
 
 Strict Rules:
 1. Bilingual Format: EVERY question and EVERY option MUST be written in both English and Marathi, separated by " | " (space, pipe, space). Example: "What is the melting point of copper? | तांब्याचा वितळण्याचा बिंदू किती आहे?"
-2. Generate high-quality, practical, and application-based questions strictly relevant to the Module Information provided above.
+${instructionRule}
 3. Ensure the distractors (incorrect options) are plausible and test common misconceptions — all distractors must also be bilingual.
 4. Provide a balanced mix of difficulty levels: 30% easy, 50% medium, 20% hard.
-5. Questions should cover learning outcomes and assessment criteria listed in the Module Information.
+${criteriaRule}
 6. Tags: The "tags" field must ALWAYS be set to exactly "${getTagsString()}". Do not change this value.
 7. Correct Answer: Use only the option letter (A, B, C, or D).
 8. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.`;
@@ -121,7 +129,7 @@ Strict Rules:
   // Trades fetched via RTK Query (useListTradesQuery)
   const { data: tradesResponse, isLoading: tradesLoading } = useListTradesQuery(
     undefined,
-    { skip: !profile }
+    { skip: !profile },
   );
   const trades = tradesResponse?.documents || [];
   const isFetching = fetchingData || tradesLoading;
@@ -154,11 +162,11 @@ Strict Rules:
       const syllabusData = await moduleServices.getNewModulesData(
         tradeData.selectedTrade.$id,
         subjectData.selectedSubject.$id,
-        selectedTradeYear
+        selectedTradeYear,
       );
 
       const sortedSyllabusData = syllabusData.sort(
-        (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0]
+        (a, b) => a.moduleId.match(/\d+/)[0] - b.moduleId.match(/\d+/)[0],
       );
 
       setModulesData({
@@ -211,12 +219,12 @@ Strict Rules:
           q.question &&
           q.correctAnswer &&
           Array.isArray(q.options) &&
-          q.options.length >= 2
+          q.options.length >= 2,
       );
 
       if (!isValid) {
         setJsonError(
-          "Invalid question structure. Each question must have: question, correctAnswer, and options array"
+          "Invalid question structure. Each question must have: question, correctAnswer, and options array",
         );
         setParsedQuestions([]);
         return;
@@ -257,7 +265,9 @@ Strict Rules:
         question: q.question,
         correctAnswer: q.correctAnswer,
         options: q.options,
-        moduleId: modulesData.selectedModule ? modulesData.selectedModule.moduleId : "",
+        moduleId: modulesData.selectedModule
+          ? modulesData.selectedModule.moduleId
+          : "",
         tradeId: tradeData.selectedTrade.$id,
         subjectId: subjectData.selectedSubject.$id,
         year: selectedTradeYear,
@@ -276,7 +286,7 @@ Strict Rules:
       toast.success(
         `${parsedQuestions.length} question${
           parsedQuestions.length !== 1 ? "s" : ""
-        } submitted successfully!`
+        } submitted successfully!`,
       );
       setJsonInput("");
       setParsedQuestions([]);
@@ -451,14 +461,33 @@ Strict Rules:
 
             {/* Module Select */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Module <span className="text-gray-400 font-normal text-xs">(Optional)</span>
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Module{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (Optional)
+                  </span>
+                </label>
+                {modulesData.selectedModule && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setModulesData((prev) => ({
+                        ...prev,
+                        selectedModule: null,
+                      }))
+                    }
+                    className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                  >
+                    Clear Module Selection
+                  </button>
+                )}
+              </div>
               <Select.Root
                 value={modulesData.selectedModule?.moduleId || ""}
                 onValueChange={(value) => {
                   const module = modulesData.data.find(
-                    (m) => m.moduleId === value
+                    (m) => m.moduleId === value,
                   );
                   setModulesData((prev) => ({
                     ...prev,
@@ -473,8 +502,8 @@ Strict Rules:
                       loading
                         ? "Loading..."
                         : modulesData.data.length === 0
-                        ? "Select criteria first"
-                        : "Select module"
+                          ? "Select criteria first"
+                          : "Select module"
                     }
                   />
                   <Select.Icon>
@@ -575,15 +604,17 @@ Strict Rules:
                 Generate / Format Prompt
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Provide raw questions to format them, or leave blank to generate new questions.
+                Provide raw questions to format them, or leave blank to generate
+                new questions.
               </p>
             </div>
             <button
               type="button"
               onClick={async () => {
-                if (!modulesData.selectedModule) {
-                  toast.error("Please select a module first to get its context in the prompt.");
-                  return;
+                if (!modulesData.selectedModule && !rawQuestionsForPrompt.trim()) {
+                  toast.info(
+                    "Note: Generating new questions without a module will cover general subject matter. For more specific questions, select a module or provide raw questions."
+                  );
                 }
                 try {
                   await navigator.clipboard.writeText(getDynamicPrompt());
@@ -599,11 +630,13 @@ Strict Rules:
               Copy Prompt
             </button>
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tags
-              <span className="ml-2 text-xs text-gray-400 font-normal">(comma-separated, e.g. nimi, electrician, theory)</span>
+              <span className="ml-2 text-xs text-gray-400 font-normal">
+                (comma-separated, e.g. nimi, electrician, theory)
+              </span>
             </label>
             <input
               type="text"
@@ -614,11 +647,18 @@ Strict Rules:
             />
             {tagsInput.trim() && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {tagsInput.split(",").map((t) => t.trim()).filter(Boolean).map((tag, i) => (
-                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                    {tag}
-                  </span>
-                ))}
+                {tagsInput
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+                  .map((tag, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                    >
+                      {tag}
+                    </span>
+                  ))}
               </div>
             )}
           </div>
@@ -699,7 +739,7 @@ Strict Rules:
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                           {q.options?.map((opt, optIdx) => {
                             const optionLetter = String.fromCharCode(
-                              65 + optIdx
+                              65 + optIdx,
                             );
                             const isCorrect = q.correctAnswer === optionLetter;
                             return (
