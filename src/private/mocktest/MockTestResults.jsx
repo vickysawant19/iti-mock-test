@@ -394,6 +394,7 @@ const MockTestResults = () => {
     let isInitialLoadDone = false;
     let eventQueue = [];
     let processQueue = null;
+    let isMounted = true;
 
     const getData = async () => {
       try {
@@ -668,6 +669,7 @@ const MockTestResults = () => {
         ]);
         console.log("[RT] subscribed with server-side paperId filter.", sub);
         unsubFn = toUnsub(sub);
+        if (!isMounted && unsubFn) unsubFn();
       } catch (err) {
         console.warn(
           "[RT] server-side filter failed, plain subscribe:",
@@ -677,6 +679,7 @@ const MockTestResults = () => {
           const sub = await realtime.subscribe(rtChannel, handleEvent);
           unsubFn = toUnsub(sub);
           console.log("[RT] subscribed (plain, client-side filter).");
+          if (!isMounted && unsubFn) unsubFn();
         } catch (err2) {
           console.error("[RT] both subscribe attempts failed:", err2?.message);
         }
@@ -686,7 +689,24 @@ const MockTestResults = () => {
     setupRealtime();
     getData();
 
+    let hiddenAt = null;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === "visible") {
+        // Only refetch if the tab was hidden for more than 30 seconds
+        if (hiddenAt && Date.now() - hiddenAt > 30000) {
+          console.log("[App] Tab was hidden for >30s, refetching data to catch up...");
+          getData();
+        }
+        hiddenAt = null;
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      isMounted = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (typeof unsubFn === "function") unsubFn();
     };
   }, [paperId]);
@@ -935,7 +955,7 @@ const MockTestResults = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {paperData && paperData.isOriginal && (
+              {isTeacher && paperData && paperData.isOriginal && (
                 <>
                   <button
                     onClick={onToggleProtection}
@@ -968,14 +988,16 @@ const MockTestResults = () => {
                 </>
               )}
 
-              <button
-                onClick={exportCSV}
-                className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Export CSV</span>
-                <span className="sm:hidden">Export</span>
-              </button>
+              {isTeacher && (
+                <button
+                  onClick={exportCSV}
+                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Export CSV</span>
+                  <span className="sm:hidden">Export</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
