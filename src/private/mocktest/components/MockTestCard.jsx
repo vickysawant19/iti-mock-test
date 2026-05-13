@@ -137,16 +137,32 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
     }
     setIsNotifying(true);
     try {
+      const batchIds = userBatches.map((b) => b.$id);
+      const existingNotifs = await notificationService.getNotificationsByBatch(batchIds);
+      
+      let notifiedCount = 0;
       for (const batch of userBatches) {
-        await notificationService.createNotification({
-          message: `New Mock Test: ${test.tradeName} (ID: ${test.paperId})`,
-          type: "mock_test_assigned",
-          batchId: batch.$id,
-          teacherId: user.$id,
-          paperId: test.paperId,
-        });
+        const alreadyExists = existingNotifs.some(
+          (n) => n.batchId === batch.$id && n.paperId === test.paperId
+        );
+        
+        if (!alreadyExists) {
+          await notificationService.createNotification({
+            message: `New Mock Test: ${test.tradeName} (ID: ${test.paperId})`,
+            type: "mock_test_assigned",
+            batchId: batch.$id,
+            teacherId: user.$id,
+            paperId: test.paperId,
+          });
+          notifiedCount++;
+        }
       }
-      toast.success("Notified all your batches!");
+      
+      if (notifiedCount > 0) {
+        toast.success(`Notified ${notifiedCount} batch(es)!`);
+      } else {
+        toast.info("Batches were already notified for this test.");
+      }
     } catch (error) {
       toast.error("Failed to notify batches.");
     } finally {

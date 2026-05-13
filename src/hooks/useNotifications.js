@@ -57,23 +57,23 @@ export function useNotifications() {
           return;
         }
 
-        // For each batch, get pending requests
-        const allPending = await Promise.all(
-          batches.map((b) =>
-            batchRequestService.getRequests(b.$id, "pending").then((reqs) =>
-              reqs.map((r) => ({
-                id: r.$id,
-                type: "pending_request",
-                message: `New join request for batch "${b.BatchName}"`,
-                batchId: b.$id,
-                studentId: r.studentId,
-                requestId: r.$id,
-                createdAt: r.createdAt,
-              }))
-            )
-          )
-        );
-        setNotifications(allPending.flat());
+        // Use the optimized single query to fetch all pending requests
+        const batchIds = batches.map(b => b.$id);
+        const pendingReqs = await batchRequestService.getPendingRequestsForBatches(batchIds);
+        
+        const mappedReqs = pendingReqs.map(r => {
+          const b = batches.find(batch => batch.$id === r.batchId);
+          return {
+            id: r.$id,
+            type: "pending_request",
+            message: `New join request for batch "${b?.BatchName || 'Unknown'}"`,
+            batchId: r.batchId,
+            studentId: r.studentId,
+            requestId: r.$id,
+            createdAt: r.createdAt,
+          };
+        });
+        setNotifications(mappedReqs);
       } else if (isStudent) {
         // Get student's own requests that changed recently
         const reqs = await batchRequestService.getStudentRequests(user.$id);
@@ -124,9 +124,13 @@ export function useNotifications() {
           mockTestNotifs = Array.from(uniqueNotifsMap.values());
         }
 
-        const allStudentNotifs = [...relevantReqs, ...mockTestNotifs].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        const EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+        const now = Date.now();
+
+        const allStudentNotifs = [...relevantReqs, ...mockTestNotifs]
+          .filter(n => now - new Date(n.createdAt).getTime() < EXPIRY_TIME)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          
         setNotifications(allStudentNotifs);
       }
     } catch (err) {
@@ -142,41 +146,118 @@ export function useNotifications() {
 
   useEffect(() => {
     let active = true;
-    let unsubFn = null;
+    let unsubNotifications = null;
+    let unsubRequests = null;
 
-    if (isStudent && user?.$id && studentBatches.length > 0) {
-      const channel = `databases.${conf.databaseId}.collections.notifications.documents`;
-      const setupRealtime = async () => {
-        try {
+    const setupRealtime = async () => {
+      try {
+        if (isStudent && user?.$id && studentBatches.length > 0) {
+          const notifChannel = `databases.${conf.databaseId}.collections.notifications.documents`;
           const sub = await realtime.subscribe(
-            channel, 
+            notifChannel, 
             (response) => {
               if (response.events.some(e => e.includes('.create'))) {
-                fetchNotifications();
+                const doc = response.payload;
+                // Prepend to notifications instead of fetching
+                setNotifications(prev => {
+                  // check if it already exists to prevent duplicate realtime pushes
+                  if (prev.some(n => n.paperId === doc.paperId && n.type === doc.type)) return prev;
+                  return [{
+                    id: doc.$id,
+                    type: doc.type,
+                    message: doc.message,
+                    batchId: doc.batchId,
+                    paperId: doc.paperId,
+                    createdAt: doc.$createdAt,
+                  }, ...prev];
+                });
               }
             },
             [Query.equal("batchId", studentBatches)]
           );
-          
-          const getUnsub = typeof sub === "function" ? sub : (sub?.unsubscribe ? sub.unsubscribe.bind(sub) : null);
-          
-          if (!active && getUnsub) {
-            getUnsub(); // Unsubscribe immediately if unmounted while fetching
-          } else {
-            unsubFn = getUnsub;
-          }
-        } catch (e) {
-          console.error("Failed to subscribe to notifications realtime", e);
+          unsubNotifications = typeof sub === "function" ? sub : (sub?.unsubscribe ? sub.unsubscribe.bind(sub) : null);
+          if (!active && unsubNotifications) unsubNotifications();
         }
-      };
-      setupRealtime();
-      
-      return () => {
-        active = false;
-        if (unsubFn) unsubFn();
-      };
-    }
-  }, [fetchNotifications, isStudent, user?.$id, studentBatches]);
+
+        // BatchRequests realtime
+        if (user?.$id) {
+          const reqChannel = `databases.${conf.databaseId}.collections.batchRequests.documents`;
+          let reqSub = null;
+
+          if (isTeacher && userBatches && userBatches.length > 0) {
+            const batchIds = userBatches.map(b => b.$id);
+            reqSub = await realtime.subscribe(
+              reqChannel,
+              (response) => {
+                if (response.events.some(e => e.includes('.create') || e.includes('.update'))) {
+                  const doc = response.payload;
+                  if (doc.status === 'pending') {
+                    setNotifications(prev => {
+                      if (prev.some(n => n.requestId === doc.$id)) return prev; // Avoid duplicate
+                      const b = userBatches.find(batch => batch.$id === doc.batchId);
+                      return [{
+                        id: doc.$id,
+                        type: "pending_request",
+                        message: `New join request for batch "${b?.BatchName || 'Unknown'}"`,
+                        batchId: doc.batchId,
+                        studentId: doc.studentId,
+                        requestId: doc.$id,
+                        createdAt: doc.createdAt,
+                      }, ...prev];
+                    });
+                  } else {
+                     // if status changed to approved/rejected, remove it from the list
+                     setNotifications(prev => prev.filter(n => n.requestId !== doc.$id));
+                  }
+                }
+              },
+              [Query.equal("batchId", batchIds)]
+            );
+          } else if (isStudent) {
+            reqSub = await realtime.subscribe(
+              reqChannel,
+              (response) => {
+                if (response.events.some(e => e.includes('.update'))) {
+                  const doc = response.payload;
+                  if (doc.status === 'approved' || doc.status === 'rejected') {
+                    setNotifications(prev => {
+                      // Remove old one if exists
+                      const filtered = prev.filter(n => n.requestId !== doc.$id);
+                      return [{
+                        id: doc.$id,
+                        type: doc.status === "approved" ? "request_approved" : "request_rejected",
+                        message: doc.status === "approved"
+                          ? `Your request to join a batch was approved! 🎉`
+                          : `Your request to join a batch was rejected.`,
+                        batchId: doc.batchId,
+                        requestId: doc.$id,
+                        createdAt: doc.updatedAt,
+                      }, ...filtered];
+                    });
+                  }
+                }
+              },
+              [Query.equal("studentId", [user.$id])]
+            );
+          }
+          
+          unsubRequests = typeof reqSub === "function" ? reqSub : (reqSub?.unsubscribe ? reqSub.unsubscribe.bind(reqSub) : null);
+          if (!active && unsubRequests) unsubRequests();
+        }
+
+      } catch (e) {
+        console.error("Failed to subscribe to realtime", e);
+      }
+    };
+    
+    setupRealtime();
+    
+    return () => {
+      active = false;
+      if (unsubNotifications) unsubNotifications();
+      if (unsubRequests) unsubRequests();
+    };
+  }, [isStudent, isTeacher, user?.$id, studentBatches, userBatches]);
 
   const notifCount = notifications.length;
 

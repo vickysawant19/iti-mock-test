@@ -94,6 +94,29 @@ export class BatchRequestService {
     }
   }
   
+  // Get pending requests for multiple batches at once
+  async getPendingRequestsForBatches(batchIds) {
+    if (!batchIds || batchIds.length === 0) return [];
+
+    try {
+      const queries = [
+        Query.equal("batchId", batchIds),
+        Query.equal("status", "pending"),
+        Query.orderDesc("$createdAt")
+      ];
+
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.batchRequestsCollectionId,
+        queries: queries
+      });
+      return response.rows;
+    } catch (error) {
+      console.error(`Appwrite error: getPendingRequestsForBatches:`, error);
+      throw new Error(`Error: ${error.message}`);
+    }
+  }
+  
   // Get requests for a specific student
   async getStudentRequests(studentId) {
     if (!studentId) throw new Error("studentId is required");
