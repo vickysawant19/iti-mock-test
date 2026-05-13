@@ -129,12 +129,13 @@ const useTimeDisplay = (startTime, totalMinutes) => {
     if (totalMinutes) {
       const totalSecs = totalMinutes * 60;
       const remSecs = Math.max(0, totalSecs - elapsedSecs);
+      const isTimeUp = elapsedSecs >= totalSecs + 60; // 1-minute grace period before forcing submit
       const rh = Math.floor(remSecs / 3600);
       const rm = Math.floor((remSecs % 3600) / 60);
       const remainingStr = rh > 0 ? `${rh}h ${rm}m left` : `${rm}m left`;
-      return { elapsedStr, remainingStr };
+      return { elapsedStr, remainingStr, isTimeUp };
     }
-    return { elapsedStr, remainingStr: null };
+    return { elapsedStr, remainingStr: null, isTimeUp: false };
   };
 
   const [time, setTime] = React.useState(calc);
@@ -176,10 +177,27 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onEx
   const medal = medalColors[rank];
   const score = result.score ?? 0;
   const isLive = !result.submitted && result.startTime;
-  const { elapsedStr, remainingStr } = useTimeDisplay(
+  const { elapsedStr, remainingStr, isTimeUp } = useTimeDisplay(
     isLive ? result.startTime : null,
     result.totalMinutes,
   );
+
+  React.useEffect(() => {
+    if (isLive && isTimeUp) {
+      const autoSubmit = async () => {
+        try {
+          const expectedEndTime = new Date(new Date(result.startTime).getTime() + result.totalMinutes * 60000).toISOString();
+          await mockTestService.updateRow(result.$id, {
+            submitted: true,
+            endTime: expectedEndTime
+          });
+        } catch (e) {
+          console.error("Auto-submit failed for", result.$id, e);
+        }
+      };
+      autoSubmit();
+    }
+  }, [isLive, isTimeUp, result.$id, result.startTime, result.totalMinutes]);
   // scorePct drives colour; progressPct drives bar width
   const scorePct = quesCount > 0 ? Math.round((score / quesCount) * 100) : 0;
   const answered = result.answeredCount ?? score; // fallback to score if field not yet stored
@@ -721,10 +739,27 @@ const MockTestResults = () => {
   // so it works even when the teacher took the test on the original document.
   const myResult = isTeacher ? teacherResult : null;
   // Live elapsed time for the teacher's own in-progress card
-  const { elapsedStr: tElapsed, remainingStr: tRemaining } = useTimeDisplay(
+  const { elapsedStr: tElapsed, remainingStr: tRemaining, isTimeUp: tIsTimeUp } = useTimeDisplay(
     myResult && !myResult.submitted ? myResult.startTime : null,
     myResult?.totalMinutes,
   );
+
+  React.useEffect(() => {
+    if (myResult && !myResult.submitted && myResult.startTime && tIsTimeUp) {
+      const autoSubmit = async () => {
+        try {
+          const expectedEndTime = new Date(new Date(myResult.startTime).getTime() + myResult.totalMinutes * 60000).toISOString();
+          await mockTestService.updateRow(myResult.$id, {
+            submitted: true,
+            endTime: expectedEndTime
+          });
+        } catch (e) {
+          console.error("Auto-submit failed for teacher", myResult.$id, e);
+        }
+      };
+      autoSubmit();
+    }
+  }, [myResult, tIsTimeUp]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to permanently delete this result?")) return;
