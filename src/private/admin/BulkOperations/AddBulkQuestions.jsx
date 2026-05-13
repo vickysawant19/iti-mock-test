@@ -233,10 +233,9 @@ Strict Rules:
     if (
       !tradeData.selectedTrade ||
       !subjectData.selectedSubject ||
-      !selectedTradeYear ||
-      !modulesData.selectedModule
+      !selectedTradeYear
     ) {
-      alert("Please select all required fields");
+      alert("Please select all required fields (Trade, Subject, Year)");
       return;
     }
 
@@ -258,7 +257,7 @@ Strict Rules:
         question: q.question,
         correctAnswer: q.correctAnswer,
         options: q.options,
-        moduleId: modulesData.selectedModule.moduleId,
+        moduleId: modulesData.selectedModule ? modulesData.selectedModule.moduleId : "",
         tradeId: tradeData.selectedTrade.$id,
         subjectId: subjectData.selectedSubject.$id,
         year: selectedTradeYear,
@@ -453,7 +452,7 @@ Strict Rules:
             {/* Module Select */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Module <span className="text-red-500">*</span>
+                Module <span className="text-gray-400 font-normal text-xs">(Optional)</span>
               </label>
               <Select.Root
                 value={modulesData.selectedModule?.moduleId || ""}
@@ -757,8 +756,7 @@ Strict Rules:
               parsedQuestions.length === 0 ||
               !tradeData.selectedTrade ||
               !subjectData.selectedSubject ||
-              !selectedTradeYear ||
-              !modulesData.selectedModule
+              !selectedTradeYear
             }
             className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >

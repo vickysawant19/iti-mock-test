@@ -107,7 +107,7 @@ const AllMockTests = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* ── Page Header ── */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
               <ClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -129,7 +129,7 @@ const AllMockTests = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="px-0 sm:px-6 py-0 sm:py-4 space-y-0 sm:space-y-5">
         {/* Error */}
         {error && (
           <Alert variant="destructive">
@@ -178,7 +178,7 @@ const AllMockTests = () => {
             )}
 
             {/* Cards grid */}
-            <div className="grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-[1px] sm:gap-4 md:gap-5 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-gray-200 dark:bg-gray-700 sm:bg-transparent sm:dark:bg-transparent border-t border-gray-200 dark:border-gray-700 sm:border-none">
               {mockTests.map((test) => (
                 <MockTestCard
                   key={test.$id}

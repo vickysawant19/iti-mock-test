@@ -361,13 +361,11 @@ const CreateQuestion = () => {
                   htmlFor="moduleId"
                   className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
                 >
-                  Module
+                  Module <span className="text-gray-500 font-normal text-sm">(Optional)</span>
                 </label>
                 <select
                   id="moduleId"
-                  {...register("moduleId", {
-                    required: "Module is required",
-                  })}
+                  {...register("moduleId")}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
                 >
                   <option value="">Select Module</option>

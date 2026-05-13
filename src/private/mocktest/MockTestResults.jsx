@@ -17,6 +17,12 @@ import {
   MoreVertical,
   Trash2,
   Eye,
+  Share2,
+  Lock,
+  Unlock,
+  Copy,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { toast } from "react-toastify";
@@ -258,7 +264,7 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onEx
             </p>
           ) : result.startTime ? (
             <p className="text-xs text-blue-400 dark:text-blue-500 mt-0.5">
-              In progress · {elapsedStr ?? "0 min"}
+              Started at {format(new Date(result.startTime), "hh:mm a")} · In progress · {elapsedStr ?? "0 min"}
               {remainingStr && (
                 <span className="text-blue-300 dark:text-blue-600 ml-1">
                   ({remainingStr})
@@ -335,7 +341,7 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onEx
       </div>
 
       {/* Progress bar — width = attempted/total, colour = correct/total */}
-      <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700">
+      <div className="h-1 w-full bg-gray-100 dark:bg-gray-700">
         <div
           className={`h-full transition-all duration-700 ease-out ${barColor} ${isLive ? "opacity-80" : ""}`}
           style={{ width: `${progressPct}%` }}
@@ -358,13 +364,28 @@ const MockTestResults = () => {
   const [extendState, setExtendState] = useState(null);
   const [newMinutes, setNewMinutes] = useState(0);
   const [teacherResult, setTeacherResult] = useState(null);
+  const [paperData, setPaperData] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingProtection, setIsTogglingProtection] = useState(false);
+  const [copied, setCopied] = useState(false);
   const profile = useSelector(selectProfile);
   const user = useSelector(selectUser);
   const isTeacher = user?.labels?.includes("Teacher") || false;
 
   useEffect(() => {
+    let isInitialLoadDone = false;
+    let eventQueue = [];
+    let processQueue = null;
+
     const getData = async () => {
       try {
+        try {
+          const pData = await mockTestService.fetchPaperById(paperId);
+          setPaperData(pData);
+        } catch (e) {
+          console.error("Failed to fetch paper data:", e);
+        }
+
         const res = await mockTestService.getUserResults(paperId);
 
         // Compute teacher's own result from RAW data before any isOriginal filter.
@@ -458,9 +479,10 @@ const MockTestResults = () => {
         setError(error.message);
       } finally {
         setLoading(false);
+        isInitialLoadDone = true;
+        if (processQueue) processQueue();
       }
     };
-    getData();
 
     // ── Realtime leaderboard — server-side filtered ──────────────────────────────
     // Channel: only rows in the questionPaperData table
@@ -480,6 +502,12 @@ const MockTestResults = () => {
       );
 
       const handleEvent = (response) => {
+        if (!isInitialLoadDone) {
+          console.log("[RT] Queuing event", response.payload?.$id);
+          eventQueue.push(response);
+          return;
+        }
+
         const doc = response.payload;
         if (!doc) return;
 
@@ -594,6 +622,14 @@ const MockTestResults = () => {
         });
       };
 
+      processQueue = () => {
+        if (eventQueue.length > 0) {
+          console.log(`[RT] Processing ${eventQueue.length} queued events.`);
+          eventQueue.forEach(handleEvent);
+          eventQueue = [];
+        }
+      };
+
       // realtime.subscribe (async) returns {unsubscribe: fn};
       // older client.subscribe (sync) returns a plain function.
       // Normalise to a callable.
@@ -630,6 +666,7 @@ const MockTestResults = () => {
     };
 
     setupRealtime();
+    getData();
 
     return () => {
       if (typeof unsubFn === "function") unsubFn();
@@ -738,6 +775,70 @@ const MockTestResults = () => {
     document.body.removeChild(link);
   };
 
+  const handleShare = async () => {
+    const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
+    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*\n\n📚 *Trade:* ${paperData?.tradeName || "Unknown"}\n💯 *Total Questions:* ${stats.quesCount}\n⏳ *Duration:* ${paperData?.totalMinutes || 0} Minutes\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Mock Test Paper", text: shareText });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+    }
+  };
+
+  const handleCopyMessage = async () => {
+    const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
+    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*\n\n📚 *Trade:* ${paperData?.tradeName || "Unknown"}\n💯 *Total Questions:* ${stats.quesCount}\n⏳ *Duration:* ${paperData?.totalMinutes || 0} Minutes\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      toast.success("Message copied to clipboard!");
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy message");
+    }
+  };
+
+  const onToggleProtection = async () => {
+    if (!paperData || !paperData.$id) return;
+    setIsTogglingProtection(true);
+    try {
+      const updated = await mockTestService.updateQuestion(paperData.$id, {
+        isProtected: !paperData.isProtected,
+      });
+      setPaperData(updated);
+      toast.success(updated.isProtected ? "Paper protected" : "Paper unprotected");
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to toggle protection");
+    } finally {
+      setIsTogglingProtection(false);
+    }
+  };
+
+  const handleDeletePaper = async () => {
+    if (!paperData || !paperData.$id) return;
+    const confirmation = window.confirm("Are you sure you want to delete this paper?");
+    if (!confirmation) return;
+
+    setIsDeleting(true);
+    try {
+      await mockTestService.deleteQuestionPaper(paperData.$id);
+      toast.success("Deleted!");
+      navigate("/all-mock-tests");
+    } catch (error) {
+      console.error("Error deleting paper:", error);
+      toast.error("Failed to delete. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) return <Loader isLoading={loading} />;
 
   if (error) {
@@ -775,18 +876,72 @@ const MockTestResults = () => {
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">
                 Mock Test Results
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-                Paper ID: {paperId}
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
+                Paper ID: <span className="font-mono">{paperId}</span>
               </p>
             </div>
-            <button
-              onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export CSV</span>
-              <span className="sm:hidden">Export</span>
-            </button>
+            
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-gray-500 hover:bg-gray-600 text-white transition-colors shrink-0 whitespace-nowrap outline-none focus:ring-2 focus:ring-gray-400">
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Share</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {navigator.share && (
+                    <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
+                      <Share2 className="w-4 h-4 mr-2 text-gray-500" /> Share via App
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleCopyMessage} className="cursor-pointer">
+                    {copied ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2 text-gray-500" />}
+                    Copy Message
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {paperData && paperData.isOriginal && (
+                <>
+                  <button
+                    onClick={onToggleProtection}
+                    disabled={isTogglingProtection}
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white transition-colors shrink-0 whitespace-nowrap"
+                  >
+                    {isTogglingProtection ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : paperData.isProtected ? (
+                      <Lock className="w-3.5 h-3.5" />
+                    ) : (
+                      <Unlock className="w-3.5 h-3.5" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {paperData.isProtected ? "Protected" : "Unprotect"}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleDeletePaper}
+                    disabled={isDeleting}
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white transition-colors shrink-0 whitespace-nowrap"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={exportCSV}
+                className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -882,7 +1037,7 @@ const MockTestResults = () => {
                             </p>
                           ) : myResult.startTime ? (
                             <p className="text-xs text-blue-400 dark:text-blue-500">
-                              In progress · {tElapsed ?? "0 min"}
+                              Started at {format(new Date(myResult.startTime), "hh:mm a")} · In progress · {tElapsed ?? "0 min"}
                               {tRemaining && (
                                 <span className="text-blue-300 dark:text-blue-600 ml-1">
                                   ({tRemaining})
@@ -921,7 +1076,7 @@ const MockTestResults = () => {
                       </div>
                     </div>
                     {/* Progress bar — width = attempted/total, colour = score/total */}
-                    <div className="h-1.5 w-full bg-violet-100 dark:bg-violet-900/30">
+                    <div className="h-1 w-full bg-violet-100 dark:bg-violet-900/30">
                       <div
                         className={`h-full transition-all duration-700 ease-out ${tBarColor} ${tIsLive ? "opacity-80" : ""}`}
                         style={{ width: `${tProgressPct}%` }}
