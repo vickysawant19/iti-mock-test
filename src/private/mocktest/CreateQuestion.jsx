@@ -84,7 +84,7 @@ const CreateQuestion = () => {
   const fetchData = async () => {
     try {
       const subjects = await subjectService.listSubjects();
-      setSubjects(subjects.documents);
+      setSubjects(subjects.rows || []); // listSubjects uses listRows → .rows
     } catch (error) {
       console.log(error);
     }
@@ -383,7 +383,24 @@ const CreateQuestion = () => {
               </div>
             )}
 
-            {/* Tags */}
+            {/* Difficulty */}
+            <div className="mb-6 lg:col-span-1">
+              <label
+                htmlFor="difficulty"
+                className="block text-gray-800 dark:text-gray-100 font-semibold mb-2"
+              >
+                Difficulty Level
+              </label>
+              <select
+                id="difficulty"
+                {...register("difficulty")}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
+              >
+                <option value="medium">Medium</option>
+                <option value="easy">Easy</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
             <div className="mb-6 lg:col-span-2">
               <label
                 htmlFor="tags"

@@ -1,6 +1,7 @@
 import { Client, Databases, ID } from 'node-appwrite';
 import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
+import generateMockTestNew from "./generateMockTestNew.js";
 import { bulkaddQuestions } from './bulkActions.js';
 
 
@@ -26,12 +27,19 @@ export default async ({ req, res, log, error }) => {
     tradeName,
     tradeId,
     subjectId,
+    subjectIds,
     year,
     quesCount,
     paperId,
     selectedModules,
+    selectedQuestions,
     totalMinutes,
     tags,
+    mode,
+    title,
+    negativeMarking,
+    visibility,
+    difficultyLevel,
     questions,
     databaseId,
     quesCollectionId,
@@ -69,6 +77,34 @@ export default async ({ req, res, log, error }) => {
         questionPapersCollectionId,
         newModulesDataCollectionId
       
+      });
+      break;
+
+    case "generateMockTestNew":
+      result = await generateMockTestNew({
+        userId,
+        userName,
+        tradeName,
+        tradeId,
+        year,
+        mode,
+        subjectId,
+        subjectIds,
+        selectedModules,
+        selectedQuestions,
+        quesCount,
+        totalMinutes,
+        title,
+        negativeMarking,
+        visibility,
+        difficultyLevel,
+        tags,
+        error,
+        database,
+        databaseId,
+        quesCollectionId,
+        questionPapersCollectionId,
+        newModulesDataCollectionId,
       });
       break;
 

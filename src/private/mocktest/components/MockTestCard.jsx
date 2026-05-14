@@ -21,10 +21,17 @@ import {
   Copy,
   Check,
   BellRing,
+  BarChart,
+  AlertTriangle,
 } from "lucide-react";
 import mockTestService from "@/services/mocktest.service";
 import notificationService from "@/services/notification.service";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectUserBatches } from "@/store/activeBatchSlice";
@@ -33,49 +40,89 @@ import { selectUserBatches } from "@/store/activeBatchSlice";
 const Stat = ({ icon: Icon, label, value, iconClass = "text-gray-400" }) => (
   <div className="flex items-center gap-2 min-w-0">
     <Icon className={`w-3.5 h-3.5 shrink-0 ${iconClass}`} />
-    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}:</span>
-    <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{value}</span>
+    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">
+      {label}:
+    </span>
+    <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">
+      {value}
+    </span>
   </div>
 );
 
 // ─── Action button ────────────────────────────────────────────────────────────
-const ActionBtn = React.forwardRef(({ onClick, asLink, to, color, icon: Icon, label, disabled, loading, ...props }, ref) => {
-  const base =
-    "flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 h-7 sm:h-9 rounded sm:rounded-lg text-[10px] sm:text-xs font-semibold text-white whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed";
-  const colors = {
-    blue:   "bg-blue-500 hover:bg-blue-600 active:bg-blue-700",
-    green:  "bg-green-500 hover:bg-green-600 active:bg-green-700",
-    purple: "bg-violet-500 hover:bg-violet-600 active:bg-violet-700",
-    gray:   "bg-gray-500 hover:bg-gray-600 active:bg-gray-700",
-    orange: "bg-orange-500 hover:bg-orange-600 active:bg-orange-700",
-    red:    "bg-red-500 hover:bg-red-600 active:bg-red-700",
-  };
+const ActionBtn = React.forwardRef(
+  (
+    {
+      onClick,
+      asLink,
+      to,
+      color,
+      icon: Icon,
+      label,
+      disabled,
+      loading,
+      ...props
+    },
+    ref,
+  ) => {
+    const base =
+      "flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 h-7 sm:h-9 rounded sm:rounded-lg text-[10px] sm:text-xs font-semibold text-white whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed";
+    const colors = {
+      blue: "bg-blue-500 hover:bg-blue-600 active:bg-blue-700",
+      green: "bg-green-500 hover:bg-green-600 active:bg-green-700",
+      purple: "bg-violet-500 hover:bg-violet-600 active:bg-violet-700",
+      gray: "bg-gray-500 hover:bg-gray-600 active:bg-gray-700",
+      orange: "bg-orange-500 hover:bg-orange-600 active:bg-orange-700",
+      red: "bg-red-500 hover:bg-red-600 active:bg-red-700",
+    };
 
-  const content = (
-    <>
-      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5" />}
-      <span>{loading ? "…" : label}</span>
-    </>
-  );
-
-  if (asLink && to) {
-    return (
-      <Link ref={ref} to={to} className={`${base} ${colors[color]}`} {...props}>
-        {content}
-      </Link>
+    const content = (
+      <>
+        {loading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Icon className="w-3.5 h-3.5" />
+        )}
+        <span>{loading ? "…" : label}</span>
+      </>
     );
-  }
 
-  return (
-    <button ref={ref} onClick={onClick} disabled={disabled || loading} className={`${base} ${colors[color]}`} {...props}>
-      {content}
-    </button>
-  );
-});
+    if (asLink && to) {
+      return (
+        <Link
+          ref={ref}
+          to={to}
+          className={`${base} ${colors[color]}`}
+          {...props}
+        >
+          {content}
+        </Link>
+      );
+    }
+
+    return (
+      <button
+        ref={ref}
+        onClick={onClick}
+        disabled={disabled || loading}
+        className={`${base} ${colors[color]}`}
+        {...props}
+      >
+        {content}
+      </button>
+    );
+  },
+);
 ActionBtn.displayName = "ActionBtn";
 
 // ─── MockTestCard ─────────────────────────────────────────────────────────────
-const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) => {
+const MockTestCard = ({
+  setMockTests,
+  test,
+  user,
+  handleDelete,
+  isDeleting,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -103,7 +150,8 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
 
   const handleCopyMessage = async (paperId) => {
     const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
-    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*\n\n📚 *Trade:* ${test.tradeName || "Unknown"}\n💯 *Total Questions:* ${test.quesCount}\n⏳ *Duration:* ${test.totalMinutes || 0} Minutes\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
+    const titleLine = test.title ? `\n\n📋 *Test:* ${test.title}` : "";
+    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*${titleLine}\n\n📚 *Trade:* ${test.tradeName || "Unknown"}\n💯 *Total Questions:* ${test.quesCount}\n⏳ *Duration:* ${test.totalMinutes || 0} Minutes\n📈 *Difficulty:* ${test.difficultyLevel || "mixed"}\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
     try {
       await navigator.clipboard.writeText(shareText);
       setCopiedMessage(true);
@@ -117,10 +165,14 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
 
   const handleShare = async (paperId) => {
     const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
-    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*\n\n📚 *Trade:* ${test.tradeName || "Unknown"}\n💯 *Total Questions:* ${test.quesCount}\n⏳ *Duration:* ${test.totalMinutes || 0} Minutes\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
+    const titleLine = test.title ? `\n\n📋 *Test:* ${test.title}` : "";
+    const shareText = `🎉 *_MSQs Exam Paper_* 🎉\n\n_Hey there!_\n_Check out this Exam Paper_\n Paper ID: *${paperId}*${titleLine}\n\n📚 *Trade:* ${test.tradeName || "Unknown"}\n💯 *Total Questions:* ${test.quesCount}\n⏳ *Duration:* ${test.totalMinutes || 0} Minutes\n📈 *Difficulty:* ${test.difficultyLevel || "mixed"}\n\n👉 Click the link below to get started:\n${examUrl}\n\n*Remember to submit on complete!*\n\n Good luck and happy Exam!`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Mock Test Paper", text: shareText });
+        await navigator.share({
+          title: test.title || test.tradeName || "Mock Test",
+          text: shareText,
+        });
       } else {
         await navigator.clipboard.writeText(shareText);
         toast.success("Link copied to clipboard!");
@@ -138,17 +190,18 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
     setIsNotifying(true);
     try {
       const batchIds = userBatches.map((b) => b.$id);
-      const existingNotifs = await notificationService.getNotificationsByBatch(batchIds);
-      
+      const existingNotifs =
+        await notificationService.getNotificationsByBatch(batchIds);
+
       let notifiedCount = 0;
       for (const batch of userBatches) {
         const alreadyExists = existingNotifs.some(
-          (n) => n.batchId === batch.$id && n.paperId === test.paperId
+          (n) => n.batchId === batch.$id && n.paperId === test.paperId,
         );
-        
+
         if (!alreadyExists) {
           await notificationService.createNotification({
-            message: `New Mock Test: ${test.tradeName} (ID: ${test.paperId})`,
+            message: `New Mock Test: ${test.title ? `${test.title} (${test.tradeName})` : test.tradeName} — ID: ${test.paperId}`,
             type: "mock_test_assigned",
             batchId: batch.$id,
             teacherId: user.$id,
@@ -157,7 +210,7 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
           notifiedCount++;
         }
       }
-      
+
       if (notifiedCount > 0) {
         toast.success(`Notified ${notifiedCount} batch(es)!`);
       } else {
@@ -176,7 +229,9 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
       const data = await mockTestService.updateQuestion(test.$id, {
         isProtected: !test.isProtected,
       });
-      setMockTests((prev) => prev.map((item) => (item.$id === data.$id ? data : item)));
+      setMockTests((prev) =>
+        prev.map((item) => (item.$id === data.$id ? data : item)),
+      );
     } catch (error) {
       console.log(error);
     } finally {
@@ -188,17 +243,31 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
 
   return (
     <div className="flex flex-col h-full rounded-none sm:rounded-2xl border-none sm:border sm:border-gray-200 sm:dark:border-gray-700 bg-white dark:bg-gray-800 sm:shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
-
       {/* ── Header ── */}
       <div className="p-2 sm:px-4 sm:pt-4 sm:pb-3 border-b border-gray-100 dark:border-gray-700">
         {/* Date row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 sm:mb-2 gap-1.5">
           <div className="flex items-center gap-1 sm:gap-1.5 text-gray-400 dark:text-gray-500 text-[9px] sm:text-xs">
             <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span>{format(new Date(test.$createdAt), "dd MMM yy, hh:mm a")}</span>
+            <span>
+              {format(new Date(test.$createdAt), "dd MMM yy, hh:mm a")}
+            </span>
           </div>
           {/* Status pill */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            {test.negativeMarking && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                title="Negative Marking Enabled"
+              >
+                <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> -1
+              </span>
+            )}
+            {test.visibility === "draft" && (
+              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-800">
+                Draft
+              </span>
+            )}
             {isSubmitted ? (
               <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
                 <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Submitted
@@ -216,8 +285,13 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
           <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
           <div className="min-w-0">
             <h2 className="text-xs sm:text-base font-bold text-gray-800 dark:text-gray-100 leading-tight sm:leading-snug line-clamp-2">
-              {test.tradeName || "No Trade Name"}
+              {test.title || test.tradeName || "No Title"}
             </h2>
+            {test.title && test.tradeName && (
+              <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400">
+                {test.tradeName}
+              </p>
+            )}
             <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {test.year ? `${test.year} Year` : ""}
               {test.isOriginal && (
@@ -235,24 +309,56 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
         {/* Paper ID with copy button */}
         <div className="flex items-center gap-1 sm:gap-2 min-w-0 col-span-1 sm:col-span-1">
           <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 text-indigo-400" />
-          <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">ID:</span>
-          <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate font-mono">{test.paperId}</span>
+          <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">
+            ID:
+          </span>
+          <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate font-mono">
+            {test.paperId}
+          </span>
           <button
             onClick={handleCopyId}
             title="Copy Paper ID"
             className="shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {copied
-              ? <Check className="w-3 h-3 text-green-500" />
-              : <Copy className="w-3 h-3 text-gray-400 hover:text-indigo-500" />}
+            {copied ? (
+              <Check className="w-3 h-3 text-green-500" />
+            ) : (
+              <Copy className="w-3 h-3 text-gray-400 hover:text-indigo-500" />
+            )}
           </button>
         </div>
-        <Stat icon={FileText}     label="Questions"  value={test.quesCount ?? "50"}               iconClass="text-blue-400"   />
-        <Stat icon={Clock}        label="Duration"   value={`${test.totalMinutes ?? "—"} min`}    iconClass="text-violet-400" />
-        <Stat icon={Target}       label="Score"      value={test.score ?? "—"}                    iconClass="text-green-400"  />
+        <Stat
+          icon={FileText}
+          label="Questions"
+          value={test.quesCount ?? "50"}
+          iconClass="text-blue-400"
+        />
+        <Stat
+          icon={Clock}
+          label="Duration"
+          value={`${test.totalMinutes ?? "—"} min`}
+          iconClass="text-violet-400"
+        />
+        <Stat
+          icon={BarChart}
+          label="Difficulty"
+          value={test.difficultyLevel ?? "mixed"}
+          iconClass="text-amber-400"
+        />
+        <Stat
+          icon={Target}
+          label="Score"
+          value={test.score ?? "—"}
+          iconClass="text-green-400"
+        />
         {isSubmitted && test.endTime && (
           <div className="col-span-2">
-            <Stat icon={CheckCircle2} label="Submitted" value={format(new Date(test.endTime), "dd MMM, hh:mm a")} iconClass="text-green-400" />
+            <Stat
+              icon={CheckCircle2}
+              label="Submitted"
+              value={format(new Date(test.endTime), "dd MMM, hh:mm a")}
+              iconClass="text-green-400"
+            />
           </div>
         )}
       </div>
@@ -261,13 +367,31 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
       <div className="mt-auto p-2 sm:p-3 grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
         {/* Start / Show */}
         {isSubmitted ? (
-          <ActionBtn asLink to={`/show-mock-test/${test.$id}`} color="green" icon={Eye} label="Show Test" />
+          <ActionBtn
+            asLink
+            to={`/show-mock-test/${test.$id}`}
+            color="green"
+            icon={Eye}
+            label="Show Test"
+          />
         ) : (
-          <ActionBtn asLink to={`/start-mock-test/${test.$id}`} color="blue" icon={PlayCircle} label="Start" />
+          <ActionBtn
+            asLink
+            to={`/start-mock-test/${test.$id}`}
+            color="blue"
+            icon={PlayCircle}
+            label="Start"
+          />
         )}
 
         {/* Scores */}
-        <ActionBtn asLink to={`/mock-test-result/${test.paperId}`} color="purple" icon={ClipboardList} label="Scores" />
+        <ActionBtn
+          asLink
+          to={`/mock-test-result/${test.paperId}`}
+          color="purple"
+          icon={ClipboardList}
+          label="Scores"
+        />
 
         {/* Share Dropdown */}
         <DropdownMenu>
@@ -276,12 +400,22 @@ const MockTestCard = ({ setMockTests, test, user, handleDelete, isDeleting }) =>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40 z-50">
             {navigator.share && (
-              <DropdownMenuItem onClick={() => handleShare(test.paperId)} className="cursor-pointer">
+              <DropdownMenuItem
+                onClick={() => handleShare(test.paperId)}
+                className="cursor-pointer"
+              >
                 <Share2 className="w-4 h-4 mr-2 text-gray-500" /> Share via App
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => handleCopyMessage(test.paperId)} className="cursor-pointer">
-              {copiedMessage ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2 text-gray-500" />}
+            <DropdownMenuItem
+              onClick={() => handleCopyMessage(test.paperId)}
+              className="cursor-pointer"
+            >
+              {copiedMessage ? (
+                <Check className="w-4 h-4 mr-2 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2 text-gray-500" />
+              )}
               Copy Message
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -32,6 +32,7 @@ const AddBulkQuestions = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [tagsInput, setTagsInput] = useState("nimi");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
 
   const [rawQuestionsForPrompt, setRawQuestionsForPrompt] = useState("");
 
@@ -71,7 +72,8 @@ Target JSON Structure:
       "English option C | मराठी पर्याय C",
       "English option D | मराठी पर्याय D"
     ],
-    "tags": "${getTagsString()}"
+    "tags": "${getTagsString()}",
+    "difficulty": "medium"
   }
 ]
 
@@ -80,8 +82,9 @@ Strict Rules:
 2. Merging Translations: If a question or option is already provided in two languages (e.g., English on one line, Marathi on the next), combine them with " | " as the separator.
 3. If only one language is present in the input, translate it to the other language to produce the bilingual string.
 4. Tags: The "tags" field must ALWAYS be set to exactly "${getTagsString()}". Do not change this value.
-5. Correct Answer: Extract only the option letter (A, B, C, or D).
-6. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.
+5. Difficulty: The "difficulty" field must be one of "easy", "medium", or "hard" based on the question content.
+6. Correct Answer: Extract only the option letter (A, B, C, or D).
+7. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.
 
 Input Data:
 ${rawQuestionsForPrompt}`;
@@ -108,7 +111,8 @@ Target JSON Structure:
       "English option C | मराठी पर्याय C",
       "English option D | मराठी पर्याय D"
     ],
-    "tags": "${getTagsString()}"
+    "tags": "${getTagsString()}",
+    "difficulty": "easy"
   }
 ]
 
@@ -119,8 +123,9 @@ ${instructionRule}
 4. Provide a balanced mix of difficulty levels: 30% easy, 50% medium, 20% hard.
 ${criteriaRule}
 6. Tags: The "tags" field must ALWAYS be set to exactly "${getTagsString()}". Do not change this value.
-7. Correct Answer: Use only the option letter (A, B, C, or D).
-8. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.`;
+7. Difficulty: The "difficulty" field must be one of "easy", "medium", or "hard".
+8. Correct Answer: Use only the option letter (A, B, C, or D).
+9. Output: Provide only the raw JSON code. Do not wrap it in markdown code blocks and do not include conversational text.`;
     }
   };
 
@@ -138,7 +143,7 @@ ${criteriaRule}
     setFetchingData(true);
     try {
       const data = await subjectService.listSubjects();
-      setSubjectData({ data: data.documents || [], selectedSubject: null });
+      setSubjectData({ data: data.rows || [], selectedSubject: null }); // listSubjects → .rows
     } catch (error) {
       console.error("Error fetching subjects:", error);
       setSubjectData({ data: [], selectedSubject: null });
@@ -274,6 +279,7 @@ ${criteriaRule}
         tags: getTagsString(),
         userId: profile.userId,
         userName: profile.userName,
+        difficulty: q.difficulty || selectedDifficulty,
       }));
 
       const payload = {
@@ -457,6 +463,23 @@ ${criteriaRule}
                   </Select.Content>
                 </Select.Portal>
               </Select.Root>
+            </div>
+
+            {/* Difficulty Select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Difficulty
+                <span className="ml-2 text-xs text-gray-400 font-normal">(applied to all questions)</span>
+              </label>
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
             </div>
 
             {/* Module Select */}

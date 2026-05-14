@@ -25,7 +25,7 @@ import QuotaExceeded from "./pages/QuotaExceeded.jsx";
 import CreateQuestion from "./private/mocktest/CreateQuestion.jsx";
 import ManageQuestions from "./private/mocktest/ManageQuestions.jsx";
 import EditQuestion from "./private/mocktest/EditQuestion.jsx";
-import CreateMockTest from "./private/mocktest/CreateMockTest.jsx";
+import CreateMockTestPage from "./private/mocktest/CreateMockTest/index.jsx";
 import AllMockTests from "./private/mocktest/AllMockTests.jsx";
 import StartMockTest from "./private/mocktest/StartMockTest.jsx";
 import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
@@ -129,7 +129,7 @@ const router = (
           <Route path="create-question" element={<CreateQuestion />} />
           <Route path="manage-questions" element={<ManageQuestions />} />
           <Route path="edit/:quesId" element={<EditQuestion />} />
-          <Route path="mock-exam" element={<CreateMockTest />} />
+          <Route path="mock-exam" element={<CreateMockTestPage />} />
           <Route path="all-mock-tests" element={<AllMockTests />} />
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />

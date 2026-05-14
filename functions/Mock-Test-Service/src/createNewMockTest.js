@@ -37,7 +37,7 @@ const createNewMockTest = async ({
 
     const paper = paperResponse.documents.find(item => item.isOriginal);
 
-    const { tradeId, tradeName, year, questions, quesCount,totalMinutes } = paper;
+    const { tradeId, tradeName, year, questions, quesCount, totalMinutes, title, negativeMarking, visibility, difficultyLevel } = paper;
 
     const processedQuestions = questions.map((question) => {
       const parsedQuestion = JSON.parse(question);
@@ -67,7 +67,11 @@ const createNewMockTest = async ({
       userName,
       score: null,
       submitted: false,
-      totalMinutes
+      totalMinutes,
+      title,
+      negativeMarking,
+      visibility,
+      difficultyLevel
     };
 
     // Create a new document in the new collection

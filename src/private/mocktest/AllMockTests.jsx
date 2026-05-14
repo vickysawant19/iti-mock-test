@@ -43,11 +43,28 @@ const AllMockTests = () => {
           Query.limit(ITEMS_PER_PAGE),
           Query.offset(startIndex),
           Query.select([
-            "endTime", "isOriginal", "isProtected", "paperId", "quesCount",
-            "score", "startTime", "submitted", "totalMinutes", "tradeId",
-            "tradeName", "userId", "userName", "year", "$createdAt", "$id",
+            "endTime",
+            "isOriginal",
+            "isProtected",
+            "paperId",
+            "quesCount",
+            "score",
+            "startTime",
+            "submitted",
+            "totalMinutes",
+            "tradeId",
+            "tradeName",
+            "userId",
+            "userName",
+            "year",
+            "$createdAt",
+            "$id",
+            "title",
+            "visibility",
+            "negativeMarking",
+            "difficultyLevel",
           ]),
-        ]
+        ],
       );
 
       if (response) {
@@ -79,7 +96,9 @@ const AllMockTests = () => {
   };
 
   const handleDelete = async (paperId) => {
-    const confirmation = window.confirm("Are you sure you want to delete this paper?");
+    const confirmation = window.confirm(
+      "Are you sure you want to delete this paper?",
+    );
     if (!confirmation) return;
 
     setIsDeleting((prev) => ({ ...prev, [paperId]: true }));
@@ -90,7 +109,9 @@ const AllMockTests = () => {
         const cachedData = cachedMockTests.current.get(currentPage);
         cachedMockTests.current.set(currentPage, {
           ...cachedData,
-          documents: cachedData.documents.filter((test) => test.$id !== paperId),
+          documents: cachedData.documents.filter(
+            (test) => test.$id !== paperId,
+          ),
         });
       }
       toast.success("Deleted!");
@@ -143,7 +164,9 @@ const AllMockTests = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-28 gap-4">
             <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">Loading mock tests…</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Loading mock tests…
+            </p>
           </div>
         ) : mockTests.length === 0 ? (
           /* Empty state */
@@ -166,8 +189,14 @@ const AllMockTests = () => {
             {totalPages > 1 && (
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Page <span className="font-semibold text-gray-700 dark:text-gray-200">{currentPage}</span> of{" "}
-                  <span className="font-semibold text-gray-700 dark:text-gray-200">{totalPages}</span>
+                  Page{" "}
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    {currentPage}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    {totalPages}
+                  </span>
                 </p>
                 <Pagination
                   currentPage={currentPage}
