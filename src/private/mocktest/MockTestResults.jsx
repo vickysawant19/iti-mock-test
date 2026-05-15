@@ -172,7 +172,7 @@ const StatCard = ({ icon: Icon, label, value, sub, iconClass }) => (
 );
 
 // ─── Student Row ──────────────────────────────────────────────────────────────
-const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onExtendTime, onDelete }) => {
+const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, onPreview, onExtendTime, onDelete }) => {
   const rank = index + 1;
   const medal = medalColors[rank];
   const score = result.score ?? 0;
@@ -250,7 +250,7 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onEx
         {/* Name + time */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {result.submitted ? (
+            {result.submitted && (canSeeScores || isMe) ? (
               <Link
                 to={`/show-mock-test/${result.$id}`}
                 target="_blank"
@@ -297,20 +297,28 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, onPreview, onEx
         {/* Score */}
         <div className="shrink-0 text-right">
           <div className="flex items-baseline gap-0.5">
-            <span
-              className={`text-base font-bold ${
-                scorePct >= 70
-                  ? "text-green-600 dark:text-green-400"
-                  : scorePct >= 40
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-red-500 dark:text-red-400"
-              }`}
-            >
-              {score}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
-              /{quesCount ?? "—"}
-            </span>
+            {canSeeScores || (isMe && result.submitted) ? (
+              <>
+                <span
+                  className={`text-base font-bold ${
+                    scorePct >= 70
+                      ? "text-green-600 dark:text-green-400"
+                      : scorePct >= 40
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-red-500 dark:text-red-400"
+                  }`}
+                >
+                  {score}
+                </span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  /{quesCount ?? "—"}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Locked
+              </span>
+            )}
           </div>
           <div className="text-xs text-gray-400 dark:text-gray-500">
             {result.submitted
@@ -721,6 +729,12 @@ const MockTestResults = () => {
       filtered = filtered.filter((i) => !i.submitted);
     return filtered;
   }, [data, searchQuery, filterStatus]);
+
+  const canSeeOthersDetails = useMemo(() => {
+    if (isTeacher) return true;
+    // Current student can see others' results ONLY if they have submitted their own paper
+    return data.some(r => r.userId === profile?.userId && r.submitted);
+  }, [data, isTeacher, profile?.userId]);
 
   const stats = useMemo(() => {
     const submitted = data.filter((i) => i.submitted);
@@ -1195,6 +1209,7 @@ const MockTestResults = () => {
                     isMe={profile?.userId === result.userId}
                     quesCount={stats.quesCount}
                     isTeacher={isTeacher}
+                    canSeeScores={canSeeOthersDetails}
                     onPreview={(id) => setPreviewId(id)}
                     onExtendTime={(res) => {
                       setExtendState({ id: res.$id, name: res.userName, currentMinutes: res.totalMinutes });

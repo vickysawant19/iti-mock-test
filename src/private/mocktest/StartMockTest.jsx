@@ -30,6 +30,9 @@ const StartMockTest = () => {
   const [timeWarning, setTimeWarning] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isGreetShown, setIsGreetShown] = useState(false);
+  const [strikes, setStrikes] = useState(0);
+  const strikesRef = useRef(0);
+  const containerRef = useRef(null);
 
   const [searchParams] = useSearchParams();
   const encodedRedirect = searchParams.get("redirect");
@@ -183,19 +186,64 @@ const StartMockTest = () => {
   useEffect(() => {
     const handleCopyPaste = (e) => {
       e.preventDefault();
-      alert("Copying and pasting is disabled on this page.");
+      toast.error("Copying and pasting is disabled!");
+    };
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      toast.error("Right-click is disabled!");
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && isGreetShown && !submitted) {
+        handleStrike();
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && isGreetShown && !submitted) {
+        handleStrike();
+      }
+    };
+
+    const handleStrike = () => {
+      strikesRef.current += 1;
+      setStrikes(strikesRef.current);
+
+      if (strikesRef.current === 1) {
+        toast.warning("⚠️ WARNING (1/3): Tab switching or exiting full-screen is not allowed!", {
+          position: "top-center",
+          autoClose: 10000,
+        });
+      } else if (strikesRef.current === 2) {
+        toast.warning("🚨 FINAL WARNING (2/3): One more violation will auto-submit your exam immediately!", {
+          position: "top-center",
+          autoClose: 10000,
+        });
+      } else if (strikesRef.current >= 3) {
+        toast.error("🚨 EXAM TERMINATED (3/3): Multiple violations detected. Auto-submitting...", {
+          position: "top-center",
+        });
+        handleSubmitExam();
+      }
     };
 
     document.addEventListener("copy", handleCopyPaste);
     document.addEventListener("paste", handleCopyPaste);
     document.addEventListener("cut", handleCopyPaste);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       document.removeEventListener("copy", handleCopyPaste);
       document.removeEventListener("paste", handleCopyPaste);
       document.removeEventListener("cut", handleCopyPaste);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
-  }, []);
+  }, [isGreetShown, submitted]);
 
   // 1. Timer ticking effect based on absolute system time (fixes background tab pausing)
   useEffect(() => {
@@ -240,6 +288,16 @@ const StartMockTest = () => {
       await mockTestService.updateTime(mockTest.$id, { startTime });
       setRemainingSeconds((mockTest.totalMinutes || 60) * 60);
       setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
+      
+      // Request Fullscreen
+      try {
+        if (containerRef.current?.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        }
+      } catch (err) {
+        console.error("Fullscreen request failed:", err);
+      }
+      
       setIsGreetShown(true);
     } catch (error) {
       toast.error("Error starting exam!");
@@ -293,7 +351,7 @@ const StartMockTest = () => {
   }
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
+    <div ref={containerRef} className="bg-gray-100 dark:bg-gray-900 min-h-screen select-none">
       {!isGreetShown ? (
         <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
