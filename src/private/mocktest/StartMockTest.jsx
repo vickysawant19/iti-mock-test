@@ -33,6 +33,7 @@ const StartMockTest = () => {
   const [strikes, setStrikes] = useState(0);
   const strikesRef = useRef(0);
   const containerRef = useRef(null);
+  const isConfirmingRef = useRef(false);
 
   const [searchParams] = useSearchParams();
   const encodedRedirect = searchParams.get("redirect");
@@ -200,6 +201,12 @@ const StartMockTest = () => {
       }
     };
 
+    const handleBlur = () => {
+      if (isGreetShown && !submitted && !isConfirmingRef.current) {
+        handleStrike();
+      }
+    };
+
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isGreetShown && !submitted) {
         handleStrike();
@@ -234,6 +241,7 @@ const StartMockTest = () => {
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    window.addEventListener("blur", handleBlur);
 
     return () => {
       document.removeEventListener("copy", handleCopyPaste);
@@ -242,6 +250,7 @@ const StartMockTest = () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.removeEventListener("blur", handleBlur);
     };
   }, [isGreetShown, submitted]);
 
@@ -358,9 +367,11 @@ const StartMockTest = () => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            isConfirmingRef.current = true;
             const confirmation = window.confirm(
               "Do you want to submit the exam?"
             );
+            setTimeout(() => { isConfirmingRef.current = false; }, 500);
             if (confirmation) handleSubmitExam();
           }}
           className="space-y-6 p-4"
