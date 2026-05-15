@@ -182,6 +182,12 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
     result.totalMinutes,
   );
 
+  // ── Visibility Logic (Anti-Cheating) ──────────────────────────────────────
+  // Teachers see everything. Students see scores/links only for submitted papers,
+  // and only if they themselves have already submitted (canSeeScores).
+  const showScore = isTeacher || ((canSeeScores || isMe) && result.submitted);
+  const showLink = result.submitted && (canSeeScores || isMe);
+
   React.useEffect(() => {
     if (isLive && isTimeUp) {
       const autoSubmit = async () => {
@@ -250,7 +256,7 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
         {/* Name + time */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {result.submitted && (canSeeScores || isMe) ? (
+            {showLink ? (
               <Link
                 to={`/show-mock-test/${result.$id}`}
                 target="_blank"
@@ -297,7 +303,7 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
         {/* Score */}
         <div className="shrink-0 text-right">
           <div className="flex items-baseline gap-0.5">
-            {canSeeScores || (isMe && result.submitted) ? (
+            {showScore ? (
               <>
                 <span
                   className={`text-base font-bold ${
