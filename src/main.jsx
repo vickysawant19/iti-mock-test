@@ -27,7 +27,7 @@ import ManageQuestions from "./private/mocktest/ManageQuestions.jsx";
 import EditQuestion from "./private/mocktest/EditQuestion.jsx";
 import CreateMockTestPage from "./private/mocktest/CreateMockTest/index.jsx";
 import AllMockTests from "./private/mocktest/AllMockTests.jsx";
-import StartMockTest from "./private/mocktest/StartMockTest.jsx";
+import StartMockTest from "./private/mocktest/StartMockTest/index.jsx";
 import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
 import AttainTest from "./private/mocktest/AttainTest.jsx";
 import MockTestResults from "./private/mocktest/MockTestResults.jsx";
