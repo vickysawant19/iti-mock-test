@@ -87,7 +87,7 @@ const MockTestGreet = ({ mockTest, handleStartExam }) => {
                 onClick={() => handleStartExam()}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white py-3 px-6"
               >
-                Start Test
+                {mockTest?.startTime ? "Resume Test" : "Start Test"}
               </Button>
             </div>
           </CardContent>

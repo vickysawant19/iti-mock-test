@@ -15,18 +15,18 @@ export function Header({ isSubmitting }) {
         </p>
       </div>
       
-      <div className="mt-4 md:mt-0 flex gap-3 w-full md:w-auto">
+      <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
         <Button 
           type="button" 
           variant="outline" 
-          className="w-full md:w-auto"
+          className="w-full sm:w-auto"
         >
           Save Draft
         </Button>
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
         >
           <Save className="h-4 w-4" />
           {isSubmitting ? "Creating..." : "Create Test"}

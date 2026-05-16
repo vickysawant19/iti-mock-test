@@ -168,7 +168,9 @@ const StartMockTest = () => {
               totalSeconds - differenceInSeconds(new Date(), startTime)
             )
           );
-          setIsGreetShown(true);
+          // We intentionally DO NOT set isGreetShown(true) here.
+          // The browser requires a user click event to trigger fullscreen mode.
+          // The user will see a "Resume Test" button on the greet screen instead.
         }
         setMockTest(userTest);
       } catch (error) {
@@ -214,6 +216,12 @@ const StartMockTest = () => {
     };
 
     const handleStrike = () => {
+      // Disable strikes during development for easier debugging
+      if (import.meta.env.DEV) {
+        console.log("Security strike ignored in development mode.");
+        return;
+      }
+
       strikesRef.current += 1;
       setStrikes(strikesRef.current);
 
@@ -289,14 +297,13 @@ const StartMockTest = () => {
 
   const handleStartExam = async () => {
     try {
-      const startTime = new Date();
-      // Only persist the startTime — do NOT spread the cloud response back into
-      // state, because saveProgress() already replaced cloud questions with
-      // lightweight { $id, response } pairs. The in-memory questions (merged
-      // from the original paper) are fully populated and must be kept.
-      await mockTestService.updateTime(mockTest.$id, { startTime });
-      setRemainingSeconds((mockTest.totalMinutes || 60) * 60);
-      setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
+      // Only set startTime if it's the first time starting the exam
+      if (!mockTest.startTime) {
+        const startTime = new Date();
+        await mockTestService.updateTime(mockTest.$id, { startTime });
+        setRemainingSeconds((mockTest.totalMinutes || 60) * 60);
+        setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
+      }
       
       // Request Fullscreen
       try {
@@ -360,7 +367,7 @@ const StartMockTest = () => {
   }
 
   return (
-    <div ref={containerRef} className="bg-gray-100 dark:bg-gray-900 min-h-screen select-none">
+    <div ref={containerRef} className="bg-slate-50 dark:bg-slate-950 h-screen overflow-hidden flex flex-col select-none font-sans">
       {!isGreetShown ? (
         <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
@@ -374,189 +381,231 @@ const StartMockTest = () => {
             setTimeout(() => { isConfirmingRef.current = false; }, 500);
             if (confirmation) handleSubmitExam();
           }}
-          className="space-y-6 p-4"
+          className="flex-grow flex flex-col w-full max-w-[1600px] mx-auto overflow-hidden"
         >
-          {timeWarning && (
-            <Alert variant="destructive" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Warning: Less than 5 minutes remaining!
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Fixed Header */}
+          <div className="flex-shrink-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 md:px-8 md:py-4 transition-all">
+            {timeWarning && (
+              <Alert variant="destructive" className="mb-3 flex items-center gap-2 border-red-500/50 bg-red-50 dark:bg-red-950/50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="font-medium text-red-700 dark:text-red-300">
+                  Warning: Less than 5 minutes remaining!
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <div className="mt-4 flex justify-between items-center">
-            <div className="flex items-center gap-2 text-lg font-semibold dark:text-gray-200">
-              <Timer className="h-6 w-6" />
-              <span
-                className={`${
-                  remainingSeconds <= 300
-                    ? "text-red-600 dark:text-red-400"
-                    : ""
-                } font-mono`}
-              >
-                {formatTime(remainingSeconds)}
-              </span>
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-xl font-bold dark:text-slate-100">
+                  <Timer className={`h-6 w-6 ${remainingSeconds <= 300 ? "text-red-500 animate-pulse" : "text-blue-500"}`} />
+                  <span className={`${remainingSeconds <= 300 ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200"} font-mono tracking-tight`}>
+                    {formatTime(remainingSeconds)}
+                  </span>
+                </div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                  {mockTest.questions.filter(q => q.response).length} of {mockTest.questions.length} Answered
+                </div>
+              </div>
+
+              {!submitted && (
+                <Button
+                  type="submit"
+                  disabled={isSubmitLoading}
+                  className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-md transition-all hover:scale-105 rounded-xl font-semibold px-6"
+                >
+                  Submit Exam
+                </Button>
+              )}
             </div>
 
-            {!submitted && (
-              <Button
-                type="submit"
-                disabled={isSubmitLoading}
-                variant="destructive"
-              >
-                Submit Exam
-              </Button>
-            )}
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+              <div 
+                className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(mockTest.questions.filter(q => q.response).length / mockTest.questions.length) * 100}%` }}
+              ></div>
+            </div>
           </div>
 
-          <Card className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                  Question {currentQuestionIndex + 1} of{" "}
-                  {mockTest.questions.length}
-                </h2>
-                {mockTest.questions[currentQuestionIndex].userName && (
-                  <h6 className="text-xs font-thin text-slate-400 dark:text-slate-500">
-                    Created by:{" "}
-                    {mockTest.questions[currentQuestionIndex].userName}
-                  </h6>
-                )}
-              </div>
+          {/* Main Workspace */}
+          <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
+            
+            {/* Left Scrollable Area: Question & Navigation */}
+            <div className="flex-grow lg:w-3/4 overflow-y-auto p-4 md:p-8 scroll-smooth pb-24 lg:pb-8">
+              <Card className="border-0 shadow-sm rounded-3xl dark:bg-slate-900 overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
+                <CardContent className="p-6 md:p-8 lg:p-10">
+                  <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <span className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-bold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      Question {currentQuestionIndex + 1} of {mockTest.questions.length}
+                    </span>
+                    {mockTest.questions[currentQuestionIndex].userName && (
+                      <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-md">
+                        By {mockTest.questions[currentQuestionIndex].userName}
+                      </span>
+                    )}
+                  </div>
 
-              <p className="text-gray-600 dark:text-gray-300 mb-6 font-semibold">
-                {mockTest.questions[currentQuestionIndex].question}
-              </p>
+                  <h3 className="text-base md:text-lg font-medium text-slate-800 dark:text-slate-100 mb-8 leading-relaxed">
+                    {mockTest.questions[currentQuestionIndex].question}
+                  </h3>
 
-              <div className="flex gap-2 m-2">
-                {mockTest.questions[currentQuestionIndex]?.images?.map(
-                  (img) => {
-                    const image = JSON.parse(img);
-                    return (
-                      <img
-                        className="min-h-32 max-h-60"
-                        key={image.id}
-                        src={image.url}
-                        alt={image.name}
-                      />
-                    );
-                  }
-                )}
-              </div>
+                  {mockTest.questions[currentQuestionIndex]?.images?.length > 0 && (
+                    <div className="flex flex-wrap gap-4 mb-8">
+                      {mockTest.questions[currentQuestionIndex].images.map(
+                        (img) => {
+                          const image = JSON.parse(img);
+                          return (
+                            <img
+                              className="rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm max-h-64 object-contain bg-white dark:bg-slate-800"
+                              key={image.id}
+                              src={image.url}
+                              alt={image.name}
+                            />
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
 
-              <div className="space-y-3">
-                {(mockTest.questions[currentQuestionIndex].options ?? []).map(
-                  (option, index) => {
-                    const isSelected =
-                      mockTest.questions[currentQuestionIndex].response ===
-                      String.fromCharCode(65 + index);
+                  <div className="space-y-4">
+                    {(mockTest.questions[currentQuestionIndex].options ?? []).map(
+                      (option, index) => {
+                        const isSelected =
+                          mockTest.questions[currentQuestionIndex].response ===
+                          String.fromCharCode(65 + index);
 
-                    return (
-                      <Label
-                        key={index}
-                        className={`
-                          block text-gray-700 dark:text-gray-200 cursor-pointer
-                          p-2 rounded-lg border-2 transition-all duration-200
-                          ${
-                            isSelected
-                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900 dark:border-blue-600"
-                              : "border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-                          }
-                        `}
-                      >
-                        <div className="flex items-center">
-                          <input
-                            type="radio"
-                            name={`question-${currentQuestionIndex}`}
-                            value={String.fromCharCode(65 + index)}
-                            onChange={() =>
-                              handleOptionChange(
-                                mockTest.questions[currentQuestionIndex].$id,
-                                String.fromCharCode(65 + index)
-                              )
-                            }
-                            checked={isSelected}
-                            className="hidden"
-                          />
-
-                          <div
+                        return (
+                          <Label
+                            key={index}
                             className={`
-                              w-8 h-8 flex items-center p-2 justify-center rounded-full border-2
+                              group relative flex items-center p-3 rounded-2xl border-2 cursor-pointer
+                              transition-all duration-300 ease-in-out
                               ${
                                 isSelected
-                                  ? "border-blue-500 bg-blue-500 text-white dark:border-blue-600 dark:bg-blue-600"
-                                  : "border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                                  ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 dark:border-blue-500 shadow-sm scale-[1.01]"
+                                  : "border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                               }
                             `}
                           >
-                            {isSelected ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <span className="font-medium">
-                                {String.fromCharCode(65 + index)}
-                              </span>
-                            )}
-                          </div>
+                            <input
+                              type="radio"
+                              name={`question-${currentQuestionIndex}`}
+                              value={String.fromCharCode(65 + index)}
+                              onChange={() =>
+                                handleOptionChange(
+                                  mockTest.questions[currentQuestionIndex].$id,
+                                  String.fromCharCode(65 + index)
+                                )
+                              }
+                              checked={isSelected}
+                              className="hidden"
+                            />
 
-                          <span className="ml-4">{option}</span>
-                        </div>
-                      </Label>
-                    );
-                  }
+                            <div
+                              className={`
+                                flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl border-2 transition-colors duration-300
+                                ${
+                                  isSelected
+                                    ? "border-blue-500 bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                                    : "border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 group-hover:border-blue-400 dark:group-hover:border-blue-500"
+                                }
+                              `}
+                            >
+                              {isSelected ? (
+                                <Check className="w-4 h-4 animate-in zoom-in-50" />
+                              ) : (
+                                <span className="font-semibold text-base">
+                                  {String.fromCharCode(65 + index)}
+                                </span>
+                              )}
+                            </div>
+
+                            <span className={`ml-3 text-sm md:text-base transition-colors duration-300 ${isSelected ? "text-blue-900 dark:text-blue-100 font-medium" : "text-slate-700 dark:text-slate-300"}`}>
+                              {option}
+                            </span>
+                          </Label>
+                        );
+                      }
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Navigation Buttons */}
+              <div className={`flex mt-8 mb-4 lg:mb-0 ${currentQuestionIndex > 0 ? "justify-between" : "justify-end"}`}>
+                {currentQuestionIndex > 0 && (
+                  <Button
+                    type="button"
+                    onClick={() => handleNavigation(-1)}
+                    variant="outline"
+                    className="rounded-xl px-6 py-6 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all font-semibold"
+                  >
+                    Previous
+                  </Button>
+                )}
+                {currentQuestionIndex < mockTest.questions.length - 1 && (
+                  <Button
+                    type="button"
+                    onClick={() => handleNavigation(1)}
+                    className="rounded-xl px-8 py-6 bg-slate-900 hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-500 shadow-lg hover:shadow-xl transition-all hover:scale-105 font-semibold"
+                  >
+                    Next Question
+                  </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <div
-            className={`flex ${
-              currentQuestionIndex > 0 ? "justify-between" : "justify-end"
-            }`}
-          >
-            {currentQuestionIndex > 0 && (
-              <Button
-                type="button"
-                onClick={() => handleNavigation(-1)}
-                variant="secondary"
-                className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
-              >
-                Previous
-              </Button>
-            )}
-            {currentQuestionIndex < mockTest.questions.length - 1 && (
-              <Button
-                type="button"
-                onClick={() => handleNavigation(1)}
-                className="dark:bg-blue-700 dark:hover:bg-blue-600"
-              >
-                Next
-              </Button>
-            )}
-          </div>
+            {/* Right Scrollable Area: Question Palette */}
+            <div className="lg:w-1/4 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 lg:overflow-y-auto p-4 md:p-6 backdrop-blur-sm">
+              <div className="mb-6 hidden lg:block">
+                <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">Status Overview</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <div className="w-4 h-4 rounded-md bg-emerald-500 shadow-sm shadow-emerald-500/20"></div>
+                    <span>Answered</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <div className="w-4 h-4 rounded-md border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800"></div>
+                    <span>Unanswered</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <div className="w-4 h-4 rounded-md bg-blue-500 ring-2 ring-blue-500/30"></div>
+                    <span>Current</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="flex flex-wrap mt-4 border dark:border-gray-700 justify-center p-2 rounded-md">
-            {mockTest.questions.map((ques, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`m-1 size-10 p-2 border rounded-md transition-colors
-                  ${
-                    currentQuestionIndex === index
-                      ? "bg-blue-500 dark:bg-blue-600 text-white"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                  }
-                  ${
-                    ques.response
-                      ? "bg-green-400 dark:bg-green-700 text-white"
-                      : ""
-                  }
-                `}
-              >
-                {index + 1}
-              </button>
-            ))}
+              <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">Question Navigator</h4>
+              <div className="flex flex-wrap gap-2 md:gap-3">
+                {mockTest.questions.map((ques, index) => {
+                  const isCurrent = currentQuestionIndex === index;
+                  const isAnswered = !!ques.response;
+
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setCurrentQuestionIndex(index)}
+                      className={`
+                        w-11 h-11 md:w-12 md:h-12 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center
+                        ${isCurrent ? "ring-4 ring-blue-500/30 scale-110 z-10" : "hover:scale-105"}
+                        ${
+                          isAnswered
+                            ? isCurrent
+                              ? "bg-emerald-500 text-white border-none shadow-md shadow-emerald-500/20"
+                              : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800"
+                            : isCurrent
+                              ? "bg-blue-500 text-white border-none shadow-md shadow-blue-500/20"
+                              : "bg-white text-slate-600 border-2 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
+                        }
+                      `}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </form>
       )}

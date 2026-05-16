@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
@@ -41,11 +41,17 @@ export function useNotifications() {
 
   const userBatches = useSelector(selectUserBatches);
   const isBatchLoading = useSelector(selectActiveBatchLoading);
+  const isFetchingRef = useRef(false);
+
+  const userBatchIds = isTeacher && userBatches ? userBatches.map(b => b.$id).sort().join(',') : '';
+  const loadingDependency = isTeacher ? isBatchLoading : false;
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.$id) return;
     if (isTeacher && isBatchLoading) return; // Wait until Redux loads the batches
+    if (isFetchingRef.current) return; // Prevent concurrent fetching
     
+    isFetchingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -167,8 +173,9 @@ export function useNotifications() {
       console.error("useNotifications fetch error:", err);
     } finally {
       setIsLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [user, isTeacher, isStudent, userBatches, isBatchLoading]);
+  }, [user?.$id, isTeacher, isStudent, userBatchIds, loadingDependency]);
 
   useEffect(() => {
     fetchNotifications();

@@ -14,7 +14,7 @@ export function ModeSelector() {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Creation Mode</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {modes.map((mode) => {
           const Icon = mode.icon;
           const isActive = currentMode === mode.id;

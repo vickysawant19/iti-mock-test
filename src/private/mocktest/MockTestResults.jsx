@@ -23,6 +23,7 @@ import {
   Copy,
   Check,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { format, differenceInMinutes } from "date-fns";
 import { toast } from "react-toastify";
@@ -172,7 +173,7 @@ const StatCard = ({ icon: Icon, label, value, sub, iconClass }) => (
 );
 
 // ─── Student Row ──────────────────────────────────────────────────────────────
-const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, onPreview, onExtendTime, onDelete }) => {
+const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, onPreview, onExtendTime, onDelete, onRestart }) => {
   const rank = index + 1;
   const medal = medalColors[rank];
   const score = result.score ?? 0;
@@ -361,6 +362,9 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onExtendTime(result)} className="cursor-pointer">
                   <Clock className="w-4 h-4 mr-2 text-blue-500" /> Extend Time
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onRestart(result)} className="cursor-pointer text-orange-600 focus:bg-orange-50 dark:focus:bg-orange-900/20 focus:text-orange-700">
+                  <RotateCcw className="w-4 h-4 mr-2" /> Restart Exam
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onDelete(result.$id)} className="cursor-pointer text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20 focus:text-red-700">
@@ -812,6 +816,18 @@ const MockTestResults = () => {
     }
   };
 
+  const handleRestart = async (result) => {
+    if (!window.confirm(`Are you sure you want to restart the exam for ${result.userName}? This will revert their submission status.`)) return;
+    try {
+      await mockTestService.updateRow(result.$id, {
+        submitted: false
+      });
+      toast.success("Exam restarted successfully!");
+    } catch (err) {
+      toast.error(err.message || "Failed to restart exam");
+    }
+  };
+
   const handleExtendTimeSubmit = async () => {
     if (!extendState) return;
     try {
@@ -1222,6 +1238,7 @@ const MockTestResults = () => {
                       setNewMinutes(res.totalMinutes || 0);
                     }}
                     onDelete={handleDelete}
+                    onRestart={handleRestart}
                   />
                 ))}
               </div>
