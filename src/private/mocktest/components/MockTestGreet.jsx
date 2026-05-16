@@ -14,15 +14,15 @@ const MockTestGreet = ({ mockTest, handleStartExam }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 relative overflow-hidden">
+    <div className="h-full w-full flex-grow bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 relative overflow-y-auto overflow-x-hidden">
       {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute h-20 w-20 rounded-full bg-blue-200 dark:bg-blue-800 opacity-20 animate-float top-20 left-10" />
         <div className="absolute h-32 w-32 rounded-full bg-indigo-200 dark:bg-indigo-800 opacity-20 animate-float-delay top-40 right-20" />
         <div className="absolute h-24 w-24 rounded-full bg-purple-200 dark:bg-purple-800 opacity-20 animate-float-slow bottom-20 left-1/4" />
       </div>
 
-      <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="relative min-h-full flex items-center justify-center px-4 py-10">
         <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-xl p-6 w-full max-w-lg mx-auto transform transition-all hover:scale-105">
           <CardContent className="space-y-6 p-6">
             {/* Header */}

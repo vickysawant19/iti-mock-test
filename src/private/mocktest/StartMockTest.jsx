@@ -1,14 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  useParams,
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import { Timer, AlertCircle, Check } from "lucide-react";
-import {  differenceInSeconds, format } from "date-fns";
+import { differenceInSeconds, format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import MockTestGreet from "./components/MockTestGreet";
@@ -30,6 +26,7 @@ const StartMockTest = () => {
   const [timeWarning, setTimeWarning] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isGreetShown, setIsGreetShown] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [strikes, setStrikes] = useState(0);
   const strikesRef = useRef(0);
   const containerRef = useRef(null);
@@ -37,9 +34,10 @@ const StartMockTest = () => {
 
   const [searchParams] = useSearchParams();
   const encodedRedirect = searchParams.get("redirect");
-  const decodedRedirect = encodedRedirect && encodedRedirect !== "null"
-    ? decodeURIComponent(encodedRedirect)
-    : "";
+  const decodedRedirect =
+    encodedRedirect && encodedRedirect !== "null"
+      ? decodeURIComponent(encodedRedirect)
+      : "";
 
   const navigate = useNavigate();
 
@@ -53,7 +51,10 @@ const StartMockTest = () => {
     saveDebounceRef.current = setTimeout(async () => {
       if (!pendingQuestionsRef.current) return;
       try {
-        await mockTestService.saveProgress(paperId, pendingQuestionsRef.current);
+        await mockTestService.saveProgress(
+          paperId,
+          pendingQuestionsRef.current,
+        );
         pendingQuestionsRef.current = null;
       } catch (err) {
         console.error("Auto-save failed:", err);
@@ -68,7 +69,10 @@ const StartMockTest = () => {
     }
     if (pendingQuestionsRef.current) {
       try {
-        await mockTestService.saveProgress(paperId, pendingQuestionsRef.current);
+        await mockTestService.saveProgress(
+          paperId,
+          pendingQuestionsRef.current,
+        );
         pendingQuestionsRef.current = null;
       } catch (err) {
         console.error("Flush save failed:", err);
@@ -131,16 +135,14 @@ const StartMockTest = () => {
         }
 
         userTest.questions = userTest.questions.map((question) =>
-          JSON.parse(question)
+          JSON.parse(question),
         );
 
         if (userTest.isOriginal !== null && !userTest.isOriginal) {
-          const originalTestResponse = await mockTestService.listQuestions(
-            [
-              Query.equal("paperId", userTest.paperId),
-              Query.equal("isOriginal", true),
-            ]
-          );
+          const originalTestResponse = await mockTestService.listQuestions([
+            Query.equal("paperId", userTest.paperId),
+            Query.equal("isOriginal", true),
+          ]);
           if (originalTestResponse.length === 0) {
             toast.error("Paper expired!");
             navigate(-1);
@@ -148,10 +150,10 @@ const StartMockTest = () => {
           }
           const originalTest = originalTestResponse[0];
           originalTest.questions = originalTest.questions.map((item) =>
-            JSON.parse(item)
+            JSON.parse(item),
           );
           const QuestionsLookup = new Map(
-            originalTest.questions.map((item) => [item.$id, item])
+            originalTest.questions.map((item) => [item.$id, item]),
           );
           userTest.questions = userTest.questions.map((ques) => ({
             ...QuestionsLookup.get(ques.$id),
@@ -165,8 +167,8 @@ const StartMockTest = () => {
           setRemainingSeconds(
             Math.max(
               0,
-              totalSeconds - differenceInSeconds(new Date(), startTime)
-            )
+              totalSeconds - differenceInSeconds(new Date(), startTime),
+            ),
           );
           // We intentionally DO NOT set isGreetShown(true) here.
           // The browser requires a user click event to trigger fullscreen mode.
@@ -203,12 +205,6 @@ const StartMockTest = () => {
       }
     };
 
-    const handleBlur = () => {
-      if (isGreetShown && !submitted && !isConfirmingRef.current) {
-        handleStrike();
-      }
-    };
-
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isGreetShown && !submitted) {
         handleStrike();
@@ -226,19 +222,28 @@ const StartMockTest = () => {
       setStrikes(strikesRef.current);
 
       if (strikesRef.current === 1) {
-        toast.warning("⚠️ WARNING (1/3): Tab switching or exiting full-screen is not allowed!", {
-          position: "top-center",
-          autoClose: 10000,
-        });
+        toast.warning(
+          "⚠️ WARNING (1/3): Tab switching or exiting full-screen is not allowed!",
+          {
+            position: "top-center",
+            autoClose: 10000,
+          },
+        );
       } else if (strikesRef.current === 2) {
-        toast.warning("🚨 FINAL WARNING (2/3): One more violation will auto-submit your exam immediately!", {
-          position: "top-center",
-          autoClose: 10000,
-        });
+        toast.warning(
+          "🚨 FINAL WARNING (2/3): One more violation will auto-submit your exam immediately!",
+          {
+            position: "top-center",
+            autoClose: 10000,
+          },
+        );
       } else if (strikesRef.current >= 3) {
-        toast.error("🚨 EXAM TERMINATED (3/3): Multiple violations detected. Auto-submitting...", {
-          position: "top-center",
-        });
+        toast.error(
+          "🚨 EXAM TERMINATED (3/3): Multiple violations detected. Auto-submitting...",
+          {
+            position: "top-center",
+          },
+        );
         handleSubmitExam();
       }
     };
@@ -249,7 +254,6 @@ const StartMockTest = () => {
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    window.addEventListener("blur", handleBlur);
 
     return () => {
       document.removeEventListener("copy", handleCopyPaste);
@@ -258,7 +262,6 @@ const StartMockTest = () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      window.removeEventListener("blur", handleBlur);
     };
   }, [isGreetShown, submitted]);
 
@@ -273,7 +276,7 @@ const StartMockTest = () => {
       const elapsedSecs = Math.floor((Date.now() - startMs) / 1000);
       const remaining = Math.max(0, totalSecs - elapsedSecs);
       setRemainingSeconds(remaining);
-      
+
       if (remaining <= 0) {
         clearInterval(timerRef.current);
       }
@@ -302,9 +305,12 @@ const StartMockTest = () => {
         const startTime = new Date();
         await mockTestService.updateTime(mockTest.$id, { startTime });
         setRemainingSeconds((mockTest.totalMinutes || 60) * 60);
-        setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
+        setMockTest((prev) => ({
+          ...prev,
+          startTime: startTime.toISOString(),
+        }));
       }
-      
+
       // Request Fullscreen
       try {
         if (containerRef.current?.requestFullscreen) {
@@ -313,7 +319,7 @@ const StartMockTest = () => {
       } catch (err) {
         console.error("Fullscreen request failed:", err);
       }
-      
+
       setIsGreetShown(true);
     } catch (error) {
       toast.error("Error starting exam!");
@@ -330,7 +336,7 @@ const StartMockTest = () => {
 
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
-      "0"
+      "0",
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
@@ -352,7 +358,6 @@ const StartMockTest = () => {
     });
   };
 
-
   const handleNavigation = (step) => {
     setCurrentQuestionIndex((prev) => {
       const newIndex = prev + step;
@@ -367,7 +372,10 @@ const StartMockTest = () => {
   }
 
   return (
-    <div ref={containerRef} className="bg-slate-50 dark:bg-slate-950 h-screen overflow-hidden flex flex-col select-none font-sans">
+    <div
+      ref={containerRef}
+      className="bg-slate-50 dark:bg-slate-950 h-screen overflow-hidden flex flex-col select-none font-sans"
+    >
       {!isGreetShown ? (
         <MockTestGreet mockTest={mockTest} handleStartExam={handleStartExam} />
       ) : (
@@ -376,9 +384,11 @@ const StartMockTest = () => {
             e.preventDefault();
             isConfirmingRef.current = true;
             const confirmation = window.confirm(
-              "Do you want to submit the exam?"
+              "Do you want to submit the exam?",
             );
-            setTimeout(() => { isConfirmingRef.current = false; }, 500);
+            setTimeout(() => {
+              isConfirmingRef.current = false;
+            }, 500);
             if (confirmation) handleSubmitExam();
           }}
           className="flex-grow flex flex-col w-full max-w-[1600px] mx-auto overflow-hidden"
@@ -386,7 +396,10 @@ const StartMockTest = () => {
           {/* Fixed Header */}
           <div className="flex-shrink-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 md:px-8 md:py-4 transition-all">
             {timeWarning && (
-              <Alert variant="destructive" className="mb-3 flex items-center gap-2 border-red-500/50 bg-red-50 dark:bg-red-950/50">
+              <Alert
+                variant="destructive"
+                className="mb-3 flex items-center gap-2 border-red-500/50 bg-red-50 dark:bg-red-950/50"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="font-medium text-red-700 dark:text-red-300">
                   Warning: Less than 5 minutes remaining!
@@ -397,13 +410,18 @@ const StartMockTest = () => {
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 text-xl font-bold dark:text-slate-100">
-                  <Timer className={`h-6 w-6 ${remainingSeconds <= 300 ? "text-red-500 animate-pulse" : "text-blue-500"}`} />
-                  <span className={`${remainingSeconds <= 300 ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200"} font-mono tracking-tight`}>
+                  <Timer
+                    className={`h-6 w-6 ${remainingSeconds <= 300 ? "text-red-500 animate-pulse" : "text-blue-500"}`}
+                  />
+                  <span
+                    className={`${remainingSeconds <= 300 ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200"} font-mono tracking-tight`}
+                  >
                     {formatTime(remainingSeconds)}
                   </span>
                 </div>
                 <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
-                  {mockTest.questions.filter(q => q.response).length} of {mockTest.questions.length} Answered
+                  {mockTest.questions.filter((q) => q.response).length} of{" "}
+                  {mockTest.questions.length} Answered
                 </div>
               </div>
 
@@ -420,23 +438,25 @@ const StartMockTest = () => {
 
             {/* Progress Bar */}
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
-              <div 
+              <div
                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${(mockTest.questions.filter(q => q.response).length / mockTest.questions.length) * 100}%` }}
+                style={{
+                  width: `${(mockTest.questions.filter((q) => q.response).length / mockTest.questions.length) * 100}%`,
+                }}
               ></div>
             </div>
           </div>
 
           {/* Main Workspace */}
           <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
-            
             {/* Left Scrollable Area: Question & Navigation */}
             <div className="flex-grow lg:w-3/4 overflow-y-auto p-4 md:p-8 scroll-smooth pb-24 lg:pb-8">
               <Card className="border-0 shadow-sm rounded-3xl dark:bg-slate-900 overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
                 <CardContent className="p-6 md:p-8 lg:p-10">
                   <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                     <span className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-bold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                      Question {currentQuestionIndex + 1} of {mockTest.questions.length}
+                      Question {currentQuestionIndex + 1} of{" "}
+                      {mockTest.questions.length}
                     </span>
                     {mockTest.questions[currentQuestionIndex].userName && (
                       <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-md">
@@ -449,7 +469,8 @@ const StartMockTest = () => {
                     {mockTest.questions[currentQuestionIndex].question}
                   </h3>
 
-                  {mockTest.questions[currentQuestionIndex]?.images?.length > 0 && (
+                  {mockTest.questions[currentQuestionIndex]?.images?.length >
+                    0 && (
                     <div className="flex flex-wrap gap-4 mb-8">
                       {mockTest.questions[currentQuestionIndex].images.map(
                         (img) => {
@@ -462,22 +483,23 @@ const StartMockTest = () => {
                               alt={image.name}
                             />
                           );
-                        }
+                        },
                       )}
                     </div>
                   )}
 
                   <div className="space-y-4">
-                    {(mockTest.questions[currentQuestionIndex].options ?? []).map(
-                      (option, index) => {
-                        const isSelected =
-                          mockTest.questions[currentQuestionIndex].response ===
-                          String.fromCharCode(65 + index);
+                    {(
+                      mockTest.questions[currentQuestionIndex].options ?? []
+                    ).map((option, index) => {
+                      const isSelected =
+                        mockTest.questions[currentQuestionIndex].response ===
+                        String.fromCharCode(65 + index);
 
-                        return (
-                          <Label
-                            key={index}
-                            className={`
+                      return (
+                        <Label
+                          key={index}
+                          className={`
                               group relative flex items-center p-3 rounded-2xl border-2 cursor-pointer
                               transition-all duration-300 ease-in-out
                               ${
@@ -486,23 +508,23 @@ const StartMockTest = () => {
                                   : "border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                               }
                             `}
-                          >
-                            <input
-                              type="radio"
-                              name={`question-${currentQuestionIndex}`}
-                              value={String.fromCharCode(65 + index)}
-                              onChange={() =>
-                                handleOptionChange(
-                                  mockTest.questions[currentQuestionIndex].$id,
-                                  String.fromCharCode(65 + index)
-                                )
-                              }
-                              checked={isSelected}
-                              className="hidden"
-                            />
+                        >
+                          <input
+                            type="radio"
+                            name={`question-${currentQuestionIndex}`}
+                            value={String.fromCharCode(65 + index)}
+                            onChange={() =>
+                              handleOptionChange(
+                                mockTest.questions[currentQuestionIndex].$id,
+                                String.fromCharCode(65 + index),
+                              )
+                            }
+                            checked={isSelected}
+                            className="hidden"
+                          />
 
-                            <div
-                              className={`
+                          <div
+                            className={`
                                 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-xl border-2 transition-colors duration-300
                                 ${
                                   isSelected
@@ -510,29 +532,32 @@ const StartMockTest = () => {
                                     : "border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 group-hover:border-blue-400 dark:group-hover:border-blue-500"
                                 }
                               `}
-                            >
-                              {isSelected ? (
-                                <Check className="w-4 h-4 animate-in zoom-in-50" />
-                              ) : (
-                                <span className="font-semibold text-base">
-                                  {String.fromCharCode(65 + index)}
-                                </span>
-                              )}
-                            </div>
+                          >
+                            {isSelected ? (
+                              <Check className="w-4 h-4 animate-in zoom-in-50" />
+                            ) : (
+                              <span className="font-semibold text-base">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                            )}
+                          </div>
 
-                            <span className={`ml-3 text-sm md:text-base transition-colors duration-300 ${isSelected ? "text-blue-900 dark:text-blue-100 font-medium" : "text-slate-700 dark:text-slate-300"}`}>
-                              {option}
-                            </span>
-                          </Label>
-                        );
-                      }
-                    )}
+                          <span
+                            className={`ml-3 text-sm md:text-base transition-colors duration-300 ${isSelected ? "text-blue-900 dark:text-blue-100 font-medium" : "text-slate-700 dark:text-slate-300"}`}
+                          >
+                            {option}
+                          </span>
+                        </Label>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Navigation Buttons */}
-              <div className={`flex mt-8 mb-4 lg:mb-0 ${currentQuestionIndex > 0 ? "justify-between" : "justify-end"}`}>
+              <div
+                className={`flex mt-8 mb-4 lg:mb-0 ${currentQuestionIndex > 0 ? "justify-between" : "justify-end"}`}
+              >
                 {currentQuestionIndex > 0 && (
                   <Button
                     type="button"
@@ -556,9 +581,36 @@ const StartMockTest = () => {
             </div>
 
             {/* Right Scrollable Area: Question Palette */}
-            <div className="lg:w-1/4 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40 lg:overflow-y-auto p-4 md:p-6 backdrop-blur-sm">
-              <div className="mb-6 hidden lg:block">
-                <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">Status Overview</h4>
+            <>
+              {/* Backdrop for mobile */}
+              {isPaletteOpen && (
+                <div 
+                  className="fixed inset-0 bg-slate-900/20 dark:bg-black/40 z-30 lg:hidden backdrop-blur-sm transition-opacity"
+                  onClick={() => setIsPaletteOpen(false)}
+                />
+              )}
+              <div 
+                className={`
+                  lg:w-1/4 lg:flex-shrink-0 
+                  lg:relative fixed bottom-0 left-0 right-0 z-40
+                  transition-transform duration-300 ease-in-out lg:transform-none lg:transition-none
+                  ${isPaletteOpen ? "translate-y-0" : "translate-y-full lg:translate-y-0"}
+                `}
+              >
+                {/* Mobile Toggle Handle */}
+                <div 
+                  className="lg:hidden absolute -top-[42px] left-1/2 transform -translate-x-1/2 bg-white/95 dark:bg-slate-900/95 px-8 py-2.5 rounded-t-2xl border-t border-l border-r border-slate-200 dark:border-slate-800 shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.1)] cursor-pointer flex flex-col items-center transition-all"
+                  onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+                >
+                  <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mb-1"></div>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase">Palette</span>
+                </div>
+
+                <div className="border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 lg:bg-white/40 lg:dark:bg-slate-900/40 backdrop-blur-xl p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none rounded-t-3xl lg:rounded-none max-h-[70vh] lg:max-h-none overflow-y-auto lg:h-full relative">
+                  <div className="mb-6 hidden lg:block">
+                <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">
+                  Status Overview
+                </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <div className="w-4 h-4 rounded-md bg-emerald-500 shadow-sm shadow-emerald-500/20"></div>
@@ -575,7 +627,9 @@ const StartMockTest = () => {
                 </div>
               </div>
 
-              <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">Question Navigator</h4>
+              <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">
+                Question Navigator
+              </h4>
               <div className="flex flex-wrap gap-2 md:gap-3">
                 {mockTest.questions.map((ques, index) => {
                   const isCurrent = currentQuestionIndex === index;
@@ -606,6 +660,8 @@ const StartMockTest = () => {
                 })}
               </div>
             </div>
+            </div>
+            </>
           </div>
         </form>
       )}
