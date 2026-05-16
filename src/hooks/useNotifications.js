@@ -8,6 +8,7 @@ import batchRequestService from "@/appwrite/batchRequestService";
 import notificationService from "@/services/notification.service";
 import { realtime } from "@/services/appwriteClient";
 import conf from "@/config/config";
+import mockTestService from "@/services/mocktest.service";
 
 
 /**
@@ -120,6 +121,35 @@ export function useNotifications() {
                 });
               }
             });
+
+          if (uniqueNotifsMap.size > 0) {
+            try {
+              const paperIdsArray = Array.from(uniqueNotifsMap.keys());
+              // Get tests for the active notifications to see if the user has attempted them
+              const userPapers = await mockTestService.listQuestions([
+                Query.equal("userId", user.$id),
+                Query.equal("paperId", paperIdsArray)
+              ]);
+              
+              // Consider a test "attempted" if it has been submitted or at least started
+              const attemptedPaperIds = new Set(
+                userPapers
+                  .filter((p) => p.submitted || p.startTime)
+                  .map((p) => p.paperId)
+              );
+
+              for (const [paperId, notif] of uniqueNotifsMap.entries()) {
+                if (attemptedPaperIds.has(paperId)) {
+                  // Mark as read in DB so it doesn't fetch again next time
+                  notificationService.markAsRead(notif.id, user.$id).catch(console.error);
+                  // Remove from local UI map
+                  uniqueNotifsMap.delete(paperId);
+                }
+              }
+            } catch (err) {
+              console.error("Failed to check attempted papers for notifications", err);
+            }
+          }
             
           mockTestNotifs = Array.from(uniqueNotifsMap.values());
         }
