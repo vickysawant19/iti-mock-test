@@ -29,7 +29,7 @@ import CreateMockTestPage from "./private/mocktest/CreateMockTest/index.jsx";
 import AllMockTests from "./private/mocktest/AllMockTests.jsx";
 import StartMockTest from "./private/mocktest/StartMockTest/index.jsx";
 import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
-import AttainTest from "./private/mocktest/AttainTest.jsx";
+import AttainTest from "./private/mocktest/AttainMockTest/index.jsx";
 import MockTestResults from "./private/mocktest/MockTestResults.jsx";
 
 import Dash from "./pages/Dash.jsx";

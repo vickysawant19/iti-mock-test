@@ -1,6 +1,5 @@
 import React from "react";
 import { BookmarkPlus, BookmarkCheck, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -24,6 +23,7 @@ const QuestionCard = ({
   onToggleMark,
   isSubmitLoading,
   onSubmit,
+  isLandscapeForced,
 }) => {
   return (
     /* Outer: fill remaining height, split into scroll area + sticky footer */
@@ -44,7 +44,7 @@ const QuestionCard = ({
               <button
                 type="button"
                 onClick={() => onOptionChange(question.$id, null)}
-                className="lg:hidden flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-md border border-slate-200 bg-white text-slate-500 active:bg-red-50 active:text-red-600 transition-all"
+                className={`${isLandscapeForced ? 'hidden' : 'flex lg:hidden'} items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-md border border-slate-200 bg-white text-slate-500 active:bg-red-50 active:text-red-600 transition-all`}
               >
                 <RotateCcw className="w-3 h-3" />
                 Clear
@@ -69,10 +69,10 @@ const QuestionCard = ({
             </div>
           </div>
 
-          {/* Question card */}
-          <Card className="border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl bg-white dark:bg-slate-900">
-            <CardContent className="p-5 md:p-7">
-              <p className="text-base md:text-lg font-medium text-slate-800 dark:text-slate-100 leading-relaxed mb-6 select-text">
+          {/* Question content */}
+          <div className="pt-2 md:pt-4">
+            <div className="px-1 md:px-2">
+              <p className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-100 leading-relaxed mb-6 select-text">
                 {question.question}
               </p>
 
@@ -123,7 +123,7 @@ const QuestionCard = ({
                         {letter}
                       </div>
                       <span
-                        className={`mt-0.5 text-sm md:text-base leading-relaxed transition-colors ${
+                        className={`mt-0.5 text-xs md:text-sm leading-relaxed transition-colors ${
                           isSelected
                             ? "text-[#1a3a6b] dark:text-blue-200 font-medium"
                             : "text-slate-700 dark:text-slate-300"
@@ -135,8 +135,8 @@ const QuestionCard = ({
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -150,7 +150,7 @@ const QuestionCard = ({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitLoading}
-            className="lg:hidden flex items-center gap-1.5 rounded-lg px-4 py-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-40 font-bold shadow-md transition-all active:scale-95 text-xs h-9"
+            className={`${isLandscapeForced ? 'hidden' : 'flex lg:hidden'} items-center gap-1.5 rounded-lg px-4 py-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-40 font-bold shadow-md transition-all active:scale-95 text-xs h-9`}
           >
             {isSubmitLoading ? "..." : "Submit"}
           </Button>
@@ -163,7 +163,7 @@ const QuestionCard = ({
               if (!isMarked) onToggleMark(question.$id);
               if (questionIndex < totalQuestions - 1) onNavigate(1);
             }}
-            className="hidden lg:flex items-center gap-1.5 rounded-lg px-4 py-2.5 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/20 font-semibold transition-colors h-10"
+            className={`${isLandscapeForced ? 'flex' : 'hidden lg:flex'} items-center gap-1.5 rounded-lg px-4 py-2.5 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/20 font-semibold transition-colors h-10`}
           >
             <BookmarkCheck className="w-4 h-4" />
             Mark for Review & Next
@@ -174,7 +174,7 @@ const QuestionCard = ({
             type="button"
             variant="ghost"
             onClick={() => onOptionChange(question.$id, null)}
-            className="hidden lg:flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors h-10"
+            className={`${isLandscapeForced ? 'flex' : 'hidden lg:flex'} items-center gap-1.5 rounded-lg px-4 py-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold transition-colors h-10`}
           >
             <RotateCcw className="w-4 h-4" />
             Clear Response

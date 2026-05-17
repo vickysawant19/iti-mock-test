@@ -33,10 +33,10 @@ class AppwriteService {
 
     // Legacy Document-based API
     this.databases = new Databases(this.client);
-    
+
     // New Relational API
     this.tablesDb = new TablesDB(this.client);
-    
+
     // Monkeypatch listRows to inject legacy 'documents' property so UI doesn't break
     const originalListRows = this.tablesDb.listRows.bind(this.tablesDb);
     this.tablesDb.listRows = async (...args: any[]) => {
@@ -46,7 +46,7 @@ class AppwriteService {
       }
       return response;
     };
-    
+
     this.account = new Account(this.client);
     this.bucket = new Storage(this.client);
     this.functions = new Functions(this.client);

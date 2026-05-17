@@ -1,5 +1,5 @@
 import React from "react";
-import { Info } from "lucide-react";
+import { Info, RotateCw } from "lucide-react";
 import itimitraLogo from "@/assets/itimitra-logo.png";
 
 /**
@@ -15,6 +15,9 @@ const ExamHeader = ({
   timeWarning,
   formatTime,
   onShowInstructions,
+  isMobilePortrait,
+  isLandscapeForced,
+  onToggleLandscape,
 }) => {
   const pct = totalSeconds > 0 ? (remainingSeconds / totalSeconds) * 100 : 0;
   const barColor =
@@ -25,21 +28,18 @@ const ExamHeader = ({
         : "bg-emerald-500";
 
   return (
-    <header className="flex-shrink-0 z-50 bg-[#1a3a6b] text-white shadow-lg">
-      {/* Top accent strip */}
-      <div className="h-1 bg-gradient-to-r from-orange-500 via-white to-green-600" />
-
-      <div className="flex items-center justify-between px-3 md:px-6 py-2 gap-2">
+    <header className="flex-shrink-0 z-50 bg-[#1a3a6b] text-white shadow-md">
+      <div className="flex items-center justify-between px-2 md:px-4 py-1.5 gap-2">
         {/* ── Left: Branding ── */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white border border-white/30 flex items-center justify-center p-1 overflow-hidden shadow-inner">
+          <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white border border-white/30 flex items-center justify-center p-0.5 overflow-hidden shadow-inner">
             <img src={itimitraLogo} alt="ITI Mitra" className="w-full h-full object-contain" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] md:text-[11px] font-bold tracking-widest text-amber-300 uppercase leading-none">
+            <div className="text-[9px] md:text-[10px] font-bold tracking-widest text-amber-300 uppercase leading-none">
               ITI MITRA
             </div>
-            <div className="text-sm md:text-base font-bold tracking-tight leading-tight truncate">
+            <div className="text-xs md:text-sm font-bold tracking-tight leading-tight truncate">
               Mock Test
             </div>
           </div>
@@ -48,11 +48,11 @@ const ExamHeader = ({
         {/* ── Center: Timer ── */}
         <div className="flex-1 max-w-xs mx-2 md:mx-6">
           <div className="text-center">
-            <div className="text-[10px] text-blue-200 uppercase tracking-widest mb-1 hidden md:block">
+            <div className="text-[9px] text-blue-200 uppercase tracking-widest mb-0.5 hidden md:block">
               Time Remaining
             </div>
             <div
-              className={`font-mono text-lg md:text-2xl font-bold tracking-tight leading-none ${
+              className={`font-mono text-base md:text-xl font-bold tracking-tight leading-none ${
                 remainingSeconds <= 300
                   ? "text-red-300 animate-pulse"
                   : "text-white"
@@ -70,14 +70,26 @@ const ExamHeader = ({
           </div>
         </div>
 
-        {/* ── Right: Instructions ── */}
-        <div className="flex-shrink-0">
+        {/* ── Right: Instructions & Rotate Toggle ── */}
+        <div className="flex-shrink-0 flex items-center gap-2">
+          {isMobilePortrait && (
+            <button
+              type="button"
+              onClick={onToggleLandscape}
+              className={`flex items-center justify-center border text-white p-1 rounded-lg transition-all ${
+                isLandscapeForced ? "bg-amber-500 hover:bg-amber-600 border-amber-400" : "bg-white/10 hover:bg-white/20 border-white/20"
+              }`}
+              title="Rotate Screen"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${isLandscapeForced ? "animate-spin-once" : ""}`} />
+            </button>
+          )}
           <button
             type="button"
             onClick={onShowInstructions}
-            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+            className="flex items-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[10px] md:text-xs font-semibold px-2 py-1 rounded-lg transition-all"
           >
-            <Info className="w-3.5 h-3.5" />
+            <Info className="w-3 h-3 md:w-3.5 md:h-3.5" />
             <span className="hidden sm:inline">Instructions</span>
           </button>
         </div>

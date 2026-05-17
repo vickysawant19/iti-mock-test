@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import Loader from "@/components/components/Loader";
 import mockTestService from "@/services/mocktest.service";
@@ -46,6 +48,41 @@ const StartMockTest = () => {
   const containerRef = useRef(null);
   const [portalContainer, setPortalContainer] = useState(null);
   const isConfirmingRef = useRef(false);
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false);
+  const [isLandscapeForced, setIsLandscapeForced] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsMobilePortrait(window.innerWidth < 768 && window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    return () => window.removeEventListener("resize", checkOrientation);
+  }, []);
+
+  // ── Block Back Navigation ──
+  useEffect(() => {
+    // Push a state so we have something to pop
+    window.history.pushState(null, null, window.location.pathname);
+    
+    const handlePopState = () => {
+      // Restore the state immediately to prevent going back
+      window.history.pushState(null, null, window.location.pathname);
+      toast.warning("Back navigation is disabled while you are in the mock test.");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // ── Hooks ─────────────────────────────────────────────────────────────────
   const { mockTest, setMockTest, isLoading, fetchMockTest } = useMockTest(paperId);
@@ -176,69 +213,132 @@ const StartMockTest = () => {
   return (
     <div
       ref={containerRef}
-      className="bg-slate-100 dark:bg-slate-950 h-screen overflow-hidden flex flex-col select-none font-sans"
+      className="bg-slate-100 dark:bg-slate-950 overflow-hidden w-full h-screen relative"
     >
-      <InstructionModal
-        open={isInstructionModalOpen}
-        onOpenChange={setIsInstructionModalOpen}
-        container={portalContainer}
-      />
-
-      {!isGreetShown ? (
-        <MockTestGreet
-          mockTest={mockTest}
-          handleStartExam={handleStartExam}
-          onShowInstructions={handleShowInstructions}
+      <div
+        className="w-full h-full flex flex-col select-none font-sans"
+        style={
+          isMobilePortrait && isLandscapeForced && isGreetShown
+            ? {
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "100vh",
+                height: "100vw",
+                transform: "translate(-50%, -50%) rotate(90deg)",
+                transformOrigin: "center center",
+              }
+            : {}
+        }
+      >
+        <InstructionModal
+          open={isInstructionModalOpen}
+          onOpenChange={setIsInstructionModalOpen}
+          container={portalContainer}
         />
-      ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmitExam();
-          }}
-          className="flex-grow flex flex-col overflow-hidden"
-        >
-          {/* ── Top Header ── */}
-          <ExamHeader
-            remainingSeconds={remainingSeconds}
-            totalSeconds={totalSeconds}
-            timeWarning={timeWarning}
-            formatTime={formatTime}
+
+        {!isGreetShown ? (
+          <MockTestGreet
+            mockTest={mockTest}
+            handleStartExam={handleStartExam}
             onShowInstructions={handleShowInstructions}
           />
-
-          {/* ── Main 2-column layout ── */}
-          <div className="flex-grow flex overflow-hidden">
-            {/* Left: Question Area */}
-            <QuestionCard
-              question={mockTest.questions[currentQuestionIndex]}
-              questionIndex={currentQuestionIndex}
-              totalQuestions={mockTest.questions.length}
-              isMarked={markedSet.has(mockTest.questions[currentQuestionIndex]?.$id)}
-              onOptionChange={handleOptionChange}
-              onNavigate={handleNavigation}
-              onToggleMark={handleToggleMark}
-              isSubmitLoading={isSubmitLoading}
-              onSubmit={handleSubmitExam}
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmitExam();
+            }}
+            className="flex-grow flex flex-col overflow-hidden"
+          >
+            {/* ── Top Header ── */}
+            <ExamHeader
+              remainingSeconds={remainingSeconds}
+              totalSeconds={totalSeconds}
+              timeWarning={timeWarning}
+              formatTime={formatTime}
+              onShowInstructions={handleShowInstructions}
+              isMobilePortrait={isMobilePortrait}
+              isLandscapeForced={isLandscapeForced}
+              onToggleLandscape={() => setIsLandscapeForced(!isLandscapeForced)}
             />
 
-            {/* Right: Sidebar / Drawer */}
-            <QuestionPalette
-              questions={mockTest.questions}
-              visitedSet={visitedSet}
-              markedSet={markedSet}
-              currentQuestionIndex={currentQuestionIndex}
-              isPaletteOpen={isPaletteOpen}
-              onTogglePalette={setIsPaletteOpen}
-              onSelectQuestion={setCurrentQuestionIndex}
-              profile={profile}
-              user={user}
-              answeredCount={answeredCount}
-              isSubmitLoading={isSubmitLoading}
-            />
+            {/* ── Main 2-column layout ── */}
+            <div className="flex-grow flex overflow-hidden">
+              {/* Left: Question Area */}
+              <QuestionCard
+                question={mockTest.questions[currentQuestionIndex]}
+                questionIndex={currentQuestionIndex}
+                totalQuestions={mockTest.questions.length}
+                isMarked={markedSet.has(mockTest.questions[currentQuestionIndex]?.$id)}
+                onOptionChange={handleOptionChange}
+                onNavigate={handleNavigation}
+                onToggleMark={handleToggleMark}
+                isSubmitLoading={isSubmitLoading}
+                onSubmit={handleSubmitExam}
+                isLandscapeForced={isLandscapeForced || !isMobilePortrait}
+              />
+
+              {/* Right: Sidebar / Drawer */}
+              <QuestionPalette
+                questions={mockTest.questions}
+                visitedSet={visitedSet}
+                markedSet={markedSet}
+                currentQuestionIndex={currentQuestionIndex}
+                isPaletteOpen={isPaletteOpen}
+                onTogglePalette={setIsPaletteOpen}
+                onSelectQuestion={setCurrentQuestionIndex}
+                profile={profile}
+                user={user}
+                answeredCount={answeredCount}
+                isSubmitLoading={isSubmitLoading}
+                isLandscapeForced={isLandscapeForced || !isMobilePortrait}
+              />
+            </div>
+          </form>
+        )}
+
+        {/* Fullscreen Enforcer Overlay */}
+        {isGreetShown && !submitted && !isFullscreen && (
+          <div className="fixed inset-0 z-[99999] bg-black/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm">
+            <AlertTriangle className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">You Exited Fullscreen!</h2>
+            <p className="text-slate-300 mb-8 max-w-md text-sm md:text-base leading-relaxed">
+              For security and anti-cheat reasons, this exam must be taken in full-screen mode. 
+              Exiting full-screen mode counts as a violation. Please return to the exam immediately.
+            </p>
+            <div className="flex flex-col gap-4 w-full max-w-xs">
+              <Button
+                size="lg"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 text-lg rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all hover:scale-105"
+                onClick={async () => {
+                  try {
+                    if (containerRef.current?.requestFullscreen) {
+                      await containerRef.current.requestFullscreen();
+                    }
+                  } catch (err) {
+                    console.error("Failed to re-enter fullscreen:", err);
+                    toast.error("Please tap anywhere and try again.");
+                  }
+                }}
+              >
+                Return to Exam
+              </Button>
+              
+              <Button
+                size="lg"
+                className="w-full bg-transparent border-2 border-white/20 text-white hover:bg-white/10 py-6 text-lg rounded-xl transition-all"
+                onClick={() => {
+                  // If they choose to exit, trigger the submit flow
+                  handleSubmitExam();
+                }}
+              >
+                Submit & Exit Exam
+              </Button>
+            </div>
           </div>
-        </form>
-      )}
+        )}
+      </div>
     </div>
   );
 };
