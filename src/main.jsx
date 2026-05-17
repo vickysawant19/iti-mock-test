@@ -31,6 +31,7 @@ import StartMockTest from "./private/mocktest/StartMockTest/index.jsx";
 import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
 import AttainTest from "./private/mocktest/AttainMockTest/index.jsx";
 import MockTestResults from "./private/mocktest/MockTestResults.jsx";
+import ExamSummary from "./private/mocktest/ExamSummary.jsx";
 
 import Dash from "./pages/Dash.jsx";
 import Home from "./pages/Home.jsx";
@@ -132,6 +133,7 @@ const router = (
           <Route path="mock-exam" element={<CreateMockTestPage />} />
           <Route path="all-mock-tests" element={<AllMockTests />} />
           <Route path="start-mock-test/:paperId" element={<StartMockTest />} />
+          <Route path="exam-summary/:paperId" element={<ExamSummary />} />
           <Route path="show-mock-test/:paperId" element={<ShowMockTest />} />
           <Route path="attain-test" element={<AttainTest />} />
           <Route

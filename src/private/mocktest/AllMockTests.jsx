@@ -5,11 +5,20 @@ import MockTestCard from "./components/MockTestCard";
 import { Query } from "appwrite";
 import Pagination from "./components/Pagination";
 import { toast } from "react-toastify";
-import { Loader2, FileText, AlertCircle, ClipboardList } from "lucide-react";
+import { Loader2, FileText, AlertCircle, ClipboardList, ArrowUpDown } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { selectUser } from "@/store/userSlice";
 
 const ITEMS_PER_PAGE = 10;
+
+const SORT_OPTIONS = [
+  { value: "updatedAt_desc", label: "Last Updated",  query: () => Query.orderDesc("$updatedAt") },
+  { value: "createdAt_desc", label: "Newest First",  query: () => Query.orderDesc("$createdAt") },
+  { value: "createdAt_asc",  label: "Oldest First",  query: () => Query.orderAsc("$createdAt")  },
+  { value: "score_desc",     label: "Highest Score", query: () => Query.orderDesc("score")      },
+  { value: "score_asc",      label: "Lowest Score",  query: () => Query.orderAsc("score")       },
+];
 
 const AllMockTests = () => {
   const [mockTests, setMockTests] = useState([]);
@@ -20,6 +29,7 @@ const AllMockTests = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isDeleting, setIsDeleting] = useState({});
+  const [sortBy, setSortBy] = useState("updatedAt_desc");
   const user = useSelector(selectUser);
 
   const fetchMockTests = useCallback(async () => {
@@ -27,9 +37,10 @@ const AllMockTests = () => {
     setError(null);
     try {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const cacheKey = `${sortBy}_${currentPage}`;
 
-      if (cachedMockTests.current.has(currentPage)) {
-        const cachedData = cachedMockTests.current.get(currentPage);
+      if (cachedMockTests.current.has(cacheKey)) {
+        const cachedData = cachedMockTests.current.get(cacheKey);
         setMockTests(cachedData.documents);
         setTotalPages(cachedData.totalPages);
         setTotalCount(cachedData.total || 0);
@@ -37,11 +48,14 @@ const AllMockTests = () => {
         return;
       }
 
+      const sortQuery = SORT_OPTIONS.find((o) => o.value === sortBy)?.query() ?? Query.orderDesc("$updatedAt");
+
       const response = await mockTestService.getQuestionPaperByUserId(
         user.$id,
         [
           Query.limit(ITEMS_PER_PAGE),
           Query.offset(startIndex),
+          sortQuery,
           Query.select([
             "endTime",
             "isOriginal",
@@ -69,7 +83,7 @@ const AllMockTests = () => {
 
       if (response) {
         const pages = Math.ceil(response.total / ITEMS_PER_PAGE);
-        cachedMockTests.current.set(currentPage, {
+        cachedMockTests.current.set(cacheKey, {
           documents: response.documents,
           totalPages: pages,
           total: response.total,
@@ -84,7 +98,14 @@ const AllMockTests = () => {
     } finally {
       setLoading(false);
     }
-  }, [user.$id, currentPage]);
+  }, [user.$id, currentPage, sortBy]);
+
+  // Reset page + clear cache when sort changes
+  const handleSortChange = (value) => {
+    cachedMockTests.current.clear();
+    setCurrentPage(1);
+    setSortBy(value);
+  };
 
   useEffect(() => {
     fetchMockTests();
@@ -147,6 +168,21 @@ const AllMockTests = () => {
               {totalCount} test{totalCount !== 1 ? "s" : ""}
             </span>
           )}
+
+          {/* Sort dropdown */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-4 h-4 text-gray-400 shrink-0" />
+            <Select value={sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-40 h-9 text-sm">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

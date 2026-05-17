@@ -115,7 +115,7 @@ const StartMockTest = () => {
         navigate(decodedRedirect);
         return;
       }
-      navigate(`/all-mock-tests`);
+      navigate(`/exam-summary/${paperId}`);
     } catch (error) {
       toast.error("Error submitting exam!");
       console.error("Error submitting exam:", error);
