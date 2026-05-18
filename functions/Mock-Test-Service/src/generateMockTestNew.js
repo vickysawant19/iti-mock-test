@@ -198,28 +198,11 @@ const generateMockTestNew = async ({
     const count   = Math.min(parseInt(quesCount), questionDocIds.length);
     const pickedIds = shuffle([...questionDocIds]).slice(0, count);
 
-    // ── Fetch full question documents ──────────────────────────────────────────
-    const qRes = await database.listDocuments(
-      databaseId,
-      quesCollectionId,
-      [
-        Query.equal("$id", pickedIds),
-        Query.limit(pickedIds.length),
-        Query.select(["$id", "question", "options", "userId", "userName", "correctAnswer", "moduleId"]),
-      ]
-    );
-
-    // ── Shuffle final list & build serialised format ───────────────────────────
-    const serialized = shuffle(qRes.documents).map((q) =>
+    // ── Build serialised format (Optimized: we only need $id now!) ─────────────
+    const serialized = pickedIds.map((id) =>
       JSON.stringify({
-        $id:           q.$id,
-        question:      q.question,
-        options:       q.options,
-        userId:        q.userId,
-        userName:      q.userName,
-        correctAnswer: q.correctAnswer,
-        moduleId:      q.moduleId || "",
-        response:      null,
+        $id: id,
+        response: null,
       })
     );
 

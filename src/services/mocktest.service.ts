@@ -151,7 +151,7 @@ class MockTestService extends DatabaseService {
     }
   }
 
-  async updateAllResponses(paperId: string, data: { responses: Array<{ questionId: string; selectedAnswer: string }>; endTime: string }) {
+  async updateAllResponses(paperId: string, data: { responses: Array<{ questionId: string; selectedAnswer: string }>; endTime: any; hydratedQuestions?: any[] }) {
     const paper = await this.getRow<MockTestPaper>(paperId);
     
     if (paper.submitted) {
@@ -161,20 +161,25 @@ class MockTestService extends DatabaseService {
     let score = 0;
     const responseMap = new Map(data.responses.map((res) => [res.questionId, res.selectedAnswer]));
 
+    const correctAnswerMap = new Map((data.hydratedQuestions || []).map(q => [q.$id, q.correctAnswer]));
+
     const updatedQuestions = paper.questions.map((q) => {
       const parsedQuestion = JSON.parse(q);
       const response = responseMap.get(parsedQuestion.$id);
 
+      const correctAns = correctAnswerMap.has(parsedQuestion.$id) 
+        ? correctAnswerMap.get(parsedQuestion.$id) 
+        : parsedQuestion.correctAnswer;
+
       if (response) {
         parsedQuestion.response = response;
-        const isCorrect = response === parsedQuestion.correctAnswer;
+        const isCorrect = response === correctAns;
         parsedQuestion.result = isCorrect;
         if (isCorrect) score += 1;
       }
 
-      return paper.isOriginal 
-        ? JSON.stringify(parsedQuestion)
-        : JSON.stringify({ $id: parsedQuestion.$id, response: parsedQuestion.response });
+      // Optimize storage by only keeping $id and response (or null)
+      return JSON.stringify({ $id: parsedQuestion.$id, response: parsedQuestion.response ?? null });
     });
 
     const result = await this.updateRow<MockTestPaper>(paperId, {
@@ -214,8 +219,7 @@ class MockTestService extends DatabaseService {
       const response = q.response ?? null;
       if (response !== null) answeredCount += 1;
       if (response && response === q.correctAnswer) score += 1;
-      const { result, ...questionData } = q;
-      return JSON.stringify({ ...questionData, response });
+      return JSON.stringify({ $id: q.$id, response });
     });
 
     return await this.updateRow<MockTestPaper>(paperId, {

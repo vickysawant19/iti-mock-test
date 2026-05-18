@@ -41,27 +41,32 @@ export function useMockTest(paperId) {
 
       userTest.questions = userTest.questions.map((q) => JSON.parse(q));
 
-      // If this is a student copy, merge responses onto the original questions
-      if (userTest.isOriginal !== null && !userTest.isOriginal) {
-        const originalTestResponse = await mockTestService.listQuestions([
-          Query.equal("paperId", userTest.paperId),
-          Query.equal("isOriginal", true),
-        ]);
-        if (originalTestResponse.length === 0) {
-          toast.error("Paper expired!");
-          navigate(-1);
-          return;
+      const needsHydration = userTest.questions.some(q => q.question === undefined);
+
+      if (needsHydration) {
+        const qIds = userTest.questions.map(q => q.$id);
+        const { questionService } = await import("@/services/question.service");
+        const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
+        const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
+
+        // If any questions are missing (deleted from DB), try fallback to original paper JSON (for older papers)
+        const hasMissing = userTest.questions.some(q => !questionsLookup.has(q.$id));
+        if (hasMissing && userTest.isOriginal !== null && !userTest.isOriginal) {
+          const originalTestResponse = await mockTestService.listQuestions([
+            Query.equal("paperId", userTest.paperId),
+            Query.equal("isOriginal", true),
+          ]);
+          if (originalTestResponse.length > 0) {
+            const originalTest = originalTestResponse[0];
+            originalTest.questions.map(item => JSON.parse(item)).forEach(oq => {
+              if (!questionsLookup.has(oq.$id)) questionsLookup.set(oq.$id, oq);
+            });
+          }
         }
-        const originalTest = originalTestResponse[0];
-        originalTest.questions = originalTest.questions.map((item) =>
-          JSON.parse(item),
-        );
-        const questionsLookup = new Map(
-          originalTest.questions.map((item) => [item.$id, item]),
-        );
-        userTest.questions = userTest.questions.map((ques) => ({
+
+        userTest.questions = userTest.questions.map(ques => ({
           ...questionsLookup.get(ques.$id),
-          response: ques.response,
+          response: ques.response ?? null,
         }));
       }
 

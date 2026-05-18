@@ -64,6 +64,28 @@ class QuestionService extends DatabaseService {
     return await this.getRow<QuestionData>(id);
   }
 
+  async getQuestionsByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    
+    let allDocuments: any[] = [];
+    const chunkSize = 100;
+    
+    try {
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const response = await this.listRows<QuestionData>([
+          Query.equal("$id", chunk),
+          Query.limit(chunk.length)
+        ]);
+        allDocuments = allDocuments.concat(response.rows);
+      }
+      return allDocuments;
+    } catch (error) {
+      console.error("Error getting questions by IDs:", error);
+      return [];
+    }
+  }
+
   async listQuestions(queries: string[] = [Query.orderDesc("$createdAt")]) {
     // Legacy mapping uses 'documents', we ensure it returns list formats smoothly
     const res = await this.listRows<QuestionData>(queries);

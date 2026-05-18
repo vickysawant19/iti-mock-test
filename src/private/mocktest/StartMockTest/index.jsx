@@ -4,6 +4,14 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import Loader from "@/components/components/Loader";
 import mockTestService from "@/services/mocktest.service";
@@ -40,6 +48,7 @@ const StartMockTest = () => {
   const [isGreetShown, setIsGreetShown] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isInstructionModalOpen, setIsInstructionModalOpen] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 
   // Track which questions have been visited (by index) and which are marked
   const [visitedSet, setVisitedSet] = useState(new Set([0]));
@@ -88,16 +97,14 @@ const StartMockTest = () => {
   const { mockTest, setMockTest, isLoading, fetchMockTest } = useMockTest(paperId);
   const { triggerSave, flushSave } = useAutoSave(paperId);
 
-  const handleSubmitExam = useCallback(async () => {
+  const requestSubmitExam = useCallback(() => {
+    setIsSubmitModalOpen(true);
+  }, []);
+
+  const executeSubmitExam = useCallback(async () => {
     if (submitted) return;
 
-    isConfirmingRef.current = true;
-    const ok = window.confirm("Are you sure you want to submit the exam?");
-    setTimeout(() => {
-      isConfirmingRef.current = false;
-    }, 500);
-    if (!ok) return;
-
+    setIsSubmitModalOpen(false);
     setIsSubmitLoading(true);
     await flushSave();
     try {
@@ -108,6 +115,7 @@ const StartMockTest = () => {
       await mockTestService.updateAllResponses(paperId, {
         responses: responseArray,
         endTime: new Date(),
+        hydratedQuestions: mockTest.questions,
       });
       toast.success("Exam submitted successfully!");
       setSubmitted(true);
@@ -125,7 +133,7 @@ const StartMockTest = () => {
   }, [mockTest, paperId, submitted, decodedRedirect, flushSave, navigate]);
 
   const isAntiCheatActive = isGreetShown && !submitted;
-  useAntiCheat({ isActive: isAntiCheatActive, onAutoSubmit: handleSubmitExam });
+  useAntiCheat({ isActive: isAntiCheatActive, onAutoSubmit: executeSubmitExam });
 
   const totalSeconds = mockTest ? (mockTest.totalMinutes || 60) * 60 : 0;
 
@@ -133,7 +141,7 @@ const StartMockTest = () => {
     startTime: mockTest?.startTime,
     totalMinutes: mockTest?.totalMinutes,
     submitted,
-    onExpire: handleSubmitExam,
+    onExpire: executeSubmitExam,
   });
 
   // ── Data fetch on mount ───────────────────────────────────────────────────
@@ -237,6 +245,25 @@ const StartMockTest = () => {
           container={portalContainer}
         />
 
+        <Dialog open={isSubmitModalOpen} onOpenChange={setIsSubmitModalOpen}>
+          <DialogContent container={portalContainer} className="!z-[100]">
+            <DialogHeader>
+              <DialogTitle>Submit Exam</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to submit the exam? Once submitted, you cannot change your answers.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4 flex gap-2">
+              <Button variant="outline" onClick={() => setIsSubmitModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="default" onClick={executeSubmitExam}>
+                Submit Exam
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {!isGreetShown ? (
           <MockTestGreet
             mockTest={mockTest}
@@ -247,7 +274,7 @@ const StartMockTest = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmitExam();
+              requestSubmitExam();
             }}
             className="flex-grow flex flex-col overflow-hidden"
           >
@@ -275,7 +302,7 @@ const StartMockTest = () => {
                 onNavigate={handleNavigation}
                 onToggleMark={handleToggleMark}
                 isSubmitLoading={isSubmitLoading}
-                onSubmit={handleSubmitExam}
+                onSubmit={requestSubmitExam}
                 isLandscapeForced={isLandscapeForced || !isMobilePortrait}
               />
 
@@ -300,7 +327,7 @@ const StartMockTest = () => {
 
         {/* Fullscreen Enforcer Overlay */}
         {isGreetShown && !submitted && !isFullscreen && (
-          <div className="fixed inset-0 z-[99999] bg-black/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm">
+          <div className="fixed inset-0 z-[99] bg-black/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm">
             <AlertTriangle className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">You Exited Fullscreen!</h2>
             <p className="text-slate-300 mb-8 max-w-md text-sm md:text-base leading-relaxed">
@@ -330,7 +357,7 @@ const StartMockTest = () => {
                 className="w-full bg-transparent border-2 border-white/20 text-white hover:bg-white/10 py-6 text-lg rounded-xl transition-all"
                 onClick={() => {
                   // If they choose to exit, trigger the submit flow
-                  handleSubmitExam();
+                  requestSubmitExam();
                 }}
               >
                 Submit & Exit Exam

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useReactToPrint } from "react-to-print";
 import mockTestService from "@/services/mocktest.service";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
@@ -18,6 +19,7 @@ import {
   TrendingUp,
   Edit,
   ChevronRight,
+  Download,
 } from "lucide-react";
 
 const OPTIONS = ["A", "B", "C", "D"];
@@ -56,6 +58,14 @@ const ShowMockTest = () => {
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const isTeacher = user.labels.includes("Teacher");
+  const contentRef = useRef(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: contentRef,
+    documentTitle: `MockTest_Result_${paperId}`,
+    // Fallback for v2 if needed, though v3 uses contentRef
+    content: () => contentRef.current,
+  });
 
   useEffect(() => {
     if (!paperId) return;
@@ -88,14 +98,38 @@ const ShowMockTest = () => {
             setIsLoading(false);
             return;
           }
-          const questionMap = originalPaper.questions.reduce((map, qStr) => {
-            try { const q = JSON.parse(qStr); map.set(q.$id, q); } catch {}
-            return map;
-          }, new Map());
+
+          const qIds = userPaper.questions.map(q => q.$id);
+          const { questionService } = await import("@/services/question.service");
+          const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
+          const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
+
+          originalPaper.questions.forEach(qStr => {
+             try { 
+               const oq = JSON.parse(qStr); 
+               if (oq.question && !questionsLookup.has(oq.$id)) {
+                 questionsLookup.set(oq.$id, oq); 
+               }
+             } catch {}
+          });
+
           userPaper.questions = userPaper.questions.map((q) => ({
-            ...questionMap.get(q.$id),
+            ...questionsLookup.get(q.$id),
             response: q.response,
           }));
+        } else {
+          const needsHydration = userPaper.questions.some(q => q.question === undefined);
+          if (needsHydration) {
+             const qIds = userPaper.questions.map(q => q.$id);
+             const { questionService } = await import("@/services/question.service");
+             const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
+             const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
+             
+             userPaper.questions = userPaper.questions.map(q => ({
+                ...questionsLookup.get(q.$id),
+                response: q.response ?? null
+             }));
+          }
         }
         setMockTest(userPaper);
       } catch (error) {
@@ -199,17 +233,26 @@ const ShowMockTest = () => {
               {mockTest.userName || "Unknown"} · {mockTest.tradeName || ""}
             </p>
           </div>
-          {/* Score pill */}
-          <div className={`text-right shrink-0`}>
-            <p className={`text-2xl font-extrabold leading-none ${perfColor}`}>
-              {mockTest.score}<span className="text-sm font-semibold text-gray-400">/{mockTest.quesCount}</span>
-            </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">{scorePercentage.toFixed(1)}%</p>
+          {/* Action & Score */}
+          <div className={`text-right shrink-0 flex items-center gap-3`}>
+            <button
+              onClick={() => handlePrint()}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+              title="Download PDF"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+            <div className="text-right hidden sm:block">
+              <p className={`text-2xl font-extrabold leading-none ${perfColor}`}>
+                {mockTest.score}<span className="text-sm font-semibold text-gray-400">/{mockTest.quesCount}</span>
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{scorePercentage.toFixed(1)}%</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 py-5 space-y-5" ref={contentRef}>
 
         {/* ── Score progress bar ── */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
