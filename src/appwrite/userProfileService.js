@@ -197,28 +197,34 @@ export class UserProfileService {
   }
 
   async getUserProfile(userId) {
+    console.log("[DEBUG] getUserProfile called with userId:", userId, "Type:", typeof userId);
+
     if (!userId) {
-      // Return early without throwing to avoid noisy production console errors
-      // when components attempt to fetch a profile for a missing/undefined ID.
+      console.warn("[DEBUG] getUserProfile returning early because userId is falsy!");
       return false; 
     }
 
     try {
+      console.log("[DEBUG] Fetching user profile from Appwrite for userId:", userId);
       const userProfile = await this.database.listRows({
         databaseId: conf.databaseId,
         tableId: conf.userProfilesCollectionId,
-        queries: [Query.equal("userId", userId)]
+        queries: [Query.equal("userId", String(userId))]
       });
+      console.log("[DEBUG] Appwrite response for getUserProfile:", userProfile);
 
       if (userProfile.total === 0) {
+        console.warn("[DEBUG] No profile found in DB for userId:", userId);
         return false;
       }
 
       const profile = userProfile.rows[0];
-      return profile; // Assuming user profile is unique per userId
+      console.log("[DEBUG] Successfully retrieved profile:", profile);
+      return profile; 
     } catch (error) {
-      console.log("Appwrite error: get user profile:", error);
+      console.error("[DEBUG] Caught an error in getUserProfile:", error);
       if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+        console.error("[DEBUG] Quota exceeded error!");
         throw error;
       }
       return false;
