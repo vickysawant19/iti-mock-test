@@ -2,7 +2,7 @@ import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { 
   School, Calendar, List, Clock, Settings2, Target, Hash, 
-  BarChart, Layers, Eye, ShieldAlert
+  BarChart, Layers, Eye, ShieldAlert, X, Tag
 } from "lucide-react";
 import { 
   Select, 
@@ -13,6 +13,52 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+
+const TagInput = ({ value = [], onChange, placeholder = "Type and press Enter..." }) => {
+  const [input, setInput] = React.useState("");
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const newTag = input.trim();
+      if (newTag && !value.includes(newTag)) {
+        onChange([...value, newTag]);
+      }
+      setInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    onChange(value.filter((tag) => tag !== tagToRemove));
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500">
+      {value.map((tag) => (
+        <span
+          key={tag}
+          className="flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded text-sm"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => removeTag(tag)}
+            className="hover:text-blue-900 dark:hover:text-blue-100"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="flex-1 min-w-[120px] bg-transparent outline-none text-gray-900 dark:text-white text-sm"
+        placeholder={value.length === 0 ? placeholder : ""}
+      />
+    </div>
+  );
+};
 
 export function ConfigurationSection({ tradesList, subjects, modules, fetchModules }) {
   const { register, control, watch, formState: { errors } } = useFormContext();
@@ -51,6 +97,20 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
               placeholder="e.g. Weekly Assessment - Fitter 1st Year"
             />
             {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2 lg:col-span-3">
+            <Label className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Tags
+            </Label>
+            <Controller
+              name="tags"
+              control={control}
+              render={({ field }) => (
+                <TagInput value={field.value} onChange={field.onChange} />
+              )}
+            />
           </div>
 
           {/* Difficulty */}

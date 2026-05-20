@@ -36,86 +36,6 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectUserBatches } from "@/store/activeBatchSlice";
 
-// ─── Small stat cell ──────────────────────────────────────────────────────────
-const Stat = ({ icon: Icon, label, value, iconClass = "text-gray-400" }) => (
-  <div className="flex items-center gap-2 min-w-0">
-    <Icon className={`w-3.5 h-3.5 shrink-0 ${iconClass}`} />
-    <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">
-      {label}:
-    </span>
-    <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">
-      {value}
-    </span>
-  </div>
-);
-
-// ─── Action button ────────────────────────────────────────────────────────────
-const ActionBtn = React.forwardRef(
-  (
-    {
-      onClick,
-      asLink,
-      to,
-      color,
-      icon: Icon,
-      label,
-      disabled,
-      loading,
-      ...props
-    },
-    ref,
-  ) => {
-    const base =
-      "flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 h-7 sm:h-9 rounded sm:rounded-lg text-[10px] sm:text-xs font-semibold text-white whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed";
-    const colors = {
-      blue: "bg-blue-500 hover:bg-blue-600 active:bg-blue-700",
-      green: "bg-green-500 hover:bg-green-600 active:bg-green-700",
-      purple: "bg-violet-500 hover:bg-violet-600 active:bg-violet-700",
-      gray: "bg-gray-500 hover:bg-gray-600 active:bg-gray-700",
-      orange: "bg-orange-500 hover:bg-orange-600 active:bg-orange-700",
-      red: "bg-red-500 hover:bg-red-600 active:bg-red-700",
-    };
-
-    const content = (
-      <>
-        {loading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Icon className="w-3.5 h-3.5" />
-        )}
-        <span>{loading ? "…" : label}</span>
-      </>
-    );
-
-    if (asLink && to) {
-      return (
-        <Link
-          ref={ref}
-          to={to}
-          className={`${base} ${colors[color]}`}
-          {...props}
-        >
-          {content}
-        </Link>
-      );
-    }
-
-    return (
-      <button
-        ref={ref}
-        onClick={onClick}
-        disabled={disabled || loading}
-        className={`${base} ${colors[color]}`}
-        {...props}
-      >
-        {content}
-      </button>
-    );
-  },
-);
-ActionBtn.displayName = "ActionBtn";
-
-// ─── MockTestCard ─────────────────────────────────────────────────────────────
 const MockTestCard = ({
   setMockTests,
   test,
@@ -126,6 +46,7 @@ const MockTestCard = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
   const userBatches = useSelector(selectUserBatches);
 
   const handleCopyId = async () => {
@@ -134,7 +55,6 @@ const MockTestCard = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // fallback for older browsers
       const el = document.createElement("textarea");
       el.value = test.paperId;
       document.body.appendChild(el);
@@ -145,8 +65,6 @@ const MockTestCard = ({
       setTimeout(() => setCopied(false), 1500);
     }
   };
-
-  const [copiedMessage, setCopiedMessage] = useState(false);
 
   const handleCopyMessage = async (paperId) => {
     const examUrl = `${window.location.origin}/attain-test?paperid=${paperId}`;
@@ -242,213 +160,145 @@ const MockTestCard = ({
   const isSubmitted = test.submitted;
 
   return (
-    <div className="flex flex-col h-full rounded-none sm:rounded-2xl border-none sm:border sm:border-gray-200 sm:dark:border-gray-700 bg-white dark:bg-gray-800 sm:shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
-      {/* ── Header ── */}
-      <div className="p-2 sm:px-4 sm:pt-4 sm:pb-3 border-b border-gray-100 dark:border-gray-700">
-        {/* Date row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 sm:mb-2 gap-1.5">
-          <div className="flex items-center gap-1 sm:gap-1.5 text-gray-400 dark:text-gray-500 text-[9px] sm:text-xs">
-            <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span>
-              {format(new Date(test.$createdAt), "dd MMM yy, hh:mm a")}
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-gray-700 flex flex-col gap-3.5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-indigo-300 dark:hover:border-indigo-500">
+      
+      {/* ── Header (ID & Badges) ── */}
+      <div className="flex justify-between items-start gap-2">
+        <span 
+          onClick={handleCopyId}
+          className="text-[0.75rem] font-mono font-bold text-indigo-800 bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 px-2.5 py-1 rounded-md tracking-wider break-all cursor-pointer hover:bg-indigo-200 transition-colors flex items-center gap-1.5"
+          title="Click to copy Paper ID"
+        >
+          {test.paperId}
+          {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-indigo-400/80 hover:text-indigo-600" />}
+        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          {test.isOriginal && (
+            <span className="text-[0.65rem] font-extrabold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded tracking-wider dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400">
+              Original
             </span>
-          </div>
-          {/* Status pill */}
-          <div className="flex items-center gap-2">
-            {test.negativeMarking && (
-              <span
-                className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                title="Negative Marking Enabled"
-              >
-                <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> -1
-              </span>
-            )}
-            {test.visibility === "draft" && (
-              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-800">
-                Draft
-              </span>
-            )}
-            {isSubmitted ? (
-              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Submitted
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Pending
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Trade name */}
-        <div className="flex items-start gap-1.5 sm:gap-2">
-          <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <h2 className="text-xs sm:text-base font-bold text-gray-800 dark:text-gray-100 leading-tight sm:leading-snug line-clamp-2">
-              {test.title || test.tradeName || "No Title"}
-            </h2>
-            {test.title && test.tradeName && (
-              <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400">
-                {test.tradeName}
-              </p>
-            )}
-            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {test.year ? `${test.year} Year` : ""}
-              {test.isOriginal && (
-                <span className="ml-1 sm:ml-2 inline-flex items-center px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
-                  Original
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Stats grid ── */}
-      <div className="flex-1 p-2 sm:px-4 sm:py-3 grid grid-cols-1 sm:grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-1 sm:gap-y-2 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-        {/* Paper ID with copy button */}
-        <div className="flex items-center gap-1 sm:gap-2 min-w-0 col-span-1 sm:col-span-1">
-          <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 text-indigo-400" />
-          <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 shrink-0">
-            ID:
-          </span>
-          <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-200 truncate font-mono">
-            {test.paperId}
-          </span>
-          <button
-            onClick={handleCopyId}
-            title="Copy Paper ID"
-            className="shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          )}
+          <span 
+            className="flex items-center justify-center text-slate-300 dark:text-slate-500 cursor-pointer" 
+            title={test.isProtected ? 'Protected' : 'Unprotected'}
+            onClick={test.isOriginal ? onToggleProtection : undefined}
           >
-            {copied ? (
-              <Check className="w-3 h-3 text-green-500" />
-            ) : (
-              <Copy className="w-3 h-3 text-gray-400 hover:text-indigo-500" />
-            )}
-          </button>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : test.isProtected ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
+          </span>
         </div>
-        <Stat
-          icon={FileText}
-          label="Questions"
-          value={test.quesCount ?? "50"}
-          iconClass="text-blue-400"
-        />
-        <Stat
-          icon={Clock}
-          label="Duration"
-          value={`${test.totalMinutes ?? "—"} min`}
-          iconClass="text-violet-400"
-        />
-        <Stat
-          icon={BarChart}
-          label="Difficulty"
-          value={test.difficultyLevel ?? "mixed"}
-          iconClass="text-amber-400"
-        />
-        <Stat
-          icon={Target}
-          label="Score"
-          value={test.score ?? "—"}
-          iconClass="text-green-400"
-        />
-        {isSubmitted && test.endTime && (
-          <div className="col-span-2">
-            <Stat
-              icon={CheckCircle2}
-              label="Submitted"
-              value={format(new Date(test.endTime), "dd MMM, hh:mm a")}
-              iconClass="text-green-400"
-            />
-          </div>
-        )}
       </div>
 
-      {/* ── Action buttons ── */}
-      <div className="mt-auto p-2 sm:p-3 grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
-        {/* Start / Show */}
+      {/* ── Body (Title & Meta Info) ── */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-[1.1rem] font-bold leading-snug text-slate-900 dark:text-white line-clamp-2">
+          {test.title || test.tradeName || "No Title"}
+        </h3>
+        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-1.5">
+          <span>{test.tradeName}</span>
+          {test.year && (
+            <>
+              <span className="text-slate-300 dark:text-slate-600 leading-none">•</span>
+              <span>{test.year} Year</span>
+            </>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-1">
+          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Date Created">
+            <Calendar className="w-3 h-3 stroke-[2.5]" />
+            {format(new Date(test.$createdAt), "dd MMM yy, hh:mm a")}
+          </span>
+          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Questions">
+            <FileText className="w-3 h-3 stroke-[2.5]" />
+            {test.quesCount ?? "50"} Qs
+          </span>
+          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Duration">
+            <Clock className="w-3 h-3 stroke-[2.5]" />
+            {test.totalMinutes ?? "—"} min
+          </span>
+          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5 capitalize" title="Difficulty">
+            <BarChart className="w-3 h-3 stroke-[2.5]" />
+            {test.difficultyLevel ?? "mixed"}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Status & Score Row ── */}
+      <div className="flex justify-between items-center py-3 border-y border-dashed border-slate-200 dark:border-slate-700 mt-1">
+        <span className={`text-[0.7rem] font-extrabold uppercase px-3 py-1 rounded-full tracking-wider ${isSubmitted ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+          {isSubmitted ? 'Submitted' : 'Pending'}
+        </span>
+        <div className="text-right">
+          {isSubmitted ? (
+            <>
+              <span className="text-[1.4rem] font-black leading-none text-slate-900 dark:text-white">{test.score ?? 0}</span>
+              <span className="text-[0.8rem] font-bold text-slate-400 dark:text-slate-500"> / {test.quesCount ? test.quesCount : "-"}</span>
+            </>
+          ) : (
+            <span className="text-[1.25rem] font-black text-slate-400 dark:text-slate-600 leading-none">—</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Bottom: Actions ── */}
+      <div className="flex justify-between items-center gap-2 mt-auto pt-1">
+        {/* Main Button */}
         {isSubmitted ? (
-          <ActionBtn
-            asLink
-            to={`/show-mock-test/${test.$id}`}
-            color="green"
-            icon={Eye}
-            label="Show Test"
-          />
+          <Link to={`/show-mock-test/${test.$id}`} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 bg-white text-indigo-600 border-indigo-600 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-indigo-500 dark:text-indigo-400">
+            <Eye className="w-4 h-4 stroke-[2.5]" /> View Result
+          </Link>
         ) : (
-          <ActionBtn
-            asLink
-            to={`/start-mock-test/${test.$id}`}
-            color="blue"
-            icon={PlayCircle}
-            label="Start"
-          />
+          <Link to={`/start-mock-test/${test.$id}`} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-transparent bg-indigo-600 text-white shadow-[0_2px_4px_rgba(79,70,229,0.2)] hover:bg-indigo-700 hover:scale-[1.02]">
+            <PlayCircle className="w-4 h-4 stroke-[2.5] fill-current" /> Start
+          </Link>
         )}
 
-        {/* Scores */}
-        <ActionBtn
-          asLink
-          to={`/mock-test-result/${test.paperId}`}
-          color="purple"
-          icon={ClipboardList}
-          label="Scores"
-        />
-
-        {/* Share Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <ActionBtn color="gray" icon={Share2} label="Share" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 z-50">
-            {navigator.share && (
-              <DropdownMenuItem
-                onClick={() => handleShare(test.paperId)}
-                className="cursor-pointer"
-              >
-                <Share2 className="w-4 h-4 mr-2 text-gray-500" /> Share via App
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => handleCopyMessage(test.paperId)}
-              className="cursor-pointer"
-            >
-              {copiedMessage ? (
-                <Check className="w-4 h-4 mr-2 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4 mr-2 text-gray-500" />
+        {/* Secondary Icons */}
+        <div className="flex gap-1 shrink-0">
+          <Link to={`/mock-test-result/${test.paperId}`} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400" title="Live Scores (Other Students)">
+            <ClipboardList className="w-[18px] h-[18px] stroke-[2.5]" />
+          </Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400" title="Share Paper">
+                <Share2 className="w-[18px] h-[18px] stroke-[2.5]" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 z-50">
+              {navigator.share && (
+                <DropdownMenuItem
+                  onClick={() => handleShare(test.paperId)}
+                  className="cursor-pointer font-medium"
+                >
+                  <Share2 className="w-4 h-4 mr-2 text-slate-500" /> Share via App
+                </DropdownMenuItem>
               )}
-              Copy Message
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={() => handleCopyMessage(test.paperId)}
+                className="cursor-pointer font-medium"
+              >
+                {copiedMessage ? (
+                  <Check className="w-4 h-4 mr-2 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4 mr-2 text-slate-500" />
+                )}
+                Copy Message
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Original-only actions */}
-        {test.isOriginal && (
-          <>
-            <ActionBtn
-              onClick={handleNotifyBatch}
-              color="blue"
-              icon={BellRing}
-              label="Notify"
-              loading={isNotifying}
-              disabled={isNotifying}
-            />
-            <ActionBtn
-              onClick={onToggleProtection}
-              color="orange"
-              icon={test.isProtected ? Lock : Unlock}
-              label={test.isProtected ? "Protected" : "Unprotect"}
-              loading={isLoading}
-            />
-            <ActionBtn
-              onClick={() => handleDelete(test.$id)}
-              color="red"
-              icon={Trash2}
-              label="Delete"
-              disabled={!!isDeleting[test.$id]}
-              loading={!!isDeleting[test.$id]}
-            />
-          </>
-        )}
+          {test.isOriginal && (
+            <>
+              <button onClick={handleNotifyBatch} disabled={isNotifying} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 disabled:opacity-50" title="Notify Students">
+                {isNotifying ? <Loader2 className="w-[18px] h-[18px] stroke-[2.5] animate-spin" /> : <BellRing className="w-[18px] h-[18px] stroke-[2.5]" />}
+              </button>
+              <button onClick={() => handleDelete(test.$id)} disabled={!!isDeleting[test.$id]} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-50" title="Delete Paper">
+                {isDeleting[test.$id] ? <Loader2 className="w-[18px] h-[18px] stroke-[2.5] animate-spin" /> : <Trash2 className="w-[18px] h-[18px] stroke-[2.5]" />}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

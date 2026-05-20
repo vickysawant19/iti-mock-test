@@ -146,47 +146,36 @@ const AllMockTests = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* ── Page Header ── */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-              <ClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
-                All Mock Tests
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                View and manage your generated test papers
-              </p>
-            </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 px-2 sm:px-6 py-6 flex flex-col">
+      <div className="w-full">
+        {/* ── Header & Controls ── */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 px-1">
+          <div>
+            <h1 className="text-[1.5rem] font-extrabold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
+              Mock Tests 
+              {!loading && (
+                <span className="text-[0.9rem] font-bold text-indigo-600 bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-0.5 rounded-full">
+                  {totalCount}
+                </span>
+              )}
+            </h1>
           </div>
-          {!loading && totalCount > 0 && (
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
-              {totalCount} test{totalCount !== 1 ? "s" : ""}
-            </span>
-          )}
-
-          {/* Sort dropdown */}
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className="w-4 h-4 text-gray-400 shrink-0" />
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <label className="text-[0.85rem] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
             <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-40 h-9 text-sm">
+              <SelectTrigger className="border-0 shadow-none h-7 px-1 w-[140px] font-semibold text-[0.875rem] text-slate-900 dark:text-white focus:ring-0 focus:ring-offset-0 bg-transparent">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={opt.value} value={opt.value} className="font-medium text-sm">{opt.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
-      </div>
 
-      <div className="px-0 sm:px-6 py-0 sm:py-4 space-y-0 sm:space-y-5">
+        <div className="space-y-5">
         {/* Error */}
         {error && (
           <Alert variant="destructive">
@@ -243,7 +232,7 @@ const AllMockTests = () => {
             )}
 
             {/* Cards grid */}
-            <div className="grid gap-[1px] sm:gap-4 md:gap-5 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-gray-200 dark:bg-gray-700 sm:bg-transparent sm:dark:bg-transparent border-t border-gray-200 dark:border-gray-700 sm:border-none">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full">
               {mockTests.map((test) => (
                 <MockTestCard
                   key={test.$id}
@@ -269,6 +258,7 @@ const AllMockTests = () => {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
