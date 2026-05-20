@@ -47,6 +47,13 @@ export class AuthService {
   async getCurrentUser() {
     try {
       const res = await account.get();
+      // Defensive check: If the Appwrite SDK catches a JSON parse error (e.g. from a proxy returning HTML)
+      // it might resolve the Promise with an Error-like object containing the raw HTML in `message`.
+      // A valid Appwrite user object MUST have an `$id`.
+      if (res && !res.$id) {
+         console.warn("[DEBUG] getCurrentUser received an invalid user object without an $id:", res);
+         return null;
+      }
       return res;
     } catch (error) {
       // Don't throw for get user, just return null so UI knows user is logged out
