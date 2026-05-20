@@ -197,10 +197,13 @@ export class UserProfileService {
   }
 
   async getUserProfile(userId) {
+    if (!userId) {
+      // Return early without throwing to avoid noisy production console errors
+      // when components attempt to fetch a profile for a missing/undefined ID.
+      return false; 
+    }
+
     try {
-      if (!userId) {
-        throw new Error("getUserProfile requires a valid userId");
-      }
       const userProfile = await this.database.listRows({
         databaseId: conf.databaseId,
         tableId: conf.userProfilesCollectionId,
@@ -208,7 +211,7 @@ export class UserProfileService {
       });
 
       if (userProfile.total === 0) {
-        throw new Error("User profile not found.");
+        return false;
       }
 
       const profile = userProfile.rows[0];
