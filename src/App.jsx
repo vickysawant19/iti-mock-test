@@ -89,7 +89,7 @@ function App() {
           <ToastContainer />
         </div>
 
-        <Analytics />
+        <Analytics mode="production" />
       </div>
     </ThemeProvider>
   );
