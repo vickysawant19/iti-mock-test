@@ -44,13 +44,14 @@ const Login = () => {
     try {
       // Login and get user
       const user = await authService.login(data);
-      console.log("Login user response:", user);
+      console.log("[DEBUG Login.jsx] user response from authService.login:", user);
       if (!user) {
         throw new Error("Unable to retrieve user details. Please try again.");
       }
       dispatch(addUser({ data: user }));
 
       // Fetch user profile
+      console.log("[DEBUG Login.jsx] Calling getUserProfile with user.$id:", user.$id);
       const res = await userProfileService.getUserProfile(user?.$id);
       if (res) {
         dispatch(addProfile({ data: res, isLoading: false }));

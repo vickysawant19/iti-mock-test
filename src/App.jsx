@@ -30,6 +30,8 @@ function App() {
     dispatch(addProfile({ isLoading: true }));
     try {
       const currentUser = await authService.getCurrentUser();
+      console.log("[DEBUG App.jsx] currentUser from authService:", currentUser);
+      
       if (currentUser) {
         dispatch(addUser({ data: currentUser, isLoading: false }));
         if (!profile) {
