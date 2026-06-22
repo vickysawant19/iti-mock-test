@@ -4,12 +4,69 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/og-preview.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/og-image.jsx",
+      "use": "@vercel/node"
     }
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/attain-test",
+      "has": [
+        {
+          "type": "query",
+          "key": "paperid",
+          "value": "(?<paperid>[a-zA-Z0-9_-]+)"
+        },
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+        }
+      ],
+      "destination": "/api/og-preview?paperId=:paperid&type=attain"
+    },
+    {
+      "source": "/start-mock-test/:paperId",
+      "has": [
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+        }
+      ],
+      "destination": "/api/og-preview?paperId=:paperId&type=start"
+    },
+    {
+      "source": "/show-mock-test/:paperId",
+      "has": [
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+        }
+      ],
+      "destination": "/api/og-preview?paperId=:paperId&type=show"
+    },
+    {
+      "source": "/mock-test-result/:paperId",
+      "has": [
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+        }
+      ],
+      "destination": "/api/og-preview?paperId=:paperId&type=result"
+    },
+    { "source": "/((?!api/).*)", "destination": "/" }
   ],
   "headers": [
     {
