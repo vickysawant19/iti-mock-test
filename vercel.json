@@ -1,19 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "api/og-preview.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/og-image.jsx",
-      "use": "@vercel/node"
-    }
-  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
