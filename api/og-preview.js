@@ -34,31 +34,30 @@ export default async function handler(req, res) {
   }
 
   // Get paperId and type from query parameters
-  const { paperId, type = "attain" } = req.query;
-
-  if (!paperId) {
-    return res.status(400).send("Missing paperId parameter");
-  }
+  const paperId = req.query.paperId || req.query.paperid;
+  const type = req.query.type || "attain";
 
   let paperData = null;
 
-  // Try to find the mock test paper details
-  try {
-    // 1. Try to fetch as direct document ID
+  if (paperId) {
+    // Try to find the mock test paper details
     try {
-      paperData = await databases.getDocument(databaseId, collectionId, paperId);
-    } catch (e) {
-      // 2. If it fails, try to search by custom paperId field
-      const listRes = await databases.listDocuments(databaseId, collectionId, [
-        Query.equal("paperId", paperId),
-        Query.limit(1)
-      ]);
-      if (listRes.total > 0) {
-        paperData = listRes.documents[0];
+      // 1. Try to fetch as direct document ID
+      try {
+        paperData = await databases.getDocument(databaseId, collectionId, paperId);
+      } catch (e) {
+        // 2. If it fails, try to search by custom paperId field
+        const listRes = await databases.listDocuments(databaseId, collectionId, [
+          Query.equal("paperId", paperId),
+          Query.limit(1)
+        ]);
+        if (listRes.total > 0) {
+          paperData = listRes.documents[0];
+        }
       }
+    } catch (error) {
+      console.error("Error fetching paper details:", error);
     }
-  } catch (error) {
-    console.error("Error fetching paper details:", error);
   }
 
   // Determine redirection URL

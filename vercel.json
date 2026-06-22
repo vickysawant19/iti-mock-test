@@ -6,17 +6,12 @@
       "source": "/attain-test",
       "has": [
         {
-          "type": "query",
-          "key": "paperid",
-          "value": "(?<paperid>[a-zA-Z0-9_-]+)"
-        },
-        {
           "type": "header",
           "key": "User-Agent",
           "value": ".*([Ww]hats[Aa]pp|[Ff]acebook|[Tt]witterbot|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Ss]lackbot|[Ll]inked[Ii]n[Bb]ot|[Ee]mbedly|[Gg]ooglebot|[Bb]ingbot|[Gg]oogle-[Ss]tructured).*?"
         }
       ],
-      "destination": "/api/og-preview?paperId=:paperid&type=attain"
+      "destination": "/api/og-preview?type=attain"
     },
     {
       "source": "/start-mock-test/:paperId",
