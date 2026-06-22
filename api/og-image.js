@@ -454,7 +454,7 @@ export default async function handler(req) {
             justifyContent: "space-between",
             background: "linear-gradient(135deg, #0B1020 0%, #151B33 100%)",
             backgroundImage: "linear-gradient(135deg, #0B1020 0%, #151B33 100%)",
-            padding: "48px 64px",
+            padding: "36px 48px",
             boxSizing: "border-box",
             position: "relative",
             fontFamily: "system-ui, -apple-system, sans-serif",
@@ -502,7 +502,7 @@ export default async function handler(req) {
                   justifyContent: "space-between",
                   alignItems: "center",
                   zIndex: 10,
-                  marginBottom: "16px",
+                  marginBottom: "12px",
                 },
                 children: [
                   // Logo Area
@@ -515,23 +515,23 @@ export default async function handler(req) {
                           type: "div",
                           props: {
                             style: {
-                              width: "36px",
-                              height: "36px",
-                              borderRadius: "8px",
+                              width: "46px",
+                              height: "46px",
+                              borderRadius: "10px",
                               backgroundColor: "#06B6D4",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              marginRight: "12px",
-                              boxShadow: "0 0 12px rgba(6, 182, 212, 0.4)",
+                              marginRight: "14px",
+                              boxShadow: "0 0 14px rgba(6, 182, 212, 0.45)",
                             },
                             children: {
                               type: "span",
                               props: {
                                 style: {
                                   color: "#0B1020",
-                                  fontSize: "18px",
-                                  fontWeight: "800",
+                                  fontSize: "24px",
+                                  fontWeight: "900",
                                 },
                                 children: "IM"
                               }
@@ -542,11 +542,11 @@ export default async function handler(req) {
                           type: "span",
                           props: {
                             style: {
-                              fontSize: "20px",
-                              fontWeight: "800",
+                              fontSize: "26px",
+                              fontWeight: "900",
                               color: "#ffffff",
                               letterSpacing: "1.5px",
-                              textShadow: "0 0 8px rgba(6, 182, 212, 0.3)",
+                              textShadow: "0 0 10px rgba(6, 182, 212, 0.35)",
                             },
                             children: "ITI MITRA"
                           }
@@ -564,15 +564,15 @@ export default async function handler(req) {
                           type: "div",
                           props: {
                             style: {
-                              backgroundColor: "rgba(16, 185, 129, 0.12)",
-                              border: "1px solid rgba(16, 185, 129, 0.3)",
+                              backgroundColor: "rgba(16, 185, 129, 0.15)",
+                              border: "1px solid rgba(16, 185, 129, 0.35)",
                               color: "#10B981",
-                              padding: "4px 10px",
-                              borderRadius: "20px",
-                              fontSize: "11px",
+                              padding: "6px 14px",
+                              borderRadius: "24px",
+                              fontSize: "14px",
                               fontWeight: "800",
                               letterSpacing: "1.5px",
-                              marginRight: "10px",
+                              marginRight: "12px",
                               display: "flex",
                               alignItems: "center",
                             },
@@ -581,11 +581,11 @@ export default async function handler(req) {
                                 type: "div",
                                 props: {
                                   style: {
-                                    width: "6px",
-                                    height: "6px",
-                                    borderRadius: "6px",
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "8px",
                                     backgroundColor: "#10B981",
-                                    marginRight: "6px",
+                                    marginRight: "8px",
                                   }
                                 }
                               },
@@ -598,11 +598,11 @@ export default async function handler(req) {
                           props: {
                             style: {
                               backgroundColor: "rgba(6, 182, 212, 0.15)",
-                              border: "1px solid rgba(6, 182, 212, 0.3)",
+                              border: "1px solid rgba(6, 182, 212, 0.35)",
                               color: "#22D3EE",
-                              padding: "4px 10px",
-                              borderRadius: "20px",
-                              fontSize: "11px",
+                              padding: "6px 14px",
+                              borderRadius: "24px",
+                              fontSize: "14px",
                               fontWeight: "800",
                               letterSpacing: "1px",
                             },
@@ -639,11 +639,11 @@ export default async function handler(req) {
                     type: "span",
                     props: {
                       style: {
-                        fontSize: "16px",
+                        fontSize: "20px",
                         fontWeight: "800",
                         color: "#22D3EE",
                         textTransform: "uppercase",
-                        letterSpacing: "2px",
+                        letterSpacing: "2.5px",
                         marginBottom: "10px",
                       },
                       children: "ONLINE MOCK TEST"
@@ -654,11 +654,11 @@ export default async function handler(req) {
                     type: "h1",
                     props: {
                       style: {
-                        fontSize: "52px",
+                        fontSize: "68px",
                         fontWeight: "900",
                         color: "#ffffff",
-                        margin: "0 0 24px 0",
-                        lineHeight: "1.2",
+                        margin: "0 0 20px 0",
+                        lineHeight: "1.15",
                         letterSpacing: "-0.5px",
                       },
                       children: displayTitle
@@ -678,21 +678,21 @@ export default async function handler(req) {
                         {
                           type: "span",
                           props: {
-                            style: { color: "#10B981", fontSize: "14px", marginRight: "24px", fontWeight: "700" },
+                            style: { color: "#10B981", fontSize: "16px", marginRight: "28px", fontWeight: "700" },
                             children: "✓ Industry Aligned"
                           }
                         },
                         {
                           type: "span",
                           props: {
-                            style: { color: "#10B981", fontSize: "14px", marginRight: "24px", fontWeight: "700" },
+                            style: { color: "#10B981", fontSize: "16px", marginRight: "28px", fontWeight: "700" },
                             children: "✓ Instant Results"
                           }
                         },
                         {
                           type: "span",
                           props: {
-                            style: { color: "#10B981", fontSize: "14px", fontWeight: "700" },
+                            style: { color: "#10B981", fontSize: "16px", fontWeight: "700" },
                             children: "✓ Skill Assessment"
                           }
                         }
@@ -728,14 +728,14 @@ export default async function handler(req) {
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "13px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
                                   children: "Paper ID"
                                 }
                               },
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "#ffffff", fontSize: "15px", fontWeight: "700", fontFamily: "monospace" },
+                                  style: { color: "#ffffff", fontSize: "18px", fontWeight: "700", fontFamily: "monospace" },
                                   children: displayPaperId || "N/A"
                                 }
                               }
@@ -759,14 +759,14 @@ export default async function handler(req) {
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "13px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
                                   children: "Questions"
                                 }
                               },
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "#10B981", fontSize: "15px", fontWeight: "800" },
+                                  style: { color: "#10B981", fontSize: "20px", fontWeight: "800" },
                                   children: `${questions} MCQs`
                                 }
                               }
@@ -790,14 +790,14 @@ export default async function handler(req) {
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "13px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
                                   children: "Duration"
                                 }
                               },
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "#22D3EE", fontSize: "15px", fontWeight: "800" },
+                                  style: { color: "#22D3EE", fontSize: "20px", fontWeight: "800" },
                                   children: `${duration} Minutes`
                                 }
                               }
@@ -820,7 +820,7 @@ export default async function handler(req) {
                               {
                                 type: "span",
                                 props: {
-                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "13px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
                                   children: "Difficulty"
                                 }
                               },
@@ -847,7 +847,7 @@ export default async function handler(req) {
                         alignItems: "center",
                         justifyContent: "center",
                         background: "linear-gradient(90deg, #06B6D4 0%, #22D3EE 100%)",
-                        padding: "16px 32px",
+                        padding: "18px 36px",
                         borderRadius: "14px",
                         width: "100%",
                         boxShadow: "0 0 24px rgba(34, 211, 238, 0.4)",
@@ -857,7 +857,7 @@ export default async function handler(req) {
                         props: {
                           style: {
                             color: "#0B1020",
-                            fontSize: "22px",
+                            fontSize: "28px",
                             fontWeight: "900",
                             letterSpacing: "1px",
                           },
@@ -889,7 +889,7 @@ export default async function handler(req) {
                     type: "span",
                     props: {
                       style: {
-                        fontSize: "12px",
+                        fontSize: "15px",
                         color: "#22D3EE",
                         fontWeight: "800",
                         letterSpacing: "0.5px",
@@ -901,7 +901,7 @@ export default async function handler(req) {
                     type: "span",
                     props: {
                       style: {
-                        fontSize: "12px",
+                        fontSize: "15px",
                         color: "rgba(255, 255, 255, 0.35)",
                         fontWeight: "600",
                       },
