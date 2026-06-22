@@ -616,246 +616,254 @@ export default async function handler(req) {
               }
             },
 
-            // Middle Column Row: Left Illustration & Right Glassmorphic Panel
+            // Full-Width Glassmorphic Panel with Large, High-Contrast Typography
             {
               type: "div",
               props: {
                 style: {
                   display: "flex",
-                  flexDirection: "row",
+                  flexDirection: "column",
                   width: "100%",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  backgroundColor: "rgba(11, 16, 32, 0.7)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "24px",
+                  padding: "36px 44px",
+                  boxSizing: "border-box",
+                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
                   flexGrow: 1,
                   zIndex: 10,
                 },
                 children: [
-                  // LEFT SIDE HERO: Schematic & Circuits SVG
+                  // Subtitle
+                  {
+                    type: "span",
+                    props: {
+                      style: {
+                        fontSize: "16px",
+                        fontWeight: "800",
+                        color: "#22D3EE",
+                        textTransform: "uppercase",
+                        letterSpacing: "2px",
+                        marginBottom: "10px",
+                      },
+                      children: "ONLINE MOCK TEST"
+                    }
+                  },
+                  // Headline (Huge Typography for Mobile Readability)
+                  {
+                    type: "h1",
+                    props: {
+                      style: {
+                        fontSize: "52px",
+                        fontWeight: "900",
+                        color: "#ffffff",
+                        margin: "0 0 24px 0",
+                        lineHeight: "1.2",
+                        letterSpacing: "-0.5px",
+                      },
+                      children: displayTitle
+                    }
+                  },
+
+                  // Trust Factors Checkmarks
                   {
                     type: "div",
                     props: {
                       style: {
                         display: "flex",
-                        width: "45%",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        flexDirection: "row",
+                        marginBottom: "28px",
                       },
                       children: [
-                        visualHero
+                        {
+                          type: "span",
+                          props: {
+                            style: { color: "#10B981", fontSize: "14px", marginRight: "24px", fontWeight: "700" },
+                            children: "✓ Industry Aligned"
+                          }
+                        },
+                        {
+                          type: "span",
+                          props: {
+                            style: { color: "#10B981", fontSize: "14px", marginRight: "24px", fontWeight: "700" },
+                            children: "✓ Instant Results"
+                          }
+                        },
+                        {
+                          type: "span",
+                          props: {
+                            style: { color: "#10B981", fontSize: "14px", fontWeight: "700" },
+                            children: "✓ Skill Assessment"
+                          }
+                        }
                       ]
                     }
                   },
 
-                  // RIGHT SIDE CONTENT: Glassmorphic panel with high-converting details
+                  // Horizontal Badges Row (Large & Clean)
                   {
                     type: "div",
                     props: {
                       style: {
                         display: "flex",
-                        flexDirection: "column",
-                        width: "50%",
-                        backgroundColor: "rgba(11, 16, 32, 0.7)",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        borderRadius: "20px",
-                        padding: "28px",
-                        boxSizing: "border-box",
-                        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "32px",
                       },
                       children: [
-                        // Headline Section
-                        {
-                          type: "span",
-                          props: {
-                            style: {
-                              fontSize: "13px",
-                              fontWeight: "800",
-                              color: "#22D3EE",
-                              textTransform: "uppercase",
-                              letterSpacing: "1.5px",
-                              marginBottom: "4px",
-                            },
-                            children: "ONLINE MOCK TEST"
-                          }
-                        },
-                        {
-                          type: "h1",
-                          props: {
-                            style: {
-                              fontSize: "30px",
-                              fontWeight: "900",
-                              color: "#ffffff",
-                              margin: "0 0 16px 0",
-                              lineHeight: "1.15",
-                              letterSpacing: "-0.5px",
-                            },
-                            children: displayTitle
-                          }
-                        },
-
-                        // Trust Factors Checkmarks
-                        {
-                          type: "div",
-                          props: {
-                            style: {
-                              display: "flex",
-                              flexDirection: "row",
-                              flexWrap: "wrap",
-                              marginBottom: "16px",
-                            },
-                            children: [
-                              {
-                                type: "span",
-                                props: {
-                                  style: { color: "#10B981", fontSize: "11px", marginRight: "10px", fontWeight: "700" },
-                                  children: "✓ Industry Aligned"
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: { color: "#10B981", fontSize: "11px", marginRight: "10px", fontWeight: "700" },
-                                  children: "✓ Instant Results"
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: { color: "#10B981", fontSize: "11px", fontWeight: "700" },
-                                  children: "✓ Assessment"
-                                }
-                              }
-                            ]
-                          }
-                        },
-
-                        // Stats Summary Grid
-                        {
-                          type: "div",
-                          props: {
-                            style: {
-                              display: "flex",
-                              flexDirection: "column",
-                              backgroundColor: "rgba(255, 255, 255, 0.02)",
-                              border: "1px solid rgba(255, 255, 255, 0.05)",
-                              borderRadius: "10px",
-                              padding: "12px 16px",
-                              marginBottom: "20px",
-                            },
-                            children: [
-                              // Row 1
-                              {
-                                type: "div",
-                                props: {
-                                  style: {
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    justifyContent: "space-between",
-                                    width: "100%",
-                                    marginBottom: "8px",
-                                  },
-                                  children: [
-                                    {
-                                      type: "div",
-                                      props: {
-                                        style: { display: "flex", flexDirection: "column" },
-                                        children: [
-                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Paper ID" } },
-                                          { type: "span", props: { style: { color: "#ffffff", fontSize: "12px", fontWeight: "700", fontFamily: "monospace" }, children: displayPaperId || "N/A" } }
-                                        ]
-                                      }
-                                    },
-                                    {
-                                      type: "div",
-                                      props: {
-                                        style: { display: "flex", flexDirection: "column", alignItems: "flex-end" },
-                                        children: [
-                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Questions" } },
-                                          { type: "span", props: { style: { color: "#10B981", fontSize: "12px", fontWeight: "800" }, children: `${questions} MCQs` } }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              // Divider
-                              {
-                                type: "div",
-                                props: {
-                                  style: {
-                                    height: "1px",
-                                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                                    width: "100%",
-                                    marginBottom: "8px",
-                                  }
-                                }
-                              },
-                              // Row 2
-                              {
-                                type: "div",
-                                props: {
-                                  style: {
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    justifyContent: "space-between",
-                                    width: "100%",
-                                  },
-                                  children: [
-                                    {
-                                      type: "div",
-                                      props: {
-                                        style: { display: "flex", flexDirection: "column" },
-                                        children: [
-                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Duration" } },
-                                          { type: "span", props: { style: { color: "#22D3EE", fontSize: "12px", fontWeight: "800" }, children: `${duration} Minutes` } }
-                                        ]
-                                      }
-                                    },
-                                    {
-                                      type: "div",
-                                      props: {
-                                        style: { display: "flex", flexDirection: "column", alignItems: "flex-end" },
-                                        children: [
-                                           { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Difficulty" } },
-                                           { type: "span", props: { style: { color: "#fbbf24", fontSize: "12px", fontWeight: "800" }, children: `${displayDifficulty} Difficulty` } }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            ]
-                          }
-                        },
-
-                        // Primary Action Button (CTA)
+                        // Badge 1: Paper ID
                         {
                           type: "div",
                           props: {
                             style: {
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "center",
-                              background: "linear-gradient(90deg, #06B6D4 0%, #22D3EE 100%)",
-                              padding: "10px 20px",
-                              borderRadius: "10px",
-                              width: "100%",
-                              boxShadow: "0 0 16px rgba(34, 211, 238, 0.3)",
+                              backgroundColor: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              padding: "12px 20px",
+                              borderRadius: "14px",
+                              marginRight: "20px",
                             },
-                            children: {
-                              type: "span",
-                              props: {
-                                style: {
-                                  color: "#0B1020",
-                                  fontSize: "15px",
-                                  fontWeight: "800",
-                                  letterSpacing: "0.5px",
-                                },
-                                children: "START EXAM →"
+                            children: [
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  children: "Paper ID"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#ffffff", fontSize: "15px", fontWeight: "700", fontFamily: "monospace" },
+                                  children: displayPaperId || "N/A"
+                                }
                               }
-                            }
+                            ]
+                          }
+                        },
+                        // Badge 2: Questions
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              padding: "12px 20px",
+                              borderRadius: "14px",
+                              marginRight: "20px",
+                            },
+                            children: [
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  children: "Questions"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#10B981", fontSize: "15px", fontWeight: "800" },
+                                  children: `${questions} MCQs`
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        // Badge 3: Duration
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              padding: "12px 20px",
+                              borderRadius: "14px",
+                              marginRight: "20px",
+                            },
+                            children: [
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  children: "Duration"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#22D3EE", fontSize: "15px", fontWeight: "800" },
+                                  children: `${duration} Minutes`
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        // Badge 4: Difficulty
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              padding: "12px 20px",
+                              borderRadius: "14px",
+                            },
+                            children: [
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", marginRight: "8px" },
+                                  children: "Difficulty"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#fbbf24", fontSize: "15px", fontWeight: "800" },
+                                  children: `${displayDifficulty} Difficulty`
+                                }
+                              }
+                            ]
                           }
                         }
                       ]
+                    }
+                  },
+
+                  // Large Glowing CTA Button
+                  {
+                    type: "div",
+                    props: {
+                      style: {
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(90deg, #06B6D4 0%, #22D3EE 100%)",
+                        padding: "16px 32px",
+                        borderRadius: "14px",
+                        width: "100%",
+                        boxShadow: "0 0 24px rgba(34, 211, 238, 0.4)",
+                      },
+                      children: {
+                        type: "span",
+                        props: {
+                          style: {
+                            color: "#0B1020",
+                            fontSize: "22px",
+                            fontWeight: "900",
+                            letterSpacing: "1px",
+                          },
+                          children: "START EXAM →"
+                        }
+                      }
                     }
                   }
                 ]
