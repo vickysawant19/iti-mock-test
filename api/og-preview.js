@@ -110,6 +110,9 @@ export default async function handler(req, res) {
   <meta property="og:title" content="${title} - ITI Mitra Mock Test" />
   <meta property="og:description" content="${description}" />
   <meta property="og:image" content="${escapedOgImageUrl}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
