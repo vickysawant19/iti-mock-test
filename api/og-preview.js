@@ -87,6 +87,7 @@ export default async function handler(req, res) {
 
   // Construct dynamic OG image URL
   const ogImageUrl = `${origin}/api/og-image?title=${encodeURIComponent(title)}&trade=${encodeURIComponent(trade)}&year=${encodeURIComponent(year)}&duration=${encodeURIComponent(duration)}&questions=${encodeURIComponent(questions)}`;
+  const escapedOgImageUrl = ogImageUrl.replace(/&/g, "&amp;");
 
   // Construct absolute redirect URL
   const redirectToUrl = `${origin}${redirectPath}`;
@@ -108,14 +109,14 @@ export default async function handler(req, res) {
   <meta property="og:url" content="${redirectToUrl}" />
   <meta property="og:title" content="${title} - ITI Mitra Mock Test" />
   <meta property="og:description" content="${description}" />
-  <meta property="og:image" content="${ogImageUrl}" />
+  <meta property="og:image" content="${escapedOgImageUrl}" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="${redirectToUrl}" />
   <meta name="twitter:title" content="${title} - ITI Mitra Mock Test" />
   <meta name="twitter:description" content="${description}" />
-  <meta name="twitter:image" content="${ogImageUrl}" />
+  <meta name="twitter:image" content="${escapedOgImageUrl}" />
 
   <!-- Pre-render fallback redirect -->
   <script type="text/javascript">
