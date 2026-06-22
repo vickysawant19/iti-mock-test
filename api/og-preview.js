@@ -1,10 +1,33 @@
 import { Client, Databases, Query } from "node-appwrite";
 
+const endpoint = process.env.VITE_APPWRITE_ENDPOINT || "https://api.itimitra.in/v1";
+const projectId = process.env.VITE_APPWRITE_PROJECT_ID || "itimocktest";
+const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || "itimocktest";
+const collectionId = process.env.VITE_QUESTIONPAPER_COLLECTION_ID || "667e8b800015a7ece741";
+const apiKey = process.env.VITE_APPWRITE_API_KEY;
+
+// Initialize Appwrite Client outside handler (persists across warm starts)
+const client = new Client()
+  .setEndpoint(endpoint)
+  .setProject(projectId);
+
+if (apiKey) {
+  client.setKey(apiKey);
+}
+
+const databases = new Databases(client);
+
 export default async function handler(req, res) {
   // Allow CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Cache the preview HTML response at Vercel's Edge CDN for 1 year
+  res.setHeader(
+    "Cache-Control",
+    "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=60"
+  );
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();
@@ -18,23 +41,6 @@ export default async function handler(req, res) {
   }
 
   let paperData = null;
-
-  const endpoint = process.env.VITE_APPWRITE_ENDPOINT || "https://api.itimitra.in/v1";
-  const projectId = process.env.VITE_APPWRITE_PROJECT_ID || "itimocktest";
-  const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || "itimocktest";
-  const collectionId = process.env.VITE_QUESTIONPAPER_COLLECTION_ID || "667e8b800015a7ece741";
-  const apiKey = process.env.VITE_APPWRITE_API_KEY;
-
-  // Initialize Appwrite Client
-  const client = new Client()
-    .setEndpoint(endpoint)
-    .setProject(projectId);
-
-  if (apiKey) {
-    client.setKey(apiKey);
-  }
-
-  const databases = new Databases(client);
 
   // Try to find the mock test paper details
   try {
