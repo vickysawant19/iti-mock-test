@@ -77,6 +77,7 @@ export default async function handler(req, res) {
   const trade = paperData?.tradeName || "All Trades";
   const year = paperData?.year ? `${paperData.year} Year` : "";
   const duration = paperData?.totalMinutes || "60";
+  const difficulty = paperData?.difficultyLevel || "mixed";
   
   // Handle question count safely
   let questions = "50";
@@ -91,7 +92,7 @@ export default async function handler(req, res) {
   const origin = `${protocol}://${host}`;
 
   // Construct dynamic OG image URL
-  const ogImageUrl = `${origin}/api/og-image?title=${encodeURIComponent(title)}&trade=${encodeURIComponent(trade)}&year=${encodeURIComponent(year)}&duration=${encodeURIComponent(duration)}&questions=${encodeURIComponent(questions)}`;
+  const ogImageUrl = `${origin}/api/og-image?title=${encodeURIComponent(title)}&trade=${encodeURIComponent(trade)}&year=${encodeURIComponent(year)}&duration=${encodeURIComponent(duration)}&questions=${encodeURIComponent(questions)}&paperId=${encodeURIComponent(paperId || "")}&difficulty=${encodeURIComponent(difficulty)}`;
   const escapedOgImageUrl = ogImageUrl.replace(/&/g, "&amp;");
 
   // Construct absolute redirect URL

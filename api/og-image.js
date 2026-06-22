@@ -14,11 +14,432 @@ export default async function handler(req) {
     const year = searchParams.get("year") || "";
     const duration = searchParams.get("duration") || "60";
     const questions = searchParams.get("questions") || "50";
+    const paperId = searchParams.get("paperId") || "";
+    const difficulty = searchParams.get("difficulty") || "mixed";
 
     // Clean strings for displaying
     const displayTitle = title.length > 60 ? title.substring(0, 57) + "..." : title;
     const displayTrade = trade.length > 40 ? trade.substring(0, 37) + "..." : trade;
     const displaySub = year ? `${displayTrade} • ${year}` : displayTrade;
+    const displayPaperId = paperId ? (paperId.length > 25 ? paperId.substring(0, 22) + "..." : paperId) : "";
+    const displayDifficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+
+    // Determine which trade visual illustration to render
+    const lowercaseTrade = trade.toLowerCase();
+    let visualHero = null;
+
+    if (lowercaseTrade.includes("electronics")) {
+      // Electronics illustration (Oscilloscope, MCU board, etc.)
+      visualHero = {
+        type: "svg",
+        props: {
+          width: "360",
+          height: "320",
+          viewBox: "0 0 360 320",
+          fill: "none",
+          children: [
+            // Grid lines for oscilloscope look
+            { type: "line", props: { x1: "0", y1: "60", x2: "360", y2: "60", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "130", x2: "360", y2: "130", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "200", x2: "360", y2: "200", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "80", y1: "0", x2: "80", y2: "320", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "180", y1: "0", x2: "180", y2: "320", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "280", y1: "0", x2: "280", y2: "320", stroke: "rgba(6, 182, 212, 0.04)", strokeWidth: "1" } },
+
+            // Oscilloscope panel
+            {
+              type: "rect",
+              props: {
+                x: "10",
+                y: "10",
+                width: "340",
+                height: "120",
+                rx: "10",
+                fill: "rgba(6, 182, 212, 0.02)",
+                stroke: "rgba(6, 182, 212, 0.15)",
+                strokeWidth: "1"
+              }
+            },
+            // Waveform path (glowing blue)
+            {
+              type: "path",
+              props: {
+                d: "M 20,70 C 60,10 90,130 130,70 C 170,10 200,130 240,70 C 280,10 310,70 340,70",
+                stroke: "#22D3EE",
+                strokeWidth: "3.5",
+                strokeLinecap: "round"
+              }
+            },
+
+            // Microcontroller chip circuit
+            {
+              type: "rect",
+              props: {
+                x: "90",
+                y: "165",
+                width: "180",
+                height: "115",
+                rx: "14",
+                fill: "rgba(37, 99, 235, 0.04)",
+                stroke: "rgba(37, 99, 235, 0.25)",
+                strokeWidth: "2"
+              }
+            },
+            // Core CPU chip
+            {
+              type: "rect",
+              props: {
+                x: "145",
+                y: "197",
+                width: "70",
+                height: "50",
+                rx: "6",
+                fill: "#0B1020",
+                stroke: "#2563EB",
+                strokeWidth: "2"
+              }
+            },
+            // Chip branding text
+            {
+              type: "text",
+              props: {
+                x: "155",
+                y: "228",
+                fill: "#06B6D4",
+                fontSize: "12",
+                fontWeight: "800",
+                style: { fontFamily: "monospace" },
+                children: "ITI-MCU"
+              }
+            },
+            // Chip pins
+            { type: "line", props: { x1: "135", y1: "207", x2: "145", y2: "207", stroke: "#60A5FA", strokeWidth: "2" } },
+            { type: "line", props: { x1: "135", y1: "222", x2: "145", y2: "222", stroke: "#60A5FA", strokeWidth: "2" } },
+            { type: "line", props: { x1: "135", y1: "237", x2: "145", y2: "237", stroke: "#60A5FA", strokeWidth: "2" } },
+            { type: "line", props: { x1: "215", y1: "207", x2: "225", y2: "207", stroke: "#60A5FA", strokeWidth: "2" } },
+            { type: "line", props: { x1: "215", y1: "222", x2: "225", y2: "222", stroke: "#60A5FA", strokeWidth: "2" } },
+            { type: "line", props: { x1: "215", y1: "237", x2: "225", y2: "237", stroke: "#60A5FA", strokeWidth: "2" } },
+
+            // Circuit pads and paths
+            { type: "circle", props: { cx: "50", cy: "222", r: "5", fill: "#06B6D4" } },
+            { type: "path", props: { d: "M 55,222 L 135,222", stroke: "#06B6D4", strokeWidth: "2", strokeDasharray: "4 2" } },
+            { type: "circle", props: { cx: "310", cy: "222", r: "5", fill: "#10B981" } },
+            { type: "path", props: { d: "M 225,222 L 305,222", stroke: "#10B981", strokeWidth: "2" } }
+          ]
+        }
+      };
+    } else if (lowercaseTrade.includes("electrician")) {
+      // Electrician illustration (wiring, control panel, electrical symbols)
+      visualHero = {
+        type: "svg",
+        props: {
+          width: "360",
+          height: "320",
+          viewBox: "0 0 360 320",
+          fill: "none",
+          children: [
+            // Grid lines
+            { type: "line", props: { x1: "0", y1: "60", x2: "360", y2: "60", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "130", x2: "360", y2: "130", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "200", x2: "360", y2: "200", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "80", y1: "0", x2: "80", y2: "320", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "180", y1: "0", x2: "180", y2: "320", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "280", y1: "0", x2: "280", y2: "320", stroke: "rgba(251, 191, 36, 0.04)", strokeWidth: "1" } },
+
+            // Control panel border
+            {
+              type: "rect",
+              props: {
+                x: "20",
+                y: "20",
+                width: "320",
+                height: "260",
+                rx: "16",
+                fill: "rgba(251, 191, 36, 0.02)",
+                stroke: "rgba(251, 191, 36, 0.2)",
+                strokeWidth: "2"
+              }
+            },
+
+            // Voltmeter dial
+            {
+              type: "circle",
+              props: {
+                cx: "90",
+                cy: "90",
+                r: "45",
+                fill: "#0B1020",
+                stroke: "#fbbf24",
+                strokeWidth: "2"
+              }
+            },
+            { type: "path", props: { d: "M 65,80 A 30,30 0 0,1 115,80", stroke: "#fbbf24", strokeWidth: "1.5", strokeDasharray: "2 2" } },
+            { type: "line", props: { x1: "90", y1: "90", x2: "115", y2: "65", stroke: "#ef4444", strokeWidth: "3", strokeLinecap: "round" } },
+            {
+              type: "text",
+              props: {
+                x: "85",
+                y: "115",
+                fill: "rgba(255, 255, 255, 0.4)",
+                fontSize: "12",
+                fontWeight: "bold",
+                children: "V"
+              }
+            },
+
+            // High Voltage Lightning Bolt
+            {
+              type: "rect",
+              props: {
+                x: "190",
+                y: "45",
+                width: "120",
+                height: "90",
+                rx: "10",
+                fill: "rgba(239, 68, 68, 0.05)",
+                stroke: "rgba(239, 68, 68, 0.25)",
+                strokeWidth: "1.5"
+              }
+            },
+            {
+              type: "path",
+              props: {
+                d: "M 255,55 L 235,95 L 260,95 L 240,125",
+                stroke: "#ef4444",
+                strokeWidth: "4",
+                strokeLinecap: "round",
+                strokeLinejoin: "round"
+              }
+            },
+
+            // Breaker switch schematic
+            {
+              type: "rect",
+              props: {
+                x: "60",
+                y: "175",
+                width: "240",
+                height: "75",
+                rx: "12",
+                fill: "#0B1020",
+                stroke: "rgba(251, 191, 36, 0.15)",
+                strokeWidth: "2"
+              }
+            },
+            { type: "circle", props: { cx: "90", cy: "212", r: "6", fill: "#fbbf24" } },
+            { type: "circle", props: { cx: "270", cy: "212", r: "6", fill: "#fbbf24" } },
+            {
+              type: "line",
+              props: {
+                x1: "90",
+                y1: "212",
+                x2: "200",
+                y2: "190",
+                stroke: "#fbbf24",
+                strokeWidth: "4",
+                strokeLinecap: "round"
+              }
+            },
+            {
+              type: "text",
+              props: {
+                x: "220",
+                y: "220",
+                fill: "#10B981",
+                fontSize: "12",
+                fontWeight: "bold",
+                children: "CONNECTED"
+              }
+            }
+          ]
+        }
+      };
+    } else if (lowercaseTrade.includes("copa")) {
+      // COPA illustration (laptop, code editor, digital dashboard)
+      visualHero = {
+        type: "svg",
+        props: {
+          width: "360",
+          height: "320",
+          viewBox: "0 0 360 320",
+          fill: "none",
+          children: [
+            // Grid lines
+            { type: "line", props: { x1: "0", y1: "60", x2: "360", y2: "60", stroke: "rgba(16, 185, 129, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "130", x2: "360", y2: "130", stroke: "rgba(16, 185, 129, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "200", x2: "360", y2: "200", stroke: "rgba(16, 185, 129, 0.04)", strokeWidth: "1" } },
+
+            // Laptop base
+            {
+              type: "path",
+              props: {
+                d: "M 20,240 L 340,240 L 320,260 L 40,260 Z",
+                fill: "#1E293B",
+                stroke: "rgba(16, 185, 129, 0.3)",
+                strokeWidth: "2"
+              }
+            },
+            // Touchpad
+            {
+              type: "rect",
+              props: {
+                x: "150",
+                y: "244",
+                width: "60",
+                height: "12",
+                rx: "2",
+                fill: "#0F172A",
+                stroke: "rgba(16, 185, 129, 0.15)",
+                strokeWidth: "1"
+              }
+            },
+            // Laptop screen bezel
+            {
+              type: "rect",
+              props: {
+                x: "40",
+                y: "30",
+                width: "280",
+                height: "200",
+                rx: "10",
+                fill: "#0B1020",
+                stroke: "rgba(16, 185, 129, 0.25)",
+                strokeWidth: "2"
+              }
+            },
+            // Screen display area
+            {
+              type: "rect",
+              props: {
+                x: "50",
+                y: "40",
+                width: "260",
+                height: "180",
+                rx: "6",
+                fill: "#020617"
+              }
+            },
+
+            // IDE lines
+            { type: "line", props: { x1: "65", y1: "55", x2: "130", y2: "55", stroke: "#3b82f6", strokeWidth: "4", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "65", y1: "70", x2: "160", y2: "70", stroke: "#10b981", strokeWidth: "4", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "80", y1: "85", x2: "180", y2: "85", stroke: "#fbbf24", strokeWidth: "4", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "80", y1: "100", x2: "140", y2: "100", stroke: "#a78bfa", strokeWidth: "4", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "65", y1: "115", x2: "110", y2: "115", stroke: "#ef4444", strokeWidth: "4", strokeLinecap: "round" } },
+
+            // HTML tags text
+            {
+              type: "text",
+              props: {
+                x: "65",
+                y: "165",
+                fill: "rgba(16, 185, 129, 0.4)",
+                fontSize: "24",
+                fontWeight: "800",
+                style: { fontFamily: "monospace" },
+                children: "</>"
+              }
+            },
+
+            // Digital dashboard graphs
+            {
+              type: "rect",
+              props: {
+                x: "195",
+                y: "55",
+                width: "100",
+                height: "75",
+                rx: "4",
+                fill: "rgba(16, 185, 129, 0.02)",
+                stroke: "rgba(16, 185, 129, 0.15)",
+                strokeWidth: "1"
+              }
+            },
+            {
+              type: "polyline",
+              props: {
+                points: "205,115 220,85 235,95 250,70 265,100 280,65",
+                stroke: "#10B981",
+                strokeWidth: "2",
+                strokeLinecap: "round",
+                strokeLinejoin: "round"
+              }
+            },
+            { type: "line", props: { x1: "210", y1: "145", x2: "210", y2: "185", stroke: "#3b82f6", strokeWidth: "6", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "225", y1: "155", x2: "225", y2: "185", stroke: "#a78bfa", strokeWidth: "6", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "240", y1: "135", x2: "240", y2: "185", stroke: "#fbbf24", strokeWidth: "6", strokeLinecap: "round" } },
+            { type: "line", props: { x1: "255", y1: "165", x2: "255", y2: "185", stroke: "#10b981", strokeWidth: "6", strokeLinecap: "round" } }
+          ]
+        }
+      };
+    } else {
+      // Default general tech layout
+      visualHero = {
+        type: "svg",
+        props: {
+          width: "360",
+          height: "320",
+          viewBox: "0 0 360 320",
+          fill: "none",
+          children: [
+            // Grid lines
+            { type: "line", props: { x1: "0", y1: "60", x2: "360", y2: "60", stroke: "rgba(96, 165, 250, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "130", x2: "360", y2: "130", stroke: "rgba(96, 165, 250, 0.04)", strokeWidth: "1" } },
+            { type: "line", props: { x1: "0", y1: "200", x2: "360", y2: "200", stroke: "rgba(96, 165, 250, 0.04)", strokeWidth: "1" } },
+
+            // Outer dial
+            {
+              type: "circle",
+              props: {
+                cx: "180",
+                cy: "150",
+                r: "90",
+                fill: "rgba(96, 165, 250, 0.01)",
+                stroke: "rgba(96, 165, 250, 0.15)",
+                strokeWidth: "1.5",
+                strokeDasharray: "6 4"
+              }
+            },
+            // Progress arc
+            {
+              type: "circle",
+              props: {
+                cx: "180",
+                cy: "150",
+                r: "75",
+                stroke: "#3b82f6",
+                strokeWidth: "4.5",
+                strokeDasharray: "350 150",
+                strokeLinecap: "round"
+              }
+            },
+            // Shield
+            {
+              type: "path",
+              props: {
+                d: "M 180,115 L 210,130 L 210,165 C 210,185 180,200 180,200 C 180,200 150,185 150,165 L 150,130 Z",
+                fill: "rgba(96, 165, 250, 0.05)",
+                stroke: "#60A5FA",
+                strokeWidth: "3.5",
+                strokeLinejoin: "round"
+              }
+            },
+            // Star
+            {
+              type: "path",
+              props: {
+                d: "M 180,135 L 185,147 L 197,147 L 187,155 L 191,167 L 180,159 L 169,167 L 173,155 L 163,147 L 175,147 Z",
+                fill: "#fbbf24"
+              }
+            },
+            { type: "circle", props: { cx: "75", cy: "70", r: "3", fill: "#3b82f6" } },
+            { type: "line", props: { x1: "75", y1: "70", x2: "120", y2: "70", stroke: "rgba(96, 165, 250, 0.2)", strokeWidth: "1" } },
+            { type: "circle", props: { cx: "285", cy: "230", r: "3", fill: "#10b981" } },
+            { type: "line", props: { x1: "240", y1: "230", x2: "285", y2: "230", stroke: "rgba(16, 185, 129, 0.2)", strokeWidth: "1" } }
+          ]
+        }
+      };
+    }
 
     return new ImageResponse(
       {
@@ -31,44 +452,47 @@ export default async function handler(req) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundImage: "linear-gradient(135deg, #0b1528 0%, #1e293b 100%)",
-            padding: "48px",
+            background: "linear-gradient(135deg, #0B1020 0%, #151B33 100%)",
+            backgroundImage: "linear-gradient(135deg, #0B1020 0%, #151B33 100%)",
+            padding: "48px 64px",
             boxSizing: "border-box",
             position: "relative",
             fontFamily: "system-ui, -apple-system, sans-serif",
           },
           children: [
-            // Subtle Decorative Background Rings
+            // Soft Background Glowing Particles / Hologram Rings
             {
               type: "div",
               props: {
                 style: {
                   position: "absolute",
-                  top: "-150px",
-                  right: "-150px",
-                  width: "500px",
-                  height: "500px",
-                  borderRadius: "500px",
-                  border: "1px solid rgba(59, 130, 246, 0.05)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                children: {
-                  type: "div",
-                  props: {
-                    style: {
-                      width: "400px",
-                      height: "400px",
-                      borderRadius: "400px",
-                      border: "1px solid rgba(59, 130, 246, 0.03)",
-                    }
-                  }
+                  top: "-100px",
+                  left: "-100px",
+                  width: "400px",
+                  height: "400px",
+                  borderRadius: "400px",
+                  background: "radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(0, 0, 0, 0) 70%)",
+                  pointerEvents: "none",
+                }
+              }
+            },
+            {
+              type: "div",
+              props: {
+                style: {
+                  position: "absolute",
+                  bottom: "-100px",
+                  right: "-100px",
+                  width: "450px",
+                  height: "450px",
+                  borderRadius: "450px",
+                  background: "radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(0, 0, 0, 0) 70%)",
+                  pointerEvents: "none",
                 }
               }
             },
 
-            // Top Row: Branding
+            // Top Header Row: Logo and Badges
             {
               type: "div",
               props: {
@@ -78,8 +502,10 @@ export default async function handler(req) {
                   justifyContent: "space-between",
                   alignItems: "center",
                   zIndex: 10,
+                  marginBottom: "16px",
                 },
                 children: [
+                  // Logo Area
                   {
                     type: "div",
                     props: {
@@ -89,21 +515,22 @@ export default async function handler(req) {
                           type: "div",
                           props: {
                             style: {
-                              width: "40px",
-                              height: "40px",
-                              borderRadius: "10px",
-                              backgroundColor: "#3b82f6",
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "8px",
+                              backgroundColor: "#06B6D4",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              marginRight: "16px",
+                              marginRight: "12px",
+                              boxShadow: "0 0 12px rgba(6, 182, 212, 0.4)",
                             },
                             children: {
                               type: "span",
                               props: {
                                 style: {
-                                  color: "white",
-                                  fontSize: "22px",
+                                  color: "#0B1020",
+                                  fontSize: "18px",
                                   fontWeight: "800",
                                 },
                                 children: "IM"
@@ -118,7 +545,8 @@ export default async function handler(req) {
                               fontSize: "20px",
                               fontWeight: "800",
                               color: "#ffffff",
-                              letterSpacing: "1px",
+                              letterSpacing: "1.5px",
+                              textShadow: "0 0 8px rgba(6, 182, 212, 0.3)",
                             },
                             children: "ITI MITRA"
                           }
@@ -126,238 +554,59 @@ export default async function handler(req) {
                       ]
                     }
                   },
+                  // Action Badges
                   {
                     type: "div",
                     props: {
-                      style: {
-                        display: "flex",
-                        backgroundColor: "rgba(59, 130, 246, 0.1)",
-                        border: "1px solid rgba(59, 130, 246, 0.2)",
-                        padding: "6px 14px",
-                        borderRadius: "20px",
-                      },
-                      children: {
-                        type: "span",
-                        props: {
-                          style: {
-                            color: "#60a5fa",
-                            fontSize: "11px",
-                            fontWeight: "700",
-                            textTransform: "uppercase",
-                            letterSpacing: "1.5px",
-                          },
-                          children: "Online Examination"
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-
-            // Center Card (Glassmorphism layout)
-            {
-              type: "div",
-              props: {
-                style: {
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  backgroundColor: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.07)",
-                  borderRadius: "24px",
-                  padding: "36px 40px",
-                  margin: "32px 0",
-                  boxSizing: "border-box",
-                  zIndex: 10,
-                },
-                children: [
-                  {
-                    type: "span",
-                    props: {
-                      style: {
-                        fontSize: "15px",
-                        fontWeight: "700",
-                        color: "#f59e0b",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        marginBottom: "12px",
-                      },
-                      children: displaySub
-                    }
-                  },
-                  {
-                    type: "h1",
-                    props: {
-                      style: {
-                        fontSize: "38px",
-                        fontWeight: "800",
-                        color: "#ffffff",
-                        lineHeight: "1.25",
-                        margin: "0 0 28px 0",
-                      },
-                      children: displayTitle
-                    }
-                  },
-                  {
-                    type: "div",
-                    props: {
-                      style: { display: "flex", gap: "20px", alignItems: "center" },
+                      style: { display: "flex", flexDirection: "row", alignItems: "center" },
                       children: [
-                        // Duration Badge
                         {
                           type: "div",
                           props: {
                             style: {
+                              backgroundColor: "rgba(16, 185, 129, 0.12)",
+                              border: "1px solid rgba(16, 185, 129, 0.3)",
+                              color: "#10B981",
+                              padding: "4px 10px",
+                              borderRadius: "20px",
+                              fontSize: "11px",
+                              fontWeight: "800",
+                              letterSpacing: "1.5px",
+                              marginRight: "10px",
                               display: "flex",
                               alignItems: "center",
-                              backgroundColor: "rgba(255, 255, 255, 0.03)",
-                              border: "1px solid rgba(255, 255, 255, 0.08)",
-                              padding: "10px 18px",
-                              borderRadius: "14px",
                             },
                             children: [
                               {
                                 type: "div",
                                 props: {
                                   style: {
-                                    width: "12px",
-                                    height: "12px",
-                                    borderRadius: "12px",
-                                    border: "2px solid #60a5fa",
-                                    marginRight: "10px",
+                                    width: "6px",
+                                    height: "6px",
+                                    borderRadius: "6px",
+                                    backgroundColor: "#10B981",
+                                    marginRight: "6px",
                                   }
                                 }
                               },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#94a3b8",
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                    marginRight: "6px",
-                                  },
-                                  children: "Duration:"
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#f8fafc",
-                                    fontSize: "14px",
-                                    fontWeight: "700",
-                                  },
-                                  children: `${duration} Mins`
-                                }
-                              }
+                              "EXAM READY"
                             ]
                           }
                         },
-
-                        // Questions Count Badge
                         {
                           type: "div",
                           props: {
                             style: {
-                              display: "flex",
-                              alignItems: "center",
-                              backgroundColor: "rgba(255, 255, 255, 0.03)",
-                              border: "1px solid rgba(255, 255, 255, 0.08)",
-                              padding: "10px 18px",
-                              borderRadius: "14px",
+                              backgroundColor: "rgba(6, 182, 212, 0.15)",
+                              border: "1px solid rgba(6, 182, 212, 0.3)",
+                              color: "#22D3EE",
+                              padding: "4px 10px",
+                              borderRadius: "20px",
+                              fontSize: "11px",
+                              fontWeight: "800",
+                              letterSpacing: "1px",
                             },
-                            children: [
-                              {
-                                type: "div",
-                                props: {
-                                  style: {
-                                    width: "10px",
-                                    height: "12px",
-                                    border: "2px solid #34d399",
-                                    borderRadius: "2px",
-                                    marginRight: "10px",
-                                  }
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#94a3b8",
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                    marginRight: "6px",
-                                  },
-                                  children: "Questions:"
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#f8fafc",
-                                    fontSize: "14px",
-                                    fontWeight: "700",
-                                  },
-                                  children: `${questions} Nos.`
-                                }
-                              }
-                            ]
-                          }
-                        },
-
-                        // Marks Badge
-                        {
-                          type: "div",
-                          props: {
-                            style: {
-                              display: "flex",
-                              alignItems: "center",
-                              backgroundColor: "rgba(255, 255, 255, 0.03)",
-                              border: "1px solid rgba(255, 255, 255, 0.08)",
-                              padding: "10px 18px",
-                              borderRadius: "14px",
-                            },
-                            children: [
-                              {
-                                type: "div",
-                                props: {
-                                  style: {
-                                    width: "12px",
-                                    height: "12px",
-                                    backgroundColor: "#a78bfa",
-                                    borderRadius: "3px",
-                                    transform: "rotate(45deg)",
-                                    marginRight: "10px",
-                                  }
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#94a3b8",
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                    marginRight: "6px",
-                                  },
-                                  children: "Marks:"
-                                }
-                              },
-                              {
-                                type: "span",
-                                props: {
-                                  style: {
-                                    color: "#f8fafc",
-                                    fontSize: "14px",
-                                    fontWeight: "700",
-                                  },
-                                  children: `${questions} Marks`
-                                }
-                              }
-                            ]
+                            children: `⚡ ${duration} MIN CHALLENGE`
                           }
                         }
                       ]
@@ -367,7 +616,253 @@ export default async function handler(req) {
               }
             },
 
-            // Bottom Row: Footer Branding and CTA
+            // Middle Column Row: Left Illustration & Right Glassmorphic Panel
+            {
+              type: "div",
+              props: {
+                style: {
+                  display: "flex",
+                  flexDirection: "row",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexGrow: 1,
+                  zIndex: 10,
+                },
+                children: [
+                  // LEFT SIDE HERO: Schematic & Circuits SVG
+                  {
+                    type: "div",
+                    props: {
+                      style: {
+                        display: "flex",
+                        width: "45%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                      children: [
+                        visualHero
+                      ]
+                    }
+                  },
+
+                  // RIGHT SIDE CONTENT: Glassmorphic panel with high-converting details
+                  {
+                    type: "div",
+                    props: {
+                      style: {
+                        display: "flex",
+                        flexDirection: "column",
+                        width: "50%",
+                        backgroundColor: "rgba(11, 16, 32, 0.7)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderRadius: "20px",
+                        padding: "28px",
+                        boxSizing: "border-box",
+                        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
+                      },
+                      children: [
+                        // Headline Section
+                        {
+                          type: "span",
+                          props: {
+                            style: {
+                              fontSize: "13px",
+                              fontWeight: "800",
+                              color: "#22D3EE",
+                              textTransform: "uppercase",
+                              letterSpacing: "1.5px",
+                              marginBottom: "4px",
+                            },
+                            children: "ONLINE MOCK TEST"
+                          }
+                        },
+                        {
+                          type: "h1",
+                          props: {
+                            style: {
+                              fontSize: "30px",
+                              fontWeight: "900",
+                              color: "#ffffff",
+                              margin: "0 0 16px 0",
+                              lineHeight: "1.15",
+                              letterSpacing: "-0.5px",
+                            },
+                            children: displayTitle
+                          }
+                        },
+
+                        // Trust Factors Checkmarks
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              flexDirection: "row",
+                              flexWrap: "wrap",
+                              marginBottom: "16px",
+                            },
+                            children: [
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#10B981", fontSize: "11px", marginRight: "10px", fontWeight: "700" },
+                                  children: "✓ Industry Aligned"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#10B981", fontSize: "11px", marginRight: "10px", fontWeight: "700" },
+                                  children: "✓ Instant Results"
+                                }
+                              },
+                              {
+                                type: "span",
+                                props: {
+                                  style: { color: "#10B981", fontSize: "11px", fontWeight: "700" },
+                                  children: "✓ Assessment"
+                                }
+                              }
+                            ]
+                          }
+                        },
+
+                        // Stats Summary Grid
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              flexDirection: "column",
+                              backgroundColor: "rgba(255, 255, 255, 0.02)",
+                              border: "1px solid rgba(255, 255, 255, 0.05)",
+                              borderRadius: "10px",
+                              padding: "12px 16px",
+                              marginBottom: "20px",
+                            },
+                            children: [
+                              // Row 1
+                              {
+                                type: "div",
+                                props: {
+                                  style: {
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                    marginBottom: "8px",
+                                  },
+                                  children: [
+                                    {
+                                      type: "div",
+                                      props: {
+                                        style: { display: "flex", flexDirection: "column" },
+                                        children: [
+                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Paper ID" } },
+                                          { type: "span", props: { style: { color: "#ffffff", fontSize: "12px", fontWeight: "700", fontFamily: "monospace" }, children: displayPaperId || "N/A" } }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      type: "div",
+                                      props: {
+                                        style: { display: "flex", flexDirection: "column", alignItems: "flex-end" },
+                                        children: [
+                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Questions" } },
+                                          { type: "span", props: { style: { color: "#10B981", fontSize: "12px", fontWeight: "800" }, children: `${questions} MCQs` } }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              // Divider
+                              {
+                                type: "div",
+                                props: {
+                                  style: {
+                                    height: "1px",
+                                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                    width: "100%",
+                                    marginBottom: "8px",
+                                  }
+                                }
+                              },
+                              // Row 2
+                              {
+                                type: "div",
+                                props: {
+                                  style: {
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                  },
+                                  children: [
+                                    {
+                                      type: "div",
+                                      props: {
+                                        style: { display: "flex", flexDirection: "column" },
+                                        children: [
+                                          { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Duration" } },
+                                          { type: "span", props: { style: { color: "#22D3EE", fontSize: "12px", fontWeight: "800" }, children: `${duration} Minutes` } }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      type: "div",
+                                      props: {
+                                        style: { display: "flex", flexDirection: "column", alignItems: "flex-end" },
+                                        children: [
+                                           { type: "span", props: { style: { color: "rgba(255, 255, 255, 0.4)", fontSize: "9px", fontWeight: "700", textTransform: "uppercase" }, children: "Difficulty" } },
+                                           { type: "span", props: { style: { color: "#fbbf24", fontSize: "12px", fontWeight: "800" }, children: `${displayDifficulty} Difficulty` } }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+
+                        // Primary Action Button (CTA)
+                        {
+                          type: "div",
+                          props: {
+                            style: {
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "linear-gradient(90deg, #06B6D4 0%, #22D3EE 100%)",
+                              padding: "10px 20px",
+                              borderRadius: "10px",
+                              width: "100%",
+                              boxShadow: "0 0 16px rgba(34, 211, 238, 0.3)",
+                            },
+                            children: {
+                              type: "span",
+                              props: {
+                                style: {
+                                  color: "#0B1020",
+                                  fontSize: "15px",
+                                  fontWeight: "800",
+                                  letterSpacing: "0.5px",
+                                },
+                                children: "START EXAM →"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+
+            // Bottom Footer Row
             {
               type: "div",
               props: {
@@ -376,51 +871,33 @@ export default async function handler(req) {
                   width: "100%",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-                  paddingTop: "24px",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+                  paddingTop: "16px",
                   zIndex: 10,
+                  marginTop: "16px",
                 },
                 children: [
                   {
                     type: "span",
                     props: {
                       style: {
-                        fontSize: "14px",
-                        color: "#64748b",
-                        fontWeight: "500",
+                        fontSize: "12px",
+                        color: "#22D3EE",
+                        fontWeight: "800",
+                        letterSpacing: "0.5px",
                       },
-                      children: "Powered by itimitra.in"
+                      children: "🚀 Practice • Learn • Succeed"
                     }
                   },
                   {
-                    type: "div",
+                    type: "span",
                     props: {
-                      style: { display: "flex", alignItems: "center" },
-                      children: [
-                        {
-                          type: "span",
-                          props: {
-                            style: {
-                              color: "#3b82f6",
-                              fontSize: "15px",
-                              fontWeight: "700",
-                              marginRight: "8px",
-                            },
-                            children: "Attempt Test Now"
-                          }
-                        },
-                        {
-                          type: "span",
-                          props: {
-                            style: {
-                              color: "#3b82f6",
-                              fontSize: "16px",
-                              fontWeight: "800",
-                            },
-                            children: "➔"
-                          }
-                        }
-                      ]
+                      style: {
+                        fontSize: "12px",
+                        color: "rgba(255, 255, 255, 0.35)",
+                        fontWeight: "600",
+                      },
+                      children: "Thousands of ITI Students Practicing Daily"
                     }
                   }
                 ]
