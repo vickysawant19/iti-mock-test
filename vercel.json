@@ -13,7 +13,7 @@
         {
           "type": "header",
           "key": "User-Agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebook|[Tt]witterbot|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Ss]lackbot|[Ll]inked[Ii]n[Bb]ot|[Ee]mbedly|[Gg]ooglebot|[Bb]ingbot|[Gg]oogle-[Ss]tructured).*?"
         }
       ],
       "destination": "/api/og-preview?paperId=:paperid&type=attain"
@@ -24,7 +24,7 @@
         {
           "type": "header",
           "key": "User-Agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebook|[Tt]witterbot|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Ss]lackbot|[Ll]inked[Ii]n[Bb]ot|[Ee]mbedly|[Gg]ooglebot|[Bb]ingbot|[Gg]oogle-[Ss]tructured).*?"
         }
       ],
       "destination": "/api/og-preview?paperId=:paperId&type=start"
@@ -35,7 +35,7 @@
         {
           "type": "header",
           "key": "User-Agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebook|[Tt]witterbot|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Ss]lackbot|[Ll]inked[Ii]n[Bb]ot|[Ee]mbedly|[Gg]ooglebot|[Bb]ingbot|[Gg]oogle-[Ss]tructured).*?"
         }
       ],
       "destination": "/api/og-preview?paperId=:paperId&type=show"
@@ -46,7 +46,7 @@
         {
           "type": "header",
           "key": "User-Agent",
-          "value": ".*(facebookexternalhit|twitterbot|whatsapp|telegrambot|discordbot|slackbot|linkedinbot|embedly|googlebot|bingbot|Google-Structured-Data-Testing-Tool).*?"
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebook|[Tt]witterbot|[Tt]elegram[Bb]ot|[Dd]iscordbot|[Ss]lackbot|[Ll]inked[Ii]n[Bb]ot|[Ee]mbedly|[Gg]ooglebot|[Bb]ingbot|[Gg]oogle-[Ss]tructured).*?"
         }
       ],
       "destination": "/api/og-preview?paperId=:paperId&type=result"
