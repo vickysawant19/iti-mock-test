@@ -270,58 +270,66 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    try {
-      const realtime = appwriteService.getRealtime();
-      const channel = `databases.${conf.databaseId}.collections.${conf.newAttendanceCollectionId}.documents`;
+    // SDK v24: subscribe() is async — wrap in an async setup function
+    const setup = async () => {
+      try {
+        const realtime = appwriteService.getRealtime();
+        const channel = `databases.${conf.databaseId}.collections.${conf.newAttendanceCollectionId}.documents`;
 
-      const unsubscribe = realtime.subscribe(channel, (response) => {
-        if (!isComponentMountedRef.current) return;
+        // SDK v24: returns Promise<{ close(): Promise<void> }>
+        const sub = await realtime.subscribe(channel, (response) => {
+          if (!isComponentMountedRef.current) return;
 
-        const document = response.payload;
+          const document = response.payload;
 
-        if (
-          !document.batchId ||
-          !currentBatchIds.current.includes(document.batchId)
-        ) {
-          return;
-        }
-
-        const events = response.events;
-        const isCreate = events.some((e) => e.endsWith(".create"));
-        const isUpdate = events.some((e) => e.endsWith(".update"));
-        const isDelete = events.some((e) => e.endsWith(".delete"));
-
-        setBatchAttendance((prevMap) => {
-          const newMap = new Map(prevMap);
-          const currentBatchDocs = newMap.get(document.batchId) || [];
-
-          if (isCreate) {
-            newMap.set(document.batchId, [...currentBatchDocs, document]);
-          } else if (isUpdate) {
-            const updatedDocs = currentBatchDocs.map((doc) =>
-              doc.$id === document.$id ? document : doc
-            );
-            newMap.set(document.batchId, updatedDocs);
-          } else if (isDelete) {
-            const filteredDocs = currentBatchDocs.filter(
-              (doc) => doc.$id !== document.$id
-            );
-            newMap.set(document.batchId, filteredDocs);
+          if (
+            !document.batchId ||
+            !currentBatchIds.current.includes(document.batchId)
+          ) {
+            return;
           }
 
-          return newMap;
-        });
-      });
+          const events = response.events;
+          const isCreate = events.some((e) => e.endsWith(".create"));
+          const isUpdate = events.some((e) => e.endsWith(".update"));
+          const isDelete = events.some((e) => e.endsWith(".delete"));
 
-      subscriptionRef.current = unsubscribe;
-    } catch (error) {
-      console.error("❌ Subscription setup failed:", error);
-    }
+          setBatchAttendance((prevMap) => {
+            const newMap = new Map(prevMap);
+            const currentBatchDocs = newMap.get(document.batchId) || [];
+
+            if (isCreate) {
+              newMap.set(document.batchId, [...currentBatchDocs, document]);
+            } else if (isUpdate) {
+              const updatedDocs = currentBatchDocs.map((doc) =>
+                doc.$id === document.$id ? document : doc
+              );
+              newMap.set(document.batchId, updatedDocs);
+            } else if (isDelete) {
+              const filteredDocs = currentBatchDocs.filter(
+                (doc) => doc.$id !== document.$id
+              );
+              newMap.set(document.batchId, filteredDocs);
+            }
+
+            return newMap;
+          });
+        });
+
+        // Store sub object — cleanup calls sub.close() (SDK v24)
+        subscriptionRef.current = sub;
+      } catch (error) {
+        console.error("❌ Subscription setup failed:", error);
+      }
+    };
+
+    setup();
 
     return () => {
       isComponentMountedRef.current = false;
-      if (typeof subscriptionRef.current === 'function') {
-        subscriptionRef.current();
+      const sub = subscriptionRef.current;
+      if (sub && typeof sub.close === "function") {
+        sub.close();
       }
       subscriptionRef.current = null;
     };

@@ -183,15 +183,15 @@ export function useNotifications() {
 
   useEffect(() => {
     let active = true;
-    let unsubNotifications = null;
-    let unsubRequests = null;
+    let subNotifications = null; // SDK v24: { close(): Promise<void> }
+    let subRequests = null;      // SDK v24: { close(): Promise<void> }
 
     const setupRealtime = async () => {
       try {
         if (isStudent && user?.$id && studentBatches.length > 0) {
           const notifChannel = `databases.${conf.databaseId}.collections.notifications.documents`;
           const sub = await realtime.subscribe(
-            notifChannel, 
+            notifChannel,
             (response) => {
               if (response.events.some(e => e.includes('.create'))) {
                 const doc = response.payload;
@@ -212,8 +212,9 @@ export function useNotifications() {
             },
             [Query.equal("batchId", studentBatches)]
           );
-          unsubNotifications = typeof sub === "function" ? sub : (sub?.unsubscribe ? sub.unsubscribe.bind(sub) : null);
-          if (!active && unsubNotifications) unsubNotifications();
+          // SDK v24: store the sub object; close() tears it down
+          subNotifications = sub;
+          if (!active && subNotifications?.close) subNotifications.close();
         }
 
         // BatchRequests realtime
@@ -277,9 +278,10 @@ export function useNotifications() {
               [Query.equal("studentId", [user.$id])]
             );
           }
-          
-          unsubRequests = typeof reqSub === "function" ? reqSub : (reqSub?.unsubscribe ? reqSub.unsubscribe.bind(reqSub) : null);
-          if (!active && unsubRequests) unsubRequests();
+
+          // SDK v24: store the sub object; close() tears it down
+          subRequests = reqSub;
+          if (!active && subRequests?.close) subRequests.close();
         }
 
       } catch (e) {
@@ -288,11 +290,12 @@ export function useNotifications() {
     };
     
     setupRealtime();
-    
+
+    // SDK v24: cleanup via sub.close() — not sub() or sub.unsubscribe()
     return () => {
       active = false;
-      if (unsubNotifications) unsubNotifications();
-      if (unsubRequests) unsubRequests();
+      if (subNotifications?.close) subNotifications.close();
+      if (subRequests?.close) subRequests.close();
     };
   }, [isStudent, isTeacher, user?.$id, studentBatches, userBatches]);
 

@@ -12,6 +12,7 @@ import authService from "./services/auth.service";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/navbar/Navbar";
 import { Analytics } from "@vercel/analytics/react";
+import { usePresence } from "./hooks/usePresence";
 
 import { ThemeProvider } from "./ThemeProvider";
 
@@ -22,7 +23,10 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const profile = useSelector(selectProfile);
-  
+
+  // Track the current user's live presence (online / away / heartbeat / cleanup on logout)
+  usePresence();
+
   const isQuotaExceededPage = location.pathname === "/quota-exceeded";
 
   const checkUserStatus = async () => {

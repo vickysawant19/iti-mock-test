@@ -49,6 +49,7 @@ import mockTestService from "@/services/mocktest.service";
 import userProfileService from "@/appwrite/userProfileService";
 import profileImageService from "@/appwrite/profileImageService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import OnlineIndicator from "@/components/components/OnlineIndicator";
 import { Query, Channel } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
@@ -241,9 +242,9 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
           )}
         </div>
 
-        {/* Avatar */}
+        {/* Avatar with online indicator */}
         <div
-          className={`w-9 h-9 shrink-0 ring-2 rounded-full ${medal ? medal.ring : "ring-gray-200 dark:ring-gray-600"}`}
+          className={`relative w-9 h-9 shrink-0 ring-2 rounded-full ${medal ? medal.ring : "ring-gray-200 dark:ring-gray-600"}`}
         >
           <InteractiveAvatar
             src={result.profileImage}
@@ -251,6 +252,12 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
             userId={result.userId}
             editable={false}
             className="w-9 h-9"
+          />
+          {/* Live presence dot — bottom-right corner of avatar */}
+          <OnlineIndicator
+            userId={result.userId}
+            size="xs"
+            className="absolute bottom-0 right-0 ring-1 ring-white dark:ring-gray-800"
           />
         </div>
 
@@ -528,7 +535,7 @@ const MockTestResults = () => {
       .table(conf.questionPapersCollectionId)
       .row();
 
-    let unsubFn = null;
+    let unsubFn = null; // SDK v24: subscribe() resolves to { close(): Promise<void> }
 
     const setupRealtime = async () => {
       console.log(
@@ -667,13 +674,11 @@ const MockTestResults = () => {
         }
       };
 
-      // realtime.subscribe (async) returns {unsubscribe: fn};
-      // older client.subscribe (sync) returns a plain function.
-      // Normalise to a callable.
-      const toUnsub = (result) => {
-        if (typeof result === "function") return result;
-        if (result && typeof result.unsubscribe === "function")
-          return result.unsubscribe.bind(result);
+      // SDK v24: realtime.subscribe() is async and returns { close(): Promise<void> }.
+      // Normalise older/future shapes to a callable close() guard.
+      const toClose = (result) => {
+        if (result && typeof result.close === "function") return () => result.close();
+        if (typeof result === "function") return result; // legacy plain-function fallback
         return null;
       };
 
@@ -686,7 +691,7 @@ const MockTestResults = () => {
           Query.equal("paperId", [paperId]),
         ]);
         console.log("[RT] subscribed with server-side paperId filter.", sub);
-        unsubFn = toUnsub(sub);
+        unsubFn = toClose(sub);
         if (!isMounted && unsubFn) unsubFn();
       } catch (err) {
         console.warn(
@@ -695,7 +700,7 @@ const MockTestResults = () => {
         );
         try {
           const sub = await realtime.subscribe(rtChannel, handleEvent);
-          unsubFn = toUnsub(sub);
+          unsubFn = toClose(sub);
           console.log("[RT] subscribed (plain, client-side filter).");
           if (!isMounted && unsubFn) unsubFn();
         } catch (err2) {

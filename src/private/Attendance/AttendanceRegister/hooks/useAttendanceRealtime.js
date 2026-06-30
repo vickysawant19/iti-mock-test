@@ -27,7 +27,7 @@ export function useAttendanceRealtime(
     const collectionId = conf.newAttendanceCollectionId;
     const currentViewMonth = format(selectedMonth, "yyyy-MM");
 
-    let unsubscribe;
+    let sub = null; // SDK v24: subscribe() is async, returns { close(): Promise<void> }
 
     const handleEvent = (response) => {
       const { events, payload } = response;
@@ -68,40 +68,50 @@ export function useAttendanceRealtime(
       });
     };
 
-    try {
-      // 🚀 Appwrite v23+ supports Server-Side Filtered Subscriptions (Realtime Queries)
-      // client.subscribe is deprecated; using Realtime service instead.
-      const realtime = appwriteService.getRealtime();
-      const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
+    const setup = async () => {
+      try {
+        // 🚀 SDK v24 / Appwrite 1.9.5: realtime.subscribe() is async, returns { close() }
+        // Single persistent WebSocket per client — server-side batch filtering via queries.
+        const realtime = appwriteService.getRealtime();
+        const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
 
-      unsubscribe = realtime.subscribe(channel, handleEvent, [
-        Query.equal("batchId", [selectedBatch]),
-      ]);
+        sub = await realtime.subscribe(channel, handleEvent, [
+          Query.equal("batchId", [selectedBatch]),
+        ]);
 
-      console.log(
-        "Subscribed to attendance updates with server-side batch filter.",
-      );
-    } catch (err) {
-      console.warn(
-        "Realtime query subscription failed, falling back to simple subscription.",
-        err.message,
-      );
+        console.log(
+          "Subscribed to attendance updates with server-side batch filter.",
+        );
+      } catch (err) {
+        console.warn(
+          "Realtime query subscription failed, falling back to simple subscription.",
+          err.message,
+        );
 
-      // 🔄 Fallback: Collection-level subscription with client-side batch filtering
-      const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
+        // 🔄 Fallback: Collection-level subscription with client-side batch filtering
+        try {
+          const realtime = appwriteService.getRealtime();
+          const channel = `databases.${databaseId}.collections.${collectionId}.documents`;
 
-      unsubscribe = realtime.subscribe(channel, (response) => {
-        // Apply manual batch filter in fallback mode
-        if (response.payload.batchId === selectedBatch) {
-          handleEvent(response);
+          sub = await realtime.subscribe(channel, (response) => {
+            // Apply manual batch filter in fallback mode
+            if (response.payload.batchId === selectedBatch) {
+              handleEvent(response);
+            }
+          });
+        } catch (err2) {
+          console.error("Both subscribe attempts failed:", err2.message);
         }
-      });
-    }
+      }
+    };
+
+    setup();
 
     // Cleanup subscription on unmount or when dependencies change
+    // SDK v24: call sub.close() — not sub() or sub.unsubscribe()
     return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
+      if (sub && typeof sub.close === "function") {
+        sub.close();
       }
     };
   }, [selectedBatch, selectedMonth, setAttendanceData]);

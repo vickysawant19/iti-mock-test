@@ -7,6 +7,7 @@ import {
   Storage,
   Teams,
   Realtime,
+  Presences,
   Query,
 } from "appwrite";
 import conf from "../config/config";
@@ -24,6 +25,7 @@ class AppwriteService {
   public bucket: Storage;
   public functions: Functions;
   public realtime: Realtime;
+  public presences: Presences;
   public teams: Teams;
 
   constructor() {
@@ -51,10 +53,11 @@ class AppwriteService {
     this.bucket = new Storage(this.client);
     this.functions = new Functions(this.client);
     this.realtime = new Realtime(this.client);
+    this.presences = new Presences(this.client);
     this.teams = new Teams(this.client);
   }
 
-  // Backwards compatibility with appwriteConfig.js 
+  // Backwards compatibility with appwriteConfig.js
   getClient() { return this.client; }
   getDatabases() { return this.databases; } // Fallback if still needed
   getTablesDB() { return this.tablesDb; }
@@ -62,6 +65,16 @@ class AppwriteService {
   getStorage() { return this.bucket; }
   getFunctions() { return this.functions; }
   getRealtime() { return this.realtime; }
+  getPresences() { return this.presences; }
+
+  // ── Appwrite SDK v26 / Server 1.9.5 notes ──────────────────────────────────
+  // realtime.subscribe() is async → returns Promise<{ close(): Promise<void> }>.
+  // Always await subscribe() and call sub.close() to tear down a subscription.
+  // Single persistent WebSocket per Client session.
+  //
+  // New in v26: Presences service (upsert/get/list/update/delete presence records).
+  // BrowserTheme enum replaces the old Theme enum (avatars.getScreenshot() theme param).
+  // Advisor and Usage services are admin-only and not available in client SDKs.
 }
 
 export const appwriteClientService = new AppwriteService();
@@ -72,6 +85,7 @@ export const account = appwriteClientService.account;
 export const storage = appwriteClientService.bucket;
 export const functions = appwriteClientService.functions;
 export const realtime = appwriteClientService.realtime;
+export const presences = appwriteClientService.presences;
 export const teams = appwriteClientService.teams;
 
 // Re-export query for convenient use across services

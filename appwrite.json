@@ -15,7 +15,8 @@
             "sites": true,
             "functions": true,
             "graphql": true,
-            "messaging": true
+            "messaging": true,
+            "presences": true
         },
         "protocols": {},
         "auth": {
