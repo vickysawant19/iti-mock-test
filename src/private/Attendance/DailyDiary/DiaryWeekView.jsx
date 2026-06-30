@@ -63,12 +63,19 @@ const DiaryWeekView = ({
                         <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
                       )}
                       {isAbsent && !isTeacher && <Badge variant="destructive">Absent</Badge>}
-                      {isHoliday && <Badge variant="destructive">Holiday</Badge>}
+                      {isHoliday && (
+                        <div className="flex gap-1">
+                          <Badge variant="destructive">Holiday</Badge>
+                          {isTeacher && attendance.get(dateKey) === "present" && (
+                            <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Working</Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {isHoliday ? (
+                  {isHoliday && !isTeacher ? (
                     <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p>
                   ) : isAbsent && !isTeacher ? (
                     <p className="text-center py-4 text-muted-foreground">No entries for absent day</p>
@@ -156,12 +163,19 @@ const DiaryWeekView = ({
                               <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
                             )}
                           </div>
-                          {isAbsent && !isTeacher && <Badge variant="destructive" className="ml-2 mt-1">Absent</Badge>}
-                          {isHoliday && <Badge variant="destructive" className="ml-2 mt-1">Holiday</Badge>}
+                           {isAbsent && !isTeacher && <Badge variant="destructive" className="ml-2 mt-1">Absent</Badge>}
+                           {isHoliday && (
+                             <div className="flex gap-1 ml-2 mt-1">
+                               <Badge variant="destructive">Holiday</Badge>
+                               {isTeacher && attendance.get(dateKey) === "present" && (
+                                 <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Working</Badge>
+                               )}
+                             </div>
+                           )}
                         </td>
                         <td className="p-4 align-top">{format(day, "EEEE")}</td>
                         <td className="p-4 align-top">
-                          {isHoliday ? (
+                          {isHoliday && !isTeacher ? (
                             <p className="text-center py-4 text-muted-foreground">{holidays.get(dateKey)?.holidayText || "Holiday"}</p>
                           ) : studentAbsentBlock ? (
                             <p className="text-center py-4 text-muted-foreground">No entries</p>
@@ -170,37 +184,37 @@ const DiaryWeekView = ({
                           )}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || studentAbsentBlock) && (
+                          {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                             <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalWork" value={entry.practicalWork || entry.practical} updateDiaryField={updateDiaryField} type="textarea" />
                           )}
                         </td>
                         <td className="p-4 align-top">
-                          {!(isHoliday || studentAbsentBlock) && (
+                          {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                             <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="practicalNumbers" value={entry.practicalNumbers} updateDiaryField={updateDiaryField} type="numberArray" />
                           )}
                         </td>
                         {isTeacher && (
                           <td className="p-4 align-top">
-                            {!(isHoliday || studentAbsentBlock) && (
+                            {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                               <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="extraWork" value={entry.extraWork} updateDiaryField={updateDiaryField} type="textarea" />
                             )}
                           </td>
                         )}
                         {isTeacher && (
                           <td className="p-4 align-top">
-                            {!(isHoliday || studentAbsentBlock) && (
+                            {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                               <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="hours" value={entry.hours} updateDiaryField={updateDiaryField} type="number" />
                             )}
                           </td>
                         )}
                         <td className="p-4 align-top">
-                          {!(isHoliday || studentAbsentBlock) && (
+                          {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                             <FieldRenderer isTeacher={isTeacher} isEditing={entry.isEditing} dateKey={dateKey} field="remarks" value={entry.remarks} updateDiaryField={updateDiaryField} type="textarea" />
                           )}
                         </td>
                         {isTeacher && (
                           <td className="p-4 align-top text-center">
-                            {!(isHoliday || studentAbsentBlock) && (
+                            {!(isHoliday && !isTeacher || studentAbsentBlock) && (
                               <Button size="sm" onClick={() => toggleEditing(dateKey)} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : entry.isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                               </Button>

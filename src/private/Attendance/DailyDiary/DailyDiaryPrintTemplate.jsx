@@ -89,14 +89,15 @@ const DailyDiaryPrintTemplate = forwardRef((
               let theoryHrs    = 0;
               let practicalHrs = 0;
 
-              if (isHoliday) {
+              const isTeacherPresent = attendance.get(dateKey) === 'present';
+              if (isHoliday && !isTeacherPresent && !entry.theoryWork) {
                 const hlabel = 'Holiday: ' + (holidays.get(dateKey)?.holidayText || '');
                 theory    = hlabel;
                 practical = '-';
                 extra     = '';
                 remarks   = 'Holiday';
                 practNos  = '';
-              } else if (isAbsent) {
+              } else if (isAbsent && !isHoliday) {
                 theory    = 'Absent';
                 practical = 'Absent';
                 extra     = '';

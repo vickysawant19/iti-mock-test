@@ -51,7 +51,7 @@ const StudentAttendanceEditModal = ({
       const key = format(date, "yyyy-MM-dd");
       const isHoliday = holidays.has(key);
 
-      if (isHoliday) {
+      if (isHoliday && !student?.isTeacher) {
         holidaysCount += 1;
         return;
       }
@@ -77,7 +77,7 @@ const StudentAttendanceEditModal = ({
     });
 
     return { workingDays, presentDays, absentDays, holidaysCount };
-  }, [monthDays, holidays, attendanceMap, batchStartDate, batchEndDate]);
+  }, [monthDays, holidays, attendanceMap, batchStartDate, batchEndDate, student?.isTeacher]);
 
   if (!isOpen || !student) return null;
 
@@ -130,7 +130,7 @@ const StudentAttendanceEditModal = ({
                 const status = attendanceMap.get(dateKey);
                 const isUpdating = updatingAttendance.get(`${student.userId}-${dateKey}`);
 
-                const canEdit = !isHoliday && !isFuture && !isBeforeBatch && !isAfterBatch;
+                const canEdit = (student.isTeacher || !isHoliday) && !isFuture && !isBeforeBatch && !isAfterBatch;
                 const nextStatus = status === "present" ? "absent" : "present";
 
                 if (!status && canEdit) {
@@ -169,7 +169,7 @@ const StudentAttendanceEditModal = ({
                     disabled={!canEdit || isUpdating}
                     onClick={() => onAttendanceStatusChange(student.userId, dateKey, nextStatus)}
                     className={`h-[62px] rounded-md border text-left p-2 transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                      isHoliday
+                      (isHoliday && !student.isTeacher)
                         ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/30 dark:border-rose-700"
                         : (isBeforeBatch || isAfterBatch)
                         ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
@@ -179,13 +179,13 @@ const StudentAttendanceEditModal = ({
                         ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700"
                         : "bg-white border-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800"
                     }`}
-                    title={isHoliday ? holidays.get(dateKey)?.holidayText || "Holiday" : isBeforeBatch ? "Date is before batch start" : isAfterBatch ? "Date is after batch end" : "Toggle attendance"}
+                    title={(isHoliday && !student.isTeacher) ? holidays.get(dateKey)?.holidayText || "Holiday" : isBeforeBatch ? "Date is before batch start" : isAfterBatch ? "Date is after batch end" : "Toggle attendance"}
                   >
                     <p className={`text-xs font-semibold ${isAfterBatch ? "line-through opacity-50" : ""}`}>
                       {format(day, "d")}
                     </p>
                     <p className="text-[10px] mt-1 uppercase tracking-wide">
-                      {isHoliday
+                      {(isHoliday && !student.isTeacher)
                         ? "Holiday"
                         : isBeforeBatch
                         ? "Pre-Batch"

@@ -182,10 +182,15 @@ function InstructorDailyDiary() {
         let hours = entry.hours || "";
         let remarks = entry.remarks || "";
 
-        if (isHoliday) {
+        const isTeacherPresent = attendance.get(dateKey) === "present";
+        if (isHoliday && !isTeacherPresent && !entry.theoryWork) {
           theory = "Holiday: " + (holidays.get(dateKey)?.holidayText || "");
           remarks = "Holiday";
-        } else if (isAbsent) {
+          practical = "";
+          practicalNo = "";
+          extraWork = "";
+          hours = "";
+        } else if (isAbsent && !isHoliday) {
           theory = "Absent";
           remarks = "Absent";
         }

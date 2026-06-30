@@ -94,6 +94,7 @@ const AttendanceTracker = () => {
   const profile = useSelector(selectProfile);
   const { activeBatchId: resolvedBatchId, isLoading: batchStateLoading } = useSelector((state) => state.activeBatch);
   const isResolvingBatch = batchStateLoading;
+  const isTeacher = profile?.role?.includes("Teacher") || profile?.role?.includes("Admin");
 
   const {
     data: batchData,
@@ -149,9 +150,9 @@ const AttendanceTracker = () => {
     })();
   }, [resolvedBatchId]);
 
-  // Only check existing attendance if NOT a holiday and batch is joined
+  // Only check existing attendance if NOT a holiday (or if user is a teacher) and batch is joined
   useEffect(() => {
-    if (!resolvedBatchId || holiday) {
+    if (!resolvedBatchId || (holiday && !isTeacher)) {
       setCheckingAttendance(false);
       return;
     }
@@ -177,11 +178,11 @@ const AttendanceTracker = () => {
     };
 
     fetchExistingAttendance();
-  }, [profile?.userId, resolvedBatchId, holiday]);
+  }, [profile?.userId, resolvedBatchId, holiday, isTeacher]);
 
-  // Calculate distance when location updates (only if not a holiday)
+  // Calculate distance when location updates (only if not a holiday, or if user is a teacher)
   useEffect(() => {
-    if (!holiday && deviceLocation && batchData?.location) {
+    if ((!holiday || isTeacher) && deviceLocation && batchData?.location) {
       setUserLocation(deviceLocation);
       const dist = calculateDistance(
         deviceLocation.lat,
@@ -191,7 +192,7 @@ const AttendanceTracker = () => {
       );
       setDistance(dist);
     }
-  }, [deviceLocation, batchData, calculateDistance, holiday]);
+  }, [deviceLocation, batchData, calculateDistance, holiday, isTeacher]);
 
   const handleMarkAttendance = async () => {
     if (distance > circleRadius) return;
@@ -233,8 +234,8 @@ const AttendanceTracker = () => {
 
   const isWithinRange = distance !== null && distance <= (circleRadius || 0);
   const loading =
-    isResolvingBatch || batchLoading || (holiday ? false : locationLoading) || checkingAttendance;
-  const error = batchError || (!holiday && locationError);
+    isResolvingBatch || batchLoading || ((holiday && !isTeacher) ? false : locationLoading) || checkingAttendance;
+  const error = batchError || (!(holiday && !isTeacher) && locationError);
 
   // If user truly has no batch (even after resolution), show "No Batch Joined/Created" UI
   if (!resolvedBatchId && !batchLoading && !checkingAttendance && !isResolvingBatch) {
@@ -430,8 +431,8 @@ const AttendanceTracker = () => {
           </div>
         )}
 
-        {/* Main Status Card - Only show if NOT a holiday */}
-        {!loading && !error && batchData && !holiday && (
+        {/* Main Status Card - Only show if NOT a holiday, or if user is a teacher */}
+        {!loading && !error && batchData && (!holiday || isTeacher) && (
           <>
             <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
                 {attendanceMarked ? (

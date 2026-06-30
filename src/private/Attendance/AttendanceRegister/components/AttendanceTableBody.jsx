@@ -172,11 +172,39 @@ const AttendanceTableBody = ({
                 const cellUpdating = updatingAttendance.get(`${student.userId}-${fullDate}`);
 
                 if (isHoliday) {
-                  if (idx === 0) {
+                  if (student.isTeacher) {
                     return (
                       <td
                         key={date}
-                        rowSpan={students.length}
+                        className={`${cell} border border-slate-300 dark:border-slate-600 text-center relative bg-purple-50 dark:bg-purple-950/20`}
+                      >
+                        {cellUpdating && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-indigo-100/70 dark:bg-indigo-900/50 z-10">
+                            <LoaderCircle className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                        )}
+                        <span
+                          className={`inline-flex items-center justify-center font-black text-base ${
+                            status === "present"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : status === "absent"
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-gray-300 dark:text-gray-600"
+                          }`}
+                        >
+                          {status === "present" ? "P" : status === "absent" ? "A" : "-"}
+                        </span>
+                      </td>
+                    );
+                  }
+
+                  const firstStudentIdx = students.findIndex((s) => !s.isTeacher);
+                  if (idx === firstStudentIdx) {
+                    const studentCount = students.filter((s) => !s.isTeacher).length;
+                    return (
+                      <td
+                        key={date}
+                        rowSpan={studentCount}
                         className="py-3 px-2 border border-slate-300 dark:border-slate-600 text-center relative bg-rose-100 dark:bg-rose-900/30"
                       >
                         <div className="absolute inset-0 flex items-center justify-center overflow-hidden">

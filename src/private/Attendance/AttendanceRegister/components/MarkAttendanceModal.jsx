@@ -72,7 +72,16 @@ const MarkAttendanceModal = ({
     setIsLoading(true);
     try {
       if (isExistingHoliday) {
-        // If it's already a holiday, we likely just want to close or do nothing unless removing
+        // Save teacher's attendance if present in existing holiday
+        const teacherStatuses = {};
+        students.forEach((student) => {
+          if (student.isTeacher) {
+            teacherStatuses[student.userId] = attendanceStatuses[student.userId];
+          }
+        });
+        if (Object.keys(teacherStatuses).length > 0) {
+          await onSave(teacherStatuses);
+        }
         onClose();
       } else if (isMarkingHoliday) {
         // Logic: Save as Holiday
@@ -289,38 +298,103 @@ const MarkAttendanceModal = ({
           
           {/* VIEW 1: Existing Holiday */}
           {showExistingHolidayView && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12 animate-fadeIn">
-              <div className="bg-amber-100 dark:bg-amber-900 rounded-full p-6 mb-4">
-                <Palmtree className="w-16 h-16 text-amber-600 dark:text-amber-300" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Holiday Marked
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md mb-6">
-                This date is currently marked as a holiday. Attendance is disabled.
-              </p>
-              
-              {/* If holidays Map stores strings, we can display the reason here */}
-              {typeof holidays.get === 'function' && holidays.get(date) && (
-                 <div className="bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-700 px-4 py-2 rounded-lg mb-6">
-                    <p className="text-amber-800 dark:text-amber-200 font-medium">
-                        "{holidays.get(date)?.holidayText}"
-                    </p>
-                 </div>
-              )}
-
-              <button
-                onClick={handleRemoveHolidayInternal}
-                disabled={isLoading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-              >
-                {isLoading ? (
-                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                   <Trash2 className="w-4 h-4" />
+            <div className="space-y-6">
+              <div className="flex flex-col items-center justify-center text-center py-6 animate-fadeIn">
+                <div className="bg-amber-100 dark:bg-amber-900 rounded-full p-4 mb-3">
+                  <Palmtree className="w-10 h-10 text-amber-600 dark:text-amber-300" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 animate-pulse">
+                  Holiday Marked
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md text-xs mb-3">
+                  This date is currently marked as a holiday. Students are exempted.
+                </p>
+                
+                {/* If holidays Map stores strings, we can display the reason here */}
+                {typeof holidays.get === 'function' && holidays.get(date) && (
+                   <div className="bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-700 px-4 py-2 rounded-lg mb-4">
+                      <p className="text-amber-800 dark:text-amber-200 text-sm font-medium">
+                          "{holidays.get(date)?.holidayText}"
+                      </p>
+                   </div>
                 )}
-                Remove Holiday
-              </button>
+
+                <button
+                  onClick={handleRemoveHolidayInternal}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs hover:bg-red-100 transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? (
+                     <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                     <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  Remove Holiday
+                </button>
+              </div>
+
+              {/* Show Teacher Attendance Selection if Teacher exists */}
+              {teachersList.length > 0 && (
+                <div className="border-t dark:border-gray-700 pt-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Teacher Attendance</h4>
+                  <div className="space-y-2">
+                    {teachersList.map((student) => (
+                      <div
+                        key={student.userId}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 border-l-purple-500"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                               <InteractiveAvatar
+                                  src={student.profileImage}
+                                  fallbackText={student.userName ? student.userName.charAt(0).toUpperCase() : "U"}
+                                  userId={student.userId}
+                                  editable={false}
+                                  className="w-9 h-9"
+                               />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">
+                                {student.userName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                ID: {student.studentId}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "present")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "present"
+                                  ? "bg-green-600 text-white dark:bg-green-800 animate-in zoom-in-95 duration-200"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(student.userId, "absent")
+                              }
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                attendanceStatuses[student.userId] === "absent"
+                                  ? "bg-red-600 text-white dark:bg-red-800 animate-in zoom-in-95 duration-200"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -511,7 +585,7 @@ const MarkAttendanceModal = ({
             </button>
             
             {/* Smart Save Button: Context aware based on isMarkingHoliday */}
-            {!isExistingHoliday && (
+            {(!isExistingHoliday || teachersList.length > 0) && (
                 <button
                   onClick={handleMainSave}
                   disabled={isLoading}
@@ -529,7 +603,11 @@ const MarkAttendanceModal = ({
                   ) : (
                     <>
                       {isMarkingHoliday || isFuture ? <Palmtree className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                      <span>{isMarkingHoliday || isFuture ? "Save Holiday" : "Save Attendance"}</span>
+                      <span>
+                        {isExistingHoliday 
+                          ? "Save Teacher Attendance" 
+                          : (isMarkingHoliday || isFuture ? "Save Holiday" : "Save Attendance")}
+                      </span>
                     </>
                   )}
                 </button>

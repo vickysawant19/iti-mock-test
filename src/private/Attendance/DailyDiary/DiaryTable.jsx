@@ -13,7 +13,7 @@ import { selectProfile } from "@/store/profileSlice";
 import { PracticalNumberInput } from "./PracticalNumberInput";
 import { highlightAbsentRow, TEACHER_ABSENT_ROW_CLASS } from "./diaryAbsentHighlight";
 
-function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText, onUpdateEntry }) {
+function DiaryTableRow({ day, entry, isHoliday, isAbsent, isTeacherPresent, isWeekend, holidayText, onUpdateEntry }) {
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const isMissing = !entry;
@@ -133,9 +133,9 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
     "bg-white lg:hover:bg-gray-50 dark:bg-gray-950 dark:lg:hover:bg-gray-900"
   }`;
 
-  if (!entry && isHoliday) {
+  if (!entry && isHoliday && !isTeacherPresent) {
     return (
-      <tr className={`${rowClass} flex flex-col lg:table-row mb-4 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
+      <tr className={`${rowClass} w-full flex flex-col lg:table-row mb-4 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
         <td className="flex justify-between items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
           <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
           <span className="lg:hidden text-muted-foreground text-sm">{format(day, "EEEE")}</span>
@@ -150,12 +150,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
 
   // Active or blank rows
   return (
-    <tr className={`${rowClass} flex flex-col lg:table-row mb-6 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
+    <tr className={`${rowClass} w-full flex flex-col lg:table-row mb-6 lg:mb-0 border lg:border-b shadow-sm lg:shadow-none rounded-xl lg:rounded-none overflow-hidden`}>
       <td className="flex justify-between lg:justify-start items-center p-4 lg:px-6 lg:py-4 lg:border-0 border-b bg-muted/10 lg:bg-transparent lg:table-cell">
         <div className="flex flex-col gap-1">
           <span className="font-medium text-gray-900 dark:text-gray-100">{format(day, "MMM dd, yyyy")}</span>
           {isAbsent && !isHoliday && (
             <span className="text-xs font-medium text-red-700 dark:text-red-300">Status: Absent</span>
+          )}
+          {isHoliday && (
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400">Holiday Work</span>
           )}
         </div>
         <span className="lg:hidden text-muted-foreground text-sm font-medium">{format(day, "EEEE")}</span>
@@ -164,15 +167,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
       
       {isEditing ? (
         <>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[250px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top lg:min-w-[250px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Theory Work</label>
             <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.theoryWork} rows={3} onChange={(e) => setFormData({ ...formData, theoryWork: e.target.value })} placeholder="Add theory notes..." />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[250px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top lg:min-w-[250px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical Work</label>
             <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.practicalWork} rows={3} onChange={(e) => setFormData({ ...formData, practicalWork: e.target.value })} placeholder="Add practical notes..." />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[150px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top lg:min-w-[150px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Practical No.</label>
             <PracticalNumberInput 
                className="w-full bg-white dark:bg-gray-900" 
@@ -181,15 +184,15 @@ function DiaryTableRow({ day, entry, isHoliday, isAbsent, isWeekend, holidayText
                onChange={(newValue) => setFormData({ ...formData, practicalNumbers: newValue })} 
             />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[200px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top lg:min-w-[200px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Extra Work</label>
             <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.extraWork} rows={3} placeholder="-" onChange={(e) => setFormData({ ...formData, extraWork: e.target.value })} />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top max-w-full lg:max-w-[80px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top w-full lg:max-w-[80px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Hours</label>
             <Input className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.hours} type="number" placeholder="-" onChange={(e) => setFormData({ ...formData, hours: e.target.value })} />
           </td>
-          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top min-w-[150px] border-b lg:border-0 border-dashed">
+          <td className="block lg:table-cell p-4 lg:px-4 lg:py-3 lg:align-top lg:min-w-[150px] border-b lg:border-0 border-dashed">
             <label className="lg:hidden text-xs font-semibold text-muted-foreground uppercase mb-2 block">Remarks</label>
             <Textarea className="w-full border p-2 rounded-md bg-white dark:bg-gray-900" value={formData.remarks} rows={2} placeholder="-" onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
           </td>
@@ -252,7 +255,7 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
     <Card className="shadow-none lg:shadow-md border-0 lg:border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mt-6 bg-transparent lg:bg-white dark:bg-gray-950">
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto relative">
-          <table className="min-w-[900px] w-full text-sm block lg:table table-auto">
+          <table className="w-full lg:min-w-[900px] text-sm block lg:table table-auto">
             <thead className="hidden lg:table-header-group">
               <tr className="border-b bg-muted/60 text-muted-foreground">
                 <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider text-xs">Date</th>
@@ -304,6 +307,7 @@ export default function DiaryTable({ monthDays, diaryData, holidays, attendance,
                         entry={entry}
                         isHoliday={isHoliday}
                         isAbsent={isAbsent}
+                        isTeacherPresent={attendance.get(dateKey) === "present"}
                         isWeekend={isWeekend}
                         holidayText={holidayText}
                         onUpdateEntry={onUpdateEntry}
