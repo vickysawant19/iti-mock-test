@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
 
 import { format } from "date-fns";
 import { UserCircle, GraduationCap, MapPin, Phone, Building, Briefcase, Calendar, ShieldCheck, User } from "lucide-react";
@@ -7,12 +8,11 @@ import { AiOutlineEdit } from "react-icons/ai";
 
 import batchService from "@/appwrite/batchService";
 import userProfileService from "@/appwrite/userProfileService";
-import authService from "@/services/auth.service";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { Query } from "appwrite";
-import Loader from "@/components/components/Loader";
+import { fixProfileImage } from "@/services/appwriteClient";
 
 const ProfileView = ({ profileProps }) => {
   const [batches, setBatches] = useState([]);
@@ -93,18 +93,7 @@ const ProfileView = ({ profileProps }) => {
     }
   }, [profile]);
 
-  const handleLogout = async () => {
-    try {
-      if (user) {
-        await authService.logout();
-        dispatch(removeUser());
-        dispatch(removeProfile());
-        navigate("/login");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+
 
   if (isLoading || collegeDataLoading || tradeDataLoading) {
     return (
@@ -161,7 +150,7 @@ const ProfileView = ({ profileProps }) => {
               <div className="relative group">
                 {profile.profileImage ? (
                   <img
-                    src={profile.profileImage}
+                    src={fixProfileImage(profile.profileImage)}
                     alt="Profile"
                     className="w-32 h-32 rounded-2xl object-cover ring-8 ring-white/80 dark:ring-slate-900 shadow-xl transition-transform duration-300 group-hover:scale-105"
                   />

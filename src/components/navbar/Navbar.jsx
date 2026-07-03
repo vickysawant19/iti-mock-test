@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react/prop-types */
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/ThemeProvider";
@@ -17,7 +18,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,14 +51,12 @@ import {
 import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
 import { setActiveBatch } from "@/store/activeBatchSlice";
 import userProfileService from "@/appwrite/userProfileService";
-import batchStudentService from "@/appwrite/batchStudentService";
-import batchService from "@/appwrite/batchService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
-import { Query } from "appwrite";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 import OnlineIndicator from "@/components/components/OnlineIndicator";
+import { fixProfileImage } from "@/services/appwriteClient";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);
@@ -450,27 +448,27 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             {/* Relative wrapper so the online dot can be absolutely positioned */}
-            <div className="relative inline-flex">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-all ring-2 ring-transparent hover:ring-pink-200 dark:hover:ring-pink-900/50">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-pink-50 dark:hover:bg-pink-950/30 transition-all ring-2 ring-transparent hover:ring-pink-200 dark:hover:ring-pink-900/50">
+              <div className="relative">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={profile?.profileImage} />
+                  <AvatarImage src={fixProfileImage(profile?.profileImage)} />
                   <AvatarFallback className="bg-gradient-to-tr from-pink-600 to-purple-600 text-white font-medium text-xs">
                     {profile?.userName?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
-              </Button>
-              {/* Live presence dot — bottom-right of avatar */}
-              <OnlineIndicator
-                userId={user?.$id}
-                size="sm"
-                className="absolute bottom-0 right-0 ring-2 ring-white dark:ring-slate-950"
-              />
-            </div>
+                {/* Live presence dot — bottom-right of avatar */}
+                <OnlineIndicator
+                  userId={user?.$id}
+                  size="sm"
+                  className="absolute -bottom-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-950"
+                />
+              </div>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-2xl p-2 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl mt-1">
             <div className="flex items-center justify-start gap-3 p-3 bg-gradient-to-br from-pink-500/10 to-purple-500/10 dark:from-pink-500/20 dark:to-purple-500/20 rounded-xl mb-2 border border-pink-100/50 dark:border-pink-900/30">
               <Avatar className="h-12 w-12 ring-2 ring-pink-500/30 dark:ring-pink-500/50 shadow-sm">
-                <AvatarImage src={profile?.profileImage} />
+                <AvatarImage src={fixProfileImage(profile?.profileImage)} />
                 <AvatarFallback className="bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold shadow-inner">
                   {profile?.userName?.charAt(0) || "U"}
                 </AvatarFallback>

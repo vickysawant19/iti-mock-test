@@ -13,7 +13,6 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
-  Medal,
   MoreVertical,
   Trash2,
   Eye,
@@ -49,7 +48,6 @@ import mockTestService from "@/services/mocktest.service";
 import userProfileService from "@/appwrite/userProfileService";
 import profileImageService from "@/appwrite/profileImageService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import OnlineIndicator from "@/components/components/OnlineIndicator";
 import { Query, Channel } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
@@ -57,7 +55,6 @@ import { selectUser } from "@/store/userSlice";
 import Loader from "@/components/components/Loader";
 import { realtime } from "@/services/appwriteClient";
 import conf from "@/config/config";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -251,13 +248,9 @@ const StudentRow = ({ result, index, isMe, quesCount, isTeacher, canSeeScores, o
             fallbackText={getInitials(result.userName) || "U"}
             userId={result.userId}
             editable={false}
+            showStatus={true}
+            statusSize="xs"
             className="w-9 h-9"
-          />
-          {/* Live presence dot — bottom-right corner of avatar */}
-          <OnlineIndicator
-            userId={result.userId}
-            size="xs"
-            className="absolute bottom-0 right-0 ring-1 ring-white dark:ring-gray-800"
           />
         </div>
 

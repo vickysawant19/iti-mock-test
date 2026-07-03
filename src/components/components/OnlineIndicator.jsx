@@ -1,4 +1,4 @@
-import React from "react";
+/* eslint-disable react/prop-types */
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 
 /**
@@ -29,19 +29,20 @@ export default function OnlineIndicator({ userId, size = "sm", className = "" })
   const dot = sizeClasses[size] ?? sizeClasses.sm;
 
   if (status === "online") {
+    const isAbsolute = className.includes("absolute");
     return (
       <span
-        className={`relative inline-flex ${dot} ${className}`}
+        className={`${isAbsolute ? "" : "relative"} inline-flex rounded-full ${dot} ${className}`}
         title="Online"
         aria-label="Online"
       >
         {/* Pulse ring */}
         <span
-          className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60`}
+          className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60"
         />
         {/* Solid dot */}
         <span
-          className={`relative inline-flex rounded-full ${dot} bg-green-500 ring-1 ring-white dark:ring-gray-900`}
+          className="absolute inline-flex rounded-full h-full w-full bg-green-500 ring-1 ring-white dark:ring-gray-900"
         />
       </span>
     );

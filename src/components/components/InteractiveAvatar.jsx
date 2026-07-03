@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useRef, forwardRef } from "react";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -5,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { Upload, Trash2, Loader2, Image as ImageIcon, Camera, RefreshCw, X } from "lucide-react";
 import profileImageService from "@/appwrite/profileImageService";
+import OnlineIndicator from "./OnlineIndicator";
+import { fixProfileImage } from "@/services/appwriteClient";
 
 const InteractiveAvatar = forwardRef(({
   src,
@@ -12,8 +15,11 @@ const InteractiveAvatar = forwardRef(({
   userId,
   editable = false,
   onImageUpdate,
-  className = "w-10 h-10" // Default sizing for nav, easily overridable
+  className = "w-10 h-10", // Default sizing for nav, easily overridable
+  showStatus = false,
+  statusSize = "sm",
 }, ref) => {
+  const fixedSrc = fixProfileImage(src);
   const [isUploading, setIsUploading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isCameraMode, setIsCameraMode] = useState(false);
@@ -145,11 +151,18 @@ const InteractiveAvatar = forwardRef(({
     <div ref={ref}>
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <div className={`cursor-pointer hover:opacity-80 transition-opacity rounded-full ring-2 ring-transparent outline-none hover:ring-blue-500/50 ${className}`}>
+          <div className={`relative cursor-pointer hover:opacity-80 transition-opacity rounded-full ring-2 ring-transparent outline-none hover:ring-blue-500/50 ${className}`}>
             <Avatar className="w-full h-full">
-              <AvatarImage src={src} className="object-cover" />
+              <AvatarImage src={fixedSrc} className="object-cover" />
               <AvatarFallback>{fallbackText}</AvatarFallback>
             </Avatar>
+            {showStatus && userId && (
+              <OnlineIndicator
+                userId={userId}
+                size={statusSize}
+                className="absolute -bottom-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-950"
+              />
+            )}
           </div>
         </DialogTrigger>
       
@@ -208,15 +221,15 @@ const InteractiveAvatar = forwardRef(({
                   </Button>
                 </div>
               </div>
-            ) : src ? (
+            ) : fixedSrc ? (
               <img 
                 src={(() => {
                   try {
-                    const url = new URL(src);
+                    const url = new URL(fixedSrc);
                     url.searchParams.delete("width");
                     url.searchParams.delete("height");
                     return url.toString();
-                  } catch { return src; }
+                  } catch { return fixedSrc; }
                 })()} 
                 alt="Profile Large" 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -246,7 +259,7 @@ const InteractiveAvatar = forwardRef(({
                  disabled={isUploading || isCameraMode}
               >
                 <Upload className="w-4 h-4" />
-                {src ? "Change" : "Upload"}
+                {fixedSrc ? "Change" : "Upload"}
               </Button>
               <Button 
                  variant="secondary" 
@@ -257,7 +270,7 @@ const InteractiveAvatar = forwardRef(({
                 <Camera className="w-4 h-4" />
                 {isCameraMode ? "Capture" : "Take Photo"}
               </Button>
-              {src && (
+              {fixedSrc && (
                 <Button 
                    variant="destructive" 
                    className="gap-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 border-0 shadow-sm transition-all hover:shadow-md" 
@@ -276,5 +289,7 @@ const InteractiveAvatar = forwardRef(({
     </div>
   );
 });
+
+InteractiveAvatar.displayName = "InteractiveAvatar";
 
 export default InteractiveAvatar;

@@ -93,3 +93,28 @@ export { Query };
 
 // Export legacy alias for components that import { appwriteService }
 export const appwriteService = appwriteClientService;
+
+// Shared presence service instances using the specialized API Key for authenticated subscriptions
+export const presenceClient = new Client()
+  .setEndpoint(conf.appwriteUrl)
+  .setProject(conf.projectId);
+
+presenceClient.headers["X-Appwrite-Key"] =
+  "standard_e623994c0ed2af791525a840dcd8979bc315e0325148247f4a35694ced2a9b55fba7c24016550a565ea718cd2de13846a051abda107fcdb90539ac29ffc136f323392cafa5501965fce7544a5ae319575f60be748d883df9d5161871357e92cb26d0634dbd36345550747c6ea222906c16e57b25ad96a6ca3aae180b8a8c0127";
+
+export const presenceService = new Presences(presenceClient);
+export const presenceRealtime = new Realtime(presenceClient);
+
+// Dynamically fix legacy/cloud appwrite endpoints using config Url host
+export const fixProfileImage = (url: string | null | undefined): string | null | undefined => {
+  if (!url) return url;
+  try {
+    const imgUrl = new URL(url);
+    const configUrl = new URL(conf.appwriteUrl);
+    imgUrl.protocol = configUrl.protocol;
+    imgUrl.host = configUrl.host;
+    return imgUrl.toString();
+  } catch (e) {
+    return url.replace("cloud.appwrite.io", "auth.itimitra.in");
+  }
+};

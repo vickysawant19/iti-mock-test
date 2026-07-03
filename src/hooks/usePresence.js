@@ -2,18 +2,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Permission, Role, Channel, Query } from "appwrite";
-import { realtime, presences } from "@/services/appwriteClient";
 import { selectUser } from "@/store/userSlice";
+import { presenceClient, presenceService, presenceRealtime } from "@/services/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
+const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
+const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
+
+const getPresenceResources = () => ({ presenceClient, presenceService, presenceRealtime });
 
 /**
  * usePresence — manages the current user's live presence and tracks online/offline status of all users.
- *
- * CRITICAL: permissions MUST include BOTH read AND update so any future
- * heartbeat upsert (PUT) can succeed. Omitting update causes a persistent
- * 401 "No permissions provided for action 'update'" on every heartbeat.
  *
  * @param {string|undefined} currentUserId  - The logged-in user's $id (falls back to Redux user)
  * @param {string}           currentStatus  - e.g. "online", "away", "typing"
@@ -30,6 +30,12 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const disabledRef = useRef(false);
   const isMountedRef = useRef(false);
   const isFocusedRef = useRef(true);
+  const isIdleRef = useRef(false);
+
+  // Timer references for blur-delay and idle tracking
+  const awayTimerRef = useRef(null);
+  const idleTimerRef = useRef(null);
+  const lastActivityRef = useRef(0);
 
   // Fallback to redux user if currentUserId isn't explicitly passed
   const effectiveUserId = currentUserId || reduxUser?.$id;
@@ -52,25 +58,52 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     const userId = userIdRef.current;
     if (!userId || disabledRef.current) return;
 
-    const status = statusOverride || (isFocusedRef.current ? statusRef.current : "away");
+    // Deduce status:
+    // 1. statusOverride if explicitly passed
+    // 2. "away" if either tab is blurred or user is inactive (idle)
+    // 3. Current active status otherwise (defaulting to "online")
+    let status = statusOverride;
+    if (!status) {
+      if (!isFocusedRef.current || isIdleRef.current) {
+        status = "away";
+      } else {
+        status = statusRef.current;
+      }
+    }
+
     const expiresAt = new Date(
       Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
     ).toISOString();
 
+    const { presenceClient } = getPresenceResources();
+
+    // CRITICAL: The client SDK's `presences.upsert` does not serialize `userId` in the HTTP payload.
+    // However, the Appwrite backend requires `userId` when using API key authentication.
+    // To resolve this, we bypass the SDK method and invoke `presenceClient.call` directly,
+    // explicitly providing the `userId` in the payload body.
+    const apiPath = `/presences/${encodeURIComponent(String(userId))}`;
+    const uri = new URL(presenceClient.config.endpoint + apiPath);
+    const apiHeaders = {
+      "X-Appwrite-Project": presenceClient.config.project,
+      "content-type": "application/json",
+      "accept": "application/json",
+    };
+    const payload = {
+      userId,
+      status,
+      expiresAt,
+      metadata: metadataRef.current,
+      permissions: [
+        // All users can read (see) this presence record
+        Permission.read(Role.users()),
+        // Only the owner can update or delete their own presence record
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
+      ],
+    };
+
     try {
-      await presences.upsert({
-        presenceId: userId, // use userId so only one record exists per user
-        status,
-        expiresAt,
-        metadata: metadataRef.current,
-        // permissions: [
-        //   // All users can read (see) this presence record
-        //   Permission.read(Role.users()),
-        //   // Only the owner can update or delete their own presence record
-        //   Permission.update(Role.user(userId)),
-        //   Permission.delete(Role.user(userId)),
-        // ],
-      });
+      await presenceClient.call("put", uri, apiHeaders, payload);
     } catch (err) {
       const code = err?.code;
       if (code === 401 || code === 403 || code === 404) {
@@ -93,14 +126,26 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   // ── Core Delete ───────────────────────────────────────────────────────────
   const deleteSelfPresence = useCallback(async (userIdToDelete) => {
     if (!userIdToDelete || disabledRef.current) return;
+    const { presenceClient } = getPresenceResources();
+    const apiPath = `/presences/${encodeURIComponent(String(userIdToDelete))}`;
+    const uri = new URL(presenceClient.config.endpoint + apiPath);
+    const apiHeaders = {
+      "X-Appwrite-Project": presenceClient.config.project,
+      "content-type": "application/json",
+      "accept": "application/json",
+    };
+    const payload = {
+      userId: userIdToDelete,
+    };
+
     try {
-      await presences.delete({ presenceId: userIdToDelete });
+      await presenceClient.call("delete", uri, apiHeaders, payload);
     } catch (err) {
       // Ignore: session or presence record might already be gone on logout
     }
   }, []);
 
-  // ── Main Effect: Presence registration, heartbeat, focus listeners, subscription ──
+  // ── Main Effect: Presence registration, heartbeat, focus/blur, idle timers ──
   useEffect(() => {
     if (!effectiveUserId) {
       setIsLoading(false);
@@ -113,10 +158,12 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     // 1. Initial register self
     upsertSelfPresence();
 
+    const { presenceService, presenceRealtime } = getPresenceResources();
+
     // 2. Fetch the current snapshot of online users
     const fetchInitialPresences = async () => {
       try {
-        const response = await presences.list({
+        const response = await presenceService.list({
           queries: [Query.limit(100)],
         });
         if (isMountedRef.current) {
@@ -141,25 +188,70 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       upsertSelfPresence();
     }, HEARTBEAT_INTERVAL_MS);
 
-    // 4. Focus/Blur state listeners
+    // 4. Activity / Inactivity Idle Tracking
+    const resetIdleTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+      const wasIdle = isIdleRef.current;
+      isIdleRef.current = false;
+
+      // Restore back to online immediately if they were previously idle and are focused
+      if (wasIdle && isFocusedRef.current) {
+        upsertSelfPresence();
+      }
+
+      idleTimerRef.current = setTimeout(() => {
+        isIdleRef.current = true;
+        // Only mark as away if the tab is focused (if blurred, focus handlers handle it)
+        if (isFocusedRef.current) {
+          upsertSelfPresence();
+        }
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityRef.current < 2000) return; // Throttle to every 2 seconds
+      lastActivityRef.current = now;
+      resetIdleTimer();
+    };
+
+    const activityEvents = ["mousemove", "keydown", "scroll", "click", "touchstart"];
+    activityEvents.forEach((ev) => window.addEventListener(ev, handleUserActivity));
+    resetIdleTimer();
+
+    // 5. Focus/Blur states with transition grace period
     const onFocus = () => {
+      if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
+      const wasFocused = isFocusedRef.current;
       isFocusedRef.current = true;
-      upsertSelfPresence(statusRef.current);
+
+      // Re-trigger upsert immediately if returning from a blurred "away" status
+      if (!wasFocused) {
+        upsertSelfPresence();
+      }
     };
+
     const onBlur = () => {
-      isFocusedRef.current = false;
-      upsertSelfPresence("away");
+      if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
+
+      // Grace period before marking user as away to prevent instant flip/flop on app switching
+      awayTimerRef.current = setTimeout(() => {
+        isFocusedRef.current = false;
+        upsertSelfPresence();
+      }, AWAY_DELAY_MS);
     };
+
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
 
-    // 5. Subscribe to live presence changes
+    // 6. Subscribe to live presence changes
     let subscription = null;
     let isSubscribed = true;
 
     const setupSubscription = async () => {
       try {
-        const sub = await realtime.subscribe(Channel.presences(), (response) => {
+        const sub = await presenceRealtime.subscribe(Channel.presences(), (response) => {
           if (!isSubscribed || !isMountedRef.current) return;
           const event = response.events[0] ?? "";
           const payload = response.payload;
@@ -195,8 +287,13 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       isSubscribed = false;
 
       clearInterval(heartbeatId);
+      
+      if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
+      activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
 
       if (subscription?.close) {
         subscription.close();
@@ -210,6 +307,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   // ── Effect: Trigger update on status or metadata change ───────────────────
   useEffect(() => {
     if (!effectiveUserId) return;
+    isIdleRef.current = false; // Reset idle status when manual state changes
     upsertSelfPresence();
   }, [effectiveUserId, currentStatus, location.pathname, upsertSelfPresence]);
 

@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import {
   Loader2,
   Search,
-  UserPlus,
   CheckCircle,
   XCircle,
   Users,
@@ -16,7 +16,6 @@ import {
   User,
   Phone,
   Mail,
-  Hash,
   Key,
   X,
 } from "lucide-react";
@@ -132,6 +131,8 @@ function ApprovalReviewModal({
               fallbackText={student?.userName?.charAt(0) || "S"}
               userId={student?.userId}
               editable={false}
+              showStatus={true}
+              statusSize="sm"
               className="w-14 h-14 rounded-full border-2 border-white shadow-md flex-shrink-0"
             />
             <div className="min-w-0">
@@ -365,7 +366,6 @@ function ProfileField({ icon: Icon, label, value, className = "" }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ManageStudentsList({ selectedBatch, batchData }) {
   const user = useSelector(selectUser);
-  const teacherId = user?.$id;
 
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -765,6 +765,8 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           fallbackText={student.userName?.charAt(0) || "U"}
                           userId={student.userId}
                           editable={false}
+                          showStatus={true}
+                          statusSize="xs"
                           className="w-8 h-8 text-xs rounded-full border border-gray-100 shadow-sm"
                         />
                         <div className="font-medium text-gray-800 dark:text-gray-200">

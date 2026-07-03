@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Channel } from "appwrite";
-import { presences, realtime } from "@/services/appwriteClient";
+import { presenceService as presences, presenceRealtime as realtime } from "@/services/appwriteClient";
 
 /**
  * Maintains a live Map<userId, presence> of every online/away user.
