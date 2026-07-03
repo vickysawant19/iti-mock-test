@@ -1,130 +1,223 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { ID, Permission, Role } from "appwrite";
-import { presences } from "@/services/appwriteClient";
+import { Permission, Role, Channel, Query } from "appwrite";
+import { realtime, presences } from "@/services/appwriteClient";
 import { selectUser } from "@/store/userSlice";
 
-const PRESENCE_ID_KEY = "appwrite_presence_id";
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
-const PRESENCE_TTL_MINUTES = 2;       // expire 2 min after last heartbeat
+const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
 
 /**
- * Manages the current user's own Appwrite Presence record.
+ * usePresence — manages the current user's live presence and tracks online/offline status of all users.
  *
- * Gracefully self-disables when the server doesn't support the Presences API
- * (Appwrite < 1.9.5) — logs one warning then goes silent.
+ * CRITICAL: permissions MUST include BOTH read AND update so any future
+ * heartbeat upsert (PUT) can succeed. Omitting update causes a persistent
+ * 401 "No permissions provided for action 'update'" on every heartbeat.
  *
- * Mount this once at the App root so it runs for the full session.
+ * @param {string|undefined} currentUserId  - The logged-in user's $id (falls back to Redux user)
+ * @param {string}           currentStatus  - e.g. "online", "away", "typing"
+ * @param {object}           metadata       - Extra data (page, device, etc.)
  */
-export function usePresence() {
-  const user = useSelector(selectUser);
+export function usePresence(currentUserId, currentStatus = "online", metadata = {}) {
+  const reduxUser = useSelector(selectUser);
   const location = useLocation();
 
-  // Stable ref for the current path so callbacks don't need it as a dep
-  const pathRef = useRef(location.pathname);
-  pathRef.current = location.pathname;
+  const [onlineUsers, setOnlineUsers] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Ref so async callbacks always hold the latest presenceId
-  const presenceIdRef = useRef(localStorage.getItem(PRESENCE_ID_KEY) || null);
-
-  // Set to true on the first unrecoverable server error (e.g. server < 1.9.5)
-  // so we don't spam the console on every heartbeat.
   const disabledRef = useRef(false);
+  const isMountedRef = useRef(false);
+  const isFocusedRef = useRef(true);
 
-  // ── Core upsert ──────────────────────────────────────────────────────────
-  const upsert = useCallback(async (status = "online", extraMeta = {}) => {
-    if (!user?.$id || disabledRef.current) return;
+  // Fallback to redux user if currentUserId isn't explicitly passed
+  const effectiveUserId = currentUserId || reduxUser?.$id;
 
-    // Reuse the same presenceId if we already have one, otherwise create new
-    if (!presenceIdRef.current) {
-      presenceIdRef.current = ID.unique();
-      localStorage.setItem(PRESENCE_ID_KEY, presenceIdRef.current);
-    }
+  // Stable refs for values used inside callbacks to avoid stale closures and unnecessary reruns
+  const userIdRef = useRef(effectiveUserId);
+  userIdRef.current = effectiveUserId;
 
+  const statusRef = useRef(currentStatus);
+  statusRef.current = currentStatus;
+
+  const metadataRef = useRef(metadata);
+  metadataRef.current = {
+    page: location.pathname,
+    ...metadata,
+  };
+
+  // ── Core Upsert ───────────────────────────────────────────────────────────
+  const upsertSelfPresence = useCallback(async (statusOverride) => {
+    const userId = userIdRef.current;
+    if (!userId || disabledRef.current) return;
+
+    const status = statusOverride || (isFocusedRef.current ? statusRef.current : "away");
     const expiresAt = new Date(
       Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
     ).toISOString();
 
     try {
       await presences.upsert({
-        presenceId: presenceIdRef.current,
+        presenceId: userId, // use userId so only one record exists per user
         status,
         expiresAt,
-        metadata: {
-          page: pathRef.current,
-          userId: user.$id,
-          ...extraMeta,
-        },
-        // Any signed-in user can read each other's presence
-        permissions: [Permission.read(Role.users())],
+        metadata: metadataRef.current,
+        // permissions: [
+        //   // All users can read (see) this presence record
+        //   Permission.read(Role.users()),
+        //   // Only the owner can update or delete their own presence record
+        //   Permission.update(Role.user(userId)),
+        //   Permission.delete(Role.user(userId)),
+        // ],
       });
     } catch (err) {
       const code = err?.code;
       if (code === 401 || code === 403 || code === 404) {
-        // Presences service is either missing on the server or disabled for clients
         disabledRef.current = true;
         console.info(
           `[usePresence] Presences service is unavailable (code ${code}: ${err?.message}). ` +
           "Presence tracking gracefully disabled."
         );
-        presenceIdRef.current = null;
-        localStorage.removeItem(PRESENCE_ID_KEY);
       } else {
-        // Other transient errors (like network offline)
-        console.warn("[usePresence] upsert failed:", err?.message);
+        console.error("[usePresence] upsert failed:", {
+          code: err.code,
+          type: err.type,
+          message: err.message,
+        });
       }
-    }
-  }, [user?.$id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Delete own presence ───────────────────────────────────────────────────
-  const deletePresence = useCallback(async () => {
-    if (disabledRef.current) return;
-    const id = presenceIdRef.current;
-    if (!id) return;
-    try {
-      await presences.delete({ presenceId: id });
-    } catch {
-      // Ignore — session may already be gone
-    } finally {
-      presenceIdRef.current = null;
-      localStorage.removeItem(PRESENCE_ID_KEY);
+      setError(err);
     }
   }, []);
 
-  // ── Mount / unmount when user signs in or out ─────────────────────────────
+  // ── Core Delete ───────────────────────────────────────────────────────────
+  const deleteSelfPresence = useCallback(async (userIdToDelete) => {
+    if (!userIdToDelete || disabledRef.current) return;
+    try {
+      await presences.delete({ presenceId: userIdToDelete });
+    } catch (err) {
+      // Ignore: session or presence record might already be gone on logout
+    }
+  }, []);
+
+  // ── Main Effect: Presence registration, heartbeat, focus listeners, subscription ──
   useEffect(() => {
-    if (!user?.$id) {
-      // User just signed out — clean up any lingering presence
-      deletePresence();
+    if (!effectiveUserId) {
+      setIsLoading(false);
       return;
     }
 
-    // Reset disabled flag when a new user signs in (different server may work)
-    disabledRef.current = false;
+    isMountedRef.current = true;
+    disabledRef.current = false; // Reset on user sign-in
 
-    // Sign-in: mark as online immediately
-    upsert("online");
+    // 1. Initial register self
+    upsertSelfPresence();
 
-    // Heartbeat: push expiresAt forward every 30 s
-    const heartbeatId = setInterval(() => upsert("online"), HEARTBEAT_INTERVAL_MS);
+    // 2. Fetch the current snapshot of online users
+    const fetchInitialPresences = async () => {
+      try {
+        const response = await presences.list({
+          queries: [Query.limit(100)],
+        });
+        if (isMountedRef.current) {
+          const map = {};
+          (response.presences ?? []).forEach((p) => {
+            map[p.userId] = p;
+          });
+          setOnlineUsers(map);
+        }
+      } catch (err) {
+        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+          console.error("[usePresence] list failed:", err.message);
+        }
+      } finally {
+        if (isMountedRef.current) setIsLoading(false);
+      }
+    };
+    fetchInitialPresences();
 
-    // focus / blur
-    const onFocus = () => upsert("online");
-    const onBlur  = () => upsert("away");
+    // 3. Heartbeat: push expiresAt forward periodically
+    const heartbeatId = setInterval(() => {
+      upsertSelfPresence();
+    }, HEARTBEAT_INTERVAL_MS);
+
+    // 4. Focus/Blur state listeners
+    const onFocus = () => {
+      isFocusedRef.current = true;
+      upsertSelfPresence(statusRef.current);
+    };
+    const onBlur = () => {
+      isFocusedRef.current = false;
+      upsertSelfPresence("away");
+    };
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
 
+    // 5. Subscribe to live presence changes
+    let subscription = null;
+    let isSubscribed = true;
+
+    const setupSubscription = async () => {
+      try {
+        const sub = await realtime.subscribe(Channel.presences(), (response) => {
+          if (!isSubscribed || !isMountedRef.current) return;
+          const event = response.events[0] ?? "";
+          const payload = response.payload;
+          if (!payload?.userId) return;
+
+          setOnlineUsers((prev) => {
+            const updated = { ...prev };
+            if (event.endsWith(".delete")) {
+              delete updated[payload.userId];
+            } else {
+              updated[payload.userId] = payload;
+            }
+            return updated;
+          });
+        });
+
+        if ((!isSubscribed || !isMountedRef.current) && sub?.close) {
+          sub.close();
+        } else {
+          subscription = sub;
+        }
+      } catch (err) {
+        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+          console.error("[usePresence] subscription failed:", err);
+        }
+      }
+    };
+    setupSubscription();
+
+    // Cleanup
     return () => {
+      isMountedRef.current = false;
+      isSubscribed = false;
+
       clearInterval(heartbeatId);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
-    };
-  }, [user?.$id, upsert, deletePresence]);
 
-  // ── Update metadata.page on route change ─────────────────────────────────
+      if (subscription?.close) {
+        subscription.close();
+      }
+
+      // Cleanup presence when user signs out or hook is unmounted
+      deleteSelfPresence(effectiveUserId);
+    };
+  }, [effectiveUserId, upsertSelfPresence, deleteSelfPresence]);
+
+  // ── Effect: Trigger update on status or metadata change ───────────────────
   useEffect(() => {
-    if (!user?.$id) return;
-    upsert("online");
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!effectiveUserId) return;
+    upsertSelfPresence();
+  }, [effectiveUserId, currentStatus, location.pathname, upsertSelfPresence]);
+
+  return {
+    onlineUsers: Object.values(onlineUsers),
+    isLoading,
+    error,
+    /** Call this to manually refresh own presence (e.g., on action/route change) */
+    refreshPresence: upsertSelfPresence,
+  };
 }
