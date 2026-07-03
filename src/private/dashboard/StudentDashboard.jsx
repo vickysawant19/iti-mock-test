@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -19,6 +21,7 @@ import { Query } from "appwrite";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
+import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 
 const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-slate-700/50">
@@ -211,6 +214,9 @@ const StudentDashboard = ({
                 color="bg-gradient-to-br from-amber-500 to-orange-600"
               />
             </div>
+
+            {/* Live Batch Members List */}
+            <OnlineBatchMembers batchId={activeBatchId} currentUserId={user?.$id} />
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-3">

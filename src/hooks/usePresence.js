@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Permission, Role, Channel, Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
+import { selectProfile } from "@/store/profileSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import { presenceClient, presenceService, presenceRealtime } from "@/services/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
@@ -21,6 +23,8 @@ const getPresenceResources = () => ({ presenceClient, presenceService, presenceR
  */
 export function usePresence(currentUserId, currentStatus = "online", metadata = {}) {
   const reduxUser = useSelector(selectUser);
+  const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector(selectActiveBatchId);
   const location = useLocation();
 
   const [onlineUsers, setOnlineUsers] = useState({});
@@ -50,6 +54,10 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const metadataRef = useRef(metadata);
   metadataRef.current = {
     page: location.pathname,
+    userName: profile?.userName || reduxUser?.name || "User",
+    profileImage: profile?.profileImage || null,
+    role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
+    activeBatchId: activeBatchId || null,
     ...metadata,
   };
 
@@ -309,7 +317,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     if (!effectiveUserId) return;
     isIdleRef.current = false; // Reset idle status when manual state changes
     upsertSelfPresence();
-  }, [effectiveUserId, currentStatus, location.pathname, upsertSelfPresence]);
+  }, [effectiveUserId, currentStatus, location.pathname, activeBatchId, profile, upsertSelfPresence]);
 
   return {
     onlineUsers: Object.values(onlineUsers),

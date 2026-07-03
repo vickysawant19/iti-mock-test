@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
 import { useNavigate } from "react-router-dom";
 import { Loader2, RefreshCw, Building, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { checkProfileCompletion } from "@/utils/profileCompletion";
 import BatchOverviewCard from "./components/BatchOverviewCard";
 import StudentTable from "./components/StudentTable";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
+import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 
 const TeacherDashboard = ({
   profile,
@@ -112,6 +114,9 @@ const TeacherDashboard = ({
           <>
             {/* Student Table */}
             <StudentTable studentRows={studentRows} selectedMonth={selectedMonth} />
+
+            {/* Live Batch Members List */}
+            <OnlineBatchMembers batchId={batchContext?.batchId} currentUserId={profile?.userId} />
 
             {/* Visual Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
