@@ -163,8 +163,8 @@ const StudentDashboard = ({
   }
 
   // Handle answering question in modal
-  const handleAnswerSubmit = async (isCorrect) => {
-    const result = await submitAnswer(isCorrect);
+  const handleAnswerSubmit = async (isCorrect, isFiftyFiftyUsed) => {
+    const result = await submitAnswer(isCorrect, isFiftyFiftyUsed);
     if (result?.levelUp) {
       setShowLevelUp(true);
     }
@@ -245,163 +245,187 @@ const StudentDashboard = ({
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 max-w-4xl mx-auto p-4 sm:p-6 space-y-5 pb-20">
-        {/* Profile Incomplete Banner */}
-        {!isComplete && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700 backdrop-blur-sm">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Complete your profile</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 truncate">Missing: {missingFields.join(", ")}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/profile/edit")}
-              className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-xl shrink-0"
-            >
-              Update
-            </Button>
-          </div>
-        )}
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 pb-20 pt-3">
 
-        {/* Sleek Compact Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/80 shadow-md p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
-              <AvatarImage src={fixProfileImage(profile?.profileImage)} />
-              <AvatarFallback className="text-base font-extrabold bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300 rounded-xl">
-                {profile?.userName?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <h1 className="text-base font-black text-slate-850 dark:text-white tracking-tight truncate leading-tight">
-                {profile?.userName || "Student"}
-              </h1>
-              <div className="flex items-center gap-2.5 text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1 flex-wrap">
-                {batchContext.batchName && (
-                  <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                    <GraduationCap className="w-3 h-3 text-pink-500" /> {batchContext.batchName}
-                  </span>
-                )}
-                {batchContext.tradeName && (
-                  <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                    <Award className="w-3 h-3 text-purple-500" /> {batchContext.tradeName}
-                  </span>
-                )}
+        {/* ── TWO-COLUMN DESKTOP LAYOUT ──
+             Left  col (lg+): GameMap — sticky, always visible
+             Right col (lg+): profile header + tabs + content
+             Mobile: single column, tabs navigate between views        ── */}
+        <div className="lg:grid lg:grid-cols-[420px_1fr] lg:gap-5 lg:items-start">
+
+          {/* ───── LEFT COLUMN ─────
+               Desktop only. Plain div (NOT inside AnimatePresence)
+               so position:sticky is never broken by FM transforms. ───── */}
+          <div
+            className="hidden lg:block sticky z-20"
+            style={{ top: "calc(64px + 8px)" }}
+          >
+            <GameMap
+              stats={stats}
+              profile={profile}
+              leaderboard={leaderboard}
+              onAttemptQuestion={() => setIsQuestionOpen(true)}
+            />
+          </div>
+
+          {/* ───── RIGHT COLUMN (all content) ───── */}
+          <div className="min-w-0 space-y-4">
+            {/* Profile Incomplete Banner */}
+            {!isComplete && (
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700 backdrop-blur-sm">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-amber-800 dark:text-amber-300">Complete your profile</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 truncate">Missing: {missingFields.join(", ")}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/profile/edit")}
+                  className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-xl shrink-0"
+                >
+                  Update
+                </Button>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Quick Level display */}
-          {stats && (
-            <div className="flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-3.5 py-1.5 rounded-xl self-end sm:self-auto shrink-0 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-pink-500 animate-pulse" />
-              <span className="text-[11px] font-black text-pink-600 dark:text-pink-400">LEVEL {stats.level}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Sliding Navigation Tabs */}
-        <div className="flex items-center overflow-x-auto gap-1 bg-white/40 dark:bg-slate-900/40 p-1.5 rounded-2xl border border-white/20 dark:border-slate-800 scrollbar-none select-none">
-          {[
-            { id: "game", label: "Game World", icon: Gamepad2 },
-            { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-            { id: "challenges", label: "Challenges", icon: Target },
-            { id: "rewards", label: "Badges", icon: Award },
-            { id: "stats", label: "My Progress", icon: ClipboardList },
-            { id: "friends", label: "Online Presence", icon: Users },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                  isActive ? "text-white" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabPill"
-                    className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl -z-10 shadow-md shadow-pink-500/10"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab content renders */}
-        <div className="space-y-4">
-          <AnimatePresence mode="wait">
-            {activeTab === "game" && (
-              <motion.div
-                key="game"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start"
-              >
-                {/* Column 1: Info + stats card (takes 5 columns on md+) */}
-                <div className="md:col-span-5 space-y-4">
-                  <div className="flex flex-col p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl gap-4">
-                    <div>
-                      <h3 className="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
-                        <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
-                        Daily Theory Challenge
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                        Attempt a random question matching your trade, gain XP and level up on correct answers!
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => setIsQuestionOpen(true)}
-                      className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 py-4 cursor-pointer"
-                    >
-                      Play Challenge Node →
-                    </Button>
+            {/* Compact Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/80 shadow-md p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+                  <AvatarImage src={fixProfileImage(profile?.profileImage)} />
+                  <AvatarFallback className="text-base font-extrabold bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300 rounded-xl">
+                    {profile?.userName?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <h1 className="text-base font-black text-slate-850 dark:text-white tracking-tight truncate leading-tight">
+                    {profile?.userName || "Student"}
+                  </h1>
+                  <div className="flex items-center gap-2.5 text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1 flex-wrap">
+                    {batchContext.batchName && (
+                      <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                        <GraduationCap className="w-3 h-3 text-pink-500" /> {batchContext.batchName}
+                      </span>
+                    )}
+                    {batchContext.tradeName && (
+                      <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                        <Award className="w-3 h-3 text-purple-500" /> {batchContext.tradeName}
+                      </span>
+                    )}
                   </div>
+                </div>
+              </div>
+              {stats && (
+                <div className="flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-3.5 py-1.5 rounded-xl self-end sm:self-auto shrink-0 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-pink-500 animate-pulse" />
+                  <span className="text-[11px] font-black text-pink-600 dark:text-pink-400">LEVEL {stats.level}</span>
+                </div>
+              )}
+            </div>
 
-                  {stats && (
-                    <div className="p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl space-y-3.5 shadow-sm">
-                      <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Your Game Stats</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-850">
-                          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">XP Level</p>
-                          <p className="text-lg font-black text-slate-850 dark:text-white mt-0.5">LVL {stats.level}</p>
-                        </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-850">
-                          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Accuracy</p>
-                          <p className="text-lg font-black text-slate-855 dark:text-white mt-0.5">{stats.accuracy}%</p>
-                        </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-855">
-                          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Streak</p>
-                          <p className="text-lg font-black text-orange-500 mt-0.5">🔥 {stats.currentStreak}</p>
-                        </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-855">
-                          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Wins</p>
-                          <p className="text-lg font-black text-emerald-500 mt-0.5">🏆 {stats.wins}</p>
+            {/* Navigation Tabs — sticky below navbar */}
+            <div className="sticky top-16 z-30 flex items-center overflow-x-auto gap-1 bg-slate-900/85 dark:bg-slate-950/75 p-2 rounded-2xl border border-slate-800 backdrop-blur-md scrollbar-none select-none shadow-xl shadow-pink-950/5">
+              {[
+                { id: "game", label: "Game World", icon: Gamepad2 },
+                { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+                { id: "challenges", label: "Challenges", icon: Target },
+                { id: "rewards", label: "Badges", icon: Award },
+                { id: "stats", label: "My Progress", icon: ClipboardList },
+                { id: "friends", label: "Online Presence", icon: Users },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                      isActive ? "text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTabPill"
+                        className="absolute inset-0 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 rounded-xl -z-10 shadow-lg shadow-pink-500/30 border-t border-white/20"
+                        transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                      />
+                    )}
+                    <Icon className={`w-4 h-4 transition-transform ${isActive ? "text-white scale-110" : "text-slate-500"}`} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab content */}
+            <div className="space-y-4">
+              <AnimatePresence mode="wait">
+
+                {/* Game tab — unified responsive view. GameMap is in the sticky left column on desktop, and inline here on mobile. */}
+                {activeTab === "game" && (
+                  <motion.div
+                    key="game"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="w-full space-y-4"
+                  >
+                    {/* Play button card */}
+                    <div className="flex flex-col p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl gap-4">
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                          <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
+                          Daily Theory Challenge
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                          Attempt a random question matching your trade, gain XP and level up on correct answers!
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setIsQuestionOpen(true)}
+                        className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 py-4 cursor-pointer"
+                      >
+                        Play Challenge Node →
+                      </Button>
+                    </div>
+
+                    {/* Stats display — Desktop only (since GameMap is already visible on the left side) */}
+                    {stats && (
+                      <div className="hidden lg:block p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl space-y-3.5 shadow-sm">
+                        <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Your Game Stats</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">XP Level</p>
+                            <p className="text-lg font-black text-slate-800 dark:text-white mt-0.5">LVL {stats.level}</p>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Accuracy</p>
+                            <p className="text-lg font-black text-slate-800 dark:text-white mt-0.5">{stats.accuracy}%</p>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Streak</p>
+                            <p className="text-lg font-black text-orange-500 mt-0.5">🔥 {stats.currentStreak}</p>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Wins</p>
+                            <p className="text-lg font-black text-emerald-500 mt-0.5">🏆 {stats.wins}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                {/* Column 2: 2.5D Isometric progression map (takes 7 columns on md+) */}
-                <div className="md:col-span-7">
-                  <GameMap
-                    stats={stats}
-                    profile={profile}
-                    onAttemptQuestion={() => setIsQuestionOpen(true)}
-                  />
-                </div>
-              </motion.div>
-            )}
+                    {/* GameMap — Mobile viewports only */}
+                    <div className="lg:hidden">
+                      <GameMap
+                        stats={stats}
+                        profile={profile}
+                        leaderboard={leaderboard}
+                        onAttemptQuestion={() => setIsQuestionOpen(true)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
 
             {activeTab === "leaderboard" && (
               <motion.div
@@ -773,8 +797,10 @@ const StudentDashboard = ({
                 <OnlineBatchMembers batchId={activeBatchId} currentUserId={user?.$id} />
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
+              </AnimatePresence>
+            </div>
+          </div>{/* end right column */}
+        </div>{/* end grid */}
       </div>
 
       {/* Gamified MCQ Question Dialog Modal */}

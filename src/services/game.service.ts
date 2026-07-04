@@ -238,7 +238,8 @@ export class GameService extends DatabaseService {
     studentId: string,
     batchId: string,
     tradeId: string,
-    isCorrect: boolean
+    isCorrect: boolean,
+    isFiftyFiftyUsed?: boolean
   ): Promise<{ stats: StudentGameStats; xpGained: number; coinsGained: number; levelUp: boolean }> {
     const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
     
@@ -248,28 +249,59 @@ export class GameService extends DatabaseService {
 
     stats.questionsAttempted += 1;
 
+    // Daily active streak calculation (Duolingo style)
+    const now = new Date();
+    let diffDays = 0;
+
+    if (stats.lastQuestionTime) {
+      const lastTime = new Date(stats.lastQuestionTime);
+      const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const d2 = new Date(lastTime.getFullYear(), lastTime.getMonth(), lastTime.getDate());
+      const diffTime = d1.getTime() - d2.getTime();
+      diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    } else {
+      // First time answering correctly
+      diffDays = 999;
+    }
+
     if (isCorrect) {
-      xpGained = 10;
+      xpGained = isFiftyFiftyUsed ? 5 : 10;
       coinsGained = 5;
       stats.xp += xpGained;
       stats.coins += coinsGained;
       stats.wins += 1;
-      stats.currentStreak += 1;
+
+      // Update streak only on correct answer
+      if (diffDays === 1) {
+        // Consecutive day correct activity
+        stats.currentStreak += 1;
+      } else if (diffDays >= 2 || !stats.lastQuestionTime) {
+        // Missed day or first time answering correctly
+        stats.currentStreak = 1;
+      }
+      // If diffDays === 0, keep current streak (can only increase once per day)
+
       if (stats.currentStreak > stats.highestStreak) {
         stats.highestStreak = stats.currentStreak;
       }
+
+      // Mark the time of the last correct answer
+      stats.lastQuestionTime = now.toISOString();
     } else {
       xpGained = -3;
       stats.xp = Math.max(0, stats.xp + xpGained); // Floor at 0
       stats.losses += 1;
-      stats.currentStreak = 0; // Reset combo streak
+
+      // If they missed consecutive days, their streak is broken
+      if (diffDays >= 2) {
+        stats.currentStreak = 0;
+      }
     }
 
     // Level formula: 100 XP per level
     stats.level = Math.floor(stats.xp / 100) + 1;
     stats.accuracy = parseFloat(((stats.wins / stats.questionsAttempted) * 100).toFixed(1));
-    stats.lastQuestionTime = new Date().toISOString();
-    stats.lastActive = new Date().toISOString();
+    stats.lastActive = now.toISOString();
 
     const levelUp = stats.level > oldLevel;
 

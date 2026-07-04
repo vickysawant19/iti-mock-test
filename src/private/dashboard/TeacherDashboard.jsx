@@ -244,8 +244,8 @@ const TeacherDashboard = ({
         {/* Batch Overview Hero */}
         <BatchOverviewCard batchContext={batchContext} batchOverview={batchOverview} />
 
-        {/* Sliding Navigation Tabs */}
-        <div className="flex items-center gap-1 bg-white/40 dark:bg-slate-900/40 p-1.5 rounded-2xl border border-white/20 dark:border-slate-800 max-w-sm">
+        {/* Sliding Navigation Tabs - Improved Game UI Style */}
+        <div className="flex items-center overflow-x-auto gap-1.5 bg-slate-900/85 dark:bg-slate-950/75 p-2 rounded-2xl border border-slate-800 backdrop-blur-md scrollbar-none select-none w-full max-w-lg shadow-xl shadow-pink-950/5">
           {[
             { id: "attendance", label: "Attendance & Performance", icon: Users },
             { id: "gamification", label: "Gamification & Challenges", icon: Trophy },
@@ -256,18 +256,20 @@ const TeacherDashboard = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-                  isActive ? "text-white" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                className={`relative flex-1 flex items-center justify-center gap-2 px-4.5 py-3 rounded-xl text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
+                  isActive 
+                    ? "text-white" 
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTeacherTabPill"
-                    className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl -z-10 shadow-md shadow-pink-500/10"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    className="absolute inset-0 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 rounded-xl -z-10 shadow-lg shadow-pink-500/30 border-t border-white/20"
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
                   />
                 )}
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+                <Icon className={`w-4 h-4 transition-transform ${isActive ? "text-white scale-110" : "text-slate-500"}`} />
                 {tab.label}
               </button>
             );

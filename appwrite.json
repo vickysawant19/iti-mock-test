@@ -15,10 +15,8 @@
             "sites": true,
             "functions": true,
             "graphql": true,
-            "messaging": true,
-            "presences": true
+            "messaging": true
         },
-        "protocols": {},
         "auth": {
             "methods": {
                 "jwt": true,
@@ -2140,157 +2138,6 @@
             "indexes": []
         },
         {
-            "$id": "student_game_stats",
-            "$permissions": [
-                "read(\"any\")",
-                "create(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "student_game_stats",
-            "enabled": true,
-            "rowSecurity": false,
-            "columns": [
-                {
-                    "key": "studentId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "xp",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "coins",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "level",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 1
-                },
-                {
-                    "key": "wins",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "losses",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "accuracy",
-                    "type": "double",
-                    "required": false,
-                    "array": false,
-                    "default": 0.0
-                },
-                {
-                    "key": "questionsAttempted",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "currentStreak",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "highestStreak",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0
-                },
-                {
-                    "key": "lastQuestionTime",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "lastActive",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                }
-            ],
-            "indexes": [
-                {
-                    "key": "unique_student_batch",
-                    "type": "unique",
-                    "status": "available",
-                    "columns": [
-                        "studentId",
-                        "batchId"
-                    ],
-                    "orders": [
-                        "asc",
-                        "asc"
-                    ]
-                },
-                {
-                    "key": "idx_batch_xp",
-                    "type": "key",
-                    "status": "available",
-                    "columns": [
-                        "batchId",
-                        "xp"
-                    ],
-                    "orders": [
-                        "asc",
-                        "desc"
-                    ]
-                }
-            ]
-        },
-        {
             "$id": "batch_challenges",
             "$permissions": [
                 "read(\"any\")",
@@ -2344,14 +2191,18 @@
                     "type": "integer",
                     "required": false,
                     "array": false,
-                    "default": 0
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
                 },
                 {
                     "key": "rewardCoins",
                     "type": "integer",
                     "required": false,
                     "array": false,
-                    "default": 0
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
                 },
                 {
                     "key": "startDate",
@@ -2391,6 +2242,175 @@
                     ],
                     "orders": [
                         "asc"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "student_game_stats",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "student_game_stats",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "studentId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "tradeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "xp",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "coins",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "level",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 1,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "wins",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "losses",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "accuracy",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -1.7976931348623157e+308,
+                    "max": 1.7976931348623157e+308
+                },
+                {
+                    "key": "questionsAttempted",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "currentStreak",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "highestStreak",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "lastQuestionTime",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "lastActive",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "unique_student_batch",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "studentId",
+                        "batchId"
+                    ],
+                    "orders": [
+                        "asc",
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "idx_batch_xp",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "xp"
+                    ],
+                    "orders": [
+                        "asc",
+                        "desc"
                     ]
                 }
             ]

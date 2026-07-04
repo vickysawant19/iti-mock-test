@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Award, XCircle, CheckCircle, Volume2, ArrowRight } from "lucide-react";
+import { Loader2, Award, XCircle, CheckCircle, Volume2, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { gameService } from "@/services/game.service";
 
@@ -12,6 +12,8 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
   const [submitted, setSubmitted] = useState(false);
   const [gradingResult, setGradingResult] = useState(null); // { isCorrect, xpGained, coinsGained, levelUp }
   const [shake, setShake] = useState(false);
+  const [isFiftyFiftyUsed, setIsFiftyFiftyUsed] = useState(false);
+  const [eliminatedOptions, setEliminatedOptions] = useState([]);
 
   const optionLabels = ["A", "B", "C", "D"];
 
@@ -24,6 +26,8 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
       setSubmitted(false);
       setGradingResult(null);
       setShake(false);
+      setIsFiftyFiftyUsed(false);
+      setEliminatedOptions([]);
 
       gameService.getRandomQuestion(tradeId)
         .then((q) => {
@@ -39,8 +43,29 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
   if (!isOpen) return null;
 
   const handleSelect = (idx) => {
-    if (submitted) return;
+    if (submitted || eliminatedOptions.includes(idx)) return;
     setSelectedOption(idx);
+  };
+
+  const handleFiftyFifty = () => {
+    if (isFiftyFiftyUsed || submitted || !question) return;
+
+    const correctLetter = question.correctAnswer;
+    const correctIdx = optionLabels.indexOf(correctLetter);
+
+    // Filter incorrect options
+    const incorrectIndexes = [0, 1, 2, 3].filter((idx) => idx !== correctIdx);
+
+    // Shuffle and pick 2 to eliminate
+    const shuffled = incorrectIndexes.sort(() => 0.5 - Math.random());
+    const toEliminate = shuffled.slice(0, 2);
+
+    setIsFiftyFiftyUsed(true);
+    setEliminatedOptions(toEliminate);
+
+    if (selectedOption !== null && toEliminate.includes(selectedOption)) {
+      setSelectedOption(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -60,10 +85,10 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
     }
 
     try {
-      const res = await onAnswerSubmit(isCorrect);
+      const res = await onAnswerSubmit(isCorrect, isFiftyFiftyUsed);
       setGradingResult({
         isCorrect,
-        xpGained: res?.xpGained || (isCorrect ? 10 : -3),
+        xpGained: res?.xpGained || (isCorrect ? (isFiftyFiftyUsed ? 5 : 10) : -3),
         coinsGained: res?.coinsGained || (isCorrect ? 5 : 0),
         levelUp: res?.levelUp || false,
       });
@@ -71,7 +96,7 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
       console.error(err);
       setGradingResult({
         isCorrect,
-        xpGained: isCorrect ? 10 : -3,
+        xpGained: isCorrect ? (isFiftyFiftyUsed ? 5 : 10) : -3,
         coinsGained: isCorrect ? 5 : 0,
         levelUp: false,
       });
@@ -176,17 +201,41 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
                 </p>
               </div>
 
+              {/* Lifeline Button */}
+              {!submitted && !isFiftyFiftyUsed && (
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleFiftyFifty}
+                    className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-purple-200 border border-purple-500/30 rounded-xl px-4 py-2 text-[10px] font-black tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-lg shadow-purple-950/20"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    50:50 Lifeline (-50% XP)
+                  </Button>
+                </div>
+              )}
+              {!submitted && isFiftyFiftyUsed && (
+                <div className="flex justify-end">
+                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-2 text-[10px] font-extrabold tracking-wider uppercase text-purple-400/80 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500/40" />
+                    Lifeline Used (Half XP Mode)
+                  </div>
+                </div>
+              )}
+
               {/* Options */}
               <div className="space-y-2.5">
                 {question.options.map((option, idx) => {
                   const letter = optionLabels[idx];
                   const isSelected = selectedOption === idx;
                   const isCorrectAnswer = letter === question.correctAnswer;
+                  const isEliminated = eliminatedOptions.includes(idx);
 
                   let optionStyle = "border-slate-800 hover:border-slate-700 bg-slate-950/20";
                   let checkIcon = null;
 
-                  if (submitted) {
+                  if (isEliminated) {
+                    optionStyle = "border-slate-900/50 bg-slate-950/5 opacity-25 pointer-events-none cursor-not-allowed";
+                  } else if (submitted) {
                     if (isCorrectAnswer) {
                       optionStyle = "border-emerald-500 bg-emerald-500/10 text-emerald-300";
                       checkIcon = <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />;
@@ -203,16 +252,22 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
                   return (
                     <button
                       key={idx}
-                      disabled={submitted}
+                      disabled={submitted || isEliminated}
                       onClick={() => handleSelect(idx)}
                       className={`flex items-center gap-3 w-full p-3.5 rounded-2xl border text-left text-xs font-bold transition-all duration-200 cursor-pointer ${optionStyle}`}
                     >
                       <span className={`flex items-center justify-center w-6 h-6 rounded-lg text-[10px] font-black shrink-0 ${
-                        isSelected ? "bg-pink-500 text-white" : "bg-slate-800 text-slate-300"
+                        isEliminated ? "bg-slate-950 text-slate-700" : (isSelected ? "bg-pink-500 text-white" : "bg-slate-800 text-slate-300")
                       }`}>
                         {letter}
                       </span>
-                      <span className="flex-1 min-w-0 break-words">{option}</span>
+                      <span className="flex-1 min-w-0 break-words">
+                        {isEliminated ? (
+                          <span className="italic tracking-widest text-[9px] opacity-40 uppercase">Eliminated</span>
+                        ) : (
+                          option
+                        )}
+                      </span>
                       {checkIcon}
                     </button>
                   );

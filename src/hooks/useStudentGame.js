@@ -52,10 +52,10 @@ export function useStudentGame(studentId, batchId, tradeId) {
   }, [tradeId]);
 
   // Submit MCQ answer
-  const submitAnswer = useCallback(async (isCorrect) => {
+  const submitAnswer = useCallback(async (isCorrect, isFiftyFiftyUsed) => {
     if (!studentId || !batchId || !tradeId) return null;
     try {
-      const res = await gameService.submitAnswer(studentId, batchId, tradeId, isCorrect);
+      const res = await gameService.submitAnswer(studentId, batchId, tradeId, isCorrect, isFiftyFiftyUsed);
       setStats(res.stats);
 
       // Check if any achievements unlocked
