@@ -46,7 +46,7 @@ function App() {
             dispatch(addProfile({ data: profileRes, isLoading: false }));
             dispatch(initializeActiveBatch(profileRes));
             if (window.location.pathname === "/") {
-              navigate("/");
+              navigate("/dash");
             }
           } else {
             if (currentUser.labels && currentUser.labels.includes("Teacher")) {

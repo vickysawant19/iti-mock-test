@@ -26,6 +26,9 @@ const conf = {
   imageUploadFunctionId: import.meta.env.VITE_IMAGE_UPLOAD_FUNCTION_ID || "",
   newModulesDataCollectionId: import.meta.env.VITE_NEW_MODULES_DATA_COLLECTION_ID || "",
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
+  gameStatsCollectionId: import.meta.env.VITE_GAME_STATS_COLLECTION_ID || "student_game_stats",
+  challengesCollectionId: import.meta.env.VITE_CHALLENGES_COLLECTION_ID || "batch_challenges",
+  achievementsCollectionId: import.meta.env.VITE_ACHIEVEMENTS_COLLECTION_ID || "student_achievements",
 };
 
 export default conf;
