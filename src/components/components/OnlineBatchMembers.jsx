@@ -13,7 +13,7 @@ const getActivityText = (path) => {
   return "Browsing App";
 };
 
-const OnlineBatchMembers = ({ batchId, currentUserId }) => {
+const OnlineBatchMembers = ({ batchId, currentUserId, compact = false }) => {
   const { onlineUsers } = useOnlineUsers();
 
   if (!batchId) return null;
@@ -29,8 +29,38 @@ const OnlineBatchMembers = ({ batchId, currentUserId }) => {
 
   const totalCount = members.length;
 
+  if (compact) {
+    if (totalCount === 0) return null;
+    return (
+      <div className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 rounded-xl px-2.5 py-1 backdrop-blur-md">
+        <div className="flex -space-x-2 overflow-hidden">
+          {members.slice(0, 4).map((m) => (
+            <InteractiveAvatar
+              key={m.userId}
+              src={m.metadata?.profileImage}
+              fallbackText={m.metadata?.userName?.charAt(0) || "U"}
+              userId={m.userId}
+              showStatus={true}
+              statusSize="xs"
+              className="w-6.5 h-6.5 rounded-full border border-white dark:border-slate-900 ring-0 hover:scale-110 hover:z-10 transition-all shrink-0"
+              title={`${m.metadata?.userName || "User"} (${getActivityText(m.metadata?.page)})`}
+            />
+          ))}
+          {members.length > 4 && (
+            <div className="flex items-center justify-center w-6.5 h-6.5 rounded-full border border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 text-[8px] font-black text-slate-500 dark:text-slate-400 z-10">
+              +{members.length - 4}
+            </div>
+          )}
+        </div>
+        <span className="text-[9px] font-black text-green-600 dark:text-green-400 whitespace-nowrap">
+          {totalCount} Active
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden p-5 space-y-4">
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden p-4 space-y-3">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-pink-500" />
@@ -66,7 +96,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId }) => {
                 {teachers.map((m) => (
                   <div
                     key={m.userId}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-pink-500/5 border border-pink-500/10 dark:bg-pink-900/10 dark:border-pink-900/20"
+                    className="flex items-center gap-2.5 p-2 rounded-2xl bg-pink-500/5 border border-pink-500/10 dark:bg-pink-900/10 dark:border-pink-900/20"
                   >
                     <InteractiveAvatar
                       src={m.metadata?.profileImage}
@@ -74,7 +104,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId }) => {
                       userId={m.userId}
                       showStatus={true}
                       statusSize="sm"
-                      className="w-10 h-10 shrink-0 ring-2 ring-pink-100 dark:ring-pink-900/30 rounded-xl"
+                      className="w-8 h-8 shrink-0 ring-2 ring-pink-100 dark:ring-pink-900/30 rounded-xl"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
@@ -106,7 +136,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId }) => {
                 {students.map((m) => (
                   <div
                     key={m.userId}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/50 hover:bg-white dark:hover:bg-slate-800/40 transition-colors"
+                    className="flex items-center gap-2.5 p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/50 hover:bg-white dark:hover:bg-slate-800/40 transition-colors"
                   >
                     <InteractiveAvatar
                       src={m.metadata?.profileImage}
@@ -114,7 +144,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId }) => {
                       userId={m.userId}
                       showStatus={true}
                       statusSize="sm"
-                      className="w-10 h-10 shrink-0 rounded-xl"
+                      className="w-8 h-8 shrink-0 rounded-xl"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">

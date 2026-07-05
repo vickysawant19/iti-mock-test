@@ -175,64 +175,7 @@ export default function GameMap({ stats, profile, leaderboard = [], onAttemptQue
         />
       </div>
 
-      {/* Floating Header UI */}
-      <div className="relative z-10 flex items-center justify-between bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-slate-800 p-3 rounded-2xl shadow-lg">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 border-2 border-pink-500 rounded-xl shadow-md">
-            <AvatarImage src={fixProfileImage(profile?.profileImage)} />
-            <AvatarFallback className="font-extrabold bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-xl">
-              {profile?.userName?.charAt(0) || "S"}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-xs font-bold text-white tracking-wide">{profile?.userName || "Player"}</p>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded">
-                LVL {currentLevel}
-              </span>
-              <span className="text-[10px] font-bold text-slate-300">
-                {currentXP} / {targetXP} XP
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Currency Display */}
-        <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-3 py-1.5 rounded-xl shadow-inner">
-          <span className="text-sm font-black text-yellow-400 tracking-tight">
-            💰 {stats?.coins || 0}
-          </span>
-          <span className="text-[9px] font-bold text-yellow-300/80 uppercase">Coins</span>
-        </div>
-      </div>
-
-      {/* XP Level Bar */}
-      <div className="relative z-10 mt-3 bg-slate-950/40 backdrop-blur-sm border border-white/5 rounded-full h-3 overflow-hidden p-[1.5px] shrink-0">
-        <div
-          className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full shadow-lg shadow-pink-500/20 transition-all duration-500"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-
-      {/* Horizontal Game Stats HUD Bar */}
-      <div className="relative z-10 mt-3 grid grid-cols-4 gap-2 bg-slate-950/50 backdrop-blur-md border border-white/5 p-2 rounded-2xl shrink-0">
-        <div className="text-center">
-          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Level</p>
-          <p className="text-xs font-black text-white mt-0.5">LVL {currentLevel}</p>
-        </div>
-        <div className="text-center border-l border-white/5">
-          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Accuracy</p>
-          <p className="text-xs font-black text-white mt-0.5">🎯 {stats?.accuracy || 0}%</p>
-        </div>
-        <div className="text-center border-l border-white/5">
-          <p className="text-[9px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider">Streak</p>
-          <p className="text-xs font-black text-orange-400 mt-0.5">🔥 {stats?.currentStreak || 0}</p>
-        </div>
-        <div className="text-center border-l border-white/5">
-          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Wins</p>
-          <p className="text-xs font-black text-yellow-400 mt-0.5">🏆 {stats?.wins || 0}</p>
-        </div>
-      </div>
+      {/* Metrics and HUD bar removed from GameMap since they are displayed persistently in the main dashboard header */}
 
       {/* Viewport container with 3D perspective */}
       <div 

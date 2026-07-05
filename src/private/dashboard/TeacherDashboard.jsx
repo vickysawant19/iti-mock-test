@@ -218,9 +218,9 @@ const TeacherDashboard = ({
     : 1;
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden pb-12">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden pb-20 md:pb-24">
       <GradientBackground />
-      <div className="relative z-10 max-w-6xl mx-auto p-4 sm:p-6 space-y-5 pb-20">
+      <div className="relative z-10 max-w-6xl mx-auto p-4 sm:p-6 space-y-5 pb-0">
         
         {/* Profile Incomplete Banner */}
         {!isComplete && (
@@ -244,37 +244,7 @@ const TeacherDashboard = ({
         {/* Batch Overview Hero */}
         <BatchOverviewCard batchContext={batchContext} batchOverview={batchOverview} />
 
-        {/* Sliding Navigation Tabs - Improved Game UI Style */}
-        <div className="flex items-center overflow-x-auto gap-1.5 bg-slate-900/85 dark:bg-slate-950/75 p-2 rounded-2xl border border-slate-800 backdrop-blur-md scrollbar-none select-none w-full max-w-lg shadow-xl shadow-pink-950/5">
-          {[
-            { id: "attendance", label: "Attendance & Performance", icon: Users },
-            { id: "gamification", label: "Gamification & Challenges", icon: Trophy },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-2 px-4.5 py-3 rounded-xl text-xs font-black tracking-wide uppercase transition-all duration-300 cursor-pointer ${
-                  isActive 
-                    ? "text-white" 
-                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTeacherTabPill"
-                    className="absolute inset-0 bg-gradient-to-r from-pink-500 via-pink-600 to-purple-600 rounded-xl -z-10 shadow-lg shadow-pink-500/30 border-t border-white/20"
-                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                  />
-                )}
-                <Icon className={`w-4 h-4 transition-transform ${isActive ? "text-white scale-110" : "text-slate-500"}`} />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Bottom Navigation Dock replaces old tabs on mobile and desktop */}
 
         <AnimatePresence mode="wait">
           {activeTab === "attendance" ? (
@@ -636,6 +606,39 @@ const TeacherDashboard = ({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Bottom Navigation Dock */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 dark:bg-slate-950/90 border-t border-slate-800/80 backdrop-blur-lg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] px-3 py-1.5 pb-safe md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:max-w-xs md:rounded-2xl md:border md:border-slate-800/80">
+        <div className="flex items-center justify-around max-w-xs mx-auto relative h-11">
+          {[
+            { id: "attendance", label: "Attendance & Performance", shortLabel: "Attendance", icon: Users },
+            { id: "gamification", label: "Gamification & Challenges", shortLabel: "Gamification", icon: Trophy },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center justify-center relative py-0.5 px-3 rounded-xl transition-all duration-200 cursor-pointer flex-1 ${
+                  isActive ? "text-pink-500 scale-105 font-bold" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-500 animate-pulse" : "text-slate-500"}`} />
+                <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight hidden md:block">{tab.label}</span>
+                <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight block md:hidden max-w-[80px] truncate">{tab.shortLabel}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="teacherBottomTabDot"
+                    className="w-1 h-1 bg-pink-500 rounded-full mt-0.5 absolute -bottom-1"
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
