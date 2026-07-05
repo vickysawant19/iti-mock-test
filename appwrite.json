@@ -175,8 +175,8 @@
                     "required": false,
                     "array": false,
                     "default": 1,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "description",
@@ -427,8 +427,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "parentContact",
@@ -436,8 +436,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "experience",
@@ -1203,8 +1203,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "quesCount",
@@ -1212,8 +1212,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "totalMinutes",
@@ -1221,8 +1221,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "answeredCount",
@@ -1230,8 +1230,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "title",
@@ -1359,8 +1359,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "day_testsCount",
@@ -1368,8 +1368,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "day_maxScore",
@@ -1377,8 +1377,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "week_questionsCount",
@@ -1386,8 +1386,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "week_testsCount",
@@ -1395,8 +1395,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "week_maxScore",
@@ -1404,8 +1404,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "month_questionsCount",
@@ -1413,8 +1413,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "month_testsCount",
@@ -1422,8 +1422,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "month_maxScore",
@@ -1431,8 +1431,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "year_questionsCount",
@@ -1440,8 +1440,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "year_testsCount",
@@ -1449,8 +1449,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "year_maxScore",
@@ -1458,8 +1458,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "allTime_questionsCount",
@@ -1467,8 +1467,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "allTime_testsCount",
@@ -1476,8 +1476,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "allTime_maxScore",
@@ -1485,8 +1485,8 @@
                     "required": false,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 }
             ],
             "indexes": []
@@ -1829,8 +1829,8 @@
                     "required": true,
                     "array": false,
                     "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "moduleDescription",
@@ -1893,7 +1893,7 @@
                     "array": false,
                     "default": null,
                     "min": 0,
-                    "max": 9223372036854775807
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "topics",
@@ -2192,8 +2192,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "rewardCoins",
@@ -2201,8 +2201,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "startDate",
@@ -2292,8 +2292,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "coins",
@@ -2301,8 +2301,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "level",
@@ -2310,8 +2310,8 @@
                     "required": false,
                     "array": false,
                     "default": 1,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "wins",
@@ -2319,8 +2319,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "losses",
@@ -2328,8 +2328,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "accuracy",
@@ -2346,8 +2346,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "currentStreak",
@@ -2355,8 +2355,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "highestStreak",
@@ -2364,8 +2364,8 @@
                     "required": false,
                     "array": false,
                     "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
+                    "min": -9223372036854776000,
+                    "max": 9223372036854776000
                 },
                 {
                     "key": "lastQuestionTime",
@@ -2478,6 +2478,97 @@
                     "orders": [
                         "asc",
                         "asc",
+                        "asc"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "batch_game_settings",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "batch_game_settings",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "questionFilter",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 30,
+                    "default": "all",
+                    "encrypt": false
+                },
+                {
+                    "key": "selectedModuleId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "selectedModuleName",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 128,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "correctAnswerXp",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 10,
+                    "min": 1,
+                    "max": 100
+                },
+                {
+                    "key": "correctAnswerCoins",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 5,
+                    "min": 1,
+                    "max": 100
+                },
+                {
+                    "key": "streakXpBonus",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 2,
+                    "min": 0,
+                    "max": 100
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "unique_batch_settings",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "batchId"
+                    ],
+                    "orders": [
                         "asc"
                     ]
                 }

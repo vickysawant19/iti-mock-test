@@ -61,6 +61,7 @@ export const useDashboardData = () => {
     () => ({
       batchId: activeBatchId,
       batchName: activeBatchData?.BatchName || "No Batch",
+      tradeId: activeBatchData?.tradeId || "",
       tradeName: tradeData?.tradeName || "",
       collegeName: collegeData?.collageName || "",
       startDate: activeBatchData?.start_date || null,

@@ -13,6 +13,7 @@ export function useStudentGame(studentId, batchId, tradeId) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [challenges, setChallenges] = useState([]);
   const [achievements, setAchievements] = useState([]);
+  const [activeSettings, setActiveSettings] = useState(null);
   
   const [currentQuestion, setCurrentQuestion] = useState(null);
   
@@ -28,8 +29,12 @@ export function useStudentGame(studentId, batchId, tradeId) {
     if (!studentId || !batchId) return;
     setIsLoadingStats(true);
     try {
-      const data = await gameService.getStudentGameStats(studentId, batchId, tradeId);
+      const [data, settings] = await Promise.all([
+        gameService.getStudentGameStats(studentId, batchId, tradeId),
+        gameService.getBatchGameSettings(batchId).catch(() => null)
+      ]);
       setStats(data);
+      setActiveSettings(settings);
     } catch (err) {
       console.error("[useStudentGame] Error fetching stats:", err);
     } finally {
@@ -39,17 +44,24 @@ export function useStudentGame(studentId, batchId, tradeId) {
 
   // Fetch random question
   const fetchQuestion = useCallback(async () => {
-    if (!tradeId) return;
+    if (!tradeId || !batchId) return;
     setIsLoadingQuestion(true);
     try {
-      const data = await gameService.getRandomQuestion(tradeId);
+      let settings = activeSettings;
+      if (!settings) {
+        settings = await gameService.getBatchGameSettings(batchId);
+        setActiveSettings(settings);
+      }
+      console.log("[useStudentGame] fetchQuestion: settings =", settings);
+      const data = await gameService.getRandomQuestion(tradeId, settings);
+      console.log("[useStudentGame] fetchQuestion: question =", data);
       setCurrentQuestion(data);
     } catch (err) {
       console.error("[useStudentGame] Error fetching question:", err);
     } finally {
       setIsLoadingQuestion(false);
     }
-  }, [tradeId]);
+  }, [tradeId, batchId, activeSettings]);
 
   // Submit MCQ answer
   const submitAnswer = useCallback(async (isCorrect, isFiftyFiftyUsed) => {
@@ -198,11 +210,58 @@ export function useStudentGame(studentId, batchId, tradeId) {
     };
   }, [batchId, studentId, fetchLeaderboard]);
 
+  // Realtime subscription for batch game settings
+  useEffect(() => {
+    if (!batchId) return;
+
+    let settingsSub = null;
+    let mounted = true;
+
+    const setupSettingsRealtime = async () => {
+      try {
+        const { appwriteService } = await import("@/services/appwriteClient");
+        const realtime = appwriteService.getRealtime();
+        const conf = (await import("@/config/config")).default;
+        const channel = `databases.${conf.databaseId}.collections.batch_game_settings.documents`;
+
+        settingsSub = await realtime.subscribe(channel, (response) => {
+          if (!mounted) return;
+          const payload = response.payload;
+          
+          if (payload?.batchId === batchId) {
+            console.log("[useStudentGame] Realtime settings updated:", payload);
+            setActiveSettings(payload);
+            
+            // Cache locally as fallback
+            try {
+              const cacheKey = `game_settings_${batchId}`;
+              localStorage.setItem(cacheKey, JSON.stringify(payload));
+            } catch (err) {
+              console.warn("[useStudentGame] Failed to write settings to cache on realtime event:", err);
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("[useStudentGame] Settings realtime subscription failed:", err);
+      }
+    };
+
+    setupSettingsRealtime();
+
+    return () => {
+      mounted = false;
+      if (settingsSub && typeof settingsSub.close === "function") {
+        settingsSub.close();
+      }
+    };
+  }, [batchId]);
+
   return {
     stats,
     leaderboard,
     challenges,
     achievements,
+    activeSettings,
     currentQuestion,
     
     isLoadingStats,

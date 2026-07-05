@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Users,
   CheckCircle,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,18 @@ const TeacherDashboard = ({
   const navigate = useNavigate();
   const { isComplete, missingFields } = checkProfileCompletion(profile);
 
-  // Tab: attendance or gamification
+  // Tab: attendance, gamification or settings
   const [activeTab, setActiveTab] = useState("attendance");
+
+  // Game Settings Tab States
+  const [questionFilter, setQuestionFilter] = useState("all");
+  const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [correctAnswerXp, setCorrectAnswerXp] = useState(10);
+  const [correctAnswerCoins, setCorrectAnswerCoins] = useState(5);
+  const [streakXpBonus, setStreakXpBonus] = useState(2);
+  const [modulesList, setModulesList] = useState([]);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Gamification state
   const [challenges, setChallenges] = useState([]);
@@ -93,6 +104,62 @@ const TeacherDashboard = ({
       fetchGamificationData();
     }
   }, [batchContext?.batchId, activeTab, fetchGamificationData]);
+
+  // Fetch batch game settings and modules
+  const fetchSettingsData = useCallback(async () => {
+    if (!batchContext?.batchId) return;
+    setIsLoadingSettings(true);
+    try {
+      const [settings, mods] = await Promise.all([
+        gameService.getBatchGameSettings(batchContext.batchId),
+        gameService.getModulesForTrade(batchContext.tradeId || "").catch(() => []),
+      ]);
+      if (settings) {
+        setQuestionFilter(settings.questionFilter || "all");
+        setSelectedModuleId(settings.selectedModuleId || "");
+        setCorrectAnswerXp(settings.correctAnswerXp !== undefined ? settings.correctAnswerXp : 10);
+        setCorrectAnswerCoins(settings.correctAnswerCoins !== undefined ? settings.correctAnswerCoins : 5);
+        setStreakXpBonus(settings.streakXpBonus !== undefined ? settings.streakXpBonus : 2);
+      }
+      setModulesList(mods || []);
+    } catch (err) {
+      console.error("[TeacherDashboard] Error loading settings:", err);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }, [batchContext?.batchId, batchContext?.tradeId]);
+
+  useEffect(() => {
+    if (batchContext?.batchId && activeTab === "settings") {
+      fetchSettingsData();
+    }
+  }, [batchContext?.batchId, activeTab, fetchSettingsData]);
+
+  // Save batch game settings
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    if (!batchContext?.batchId) return;
+    setIsSavingSettings(true);
+    try {
+      const selectedMod = modulesList.find(m => m.moduleId === selectedModuleId);
+      const payload = {
+        batchId: batchContext.batchId,
+        questionFilter,
+        selectedModuleId: questionFilter === "module" ? selectedModuleId : "",
+        selectedModuleName: questionFilter === "module" ? (selectedMod?.moduleName || "") : "",
+        correctAnswerXp: Number(correctAnswerXp),
+        correctAnswerCoins: Number(correctAnswerCoins),
+        streakXpBonus: Number(streakXpBonus),
+      };
+      await gameService.saveBatchGameSettings(batchContext.batchId, payload);
+      alert("Game Settings saved successfully!");
+    } catch (err) {
+      console.error("[TeacherDashboard] Error saving settings:", err);
+      alert("Failed to save settings: " + err.message);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   // Create new challenge
   const handleCreateChallenge = async (e) => {
@@ -247,7 +314,7 @@ const TeacherDashboard = ({
         {/* Bottom Navigation Dock replaces old tabs on mobile and desktop */}
 
         <AnimatePresence mode="wait">
-          {activeTab === "attendance" ? (
+          {activeTab === "attendance" && (
             <motion.div
               key="attendance"
               initial={{ opacity: 0, y: 10 }}
@@ -336,9 +403,11 @@ const TeacherDashboard = ({
                 </>
               )}
             </motion.div>
-          ) : (
+          )}
+
+          {activeTab === "leaderboard" && (
             <motion.div
-              key="gamification"
+              key="leaderboard"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -381,194 +450,6 @@ const TeacherDashboard = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                    {/* Launch Challenge Form */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <PlusCircle className="w-5 h-5 text-pink-500" />
-                        Launch New Challenge
-                      </h3>
-                      <form onSubmit={handleCreateChallenge} className="space-y-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Challenge Title</label>
-                          <input
-                            required
-                            type="text"
-                            placeholder="e.g. Solve 50 questions"
-                            value={challengeTitle}
-                            onChange={(e) => setChallengeTitle(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Description</label>
-                          <textarea
-                            required
-                            rows="2"
-                            placeholder="Detail the instructions or criteria for students..."
-                            value={challengeDesc}
-                            onChange={(e) => setChallengeDesc(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">XP Reward</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={challengeXP}
-                              onChange={(e) => setChallengeXP(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Coins Reward</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={challengeCoins}
-                              onChange={(e) => setChallengeCoins(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                            />
-                          </div>
-                        </div>
-                        <Button
-                          disabled={isCreatingChallenge}
-                          type="submit"
-                          className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-pink-500/10 cursor-pointer"
-                        >
-                          {isCreatingChallenge ? "Launching..." : "Launch Challenge"}
-                        </Button>
-                      </form>
-                    </div>
-
-                    {/* Prize Dispatcher Form */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <Award className="w-5 h-5 text-purple-500" />
-                        Badge & Prize Dispatcher
-                      </h3>
-                      <form onSubmit={handleDispatchPrize} className="space-y-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Student</label>
-                          <select
-                            required
-                            value={selectedStudent}
-                            onChange={(e) => setSelectedStudent(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
-                          >
-                            <option value="">-- Choose Student --</option>
-                            {studentRows.map((s) => (
-                              <option key={s.studentId} value={s.studentId}>
-                                {s.userName}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Prize Type</label>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                              <input
-                                type="radio"
-                                checked={prizeType === "bonus"}
-                                onChange={() => setPrizeType("bonus")}
-                              />
-                              XP & Coins Bonus
-                            </label>
-                            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                              <input
-                                type="radio"
-                                checked={prizeType === "badge"}
-                                onChange={() => setPrizeType("badge")}
-                              />
-                              Achievement Badge
-                            </label>
-                          </div>
-                        </div>
-
-                        {prizeType === "badge" ? (
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Badge</label>
-                            <select
-                              required
-                              value={selectedBadge}
-                              onChange={(e) => setSelectedBadge(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
-                            >
-                              <option value="">-- Choose Badge --</option>
-                              {Object.values(BADGES).map((badge) => (
-                                <option key={badge.id} value={badge.id}>
-                                  🏆 {badge.title} - {badge.description}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus XP</label>
-                              <input
-                                type="number"
-                                min="10"
-                                value={bonusXP}
-                                onChange={(e) => setBonusXP(e.target.value)}
-                                className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus Coins</label>
-                              <input
-                                type="number"
-                                min="5"
-                                value={bonusCoins}
-                                onChange={(e) => setBonusCoins(e.target.value)}
-                                className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        <Button
-                          disabled={isDispatchingPrize}
-                          type="submit"
-                          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-indigo-500/10 cursor-pointer"
-                        >
-                          {isDispatchingPrize ? "Dispatching..." : "Dispatch Prize"}
-                        </Button>
-                      </form>
-                    </div>
-                  </div>
-
-                  {/* Active Challenges List */}
-                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Active Batch Challenges</h3>
-                    </div>
-                    <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                      {challenges.map((challenge) => {
-                        const completionsCount = challenge.completedStudents?.length || 0;
-                        return (
-                          <div key={challenge.$id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                            <div>
-                              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">{challenge.title}</h4>
-                              <p className="text-[11px] text-slate-400 mt-0.5">{challenge.description}</p>
-                            </div>
-                            <span className="text-[10px] font-extrabold bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              {completionsCount} Completed
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {challenges.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-10">No challenges launched yet.</p>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Batch Game Leaderboard */}
                   <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
                     <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800">
@@ -605,15 +486,378 @@ const TeacherDashboard = ({
               )}
             </motion.div>
           )}
+
+          {activeTab === "challenges" && (
+            <motion.div
+              key="challenges"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {loadingGame ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                </div>
+              ) : (
+                <>
+                  {/* Launch Challenge Form */}
+                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
+                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <PlusCircle className="w-5 h-5 text-pink-500" />
+                      Launch New Challenge
+                    </h3>
+                    <form onSubmit={handleCreateChallenge} className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Challenge Title</label>
+                        <input
+                          required
+                          type="text"
+                          placeholder="e.g. Solve 50 questions"
+                          value={challengeTitle}
+                          onChange={(e) => setChallengeTitle(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Description</label>
+                        <textarea
+                          required
+                          rows="2"
+                          placeholder="Detail the instructions or criteria for students..."
+                          value={challengeDesc}
+                          onChange={(e) => setChallengeDesc(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">XP Reward</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={challengeXP}
+                            onChange={(e) => setChallengeXP(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Coins Reward</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={challengeCoins}
+                            onChange={(e) => setChallengeCoins(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        disabled={isCreatingChallenge}
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-pink-500/10 cursor-pointer"
+                      >
+                        {isCreatingChallenge ? "Launching..." : "Launch Challenge"}
+                      </Button>
+                    </form>
+                  </div>
+
+                  {/* Active Challenges List */}
+                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800">
+                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Active Batch Challenges</h3>
+                    </div>
+                    <div className="divide-y divide-white/20 dark:divide-slate-800/40">
+                      {challenges.map((challenge) => {
+                        const completionsCount = challenge.completedStudents?.length || 0;
+                        return (
+                          <div key={challenge.$id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">{challenge.title}</h4>
+                              <p className="text-[11px] text-slate-400 mt-0.5">{challenge.description}</p>
+                            </div>
+                            <span className="text-[10px] font-extrabold bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              {completionsCount} Completed
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {challenges.length === 0 && (
+                        <p className="text-xs text-slate-400 text-center py-10">No challenges launched yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "prizes" && (
+            <motion.div
+              key="prizes"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {loadingGame ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                </div>
+              ) : (
+                <>
+                  {/* Prize Dispatcher Form */}
+                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
+                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <Award className="w-5 h-5 text-purple-500" />
+                      Badge & Prize Dispatcher
+                    </h3>
+                    <form onSubmit={handleDispatchPrize} className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Student</label>
+                        <select
+                          required
+                          value={selectedStudent}
+                          onChange={(e) => setSelectedStudent(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
+                        >
+                          <option value="">-- Choose Student --</option>
+                          {studentRows.map((s) => (
+                            <option key={s.studentId} value={s.studentId}>
+                              {s.userName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Prize Type</label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            <input
+                              type="radio"
+                              checked={prizeType === "bonus"}
+                              onChange={() => setPrizeType("bonus")}
+                            />
+                            XP & Coins Bonus
+                          </label>
+                          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                            <input
+                              type="radio"
+                              checked={prizeType === "badge"}
+                              onChange={() => setPrizeType("badge")}
+                            />
+                            Achievement Badge
+                          </label>
+                        </div>
+                      </div>
+
+                      {prizeType === "badge" ? (
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Badge</label>
+                          <select
+                            required
+                            value={selectedBadge}
+                            onChange={(e) => setSelectedBadge(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
+                          >
+                            <option value="">-- Choose Badge --</option>
+                            {Object.values(BADGES).map((badge) => (
+                              <option key={badge.id} value={badge.id}>
+                                🏆 {badge.title} - {badge.description}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus XP</label>
+                            <input
+                              type="number"
+                              min="10"
+                              value={bonusXP}
+                              onChange={(e) => setBonusXP(e.target.value)}
+                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus Coins</label>
+                            <input
+                              type="number"
+                              min="5"
+                              value={bonusCoins}
+                              onChange={(e) => setBonusCoins(e.target.value)}
+                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        disabled={isDispatchingPrize}
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-indigo-500/10 cursor-pointer"
+                      >
+                        {isDispatchingPrize ? "Dispatching..." : "Dispatch Prize"}
+                      </Button>
+                    </form>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "settings" && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-5"
+            >
+              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                  <div className="p-2 bg-pink-500/10 rounded-xl">
+                    <Settings className="w-5 h-5 text-pink-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 dark:text-white">Batch Game Configuration</h3>
+                    <p className="text-[11px] text-slate-400 font-medium">Control the question scope and gameplay rewards for batch members</p>
+                  </div>
+                </div>
+
+                {isLoadingSettings ? (
+                  <div className="flex justify-center items-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                  </div>
+                ) : (
+                  <form onSubmit={handleSaveSettings} className="space-y-5">
+                    {/* Part 1: Question Pool Scope Filter */}
+                    <div className="space-y-3">
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Question Source Pool</label>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-400 font-medium">Specify which questions are served to students in Game Mode</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                        {/* Selector option */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-450 uppercase block">Question Filter Mode</label>
+                          <select
+                            value={questionFilter}
+                            onChange={(e) => setQuestionFilter(e.target.value)}
+                            className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium"
+                          >
+                            <option value="all">All Subject Questions (Default)</option>
+                            <option value="first_year">First Year Questions Only</option>
+                            <option value="second_year">Second Year Questions Only</option>
+                            <option value="module">Specific Module Only</option>
+                          </select>
+                        </div>
+
+                        {/* Module Selector dropdown, only visible if filter mode is "module" */}
+                        {questionFilter === "module" && (
+                          <div className="space-y-2 animate-float-in">
+                            <label className="text-[10px] font-bold text-slate-450 uppercase block">Select Trade Module</label>
+                            <select
+                              value={selectedModuleId}
+                              onChange={(e) => setSelectedModuleId(e.target.value)}
+                              required
+                              className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium"
+                            >
+                              <option value="">-- Choose Module --</option>
+                              {modulesList.map((m) => (
+                                <option key={m.$id} value={m.moduleId}>
+                                  {m.moduleId} — {m.moduleName} (Year {m.year})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <hr className="border-slate-100 dark:border-slate-800 my-2" />
+
+                    {/* Part 2: Rewards and Payout Setting values */}
+                    <div className="space-y-4">
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Correct Answer Rewards</label>
+                      <p className="text-[10px] text-slate-455 dark:text-slate-400 font-medium">Fine-tune the gaming payouts awarded to students upon successfully clearing nodes</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-450 uppercase block">XP Payout per Answer</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={correctAnswerXp}
+                            onChange={(e) => setCorrectAnswerXp(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-455 uppercase block">Coins Payout per Answer</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={correctAnswerCoins}
+                            onChange={(e) => setCorrectAnswerCoins(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-455 uppercase block">Daily Streak XP Bonus</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="20"
+                            value={streakXpBonus}
+                            onChange={(e) => setStreakXpBonus(e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
+                          />
+                          <span className="text-[8px] text-slate-400 font-bold block mt-1">Bonus XP = (current streak days) × value</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Part 3: Form Submit Action */}
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        type="submit"
+                        disabled={isSavingSettings}
+                        className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 transition-all cursor-pointer h-10 px-6"
+                      >
+                        {isSavingSettings ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                            Saving Settings...
+                          </>
+                        ) : (
+                          "Save Game Configuration"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
       {/* Bottom Navigation Dock */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 dark:bg-slate-950/90 border-t border-slate-800/80 backdrop-blur-lg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] px-3 py-1.5 pb-safe md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:max-w-xs md:rounded-2xl md:border md:border-slate-800/80">
-        <div className="flex items-center justify-around max-w-xs mx-auto relative h-11">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 dark:bg-slate-950/90 border-t border-slate-800/80 backdrop-blur-lg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] px-3 py-1.5 pb-safe md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:max-w-xl md:rounded-2xl md:border md:border-slate-800/80">
+        <div className="flex items-center justify-around max-w-xl mx-auto relative h-11">
           {[
-            { id: "attendance", label: "Attendance & Performance", shortLabel: "Attendance", icon: Users },
-            { id: "gamification", label: "Gamification & Challenges", shortLabel: "Gamification", icon: Trophy },
+            { id: "attendance", label: "Attendance & Stats", shortLabel: "Attendance", icon: Users },
+            { id: "leaderboard", label: "Leaderboard & Stats", shortLabel: "Leaderboard", icon: Trophy },
+            { id: "challenges", label: "Launch Challenges", shortLabel: "Challenges", icon: Target },
+            { id: "prizes", label: "Dispatch Prizes", shortLabel: "Prizes", icon: Award },
+            { id: "settings", label: "Game Settings", shortLabel: "Settings", icon: Settings },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;

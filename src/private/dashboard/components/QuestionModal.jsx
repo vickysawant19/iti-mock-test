@@ -5,7 +5,7 @@ import { Loader2, Award, XCircle, CheckCircle, Volume2, ArrowRight, Sparkles } f
 import { Button } from "@/components/ui/button";
 import { gameService } from "@/services/game.service";
 
-export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit, stats }) {
+export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAnswerSubmit, stats }) {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -29,16 +29,24 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
       setIsFiftyFiftyUsed(false);
       setEliminatedOptions([]);
 
-      gameService.getRandomQuestion(tradeId)
-        .then((q) => {
+      const loadQuestion = async () => {
+        try {
+          console.log("[QuestionModal] loadQuestion: batchId =", batchId, "tradeId =", tradeId);
+          const settings = batchId ? await gameService.getBatchGameSettings(batchId) : undefined;
+          console.log("[QuestionModal] loadQuestion: settings fetched =", settings);
+          const q = await gameService.getRandomQuestion(tradeId, settings);
+          console.log("[QuestionModal] loadQuestion: question fetched =", q);
           setQuestion(q);
+        } catch (err) {
+          console.error("[QuestionModal] Failed to load question:", err);
+        } finally {
           setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-        });
+        }
+      };
+
+      loadQuestion();
     }
-  }, [isOpen, tradeId]);
+  }, [isOpen, tradeId, batchId]);
 
   if (!isOpen) return null;
 
@@ -88,8 +96,9 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
       const res = await onAnswerSubmit(isCorrect, isFiftyFiftyUsed);
       setGradingResult({
         isCorrect,
-        xpGained: res?.xpGained || (isCorrect ? (isFiftyFiftyUsed ? 5 : 10) : -3),
-        coinsGained: res?.coinsGained || (isCorrect ? 5 : 0),
+        xpGained: res?.xpGained !== undefined ? res.xpGained : (isCorrect ? (isFiftyFiftyUsed ? 5 : 10) : -3),
+        coinsGained: res?.coinsGained !== undefined ? res.coinsGained : (isCorrect ? 5 : 0),
+        streakBonus: res?.streakBonus || 0,
         levelUp: res?.levelUp || false,
       });
     } catch (err) {
@@ -98,6 +107,7 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
         isCorrect,
         xpGained: isCorrect ? (isFiftyFiftyUsed ? 5 : 10) : -3,
         coinsGained: isCorrect ? 5 : 0,
+        streakBonus: 0,
         levelUp: false,
       });
     }
@@ -292,7 +302,7 @@ export default function QuestionModal({ isOpen, onClose, tradeId, onAnswerSubmit
                           🎉 CORRECT ANSWER!
                         </p>
                         <p className="text-xs font-bold text-slate-300">
-                          XP Earned: <span className="text-emerald-400">+{gradingResult.xpGained} XP</span> | Coins: <span className="text-yellow-400">+{gradingResult.coinsGained} Coins</span>
+                          XP Earned: <span className="text-emerald-400">+{gradingResult.xpGained} XP{gradingResult.streakBonus > 0 ? ` (+${gradingResult.streakBonus} Streak Bonus)` : ""}</span> | Coins: <span className="text-yellow-400">+{gradingResult.coinsGained} Coins</span>
                         </p>
                         {gradingResult.levelUp && (
                           <motion.p

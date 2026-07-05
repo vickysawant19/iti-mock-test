@@ -24,6 +24,19 @@ export interface StudentGameStats {
   $updatedAt?: string;
 }
 
+export interface BatchGameSettings {
+  $id?: string;
+  batchId: string;
+  questionFilter: string; // "all" | "first_year" | "second_year" | "module"
+  selectedModuleId?: string;
+  selectedModuleName?: string;
+  correctAnswerXp: number;
+  correctAnswerCoins: number;
+  streakXpBonus: number;
+  $createdAt?: string;
+  $updatedAt?: string;
+}
+
 export class GameService extends DatabaseService {
   constructor() {
     super(conf.gameStatsCollectionId);
@@ -91,7 +104,7 @@ export class GameService extends DatabaseService {
    * Fetches exactly ONE random Theory question for the student's trade.
    * Utilizes a count query + random offset + limit(1) to minimize database reads.
    */
-  async getRandomQuestion(tradeId: string): Promise<any | null> {
+   async getRandomQuestion(tradeId: string, settings?: BatchGameSettings): Promise<any | null> {
     try {
       // Find Trade Theory subject ID (with localStorage caching)
       let subjectId = "";
@@ -136,8 +149,25 @@ export class GameService extends DatabaseService {
         baseQueries.push(Query.equal("subjectId", subjectId));
       }
 
+      // Apply settings filter if available
+      let settingsSuffix = "all";
+      if (settings) {
+        if (settings.questionFilter === "first_year") {
+          baseQueries.push(Query.equal("year", "FIRST"));
+          settingsSuffix = "first_year";
+        } else if (settings.questionFilter === "second_year") {
+          baseQueries.push(Query.equal("year", "SECOND"));
+          settingsSuffix = "second_year";
+        } else if (settings.questionFilter === "module" && settings.selectedModuleId) {
+          baseQueries.push(Query.equal("moduleId", settings.selectedModuleId));
+          settingsSuffix = `module_${settings.selectedModuleId}`;
+        }
+      }
+
+      console.log("[GameService] getRandomQuestion: tradeId =", tradeId, "subjectId =", subjectId, "settings =", settings, "queries =", baseQueries);
+
       // Step 1: Get count of questions (with localStorage caching)
-      const cacheKey = `ques_count_${tradeId}_${subjectId || "no_sub"}`;
+      const cacheKey = `ques_count_${tradeId}_${subjectId || "no_sub"}_${settingsSuffix}`;
       let total: number | null = null;
       try {
         const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
@@ -240,12 +270,15 @@ export class GameService extends DatabaseService {
     tradeId: string,
     isCorrect: boolean,
     isFiftyFiftyUsed?: boolean
-  ): Promise<{ stats: StudentGameStats; xpGained: number; coinsGained: number; levelUp: boolean }> {
+  ): Promise<{ stats: StudentGameStats; xpGained: number; coinsGained: number; streakBonus?: number; levelUp: boolean }> {
     const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
+    const settings = await this.getBatchGameSettings(batchId);
+    console.log("[GameService] submitAnswer: batchId =", batchId, "settings =", settings);
     
     const oldLevel = stats.level;
     let xpGained = 0;
     let coinsGained = 0;
+    let streakBonus = 0;
 
     stats.questionsAttempted += 1;
 
@@ -265,8 +298,20 @@ export class GameService extends DatabaseService {
     }
 
     if (isCorrect) {
-      xpGained = isFiftyFiftyUsed ? 5 : 10;
-      coinsGained = 5;
+      const baseXP = settings?.correctAnswerXp !== undefined ? Number(settings.correctAnswerXp) : 10;
+      const baseCoins = settings?.correctAnswerCoins !== undefined ? Number(settings.correctAnswerCoins) : 5;
+      
+      // Calculate streak bonus
+      streakBonus = 0;
+      if (diffDays === 1 || stats.currentStreak > 0) {
+        const bonusPerDay = settings?.streakXpBonus !== undefined ? Number(settings.streakXpBonus) : 2;
+        streakBonus = stats.currentStreak * bonusPerDay;
+      }
+
+      xpGained = isFiftyFiftyUsed ? Math.round(baseXP / 2) : baseXP;
+      xpGained += streakBonus;
+      coinsGained = baseCoins;
+      
       stats.xp += xpGained;
       stats.coins += coinsGained;
       stats.wins += 1;
@@ -305,7 +350,7 @@ export class GameService extends DatabaseService {
 
     const levelUp = stats.level > oldLevel;
 
-    // Update in DB (if the document has an ID, update it; otherwise return mock values)
+    // Update in DB
     let updatedStats = stats;
     if (stats.$id) {
       try {
@@ -331,6 +376,7 @@ export class GameService extends DatabaseService {
       stats: updatedStats,
       xpGained,
       coinsGained,
+      streakBonus,
       levelUp,
     };
   }
@@ -361,6 +407,140 @@ export class GameService extends DatabaseService {
     }
 
     return stats;
+  }
+
+  /**
+   * Fetches the batch-specific game configuration settings (question filters and rewards).
+   * Automatically falls back to localStorage or default configurations on failure.
+   */
+  async getBatchGameSettings(batchId: string): Promise<BatchGameSettings> {
+    const cacheKey = `game_settings_${batchId}`;
+    const defaultSettings: BatchGameSettings = {
+      batchId,
+      questionFilter: "all",
+      correctAnswerXp: 10,
+      correctAnswerCoins: 5,
+      streakXpBonus: 2,
+    };
+
+    try {
+      const { databases } = await import("./appwriteClient");
+      const response = await databases.listDocuments(
+        conf.databaseId,
+        "batch_game_settings",
+        [Query.equal("batchId", batchId), Query.limit(1)]
+      );
+      if (response.total > 0) {
+        const settings = response.documents[0] as unknown as BatchGameSettings;
+        if (typeof window !== "undefined") {
+          localStorage.setItem(cacheKey, JSON.stringify(settings));
+        }
+        return settings;
+      }
+    } catch (dbError) {
+      console.warn("[GameService] Appwrite batch_game_settings fetch failed, using fallback:", dbError);
+    }
+
+    try {
+      if (typeof window !== "undefined") {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      }
+    } catch (err) {
+      console.warn("[GameService] Failed to read settings from cache:", err);
+    }
+
+    return defaultSettings;
+  }
+
+  /**
+   * Upserts the batch-specific game configuration settings.
+   */
+  async saveBatchGameSettings(
+    batchId: string,
+    settings: Omit<BatchGameSettings, "$id" | "$createdAt" | "$updatedAt">
+  ): Promise<BatchGameSettings> {
+    const cacheKey = `game_settings_${batchId}`;
+    try {
+      const { databases } = await import("./appwriteClient");
+      
+      let existingId = "";
+      try {
+        const response = await databases.listDocuments(
+          conf.databaseId,
+          "batch_game_settings",
+          [Query.equal("batchId", batchId), Query.limit(1)]
+        );
+        if (response.total > 0) {
+          existingId = response.documents[0].$id;
+        }
+      } catch (err) {
+        console.warn("[GameService] Failed to check existing settings:", err);
+      }
+
+      let result: BatchGameSettings;
+      if (existingId) {
+        const updated = await databases.updateDocument(
+          conf.databaseId,
+          "batch_game_settings",
+          existingId,
+          settings
+        );
+        result = updated as unknown as BatchGameSettings;
+      } else {
+        const created = await databases.createDocument(
+          conf.databaseId,
+          "batch_game_settings",
+          ID.unique(),
+          settings
+        );
+        result = created as unknown as BatchGameSettings;
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+      }
+      return result;
+    } catch (error: any) {
+      console.error("[GameService] saveBatchGameSettings failed, using fallback:", error);
+      const fallbackResult = {
+        $id: "local_" + Date.now(),
+        ...settings,
+      } as BatchGameSettings;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(cacheKey, JSON.stringify(fallbackResult));
+      }
+      return fallbackResult;
+    }
+  }
+
+  /**
+   * Fetches all modules for a given trade under "Trade Theory" or "Theory".
+   */
+  async getModulesForTrade(tradeId: string): Promise<any[]> {
+    try {
+      const subjectService = (await import("../appwrite/subjectService")).default;
+      const moduleServices = (await import("../appwrite/moduleServices")).default;
+      
+      let theorySubject = await subjectService.getSubjectByName("Trade Theory");
+      if (!theorySubject) {
+        theorySubject = await subjectService.getSubjectByName("Theory");
+      }
+      const subjectId = theorySubject ? theorySubject.$id : "";
+      if (!subjectId) return [];
+
+      const [year1Modules, year2Modules] = await Promise.all([
+        moduleServices.getNewModulesData(tradeId, subjectId, "FIRST").catch(() => []),
+        moduleServices.getNewModulesData(tradeId, subjectId, "SECOND").catch(() => []),
+      ]);
+      
+      return [...(year1Modules || []), ...(year2Modules || [])];
+    } catch (e) {
+      console.error("[GameService] getModulesForTrade failed:", e);
+      return [];
+    }
   }
 }
 
