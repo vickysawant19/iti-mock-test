@@ -21,10 +21,27 @@ const InteractiveAvatar = forwardRef(({
   statusSize = "sm",
   userName = "",
 }, ref) => {
-  const fixedSrc = fixProfileImage(src);
+  const fixedSrc = (() => {
+    const fixed = fixProfileImage(src);
+    if (!fixed) return fixed;
+    try {
+      const url = new URL(fixed);
+      url.searchParams.delete("width");
+      url.searchParams.delete("height");
+      return url.toString();
+    } catch {
+      return fixed;
+    }
+  })();
   const { getStatus } = useOnlineUsers();
   const isOnline = userId ? getStatus(userId) === "online" : false;
   const [isUploading, setIsUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image error state when image source changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [src]);
   const [isOpen, setIsOpen] = useState(false);
   const [isCameraMode, setIsCameraMode] = useState(false);
   const [facingMode, setFacingMode] = useState("user");
@@ -157,8 +174,16 @@ const InteractiveAvatar = forwardRef(({
         <DialogTrigger asChild>
           <div className={`relative cursor-pointer hover:opacity-80 transition-opacity rounded-full ring-2 ring-transparent outline-none hover:ring-blue-500/50 ${className}`}>
             <Avatar className="w-full h-full">
-              <AvatarImage src={fixedSrc} className="object-cover" />
-              <AvatarFallback>{fallbackText}</AvatarFallback>
+              {fixedSrc && !imageError ? (
+                <img
+                  src={fixedSrc}
+                  className="w-full h-full object-cover rounded-full"
+                  alt={userName || "User Avatar"}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <AvatarFallback>{fallbackText}</AvatarFallback>
+              )}
             </Avatar>
             {showStatus && userId && (
               <OnlineIndicator
@@ -233,16 +258,7 @@ const InteractiveAvatar = forwardRef(({
                 </div>
               ) : fixedSrc ? (
                 <img
-                  src={(() => {
-                    try {
-                      const url = new URL(fixedSrc);
-                      url.searchParams.delete("width");
-                      url.searchParams.delete("height");
-                      return url.toString();
-                    } catch {
-                      return fixedSrc;
-                    }
-                  })()}
+                  src={fixedSrc}
                   alt="Profile Large"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -301,16 +317,7 @@ const InteractiveAvatar = forwardRef(({
             <div className="relative rounded-[2rem] overflow-hidden w-36 h-36 border-2 border-pink-500/40 shadow-xl shadow-pink-500/10 flex items-center justify-center bg-slate-900">
               {fixedSrc ? (
                 <img
-                  src={(() => {
-                    try {
-                      const url = new URL(fixedSrc);
-                      url.searchParams.delete("width");
-                      url.searchParams.delete("height");
-                      return url.toString();
-                    } catch {
-                      return fixedSrc;
-                    }
-                  })()}
+                  src={fixedSrc}
                   alt="Student Avatar"
                   className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-300"
                 />

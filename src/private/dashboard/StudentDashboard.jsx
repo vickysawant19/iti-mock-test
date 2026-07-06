@@ -34,6 +34,7 @@ import { checkProfileCompletion } from "@/utils/profileCompletion";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import GameWorld from "./components/GameWorld";
 import QuestionModal from "./components/QuestionModal";
 import useStudentGame from "@/hooks/useStudentGame";
@@ -151,6 +152,11 @@ const StudentDashboard = ({
     };
     fetchStats();
   }, [activeBatchId, user?.$id]);
+
+  // Reset scroll position to top on tab changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   // Show badge unlock celebrations if any exist
   useEffect(() => {
@@ -508,12 +514,15 @@ const StudentDashboard = ({
                         {/* 2nd Place */}
                         {leaderboard[1] && (
                           <div className="flex flex-col items-center">
-                            <Avatar className="h-12 w-12 border-2 border-slate-300 ring-2 ring-slate-400/20 rounded-xl mb-1 shadow-md">
-                              <AvatarImage src={fixProfileImage(leaderboard[1].profileImage)} />
-                              <AvatarFallback className="font-extrabold bg-slate-200 text-slate-700 text-sm rounded-xl">
-                                {leaderboard[1].userName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
+                            <InteractiveAvatar
+                              src={leaderboard[1].profileImage}
+                              fallbackText={leaderboard[1].userName.charAt(0)}
+                              userId={leaderboard[1].studentId}
+                              userName={leaderboard[1].userName}
+                              showStatus={true}
+                              statusSize="xs"
+                              className="h-12 w-12 border-2 border-slate-300 ring-2 ring-slate-400/20 rounded-xl mb-1 shadow-md"
+                            />
                             <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                               {leaderboard[1].userName}
                             </p>
@@ -531,12 +540,15 @@ const StudentDashboard = ({
                               <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-yellow-500 animate-bounce">
                                 👑
                               </div>
-                              <Avatar className="h-16 w-16 border-2 border-yellow-400 ring-4 ring-yellow-400/20 rounded-2xl mb-1 shadow-xl">
-                                <AvatarImage src={fixProfileImage(leaderboard[0].profileImage)} />
-                                <AvatarFallback className="font-extrabold bg-yellow-100 text-yellow-700 text-base rounded-2xl">
-                                  {leaderboard[0].userName.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
+                              <InteractiveAvatar
+                                src={leaderboard[0].profileImage}
+                                fallbackText={leaderboard[0].userName.charAt(0)}
+                                userId={leaderboard[0].studentId}
+                                userName={leaderboard[0].userName}
+                                showStatus={true}
+                                statusSize="xs"
+                                className="h-16 w-16 border-2 border-yellow-400 ring-4 ring-yellow-400/20 rounded-2xl mb-1 shadow-xl"
+                              />
                             </div>
                             <p className="text-xs font-black text-slate-800 dark:text-white max-w-[85px] truncate text-center">
                               {leaderboard[0].userName}
@@ -552,12 +564,15 @@ const StudentDashboard = ({
                         {/* 3rd Place */}
                         {leaderboard[2] && (
                           <div className="flex flex-col items-center">
-                            <Avatar className="h-11 w-11 border-2 border-amber-600/40 ring-2 ring-amber-600/15 rounded-xl mb-1 shadow-md">
-                              <AvatarImage src={fixProfileImage(leaderboard[2].profileImage)} />
-                              <AvatarFallback className="font-extrabold bg-amber-50 text-amber-800 text-sm rounded-xl">
-                                {leaderboard[2].userName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
+                            <InteractiveAvatar
+                              src={leaderboard[2].profileImage}
+                              fallbackText={leaderboard[2].userName.charAt(0)}
+                              userId={leaderboard[2].studentId}
+                              userName={leaderboard[2].userName}
+                              showStatus={true}
+                              statusSize="xs"
+                              className="h-11 w-11 border-2 border-amber-600/40 ring-2 ring-amber-600/15 rounded-xl mb-1 shadow-md"
+                            />
                             <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                               {leaderboard[2].userName}
                             </p>
@@ -589,12 +604,15 @@ const StudentDashboard = ({
                                 <span className="text-xs font-black text-slate-400 dark:text-slate-500 w-5">
                                   #{entry.rank}
                                 </span>
-                                <Avatar className="h-8 w-8 rounded-lg">
-                                  <AvatarImage src={fixProfileImage(entry.profileImage)} />
-                                  <AvatarFallback className="font-extrabold text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 rounded-lg">
-                                    {entry.userName.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <InteractiveAvatar
+                                  src={entry.profileImage}
+                                  fallbackText={entry.userName.charAt(0)}
+                                  userId={entry.studentId}
+                                  userName={entry.userName}
+                                  showStatus={true}
+                                  statusSize="xs"
+                                  className="h-8 w-8 rounded-lg"
+                                />
                                 <div>
                                   <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                                     {entry.userName}

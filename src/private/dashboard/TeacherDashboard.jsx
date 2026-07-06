@@ -26,6 +26,7 @@ import BatchOverviewCard from "./components/BatchOverviewCard";
 import StudentTable from "./components/StudentTable";
 import AttendanceTrendChart from "./components/AttendanceTrendChart";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
+import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { challengeService } from "@/services/challenge.service";
 import { gameService } from "@/services/game.service";
 import { leaderboardService } from "@/services/leaderboard.service";
@@ -100,10 +101,20 @@ const TeacherDashboard = ({
   }, [batchContext?.batchId]);
 
   useEffect(() => {
-    if (batchContext?.batchId && activeTab === "gamification") {
+    if (
+      batchContext?.batchId &&
+      (activeTab === "leaderboard" ||
+        activeTab === "challenges" ||
+        activeTab === "prizes")
+    ) {
       fetchGamificationData();
     }
   }, [batchContext?.batchId, activeTab, fetchGamificationData]);
+
+  // Reset scroll position to top on tab changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   // Fetch batch game settings and modules
   const fetchSettingsData = useCallback(async () => {
@@ -460,12 +471,15 @@ const TeacherDashboard = ({
                         <div key={student.studentId} className="flex justify-between items-center px-5 py-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-black text-slate-400 w-5">#{idx + 1}</span>
-                            <Avatar className="h-8 w-8 rounded-lg">
-                              <AvatarImage src={fixProfileImage(student.profileImage)} />
-                              <AvatarFallback className="font-extrabold text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 rounded-lg">
-                                {student.userName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
+                            <InteractiveAvatar
+                              src={student.profileImage}
+                              fallbackText={student.userName.charAt(0)}
+                              userId={student.studentId}
+                              userName={student.userName}
+                              showStatus={true}
+                              statusSize="xs"
+                              className="h-8 w-8 rounded-lg"
+                            />
                             <div>
                               <p className="text-xs font-bold text-slate-750 dark:text-slate-300">{student.userName}</p>
                               <p className="text-[9px] text-slate-400 font-medium">Level {student.level} • Wins: {student.wins} / Losses: {student.losses}</p>
