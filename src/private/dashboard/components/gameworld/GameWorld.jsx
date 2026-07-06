@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useRef, useState, useEffect, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Play,
   Lock,
@@ -13,7 +13,6 @@ import {
   Flame,
   Zap,
   Coins,
-  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,117 +22,15 @@ import { fixProfileImage } from "@/services/appwriteClient";
 import { BADGES } from "@/services/reward.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 
-/* ────────────────────────────────────────────────────────────────────────
-   Path geometry — generates a smooth SVG road through the level nodes
-   ──────────────────────────────────────────────────────────────────── */
-const getCurvedPath = (points) => {
-  if (points.length === 0) return "";
-
-  const controlPoint = (current, previous, next, reverse) => {
-    const p = previous || current;
-    const n = next || current;
-    const smoothing = 0.16;
-
-    const lengthX = n.pixelX - p.pixelX;
-    const lengthY = n.pixelY - p.pixelY;
-
-    const speed = Math.sqrt(lengthX * lengthX + lengthY * lengthY);
-    const angle = Math.atan2(lengthY, lengthX) + (reverse ? Math.PI : 0);
-    const length = speed * smoothing;
-
-    return [current.pixelX + Math.cos(angle) * length, current.pixelY + Math.sin(angle) * length];
-  };
-
-  return points.reduce((acc, point, i, a) => {
-    if (i === 0) return `M ${point.pixelX} ${point.pixelY}`;
-    const [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point);
-    const [cpeX, cpeY] = controlPoint(point, a[i - 1], a[i + 1], true);
-    return `${acc} C ${cpsX.toFixed(2)} ${cpsY.toFixed(2)}, ${cpeX.toFixed(2)} ${cpeY.toFixed(2)}, ${point.pixelX} ${point.pixelY}`;
-  }, "");
-};
-
-const BASE_COORDINATES = [
-  { x: 50, y: 88, type: "start" },
-  { x: 30, y: 79, type: "question" },
-  { x: 22, y: 68, type: "question" },
-  { x: 42, y: 60, type: "bonus" },
-  { x: 70, y: 56, type: "question" },
-  { x: 78, y: 44, type: "question" },
-  { x: 55, y: 36, type: "bonus" },
-  { x: 30, y: 30, type: "question" },
-  { x: 38, y: 18, type: "question" },
-  { x: 50, y: 10, type: "boss" },
-];
-
-const getLeague = (wins = 0) => {
-  if (wins < 5) return { name: "Bronze League", ring: "border-amber-500/30 bg-amber-500/10", text: "text-amber-300", icon: "text-amber-400", next: 5 };
-  if (wins < 15) return { name: "Silver League", ring: "border-slate-400/30 bg-slate-400/10", text: "text-slate-200", icon: "text-slate-200", next: 15 };
-  if (wins < 30) return { name: "Gold League", ring: "border-yellow-400/30 bg-yellow-400/10", text: "text-yellow-300", icon: "text-yellow-300", next: 30 };
-  return { name: "Diamond League", ring: "border-cyan-400/30 bg-cyan-400/10", text: "text-cyan-300", icon: "text-cyan-300", next: null };
-};
-
-/* ────────────────────────────────────────────────────────────────────────
-   Small reusable pieces
-   ──────────────────────────────────────────────────────────────────── */
-
-// A compact stat tile used in both the sidebar grid and the mobile strip.
-function StatTile({ icon, label, value, onClick, accent = "text-white", compact = false }) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "group relative flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04]",
-        "px-3 py-2 text-left transition-all hover:bg-white/[0.08] active:scale-[0.97]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60",
-        compact ? "shrink-0" : "w-full",
-      ].join(" ")}
-    >
-      <span className="shrink-0">{icon}</span>
-      <span className="min-w-0 leading-tight">
-        <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
-        <span className={`block truncate text-[11px] font-black ${accent}`}>{value}</span>
-      </span>
-    </button>
-  );
-}
-
-const LevelShield = ({ level }) => (
-  <div className="relative flex h-full w-full select-none items-center justify-center">
-    <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-      <defs>
-        <linearGradient id="goldGradShield" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFE58F" />
-          <stop offset="50%" stopColor="#F6C453" />
-          <stop offset="100%" stopColor="#D48806" />
-        </linearGradient>
-        <radialGradient id="purpleShieldGradShield" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#E0A7FF" />
-          <stop offset="70%" stopColor="#A020F0" />
-          <stop offset="100%" stopColor="#5B0E91" />
-        </radialGradient>
-        <linearGradient id="glossGradShield" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      <path d="M 50 2 L 53 10 L 61 10 L 55 15 L 57 23 L 50 18 L 43 23 L 45 15 L 39 10 L 47 10 Z" fill="#F6C453" stroke="#D48806" strokeWidth="0.7" />
-
-      <path d="M 28 35 C 10 25, 4 48, 18 58 C 8 52, 6 62, 20 64 C 10 62, 12 72, 26 68" fill="none" stroke="url(#goldGradShield)" strokeWidth="4" strokeLinecap="round" />
-      <path d="M 72 35 C 90 25, 96 48, 82 58 C 92 52, 94 62, 80 64 C 90 62, 88 72, 74 68" fill="none" stroke="url(#goldGradShield)" strokeWidth="4" strokeLinecap="round" />
-
-      <path d="M 32 24 L 68 24 Q 74 24 72 38 L 64 74 Q 50 88 50 88 Q 50 88 36 74 L 28 38 Q 26 24 32 24 Z" fill="url(#purpleShieldGradShield)" stroke="url(#goldGradShield)" strokeWidth="3.5" />
-      <path d="M 32 24 L 68 24 Q 74 24 72 38 L 50 50 L 28 38 Q 26 24 32 24 Z" fill="url(#glossGradShield)" pointerEvents="none" />
-
-      <circle cx="34" cy="30" r="1.5" fill="#FFFFFF" opacity="0.8" className="animate-pulse" />
-      <circle cx="66" cy="30" r="1.5" fill="#FFFFFF" opacity="0.8" className="animate-pulse" />
-      <circle cx="50" cy="78" r="1" fill="#FFFFFF" opacity="0.6" />
-
-      <text x="50" y="44" textAnchor="middle" fill="#F6C453" fontSize="9" fontWeight="800" fontFamily="Poppins, sans-serif" letterSpacing="0.8">LEVEL</text>
-      <text x="50" y="70" textAnchor="middle" fill="#FFFFFF" fontSize="22" fontWeight="900" fontFamily="Poppins, sans-serif" filter="drop-shadow(0px 2px 3px rgba(0,0,0,0.5))">{level}</text>
-    </svg>
-  </div>
-);
+// Modular sub-components and helpers
+import { getCurvedPath, BASE_COORDINATES, getLeague } from "./helpers";
+import StatTile from "./StatTile";
+import LevelShield from "./LevelShield";
+import useCamera from "./useCamera";
+import GameViewport from "./GameViewport";
+import GameRoad from "./GameRoad";
+import GameStage from "./GameStage";
+import StagePopup from "./StagePopup";
 
 /* ────────────────────────────────────────────────────────────────────────
    Main component
@@ -185,38 +82,87 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
   const canvasHeight = totalLevels * 850;
   const curvedRoadPath = useMemo(() => getCurvedPath(coordinates), [coordinates]);
 
-  const containerRef = useRef(null);
-  const [scale, setScale] = useState(1.05);
-  const [mapY, setMapY] = useState(0);
+  const camera = useCamera({
+    worldWidth: 500,
+    worldHeight: canvasHeight,
+    initialScale: 1.05,
+  });
+
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [containerHeight, setContainerHeight] = useState(390);
   const [activeDetail, setActiveDetail] = useState(null);
+  const [focusedStage, setFocusedStage] = useState(currentStep);
+  const [popupStageIndex, setPopupStageIndex] = useState(null);
+  const prevStepRef = useRef(undefined);
+  const hasCenteredRef = useRef(false);
 
   const recenterOn = useCallback(
-    (nudge = false) => {
-      if (!containerRef.current) return;
-      const height = containerRef.current.clientHeight || 390;
-      setContainerHeight(height);
-      const activeNodeY = coordinates[currentStep]?.y || 50;
-      const nodePixelY = (activeNodeY / 100) * canvasHeight;
-      const initialY = Math.min(0, Math.max(height - canvasHeight, height / 2 - nodePixelY));
-      setMapY((prev) => (nudge && prev === initialY ? initialY + 0.001 : initialY));
+    () => {
+      const activeNode = coordinates[currentStep];
+      if (activeNode) {
+        camera.recenterOnNode(activeNode, camera.scale.get(), {
+          stiffness: 160,
+          damping: 24,
+        });
+        setFocusedStage(currentStep);
+      }
     },
-    [coordinates, currentStep, canvasHeight]
+    [coordinates, currentStep, camera.recenterOnNode, camera.scale]
   );
 
+  // Initial centering — only runs once when the viewport is ready
   useEffect(() => {
-    recenterOn(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, canvasHeight]);
+    if (hasCenteredRef.current) return;
+    if (camera.viewportWidth <= 0 || camera.viewportHeight <= 0) return;
+    const activeNode = coordinates[currentStep];
+    if (activeNode) {
+      camera.recenterOnNode(activeNode, camera.scale.get(), {
+        stiffness: 160,
+        damping: 24,
+      });
+      setFocusedStage(currentStep);
+      hasCenteredRef.current = true;
+    }
+  }, [camera.viewportWidth, camera.viewportHeight]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Candy Crush style progression sequence when a user unlocks a stage
   useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) setContainerHeight(containerRef.current.clientHeight);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    const prevStep = prevStepRef.current;
+    // Skip if step hasn't changed or if this is the initial render
+    if (prevStep === undefined) {
+      prevStepRef.current = currentStep;
+      return;
+    }
+    if (currentStep === prevStep) return;
+
+    if (currentStep > prevStep) {
+      const oldNode = coordinates[prevStep];
+      const newNode = coordinates[currentStep];
+      if (oldNode && newNode) {
+        setPopupStageIndex(null);
+
+        // 1. Center on completed stage and zoom in slightly
+        camera.recenterOnNode(oldNode, 1.25, { stiffness: 100, damping: 20 });
+
+        // 2. Glide upward to reveal the newly unlocked stage
+        const timeoutReveal = setTimeout(() => {
+          camera.recenterOnNode(newNode, 1.2, { stiffness: 85, damping: 18 });
+          setFocusedStage(currentStep);
+
+          // 3. Play visual settle sequence, opening detail popup
+          const timeoutSettle = setTimeout(() => {
+            setPopupStageIndex(currentStep);
+            camera.zoomTo(1.05, { stiffness: 90, damping: 20 });
+          }, 1200);
+
+          return () => clearTimeout(timeoutSettle);
+        }, 1000);
+
+        prevStepRef.current = currentStep;
+        return () => clearTimeout(timeoutReveal);
+      }
+    }
+    prevStepRef.current = currentStep;
+  }, [currentStep, coordinates, camera.recenterOnNode, camera.zoomTo]);
 
   const detailMeta = {
     level: { icon: <Zap className="h-4 w-4 text-pink-400" />, title: `Level ${currentLevel} details` },
@@ -230,6 +176,12 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
       <style>{`
         @keyframes breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(0.6); opacity: 0; }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
+          100% { transform: translateY(-40px) scale(1); opacity: 0; }
+        }
         @keyframes gamerBounce {
           0%, 100% { transform: scale(1) translateY(0); }
           15% { transform: scale(0.9) translateY(0); }
@@ -292,7 +244,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
               <div className="mt-1.5">
                 <div className="flex items-center justify-between text-[7px] font-black uppercase tracking-wider text-slate-400">
                   <span>XP Progress</span>
-                  <span className="text-pink-400">{xpIntoLevel} / 100</span>
+                  <span className="text-pink-405">{xpIntoLevel} / 100</span>
                 </div>
                 <div className="relative mt-0.5 h-1 w-full overflow-hidden rounded-full border border-white/5 bg-slate-950/80">
                   <div
@@ -337,186 +289,90 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
           </div>
         </div>
 
-        {/* Draggable map viewport */}
-        <div
-          ref={containerRef}
-          className="relative z-10 w-full flex-1 overflow-hidden border-b border-indigo-500/10 shadow-inner"
-          style={{ perspective: 1000, touchAction: "none" }}
-        >
+        {/* Camera-driven interactive map viewport */}
+        <div className="relative flex-1 min-h-0 w-full overflow-hidden">
+          <GameViewport
+            camera={camera}
+            worldWidth={500}
+            worldHeight={canvasHeight}
+            coordinates={coordinates}
+            onFocusStageChange={setFocusedStage}
+          >
+            <GameRoad
+              curvedRoadPath={curvedRoadPath}
+              coordinates={coordinates}
+              totalLevels={totalLevels}
+              scale={camera.scale}
+              canvasHeight={canvasHeight}
+            />
+
+            {coordinates.map((node, index) => (
+              <GameStage
+                key={index}
+                node={node}
+                index={index}
+                currentStep={currentStep}
+                leaderboard={leaderboard}
+                currentStudentId={currentStudentId}
+                profile={profile}
+                currentLevel={currentLevel}
+                focusedStage={focusedStage}
+                mapX={camera.mapX}
+                mapY={camera.mapY}
+                scale={camera.scale}
+                viewportWidth={camera.viewportWidth}
+                viewportHeight={camera.viewportHeight}
+                onNodeClick={(clickedIndex) => {
+                  setFocusedStage(clickedIndex);
+                  setPopupStageIndex(clickedIndex);
+                  camera.recenterOnNode(coordinates[clickedIndex], camera.scale.get(), {
+                    stiffness: 160,
+                    damping: 24,
+                  });
+                }}
+              />
+            ))}
+
+            {popupStageIndex !== null && (
+              <StagePopup
+                key={`popup-${popupStageIndex}`}
+                node={coordinates[popupStageIndex]}
+                index={popupStageIndex}
+                currentStep={currentStep}
+                mapX={camera.mapX}
+                mapY={camera.mapY}
+                scale={camera.scale}
+                viewportWidth={camera.viewportWidth}
+                viewportHeight={camera.viewportHeight}
+                onClose={() => setPopupStageIndex(null)}
+                onPlay={() => {
+                  setPopupStageIndex(null);
+                  onAttemptQuestion();
+                }}
+              />
+            )}
+          </GameViewport>
+
+          {/* HUD Overlays (Rendered outside viewport so they don't move/pan) */}
           <div className="pointer-events-auto absolute top-4 left-4 z-30 select-none">
-            <OnlineBatchMembers batchId={batchContext?.batchId || stats?.batchId} currentUserId={currentStudentId} compact={true} />
+            <OnlineBatchMembers
+              batchId={batchContext?.batchId || stats?.batchId}
+              currentUserId={currentStudentId}
+              compact={true}
+            />
           </div>
 
-          <motion.div
-            drag="y"
-            dragConstraints={{ top: containerHeight - canvasHeight * scale, bottom: 0 }}
-            dragElastic={0.15}
-            animate={{ y: mapY, scale }}
-            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            className="absolute w-full origin-center cursor-grab active:cursor-grabbing"
-            style={{ transformStyle: "preserve-3d", rotateX: 12, height: canvasHeight }}
-          >
-            <svg viewBox={`0 0 500 ${canvasHeight}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 z-0 h-full w-full">
-              <defs>
-                <linearGradient id="roadGlowGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                  <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.4" />
-                  <stop offset="50%" stopColor="#d946ef" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.8" />
-                </linearGradient>
-                <linearGradient id="roadBaseGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                  <stop offset="0%" stopColor="#312e81" />
-                  <stop offset="50%" stopColor="#4c1d95" />
-                  <stop offset="100%" stopColor="#1e1b4b" />
-                </linearGradient>
-              </defs>
-              <path d={curvedRoadPath} fill="none" stroke="url(#roadGlowGrad)" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" className="opacity-75 blur-[5px]" />
-              <path d={curvedRoadPath} fill="none" stroke="#6366f1" strokeWidth="22" strokeLinecap="round" strokeLinejoin="round" className="opacity-45" />
-              <path d={curvedRoadPath} fill="none" stroke="url(#roadBaseGrad)" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={curvedRoadPath} fill="none" stroke="#f59e0b" strokeWidth="1.8" strokeDasharray="5 7" strokeLinecap="round" strokeLinejoin="round" className="opacity-95" />
-
-              {Array.from({ length: totalLevels - 1 }).map((_, L) => {
-                const nodeFrom = coordinates[L * 10 + 9];
-                const nodeTo = coordinates[(L + 1) * 10];
-                if (!nodeFrom || !nodeTo) return null;
-                const x = nodeFrom.pixelX;
-                const yStart = nodeFrom.pixelY;
-                const yEnd = nodeTo.pixelY;
-                return (
-                  <g key={`bridge-${L}`} className="opacity-95">
-                    <line x1={x - 22} y1={yStart - 10} x2={x - 22} y2={yEnd + 10} stroke="#090d16" strokeWidth="6" strokeLinecap="round" className="opacity-60" />
-                    <line x1={x + 22} y1={yStart - 10} x2={x + 22} y2={yEnd + 10} stroke="#090d16" strokeWidth="6" strokeLinecap="round" className="opacity-60" />
-                    <line x1={x} y1={yStart - 4} x2={x} y2={yEnd + 4} stroke="#1e293b" strokeWidth="24" strokeLinecap="butt" />
-                    <line x1={x} y1={yStart - 4} x2={x} y2={yEnd + 4} stroke="#475569" strokeWidth="20" strokeDasharray="2 4" strokeLinecap="butt" />
-                    <line x1={x - 11} y1={yStart - 4} x2={x - 11} y2={yEnd + 4} stroke="#fbbf24" strokeWidth="3.5" strokeDasharray="1 14" />
-                    <line x1={x + 11} y1={yStart - 4} x2={x + 11} y2={yEnd + 4} stroke="#fbbf24" strokeWidth="3.5" strokeDasharray="1 14" />
-                  </g>
-                );
-              })}
-            </svg>
-
-            {coordinates.map((node, index) => {
-              const isCompleted = index < currentStep;
-              const isActive = index === currentStep;
-              const isLocked = index > currentStep;
-
-              let icon = <Compass className="h-5 w-5" />;
-              let nodeColor = "bg-slate-700/80 border-slate-600 text-slate-400";
-              let glow = "";
-              let scaleClass = "";
-
-              if (isActive) {
-                icon = <Play className="ml-0.5 h-6 w-6 animate-pulse fill-white text-white" />;
-                nodeColor = "bg-gradient-to-br from-pink-500 to-purple-600 border-white text-white";
-                glow = "ring-4 ring-pink-500/50 shadow-2xl shadow-pink-500/50 animate-bounce";
-                scaleClass = "scale-110";
-              } else if (isCompleted) {
-                icon = <Award className="h-5 w-5 text-white" />;
-                nodeColor = "bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400 text-white";
-                glow = "shadow-lg shadow-emerald-500/20";
-              } else if (isLocked) {
-                icon = <Lock className="h-4 w-4 text-slate-600" />;
-                nodeColor = "bg-slate-900/90 border-slate-800 text-slate-700 opacity-60";
-              }
-
-              if (node.type === "boss") {
-                icon = <Trophy className={`h-5 w-5 ${isLocked ? "text-slate-600" : "text-yellow-300"}`} />;
-                if (isActive) nodeColor = "bg-gradient-to-br from-yellow-500 to-amber-600 border-white text-white";
-              }
-
-              const otherStudentsOnStage = leaderboard.filter((s) => (s.wins || 0) === index && s.studentId !== currentStudentId);
-
-              return (
-                <div
-                  key={index}
-                  style={{ position: "absolute", left: `${node.x}%`, top: `${node.y}%`, transform: "translate(-50%, -50%)", transformStyle: "preserve-3d" }}
-                  className="z-10"
-                >
-                  <div style={{ transform: "rotateX(-12deg)", transformStyle: "preserve-3d" }} className="animate-float relative flex flex-col items-center">
-                    {isActive && (
-                      <div className="absolute bottom-11 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center">
-                        <motion.div
-                          animate={{ y: [0, -4, 0] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="relative rounded-lg border border-white bg-gradient-to-br from-pink-500 to-purple-600 p-0.5 shadow-md"
-                        >
-                          <div className="relative">
-                            <InteractiveAvatar
-                              src={profile?.profileImage}
-                              fallbackText={profile?.userName?.charAt(0) || "U"}
-                              userId={profile?.userId}
-                              showStatus={true}
-                              statusSize="xs"
-                              userName={profile?.userName}
-                              className="h-7 w-7 shrink-0 rounded-md"
-                            />
-                            <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 z-30 h-[15px] w-[15px] select-none">
-                              <LevelShield level={currentLevel} />
-                            </div>
-                          </div>
-                          <div className="absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rotate-45 border-r border-b border-white bg-purple-600" />
-                        </motion.div>
-                      </div>
-                    )}
-
-                    {otherStudentsOnStage.length > 0 && (
-                      <div className="absolute right-7 top-1/2 z-20 flex -translate-y-1/2 -space-x-1 items-center rounded-full border border-indigo-500/30 bg-slate-950/85 px-1 py-0.5 shadow-lg backdrop-blur-md">
-                        {otherStudentsOnStage.slice(0, 2).map((student) => (
-                          <div key={student.studentId} className="group relative cursor-help">
-                            <InteractiveAvatar
-                              src={student.profileImage}
-                              fallbackText={student.userName?.charAt(0) || "U"}
-                              userId={student.studentId}
-                              showStatus={true}
-                              statusSize="xs"
-                              userName={student.userName}
-                              className="h-5 w-5 shrink-0 rounded-full border border-slate-950 transition-all hover:z-30 hover:scale-110"
-                            />
-                            <span className="pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2 scale-0 whitespace-nowrap rounded border border-white/10 bg-slate-900/90 px-1.5 py-0.5 text-[7px] font-bold text-white shadow-md transition-all group-hover:scale-100">
-                              {student.userName} (Lvl {student.level})
-                            </span>
-                          </div>
-                        ))}
-                        {otherStudentsOnStage.length > 2 && (
-                          <span className="px-0.5 text-[7px] font-black text-slate-300">+{otherStudentsOnStage.length - 2}</span>
-                        )}
-                      </div>
-                    )}
-
-                    <button
-                      disabled={isLocked}
-                      onClick={isActive ? onAttemptQuestion : undefined}
-                      aria-label={isLocked ? `Stage ${index + 1} — locked` : `Stage ${index + 1}${isActive ? " — play" : ""}`}
-                      className={[
-                        "relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-11 sm:w-11",
-                        isLocked ? "cursor-not-allowed" : "cursor-pointer hover:scale-105 active:scale-95",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70",
-                        nodeColor,
-                        glow,
-                        scaleClass,
-                      ].join(" ")}
-                    >
-                      {icon}
-                      <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-slate-800 bg-slate-950/70 px-1.5 py-0.5 text-[9px] font-extrabold text-slate-400">
-                        Stage {index + 1}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </motion.div>
-
           {/* Floating map controls */}
-          <div className="absolute bottom-[100px] right-4 z-30 flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 shadow-2xl backdrop-blur-lg md:bottom-6 md:right-6">
+          <div className="absolute bottom-[calc(100px+env(safe-area-inset-bottom,0px))] right-4 z-30 flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 shadow-2xl backdrop-blur-lg md:bottom-6 md:right-6">
             <button
-              onClick={() => setScale((s) => Math.min(1.6, s + 0.15))}
+              onClick={() => camera.zoomTo(Math.min(1.6, camera.scale.get() + 0.15))}
               aria-label="Zoom in"
               className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
             >
               <ZoomIn className="h-[18px] w-[18px]" />
             </button>
             <button
-              onClick={() => setScale((s) => Math.max(0.8, s - 0.15))}
+              onClick={() => camera.zoomTo(Math.max(0.8, camera.scale.get() - 0.15))}
               aria-label="Zoom out"
               className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
             >
@@ -552,7 +408,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
         </div>
 
         {/* Mobile bottom overtake strip */}
-        <div className="z-20 w-full shrink-0 border-t border-white/10 bg-slate-950/80 px-4 py-2 backdrop-blur-md md:hidden">
+        <div className="z-20 w-full shrink-0 border-t border-white/10 bg-slate-950/80 px-4 py-2.5 mb-[calc(56px+env(safe-area-inset-bottom,0px))] backdrop-blur-md md:hidden">
           <div className="flex items-center justify-between gap-2 text-[10px]">
             <span className="flex shrink-0 items-center gap-1.5 font-black uppercase tracking-wider text-white">
               <Trophy className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
@@ -736,7 +592,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
                     <div className="space-y-2">
                       <p>
                         You are at <strong>Level {currentLevel}</strong> with <strong>{stats?.xp || 0} total XP</strong>. Need{" "}
-                        <strong className="text-pink-400">{100 - xpIntoLevel} XP</strong> to advance to Level {currentLevel + 1}.
+                        <strong className="text-pink-405">{100 - xpIntoLevel} XP</strong> to advance to Level {currentLevel + 1}.
                       </p>
                       <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-white/5 bg-slate-950/40 p-2">
                         <div className="rounded-lg bg-slate-950/20 p-1.5">
@@ -784,7 +640,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
                       {nextPlayer ? (
                         <>
                           Chasing <strong className="text-white">{nextPlayer.userName}</strong> — need{" "}
-                          <strong className="text-pink-400">{xpNeeded} XP</strong> to overtake them.
+                          <strong className="text-pink-405">{xpNeeded} XP</strong> to overtake them.
                         </>
                       ) : (
                         "👑 You're leading the batch leaderboard!"

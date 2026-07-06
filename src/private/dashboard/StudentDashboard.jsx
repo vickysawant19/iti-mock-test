@@ -35,7 +35,7 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import GameWorld from "./components/GameWorld";
+import GameWorld from "./components/gameworld/GameWorld";
 import QuestionModal from "./components/QuestionModal";
 import useStudentGame from "@/hooks/useStudentGame";
 import { BADGES } from "@/services/reward.service";
