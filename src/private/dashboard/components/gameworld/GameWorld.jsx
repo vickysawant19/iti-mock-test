@@ -35,7 +35,7 @@ import StagePopup from "./StagePopup";
 /* ────────────────────────────────────────────────────────────────────────
    Main component
    ──────────────────────────────────────────────────────────────────── */
-export default function GameWorld({ user, stats, profile, leaderboard = [], batchContext = {}, onAttemptQuestion }) {
+export default function GameWorld({ user, stats, profile, leaderboard = [], batchContext = {}, activeSettings, onAttemptQuestion }) {
   const currentLevel = stats?.level || 1;
   const xpIntoLevel = stats?.xp ? stats.xp % 100 : 0;
 
@@ -244,7 +244,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
               <div className="mt-1.5">
                 <div className="flex items-center justify-between text-[7px] font-black uppercase tracking-wider text-slate-400">
                   <span>XP Progress</span>
-                  <span className="text-pink-405">{xpIntoLevel} / 100</span>
+                  <span className="text-pink-400">{xpIntoLevel} / 100</span>
                 </div>
                 <div className="relative mt-0.5 h-1 w-full overflow-hidden rounded-full border border-white/5 bg-slate-950/80">
                   <div
@@ -256,7 +256,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
             </div>
           </button>
 
-          <div className="no-scrollbar mt-2 flex items-center gap-2 overflow-x-auto">
+          <div className="mt-2.5 grid grid-cols-4 gap-1.5 w-full">
             <StatTile
               compact
               icon={<Coins className="h-4 w-4 text-yellow-400" />}
@@ -332,26 +332,28 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
                 }}
               />
             ))}
-
-            {popupStageIndex !== null && (
-              <StagePopup
-                key={`popup-${popupStageIndex}`}
-                node={coordinates[popupStageIndex]}
-                index={popupStageIndex}
-                currentStep={currentStep}
-                mapX={camera.mapX}
-                mapY={camera.mapY}
-                scale={camera.scale}
-                viewportWidth={camera.viewportWidth}
-                viewportHeight={camera.viewportHeight}
-                onClose={() => setPopupStageIndex(null)}
-                onPlay={() => {
-                  setPopupStageIndex(null);
-                  onAttemptQuestion();
-                }}
-              />
-            )}
           </GameViewport>
+
+          {popupStageIndex !== null && (
+            <StagePopup
+              key={`popup-${popupStageIndex}`}
+              node={coordinates[popupStageIndex]}
+              index={popupStageIndex}
+              currentStep={currentStep}
+              mapX={camera.mapX}
+              mapY={camera.mapY}
+              scale={camera.scale}
+              viewportWidth={camera.viewportWidth}
+              viewportHeight={camera.viewportHeight}
+              stats={stats}
+              activeSettings={activeSettings}
+              onClose={() => setPopupStageIndex(null)}
+              onPlay={() => {
+                setPopupStageIndex(null);
+                onAttemptQuestion();
+              }}
+            />
+          )}
 
           {/* HUD Overlays (Rendered outside viewport so they don't move/pan) */}
           <div className="pointer-events-auto absolute top-4 left-4 z-30 select-none">
@@ -414,7 +416,7 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
               <Trophy className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
               Rank {rankText}
             </span>
-            <span className="min-w-0 flex-1 truncate text-center text-slate-300">
+            <span className="min-w-0 flex-1 truncate text-right text-slate-300">
               {nextPlayer ? (
                 <>
                   <Flame className="mr-1 inline h-3 w-3 fill-orange-500 text-orange-500" />

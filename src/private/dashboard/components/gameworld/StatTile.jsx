@@ -5,10 +5,10 @@ export default function StatTile({ icon, label, value, onClick, accent = "text-w
     <button
       onClick={onClick}
       className={[
-        "group relative flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04]",
-        "px-3 py-2 text-left transition-all hover:bg-white/[0.08] active:scale-[0.97]",
+        "group relative flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04]",
+        "px-2 py-1.5 text-left transition-all hover:bg-white/[0.08] active:scale-[0.97]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60",
-        compact ? "shrink-0" : "w-full",
+        "w-full",
       ].join(" ")}
     >
       <span className="shrink-0">{icon}</span>

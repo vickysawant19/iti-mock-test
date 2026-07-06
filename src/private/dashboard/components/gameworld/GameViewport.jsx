@@ -58,6 +58,16 @@ export default function GameViewport({
     // Only drag with left mouse button / single touch
     if (e.button !== 0 && e.pointerType === "mouse") return;
 
+    // Prevent map drag if the target is interactive
+    const target = e.target;
+    if (
+      target.closest("button") ||
+      target.closest("a") ||
+      target.closest(".pointer-events-auto")
+    ) {
+      return;
+    }
+
     dragStartRef.current = {
       pointerX: e.clientX,
       pointerY: e.clientY,
