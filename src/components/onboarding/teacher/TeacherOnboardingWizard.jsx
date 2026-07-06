@@ -48,8 +48,8 @@ export default function TeacherOnboardingWizard() {
 
       // Already complete → go to dash
       if (existingProfile.isProfileComplete) {
-        console.log("[WIZARD useEffect] isProfileComplete=true → navigating to /dash");
-        navigate("/dash");
+        console.log("[WIZARD useEffect] isProfileComplete=true → navigating to /arena");
+        navigate("/arena");
         return;
       }
 
@@ -128,7 +128,7 @@ export default function TeacherOnboardingWizard() {
   const handleFinish = async () => {
     const ok = await saveProgress({}, currentStep + 1);
     // Redirect to dashboard
-    if (ok) navigate("/dash");
+    if (ok) navigate("/arena");
   };
 
   if (!user) return null;

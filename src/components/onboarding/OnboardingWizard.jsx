@@ -44,7 +44,7 @@ export default function OnboardingWizard() {
       }
 
       if (existingProfile.isProfileComplete) {
-        navigate("/dash");
+        navigate("/arena");
         return;
       }
 
@@ -110,7 +110,7 @@ export default function OnboardingWizard() {
   const handleFinish = async () => {
     const ok = await saveProgress({}, currentStep + 1);
     // Profile is already saved in saveProgress
-    if (ok) navigate("/dash");
+    if (ok) navigate("/arena");
   };
 
   if (!user) return null;

@@ -125,7 +125,7 @@ const BatchForm = ({ onClose }) => {
       const data = await batchService.getBatch(batchId);
       if (data.teacherId !== profile.userId) {
         toast.error("You are not authorized to access this batch");
-        navigate("/dash");
+        navigate("/arena");
         return;
       }
       setBatchData(data);

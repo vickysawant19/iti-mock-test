@@ -5,7 +5,7 @@ import { Users, GraduationCap, Briefcase } from "lucide-react";
 
 const getActivityText = (path) => {
   if (!path) return "Online";
-  if (path === "/dash" || path === "/") return "On Dashboard";
+  if (path === "/arena" || path === "/") return "In Game Arena";
   if (path === "/profile") return "Viewing Profile";
   if (path === "/student-attendance" || path === "/attendance") return "Viewing Attendance";
   if (path.includes("mock-test")) return "Taking Mock Test";

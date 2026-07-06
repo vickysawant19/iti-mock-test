@@ -193,10 +193,10 @@ const Home = () => {
             >
               <Button
                 size="lg"
-                onClick={() => navigate(isLoggedIn ? "/dash" : "/signup")}
+                onClick={() => navigate(isLoggedIn ? "/arena" : "/signup")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-xl text-lg font-bold shadow-[0_8px_30px_rgb(37,99,235,0.24)] transition-all hover:-translate-y-1"
               >
-                {isLoggedIn ? "Go to Dashboard" : "Get Started"} <ArrowRight className="ml-2 w-5 h-5" />
+                {isLoggedIn ? "Go to Game Arena" : "Get Started"} <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               {!isLoggedIn && (
                 <Button

@@ -45,8 +45,8 @@ export const menuConfig = [
     items: [
       { label: "Home", path: "/", icon: FaHome },
       {
-        label: "Dashboard",
-        path: "/dash",
+        label: "Game Arena",
+        path: "/arena",
         icon: FaDashcube,
         requiresAuth: true,
       },
@@ -202,7 +202,7 @@ export const menuConfig = [
 
 export const pathToHeading = {
   "/": "Home",
-  "/dash": "Dashboard",
+  "/arena": "Game Arena",
   "/profile": "Profile",
   "/manage-batch/create": "Create / Update Batch",
   "/manage-batch/students": "Manage Batch Students",

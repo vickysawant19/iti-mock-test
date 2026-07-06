@@ -65,7 +65,7 @@ export default function BatchEnrollmentStatus() {
       setStatus(currentStatus);
       if (currentStatus === "ACTIVE") {
         toast.success("Hooray! Your access has been approved.");
-        navigate("/dash");
+        navigate("/arena");
       }
     } catch (err) {
       console.error("[BatchEnrollmentStatus] Error checking status:", err);
@@ -77,7 +77,7 @@ export default function BatchEnrollmentStatus() {
     // If router gave us initial state, use it to avoid double-fetching temporarily
     if (location.state?.batchStatus && status === "loading") {
       setStatus(location.state.batchStatus);
-      if (location.state.batchStatus === "ACTIVE") navigate("/dash");
+      if (location.state.batchStatus === "ACTIVE") navigate("/arena");
     } else {
       fetchStatus();
     }

@@ -291,7 +291,7 @@ const StudentDashboard = ({
 
       <div className={`relative z-10 ${
         activeTab === "game"
-          ? "w-full h-[calc(100vh-64px)] overflow-hidden"
+          ? "w-full h-[calc(100dvh-64px)] overflow-hidden"
           : "max-w-7xl mx-auto px-3 sm:px-6 pb-0 pt-3"
       }`}>
         {activeTab === "game" ? (

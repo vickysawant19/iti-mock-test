@@ -39,7 +39,7 @@ const Signup = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/dash");
+      navigate("/arena");
     }
   }, [navigate, user]);
 

@@ -35,7 +35,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user && user.$id) {
-      navigate("/dash", { replace: true });
+      navigate("/arena", { replace: true });
     }
   }, [user, navigate]);
 
@@ -57,7 +57,7 @@ const Login = () => {
         dispatch(addProfile({ data: res, isLoading: false }));
         dispatch(initializeActiveBatch(res));
         toast.success("Welcome back! Login successful.");
-        navigate("/dash", { replace: true });
+        navigate("/arena", { replace: true });
       } else {
         toast.info("Please setup your profile to continue.");
         navigate("/onboarding");

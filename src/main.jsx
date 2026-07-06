@@ -118,7 +118,7 @@ const router = (
             element={<TeacherOnboardingWizard />}
           />
           <Route path="batch-enroll" element={<BatchEnrollmentStatus />} />
-          <Route path="dash" element={<Dash />} />
+          <Route path="arena" element={<Dash />} />
           <Route path="browse-batches" element={<BrowseBatches />} />
           <Route
             path="student-attendance"
