@@ -1,4 +1,4 @@
-import { account, functions } from "./appwriteClient";
+import { account, functions, realtime } from "./appwriteClient";
 import conf from "../config/config";
 
 export interface CreateAccountPayload {
@@ -63,6 +63,11 @@ export class AuthService {
 
   async logout() {
     try {
+      try {
+        await realtime.disconnect();
+      } catch (err) {
+        console.warn("Failed to disconnect realtime WebSocket:", err);
+      }
       return await account.deleteSession("current");
     } catch (error) {
       this.handleError(error);

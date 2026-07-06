@@ -38,6 +38,8 @@ export interface BatchGameSettings {
 }
 
 export class GameService extends DatabaseService {
+  private settingsCache = new Map<string, BatchGameSettings>();
+
   constructor() {
     super(conf.gameStatsCollectionId);
   }
@@ -73,8 +75,8 @@ export class GameService extends DatabaseService {
         losses: 0,
         accuracy: 0,
         questionsAttempted: 0,
-        currentStreak: 0,
-        highestStreak: 0,
+        currentStreak: 1,
+        highestStreak: 1,
         lastQuestionTime: new Date().toISOString(),
         lastActive: new Date().toISOString(),
       };
@@ -94,8 +96,8 @@ export class GameService extends DatabaseService {
         losses: 0,
         accuracy: 0,
         questionsAttempted: 0,
-        currentStreak: 0,
-        highestStreak: 0,
+        currentStreak: 1,
+        highestStreak: 1,
       };
     }
   }
@@ -414,6 +416,10 @@ export class GameService extends DatabaseService {
    * Automatically falls back to localStorage or default configurations on failure.
    */
   async getBatchGameSettings(batchId: string): Promise<BatchGameSettings> {
+    if (this.settingsCache.has(batchId)) {
+      return this.settingsCache.get(batchId)!;
+    }
+
     const cacheKey = `game_settings_${batchId}`;
     const defaultSettings: BatchGameSettings = {
       batchId,
@@ -422,6 +428,19 @@ export class GameService extends DatabaseService {
       correctAnswerCoins: 5,
       streakXpBonus: 2,
     };
+
+    try {
+      if (typeof window !== "undefined") {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const settings = JSON.parse(cached) as BatchGameSettings;
+          this.settingsCache.set(batchId, settings);
+          return settings;
+        }
+      }
+    } catch (err) {
+      console.warn("[GameService] Failed to read settings from cache:", err);
+    }
 
     try {
       const { databases } = await import("./appwriteClient");
@@ -435,21 +454,11 @@ export class GameService extends DatabaseService {
         if (typeof window !== "undefined") {
           localStorage.setItem(cacheKey, JSON.stringify(settings));
         }
+        this.settingsCache.set(batchId, settings);
         return settings;
       }
     } catch (dbError) {
       console.warn("[GameService] Appwrite batch_game_settings fetch failed, using fallback:", dbError);
-    }
-
-    try {
-      if (typeof window !== "undefined") {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-      }
-    } catch (err) {
-      console.warn("[GameService] Failed to read settings from cache:", err);
     }
 
     return defaultSettings;
@@ -502,6 +511,7 @@ export class GameService extends DatabaseService {
       if (typeof window !== "undefined") {
         localStorage.setItem(cacheKey, JSON.stringify(result));
       }
+      this.settingsCache.set(batchId, result);
       return result;
     } catch (error: any) {
       console.error("[GameService] saveBatchGameSettings failed, using fallback:", error);
@@ -512,6 +522,7 @@ export class GameService extends DatabaseService {
       if (typeof window !== "undefined") {
         localStorage.setItem(cacheKey, JSON.stringify(fallbackResult));
       }
+      this.settingsCache.set(batchId, fallbackResult);
       return fallbackResult;
     }
   }
@@ -541,6 +552,13 @@ export class GameService extends DatabaseService {
       console.error("[GameService] getModulesForTrade failed:", e);
       return [];
     }
+  }
+
+  /**
+   * Updates the in-memory cache for a batch's game settings (typically called on realtime updates).
+   */
+  updateSettingsCache(batchId: string, settings: BatchGameSettings): void {
+    this.settingsCache.set(batchId, settings);
   }
 }
 

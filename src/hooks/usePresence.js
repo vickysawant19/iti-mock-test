@@ -5,14 +5,14 @@ import { Permission, Role, Channel, Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import { presenceClient, presenceService, presenceRealtime } from "@/services/appwriteClient";
+import { presenceClient, presenceService, realtime } from "@/services/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
 const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
 const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
 
-const getPresenceResources = () => ({ presenceClient, presenceService, presenceRealtime });
+const getPresenceResources = () => ({ presenceClient, presenceService, realtime });
 
 /**
  * usePresence — manages the current user's live presence and tracks online/offline status of all users.
@@ -40,6 +40,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const awayTimerRef = useRef(null);
   const idleTimerRef = useRef(null);
   const lastActivityRef = useRef(0);
+  const lastUpsertRef = useRef({ time: 0, payloadJson: "" });
 
   // Fallback to redux user if currentUserId isn't explicitly passed
   const effectiveUserId = currentUserId || reduxUser?.$id;
@@ -78,6 +79,20 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
         status = statusRef.current;
       }
     }
+
+    // Deduplicate rapid identical upserts (such as on route mount and state initialization renders)
+    const currentPayloadJson = JSON.stringify({
+      status,
+      metadata: metadataRef.current,
+    });
+    const now = Date.now();
+    if (
+      lastUpsertRef.current.payloadJson === currentPayloadJson &&
+      now - lastUpsertRef.current.time < 3000
+    ) {
+      return;
+    }
+    lastUpsertRef.current = { time: now, payloadJson: currentPayloadJson };
 
     const expiresAt = new Date(
       Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
@@ -166,7 +181,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     // 1. Initial register self
     upsertSelfPresence();
 
-    const { presenceService, presenceRealtime } = getPresenceResources();
+    const { presenceService, realtime: presenceRealtime } = getPresenceResources();
 
     // 2. Fetch the current snapshot of online users
     const fetchInitialPresences = async () => {
@@ -276,8 +291,8 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
           });
         });
 
-        if ((!isSubscribed || !isMountedRef.current) && sub?.close) {
-          sub.close();
+        if ((!isSubscribed || !isMountedRef.current) && sub?.unsubscribe) {
+          sub.unsubscribe();
         } else {
           subscription = sub;
         }
@@ -303,8 +318,8 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       window.removeEventListener("blur", onBlur);
       activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
 
-      if (subscription?.close) {
-        subscription.close();
+      if (subscription?.unsubscribe) {
+        subscription.unsubscribe();
       }
 
       // Cleanup presence when user signs out or hook is unmounted

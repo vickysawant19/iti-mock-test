@@ -1,12 +1,13 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
-import batchService from "./batchService";
 
 export class UserProfileService {
   constructor() {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getTablesDB();
+    this.profileCache = new Map();
+    this.profileRequests = new Map();
   }
 
   async createUserProfile({
@@ -49,6 +50,10 @@ export class UserProfileService {
         rowId: "unique()",
         data: userProfile
       });
+
+      if (response && response.userId) {
+        this.profileCache.set(response.userId, response);
+      }
 
       return response;
     } catch (error) {
@@ -131,6 +136,10 @@ export class UserProfileService {
         data: updatedData
       });
 
+      if (response && response.userId) {
+        this.profileCache.set(response.userId, response);
+      }
+
       return response;
     } catch (error) {
       console.error("Appwrite error: updating user profile:", error);
@@ -161,6 +170,10 @@ export class UserProfileService {
         data: payload
       });
 
+      if (response && response.userId) {
+        this.profileCache.set(response.userId, response);
+      }
+
       return response;
     } catch (error) {
       console.error("Appwrite error: patchUserProfile:", error);
@@ -170,6 +183,7 @@ export class UserProfileService {
 
   async deleteUserProfile(profileId) {
     try {
+      this.profileCache.clear();
       return await this.database.deleteRow({
         databaseId: conf.databaseId,
         tableId: conf.userProfilesCollectionId,
@@ -189,6 +203,14 @@ export class UserProfileService {
         queries: [...query]
       });
 
+      if (userProfiles && userProfiles.rows) {
+        userProfiles.rows.forEach(p => {
+          if (p.userId) {
+            this.profileCache.set(p.userId, p);
+          }
+        });
+      }
+
       return userProfiles.rows;
     } catch (error) {
       console.error("Appwrite error: get batch user profiles:", error);
@@ -197,38 +219,58 @@ export class UserProfileService {
   }
 
   async getUserProfile(userId) {
-    console.log("[DEBUG] getUserProfile called with userId:", userId, "Type:", typeof userId);
-
     if (!userId) {
       console.warn("[DEBUG] getUserProfile returning early because userId is falsy!");
       return false; 
     }
 
-    try {
-      console.log("[DEBUG] Fetching user profile from Appwrite for userId:", userId);
-      const userProfile = await this.database.listRows({
-        databaseId: conf.databaseId,
-        tableId: conf.userProfilesCollectionId,
-        queries: [Query.equal("userId", String(userId))]
-      });
-      console.log("[DEBUG] Appwrite response for getUserProfile:", userProfile);
-
-      if (userProfile.total === 0) {
-        console.warn("[DEBUG] No profile found in DB for userId:", userId);
-        return false;
-      }
-
-      const profile = userProfile.rows[0];
-      console.log("[DEBUG] Successfully retrieved profile:", profile);
-      return profile; 
-    } catch (error) {
-      console.error("[DEBUG] Caught an error in getUserProfile:", error);
-      if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
-        console.error("[DEBUG] Quota exceeded error!");
-        throw error;
-      }
-      return false;
+    // 1. Check if we already have a cached profile (avoid redundant reads)
+    if (this.profileCache.has(userId)) {
+      console.log("[DEBUG] Returning cached user profile for userId:", userId);
+      return this.profileCache.get(userId);
     }
+
+    // 2. Check if a fetch request is already in-flight for this user (deduplicate concurrent requests)
+    if (this.profileRequests.has(userId)) {
+      console.log("[DEBUG] Merging with existing in-flight request for userId:", userId);
+      return this.profileRequests.get(userId);
+    }
+
+    const promise = (async () => {
+      try {
+        console.log("[DEBUG] Fetching user profile from Appwrite for userId:", userId);
+        const userProfile = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.userProfilesCollectionId,
+          queries: [Query.equal("userId", String(userId))]
+        });
+        console.log("[DEBUG] Appwrite response for getUserProfile:", userProfile);
+
+        if (userProfile.total === 0) {
+          console.warn("[DEBUG] No profile found in DB for userId:", userId);
+          this.profileCache.set(userId, false);
+          return false;
+        }
+
+        const profile = userProfile.rows[0];
+        console.log("[DEBUG] Successfully retrieved profile:", profile);
+        this.profileCache.set(userId, profile);
+        return profile; 
+      } catch (error) {
+        console.error("[DEBUG] Caught an error in getUserProfile:", error);
+        if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+          console.error("[DEBUG] Quota exceeded error!");
+          throw error;
+        }
+        return false;
+      } finally {
+        // Clean up from the active request cache once resolved/rejected
+        this.profileRequests.delete(userId);
+      }
+    })();
+
+    this.profileRequests.set(userId, promise);
+    return promise;
   }
 
   /**
@@ -236,7 +278,7 @@ export class UserProfileService {
    * batchId attribute was removed from userProfiles during normalization.
    * Student-Batch mappings must exclusively use batchStudentService or batchRequestService.
    */
-  async getProfilesByBatchId(batchId) {
+  async getProfilesByBatchId() {
     console.warn("DEPRECATED: getProfilesByBatchId called. Returning empty array [] to prevent schema crash.");
     return [];
   }

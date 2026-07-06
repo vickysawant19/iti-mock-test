@@ -68,9 +68,10 @@ class AppwriteService {
   getPresences() { return this.presences; }
 
   // ── Appwrite SDK v26 / Server 1.9.5 notes ──────────────────────────────────
-  // realtime.subscribe() is async → returns Promise<{ close(): Promise<void> }>.
-  // Always await subscribe() and call sub.close() to tear down a subscription.
+  // realtime.subscribe() is async → returns Promise<{ unsubscribe(): Promise<void>, update(options): Promise<void> }>.
+  // Always await subscribe() and call sub.unsubscribe() to tear down a subscription.
   // Single persistent WebSocket per Client session.
+  // Call realtime.disconnect() to close the socket connection entirely if needed.
   //
   // New in v26: Presences service (upsert/get/list/update/delete presence records).
   // BrowserTheme enum replaces the old Theme enum (avatars.getScreenshot() theme param).
@@ -103,7 +104,6 @@ presenceClient.headers["X-Appwrite-Key"] =
   "standard_e623994c0ed2af791525a840dcd8979bc315e0325148247f4a35694ced2a9b55fba7c24016550a565ea718cd2de13846a051abda107fcdb90539ac29ffc136f323392cafa5501965fce7544a5ae319575f60be748d883df9d5161871357e92cb26d0634dbd36345550747c6ea222906c16e57b25ad96a6ca3aae180b8a8c0127";
 
 export const presenceService = new Presences(presenceClient);
-export const presenceRealtime = new Realtime(presenceClient);
 
 // Dynamically fix legacy/cloud appwrite endpoints using config Url host
 export const fixProfileImage = (url: string | null | undefined): string | null | undefined => {

@@ -3,6 +3,7 @@ import { gameService } from "@/services/game.service";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { challengeService } from "@/services/challenge.service";
 import { rewardService } from "@/services/reward.service";
+import conf from "@/config/config";
 
 /**
  * useStudentGame Hook
@@ -178,8 +179,10 @@ export function useStudentGame(studentId, batchId, tradeId) {
       try {
         const { appwriteService } = await import("@/services/appwriteClient");
         const realtime = appwriteService.getRealtime();
-        const conf = (await import("@/config/config")).default;
-        const channel = `databases.${conf.databaseId}.collections.${conf.gameStatsCollectionId}.documents`;
+        const { Channel } = await import("appwrite");
+        const channel = Channel.tablesdb(conf.databaseId)
+          .table(conf.gameStatsCollectionId)
+          .row();
 
         sub = await realtime.subscribe(channel, (response) => {
           if (!mounted) return;
@@ -204,8 +207,8 @@ export function useStudentGame(studentId, batchId, tradeId) {
 
     return () => {
       mounted = false;
-      if (sub && typeof sub.close === "function") {
-        sub.close();
+      if (sub && typeof sub.unsubscribe === "function") {
+        sub.unsubscribe();
       }
     };
   }, [batchId, studentId, fetchLeaderboard]);
@@ -221,8 +224,10 @@ export function useStudentGame(studentId, batchId, tradeId) {
       try {
         const { appwriteService } = await import("@/services/appwriteClient");
         const realtime = appwriteService.getRealtime();
-        const conf = (await import("@/config/config")).default;
-        const channel = `databases.${conf.databaseId}.collections.batch_game_settings.documents`;
+        const { Channel } = await import("appwrite");
+        const channel = Channel.tablesdb(conf.databaseId)
+          .table("batch_game_settings")
+          .row();
 
         settingsSub = await realtime.subscribe(channel, (response) => {
           if (!mounted) return;
@@ -232,12 +237,13 @@ export function useStudentGame(studentId, batchId, tradeId) {
             console.log("[useStudentGame] Realtime settings updated:", payload);
             setActiveSettings(payload);
             
-            // Cache locally as fallback
+            // Cache locally as fallback and update in-memory cache in gameService
             try {
               const cacheKey = `game_settings_${batchId}`;
               localStorage.setItem(cacheKey, JSON.stringify(payload));
+              gameService.updateSettingsCache(batchId, payload);
             } catch (err) {
-              console.warn("[useStudentGame] Failed to write settings to cache on realtime event:", err);
+              console.warn("[useStudentGame] Failed to write/update settings cache on realtime event:", err);
             }
           }
         });
@@ -250,8 +256,8 @@ export function useStudentGame(studentId, batchId, tradeId) {
 
     return () => {
       mounted = false;
-      if (settingsSub && typeof settingsSub.close === "function") {
-        settingsSub.close();
+      if (settingsSub && typeof settingsSub.unsubscribe === "function") {
+        settingsSub.unsubscribe();
       }
     };
   }, [batchId]);

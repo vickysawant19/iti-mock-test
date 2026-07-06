@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUserBatches, selectActiveBatchLoading } from "@/store/activeBatchSlice";
-import { Query } from "appwrite";
+import { Query, Channel } from "appwrite";
 import batchRequestService from "@/appwrite/batchRequestService";
 import notificationService from "@/services/notification.service";
 import { realtime } from "@/services/appwriteClient";
@@ -189,7 +189,7 @@ export function useNotifications() {
     const setupRealtime = async () => {
       try {
         if (isStudent && user?.$id && studentBatches.length > 0) {
-          const notifChannel = `databases.${conf.databaseId}.collections.notifications.documents`;
+          const notifChannel = Channel.tablesdb(conf.databaseId).table("notifications").row();
           const sub = await realtime.subscribe(
             notifChannel,
             (response) => {
@@ -214,12 +214,12 @@ export function useNotifications() {
           );
           // SDK v24: store the sub object; close() tears it down
           subNotifications = sub;
-          if (!active && subNotifications?.close) subNotifications.close();
+          if (!active && subNotifications?.unsubscribe) subNotifications.unsubscribe();
         }
 
         // BatchRequests realtime
         if (user?.$id) {
-          const reqChannel = `databases.${conf.databaseId}.collections.batchRequests.documents`;
+          const reqChannel = Channel.tablesdb(conf.databaseId).table("batchRequests").row();
           let reqSub = null;
 
           if (isTeacher && userBatches && userBatches.length > 0) {
@@ -281,7 +281,7 @@ export function useNotifications() {
 
           // SDK v24: store the sub object; close() tears it down
           subRequests = reqSub;
-          if (!active && subRequests?.close) subRequests.close();
+          if (!active && subRequests?.unsubscribe) subRequests.unsubscribe();
         }
 
       } catch (e) {
@@ -291,11 +291,11 @@ export function useNotifications() {
     
     setupRealtime();
 
-    // SDK v24: cleanup via sub.close() — not sub() or sub.unsubscribe()
+    // SDK v26: cleanup via sub.unsubscribe() — not sub() or sub.close()
     return () => {
       active = false;
-      if (subNotifications?.close) subNotifications.close();
-      if (subRequests?.close) subRequests.close();
+      if (subNotifications?.unsubscribe) subNotifications.unsubscribe();
+      if (subRequests?.unsubscribe) subRequests.unsubscribe();
     };
   }, [isStudent, isTeacher, user?.$id, studentBatches, userBatches]);
 

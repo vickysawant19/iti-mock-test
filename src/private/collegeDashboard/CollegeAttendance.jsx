@@ -30,7 +30,7 @@ import {
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListBatchesQuery } from "@/store/api/batchApi";
-import { Query } from "appwrite";
+import { Query, Channel } from "appwrite";
 import { appwriteService } from "@/services/appwriteClient";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import batchStudentService from "@/appwrite/batchStudentService";
@@ -274,7 +274,9 @@ const AttendanceDashboard = () => {
     const setup = async () => {
       try {
         const realtime = appwriteService.getRealtime();
-        const channel = `databases.${conf.databaseId}.collections.${conf.newAttendanceCollectionId}.documents`;
+        const channel = Channel.tablesdb(conf.databaseId)
+          .table(conf.newAttendanceCollectionId)
+          .row();
 
         // SDK v24: returns Promise<{ close(): Promise<void> }>
         const sub = await realtime.subscribe(channel, (response) => {
@@ -328,8 +330,8 @@ const AttendanceDashboard = () => {
     return () => {
       isComponentMountedRef.current = false;
       const sub = subscriptionRef.current;
-      if (sub && typeof sub.close === "function") {
-        sub.close();
+      if (sub && typeof sub.unsubscribe === "function") {
+        sub.unsubscribe();
       }
       subscriptionRef.current = null;
     };

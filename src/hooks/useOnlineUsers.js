@@ -1,14 +1,75 @@
 import { useState, useEffect, useCallback } from "react";
 import { Channel } from "appwrite";
-import { presenceService as presences, presenceRealtime as realtime } from "@/services/appwriteClient";
+import { presenceService as presences, realtime } from "@/services/appwriteClient";
+
+// Global singleton state for online users to prevent duplicate network calls and WebSocket subscriptions
+let globalOnlineUsers = new Map();
+const listeners = new Set();
+let initialFetchPromise = null;
+let activeSubscription = null;
+
+async function startPresenceTracking() {
+  if (initialFetchPromise) return initialFetchPromise;
+
+  initialFetchPromise = (async () => {
+    try {
+      const result = await presences.list();
+      globalOnlineUsers = new Map(
+        (result.presences ?? []).map((p) => [p.userId, p])
+      );
+      notifyListeners();
+    } catch (err) {
+      if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+        console.warn("[useOnlineUsers] list failed:", err?.message);
+      }
+    }
+  })();
+
+  (async () => {
+    try {
+      const sub = await realtime.subscribe(Channel.presences(), (response) => {
+        const presence = response.payload;
+        if (!presence?.userId) return;
+
+        const isDelete = response.events?.some((e) => e.includes(".delete"));
+        if (isDelete) {
+          globalOnlineUsers.delete(presence.userId);
+        } else {
+          globalOnlineUsers.set(presence.userId, presence);
+        }
+        notifyListeners();
+      });
+      activeSubscription = sub;
+      return sub;
+    } catch (err) {
+      if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+        console.warn("[useOnlineUsers] subscribe failed:", err?.message);
+      }
+      return null;
+    }
+  })();
+
+  return initialFetchPromise;
+}
+
+function stopPresenceTracking() {
+  if (activeSubscription) {
+    if (typeof activeSubscription.unsubscribe === "function") {
+      activeSubscription.unsubscribe();
+    }
+  }
+  globalOnlineUsers.clear();
+  initialFetchPromise = null;
+  activeSubscription = null;
+}
+
+function notifyListeners() {
+  listeners.forEach((listener) => listener(new Map(globalOnlineUsers)));
+}
 
 /**
  * Maintains a live Map<userId, presence> of every online/away user.
- *
- * 1. Fetches an initial snapshot with presences.list()
- * 2. Subscribes to Channel.presences() for real-time updates
- *    - upsert / update  → set(userId, presence)
- *    - delete           → delete(userId)
+ * Shares a single global WebSocket subscription and snapshot fetch.
  *
  * Returns:
  *   onlineUsers   - Map<userId, presence>
@@ -17,66 +78,24 @@ import { presenceService as presences, presenceRealtime as realtime } from "@/se
  *   getStatus(id) - 'online' | 'away' | 'offline'
  */
 export function useOnlineUsers() {
-  const [onlineUsers, setOnlineUsers] = useState(new Map());
+  const [onlineUsers, setOnlineUsers] = useState(new Map(globalOnlineUsers));
 
-  // ── Helper: apply a single presence event to the map ─────────────────────
-  const applyEvent = useCallback((response) => {
-    const presence = response.payload;
-    if (!presence?.userId) return;
-
-    const isDelete = response.events?.some((e) => e.includes(".delete"));
-
-    setOnlineUsers((prev) => {
-      const next = new Map(prev);
-      if (isDelete) {
-        next.delete(presence.userId);
-      } else {
-        next.set(presence.userId, presence);
-      }
-      return next;
-    });
-  }, []);
-
-  // ── Mount: snapshot + realtime subscription ───────────────────────────────
   useEffect(() => {
-    let sub = null;
-    let mounted = true;
+    listeners.add(setOnlineUsers);
 
-    const setup = async () => {
-      // 1. Initial snapshot
-      try {
-        const result = await presences.list();
-        if (!mounted) return;
-        const map = new Map(
-          (result.presences ?? []).map((p) => [p.userId, p])
-        );
-        setOnlineUsers(map);
-      } catch (err) {
-        // 401/403/404 = server doesn't support Presences API (< 1.9.5) — skip silently
-        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
-          console.warn("[useOnlineUsers] list failed:", err?.message);
-        }
-        return; // Don't subscribe if list already failed with auth/not-found error
-      }
-
-      // 2. Subscribe to Channel.presences() — SDK v26 async, returns { close() }
-      try {
-        sub = await realtime.subscribe(Channel.presences(), applyEvent);
-        if (!mounted && sub?.close) sub.close();
-      } catch (err) {
-        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
-          console.warn("[useOnlineUsers] subscribe failed:", err?.message);
-        }
-      }
-    };
-
-    setup();
+    // If first component using the hook mounts, start the shared tracking
+    if (listeners.size === 1) {
+      startPresenceTracking();
+    }
 
     return () => {
-      mounted = false;
-      if (sub?.close) sub.close();
+      listeners.delete(setOnlineUsers);
+      // If last component using the hook unmounts, stop the shared tracking
+      if (listeners.size === 0) {
+        stopPresenceTracking();
+      }
     };
-  }, [applyEvent]);
+  }, []);
 
   // ── Derived helpers ───────────────────────────────────────────────────────
   const getStatus = useCallback(

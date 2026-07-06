@@ -667,9 +667,10 @@ const MockTestResults = () => {
         }
       };
 
-      // SDK v24: realtime.subscribe() is async and returns { close(): Promise<void> }.
-      // Normalise older/future shapes to a callable close() guard.
+      // SDK v26: realtime.subscribe() is async and returns { unsubscribe(): Promise<void> }.
+      // Normalise older/future shapes to a callable unsubscribe/close guard.
       const toClose = (result) => {
+        if (result && typeof result.unsubscribe === "function") return () => result.unsubscribe();
         if (result && typeof result.close === "function") return () => result.close();
         if (typeof result === "function") return result; // legacy plain-function fallback
         return null;
