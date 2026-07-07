@@ -1,0 +1,242 @@
+[
+  {
+    "moduleId": "m1",
+    "moduleName": "Workshop Safety & Introduction",
+    "moduleDescription": "Introduction to RAC trade, workshop practices, PPE, first aid and safety regulations.",
+    "learningOutcome": "Follow workshop safety, identify hazards and use PPE correctly.",
+    "moduleDuration": 30,
+    "assessmentCriteria": "Follow workshop safety, identify hazards and use PPE correctly.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identification and use of PPE correctly", "points": "20" },
+      { "id": 2, "evaluation": "Knowledge of workshop safety rules and hazards", "points": "20" },
+      { "id": 3, "evaluation": "Correct execution of first aid procedures", "points": "20" },
+      { "id": 4, "evaluation": "Handling of firefighting equipment", "points": "20" },
+      { "id": 5, "evaluation": "Workshop clean up and tool storage", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m2",
+    "moduleName": "Fitting & Bench Work",
+    "moduleDescription": "Basic fitting operations using hand tools and measuring instruments.",
+    "learningOutcome": "Produce fitting jobs by marking, cutting, filing, drilling and threading.",
+    "moduleDuration": 30,
+    "assessmentCriteria": "Produce fitting jobs by marking, cutting, filing, drilling and threading.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Accuracy of marking and layout", "points": "20" },
+      { "id": 2, "evaluation": "Correct technique in cutting and filing", "points": "20" },
+      { "id": 3, "evaluation": "Quality of drilling and threading operations", "points": "20" },
+      { "id": 4, "evaluation": "Precision measurement using vernier caliper/micrometer", "points": "20" },
+      { "id": 5, "evaluation": "Tool maintenance and safe execution", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m3",
+    "moduleName": "Sheet Metal Work",
+    "moduleDescription": "Fabrication using sheet metal, bending, riveting and soldering techniques.",
+    "learningOutcome": "Manufacture sheet metal components according to drawings.",
+    "moduleDuration": 30,
+    "assessmentCriteria": "Manufacture sheet metal components according to drawings.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Interpretation of drawing and pattern layout", "points": "20" },
+      { "id": 2, "evaluation": "Accuracy of bending and cutting sheet metal", "points": "20" },
+      { "id": 3, "evaluation": "Quality of riveting and soldering joints", "points": "20" },
+      { "id": 4, "evaluation": "Dimensional accuracy of fabricated component", "points": "20" },
+      { "id": 5, "evaluation": "Safe handling of sheet metal tools", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m4",
+    "moduleName": "Electrical Fundamentals",
+    "moduleDescription": "Electrical concepts, measurements, wiring and motor connections.",
+    "learningOutcome": "Measure electrical quantities and perform electrical wiring safely.",
+    "moduleDuration": 45,
+    "assessmentCriteria": "Measure electrical quantities and perform electrical wiring safely.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Correct use of multimeters and clamp-on meters", "points": "20" },
+      { "id": 2, "evaluation": "Wiring of series and parallel circuits safely", "points": "20" },
+      { "id": 3, "evaluation": "Making correct motor terminal connections", "points": "20" },
+      { "id": 4, "evaluation": "Understanding of electrical diagrams and wire color codes", "points": "20" },
+      { "id": 5, "evaluation": "Adherence to electrical safety procedures", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m5",
+    "moduleName": "Basic Electronics",
+    "moduleDescription": "Electronic components, soldering, rectifiers and testing circuits.",
+    "learningOutcome": "Identify electronic components and construct basic electronic circuits.",
+    "moduleDuration": 57,
+    "assessmentCriteria": "Identify electronic components and construct basic electronic circuits.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identification and testing of active/passive components", "points": "20" },
+      { "id": 2, "evaluation": "Quality of soldering and desoldering on PCB", "points": "20" },
+      { "id": 3, "evaluation": "Assembly and testing of rectifiers and filter circuits", "points": "20" },
+      { "id": 4, "evaluation": "Use of oscilloscope and signal generators", "points": "20" },
+      { "id": 5, "evaluation": "Neatness of circuit wiring and design", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m6",
+    "moduleName": "Gas Welding & Brazing",
+    "moduleDescription": "Gas welding, copper brazing and refrigeration pipe joining.",
+    "learningOutcome": "Perform brazing and welding for refrigeration systems.",
+    "moduleDuration": 46,
+    "assessmentCriteria": "Perform brazing and welding for refrigeration systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Setting up Oxy-Acetylene welding plant safely", "points": "20" },
+      { "id": 2, "evaluation": "Copper-to-copper and copper-to-steel brazing technique", "points": "20" },
+      { "id": 3, "evaluation": "Leak-proof quality of brazed joints", "points": "20" },
+      { "id": 4, "evaluation": "Safety precautions, pressure settings, and gas handling", "points": "20" },
+      { "id": 5, "evaluation": "Cleanliness and final joint inspection", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m7",
+    "moduleName": "RAC Tools & Copper Tubing",
+    "moduleDescription": "RAC tools, refrigeration cycle and copper tube preparation.",
+    "learningOutcome": "Prepare refrigeration tubing using cutting, bending, flaring and swaging.",
+    "moduleDuration": 45,
+    "assessmentCriteria": "Prepare refrigeration tubing using cutting, bending, flaring and swaging.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Use and care of specialized RAC hand tools", "points": "20" },
+      { "id": 2, "evaluation": "Precision cutting and bending of copper tubes", "points": "20" },
+      { "id": 3, "evaluation": "Quality and size of flares and swages", "points": "20" },
+      { "id": 4, "evaluation": "Prevention of tube flattening or crimping during bending", "points": "20" },
+      { "id": 5, "evaluation": "Safety practices in handling tubing tools", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m8",
+    "moduleName": "Domestic Refrigerator Installation & Servicing",
+    "moduleDescription": "Installation, leak testing, evacuation and gas charging of refrigerators.",
+    "learningOutcome": "Install, service and troubleshoot domestic refrigerators.",
+    "moduleDuration": 70,
+    "assessmentCriteria": "Install, service and troubleshoot domestic refrigerators.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Installation and leveling of domestic refrigerator", "points": "20" },
+      { "id": 2, "evaluation": "Executing pressure testing and evacuation (vacuum)", "points": "20" },
+      { "id": 3, "evaluation": "Accurate refrigerant charging (by weight/pressure)", "points": "20" },
+      { "id": 4, "evaluation": "Diagnosing electrical and mechanical faults", "points": "20" },
+      { "id": 5, "evaluation": "Compliance with safety and environment standards", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m9",
+    "moduleName": "Compressor Technology",
+    "moduleDescription": "Compressor construction, testing, dismantling and servicing.",
+    "learningOutcome": "Service hermetic compressors and test compressor performance.",
+    "moduleDuration": 55,
+    "assessmentCriteria": "Service hermetic compressors and test compressor performance.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Testing motor windings for continuity, ground, and resistance", "points": "20" },
+      { "id": 2, "evaluation": "Dismantling and inspection of compressor mechanical parts", "points": "20" },
+      { "id": 3, "evaluation": "Testing pumping efficiency (discharge/suction pressures)", "points": "20" },
+      { "id": 4, "evaluation": "Replacing oil and terminals, and terminal re-sealing", "points": "20" },
+      { "id": 5, "evaluation": "Safe electrical testing and start-up procedures", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m10",
+    "moduleName": "Condensers, Evaporators & Refrigerant Controls",
+    "moduleDescription": "Condensers, evaporators, capillary tubes, expansion devices and refrigerant controls.",
+    "learningOutcome": "Service refrigeration components and controls.",
+    "moduleDuration": 50,
+    "assessmentCriteria": "Service refrigeration components and controls.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Cleaning and servicing air-cooled condensers", "points": "20" },
+      { "id": 2, "evaluation": "Testing and replacing capillary tubes/expansion valves", "points": "20" },
+      { "id": 3, "evaluation": "Checking evaporator surface and defrost controls", "points": "20" },
+      { "id": 4, "evaluation": "Testing thermostats, relays, and overload protectors", "points": "20" },
+      { "id": 5, "evaluation": "System parameters verification post-service", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m11",
+    "moduleName": "Refrigerant Recovery & Environmental Practices",
+    "moduleDescription": "Refrigerant recovery, recycling, retrofitting and environmental protection.",
+    "learningOutcome": "Recover refrigerant safely and retrofit RAC systems.",
+    "moduleDuration": 40,
+    "assessmentCriteria": "Recover refrigerant safely and retrofit RAC systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Setting up and operating refrigerant recovery machine", "points": "20" },
+      { "id": 2, "evaluation": "Measuring recovered refrigerant amount accurately", "points": "20" },
+      { "id": 3, "evaluation": "Flushing systems and changing oils for retrofitting", "points": "20" },
+      { "id": 4, "evaluation": "Charging retrofitted systems with eco-friendly refrigerants", "points": "20" },
+      { "id": 5, "evaluation": "Understanding ODS regulations and safety protocols", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m12",
+    "moduleName": "Thermal Insulation",
+    "moduleDescription": "Thermal insulation materials and prevention of heat leakage.",
+    "learningOutcome": "Apply insulation to improve cooling efficiency.",
+    "moduleDuration": 20,
+    "assessmentCriteria": "Apply insulation to improve cooling efficiency.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identification of various insulation materials (PUF, Glasswool)", "points": "20" },
+      { "id": 2, "evaluation": "Surface preparation before applying insulation", "points": "20" },
+      { "id": 3, "evaluation": "Proper application of insulation on piping and cabinets", "points": "20" },
+      { "id": 4, "evaluation": "Securing insulation and vapor sealing", "points": "20" },
+      { "id": 5, "evaluation": "Assessing efficiency and preventing cold bridge defects", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m13",
+    "moduleName": "Window Air Conditioner",
+    "moduleDescription": "Installation, servicing and troubleshooting of Window AC.",
+    "learningOutcome": "Install and maintain Window Air Conditioners.",
+    "moduleDuration": 35,
+    "assessmentCriteria": "Install and maintain Window Air Conditioners.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Selecting proper location and installing mounting frame", "points": "20" },
+      { "id": 2, "evaluation": "Dismantling and wet-cleaning filters, condenser, evaporator", "points": "20" },
+      { "id": 3, "evaluation": "Testing selector switch, fan motor, and thermostat", "points": "20" },
+      { "id": 4, "evaluation": "Finding and repairing leaks, charging refrigerant", "points": "20" },
+      { "id": 5, "evaluation": "Electrical parameters test (current, voltage) & air temp diff", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m14",
+    "moduleName": "Split Air Conditioner",
+    "moduleDescription": "Installation and servicing of Split, Cassette and Inverter AC systems.",
+    "learningOutcome": "Install and troubleshoot Split Air Conditioning systems.",
+    "moduleDuration": 55,
+    "assessmentCriteria": "Install and troubleshoot Split Air Conditioning systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Installing indoor and outdoor units with correct clearances", "points": "20" },
+      { "id": 2, "evaluation": "Flaring, interconnecting pipes, and vacuuming lines", "points": "20" },
+      { "id": 3, "evaluation": "Commissioning, checking drain water flow, leak testing joints", "points": "20" },
+      { "id": 4, "evaluation": "Troubleshooting electronic controller (PCB) and inverter errors", "points": "20" },
+      { "id": 5, "evaluation": "Safe high-pressure refrigerant handling (R410A/R32/R290)", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m15",
+    "moduleName": "Automobile Air Conditioning",
+    "moduleDescription": "Car AC components, servicing and gas charging.",
+    "learningOutcome": "Diagnose and repair automobile air conditioning systems.",
+    "moduleDuration": 25,
+    "assessmentCriteria": "Diagnose and repair automobile air conditioning systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Locating and identifying car AC components (compressor, etc)", "points": "20" },
+      { "id": 2, "evaluation": "Leak testing car AC plumbing and condenser", "points": "20" },
+      { "id": 3, "evaluation": "Servicing/replacing cabin filter and blower assembly", "points": "20" },
+      { "id": 4, "evaluation": "Evacuating and charging refrigerant using manifold gauge set", "points": "20" },
+      { "id": 5, "evaluation": "Testing clutch operation, belt tension, and duct temp output", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m16",
+    "moduleName": "Engineering Drawing, Workshop Calculation & Science",
+    "moduleDescription": "Engineering drawing interpretation, calculations and applied science.",
+    "learningOutcome": "Read engineering drawings and apply workshop mathematics.",
+    "moduleDuration": 97,
+    "assessmentCriteria": "Read engineering drawings and apply workshop mathematics.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Interpreting orthographic and isometric projections", "points": "20" },
+      { "id": 2, "evaluation": "Reading refrigeration electrical circuit diagrams", "points": "20" },
+      { "id": 3, "evaluation": "Performing calculation of area, volume, and unit conversions", "points": "20" },
+      { "id": 4, "evaluation": "Applying concepts of heat, temperature, and pressure scales", "points": "20" },
+      { "id": 5, "evaluation": "Workshop science application to cooling load estimation", "points": "20" }
+    ]
+  }
+]

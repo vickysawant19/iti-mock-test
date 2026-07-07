@@ -1,0 +1,257 @@
+[
+  {
+    "moduleId": "m17",
+    "moduleName": "Commercial Compressors",
+    "moduleDescription": "Open type and semi-hermetic compressor servicing.",
+    "learningOutcome": "Dismantle, repair and assemble commercial compressors.",
+    "moduleDuration": 60,
+    "assessmentCriteria": "Dismantle, repair and assemble commercial compressors.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identifying and labeling compressor parts", "points": "20" },
+      { "id": 2, "evaluation": "Dismantling semi-hermetic compressor mechanical assembly", "points": "20" },
+      { "id": 3, "evaluation": "Inspecting and replacing valves, gaskets, and pistons", "points": "20" },
+      { "id": 4, "evaluation": "Assembling, oil charging, and pressure leak testing", "points": "20" },
+      { "id": 5, "evaluation": "Electrical insulation (megger) & pump test", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m18",
+    "moduleName": "Water-Cooled Condensers & Cooling Towers",
+    "moduleDescription": "Condenser servicing, descaling and cooling tower maintenance.",
+    "learningOutcome": "Maintain water-cooled condensers and cooling towers.",
+    "moduleDuration": 45,
+    "assessmentCriteria": "Maintain water-cooled condensers and cooling towers.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Cleaning tube-in-tube and shell-and-tube condensers", "points": "20" },
+      { "id": 2, "evaluation": "Executing chemical and mechanical descaling operations", "points": "20" },
+      { "id": 3, "evaluation": "Cleaning and servicing cooling tower sump, fills, and nozzles", "points": "20" },
+      { "id": 4, "evaluation": "Inspecting float valve and adjusting water level", "points": "20" },
+      { "id": 5, "evaluation": "Testing water flow rate and checking for fan alignment", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m19",
+    "moduleName": "Water Treatment Systems",
+    "moduleDescription": "Water softeners, regeneration and circulating water treatment.",
+    "learningOutcome": "Service and maintain water treatment systems.",
+    "moduleDuration": 30,
+    "assessmentCriteria": "Service and maintain water treatment systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Testing water hardness, pH, and TDS levels", "points": "20" },
+      { "id": 2, "evaluation": "Servicing water softening plants and valves", "points": "20" },
+      { "id": 3, "evaluation": "Executing brine regeneration procedure", "points": "20" },
+      { "id": 4, "evaluation": "Adding scale/corrosion inhibitors to circulating water", "points": "20" },
+      { "id": 5, "evaluation": "Adhering to safety rules in handling water chemicals", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m20",
+    "moduleName": "Expansion Devices & Chillers",
+    "moduleDescription": "Expansion valves, flooded evaporators and chillers.",
+    "learningOutcome": "Install and adjust refrigerant flow devices.",
+    "moduleDuration": 40,
+    "assessmentCriteria": "Install and adjust refrigerant flow devices.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Setting and adjusting Thermostatic Expansion Valves (TEV)", "points": "20" },
+      { "id": 2, "evaluation": "Installing and testing electronic expansion valves (EEV)", "points": "20" },
+      { "id": 3, "evaluation": "Servicing flooded evaporators and low side controls", "points": "20" },
+      { "id": 4, "evaluation": "Superheat calculation and adjustment", "points": "20" },
+      { "id": 5, "evaluation": "Safe installation practices and leak checking", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m21",
+    "moduleName": "Commercial Refrigeration Equipment",
+    "moduleDescription": "Water coolers, bottle coolers, visi coolers and deep freezers.",
+    "learningOutcome": "Service commercial refrigeration equipment.",
+    "moduleDuration": 80,
+    "assessmentCriteria": "Service commercial refrigeration equipment.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Servicing storage and pressure type water coolers", "points": "20" },
+      { "id": 2, "evaluation": "Troubleshooting visi-coolers and chest deep freezers", "points": "20" },
+      { "id": 3, "evaluation": "Testing defrost cycles and fan motor controls", "points": "20" },
+      { "id": 4, "evaluation": "Replacing door gaskets and checking thermal insulation", "points": "20" },
+      { "id": 5, "evaluation": "Gas charging and testing cooling performance parameters", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m22",
+    "moduleName": "Ice Making Equipment",
+    "moduleDescription": "Ice cube machines, ice plants and ice candy plants.",
+    "learningOutcome": "Install, repair and maintain ice-making equipment.",
+    "moduleDuration": 70,
+    "assessmentCriteria": "Install, repair and maintain ice-making equipment.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Checking water harvest and spray mechanism in cube ice machine", "points": "20" },
+      { "id": 2, "evaluation": "Testing electrical timers and hot gas defrost solenoids", "points": "20" },
+      { "id": 3, "evaluation": "Preparing and maintaining brine solution density in ice plants", "points": "20" },
+      { "id": 4, "evaluation": "Inspecting ice cans and harvester mechanisms", "points": "20" },
+      { "id": 5, "evaluation": "Preventive maintenance tasks and safety checklist", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m23",
+    "moduleName": "Cold Storage Systems",
+    "moduleDescription": "Walk-in coolers, cold rooms and preventive maintenance.",
+    "learningOutcome": "Service cold storage and maintain performance.",
+    "moduleDuration": 50,
+    "assessmentCriteria": "Service cold storage and maintain performance.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Inspecting wall panel joints and door heater operation", "points": "20" },
+      { "id": 2, "evaluation": "Testing evaporator coils and defrost systems", "points": "20" },
+      { "id": 3, "evaluation": "Checking oil separators and crankcase heaters", "points": "20" },
+      { "id": 4, "evaluation": "Evaluating temperature and humidity levels inside cold room", "points": "20" },
+      { "id": 5, "evaluation": "Performing weekly preventive maintenance checklist", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m24",
+    "moduleName": "HVAC Fundamentals",
+    "moduleDescription": "Psychrometrics, airflow measurement and HVAC principles.",
+    "learningOutcome": "Measure air properties and evaluate HVAC performance.",
+    "moduleDuration": 40,
+    "assessmentCriteria": "Measure air properties and evaluate HVAC performance.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Using Sling Psychrometer/Anemometers correctly", "points": "20" },
+      { "id": 2, "evaluation": "Plotting state points on Psychrometric chart", "points": "20" },
+      { "id": 3, "evaluation": "Measuring Dry Bulb, Wet Bulb, RH, Dew Point", "points": "20" },
+      { "id": 4, "evaluation": "Calculating airflow (CFM) and duct static pressure", "points": "20" },
+      { "id": 5, "evaluation": "Safety in using testing instruments", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m25",
+    "moduleName": "Fans, Blowers & Air Distribution",
+    "moduleDescription": "Fan motors, blowers, ducts and insulation.",
+    "learningOutcome": "Install and maintain air distribution systems.",
+    "moduleDuration": 45,
+    "assessmentCriteria": "Install and maintain air distribution systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Servicing blower assembly and checking belt tension", "points": "20" },
+      { "id": 2, "evaluation": "Connecting and testing fan speed controllers", "points": "20" },
+      { "id": 3, "evaluation": "Fabricating and joining simple duct segments", "points": "20" },
+      { "id": 4, "evaluation": "Applying acoustic and thermal duct insulation", "points": "20" },
+      { "id": 5, "evaluation": "Adjusting dampers for proper air balancing", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m26",
+    "moduleName": "Air Filters & Indoor Air Quality",
+    "moduleDescription": "Air filter servicing and indoor air quality improvement.",
+    "learningOutcome": "Maintain HVAC filtration systems.",
+    "moduleDuration": 20,
+    "assessmentCriteria": "Maintain HVAC filtration systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identifying and cleaning different air filters", "points": "20" },
+      { "id": 2, "evaluation": "Measuring pressure drop across filters", "points": "20" },
+      { "id": 3, "evaluation": "Replacing HEPA and carbon filters correctly", "points": "20" },
+      { "id": 4, "evaluation": "Checking fresh air intake and exhaust dampers", "points": "20" },
+      { "id": 5, "evaluation": "Adhering to safety during filter disposal", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m27",
+    "moduleName": "Package Air Conditioners",
+    "moduleDescription": "Air-cooled and water-cooled package AC systems.",
+    "learningOutcome": "Install and troubleshoot package air conditioners.",
+    "moduleDuration": 50,
+    "assessmentCriteria": "Install and troubleshoot package air conditioners.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Levelling and placing package AC units", "points": "20" },
+      { "id": 2, "evaluation": "Duct connection and sealing at unit flange", "points": "20" },
+      { "id": 3, "evaluation": "Wiring control circuits and thermostat controls", "points": "20" },
+      { "id": 4, "evaluation": "Troubleshooting high pressure / low pressure trips", "points": "20" },
+      { "id": 5, "evaluation": "Checking overall cooling efficiency and parameters", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m28",
+    "moduleName": "Central Air Conditioning",
+    "moduleDescription": "AHU, FCU, condensers, cooling towers and chilled water systems.",
+    "learningOutcome": "Service and maintain central air conditioning plants.",
+    "moduleDuration": 90,
+    "assessmentCriteria": "Service and maintain central air conditioning plants.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Servicing Air Handling Units (AHU) and Fan Coil Units (FCU)", "points": "20" },
+      { "id": 2, "evaluation": "Inspecting chilled water pumps and adjusting valves", "points": "20" },
+      { "id": 3, "evaluation": "Testing control panel wiring and interlocking sequence", "points": "20" },
+      { "id": 4, "evaluation": "Servicing high capacity condenser water systems", "points": "20" },
+      { "id": 5, "evaluation": "Adhering to heavy machinery safety protocols", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m29",
+    "moduleName": "DX & Chiller Systems",
+    "moduleDescription": "Direct Expansion systems and chilled water plants.",
+    "learningOutcome": "Diagnose and maintain DX and chiller systems.",
+    "moduleDuration": 55,
+    "assessmentCriteria": "Diagnose and maintain DX and chiller systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Operating shell-and-tube water chillers", "points": "20" },
+      { "id": 2, "evaluation": "Checking freeze protection controls and flow switches", "points": "20" },
+      { "id": 3, "evaluation": "Comparing performance of DX vs Flooded chillers", "points": "20" },
+      { "id": 4, "evaluation": "Troubleshooting low suction and high head pressure faults", "points": "20" },
+      { "id": 5, "evaluation": "Logging chiller operational parameters", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m30",
+    "moduleName": "VRF / VRV Air Conditioning",
+    "moduleDescription": "VRF/VRV components, piping, commissioning and servicing.",
+    "learningOutcome": "Install and troubleshoot VRF/VRV systems.",
+    "moduleDuration": 40,
+    "assessmentCriteria": "Install and troubleshoot VRF/VRV systems.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identifying branch joints and headers layout", "points": "20" },
+      { "id": 2, "evaluation": "Performing nitrogen pressure leakage test (40+ bar)", "points": "20" },
+      { "id": 3, "evaluation": "Commissioning VRF systems using service software", "points": "20" },
+      { "id": 4, "evaluation": "Troubleshooting indoor-outdoor communication errors", "points": "20" },
+      { "id": 5, "evaluation": "Executing oil recovery cycle and parameters check", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m31",
+    "moduleName": "Mobile Air Conditioning",
+    "moduleDescription": "Bus and train air conditioning systems.",
+    "learningOutcome": "Maintain and troubleshoot heavy vehicle air conditioning.",
+    "moduleDuration": 35,
+    "assessmentCriteria": "Maintain and troubleshoot heavy vehicle air conditioning.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Identifying roof-mounted package unit components on bus/train", "points": "20" },
+      { "id": 2, "evaluation": "Testing open drive compressor belt coupling and clutch", "points": "20" },
+      { "id": 3, "evaluation": "Checking vibration dampers and rubber hose condition", "points": "20" },
+      { "id": 4, "evaluation": "Troubleshooting DC control voltage electrical faults", "points": "20" },
+      { "id": 5, "evaluation": "Adhering to transport safety and high-voltage precautions", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m32",
+    "moduleName": "Preventive Maintenance & Plant Operation",
+    "moduleDescription": "Preventive maintenance schedules and log book management.",
+    "learningOutcome": "Perform preventive maintenance and maintain operational records.",
+    "moduleDuration": 30,
+    "assessmentCriteria": "Perform preventive maintenance and maintain operational records.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Designing daily/weekly/monthly PM schedules", "points": "20" },
+      { "id": 2, "evaluation": "Proper logging of suction, discharge, oil, water temp/pressures", "points": "20" },
+      { "id": 3, "evaluation": "Detecting abnormal noise, vibration, or temperature trends", "points": "20" },
+      { "id": 4, "evaluation": "Executing shutdown and start-up checklists correctly", "points": "20" },
+      { "id": 5, "evaluation": "Maintaining plant safety records and lockout-tagout (LOTO)", "points": "20" }
+    ]
+  },
+  {
+    "moduleId": "m33",
+    "moduleName": "Engineering Drawing, Workshop Calculation & Science",
+    "moduleDescription": "Advanced engineering drawing, calculations and applied science.",
+    "learningOutcome": "Interpret engineering drawings and solve technical calculations.",
+    "moduleDuration": 50,
+    "assessmentCriteria": "Interpret engineering drawings and solve technical calculations.",
+    "evalutionsPoints": [
+      { "id": 1, "evaluation": "Interpreting complex centralized AC duct layout plans", "points": "20" },
+      { "id": 2, "evaluation": "Reading control circuit interlocking diagrams", "points": "20" },
+      { "id": 3, "evaluation": "Calculating plant cooling capacity (TR) and heat load", "points": "20" },
+      { "id": 4, "evaluation": "Applying coefficient of performance (COP) and EER calculations", "points": "20" },
+      { "id": 5, "evaluation": "Understanding refrigerant enthalpy and Mollier diagrams", "points": "20" }
+    ]
+  }
+]

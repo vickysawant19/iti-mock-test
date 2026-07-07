@@ -9,6 +9,7 @@ import {
   Users,
   RefreshCw,
   Eye,
+  EyeOff,
   Trash2,
   CalendarDays,
   ShieldCheck,
@@ -18,6 +19,7 @@ import {
   Mail,
   Key,
   X,
+  Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -98,7 +100,7 @@ function ApprovalReviewModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -106,9 +108,9 @@ function ApprovalReviewModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-gray-900 rounded-t-2xl rounded-b-none sm:rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 max-h-[85vh] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 flex-shrink-0" />
             <div>
@@ -123,7 +125,7 @@ function ApprovalReviewModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* Student Identity Card */}
           <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
             <InteractiveAvatar
@@ -315,7 +317,7 @@ function ApprovalReviewModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           <button
             onClick={onClose}
             disabled={isApproving}
@@ -386,6 +388,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [resetPasswordError, setResetPasswordError] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchList = async () => {
     if (!selectedBatch) {
@@ -564,6 +567,26 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
     }
   };
 
+  const handleQuickResetPassword = async () => {
+    if (!viewProfileUserId) return;
+    const student = students.find((s) => s.userId === viewProfileUserId);
+    setIsResettingPassword(true);
+    try {
+      await authService.adminResetPassword(
+        viewProfileUserId,
+        "test@1234",
+      );
+      toast.success(`Password successfully reset to "test@1234" for ${student?.userName || "student"}`);
+      setResetPasswordValue("");
+      setResetPasswordError("");
+    } catch (err) {
+      console.error("Quick password reset error:", err);
+      toast.error(err.message || "Failed to reset password.");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleAction = async (action, student) => {
     setProcessingId(student.userId);
     try {
@@ -663,63 +686,73 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
         isApproving={isApproving}
       />
 
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/80 transition-all">
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap gap-2">
             {["all", "pending", "approved", "rejected", "unrequested"].map(
-              (f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-3 py-1 flex items-center gap-1.5 text-xs font-medium rounded-full capitalize transition-colors ${
-                    filter === f
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
-                  }`}
-                >
-                  {f}
-                  <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                      filter === f
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-500 dark:bg-gray-600 dark:text-gray-400"
+              (f) => {
+                const isActive = filter === f;
+                const statusColors = {
+                  all: "bg-blue-500 text-white dark:bg-blue-600",
+                  pending: "bg-amber-500 text-white dark:bg-amber-600",
+                  approved: "bg-emerald-500 text-white dark:bg-emerald-600",
+                  rejected: "bg-rose-500 text-white dark:bg-rose-600",
+                  unrequested: "bg-indigo-500 text-white dark:bg-indigo-600"
+                };
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-3.5 py-1.5 flex items-center gap-1.5 text-xs font-bold rounded-xl capitalize transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                      isActive
+                        ? `${statusColors[f]} shadow-sm shadow-blue-500/10`
+                        : "bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700/80 border border-slate-200/30 dark:border-slate-700/30"
                     }`}
                   >
-                    {counts[f]}
-                  </span>
-                </button>
-              ),
+                    {f}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                      }`}
+                    >
+                      {counts[f]}
+                    </span>
+                  </button>
+                );
+              },
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-2.5 top-2 text-gray-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search students..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 h-8 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+                className="pl-9 pr-4 h-9 w-full sm:w-60 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all dark:bg-slate-900/50 dark:border-slate-800 dark:text-white"
               />
             </div>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
-              className="flex items-center h-8 px-2 text-xs border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+              className="flex items-center justify-center h-9 px-3 text-xs font-bold border border-slate-200/80 rounded-xl text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50 transition-all cursor-pointer"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 mr-1 ${isRefreshing ? "animate-spin" : ""}`}
+                className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
               />
               Refresh
             </button>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
-            <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-700 border-y border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600">
+        {/* Table - Desktop View */}
+        <div className="hidden sm:block overflow-x-auto border border-slate-100 dark:border-slate-800 rounded-2xl">
+          <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+            <thead className="bg-slate-50/60 text-xs uppercase font-bold text-slate-700 border-b border-slate-100 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-800">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Contact</th>
@@ -756,7 +789,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                 displayed.map((student) => (
                   <tr
                     key={student.userId}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors duration-150 border-b border-slate-100 last:border-0 dark:border-slate-800/50"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -781,14 +814,14 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1.5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize w-fit ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize w-fit ${
                             student.status === "approved"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30"
                               : student.status === "pending"
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/30 dark:border-amber-900/30"
                                 : student.status === "rejected"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/30 dark:border-rose-900/30"
+                                  : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30"
                           }`}
                         >
                           {student.status}
@@ -797,7 +830,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                         {student.status === "approved" &&
                           student.enrollmentStatus && (
                             <div className="flex flex-col gap-0.5 text-[10px]">
-                              <span className="text-gray-500 font-medium">
+                              <span className="text-slate-500 font-medium dark:text-slate-400">
                                 Status:{" "}
                                 <span className="text-gray-800 dark:text-gray-200 capitalize">
                                   {student.enrollmentStatus}
@@ -823,7 +856,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                             <button
                               disabled={processingId === student.userId}
                               onClick={() => handleAction("request", student)}
-                              className="bg-blue-600 text-white px-2 py-1 text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                              className="bg-blue-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer"
                             >
                               Request
                             </button>
@@ -832,7 +865,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                               onClick={() =>
                                 handleAction("direct-assign", student)
                               }
-                              className="border border-blue-600 text-blue-600 px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50"
+                              className="border border-blue-600 text-blue-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                             >
                               Assign Direct
                             </button>
@@ -844,21 +877,21 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                             <button
                               disabled={processingId === student.userId}
                               onClick={() => openApprovalModal(student)}
-                              className="bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                              className="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
                             >
                               {processingId === student.userId ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <CheckCircle className="w-3 h-3" />
+                                <CheckCircle className="w-3.5 h-3.5" />
                               )}
                               Approve
                             </button>
                             <button
                               disabled={processingId === student.userId}
                               onClick={() => handleAction("reject", student)}
-                              className="border border-red-600 text-red-600 px-2 py-1 text-xs rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center gap-1"
+                              className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
                             >
-                              <XCircle className="w-3 h-3" /> Reject
+                              <XCircle className="w-3.5 h-3.5" /> Reject
                             </button>
                           </>
                         )}
@@ -869,17 +902,17 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                               onClick={() =>
                                 handleAction("re-request", student)
                               }
-                              className="bg-gray-600 text-white px-2 py-1 text-xs rounded hover:bg-gray-700 disabled:opacity-50"
+                              className="bg-slate-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                             >
                               Re-request
                             </button>
                             <button
                               disabled={processingId === student.userId}
                               onClick={() => handleAction("delete", student)}
-                              className="border border-red-600 text-red-600 px-2 py-1 text-xs rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center gap-1"
+                              className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
                               title="Delete Request"
                             >
-                              <Trash2 className="w-3 h-3" /> Delete
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
                             </button>
                           </>
                         )}
@@ -890,20 +923,17 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                               onClick={() =>
                                 setViewProfileUserId(student.userId)
                               }
-                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-2 flex items-center transition-colors"
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                             >
-                              <Eye
-                                className="w-4 h-4 cursor-pointer"
-                                title="View/Edit Profile"
-                              />
+                              <Eye className="w-3.5 h-3.5" /> View Profile
                             </button>
                             <button
                               disabled={processingId === student.userId}
                               onClick={() => handleAction("revoke", student)}
-                              className="border border-red-600 text-red-600 px-2 py-1 text-xs rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center gap-1"
+                              className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
                               title="Revoke and Reject Request"
                             >
-                              <XCircle className="w-3 h-3" /> Revoke
+                              <XCircle className="w-3.5 h-3.5" /> Revoke
                             </button>
                           </>
                         )}
@@ -916,6 +946,173 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           </table>
         </div>
 
+        {/* Mobile-optimized Card List */}
+        <div className="block sm:hidden space-y-4">
+          {isLoading ? (
+            <div className="py-8 text-center text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500 mx-auto" />
+              <span className="text-xs mt-2 block font-medium">Loading students...</span>
+            </div>
+          ) : displayed.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <Users className="w-8 h-8 mx-auto text-slate-300 mb-2 dark:text-slate-600" />
+              No students found.
+            </div>
+          ) : (
+            displayed.map((student) => (
+              <div
+                key={student.userId}
+                className="bg-slate-50/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4 space-y-3.5 transition-all"
+              >
+                {/* Header: Avatar, Name & Status */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <InteractiveAvatar
+                      src={student.profileImage}
+                      fallbackText={student.userName?.charAt(0) || "U"}
+                      userId={student.userId}
+                      editable={false}
+                      showStatus={true}
+                      statusSize="xs"
+                      className="w-10 h-10 text-xs rounded-full border border-slate-100 shadow-sm"
+                    />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">
+                        {student.userName}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        {student.email}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                      student.status === "approved"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30"
+                        : student.status === "pending"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/30 dark:border-amber-900/30"
+                          : student.status === "rejected"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/30 dark:border-rose-900/30"
+                            : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/30 dark:border-indigo-900/30"
+                    }`}
+                  >
+                    {student.status}
+                  </span>
+                </div>
+
+                {/* Contact and Enrollment Details */}
+                <div className="text-xs space-y-1 bg-white/40 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Phone:</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">{student.phone}</span>
+                  </div>
+                  {student.status === "approved" && student.enrollmentStatus && (
+                    <>
+                      <div className="flex justify-between border-t border-slate-100/50 dark:border-slate-800/50 pt-1.5 mt-1.5">
+                        <span className="text-slate-400">Enrollment Status:</span>
+                        <span className="text-slate-700 dark:text-slate-300 font-semibold capitalize">
+                          {student.enrollmentStatus}
+                        </span>
+                      </div>
+                      {student.enrollmentDate && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Enrolled On:</span>
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {format(new Date(student.enrollmentDate), "MMM d, yyyy")}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Actions row */}
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
+                  {student.status === "unrequested" && (
+                    <>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("request", student)}
+                        className="bg-blue-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer flex-1 text-center"
+                      >
+                        Request
+                      </button>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("direct-assign", student)}
+                        className="border border-blue-600 text-blue-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex-1 text-center"
+                      >
+                        Assign Direct
+                      </button>
+                    </>
+                  )}
+                  {student.status === "pending" && (
+                    <>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => openApprovalModal(student)}
+                        className="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer flex-1"
+                      >
+                        {processingId === student.userId ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        )}
+                        Approve
+                      </button>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("reject", student)}
+                        className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer flex-1"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Reject
+                      </button>
+                    </>
+                  )}
+                  {student.status === "rejected" && (
+                    <>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("re-request", student)}
+                        className="bg-slate-600 text-white px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex-1 text-center"
+                      >
+                        Re-request
+                      </button>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("delete", student)}
+                        className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                        title="Delete Request"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </>
+                  )}
+                  {student.status === "approved" && (
+                    <>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => setViewProfileUserId(student.userId)}
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 flex-1"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View Profile
+                      </button>
+                      <button
+                        disabled={processingId === student.userId}
+                        onClick={() => handleAction("revoke", student)}
+                        className="border border-rose-600 text-rose-600 px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                        title="Revoke and Reject Request"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Revoke
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* View/Edit Profile Modal */}
         <Dialog
           open={!!viewProfileUserId}
@@ -923,33 +1120,34 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
             if (!open) {
               setViewProfileUserId(null);
               setActiveProfileTab("profile");
+              setShowPassword(false);
             }
           }}
         >
-          <DialogContent className="sm:!max-w-4xl w-full max-h-[90vh] overflow-y-auto p-0 gap-0">
-            <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <DialogTitle className="text-xl font-bold">
+          <DialogContent showCloseButton={false} className="fixed bottom-0 top-auto left-0 right-0 translate-x-0 translate-y-0 w-full max-w-full rounded-t-2xl rounded-b-none h-[85vh] max-h-[85vh] p-0 gap-0 overflow-hidden flex flex-col data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-full duration-300 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:bottom-auto sm:right-auto sm:max-w-4xl sm:rounded-xl sm:h-auto sm:max-h-[90vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+            <DialogHeader className="p-4 sm:p-5 sticky top-0 bg-white/95 backdrop-blur-sm z-20 dark:bg-gray-900/95 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <DialogTitle className="text-lg sm:text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:from-white dark:to-slate-300">
                   Student Management
                 </DialogTitle>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-max shadow-inner">
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl shadow-inner max-w-full overflow-x-auto scrollbar-none">
                     <button
                       onClick={() => setActiveProfileTab("profile")}
-                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                      className={`px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 shrink-0 cursor-pointer ${
                         activeProfileTab === "profile"
-                          ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-white/60 dark:hover:text-gray-100 dark:hover:bg-gray-700/50"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                       }`}
                     >
                       Profile Details
                     </button>
                     <button
                       onClick={() => setActiveProfileTab("enrollment")}
-                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                      className={`px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 shrink-0 cursor-pointer ${
                         activeProfileTab === "enrollment"
-                          ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-white/60 dark:hover:text-gray-100 dark:hover:bg-gray-700/50"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                       }`}
                     >
                       Enrollment Record
@@ -959,14 +1157,15 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                         setActiveProfileTab("reset-password");
                         setResetPasswordValue("");
                         setResetPasswordError("");
+                        setShowPassword(false);
                       }}
-                      className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                      className={`flex items-center gap-1 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 shrink-0 cursor-pointer ${
                         activeProfileTab === "reset-password"
                           ? "bg-amber-500 text-white shadow-sm"
-                          : "text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20"
+                          : "text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400"
                       }`}
                     >
-                      <Key className="w-3.5 h-3.5" /> Reset Password
+                      <Key className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Reset Pass
                     </button>
                   </div>
                   {/* Close button */}
@@ -974,8 +1173,9 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                     onClick={() => {
                       setViewProfileUserId(null);
                       setActiveProfileTab("profile");
+                      setShowPassword(false);
                     }}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-all duration-200 active:scale-90"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-all duration-200 active:scale-90 cursor-pointer"
                     title="Close"
                   >
                     <X className="w-5 h-5" />
@@ -984,7 +1184,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
               </div>
             </DialogHeader>
             {/* Tab panels — always rendered, toggled via CSS for smooth fade-in */}
-            <div className="relative p-6">
+            <div className="relative p-4 sm:p-6 overflow-y-auto flex-1">
               <div
                 className={`transition-all duration-200 ${
                   activeProfileTab === "profile"
@@ -1041,16 +1241,16 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                 }`}
               >
                 {viewProfileUserId && (
-                  <div className="max-w-md mx-auto py-6">
+                  <div className="max-w-md mx-auto py-4">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                         <Key className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
                           Reset Student Password
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           Set a new password for{" "}
                           <strong>
                             {
@@ -1062,28 +1262,72 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                         </p>
                       </div>
                     </div>
+
+                    {/* Quick Reset Section */}
+                    <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl p-4.5 mb-6">
+                      <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+                        <div className="text-center sm:text-left">
+                          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                            Quick One-Click Reset
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Instantly reset password to <code className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-800 dark:text-slate-200 font-mono font-bold">test@1234</code>.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleQuickResetPassword}
+                          disabled={isResettingPassword}
+                          className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer shrink-0"
+                        >
+                          {isResettingPassword ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Resetting...
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-3.5 h-3.5" /> Quick Reset
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6 text-sm text-amber-800 dark:text-amber-300">
                       ⚠️ The student will need to use this new password to log
                       in. Make sure to share it securely.
                     </div>
                     <form onSubmit={handleResetPassword} className="space-y-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                           New Password <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="password"
-                          value={resetPasswordValue}
-                          onChange={(e) => {
-                            setResetPasswordValue(e.target.value);
-                            setResetPasswordError("");
-                          }}
-                          placeholder="Enter new password (min 8 characters)"
-                          className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={resetPasswordValue}
+                            onChange={(e) => {
+                              setResetPasswordValue(e.target.value);
+                              setResetPasswordError("");
+                            }}
+                            placeholder="Enter new password (min 8 characters)"
+                            className="w-full pl-3 pr-10 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                         {resetPasswordError && (
                           <p className="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />{" "}
+                            <AlertCircle className="w-3.5 h-3.5" />{" "}
                             {resetPasswordError}
                           </p>
                         )}
@@ -1091,7 +1335,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                       <button
                         type="submit"
                         disabled={isResettingPassword}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-sm disabled:opacity-50 transition-all active:scale-95"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-sm disabled:opacity-50 transition-all active:scale-95 cursor-pointer"
                       >
                         {isResettingPassword ? (
                           <>
