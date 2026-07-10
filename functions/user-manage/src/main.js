@@ -125,7 +125,7 @@ export default async ({ req, res, log, error }) => {
       let monthlyData = {};
       try {
         monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
-      } catch (e) {}
+      } catch (e) { }
 
       if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
       monthlyData[monthKey] += isPresent;
@@ -186,7 +186,7 @@ export default async ({ req, res, log, error }) => {
         let monthlyData = {};
         try {
           monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
-        } catch (e) {}
+        } catch (e) { }
 
         if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
         monthlyData[monthKey] += isPresent;
@@ -313,6 +313,15 @@ export default async ({ req, res, log, error }) => {
         validatePassword(password);
         response = await users.updatePassword(userId, password);
         log(`Password updated for user ${userId} by an authorized teacher`);
+        break;
+      }
+      case 'updateEmail': {
+        // Expecting userId and email
+        const { userId, email } = req.bodyJson;
+        validateUserId(userId);
+        validateEmail(email);
+        response = await users.updateEmail(userId, email);
+        log(`Email updated for user ${userId} to ${email} by an authorized teacher`);
         break;
       }
       case 'updateLabels': {

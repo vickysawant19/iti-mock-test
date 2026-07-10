@@ -130,6 +130,27 @@ export class AuthService {
     }
   }
 
+  async adminUpdateEmail(userId: string, email: string) {
+    try {
+      if (!email) throw new Error("A new email is required.");
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        JSON.stringify({
+          action: "updateEmail",
+          userId,
+          email
+        })
+      );
+      const result = JSON.parse(response.responseBody);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update student email");
+      }
+      return result;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   private handleError(error: any) {
     if (error instanceof Error) {
       throw new Error(`${error.message.split(".")[0]}`);

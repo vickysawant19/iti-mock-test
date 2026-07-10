@@ -384,11 +384,26 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
 
-  // ── Reset Password state (inline tab) ──
+  // ── Reset Password & Email state (inline tab) ──
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [resetPasswordError, setResetPasswordError] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [editEmailValue, setEditEmailValue] = useState("");
+  const [editEmailError, setEditEmailError] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  useEffect(() => {
+    if (viewProfileUserId) {
+      const student = students.find((s) => s.userId === viewProfileUserId);
+      if (student) {
+        setEditEmailValue(student.email || "");
+      }
+    } else {
+      setEditEmailValue("");
+      setEditEmailError("");
+    }
+  }, [viewProfileUserId, students]);
 
   const fetchList = async () => {
     if (!selectedBatch) {
@@ -584,6 +599,66 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
       toast.error(err.message || "Failed to reset password.");
     } finally {
       setIsResettingPassword(false);
+    }
+  };
+
+  const handleUpdateEmail = async (e) => {
+    e.preventDefault();
+    if (!viewProfileUserId) return;
+    const student = students.find((s) => s.userId === viewProfileUserId);
+    if (!student) return;
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editEmailValue)) {
+      setEditEmailError("Invalid email format");
+      return;
+    }
+    
+    setIsUpdatingEmail(true);
+    let dbUpdated = false;
+    let authUpdated = false;
+    let authErrorMsg = "";
+
+    try {
+      // 1. First, update userProfile in Database (always try this)
+      if (student.profileId) {
+        await userProfileService.updateUserProfile(student.profileId, {
+          email: editEmailValue
+        });
+        dbUpdated = true;
+      }
+      
+      // 2. Next, try to update Appwrite Auth via Cloud Function
+      try {
+        await authService.adminUpdateEmail(viewProfileUserId, editEmailValue);
+        authUpdated = true;
+      } catch (authErr) {
+        console.warn("Auth email update failed:", authErr);
+        authErrorMsg = authErr.message || "Action not supported by function";
+      }
+      
+      if (dbUpdated && authUpdated) {
+        toast.success(`Email updated successfully to ${editEmailValue} in both Auth & Database!`);
+      } else if (dbUpdated) {
+        toast.warning(`Email updated in Database to ${editEmailValue}, but Auth update failed: ${authErrorMsg}`);
+      }
+      
+      // 3. Update local state
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (s.userId === viewProfileUserId) {
+            return { ...s, email: editEmailValue };
+          }
+          return s;
+        })
+      );
+      setEditEmailError("");
+    } catch (err) {
+      console.error("Email update error:", err);
+      toast.error(err.message || "Failed to update email.");
+    } finally {
+      setIsUpdatingEmail(false);
     }
   };
 
@@ -1165,7 +1240,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           : "text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400"
                       }`}
                     >
-                      <Key className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Reset Pass
+                      <Key className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Credentials
                     </button>
                   </div>
                   {/* Close button */}
@@ -1248,10 +1323,10 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                       </div>
                       <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white">
-                          Reset Student Password
+                          Student Credentials
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Set a new password for{" "}
+                          Update email or reset password for{" "}
                           <strong>
                             {
                               students.find(
@@ -1262,6 +1337,50 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                         </p>
                       </div>
                     </div>
+
+                    {/* Update Email Form */}
+                    <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl p-4.5 mb-6">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500" />
+                        Update Email Address
+                      </h4>
+                      <form onSubmit={handleUpdateEmail} className="space-y-3">
+                        <div className="relative">
+                          <input
+                            type="email"
+                            value={editEmailValue}
+                            onChange={(e) => {
+                              setEditEmailValue(e.target.value);
+                              setEditEmailError("");
+                            }}
+                            placeholder="Enter new email address"
+                            className="w-full pl-3 pr-10 py-2.5 text-sm border border-slate-350 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                          />
+                        </div>
+                        {editEmailError && (
+                          <p className="text-rose-500 text-xs mt-1 flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5" /> {editEmailError}
+                          </p>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={isUpdatingEmail || editEmailValue === (students.find(s => s.userId === viewProfileUserId)?.email || "")}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          {isUpdatingEmail ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5" /> Save Email Address
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    </div>
+
+                    <div className="border-t border-slate-200/60 dark:border-slate-800 my-6"></div>
 
                     {/* Quick Reset Section */}
                     <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 rounded-xl p-4.5 mb-6">
