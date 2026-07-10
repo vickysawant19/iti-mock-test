@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Sparkles,
   Coins,
+  Star,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,9 @@ import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import GameWorld from "./components/gameworld/GameWorld";
 import QuestionModal from "./components/QuestionModal";
 import LuckyWheelModal from "./components/LuckyWheelModal";
+import MissionsTabPanel from "./components/MissionsTabPanel";
 import useStudentGame from "@/hooks/useStudentGame";
+import useDailyMissions from "@/hooks/useDailyMissions";
 import { BADGES } from "@/services/reward.service";
 import { fixProfileImage } from "@/services/appwriteClient";
 
@@ -80,7 +83,7 @@ const StudentDashboard = ({
   ];
 
   const studentTabsRight = [
-    { id: "challenges", label: "Challenges", shortLabel: "Challenges", icon: Target },
+    { id: "missions", label: "Missions", shortLabel: "Missions", icon: Star },
     { id: "profile", label: "My Profile", shortLabel: "Profile", icon: User },
   ];
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -105,6 +108,20 @@ const StudentDashboard = ({
     spinLuckyWheel,
     canSpin,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId);
+
+  // Daily Missions
+  const {
+    missions,
+    isLoading: missionsLoading,
+    claimingId,
+    completedCount,
+    claimedCount,
+    totalCount: missionTotal,
+    allClaimed,
+    fetchMissions,
+    claimMission,
+    incrementProgress,
+  } = useDailyMissions(user?.$id, activeBatchId);
 
   // Gamer League Calculations (Emoji-Free SVGs)
   const getLeague = (wins) => {
@@ -156,6 +173,14 @@ const StudentDashboard = ({
     };
     fetchStats();
   }, [activeBatchId, user?.$id]);
+
+  // Fire login mission once per session when user is ready
+  useEffect(() => {
+    if (user?.$id && activeBatchId) {
+      incrementProgress("login", 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.$id, activeBatchId]);
 
   // Reset scroll position to top on tab changes
   useEffect(() => {
@@ -216,6 +241,25 @@ const StudentDashboard = ({
     if (result?.levelUp) {
       setShowLevelUp(true);
     }
+
+    // Update daily mission progress (fire-and-forget, non-blocking)
+    try {
+      // Every answered question counts
+      incrementProgress("questions", 1);
+      // XP earned counts toward xp missions
+      const xpGained = result?.xpGained || 0;
+      if (xpGained > 0) incrementProgress("xp", xpGained);
+      // Correct answers
+      if (isCorrect) {
+        incrementProgress("correct_answers", 1);
+        // Streak missions — check current streak from stats
+        const currentStreak = stats?.currentStreak || 0;
+        if (currentStreak > 0) incrementProgress("correct_streak", 1);
+      }
+    } catch (missionErr) {
+      console.warn("[Mission] progress update failed:", missionErr);
+    }
+
     return result;
   };
 
@@ -667,77 +711,29 @@ const StudentDashboard = ({
                   </motion.div>
                 )}
 
-                {activeTab === "challenges" && (
+                {activeTab === "missions" && (
                   <motion.div
-                    key="challenges"
+                    key="missions"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white mb-2">Teacher Challenges</h3>
-                      <p className="text-xs text-slate-500">
-                        Complete challenges set by your instructor and claim bonus XP and Coins!
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3">
-                      {challenges.map((challenge) => {
-                        const completedList = challenge.completedStudents || [];
-                        const isClaimed = completedList.includes(user?.$id);
-
-                        return (
-                          <div
-                            key={challenge.$id}
-                            className={`p-4 rounded-3xl border transition-all ${
-                              isClaimed
-                                ? "bg-slate-100/50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-900 opacity-70"
-                                : "bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-white/40 dark:border-slate-800 shadow-sm"
-                            }`}
-                          >
-                            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                              <div>
-                                <h4 className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5">
-                                  {isClaimed ? (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                  ) : (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
-                                  )}
-                                  {challenge.title}
-                                </h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  {challenge.description}
-                                </p>
-                                <div className="flex items-center gap-3 mt-3">
-                                  <span className="text-[10px] font-extrabold bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2.5 py-1 rounded-xl">
-                                    🌟 +{challenge.rewardXP} XP
-                                  </span>
-                                  <span className="text-[10px] font-extrabold bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2.5 py-1 rounded-xl">
-                                    💰 +{challenge.rewardCoins} Coins
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <Button
-                                onClick={() => handleClaimChallenge(challenge.$id)}
-                                disabled={isClaimed}
-                                className={`w-full sm:w-auto px-5 py-4 font-bold text-xs rounded-xl shadow-sm ${
-                                  isClaimed
-                                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none"
-                                    : "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white cursor-pointer"
-                                }`}
-                              >
-                                {isClaimed ? "Claimed" : "Claim Reward"}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {challenges.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-10">No challenges assigned at this moment.</p>
-                      )}
-                    </div>
+                    {/* Internal sub-tab pill switcher */}
+                    <MissionsTabPanel
+                      missions={missions}
+                      missionsLoading={missionsLoading}
+                      claimingId={claimingId}
+                      completedCount={completedCount}
+                      claimedCount={claimedCount}
+                      missionTotal={missionTotal}
+                      allClaimed={allClaimed}
+                      claimMission={claimMission}
+                      fetchMissions={fetchMissions}
+                      challenges={challenges}
+                      userId={user?.$id}
+                      onClaimChallenge={handleClaimChallenge}
+                    />
                   </motion.div>
                 )}
 
@@ -992,6 +988,7 @@ const StudentDashboard = ({
             {studentTabsRight.map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
+              const showMissionBadge = tab.id === "missions" && completedCount > claimedCount;
               return (
                 <button
                   key={tab.id}
@@ -1000,7 +997,12 @@ const StudentDashboard = ({
                     isActive ? "text-pink-500 scale-105 font-bold" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-500 animate-pulse" : "text-slate-500"}`} />
+                  <div className="relative">
+                    <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-500 animate-pulse" : "text-slate-500"}`} />
+                    {showMissionBadge && (
+                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 ring-1 ring-slate-950 animate-pulse" />
+                    )}
+                  </div>
                   <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight hidden md:block">{tab.label}</span>
                   <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight block md:hidden max-w-[50px] truncate">{tab.shortLabel}</span>
                 </button>
