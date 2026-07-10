@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Query } from "appwrite";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfDay, endOfDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfDay, endOfDay, subMonths } from "date-fns";
 import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
 import holidayService from "@/appwrite/holidaysService";
+import conf from "@/config/config";
 
 /**
  * Computes per-student stats for a given batch:
@@ -36,8 +37,9 @@ const countWorkingDays = (start, end, holidaySet) => {
 export const useBatchStats = (batchId, batchData, selectedMonth) => {
   const [students, setStudents] = useState([]);
   const [profiles, setProfiles] = useState({});
-  const [allAttendance, setAllAttendance] = useState([]);
-  const [mockTests, setMockTests] = useState([]);
+  const [studentStats, setStudentStats] = useState({}); // studentId -> { overall, monthly }
+  const [rawTests, setRawTests] = useState([]);
+  const [rawTrend, setRawTrend] = useState({}); // monthKey -> { count, label }
   const [holidays, setHolidays] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -61,8 +63,17 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         return;
       }
 
-      // 2. Fetch profiles, stats, and holidays
-      const [profileDocs, statsDocs, holidayDocs] =
+      // Calculate month range if selectedMonth is set
+      let monthStartStr = null;
+      let monthEndStr = null;
+      if (selectedMonth) {
+        const d = new Date(selectedMonth + "-01");
+        monthStartStr = format(startOfMonth(d), "yyyy-MM-dd");
+        monthEndStr = format(endOfMonth(d), "yyyy-MM-dd");
+      }
+
+      // 2. Fetch profiles, holidays, and raw tests in parallel
+      const [profileDocs, holidayDocs, testsDocsRes] =
         await Promise.all([
           // Profiles
           userProfileService.getBatchUserProfile([
@@ -70,19 +81,17 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
             Query.limit(100),
             Query.select(["userId", "userName", "profileImage"]),
           ]),
-          // Precomputed Stats
-          (async () => {
-             // We can just use databases.listDocuments here manually or let's import it
-             const { appwriteService } = await import("@/services/appwriteClient");
-             const conf = (await import("@/config/config")).default;
-             return appwriteService.getDatabases().listDocuments(
-                 conf.databaseId,
-                 "userBatchStats",
-                 [Query.equal("batchId", batchId), Query.limit(100)]
-             ).then(r => r.documents);
-          })(),
           // Holidays
           holidayService.getBatchHolidays(batchId, [Query.select(["date"])]),
+          // Raw Mock Tests
+          mockTestService.listQuestions([
+            Query.equal("userId", studentIds),
+            Query.equal("submitted", true),
+            Query.select(["userId", "score", "quesCount"])
+          ]).catch(err => {
+            console.error("Error fetching raw tests:", err);
+            return [];
+          }),
         ]);
 
       // Build profile map
@@ -92,12 +101,8 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
       });
       setProfiles(profileMap);
 
-      // Build stats map
-      const precomputedStatsMap = {};
-      statsDocs.forEach((s) => {
-        precomputedStatsMap[s.userId] = s;
-      });
-      setAllAttendance(statsDocs); // We'll loosely store stats in allAttendance state variable for now
+      // Store raw tests
+      setRawTests(testsDocsRes || []);
 
       // Holidays set
       const hSet = new Set();
@@ -105,13 +110,81 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         if (h?.date) hSet.add(h.date.substring(0, 10));
       });
       setHolidays(hSet);
+
+      // 3. Fetch attendance stats (limit 1 count) for each student and monthly trends in parallel
+      const statsMap = {};
+      const trendMap = {};
+
+      const now = new Date();
+      const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const d = subMonths(now, i);
+        return {
+          monthKey: format(d, "yyyy-MM"),
+          label: format(d, "MMM yy"),
+          start: format(startOfMonth(d), "yyyy-MM-dd"),
+          end: format(endOfMonth(d), "yyyy-MM-dd"),
+        };
+      }).reverse();
+
+      await Promise.all([
+        // Fetch per-student counts
+        ...studentIds.map(async (sid) => {
+          try {
+            const [overall, monthly] = await Promise.all([
+              newAttendanceService.getStudentAttendanceStats(sid, batchId),
+              monthStartStr && monthEndStr
+                ? newAttendanceService.getStudentAttendanceStats(sid, batchId, monthStartStr, monthEndStr)
+                : Promise.resolve({ presentDays: 0, percentage: 0 }),
+            ]);
+            statsMap[sid] = { overall, monthly };
+          } catch (err) {
+            console.error(`Error fetching stats for student ${sid}:`, err);
+            statsMap[sid] = {
+              overall: { presentDays: 0, percentage: 0 },
+              monthly: { presentDays: 0, percentage: 0 },
+            };
+          }
+        }),
+        // Fetch trend counts
+        ...last6Months.map(async (m) => {
+          try {
+            const count = await newAttendanceService.database.listRows({
+              databaseId: conf.databaseId,
+              tableId: conf.newAttendanceCollectionId,
+              queries: [
+                Query.equal("batchId", batchId),
+                Query.equal("status", "present"),
+                Query.greaterThanEqual("date", m.start),
+                Query.lessThanEqual("date", m.end),
+                Query.limit(1),
+              ]
+            }).then((res) => res.total);
+            trendMap[m.monthKey] = {
+              label: m.label,
+              count,
+              monthKey: m.monthKey,
+            };
+          } catch (err) {
+            console.error(`Error fetching trend for ${m.monthKey}:`, err);
+            trendMap[m.monthKey] = {
+              label: m.label,
+              count: 0,
+              monthKey: m.monthKey,
+            };
+          }
+        })
+      ]);
+
+      setStudentStats(statsMap);
+      setRawTrend(trendMap);
+
     } catch (err) {
       console.error("[useBatchStats] Error:", err);
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  }, [batchId]);
+  }, [batchId, selectedMonth]);
 
   useEffect(() => {
     fetchData();
@@ -135,51 +208,41 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
       ? countWorkingDays(batchStart, effectiveEnd, holidays)
       : 0;
 
-    // Selected month range
-    let monthStart = null;
-    let monthEnd = null;
-    let monthWorkingDays = 0;
-    if (selectedMonth) {
-      const d = new Date(selectedMonth + "-01");
-      monthStart = startOfMonth(d);
-      monthEnd = endOfMonth(d);
-      // Clamp to batch range
-      const clampedStart = new Date(
-        Math.max(monthStart.getTime(), batchStart?.getTime() || 0)
-      );
-      const clampedEnd = new Date(
-        Math.min(monthEnd.getTime(), effectiveEnd.getTime())
-      );
-      monthWorkingDays = countWorkingDays(clampedStart, clampedEnd, holidays);
-    }
-
-    // Here, allAttendance is actually precomputed stats
-    const statsMap = {};
-    allAttendance.forEach((s) => {
-      statsMap[s.userId] = s;
+    // Group mock tests by userId
+    const testsByUser = {};
+    rawTests.forEach((t) => {
+      const uid = t.userId;
+      if (!testsByUser[uid]) {
+        testsByUser[uid] = [];
+      }
+      testsByUser[uid].push(t);
     });
 
     return students.map((s) => {
       const sid = s.studentId;
       const profile = profiles[sid] || {};
-      const stat = statsMap[sid] || { presentDays: 0, monthlyAttendance: "{}", testsSubmitted: 0, latestScore: 0, cumulativeScore: 0 };
+      const stat = studentStats[sid] || {
+        overall: { presentDays: 0, percentage: 0 },
+        monthly: { presentDays: 0, percentage: 0 }
+      };
+
+      const presentDays = stat.overall.presentDays || 0;
+      const totalAtt = stat.overall.percentage || 0;
+      const monthAtt = stat.monthly.percentage || 0;
+
+      // Compute mock test stats from raw tests
+      const studentTests = testsByUser[sid] || [];
+      const testsSubmitted = studentTests.length;
       
-      let monthPresent = 0;
-      if (selectedMonth) {
-        try {
-          const mData = JSON.parse(stat.monthlyAttendance || "{}");
-          monthPresent = mData[selectedMonth] || 0;
-        } catch(e) {}
-      }
+      let cumulativeScore = 0;
+      studentTests.forEach((t) => {
+        const score = t.score || 0;
+        const qCount = t.quesCount || 0;
+        const percentageScore = qCount > 0 ? (score / qCount) * 100 : 0;
+        cumulativeScore += percentageScore;
+      });
 
-      const totalAtt = totalWorkingDays > 0
-        ? parseFloat(((stat.presentDays / totalWorkingDays) * 100).toFixed(1))
-        : 0;
-      const monthAtt = monthWorkingDays > 0
-        ? parseFloat(((monthPresent / monthWorkingDays) * 100).toFixed(1))
-        : 0;
-
-      const avgScore = stat.testsSubmitted > 0 ? parseFloat((stat.cumulativeScore / stat.testsSubmitted).toFixed(1)) : 0;
+      const avgScore = testsSubmitted > 0 ? parseFloat((cumulativeScore / testsSubmitted).toFixed(1)) : 0;
 
       let status = "active";
       if (totalAtt < 50) status = "critical";
@@ -193,15 +256,15 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         rollNumber: s.rollNumber || null,
         totalAttendancePercent: totalAtt,
         monthlyAttendancePercent: monthAtt,
-        presentDays: stat.presentDays,
+        presentDays,
         totalWorkingDays,
-        testsSubmitted: stat.testsSubmitted,
+        testsSubmitted,
         avgScore,
         status,
         joinedAt: s.joinedAt,
       };
     });
-  }, [students, profiles, allAttendance, batchData, holidays, selectedMonth]);
+  }, [students, profiles, studentStats, rawTests, batchData, holidays]);
 
   // Aggregated batch overview
   const batchOverview = useMemo(() => {
@@ -232,51 +295,30 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
 
   // Monthly attendance trend (last 6 months)
   const attendanceTrend = useMemo(() => {
-    if (!batchData?.start_date || allAttendance.length === 0) return [];
-    // since allAttendance contains stats map and not raw attendance
-    // we need to aggregate the individual monthly sums from JSON.
-    const monthMap = {};
-    
-    allAttendance.forEach((s) => {
-      let mData = {};
-      try { mData = JSON.parse(s.monthlyAttendance || "{}"); } catch(e) {}
-      
-      Object.entries(mData).forEach(([m, present]) => {
-         if (!monthMap[m]) monthMap[m] = { present: 0, total: 0 };
-         monthMap[m].present += present;
-         // Total working days per month is not strictly saved per student in userBatchStats, 
-         // so we rely on holidays and date fns here to compute totalWorkingDays for that month.
-         monthMap[m].total++; 
-      })
-    });
+    if (!batchData?.start_date || students.length === 0) return [];
 
-    return Object.entries(monthMap)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-6)
-      .map(([month, data]) => {
-        // compute working days for this month
-        const d = new Date(month + "-01");
+    return Object.values(rawTrend)
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .map((m) => {
+        const d = new Date(m.monthKey + "-01");
         const mStart = startOfMonth(d);
         const mEnd = endOfMonth(d);
         const batchStart = batchData.start_date ? new Date(batchData.start_date) : mStart;
         const effectiveStart = new Date(Math.max(mStart.getTime(), batchStart.getTime()));
         
         let monthWorkingDays = countWorkingDays(effectiveStart, mEnd, holidays);
-        // Student's sum of present divided by student working days sum 
-        // Here `data.total` is the number of students who had an entry for this month
         // Average attendance for the month is (total presents / (working days * total students))
-        // But a simpler approach is calculating the total max possible present and dividing.
-        let totalPossible = monthWorkingDays * data.total;
+        let totalPossible = monthWorkingDays * students.length;
 
         return {
-          month,
-          label: format(d, "MMM yy"),
+          month: m.monthKey,
+          label: m.label,
           percentage: totalPossible > 0
-            ? parseFloat(((data.present / totalPossible) * 100).toFixed(1))
+            ? parseFloat(((m.count / totalPossible) * 100).toFixed(1))
             : 0,
         };
-     });
-  }, [allAttendance, batchData, holidays]);
+      });
+  }, [rawTrend, batchData, holidays, students]);
 
   return {
     studentRows,

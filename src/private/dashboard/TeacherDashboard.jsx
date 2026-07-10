@@ -322,6 +322,18 @@ const TeacherDashboard = ({
         {/* Batch Overview Hero */}
         <BatchOverviewCard batchContext={batchContext} batchOverview={batchOverview} />
 
+        {/* Live Class Lobby - Sleek Touch-to-Expand Tracker */}
+        <div className="relative z-30 flex items-center justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-3 shadow-sm select-none">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-450 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">Class Lobby</span>
+          </div>
+          <OnlineBatchMembers batchId={batchContext?.batchId} currentUserId={profile?.userId} compact={true} align="right" />
+        </div>
+
         {/* Bottom Navigation Dock replaces old tabs on mobile and desktop */}
 
         <AnimatePresence mode="wait">
@@ -334,14 +346,14 @@ const TeacherDashboard = ({
               className="space-y-5"
             >
               {/* Controls Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+              <div className="flex flex-row items-center justify-between gap-3 w-full">
                 <div className="flex items-center gap-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Month</label>
                   <input
                     type="month"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="px-3 py-2 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
+                    className="px-2.5 py-1.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
                   />
                 </div>
                 <Button
@@ -352,7 +364,7 @@ const TeacherDashboard = ({
                   className="text-xs font-semibold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
-                  Refresh Stats
+                  Refresh
                 </Button>
               </div>
 
@@ -370,22 +382,20 @@ const TeacherDashboard = ({
                   {/* Student Table */}
                   <StudentTable studentRows={studentRows} selectedMonth={selectedMonth} />
 
-                  {/* Live Batch Members List */}
-                  <OnlineBatchMembers batchId={batchContext?.batchId} currentUserId={profile?.userId} />
 
                   {/* Visual Insights */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <AttendanceTrendChart data={attendanceTrend} />
 
                     {/* Needs Attention List */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-                      <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
+                    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
+                      <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-amber-500" />
                         <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">
                           Needs Attention
                         </h3>
                       </div>
-                      <div className="p-4 space-y-2 max-h-56 overflow-y-auto">
+                      <div className="py-2 px-0 sm:p-4 space-y-2 max-h-56 overflow-y-auto">
                         {studentRows
                           .filter((s) => s.totalAttendancePercent < 75)
                           .sort((a, b) => a.totalAttendancePercent - b.totalAttendancePercent)
@@ -393,12 +403,12 @@ const TeacherDashboard = ({
                           .map((s) => (
                             <div
                               key={s.studentId}
-                              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-red-50/40 dark:bg-red-900/10 border border-red-100/30 dark:border-red-900/20"
+                              className="flex items-center justify-between gap-2 py-2 px-1 sm:p-2.5 sm:rounded-xl sm:bg-red-50/40 sm:dark:bg-red-900/10 border-b border-slate-100 dark:border-slate-800/30 sm:border sm:border-red-100/30 sm:dark:border-red-900/20 last:border-b-0"
                             >
-                              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate">
                                 {s.userName}
                               </span>
-                              <span className="text-xs font-extrabold text-red-600 dark:text-red-400 tabular-nums shrink-0">
+                              <span className="text-xs font-extrabold text-red-650 dark:text-red-400 tabular-nums shrink-0">
                                 {s.totalAttendancePercent}%
                               </span>
                             </div>

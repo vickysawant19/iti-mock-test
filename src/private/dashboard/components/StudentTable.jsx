@@ -101,25 +101,25 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
   }
 
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Users className="w-5 h-5 text-purple-500 shrink-0" />
           <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">
             Students <span className="text-slate-400 font-normal">({filtered.length})</span>
           </h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-2 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 w-44"
+              className="pl-8 pr-3 py-2 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 w-full sm:w-44"
             />
           </div>
           {/* Filter button */}
@@ -127,7 +127,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
             variant="ghost"
             size="sm"
             onClick={() => setShowLowOnly(!showLowOnly)}
-            className={`rounded-xl text-xs font-semibold ${
+            className={`rounded-xl text-xs font-semibold flex-1 sm:flex-none justify-center ${
               showLowOnly
                 ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
                 : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -139,8 +139,8 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Table (Desktop only) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-white/20 dark:border-slate-800">
@@ -210,6 +210,79 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/40">
+        {filtered.map((row) => (
+          <div key={row.studentId} className="py-3 px-2 flex flex-col gap-2.5 hover:bg-pink-50/10 dark:hover:bg-pink-900/5 transition-colors">
+            {/* Header: Student Info + Status */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={row.profileImage} />
+                  <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300">
+                    {row.userName?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-850 dark:text-white truncate max-w-[160px]">{row.userName}</p>
+                  {row.registerId && (
+                    <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{row.registerId}</p>
+                  )}
+                </div>
+              </div>
+              <StatusBadge status={row.status} />
+            </div>
+
+            {/* Attendance Progress Bars */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-1">
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Overall Att.</span>
+                  <span className={`text-[10px] font-extrabold ${
+                    row.totalAttendancePercent < 50 ? 'text-red-500' : row.totalAttendancePercent < 75 ? 'text-amber-500' : 'text-emerald-500'
+                  }`}>{row.totalAttendancePercent}%</span>
+                </div>
+                <div className="w-full h-1 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${
+                    row.totalAttendancePercent < 50 ? 'bg-red-500' : row.totalAttendancePercent < 75 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`} style={{ width: `${Math.min(row.totalAttendancePercent, 100)}%` }} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Monthly Att.</span>
+                  <span className={`text-[10px] font-extrabold ${
+                    row.monthlyAttendancePercent < 50 ? 'text-red-500' : row.monthlyAttendancePercent < 75 ? 'text-amber-500' : 'text-emerald-500'
+                  }`}>{row.monthlyAttendancePercent}%</span>
+                </div>
+                <div className="w-full h-1 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${
+                    row.monthlyAttendancePercent < 50 ? 'bg-red-500' : row.monthlyAttendancePercent < 75 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`} style={{ width: `${Math.min(row.monthlyAttendancePercent, 100)}%` }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Test Stats */}
+            <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 px-0.5">
+              <div className="flex items-center gap-1">
+                <span>Tests:</span>
+                <span className="font-extrabold text-slate-700 dark:text-slate-300">{row.testsSubmitted}</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <span>Avg Score:</span>
+                <span className={`font-black ${
+                  row.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-450"
+                  : row.avgScore >= 50 ? "text-amber-600 dark:text-amber-450"
+                  : "text-red-600 dark:text-red-450"
+                }`}>{row.avgScore}%</span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {filtered.length === 0 && studentRows.length > 0 && (

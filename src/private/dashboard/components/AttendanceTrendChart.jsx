@@ -35,14 +35,14 @@ const AttendanceTrendChart = ({ data = [] }) => {
   }
 
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
+    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
+      <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-emerald-500" />
         <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">
           Attendance Trend
         </h3>
       </div>
-      <div className="p-4 h-64">
+      <div className="py-4 px-0 sm:p-4 h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
