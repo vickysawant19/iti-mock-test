@@ -37,6 +37,7 @@ import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import GameWorld from "./components/gameworld/GameWorld";
 import QuestionModal from "./components/QuestionModal";
+import LuckyWheelModal from "./components/LuckyWheelModal";
 import useStudentGame from "@/hooks/useStudentGame";
 import { BADGES } from "@/services/reward.service";
 import { fixProfileImage } from "@/services/appwriteClient";
@@ -71,6 +72,7 @@ const StudentDashboard = ({
   // Tabs: game, leaderboard, challenges, profile
   const [activeTab, setActiveTab] = useState("game");
   const [isQuestionOpen, setIsQuestionOpen] = useState(false);
+  const [isWheelOpen, setIsWheelOpen] = useState(false);
 
   const studentTabsLeft = [
     { id: "game", label: "Game World", shortLabel: "Game", icon: Gamepad2 },
@@ -100,6 +102,8 @@ const StudentDashboard = ({
     claimChallengeReward,
     unlockedBadges,
     clearUnlockedBadges,
+    spinLuckyWheel,
+    canSpin,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId);
 
   // Gamer League Calculations (Emoji-Free SVGs)
@@ -303,6 +307,8 @@ const StudentDashboard = ({
             batchContext={batchContext}
             activeSettings={activeSettings}
             onAttemptQuestion={() => setIsQuestionOpen(true)}
+            canSpin={canSpin}
+            setIsWheelOpen={setIsWheelOpen}
           />
         ) : (
           <div className="min-w-0 space-y-4">
@@ -461,6 +467,22 @@ const StudentDashboard = ({
                     +
                   </button>
                 </div>
+
+                {/* Lucky Spin Button */}
+                <button
+                  onClick={() => setIsWheelOpen(true)}
+                  className="relative overflow-hidden bg-slate-950/60 hover:bg-slate-900 border border-amber-500/30 px-3 rounded-2xl flex items-center gap-2 shadow-lg h-[48px] shrink-0 cursor-pointer transition-all active:scale-95 group select-none"
+                  title="Daily Lucky Spin"
+                >
+                  <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-gamer-shine pointer-events-none" />
+                  <span className="text-lg animate-spin" style={{ animationDuration: '6s' }}>🎡</span>
+                  <div className="flex flex-col justify-center text-left">
+                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-wider leading-none">Lucky Spin</span>
+                    <span className={`text-[9px] font-extrabold mt-0.5 leading-none ${canSpin() ? "text-green-400 animate-pulse" : "text-slate-555 dark:text-slate-400"}`}>
+                      {canSpin() ? "SPIN LIVE" : "SPUN"}
+                    </span>
+                  </div>
+                </button>
 
                 {/* League, Rank & Achievements badges */}
                 <div className="flex items-center gap-2">
@@ -996,6 +1018,15 @@ const StudentDashboard = ({
         batchId={activeBatchId || batchContext?.batchId || stats?.batchId}
         activeSettings={activeSettings}
         onAnswerSubmit={handleAnswerSubmit}
+        stats={stats}
+      />
+
+      {/* Daily Lucky Spin Modal */}
+      <LuckyWheelModal
+        isOpen={isWheelOpen}
+        onClose={() => setIsWheelOpen(false)}
+        canSpin={canSpin}
+        spinLuckyWheel={spinLuckyWheel}
         stats={stats}
       />
     </div>

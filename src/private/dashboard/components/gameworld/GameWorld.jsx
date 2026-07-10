@@ -35,7 +35,17 @@ import StagePopup from "./StagePopup";
 /* ────────────────────────────────────────────────────────────────────────
    Main component
    ──────────────────────────────────────────────────────────────────── */
-export default function GameWorld({ user, stats, profile, leaderboard = [], batchContext = {}, activeSettings, onAttemptQuestion }) {
+export default function GameWorld({
+  user,
+  stats,
+  profile,
+  leaderboard = [],
+  batchContext = {},
+  activeSettings,
+  onAttemptQuestion,
+  canSpin,
+  setIsWheelOpen
+}) {
   const currentLevel = stats?.level || 1;
   const xpIntoLevel = stats?.xp ? stats.xp % 100 : 0;
 
@@ -363,6 +373,21 @@ export default function GameWorld({ user, stats, profile, leaderboard = [], batc
               compact={true}
             />
           </div>
+
+          {/* Floating Lucky Spin Button on map */}
+          {canSpin && setIsWheelOpen && (
+            <div className="pointer-events-auto absolute top-4 right-4 z-30 select-none">
+              <button
+                onClick={() => setIsWheelOpen(true)}
+                className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-900 border border-amber-500/30 rounded-xl px-2.5 py-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer pointer-events-auto shadow-sm select-none"
+              >
+                <span className="text-sm animate-spin" style={{ animationDuration: '6s' }}>🎡</span>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${canSpin() ? "text-amber-450 animate-pulse" : "text-slate-405 dark:text-slate-400"}`}>
+                  {canSpin() ? "Lucky Spin" : "Spun Today"}
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Floating map controls */}
           <div className="absolute bottom-[calc(100px+env(safe-area-inset-bottom,0px))] right-4 z-30 flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 shadow-2xl backdrop-blur-lg md:bottom-6 md:right-6">

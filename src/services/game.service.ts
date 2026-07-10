@@ -20,6 +20,7 @@ export interface StudentGameStats {
   highestStreak: number;
   lastQuestionTime?: string;
   lastActive?: string;
+  lastWheelSpinTime?: string;
   $createdAt?: string;
   $updatedAt?: string;
 }
@@ -409,6 +410,91 @@ export class GameService extends DatabaseService {
     }
 
     return stats;
+  }
+
+  /**
+   * Processes a daily spin reward for the lucky wheel.
+   * Leverages both localStorage and database fields for last spin tracking.
+   */
+  async spinLuckyWheel(
+    studentId: string,
+    batchId: string,
+    tradeId: string,
+    xpReward: number,
+    coinsReward: number
+  ): Promise<StudentGameStats> {
+    const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
+    stats.xp += xpReward;
+    stats.coins += coinsReward;
+    stats.level = Math.floor(stats.xp / 100) + 1;
+    stats.lastActive = new Date().toISOString();
+    const spinTime = new Date().toISOString();
+
+    const storageKey = `last_wheel_spin_${studentId}_${batchId}`;
+    try {
+      localStorage.setItem(storageKey, spinTime);
+    } catch (e) {
+      console.warn("Failed to save spin time to localStorage", e);
+    }
+
+    if (stats.$id) {
+      try {
+        const { databases } = await import("./appwriteClient");
+        const updated = await databases.updateDocument(
+          conf.databaseId,
+          conf.gameStatsCollectionId,
+          stats.$id,
+          {
+            xp: stats.xp,
+            coins: stats.coins,
+            level: stats.level,
+            lastActive: stats.lastActive,
+            lastWheelSpinTime: spinTime,
+          }
+        );
+        return updated as unknown as StudentGameStats;
+      } catch (err: any) {
+        console.warn(
+          "[GameService] Failed to write lastWheelSpinTime to database. Falling back to writing standard fields.",
+          err
+        );
+        return await this.updateRow<StudentGameStats>(stats.$id, {
+          xp: stats.xp,
+          coins: stats.coins,
+          level: stats.level,
+          lastActive: stats.lastActive,
+        });
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Checks if the student is eligible to spin the wheel today (calendar day comparison).
+   */
+  canSpinLuckyWheel(studentId: string, batchId: string, stats?: StudentGameStats | null): boolean {
+    const storageKey = `last_wheel_spin_${studentId}_${batchId}`;
+    let lastSpinStr: string | null = null;
+
+    try {
+      lastSpinStr = localStorage.getItem(storageKey);
+    } catch (e) {}
+
+    if (!lastSpinStr && stats && stats.lastWheelSpinTime) {
+      lastSpinStr = stats.lastWheelSpinTime;
+    }
+
+    if (!lastSpinStr) return true;
+
+    const lastSpin = new Date(lastSpinStr);
+    const now = new Date();
+
+    return (
+      lastSpin.getFullYear() !== now.getFullYear() ||
+      lastSpin.getMonth() !== now.getMonth() ||
+      lastSpin.getDate() !== now.getDate()
+    );
   }
 
   /**

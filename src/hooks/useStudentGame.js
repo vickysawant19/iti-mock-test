@@ -285,6 +285,23 @@ export function useStudentGame(studentId, batchId, tradeId) {
     fetchChallenges,
     claimChallengeReward,
     fetchAchievements,
+
+    spinLuckyWheel: useCallback(async (xpReward, coinsReward) => {
+      if (!studentId || !batchId || !tradeId) return null;
+      try {
+        const res = await gameService.spinLuckyWheel(studentId, batchId, tradeId, xpReward, coinsReward);
+        setStats(res);
+        fetchLeaderboard();
+        return res;
+      } catch (err) {
+        console.error("[useStudentGame] Error spinning lucky wheel:", err);
+        return null;
+      }
+    }, [studentId, batchId, tradeId, fetchLeaderboard]),
+
+    canSpin: useCallback(() => {
+      return gameService.canSpinLuckyWheel(studentId, batchId, stats);
+    }, [studentId, batchId, stats]),
   };
 }
 
