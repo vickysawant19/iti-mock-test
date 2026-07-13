@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { 
   Coins, 
   Sparkles, 
@@ -142,8 +143,8 @@ const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic }) => {
         </div>
       )}
 
-      {/* Category Pills Slider */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-white/10">
+      {/* Category Sub-tabs Switcher */}
+      <div className="flex items-center gap-4 sm:gap-6 md:gap-8 border-b border-slate-200 dark:border-[#221a48] pb-0 relative z-10 select-none w-full overflow-x-auto scrollbar-none">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
           const Icon = cat.icon;
@@ -154,14 +155,20 @@ const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic }) => {
                 setErrorMsg("");
                 setActiveCategory(cat.id);
               }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-200 cursor-pointer font-bold text-xs select-none shrink-0 ${
+              className={`relative flex items-center gap-2 py-3 px-1 cursor-pointer transition-all duration-200 text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 ${
                 isActive
-                  ? "bg-pink-500 text-white border-pink-400 shadow-md shadow-pink-500/25"
-                  : "bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/40 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-800/80"
+                  ? "text-slate-900 dark:text-white"
+                  : "text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
-              <Icon className="w-4 h-4" />
-              {cat.label}
+              <Icon className={`w-4 h-4 ${isActive ? "text-pink-500" : "text-slate-400"}`} />
+              <span>{cat.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeCategoryUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
+                />
+              )}
             </button>
           );
         })}

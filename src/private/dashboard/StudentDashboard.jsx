@@ -19,6 +19,7 @@ import {
   Trophy,
   Target,
   Flame,
+  Play,
   User,
   Users,
   Compass,
@@ -28,6 +29,9 @@ import {
   Sparkles,
   Coins,
   Star,
+  Wrench,
+  LayoutGrid,
+  BarChart2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -47,231 +51,14 @@ import { BADGES } from "@/services/reward.service";
 import { fixProfileImage } from "@/services/appwriteClient";
 import CosmeticStoreTab from "./components/CosmeticStoreTab";
 import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
-
-const StatCard = ({ icon: Icon, label, value, color, sub }) => (
-  <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-slate-700/50">
-    <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${color}`}>
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{label}</p>
-        <p className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{value}</p>
-        {sub && <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  </div>
-);
-
-const AccuracyGraph = ({ series = [] }) => {
-  if (!series || series.length === 0) {
-    return (
-      <div className="h-48 flex flex-col items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl border border-white/30 dark:border-slate-800 p-5 text-slate-400 text-xs font-bold text-center">
-        <TrendingUp className="w-8 h-8 text-slate-350 dark:text-slate-700 mb-2 animate-bounce" />
-        No test data available for accuracy mapping
-      </div>
-    );
-  }
-
-  const width = 500;
-  const height = 150;
-  const paddingX = 40;
-  const paddingY = 20;
-
-  const graphWidth = width - paddingX * 2;
-  const graphHeight = height - paddingY * 2;
-
-  // Map values to coordinates
-  const points = series.map((val, idx) => {
-    const x = paddingX + (series.length > 1 ? (idx / (series.length - 1)) * graphWidth : 0);
-    // y values: 0% is at graphHeight + paddingY, 100% is at paddingY
-    const y = paddingY + graphHeight - (val / 100) * graphHeight;
-    return { x, y, value: val };
-  });
-
-  // SVG path definition for the line
-  const linePath = points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-
-  // SVG path definition for the area under the line
-  const areaPath = points.length > 0 
-    ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
-    : "";
-
-  return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 shadow-sm relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
-      <div className="flex justify-between items-center mb-3">
-        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-          Accuracy Trend (Last {series.length} Tests)
-        </h4>
-        <span className="text-[10px] font-black text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded-full">{series[series.length - 1]}% Latest</span>
-      </div>
-
-      <div className="relative">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-          <defs>
-            {/* Area Gradient */}
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FF2EA6" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#A020F0" stopOpacity="0.0" />
-            </linearGradient>
-            {/* Line Glow Filter */}
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <dropShadow dx="0" dy="3" stdDeviation="3" floodColor="#FF2EA6" floodOpacity="0.3" />
-            </filter>
-            {/* Stroke Gradient */}
-            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#FF2EA6" />
-              <stop offset="100%" stopColor="#A020F0" />
-            </linearGradient>
-          </defs>
-
-          {/* Grid lines */}
-          {[0, 25, 50, 75, 100].map((yVal) => {
-            const y = paddingY + graphHeight - (yVal / 100) * graphHeight;
-            return (
-              <g key={yVal} className="opacity-10 dark:opacity-20">
-                <line
-                  x1={paddingX}
-                  y1={y}
-                  x2={width - paddingX}
-                  y2={y}
-                  stroke="currentColor"
-                  className="text-slate-400 dark:text-slate-500"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
-                <text
-                  x={paddingX - 10}
-                  y={y + 3}
-                  fill="currentColor"
-                  className="text-slate-400 dark:text-slate-500 font-bold"
-                  fontSize="8"
-                  textAnchor="end"
-                >
-                  {yVal}%
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Area path */}
-          {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
-
-          {/* Line path */}
-          {linePath && (
-            <path
-              d={linePath}
-              fill="none"
-              stroke="url(#lineGradient)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter="url(#glow)"
-            />
-          )}
-
-          {/* Data points */}
-          {points.map((p, idx) => (
-            <g key={idx} className="group/point cursor-help">
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r="4"
-                className="fill-white dark:fill-slate-900 stroke-pink-500 hover:scale-125 transition-transform"
-                strokeWidth="2"
-              />
-              {/* Tooltip background & text */}
-              <rect
-                x={p.x - 14}
-                y={p.y - 20}
-                width="28"
-                height="14"
-                rx="4"
-                className="fill-slate-900/90 dark:fill-white/95 opacity-0 group-hover/point:opacity-100 transition-opacity pointer-events-none"
-              />
-              <text
-                x={p.x}
-                y={p.y - 10}
-                className="fill-white dark:fill-slate-900 opacity-0 group-hover/point:opacity-100 transition-opacity pointer-events-none font-black"
-                fontSize="8"
-                textAnchor="middle"
-              >
-                {p.value}%
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
-    </div>
-  );
-};
-
-const RecentBadgesRibbon = ({ achievements = [], badges = {} }) => {
-  const getBadgeIconHelper = (iconName) => {
-    switch (iconName) {
-      case "Flame": return <Flame className="w-5 h-5 text-orange-500" />;
-      case "Target": return <Target className="w-5 h-5 text-red-500" />;
-      case "BookOpen": return <BookOpen className="w-5 h-5 text-purple-500" />;
-      case "Zap": return <Zap className="w-5 h-5 text-yellow-500 animate-pulse" />;
-      case "Trophy": return <Trophy className="w-5 h-5 text-yellow-400" />;
-      default: return <Award className="w-5 h-5 text-pink-500" />;
-    }
-  };
-
-  const unlockedAchievementIds = achievements.map(a => a.achievementId);
-  const recentBadgesList = Object.values(badges)
-    .filter(badge => unlockedAchievementIds.includes(badge.id))
-    .map(badge => {
-      const achDoc = achievements.find(a => a.achievementId === badge.id);
-      return {
-        ...badge,
-        unlockedAt: achDoc?.$createdAt || achDoc?.$updatedAt
-      };
-    })
-    .sort((a, b) => new Date(b.unlockedAt || 0).getTime() - new Date(a.unlockedAt || 0).getTime())
-    .slice(0, 4);
-
-  if (recentBadgesList.length === 0) {
-    return (
-      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 text-center text-slate-400 text-xs font-bold shadow-sm">
-        🎖️ Unlock badges by answering questions and completing missions!
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
-      <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
-        <Award className="w-4 h-4 text-pink-500" />
-        Recent Badges Unlocked
-      </h3>
-      <div className="grid grid-cols-4 gap-2">
-        {recentBadgesList.map((badge) => (
-          <div
-            key={badge.id}
-            className="group relative flex flex-col items-center p-2 rounded-2xl bg-slate-50/50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 hover:border-pink-500/20 dark:hover:border-pink-500/20 transition-all text-center"
-          >
-            <div className={`p-2 rounded-xl mb-1 bg-slate-200/50 dark:bg-slate-900`}>
-              {getBadgeIconHelper(badge.icon)}
-            </div>
-            <span className="text-[9px] font-black text-slate-700 dark:text-slate-200 truncate w-full">{badge.title}</span>
-            <span className="text-[7px] text-slate-400 dark:text-slate-500 mt-0.5">
-              {badge.unlockedAt ? format(new Date(badge.unlockedAt), "dd MMM") : "Recent"}
-            </span>
-
-            {/* Hover Tooltip */}
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50 w-36 bg-slate-950/95 border border-white/10 p-2.5 rounded-xl text-[8px] text-slate-300 text-center shadow-xl">
-              <p className="font-extrabold text-white text-[9px]">{badge.title}</p>
-              <p className="mt-0.5 leading-relaxed">{badge.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+import StudentProfileCard from "./components/StudentProfileCard";
+import OverviewTab from "./components/OverviewTab";
+import AnalysisTab from "./components/AnalysisTab";
+import BadgesTab from "./components/BadgesTab";
+import AvatarStoreTab from "./components/AvatarStoreTab";
+import LeaderboardTab from "./components/LeaderboardTab";
+import BottomNavDock from "./components/BottomNavDock";
+import CelebrationOverlays from "./components/CelebrationOverlays";
 
 const StudentDashboard = ({
   user,
@@ -385,8 +172,8 @@ const StudentDashboard = ({
 
   const borderItem = COSMETIC_ITEMS.find((item) => item.id === equippedBorder);
   const profileCardClass = borderItem 
-    ? `relative overflow-hidden rounded-[24px] shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4 w-full ${borderItem.value}`
-    : "relative overflow-hidden rounded-[24px] bg-gradient-to-r from-[#23174B] via-[#2D2165] to-[#3B2F86] border border-white/10 shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4 w-full";
+    ? `relative overflow-hidden rounded-[24px] shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-5 md:p-6 flex flex-col gap-6 w-full ${borderItem.value}`
+    : "relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1b0d3a] via-[#110926] to-[#0c051e] border border-[#2d1b54] shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-5 md:p-6 flex flex-col gap-6 w-full";
 
   // Gamer League Calculations (Emoji-Free SVGs)
   const getLeague = (wins) => {
@@ -622,70 +409,17 @@ const StudentDashboard = ({
     }
   };
 
-  const getBadgeIcon = (iconName) => {
-    switch (iconName) {
-      case "Flame": return <Flame className="w-6 h-6" />;
-      case "Target": return <Target className="w-6 h-6" />;
-      case "BookOpen": return <BookOpen className="w-6 h-6" />;
-      case "Zap": return <Zap className="w-6 h-6" />;
-      case "Trophy": return <Trophy className="w-6 h-6" />;
-      default: return <Award className="w-6 h-6" />;
-    }
-  };
-
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden pb-20 md:pb-24">
       <GradientBackground />
 
-      {/* Level Up Overlay Celebration */}
-      <AnimatePresence>
-        {showLevelUp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowLevelUp(false)} />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="relative bg-slate-900 border border-yellow-500/30 p-8 rounded-3xl text-center max-w-sm text-white shadow-2xl z-10"
-            >
-              <div className="w-20 h-20 bg-yellow-500/20 border border-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <Sparkles className="w-10 h-10 text-yellow-400" />
-              </div>
-              <h2 className="text-2xl font-black text-yellow-400 tracking-tight mb-2">LEVEL UP!</h2>
-              <p className="text-sm text-slate-300 mb-6">
-                Congratulations! Your hard work has paid off. You have ascended to:
-              </p>
-              <div className="inline-block px-6 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full text-slate-950 font-black text-lg tracking-wide mb-6">
-                Level {stats?.level || 1}
-              </div>
-              <Button onClick={() => setShowLevelUp(false)} className="w-full bg-slate-800 hover:bg-slate-700 rounded-xl">
-                Awesome!
-              </Button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Badge Unlock Celebration Banner */}
-      <AnimatePresence>
-        {unlockedBadges.length > 0 && (
-          <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 20, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm bg-slate-900 border-2 border-pink-500 rounded-2xl p-4 shadow-2xl flex items-center gap-4 text-white"
-          >
-            <div className="p-3 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl">
-              {getBadgeIcon(unlockedBadges[0].icon)}
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-pink-500 tracking-widest uppercase">New Badge Unlocked!</p>
-              <h4 className="text-sm font-black text-white">{unlockedBadges[0].title}</h4>
-              <p className="text-[11px] text-slate-400 mt-0.5">{unlockedBadges[0].description}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Level Up & Badge Celebration Overlays */}
+      <CelebrationOverlays
+        showLevelUp={showLevelUp}
+        setShowLevelUp={setShowLevelUp}
+        stats={stats}
+        unlockedBadges={unlockedBadges}
+      />
 
       <div className={`relative z-10 ${
         activeTab === "game"
@@ -727,367 +461,26 @@ const StudentDashboard = ({
 
             {/* Premium Gamer Profile Card (Compact Landscape Mode) */}
             {activeTab === "profile" && (
-              <div className={profileCardClass}>
-              {/* Custom Gamer Keyframe Animations */}
-              <style>{`
-                @keyframes breath {
-                  0%, 100% { transform: scale(1); }
-                  50% { transform: scale(1.03); }
-                }
-                @keyframes float {
-                  0%, 100% { transform: translateY(0); }
-                  50% { transform: translateY(-3px); }
-                }
-                @keyframes gamerBounce {
-                  0%, 100% { transform: scale(1) translateY(0); }
-                  15% { transform: scale(0.9) translateY(0); }
-                  50% { transform: scale(1.1) translateY(-3px); }
-                  75% { transform: scale(1) translateY(0); }
-                }
-                @keyframes gamerShine {
-                  0% { transform: translateX(-150%) rotate(35deg); }
-                  100% { transform: translateX(150%) rotate(35deg); }
-                }
-                .animate-breath {
-                  animation: breath 4s infinite ease-in-out;
-                }
-                .animate-float {
-                  animation: float 3s infinite ease-in-out;
-                }
-                .animate-gamer-bounce {
-                  animation: gamerBounce 4s infinite ease-in-out;
-                }
-                .animate-gamer-shine {
-                  animation: gamerShine 4s infinite ease-in-out;
-                }
-              `}</style>
-
-              {/* Decorative Glows */}
-              <div className="absolute top-[-20%] right-[-10%] w-40 h-40 rounded-full bg-[#FF2EA6]/10 blur-[60px] pointer-events-none" />
-              <div className="absolute bottom-[-20%] left-[5%] w-32 h-32 rounded-full bg-[#A020F0]/10 blur-[50px] pointer-events-none" />
-
-              {/* Panel 1: Avatar & Core Info */}
-              <div className="flex items-center gap-3.5 w-full lg:w-auto relative z-10">
-                {/* Left: Player Avatar */}
-                <div className="relative shrink-0 animate-breath">
-                  <div className="absolute inset-0 bg-[#4D8CFF]/25 rounded-[16px] blur-sm pointer-events-none" />
-                  <Avatar className="h-[56px] w-[56px] border-2 border-white rounded-[16px] shadow-[0_0_10px_rgba(255,46,166,0.35)] relative z-10">
-                    <AvatarImage src={fixProfileImage(gamifiedProfile?.profileImage)} />
-                    <AvatarFallback className="text-xl font-black bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-white rounded-[16px]">
-                      {gamifiedProfile?.userName?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  {/* Equipped Frame Overlay */}
-                  {equippedFrame && (
-                    <div className={`absolute inset-[-4px] rounded-[18px] pointer-events-none z-20 ${
-                      COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
-                    }`} />
-                  )}
-                </div>
-
-                {/* Info Text Stack */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-base sm:text-lg font-black text-white tracking-wide uppercase leading-tight font-poppins truncate">
-                      {profile?.userName || "RAKESH RAMA TARI"}
-                    </h2>
-                    {equippedTitle && (
-                      <span className="text-[8px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                    {batchContext.batchName && (
-                      <div className="flex items-center gap-1 px-2.5 py-1 bg-white/10 dark:bg-white/5 border border-white/10 rounded-full text-[10px] font-medium text-white shadow-sm">
-                        <GraduationCap className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-                        <span className="truncate max-w-[120px]">{batchContext.batchName}</span>
-                      </div>
-                    )}
-                    {batchContext.tradeName && (
-                      <div className="flex items-center gap-1 px-2.5 py-1 bg-white/10 dark:bg-white/5 border border-white/10 rounded-full text-[10px] font-medium text-white shadow-sm">
-                        <Award className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span className="truncate max-w-[125px]">{batchContext.tradeName}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Panel 2: Level Shield & XP Bar */}
-              {stats && (
-                <div className="flex items-center gap-3 bg-slate-900/40 border border-white/5 px-3 py-2 rounded-[20px] relative z-10 w-full lg:max-w-xs xl:max-w-md flex-1">
-                  <div className="animate-float relative shrink-0">
-                    <div className="absolute inset-0 bg-[#FF2EA6]/15 rounded-full blur-sm pointer-events-none" />
-                    <div className="w-12 h-12">
-                      <LevelShield level={stats.level} />
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-wider text-slate-300">
-                      <span className="flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-pink-500 shrink-0" />
-                        XP Progress
-                      </span>
-                      <span className="text-pink-400 font-extrabold">{stats.xp % 100} / 100 XP</span>
-                    </div>
-                    
-                    {/* Glowing XP Progress Bar */}
-                    <div className="w-full bg-slate-950/60 rounded-full h-2 mt-1 relative p-[1px] overflow-hidden border border-slate-800/80">
-                      <div 
-                        className="bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] h-full rounded-full transition-all duration-1000 ease-out relative shadow-[0_0_8px_rgba(255,46,166,0.5)]" 
-                        style={{ width: `${(stats.xp % 100)}%` }}
-                      >
-                        {/* Shimmer light effect */}
-                        <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/60 blur-[1px] rounded-full animate-pulse" />
-                      </div>
-                    </div>
-                    
-                    <span className="text-[8px] text-slate-400 font-bold mt-0.5 text-right block">
-                      Level up in {100 - (stats.xp % 100)} XP
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Panel 3: Economy (Coins) & Achievements */}
-              <div className="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto relative z-10 shrink-0">
-                {/* Gold Coins card with sliding shine */}
-                <div className="relative group overflow-hidden bg-slate-950/60 border border-white/10 px-3 py-1.5 rounded-2xl flex items-center gap-2.5 shadow-lg min-w-[120px] h-[48px] shrink-0">
-                  <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-gamer-shine pointer-events-none" />
-                  
-                  <Coins className="w-4.5 h-4.5 text-yellow-400 animate-gamer-bounce shrink-0" />
-                  <div className="flex flex-col justify-center min-w-0">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none">Coins</span>
-                    <span className="text-xs font-black text-white mt-0.5 leading-none">
-                      {stats?.coins || 0}
-                    </span>
-                  </div>
-                  
-                  {/* Circular "+" button */}
-                  <button 
-                    onClick={() => setIsQuestionOpen(true)}
-                    className="w-5 h-5 rounded-full bg-[#F6C453] hover:bg-[#FFE07D] text-[#23174B] flex items-center justify-center font-black text-xs shadow-[0_2px_6px_rgba(246,196,83,0.3)] transition-all active:scale-90 cursor-pointer shrink-0 ml-auto"
-                    title="Earn Coins"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Lucky Spin Button */}
-                <button
-                  onClick={() => setIsWheelOpen(true)}
-                  className="relative overflow-hidden bg-slate-950/60 hover:bg-slate-900 border border-amber-500/30 px-3 rounded-2xl flex items-center gap-2 shadow-lg h-[48px] shrink-0 cursor-pointer transition-all active:scale-95 group select-none"
-                  title="Daily Lucky Spin"
-                >
-                  <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-gamer-shine pointer-events-none" />
-                  <span className="text-lg animate-spin" style={{ animationDuration: '6s' }}>🎡</span>
-                  <div className="flex flex-col justify-center text-left">
-                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-wider leading-none">Lucky Spin</span>
-                    <span className={`text-[9px] font-extrabold mt-0.5 leading-none ${canSpin() ? "text-green-400 animate-pulse" : "text-slate-555 dark:text-slate-400"}`}>
-                      {canSpin() ? "SPIN LIVE" : "SPUN"}
-                    </span>
-                  </div>
-                </button>
-
-                {/* League, Rank & Achievements badges */}
-                <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black border uppercase tracking-wider ${league.color}`}>
-                    <Award className={`w-3 h-3 ${league.iconColor} shrink-0`} />
-                    <span className="hidden sm:inline">{league.name}</span>
-                  </span>
-                  
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black border border-slate-700/50 bg-slate-800/40 text-slate-300 uppercase tracking-wider">
-                    <Trophy className="w-3 h-3 text-yellow-500 shrink-0" />
-                    <span>Rank {rankText}</span>
-                  </span>
-
-                  {/* Mini achievements */}
-                  <div className="flex gap-1 items-center shrink-0">
-                    {stats?.badges && stats.badges.length > 0 ? (
-                      stats.badges.slice(0, 2).map((badgeId, idx) => {
-                        const badgeDetails = BADGES[badgeId] || { name: "Badge", icon: "🏅" };
-                        return (
-                          <div
-                            key={idx}
-                            className="w-5.5 h-5.5 flex items-center justify-center rounded-lg bg-white/10 border border-white/10 text-xs shadow-inner hover:scale-110 active:scale-95 transition-all cursor-help"
-                            title={badgeDetails.name}
-                          >
-                            {badgeDetails.icon}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">No Badges</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
+              <StudentProfileCard
+                profile={gamifiedProfile}
+                batchContext={batchContext}
+                stats={stats}
+                equippedFrame={equippedFrame}
+                equippedTitle={equippedTitle}
+                equippedBorder={equippedBorder}
+                rankText={rankText}
+                onEarnCoins={() => setIsQuestionOpen(true)}
+                onLuckySpin={() => setIsWheelOpen(true)}
+              />
+            )}
             {/* Tab content */}
-            <div className="space-y-4">
+            <div className="space-y-4 ">
               <AnimatePresence mode="wait">
                 {activeTab === "leaderboard" && (
-                  <motion.div
-                    key="leaderboard"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-5"
-                  >
-                    {/* Top 3 podium display */}
-                    {gamifiedLeaderboard.length > 0 && (
-                      <div className="flex justify-center items-end gap-3 sm:gap-6 pt-10 pb-4 max-w-md mx-auto relative">
-                        {/* 2nd Place */}
-                        {gamifiedLeaderboard[1] && (
-                          <div className="flex flex-col items-center">
-                            <InteractiveAvatar
-                              src={gamifiedLeaderboard[1].profileImage}
-                              fallbackText={gamifiedLeaderboard[1].userName.charAt(0)}
-                              userId={gamifiedLeaderboard[1].studentId}
-                              userName={gamifiedLeaderboard[1].userName}
-                              showStatus={true}
-                              statusSize="xs"
-                              className="h-12 w-12 border-2 border-slate-300 ring-2 ring-slate-400/20 rounded-xl mb-1 shadow-md"
-                            />
-                            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
-                              {gamifiedLeaderboard[1].userName}
-                            </p>
-                            <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-900 border border-slate-300 dark:border-slate-800 rounded-t-xl h-20 flex flex-col items-center justify-center mt-2 shadow-lg">
-                              <span className="text-xl font-black text-slate-700 dark:text-slate-300">2</span>
-                              <span className="text-[9px] font-bold text-slate-500">{gamifiedLeaderboard[1].xp} XP</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 1st Place */}
-                        {gamifiedLeaderboard[0] && (
-                          <div className="flex flex-col items-center z-10 -mt-8">
-                            <div className="relative">
-                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-yellow-500 animate-bounce">
-                                👑
-                              </div>
-                              <InteractiveAvatar
-                                src={gamifiedLeaderboard[0].profileImage}
-                                fallbackText={gamifiedLeaderboard[0].userName.charAt(0)}
-                                userId={gamifiedLeaderboard[0].studentId}
-                                userName={gamifiedLeaderboard[0].userName}
-                                showStatus={true}
-                                statusSize="xs"
-                                className="h-16 w-16 border-2 border-yellow-400 ring-4 ring-yellow-400/20 rounded-2xl mb-1 shadow-xl"
-                              />
-                            </div>
-                            <p className="text-xs font-black text-slate-800 dark:text-white max-w-[85px] truncate text-center">
-                              {gamifiedLeaderboard[0].userName}
-                            </p>
-                            <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-400 to-amber-500 dark:from-yellow-600 dark:to-amber-950 border border-yellow-300 dark:border-amber-900 rounded-t-2xl h-28 flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
-                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-pulse" />
-                              <span className="text-3xl font-black text-slate-900 dark:text-yellow-100">1</span>
-                              <span className="text-[10px] font-black text-slate-800 dark:text-yellow-200">{gamifiedLeaderboard[0].xp} XP</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 3rd Place */}
-                        {gamifiedLeaderboard[2] && (
-                          <div className="flex flex-col items-center">
-                            <InteractiveAvatar
-                              src={gamifiedLeaderboard[2].profileImage}
-                              fallbackText={gamifiedLeaderboard[2].userName.charAt(0)}
-                              userId={gamifiedLeaderboard[2].studentId}
-                              userName={gamifiedLeaderboard[2].userName}
-                              showStatus={true}
-                              statusSize="xs"
-                              className="h-11 w-11 border-2 border-amber-600/40 ring-2 ring-amber-600/15 rounded-xl mb-1 shadow-md"
-                            />
-                            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
-                              {gamifiedLeaderboard[2].userName}
-                            </p>
-                            <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-900 border border-amber-600/30 dark:border-slate-800 rounded-t-xl h-16 flex flex-col items-center justify-center mt-2 shadow-lg">
-                              <span className="text-base font-black text-amber-700 dark:text-amber-400">3</span>
-                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500">{gamifiedLeaderboard[2].xp} XP</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Leaderboard list */}
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                      <div className="p-4 border-b border-white/20 dark:border-slate-800">
-                        <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Batch Ranking Leaderboard</h3>
-                      </div>
-                      <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                        {gamifiedLeaderboard.map((entry, index) => {
-                          const isMe = entry.studentId === user?.$id;
-                          const entryCosmetics = cosmeticsService.parseCosmetics(entry);
-                          const entryFrame = entryCosmetics.equipped?.frame;
-                          const entryTitle = entryCosmetics.equipped?.title;
-
-                          return (
-                            <div
-                              key={entry.studentId}
-                              className={`flex items-center justify-between px-4 py-3.5 transition-colors ${
-                                isMe ? "bg-pink-500/5 dark:bg-pink-900/10" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/10"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 w-5">
-                                  #{entry.rank}
-                                </span>
-                                <div className="relative shrink-0">
-                                  <InteractiveAvatar
-                                    src={entry.profileImage}
-                                    fallbackText={entry.userName.charAt(0)}
-                                    userId={entry.studentId}
-                                    userName={entry.userName}
-                                    showStatus={true}
-                                    statusSize="xs"
-                                    className="h-8 w-8 rounded-lg"
-                                  />
-                                  {entryFrame && (
-                                    <div className={`absolute inset-[-2px] rounded-lg pointer-events-none z-20 ${
-                                      COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
-                                    }`} style={{ transform: "scale(1.08)" }} />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
-                                    {entry.userName}
-                                    {entryTitle && (
-                                      <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
-                                        {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
-                                      </span>
-                                    )}
-                                    {isMe && (
-                                      <span className="text-[8px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded-full uppercase">
-                                        You
-                                      </span>
-                                    )}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold mt-0.5">
-                                    <span>LVL {entry.level}</span>
-                                    <span>•</span>
-                                    <span>Accuracy: {entry.accuracy}%</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs font-black text-pink-600 dark:text-pink-400">{entry.xp} XP</p>
-                                <p className="text-[9px] text-slate-400 font-bold">Streak: 🔥 {entry.currentStreak}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {leaderboard.length === 0 && (
-                          <p className="text-xs text-slate-400 text-center py-10">No scores recorded yet in this batch.</p>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
+                  <LeaderboardTab
+                    gamifiedLeaderboard={gamifiedLeaderboard}
+                    user={user}
+                  />
                 )}
 
                 {activeTab === "missions" && (
@@ -1116,388 +509,78 @@ const StudentDashboard = ({
                   </motion.div>
                 )}
 
-
-
                 {activeTab === "profile" && (
                   <motion.div
                     key="profile"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
+                    className="space-y-6"
                   >
                     {/* Profile Sub-tabs Switcher */}
-                    <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-900/40 border border-white/5 max-w-lg relative z-10 select-none">
+                    <div className="flex items-center gap-4 sm:gap-6 md:gap-8 border-b border-slate-200 dark:border-[#221a48] pb-0 relative z-10 select-none w-full">
                       {[
-                        { id: "stats", label: "Overview" },
-                        { id: "analysis", label: "Analysis" },
-                        { id: "badges", label: "Badges" },
-                        { id: "store", label: "Avatar Store" }
+                        { id: "stats", label: "Overview", icon: LayoutGrid },
+                        { id: "analysis", label: "Analysis", icon: BarChart2 },
+                        { id: "badges", label: "Badges", icon: Trophy },
+                        { id: "store", label: "Avatar Store", icon: Gamepad2 }
                       ].map((tab) => {
                         const isActive = profileSubTab === tab.id;
+                        const Icon = tab.icon;
                         return (
                           <button
                             key={tab.id}
                             onClick={() => setProfileSubTab(tab.id)}
-                            className={`flex-1 min-w-[70px] rounded-xl py-2 px-2 text-[9px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer text-center ${
+                            className={`relative flex items-center gap-2 py-3 px-1 cursor-pointer transition-all duration-200 text-xs sm:text-sm font-bold whitespace-nowrap ${
                               isActive
-                                ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-white border border-pink-500/25 shadow-sm scale-102"
-                                : "text-slate-400 hover:text-slate-200"
+                                ? "text-slate-900 dark:text-white"
+                                : "text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200"
                             }`}
                           >
-                            {tab.label}
+                            <Icon className={`w-4 h-4 ${isActive ? "text-pink-500" : "text-slate-400"}`} />
+                            <span>{tab.label}</span>
+                            {isActive && (
+                              <motion.div
+                                layoutId="activeTabUnderline"
+                                className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
+                              />
+                            )}
                           </button>
                         );
                       })}
                     </div>
 
-                    {/* Stats cards */}
+                    {/* Subtab Contents */}
                     {isStatsLoading ? (
                       <div className="flex justify-center py-10">
                         <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
                       </div>
                     ) : profileSubTab === "stats" ? (
-                      <>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                          <StatCard
-                            icon={TrendingUp}
-                            label="Attendance"
-                            value={`${overallStats?.percentage || 0}%`}
-                            sub={`${overallStats?.presentDays || 0} / ${overallStats?.total || 0} days`}
-                            color="bg-gradient-to-br from-emerald-500 to-green-600"
-                          />
-                          <StatCard
-                            icon={Award}
-                            label="Avg Score"
-                            value={`${testStats.avgScore}%`}
-                            color="bg-gradient-to-br from-amber-500 to-orange-600"
-                          />
-                          <StatCard
-                            icon={ClipboardList}
-                            label="Total Questions"
-                            value={profileStats.totalQuestions}
-                            color="bg-gradient-to-br from-purple-500 to-indigo-600"
-                          />
-                          <StatCard
-                            icon={CheckCircle2}
-                            label="Correct Answers"
-                            value={profileStats.correctAnswers}
-                            color="bg-gradient-to-br from-blue-500 to-sky-600"
-                          />
-                          <StatCard
-                            icon={Clock}
-                            label="Average Time"
-                            value={profileStats.averageTimeStr}
-                            color="bg-gradient-to-br from-pink-500 to-rose-600"
-                          />
-                          <StatCard
-                            icon={Zap}
-                            label="Monthly XP"
-                            value={`${profileStats.monthlyXp} XP`}
-                            color="bg-gradient-to-br from-yellow-400 to-amber-500"
-                          />
-                        </div>
-
-                        {/* Game Stats — Today & All-Time */}
-                        {stats && (
-                          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                            {/* Section Header */}
-                            <div className="px-5 py-3.5 border-b border-white/20 dark:border-slate-800 flex items-center gap-2.5">
-                              <div className="p-1.5 bg-pink-500/10 rounded-lg">
-                                <Gamepad2 className="w-4 h-4 text-pink-500" />
-                              </div>
-                              <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Game Stats</h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/20 dark:divide-slate-800">
-                              {/* Today's Stats */}
-                              <div className="p-5 space-y-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                                  Today's Activity
-                                </p>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {/* Questions Today */}
-                                  <div className="flex flex-col items-center justify-center bg-slate-100/60 dark:bg-slate-800/50 rounded-2xl py-3 px-2 gap-0.5 border border-slate-200/60 dark:border-slate-700/40">
-                                    <span className="text-xl font-black text-slate-800 dark:text-white leading-none">
-                                      {stats.dailyQuestionsAttempted || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center leading-tight mt-0.5">Questions</span>
-                                  </div>
-                                  {/* Correct Today */}
-                                  <div className="flex flex-col items-center justify-center bg-emerald-500/8 dark:bg-emerald-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-emerald-500/20">
-                                    <span className="text-xl font-black text-emerald-500 leading-none">
-                                      {stats.dailyWins || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Correct</span>
-                                  </div>
-                                  {/* Wrong Today */}
-                                  <div className="flex flex-col items-center justify-center bg-red-500/8 dark:bg-red-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-red-500/20">
-                                    <span className="text-xl font-black text-red-500 leading-none">
-                                      {stats.dailyLosses || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-red-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Wrong</span>
-                                  </div>
-                                </div>
-                                {/* Today's accuracy mini bar */}
-                                {(stats.dailyQuestionsAttempted || 0) > 0 && (
-                                  <div className="space-y-1">
-                                    <div className="flex justify-between text-[9px] font-bold text-slate-400">
-                                      <span>Today's Accuracy</span>
-                                      <span className="text-pink-400 font-extrabold">
-                                        {(((stats.dailyWins || 0) / (stats.dailyQuestionsAttempted || 1)) * 100).toFixed(0)}%
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                      <div
-                                        className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-700"
-                                        style={{ width: `${(((stats.dailyWins || 0) / (stats.dailyQuestionsAttempted || 1)) * 100).toFixed(0)}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* All-Time Stats */}
-                              <div className="p-5 space-y-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                                  <Trophy className="w-3 h-3 text-yellow-400" />
-                                  All-Time Record
-                                </p>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {/* Total Questions */}
-                                  <div className="flex flex-col items-center justify-center bg-slate-100/60 dark:bg-slate-800/50 rounded-2xl py-3 px-2 gap-0.5 border border-slate-200/60 dark:border-slate-700/40">
-                                    <span className="text-xl font-black text-slate-800 dark:text-white leading-none">
-                                      {stats.questionsAttempted || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center leading-tight mt-0.5">Total</span>
-                                  </div>
-                                  {/* Total Correct */}
-                                  <div className="flex flex-col items-center justify-center bg-emerald-500/8 dark:bg-emerald-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-emerald-500/20">
-                                    <span className="text-xl font-black text-emerald-500 leading-none">
-                                      {stats.wins || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Correct</span>
-                                  </div>
-                                  {/* Total Wrong */}
-                                  <div className="flex flex-col items-center justify-center bg-red-500/8 dark:bg-red-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-red-500/20">
-                                    <span className="text-xl font-black text-red-500 leading-none">
-                                      {stats.losses || 0}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-red-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Wrong</span>
-                                  </div>
-                                </div>
-                                {/* All-time accuracy mini bar */}
-                                {(stats.questionsAttempted || 0) > 0 && (
-                                  <div className="space-y-1">
-                                    <div className="flex justify-between text-[9px] font-bold text-slate-400">
-                                      <span>Overall Accuracy</span>
-                                      <span className="text-purple-400 font-extrabold">{stats.accuracy || 0}%</span>
-                                    </div>
-                                    <div className="w-full bg-slate-200/60 dark:bg-slate-850 rounded-full h-1.5 overflow-hidden">
-                                      <div
-                                        className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-700"
-                                        style={{ width: `${stats.accuracy || 0}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Quick Actions */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <Button
-                            onClick={() => navigate("/student-attendance")}
-                            variant="outline"
-                            className="h-14 rounded-2xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/40 dark:border-slate-800 hover:bg-pink-50/60 dark:hover:bg-pink-900/10 transition-all font-bold text-xs cursor-pointer"
-                          >
-                            <Calendar className="w-4 h-4 mr-2 text-pink-500" />
-                            View Attendance
-                          </Button>
-                          <Button
-                            onClick={() => navigate("/all-mock-tests")}
-                            variant="outline"
-                            className="h-14 rounded-2xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-white/40 dark:border-slate-800 hover:bg-purple-50/60 dark:hover:bg-purple-900/10 transition-all font-bold text-xs cursor-pointer"
-                          >
-                            <BookOpen className="w-4 h-4 mr-2 text-purple-500" />
-                            Mock Tests
-                          </Button>
-                        </div>
-                      </>
+                      <OverviewTab
+                        overallStats={overallStats}
+                        testStats={testStats}
+                        profileStats={profileStats}
+                        stats={stats}
+                        navigate={navigate}
+                      />
                     ) : profileSubTab === "analysis" ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                        {/* Left Column (8 cols): Accuracy Graph & Subject Analysis */}
-                        <div className="lg:col-span-8 space-y-5">
-                          <AccuracyGraph series={profileStats.accuracySeries} />
-
-                          {/* Subject Performance */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* Strongest Subject */}
-                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
-                              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
-                              <div className="p-3 bg-emerald-500/10 rounded-2xl shrink-0">
-                                <Trophy className="w-6 h-6 text-emerald-500" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Strongest Subject</p>
-                                <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.strongestSubject}</h4>
-                              </div>
-                            </div>
-
-                            {/* Weakest Subject */}
-                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
-                              <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
-                              <div className="p-3 bg-red-500/10 rounded-2xl shrink-0">
-                                <AlertCircle className="w-6 h-6 text-red-500" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Needs Focus (Weakest)</p>
-                                <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.weakestSubject}</h4>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right Column (4 cols): Recent Badges Ribbon & Recent Tests */}
-                        <div className="lg:col-span-4 space-y-5">
-                          <RecentBadgesRibbon achievements={achievements} badges={BADGES} />
-
-                          {/* Recent Tests Table */}
-                          {recentTests.length > 0 && (
-                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden h-fit">
-                              <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-purple-500" />
-                                <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Recent Tests</h3>
-                              </div>
-                              <div className="divide-y divide-white/20 dark:divide-slate-800/50">
-                                {recentTests.slice(0, 5).map((test, idx) => {
-                                  const pct = test.quesCount > 0 ? ((test.score / test.quesCount) * 100).toFixed(1) : 0;
-                                  return (
-                                    <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors">
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{test.tradeName || test.paperId}</p>
-                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                                          <Clock className="w-3.5 h-3.5 mr-1" />
-                                          {test.$createdAt ? format(new Date(test.$createdAt), "dd MMM yyyy") : "—"}
-                                        </p>
-                                      </div>
-                                      <span className={`text-xs font-extrabold tabular-nums ${
-                                        pct >= 75 ? "text-emerald-600 dark:text-emerald-400"
-                                        : pct >= 50 ? "text-amber-600 dark:text-amber-400"
-                                        : "text-red-650 dark:text-red-400"
-                                      }`}>
-                                        {pct}%
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <AnalysisTab
+                        profileStats={profileStats}
+                        achievements={achievements}
+                        recentTests={recentTests}
+                      />
                     ) : profileSubTab === "badges" ? (
-                      <div className="space-y-5">
-                        {/* Full Achievements Badge Grid */}
-                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5">
-                          <div className="mb-4">
-                            <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                              <Award className="w-5 h-5 text-pink-500" />
-                              Achievement Badges Milestone Inventory
-                            </h3>
-                            <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
-                              Unlock medals by achieving training milestones.
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                            {Object.values(BADGES).map((badge) => {
-                              const isUnlocked = achievements.some((a) => a.achievementId === badge.id);
-
-                              return (
-                                <div
-                                  key={badge.id}
-                                  className={`p-3 rounded-2xl border flex flex-col items-center text-center transition-all ${
-                                    isUnlocked
-                                      ? "bg-gradient-to-b from-slate-900 to-slate-950 border-pink-500/20 text-white shadow-md"
-                                      : "bg-white/40 dark:bg-slate-900/40 border-white/20 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-65"
-                                  }`}
-                                >
-                                  <div className={`p-2 rounded-xl mb-2 ${
-                                    isUnlocked ? "bg-gradient-to-br " + badge.color : "bg-slate-250 dark:bg-slate-800"
-                                  }`}>
-                                    {getBadgeIcon(badge.icon)}
-                                  </div>
-                                  <h4 className="text-[10px] font-black tracking-tight leading-tight">{badge.title}</h4>
-                                  <p className="text-[9px] text-slate-400 dark:text-slate-550 mt-0.5 max-w-[120px] leading-normal font-medium">
-                                    {badge.description}
-                                  </p>
-                                  
-                                  <span className={`text-[8px] font-black tracking-wider uppercase mt-2 px-1.5 py-0.5 rounded-full ${
-                                    isUnlocked
-                                      ? "bg-pink-500/20 text-pink-400 border border-pink-500/30"
-                                      : "bg-slate-200 dark:bg-slate-800 text-slate-405"
-                                  }`}>
-                                    {isUnlocked ? "Unlocked" : "Locked"}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Active Game Settings Rules Card */}
-                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 h-fit lg:col-span-2">
-                          <div className="flex items-center gap-2.5 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <div className="p-2 bg-pink-500/10 rounded-xl">
-                              <Gamepad2 className="w-5 h-5 text-pink-500" />
-                            </div>
-                            <div>
-                              <h3 className="text-base font-bold text-slate-855 dark:text-white tracking-tight">Active Batch Game Settings</h3>
-                              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Configured by Batch Instructor for {batchContext?.batchName || "your batch"}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center sm:text-left">
-                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Question Filter Scope</span>
-                              <span className="text-xs font-bold text-slate-880 dark:text-white mt-1 uppercase">
-                                {activeSettings?.questionFilter === "first_year" ? "First Year Only"
-                                 : activeSettings?.questionFilter === "second_year" ? "Second Year Only"
-                                 : activeSettings?.questionFilter === "module" ? `Module: ${activeSettings?.selectedModuleName || activeSettings?.selectedModuleId || "Specific Module"}`
-                                 : "All Subject Questions"}
-                              </span>
-                            </div>
-                            
-                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-555">Correct Answer Clear Payout</span>
-                              <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
-                                ⭐ +{activeSettings?.correctAnswerXp !== undefined ? activeSettings.correctAnswerXp : 10} XP
-                                {" | "}
-                                🪙 +{activeSettings?.correctAnswerCoins !== undefined ? activeSettings.correctAnswerCoins : 5} Coins
-                              </span>
-                            </div>
-                            
-                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Active Streak Bonus</span>
-                              <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
-                                🔥 +{activeSettings?.streakXpBonus !== undefined ? activeSettings.streakXpBonus : 2} XP per consecutive day
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <BadgesTab
+                        achievements={achievements}
+                        batchContext={batchContext}
+                        activeSettings={activeSettings}
+                      />
                     ) : (
-                      <div className="animate-fade-in relative z-10">
-                        <CosmeticStoreTab
-                          stats={stats}
-                          purchaseCosmetic={purchaseCosmetic}
-                          equipCosmetic={equipCosmetic}
-                        />
-                      </div>
+                      <AvatarStoreTab
+                        stats={stats}
+                        purchaseCosmetic={purchaseCosmetic}
+                        equipCosmetic={equipCosmetic}
+                      />
                     )}
                   </motion.div>
                 )}
@@ -1508,83 +591,15 @@ const StudentDashboard = ({
       </div>{/* end layout container */}
 
       {/* Bottom Navigation Dock */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 dark:bg-slate-950/90 border-t border-slate-800/80 backdrop-blur-lg shadow-[0_-8px_30px_rgba(0,0,0,0.3)] px-3 py-1.5 pb-safe md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:max-w-xl md:rounded-2xl md:border md:border-slate-800/80">
-        <div className="flex items-center justify-between max-w-md mx-auto relative h-11">
-          {/* Left Tabs */}
-          <div className="flex flex-1 justify-around items-center">
-            {studentTabsLeft.map((tab) => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center justify-center relative py-0.5 px-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                    isActive ? "text-pink-500 scale-105 font-bold" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-500 animate-pulse" : "text-slate-500"}`} />
-                  <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight hidden md:block">{tab.label}</span>
-                  <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight block md:hidden max-w-[50px] truncate">{tab.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Center Play Game Button */}
-          <div className="relative flex justify-center items-center px-4">
-            <div className="absolute -top-7 z-30">
-              {/* Outer pulsing ring glow */}
-              <div className="absolute inset-0 -m-1.5 animate-pulse rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-60 blur-md" />
-              
-              {/* Glowing border wrapper */}
-              <div className="relative p-[3px] rounded-full bg-gradient-to-r from-pink-500 via-purple-600 to-blue-500 shadow-[0_0_18px_rgba(236,72,153,0.55)] hover:shadow-[0_0_28px_rgba(236,72,153,0.75)] transition-all duration-300">
-                <button
-                  onClick={() => {
-                    setIsQuestionOpen(true);
-                    if (activeTab !== "game") {
-                      setActiveTab("game");
-                    }
-                  }}
-                  className="w-13 h-13 bg-slate-950 hover:bg-slate-900 border border-white/10 text-white rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer group focus:outline-none"
-                  title="Play Mocktest Game"
-                >
-                  <Flame className="w-6.5 h-6.5 text-pink-500 fill-pink-500/20 group-hover:scale-125 group-hover:text-pink-400 group-hover:fill-pink-400/30 transition-all duration-300 animate-bounce" />
-                </button>
-              </div>
-            </div>
-            {/* Invisible placeholder to keep space for the floating center button */}
-            <div className="w-13 h-13" />
-          </div>
-
-          {/* Right Tabs */}
-          <div className="flex flex-1 justify-around items-center">
-            {studentTabsRight.map((tab) => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-              const showMissionBadge = tab.id === "missions" && completedCount > claimedCount;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center justify-center relative py-0.5 px-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                    isActive ? "text-pink-500 scale-105 font-bold" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <div className="relative">
-                    <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-500 animate-pulse" : "text-slate-500"}`} />
-                    {showMissionBadge && (
-                      <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 ring-1 ring-slate-950 animate-pulse" />
-                    )}
-                  </div>
-                  <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight hidden md:block">{tab.label}</span>
-                  <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight block md:hidden max-w-[50px] truncate">{tab.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <BottomNavDock
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        studentTabsLeft={studentTabsLeft}
+        studentTabsRight={studentTabsRight}
+        completedCount={completedCount}
+        claimedCount={claimedCount}
+        setIsQuestionOpen={setIsQuestionOpen}
+      />
 
       {/* Gamified MCQ Question Dialog Modal */}
       <QuestionModal
@@ -1616,80 +631,4 @@ const GradientBackground = () => (
     <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse" />
   </div>
 );
-
-const LevelShield = ({ level }) => (
-  <div className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 select-none">
-    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
-      <defs>
-        {/* Gold Wings Gradient */}
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFE58F" />
-          <stop offset="50%" stopColor="#F6C453" />
-          <stop offset="100%" stopColor="#D48806" />
-        </linearGradient>
-        {/* Purple Crystal Gradient */}
-        <radialGradient id="purpleShieldGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#E0A7FF" />
-          <stop offset="70%" stopColor="#A020F0" />
-          <stop offset="100%" stopColor="#5B0E91" />
-        </radialGradient>
-        {/* Gloss Highlight Gradient */}
-        <linearGradient id="glossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      {/* Star on top */}
-      <path
-        d="M 50 2 L 53 10 L 61 10 L 55 15 L 57 23 L 50 18 L 43 23 L 45 15 L 39 10 L 47 10 Z"
-        fill="#F6C453"
-        stroke="#D48806"
-        strokeWidth="0.7"
-      />
-
-      {/* Gold Wings (Left) */}
-      <path
-        d="M 28 35 C 10 25, 4 48, 18 58 C 8 52, 6 62, 20 64 C 10 62, 12 72, 26 68"
-        fill="none"
-        stroke="url(#goldGrad)"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-      {/* Gold Wings (Right) */}
-      <path
-        d="M 72 35 C 90 25, 96 48, 82 58 C 92 52, 94 62, 80 64 C 90 62, 88 72, 74 68"
-        fill="none"
-        stroke="url(#goldGrad)"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-
-      {/* Purple Shield Base */}
-      <path
-        d="M 32 24 L 68 24 Q 74 24 72 38 L 64 74 Q 50 88 50 88 Q 50 88 36 74 L 28 38 Q 26 24 32 24 Z"
-        fill="url(#purpleShieldGrad)"
-        stroke="url(#goldGrad)"
-        strokeWidth="3.5"
-      />
-
-      {/* Glossy Highlight Overlay */}
-      <path
-        d="M 32 24 L 68 24 Q 74 24 72 38 L 50 50 L 28 38 Q 26 24 32 24 Z"
-        fill="url(#glossGrad)"
-        pointerEvents="none"
-      />
-      
-      {/* Tiny sparkling star particles */}
-      <circle cx="34" cy="30" r="1.5" fill="#FFFFFF" opacity="0.8" className="animate-pulse" />
-      <circle cx="66" cy="30" r="1.5" fill="#FFFFFF" opacity="0.8" className="animate-pulse" />
-      <circle cx="50" cy="78" r="1" fill="#FFFFFF" opacity="0.6" />
-
-      {/* Level Text */}
-      <text x="50" y="44" textAnchor="middle" fill="#F6C453" fontSize="9" fontWeight="800" fontFamily="Poppins, sans-serif" letterSpacing="0.8">LEVEL</text>
-      <text x="50" y="70" textAnchor="middle" fill="#FFFFFF" fontSize="22" fontWeight="900" fontFamily="Poppins, sans-serif" filter="drop-shadow(0px 2px 3px rgba(0,0,0,0.5))">{level}</text>
-    </svg>
-  </div>
-);
-
 export default StudentDashboard;

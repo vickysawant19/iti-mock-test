@@ -34,10 +34,10 @@ function MissionRow({ mission, onClaim, isClaiming }) {
       animate={{ opacity: 1, y: 0 }}
       className={`relative rounded-2xl border p-3.5 transition-all ${
         isClaimed
-          ? "border-white/5 bg-slate-900/20 opacity-50"
+          ? "border-slate-200/60 dark:border-white/5 bg-slate-100/50 dark:bg-slate-900/20 opacity-50"
           : isComplete
-          ? "border-emerald-500/25 bg-emerald-500/5"
-          : "border-white/8 bg-slate-900/40"
+          ? "border-emerald-500/20 dark:border-emerald-500/25 bg-emerald-50/20 dark:bg-emerald-500/5"
+          : "border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-slate-900/40"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -49,11 +49,11 @@ function MissionRow({ mission, onClaim, isClaiming }) {
         {/* Content */}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className={`text-xs font-bold leading-tight ${isClaimed ? "text-slate-500 line-through" : "text-slate-100"}`}>
+            <p className={`text-xs font-bold leading-tight ${isClaimed ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-800 dark:text-slate-100"}`}>
               {mission.label}
             </p>
             <span className={`shrink-0 text-[10px] font-black ${
-              isClaimed ? "text-slate-600" : isComplete ? "text-emerald-400" : "text-slate-400"
+              isClaimed ? "text-slate-450 dark:text-slate-600" : isComplete ? "text-emerald-500 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"
             }`}>
               {mission.progress || 0}/{mission.target}
             </span>
@@ -61,7 +61,7 @@ function MissionRow({ mission, onClaim, isClaiming }) {
 
           {/* Progress bar */}
           {!isClaimed && (
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800/60">
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/60">
               <motion.div
                 className={`h-full rounded-full ${isComplete ? "bg-emerald-500" : "bg-gradient-to-r from-pink-500 to-purple-500"}`}
                 initial={{ width: 0 }}
@@ -100,7 +100,7 @@ function MissionRow({ mission, onClaim, isClaiming }) {
               {isClaiming ? <Loader2 className="h-3 w-3 animate-spin" /> : "Claim"}
             </Button>
           ) : (
-            <Circle className="h-5 w-5 text-slate-700" />
+            <Circle className="h-5 w-5 text-slate-300 dark:text-slate-700" />
           )}
         </div>
       </div>
@@ -139,8 +139,8 @@ function AllDoneCard() {
         <Trophy className="h-8 w-8 text-amber-400" />
       </div>
       <div>
-        <p className="text-sm font-black text-amber-300">All Missions Done!</p>
-        <p className="mt-1 text-[11px] text-slate-400">Come back tomorrow for new missions.</p>
+        <p className="text-sm font-black text-amber-600 dark:text-amber-300">All Missions Done!</p>
+        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Come back tomorrow for new missions.</p>
       </div>
     </div>
   );
@@ -180,18 +180,18 @@ export default function DailyMissionsPanel({
       {/* Header summary */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
-            <Star className="h-4 w-4 text-amber-400" />
+          <h3 className="text-sm font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-1.5">
+            <Star className="h-4 w-4 text-amber-500 dark:text-amber-400" />
             Daily Quests
           </h3>
-          <p className="mt-0.5 text-[10px] text-slate-400 font-medium">
+          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
             {claimedCount}/{totalCount} missions claimed
           </p>
         </div>
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="rounded-xl p-1.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all cursor-pointer"
+          className="rounded-xl p-1.5 text-slate-500 hover:text-slate-750 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
           title="Refresh missions"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -201,12 +201,12 @@ export default function DailyMissionsPanel({
       {/* Overall progress bar */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Daily Progress</span>
-          <span className="text-[10px] font-black text-amber-400">{overallPct}%</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Daily Progress</span>
+          <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">{overallPct}%</span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800/60 border border-white/5">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/60 border border-slate-300 dark:border-white/5">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.4)]"
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.3)]"
             initial={{ width: 0 }}
             animate={{ width: `${overallPct}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}

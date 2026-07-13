@@ -12,7 +12,7 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-500/10 border border-purple-500/20">
-          <Target className="h-7 w-7 text-purple-400" />
+          <Target className="h-7 w-7 text-purple-400 animate-pulse" />
         </div>
         <p className="text-xs font-medium text-slate-500">No challenges assigned yet.<br />Check back soon!</p>
       </div>
@@ -23,10 +23,10 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
-        <Target className="h-4 w-4 text-purple-400" />
+        <Target className="h-4 w-4 text-purple-500 dark:text-purple-400" />
         <div>
-          <p className="text-xs font-black text-white tracking-tight">Teacher Challenges</p>
-          <p className="text-[10px] text-slate-400">Complete tasks & claim bonus rewards</p>
+          <p className="text-xs font-black text-slate-800 dark:text-white tracking-tight">Teacher Challenges</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400">Complete tasks & claim bonus rewards</p>
         </div>
       </div>
 
@@ -43,10 +43,10 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
             animate={{ opacity: 1, y: 0 }}
             className={`rounded-2xl border p-3.5 transition-all ${
               isClaimed
-                ? "border-white/5 bg-slate-900/20 opacity-55"
+                ? "border-slate-200/60 dark:border-white/5 bg-slate-100/40 dark:bg-slate-900/20 opacity-55"
                 : isCompleted
-                ? "border-emerald-500/20 bg-emerald-500/5 animate-pulse"
-                : "border-purple-500/20 bg-purple-500/5"
+                ? "border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/5 animate-pulse animate-duration-1000"
+                : "border-purple-500/15 dark:border-purple-500/20 bg-purple-500/5"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
@@ -60,12 +60,12 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
                   ) : (
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400 animate-pulse" />
                   )}
-                  <p className={`text-xs font-bold leading-tight ${isClaimed ? "text-slate-500 line-through" : "text-slate-100"}`}>
+                  <p className={`text-xs font-bold leading-tight ${isClaimed ? "text-slate-400 dark:text-slate-500 line-through" : "text-slate-800 dark:text-slate-100"}`}>
                     {challenge.title}
                   </p>
                 </div>
                 {challenge.description && (
-                  <p className="text-[10px] text-slate-400 mt-0.5 ml-3.5 leading-relaxed">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 ml-3.5 leading-relaxed">
                     {challenge.description}
                   </p>
                 )}
@@ -73,13 +73,13 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
                 {/* Progress bar visual for tracking challenges */}
                 {!isManual && !isClaimed && (
                   <div className="mt-2.5 ml-3.5 space-y-1 select-none">
-                    <div className="flex justify-between items-center text-[9px] font-extrabold text-slate-400">
+                    <div className="flex justify-between items-center text-[9px] font-extrabold text-slate-500 dark:text-slate-400">
                       <span>Progress</span>
-                      <span className={isCompleted ? "text-emerald-400 font-black" : "text-purple-300"}>
+                      <span className={isCompleted ? "text-emerald-500 dark:text-emerald-400 font-black" : "text-purple-600 dark:text-purple-300"}>
                         {challenge.progress || 0} / {challenge.target}
                       </span>
                     </div>
-                    <div className="w-full bg-slate-950/60 rounded-full h-1.5 overflow-hidden border border-slate-800/80">
+                    <div className="w-full bg-slate-200 dark:bg-slate-950/60 rounded-full h-1.5 overflow-hidden border border-slate-300 dark:border-slate-800/80">
                       <div
                         className={`h-full rounded-full transition-all duration-750 ${
                           isCompleted
@@ -94,12 +94,12 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
 
                 <div className="flex items-center gap-2 mt-2 ml-3.5">
                   {(challenge.rewardXP || 0) > 0 && (
-                    <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-pink-400">
+                    <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-pink-500 dark:text-pink-400">
                       <Zap className="h-2.5 w-2.5" />+{challenge.rewardXP} XP
                     </span>
                   )}
                   {(challenge.rewardCoins || 0) > 0 && (
-                    <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-yellow-400">
+                    <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-yellow-600 dark:text-yellow-400">
                       <Coins className="h-2.5 w-2.5" />+{challenge.rewardCoins}
                     </span>
                   )}
@@ -108,16 +108,16 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
 
               {/* Claim button */}
               {isClaimed ? (
-                <span className="shrink-0 text-[9px] font-black uppercase tracking-wider text-emerald-600 mt-1">Done</span>
+                <span className="shrink-0 text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1">Done</span>
               ) : (
                 <Button
                   size="sm"
                   disabled={!isCompleted}
                   onClick={() => onClaimChallenge(challenge.$id)}
-                  className={`h-7 shrink-0 cursor-pointer rounded-xl px-2.5 text-[10px] font-black text-white active:scale-95 shadow-none border-0 transition-all ${
+                  className={`h-7 shrink-0 cursor-pointer rounded-xl px-2.5 text-[10px] font-black active:scale-95 shadow-none border-0 transition-all ${
                     isCompleted
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 hover:shadow-[0_2px_8px_rgba(236,72,153,0.35)]"
-                      : "bg-slate-800/80 text-slate-500 border border-slate-700/30 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white hover:shadow-[0_2px_8px_rgba(236,72,153,0.35)]"
+                      : "bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700/30 cursor-not-allowed"
                   }`}
                 >
                   Claim
@@ -164,9 +164,9 @@ export default function MissionsTabPanel({
   }).length;
 
   return (
-    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5">
+    <div className="space-y-5">
       {/* Pill switcher */}
-      <div className="flex items-center gap-1.5 mb-5 p-1 rounded-2xl bg-slate-800/50 border border-white/5">
+      <div className="flex items-center p-1 rounded-full bg-slate-100/80 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/80 select-none relative mb-5">
         {PILLS.map(({ id, label, icon: Icon }) => {
           const isActive = activeSection === id;
           const badge =
@@ -180,16 +180,25 @@ export default function MissionsTabPanel({
             <button
               key={id}
               onClick={() => setActiveSection(id)}
-              className={`relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold transition-all duration-200 ${
+              className={`relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2 text-xs font-bold transition-all duration-300 select-none ${
                 isActive
-                  ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-white border border-pink-500/25 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "text-slate-900 dark:text-white"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
-              <Icon className={`h-3 w-3 ${isActive ? "text-pink-400" : ""}`} />
-              {label}
+              {/* Sliding glassmorphic capsule background */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeMissionTab"
+                  className="absolute inset-0 bg-white border border-slate-200/80 dark:bg-gradient-to-r dark:from-[#311c66]/65 dark:to-[#170a3c]/65 dark:border dark:border-[#533f93]/40 shadow-sm rounded-full -z-10"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              
+              <Icon className={`h-3.5 w-3.5 transition-colors ${isActive ? "text-pink-500 dark:text-pink-400" : "text-slate-400 dark:text-slate-500"}`} />
+              <span>{label}</span>
               {badge > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white">
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white ml-0.5">
                   {badge}
                 </span>
               )}
