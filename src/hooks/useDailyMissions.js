@@ -65,6 +65,20 @@ export function useDailyMissions(studentId, batchId) {
     }
   }, [studentId, fetchMissions]);
 
+  /**
+   * Reset progress on missions of a given type (call after streak is broken).
+   */
+  const resetProgress = useCallback(async (type) => {
+    if (!studentId) return;
+    try {
+      await dailyMissionsService.resetProgress(studentId, type);
+      // Refresh local state after reset
+      await fetchMissions();
+    } catch (err) {
+      console.error("[useDailyMissions] resetProgress failed:", err);
+    }
+  }, [studentId, fetchMissions]);
+
   // Derived counts
   const completedCount = missions.filter((m) => (m.progress || 0) >= m.target).length;
   const claimedCount = missions.filter((m) => m.claimed).length;
@@ -82,6 +96,7 @@ export function useDailyMissions(studentId, batchId) {
     fetchMissions,
     claimMission,
     incrementProgress,
+    resetProgress,
   };
 }
 

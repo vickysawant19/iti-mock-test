@@ -21,6 +21,7 @@ import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { fixProfileImage } from "@/services/appwriteClient";
 import { BADGES } from "@/services/reward.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
 
 // Modular sub-components and helpers
 import { getCurvedPath, BASE_COORDINATES, getLeague } from "./helpers";
@@ -48,6 +49,12 @@ export default function GameWorld({
 }) {
   const currentLevel = stats?.level || 1;
   const xpIntoLevel = stats?.xp ? stats.xp % 100 : 0;
+
+  const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+  const equippedFrame = cosmeticsState.equipped?.frame;
+  const equippedTitle = cosmeticsState.equipped?.title;
+  const equippedBorder = cosmeticsState.equipped?.border;
+  const borderItem = COSMETIC_ITEMS.find((item) => item.id === equippedBorder);
 
   // Winding path scales with player progress so higher-level students see more road ahead.
   const maxActiveLevel = Math.max(currentLevel, Math.floor((stats?.wins || 0) / 10) + 1);
@@ -226,7 +233,9 @@ export default function GameWorld({
         <div className="z-20 w-full shrink-0 select-none p-3 pb-2 md:hidden">
           <button
             onClick={() => setActiveDetail((d) => (d === "level" ? null : "level"))}
-            className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2.5 shadow-lg backdrop-blur-md transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60"
+            className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur-md transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60 ${
+              equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/60"
+            }`}
           >
             <div className="relative shrink-0 animate-breath">
               <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,46,166,0.35)]">
@@ -235,6 +244,11 @@ export default function GameWorld({
                   {profile?.userName?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
+              {equippedFrame && (
+                <div className={`absolute inset-[-2px] rounded-full pointer-events-none z-20 ${
+                  COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+                }`} />
+              )}
               <div className="absolute -bottom-1 -right-1 rounded-full border border-white/20 bg-gradient-to-r from-pink-500 to-purple-600 px-1.5 py-0.5 text-[8px] font-black text-white shadow-md">
                 LVL {currentLevel}
               </div>
@@ -242,8 +256,13 @@ export default function GameWorld({
 
             <div className="min-w-0 flex-1 text-left">
               <div className="flex flex-wrap items-center gap-1.5">
-                <h2 className="max-w-[110px] truncate font-poppins text-xs font-black uppercase tracking-wider text-white">
+                <h2 className="max-w-[110px] truncate font-poppins text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
                   {profile?.userName || "Player"}
+                  {equippedTitle && (
+                    <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
+                      {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+                    </span>
+                  )}
                 </h2>
                 {batchContext.batchName && (
                   <span className="max-w-[70px] shrink-0 truncate rounded bg-pink-500/20 border border-pink-500/30 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-wider text-pink-300">
@@ -325,6 +344,7 @@ export default function GameWorld({
                 leaderboard={leaderboard}
                 currentStudentId={currentStudentId}
                 profile={profile}
+                stats={stats}
                 currentLevel={currentLevel}
                 focusedStage={focusedStage}
                 mapX={camera.mapX}
@@ -462,7 +482,9 @@ export default function GameWorld({
         <div className="pointer-events-none absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-purple-500/5 blur-[60px]" />
 
         {/* Player hero card */}
-        <div className="relative z-10 mb-5 flex min-h-[92px] items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 p-4 shadow-lg">
+        <div className={`relative z-10 mb-5 flex min-h-[92px] items-center gap-4 overflow-hidden rounded-2xl border p-4 shadow-lg ${
+          equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/60"
+        }`}>
           <div className="relative shrink-0 animate-breath">
             <div className="pointer-events-none absolute inset-0 rounded-full bg-[#FF2EA6]/25 blur-sm" />
             <Avatar className="relative h-[54px] w-[54px] rounded-full border-2 border-white shadow-[0_0_12px_rgba(255,46,166,0.35)]">
@@ -471,11 +493,21 @@ export default function GameWorld({
                 {profile?.userName?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
+            {equippedFrame && (
+              <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
+                COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+              }`} />
+            )}
           </div>
 
           <div className="min-w-0 flex-1 pr-14 text-left">
-            <h2 className="truncate font-poppins text-sm font-black uppercase leading-tight tracking-wider text-white">
+            <h2 className="truncate font-poppins text-sm font-black uppercase leading-tight tracking-wider text-white flex items-center gap-1.5 flex-wrap">
               {profile?.userName || "Player"}
+              {equippedTitle && (
+                <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
+                  {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+                </span>
+              )}
             </h2>
             <div className="mt-1 flex flex-col gap-1">
               {batchContext.batchName && (
@@ -561,12 +593,32 @@ export default function GameWorld({
                   <p>
                     Need <strong className="font-extrabold text-pink-400">{xpNeeded} XP</strong> to overtake:
                   </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={fixProfileImage(nextPlayer.profileImage)} />
-                      <AvatarFallback className="bg-slate-800 text-[10px] font-extrabold text-white">{nextPlayer.userName.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <div className="relative shrink-0">
+                      <Avatar className="h-6 w-6 border border-white/20">
+                        <AvatarImage src={fixProfileImage(nextPlayer.profileImage)} />
+                        <AvatarFallback className="bg-slate-800 text-[10px] font-extrabold text-white">{nextPlayer.userName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {(() => {
+                        const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
+                        const targetFrame = targetCosmetics.equipped?.frame;
+                        return targetFrame && (
+                          <div className={`absolute inset-[-1.5px] rounded-full pointer-events-none z-20 ${
+                            COSMETIC_ITEMS.find((i) => i.id === targetFrame)?.value
+                          }`} />
+                        );
+                      })()}
+                    </div>
                     <span className="max-w-[100px] truncate text-xs font-black text-white">{nextPlayer.userName}</span>
+                    {(() => {
+                      const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
+                      const targetTitle = targetCosmetics.equipped?.title;
+                      return targetTitle && (
+                        <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
+                          {COSMETIC_ITEMS.find((i) => i.id === targetTitle)?.value}
+                        </span>
+                      );
+                    })()}
                     <span className="shrink-0 text-[9px] font-bold text-slate-400">(Rank #{currentRank - 1})</span>
                   </div>
                 </div>

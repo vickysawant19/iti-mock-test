@@ -2,6 +2,7 @@ import { motion, useTransform } from "framer-motion";
 import { Play, Lock, Award, Trophy, Compass } from "lucide-react";
 import LevelShield from "./LevelShield";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
 
 export default function GameStage({
   node,
@@ -10,6 +11,7 @@ export default function GameStage({
   leaderboard = [],
   currentStudentId,
   profile,
+  stats,
   currentLevel,
   focusedStage,
   mapX,
@@ -22,6 +24,9 @@ export default function GameStage({
   const isCompleted = index < currentStep;
   const isActive = index === currentStep;
   const isLocked = index > currentStep;
+
+  const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+  const equippedFrame = cosmeticsState.equipped?.frame;
 
   // 1. Calculate the real-time screen coordinates of this node
   const screenX = useTransform([mapX, scale], ([x, s]) => x + node.pixelX * s);
@@ -148,6 +153,11 @@ export default function GameStage({
                   userName={profile?.userName}
                   className="h-7 w-7 shrink-0 rounded-md"
                 />
+                {equippedFrame && (
+                  <div className={`absolute inset-[-1.5px] rounded-lg pointer-events-none z-20 ${
+                    COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+                  }`} style={{ transform: "scale(1.08)" }} />
+                )}
                 <div className="pointer-events-none absolute -bottom-1.5 -right-1.5 z-30 h-[15px] w-[15px] select-none">
                   <LevelShield level={currentLevel} />
                 </div>
@@ -160,22 +170,33 @@ export default function GameStage({
         {/* Other batch members on this stage */}
         {otherStudentsOnStage.length > 0 && (
           <div className="absolute right-7 top-1/2 z-20 flex -translate-y-1/2 -space-x-1 items-center rounded-full border border-indigo-500/30 bg-slate-950/85 px-1 py-0.5 shadow-lg backdrop-blur-md">
-            {otherStudentsOnStage.slice(0, 2).map((student) => (
-              <div key={student.studentId} className="group relative cursor-help">
-                <InteractiveAvatar
-                  src={student.profileImage}
-                  fallbackText={student.userName?.charAt(0) || "U"}
-                  userId={student.studentId}
-                  showStatus={true}
-                  statusSize="xs"
-                  userName={student.userName}
-                  className="h-5 w-5 shrink-0 rounded-full border border-slate-950 transition-all hover:z-30 hover:scale-110"
-                />
-                <span className="pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2 scale-0 whitespace-nowrap rounded border border-white/10 bg-slate-900/90 px-1.5 py-0.5 text-[7px] font-bold text-white shadow-md transition-all group-hover:scale-100">
-                  {student.userName} (Lvl {student.level})
-                </span>
-              </div>
-            ))}
+            {otherStudentsOnStage.slice(0, 2).map((student) => {
+              const studentCosmetics = cosmeticsService.parseCosmetics(student);
+              const studentFrame = studentCosmetics.equipped?.frame;
+              return (
+                <div key={student.studentId} className="group relative cursor-help">
+                  <div className="relative">
+                    <InteractiveAvatar
+                      src={student.profileImage}
+                      fallbackText={student.userName?.charAt(0) || "U"}
+                      userId={student.studentId}
+                      showStatus={true}
+                      statusSize="xs"
+                      userName={student.userName}
+                      className="h-5 w-5 shrink-0 rounded-full border border-slate-950 transition-all hover:z-30 hover:scale-110"
+                    />
+                    {studentFrame && (
+                      <div className={`absolute inset-[-1px] rounded-full pointer-events-none z-20 ${
+                        COSMETIC_ITEMS.find((i) => i.id === studentFrame)?.value
+                      }`} style={{ transform: "scale(1.15)" }} />
+                    )}
+                  </div>
+                  <span className="pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2 scale-0 whitespace-nowrap rounded border border-white/10 bg-slate-900/90 px-1.5 py-0.5 text-[7px] font-bold text-white shadow-md transition-all group-hover:scale-100">
+                    {student.userName} (Lvl {student.level})
+                  </span>
+                </div>
+              );
+            })}
             {otherStudentsOnStage.length > 2 && (
               <span className="px-0.5 text-[7px] font-black text-slate-300">
                 +{otherStudentsOnStage.length - 2}

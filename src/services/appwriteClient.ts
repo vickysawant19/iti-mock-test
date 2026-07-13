@@ -108,13 +108,24 @@ export const presenceService = new Presences(presenceClient);
 // Dynamically fix legacy/cloud appwrite endpoints using config Url host
 export const fixProfileImage = (url: string | null | undefined): string | null | undefined => {
   if (!url) return url;
+  if (url.startsWith("/")) return url;
   try {
     const imgUrl = new URL(url);
     const configUrl = new URL(conf.appwriteUrl);
+    
+    // Only rewrite Appwrite or itimitra domain URLs
+    const isAppwrite = imgUrl.host.includes("appwrite") || imgUrl.host.includes("itimitra") || imgUrl.pathname.includes("/storage/buckets/");
+    if (!isAppwrite) {
+      return url;
+    }
+    
     imgUrl.protocol = configUrl.protocol;
     imgUrl.host = configUrl.host;
     return imgUrl.toString();
   } catch (e) {
-    return url.replace("cloud.appwrite.io", "auth.itimitra.in");
+    if (url.includes("cloud.appwrite.io")) {
+      return url.replace("cloud.appwrite.io", "auth.itimitra.in");
+    }
+    return url;
   }
 };

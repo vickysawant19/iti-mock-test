@@ -30,6 +30,15 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
   const [shake, setShake] = useState(false);
   const [isFiftyFiftyUsed, setIsFiftyFiftyUsed] = useState(false);
   const [eliminatedOptions, setEliminatedOptions] = useState([]);
+  
+  // Advanced Gamification states
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [isTimeout, setIsTimeout] = useState(false);
+  const [confidence, setConfidence] = useState(null);
+  const [sessionCombo, setSessionCombo] = useState(() => {
+    return parseInt(localStorage.getItem("session_combo") || "0", 10);
+  });
+  const timerRef = useRef(null);
 
   const isMobile = useIsMobile();
   const dragControls = useDragControls();
@@ -48,6 +57,11 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
       setShake(false);
       setIsFiftyFiftyUsed(false);
       setEliminatedOptions([]);
+      
+      // Reset timer and confidence
+      setTimeLeft(30);
+      setIsTimeout(false);
+      setConfidence(null);
 
       const loadQuestion = async () => {
         try {
@@ -65,7 +79,70 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
     }
   }, [isOpen, tradeId, batchId]);
 
+  // Countdown timer effect
+  useEffect(() => {
+    if (isOpen && !loading && question && !submitted) {
+      setTimeLeft(30);
+      setIsTimeout(false);
+
+      if (timerRef.current) clearInterval(timerRef.current);
+
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            handleTimeout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isOpen, loading, question, submitted]);
+
   if (!isOpen) return null;
+
+  const isDifficult = (() => {
+    if (!question) return false;
+    const text = (question.question || "").toLowerCase();
+    return text.length > 110 || text.includes("calculate") || text.includes("formula") || text.includes("convert") || text.includes("what is the value") || text.includes("resistance") || text.includes("voltage") || text.includes("current");
+  })();
+
+  const handleTimeout = async () => {
+    if (submitted) return;
+    setSubmitted(true);
+    setIsTimeout(true);
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+
+    // Reset combo on incorrect
+    setSessionCombo(0);
+    localStorage.setItem("session_combo", "0");
+
+    try {
+      const res = await onAnswerSubmit(false, isFiftyFiftyUsed);
+      setGradingResult({
+        isCorrect: false,
+        xpGained: -3,
+        coinsGained: 0,
+        streakBonus: 0,
+        levelUp: false,
+      });
+    } catch (err) {
+      console.error(err);
+      setGradingResult({
+        isCorrect: false,
+        xpGained: -3,
+        coinsGained: 0,
+        streakBonus: 0,
+        levelUp: false,
+      });
+    }
+  };
 
   const handleSelect = (idx) => {
     if (submitted || eliminatedOptions.includes(idx)) return;
@@ -92,12 +169,20 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
   const handleSubmit = async () => {
     if (selectedOption === null || submitted || !question) return;
 
+    if (timerRef.current) clearInterval(timerRef.current);
+
     const selectedLetter = optionLabels[selectedOption];
     const isCorrect = selectedLetter === question.correctAnswer;
 
     setSubmitted(true);
 
-    if (!isCorrect) {
+    if (isCorrect) {
+      const newCombo = sessionCombo + 1;
+      setSessionCombo(newCombo);
+      localStorage.setItem("session_combo", newCombo.toString());
+    } else {
+      setSessionCombo(0);
+      localStorage.setItem("session_combo", "0");
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
@@ -202,8 +287,8 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
             "max-h-[92dvh] rounded-t-[2rem] md:max-h-[85vh] md:max-w-lg md:rounded-3xl",
           ].join(" ")}
         >
-          {/* Confetti */}
-          {submitted && gradingResult?.isCorrect && (
+          {/* Confetti only for difficult questions */}
+          {submitted && gradingResult?.isCorrect && isDifficult && (
             <div className="pointer-events-none absolute left-1/2 top-1/3 z-50">{renderConfetti()}</div>
           )}
 
@@ -216,23 +301,38 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
           </div>
 
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 pb-3 pt-1 md:pt-5">
-            <h3 className="flex items-center gap-1.5 text-sm font-black tracking-tight text-pink-500">
-              <Award className="h-5 w-5 text-pink-500" />
-              GAMIFIED CHALLENGE
-            </h3>
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 pb-3 pt-1 md:pt-5 bg-slate-950/20">
+            <div className="min-w-0">
+              <h3 className="flex items-center gap-1.5 text-sm font-black tracking-tight text-pink-500">
+                <Award className="h-4.5 w-4.5 text-pink-500 shrink-0" />
+                {question ? `QUESTION ${((stats?.wins || 0) % 10) + 1}/10` : "GAMIFIED CHALLENGE"}
+              </h3>
+            </div>
             <div className="flex items-center gap-2">
-              {stats && (
-                <span className="flex items-center gap-1 rounded-full bg-slate-800 px-2.5 py-1 text-[10px] font-extrabold text-slate-300">
+              {/* Session Combo Meter */}
+              {sessionCombo > 0 && (
+                <motion.span
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-center gap-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 px-2 py-0.5 text-[9px] font-black text-orange-400"
+                  title="Session Combo Streak"
+                >
                   <Flame className="h-3 w-3 fill-orange-500 text-orange-500" />
-                  {stats?.currentStreak || 0}
+                  x{sessionCombo}
+                </motion.span>
+              )}
+              {/* XP Preview Indicator */}
+              {question && (
+                <span className="flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-black text-purple-300">
+                  <Sparkles className="h-3 w-3 text-purple-400" />
+                  +{isFiftyFiftyUsed ? 5 : 10} XP
                 </span>
               )}
               {!submitted && (
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
+                  className="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300 cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -260,6 +360,33 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Timer animation bar */}
+                {!submitted && (
+                  <div className="relative w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                    <motion.div
+                      initial={{ width: "100%" }}
+                      animate={{
+                        width: `${(timeLeft / 30) * 100}%`,
+                        backgroundColor: timeLeft <= 10 ? "#ef4444" : timeLeft <= 18 ? "#eab308" : "#10b981",
+                      }}
+                      transition={{ duration: 1, ease: "linear" }}
+                      className={`h-full ${timeLeft <= 10 ? "animate-pulse" : ""}`}
+                    />
+                  </div>
+                )}
+
+                {/* Difficulty & Stage Indicator */}
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Challenge {((stats?.wins || 0) % 10) + 1} of 10
+                  </span>
+                  {isDifficult && (
+                    <span className="flex items-center gap-1 rounded bg-red-500/10 border border-red-500/30 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-red-400 animate-pulse">
+                      🔥 Hard Question
+                    </span>
+                  )}
+                </div>
+
                 {/* Question */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                   <p className="text-base font-bold leading-relaxed text-slate-100">{question.question}</p>
@@ -339,6 +466,40 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
                   })}
                 </div>
 
+                {/* Confidence meter */}
+                {selectedOption !== null && !submitted && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/30 p-3.5 text-center space-y-2"
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      How confident are you in this answer?
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      {[
+                        { level: "low", label: "Low", emoji: "😟" },
+                        { level: "medium", label: "Medium", emoji: "🤔" },
+                        { level: "high", label: "High", emoji: "😎" },
+                      ].map((item) => (
+                        <button
+                          key={item.level}
+                          type="button"
+                          onClick={() => setConfidence(item.level)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all duration-200 active:scale-95 cursor-pointer ${
+                            confidence === item.level
+                              ? "bg-pink-500 border-pink-400 text-white shadow-md shadow-pink-500/20 scale-105"
+                              : "bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-350"
+                          }`}
+                        >
+                          <span>{item.emoji}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Result panel */}
                 <AnimatePresence>
                   {submitted && gradingResult && (
@@ -350,7 +511,14 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
                         : "border-red-500/30 bg-red-500/10 text-red-300"
                         }`}
                     >
-                      {gradingResult.isCorrect ? (
+                      {isTimeout ? (
+                        <>
+                          <p className="text-sm font-black">⏰ Time's Up!</p>
+                          <p className="text-xs font-bold text-slate-300">
+                            Penalty: <span className="text-red-400">-3 XP</span>
+                          </p>
+                        </>
+                      ) : gradingResult.isCorrect ? (
                         <>
                           <p className="text-sm font-black">🎉 Correct answer!</p>
                           <p className="text-xs font-bold text-slate-300">
@@ -382,6 +550,28 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Explanation */}
+                {submitted && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-1.5"
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-wider text-pink-500">
+                      Answer Explanation
+                    </p>
+                    <p className="text-xs leading-relaxed text-slate-300">
+                      {(() => {
+                        if (question.explanation) return question.explanation;
+                        const correctLetter = question.correctAnswer;
+                        const correctIdx = optionLabels.indexOf(correctLetter);
+                        const correctText = question.options[correctIdx];
+                        return `Option ${correctLetter} ("${correctText}") is correct because it represents the verified standard theory solution in the training database.`;
+                      })()}
+                    </p>
+                  </motion.div>
+                )}
               </div>
             )}
           </div>

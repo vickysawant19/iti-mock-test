@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { gameService } from "@/services/game.service";
+import { cosmeticsService } from "@/services/cosmetics.service";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { challengeService } from "@/services/challenge.service";
 import { rewardService } from "@/services/reward.service";
@@ -302,6 +303,30 @@ export function useStudentGame(studentId, batchId, tradeId) {
     canSpin: useCallback(() => {
       return gameService.canSpinLuckyWheel(studentId, batchId, stats);
     }, [studentId, batchId, stats]),
+
+    purchaseCosmetic: useCallback(async (itemId) => {
+      if (!studentId || !batchId || !tradeId) return null;
+      try {
+        const res = await cosmeticsService.purchaseCosmetic(studentId, batchId, tradeId, itemId);
+        setStats(res);
+        return res;
+      } catch (err) {
+        console.error("[useStudentGame] Error purchasing cosmetic:", err);
+        throw err;
+      }
+    }, [studentId, batchId, tradeId]),
+
+    equipCosmetic: useCallback(async (category, itemId) => {
+      if (!studentId || !batchId || !tradeId) return null;
+      try {
+        const res = await cosmeticsService.equipCosmetic(studentId, batchId, tradeId, category, itemId);
+        setStats(res);
+        return res;
+      } catch (err) {
+        console.error("[useStudentGame] Error equipping cosmetic:", err);
+        throw err;
+      }
+    }, [studentId, batchId, tradeId]),
   };
 }
 

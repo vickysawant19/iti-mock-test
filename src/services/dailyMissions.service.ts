@@ -38,7 +38,7 @@ const MISSION_POOL = [
 
 // Deterministically pick 4 missions per student per day (seeded by date + studentId)
 function pickDailyMissions(studentId: string, date: string) {
-  const seed = [...(studentId + date)].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const seed = (studentId + date).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const shuffled = [...MISSION_POOL].sort((a, b) => {
     const ha = Math.sin(seed + a.missionId.length) * 10000;
     const hb = Math.sin(seed + b.missionId.length) * 10000;
@@ -137,6 +137,34 @@ export class DailyMissionsService extends DatabaseService {
       }
     } catch (err) {
       console.warn("[DailyMissionsService] incrementProgress failed:", err);
+    }
+  }
+
+  /**
+   * Resets progress on all active (uncompleted and unclaimed) missions of a given type.
+   */
+  async resetProgress(
+    studentId: string,
+    type: string
+  ): Promise<void> {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const res = await this.listRows<DailyMission>([
+        Query.equal("studentId", studentId),
+        Query.equal("date", today),
+        Query.equal("type", type),
+        Query.limit(5),
+      ]);
+
+      for (const mission of res.rows) {
+        if (mission.claimed) continue;
+        if ((mission.progress || 0) >= mission.target) continue;
+        if (mission.$id && mission.progress !== 0) {
+          await this.updateRow<DailyMission>(mission.$id, { progress: 0 });
+        }
+      }
+    } catch (err) {
+      console.warn("[DailyMissionsService] resetProgress failed:", err);
     }
   }
 

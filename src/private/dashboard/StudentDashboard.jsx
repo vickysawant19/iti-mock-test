@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -23,6 +23,7 @@ import {
   Users,
   Compass,
   Zap,
+  CheckCircle2,
   ChevronRight,
   Sparkles,
   Coins,
@@ -44,6 +45,8 @@ import useStudentGame from "@/hooks/useStudentGame";
 import useDailyMissions from "@/hooks/useDailyMissions";
 import { BADGES } from "@/services/reward.service";
 import { fixProfileImage } from "@/services/appwriteClient";
+import CosmeticStoreTab from "./components/CosmeticStoreTab";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
 
 const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-slate-700/50">
@@ -60,6 +63,216 @@ const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   </div>
 );
 
+const AccuracyGraph = ({ series = [] }) => {
+  if (!series || series.length === 0) {
+    return (
+      <div className="h-48 flex flex-col items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl border border-white/30 dark:border-slate-800 p-5 text-slate-400 text-xs font-bold text-center">
+        <TrendingUp className="w-8 h-8 text-slate-350 dark:text-slate-700 mb-2 animate-bounce" />
+        No test data available for accuracy mapping
+      </div>
+    );
+  }
+
+  const width = 500;
+  const height = 150;
+  const paddingX = 40;
+  const paddingY = 20;
+
+  const graphWidth = width - paddingX * 2;
+  const graphHeight = height - paddingY * 2;
+
+  // Map values to coordinates
+  const points = series.map((val, idx) => {
+    const x = paddingX + (series.length > 1 ? (idx / (series.length - 1)) * graphWidth : 0);
+    // y values: 0% is at graphHeight + paddingY, 100% is at paddingY
+    const y = paddingY + graphHeight - (val / 100) * graphHeight;
+    return { x, y, value: val };
+  });
+
+  // SVG path definition for the line
+  const linePath = points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+  // SVG path definition for the area under the line
+  const areaPath = points.length > 0 
+    ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
+    : "";
+
+  return (
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 shadow-sm relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
+      <div className="flex justify-between items-center mb-3">
+        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+          Accuracy Trend (Last {series.length} Tests)
+        </h4>
+        <span className="text-[10px] font-black text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded-full">{series[series.length - 1]}% Latest</span>
+      </div>
+
+      <div className="relative">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+          <defs>
+            {/* Area Gradient */}
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FF2EA6" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#A020F0" stopOpacity="0.0" />
+            </linearGradient>
+            {/* Line Glow Filter */}
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <dropShadow dx="0" dy="3" stdDeviation="3" floodColor="#FF2EA6" floodOpacity="0.3" />
+            </filter>
+            {/* Stroke Gradient */}
+            <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#FF2EA6" />
+              <stop offset="100%" stopColor="#A020F0" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          {[0, 25, 50, 75, 100].map((yVal) => {
+            const y = paddingY + graphHeight - (yVal / 100) * graphHeight;
+            return (
+              <g key={yVal} className="opacity-10 dark:opacity-20">
+                <line
+                  x1={paddingX}
+                  y1={y}
+                  x2={width - paddingX}
+                  y2={y}
+                  stroke="currentColor"
+                  className="text-slate-400 dark:text-slate-500"
+                  strokeWidth="1"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={paddingX - 10}
+                  y={y + 3}
+                  fill="currentColor"
+                  className="text-slate-400 dark:text-slate-500 font-bold"
+                  fontSize="8"
+                  textAnchor="end"
+                >
+                  {yVal}%
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Area path */}
+          {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
+
+          {/* Line path */}
+          {linePath && (
+            <path
+              d={linePath}
+              fill="none"
+              stroke="url(#lineGradient)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#glow)"
+            />
+          )}
+
+          {/* Data points */}
+          {points.map((p, idx) => (
+            <g key={idx} className="group/point cursor-help">
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="4"
+                className="fill-white dark:fill-slate-900 stroke-pink-500 hover:scale-125 transition-transform"
+                strokeWidth="2"
+              />
+              {/* Tooltip background & text */}
+              <rect
+                x={p.x - 14}
+                y={p.y - 20}
+                width="28"
+                height="14"
+                rx="4"
+                className="fill-slate-900/90 dark:fill-white/95 opacity-0 group-hover/point:opacity-100 transition-opacity pointer-events-none"
+              />
+              <text
+                x={p.x}
+                y={p.y - 10}
+                className="fill-white dark:fill-slate-900 opacity-0 group-hover/point:opacity-100 transition-opacity pointer-events-none font-black"
+                fontSize="8"
+                textAnchor="middle"
+              >
+                {p.value}%
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+const RecentBadgesRibbon = ({ achievements = [], badges = {} }) => {
+  const getBadgeIconHelper = (iconName) => {
+    switch (iconName) {
+      case "Flame": return <Flame className="w-5 h-5 text-orange-500" />;
+      case "Target": return <Target className="w-5 h-5 text-red-500" />;
+      case "BookOpen": return <BookOpen className="w-5 h-5 text-purple-500" />;
+      case "Zap": return <Zap className="w-5 h-5 text-yellow-500 animate-pulse" />;
+      case "Trophy": return <Trophy className="w-5 h-5 text-yellow-400" />;
+      default: return <Award className="w-5 h-5 text-pink-500" />;
+    }
+  };
+
+  const unlockedAchievementIds = achievements.map(a => a.achievementId);
+  const recentBadgesList = Object.values(badges)
+    .filter(badge => unlockedAchievementIds.includes(badge.id))
+    .map(badge => {
+      const achDoc = achievements.find(a => a.achievementId === badge.id);
+      return {
+        ...badge,
+        unlockedAt: achDoc?.$createdAt || achDoc?.$updatedAt
+      };
+    })
+    .sort((a, b) => new Date(b.unlockedAt || 0).getTime() - new Date(a.unlockedAt || 0).getTime())
+    .slice(0, 4);
+
+  if (recentBadgesList.length === 0) {
+    return (
+      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 text-center text-slate-400 text-xs font-bold shadow-sm">
+        🎖️ Unlock badges by answering questions and completing missions!
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+      <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-3">
+        <Award className="w-4 h-4 text-pink-500" />
+        Recent Badges Unlocked
+      </h3>
+      <div className="grid grid-cols-4 gap-2">
+        {recentBadgesList.map((badge) => (
+          <div
+            key={badge.id}
+            className="group relative flex flex-col items-center p-2 rounded-2xl bg-slate-50/50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 hover:border-pink-500/20 dark:hover:border-pink-500/20 transition-all text-center"
+          >
+            <div className={`p-2 rounded-xl mb-1 bg-slate-200/50 dark:bg-slate-900`}>
+              {getBadgeIconHelper(badge.icon)}
+            </div>
+            <span className="text-[9px] font-black text-slate-700 dark:text-slate-200 truncate w-full">{badge.title}</span>
+            <span className="text-[7px] text-slate-400 dark:text-slate-500 mt-0.5">
+              {badge.unlockedAt ? format(new Date(badge.unlockedAt), "dd MMM") : "Recent"}
+            </span>
+
+            {/* Hover Tooltip */}
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50 w-36 bg-slate-950/95 border border-white/10 p-2.5 rounded-xl text-[8px] text-slate-300 text-center shadow-xl">
+              <p className="font-extrabold text-white text-[9px]">{badge.title}</p>
+              <p className="mt-0.5 leading-relaxed">{badge.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const StudentDashboard = ({
   user,
   profile,
@@ -70,10 +283,14 @@ const StudentDashboard = ({
   isBatchLoading,
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "game";
+  const setActiveTab = (tabId) => {
+    setSearchParams({ tab: tabId });
+  };
   const { isComplete, missingFields } = checkProfileCompletion(profile);
   
-  // Tabs: game, leaderboard, challenges, profile
-  const [activeTab, setActiveTab] = useState("game");
+  // Modals
   const [isQuestionOpen, setIsQuestionOpen] = useState(false);
   const [isWheelOpen, setIsWheelOpen] = useState(false);
 
@@ -84,6 +301,7 @@ const StudentDashboard = ({
 
   const studentTabsRight = [
     { id: "missions", label: "Missions", shortLabel: "Missions", icon: Star },
+    { id: "store", label: "Store", shortLabel: "Store", icon: Sparkles },
     { id: "profile", label: "My Profile", shortLabel: "Profile", icon: User },
   ];
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -93,6 +311,15 @@ const StudentDashboard = ({
   const [testStats, setTestStats] = useState({ count: 0, avgScore: 0 });
   const [recentTests, setRecentTests] = useState([]);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [profileStats, setProfileStats] = useState({
+    totalQuestions: 0,
+    correctAnswers: 0,
+    averageTimeStr: "—",
+    monthlyXp: 0,
+    strongestSubject: "N/A",
+    weakestSubject: "N/A",
+    accuracySeries: [],
+  });
 
   // Gamification hook
   const {
@@ -107,6 +334,8 @@ const StudentDashboard = ({
     clearUnlockedBadges,
     spinLuckyWheel,
     canSpin,
+    purchaseCosmetic,
+    equipCosmetic,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId);
 
   // Daily Missions
@@ -121,7 +350,42 @@ const StudentDashboard = ({
     fetchMissions,
     claimMission,
     incrementProgress,
+    resetProgress,
   } = useDailyMissions(user?.$id, activeBatchId);
+
+  // Parse equipped cosmetics
+  const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+  const equippedAvatar = cosmeticsState.equipped?.avatar;
+  const equippedFrame = cosmeticsState.equipped?.frame;
+  const equippedTitle = cosmeticsState.equipped?.title;
+  const equippedBorder = cosmeticsState.equipped?.border;
+
+  const customAvatarUrl = equippedAvatar
+    ? COSMETIC_ITEMS.find((i) => i.id === equippedAvatar)?.value
+    : null;
+
+  // Custom modified profile and leaderboard objects to override avatar image
+  const gamifiedProfile = profile ? {
+    ...profile,
+    profileImage: customAvatarUrl || profile.profileImage
+  } : profile;
+
+  const gamifiedLeaderboard = leaderboard.map((entry) => {
+    const entryCosmetics = cosmeticsService.parseCosmetics(entry);
+    const entryAvatarId = entryCosmetics.equipped?.avatar;
+    const entryAvatarUrl = entryAvatarId
+      ? COSMETIC_ITEMS.find((i) => i.id === entryAvatarId)?.value
+      : null;
+    return {
+      ...entry,
+      profileImage: entryAvatarUrl || entry.profileImage
+    };
+  });
+
+  const borderItem = COSMETIC_ITEMS.find((item) => item.id === equippedBorder);
+  const profileCardClass = borderItem 
+    ? `relative overflow-hidden rounded-[24px] shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4 w-full ${borderItem.value}`
+    : "relative overflow-hidden rounded-[24px] bg-gradient-to-r from-[#23174B] via-[#2D2165] to-[#3B2F86] border border-white/10 shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4 w-full";
 
   // Gamer League Calculations (Emoji-Free SVGs)
   const getLeague = (wins) => {
@@ -150,20 +414,103 @@ const StudentDashboard = ({
           mockTestService.listQuestions([
             Query.equal("userId", user.$id),
             Query.equal("submitted", true),
-            Query.select(["score", "quesCount", "paperId", "tradeName", "$createdAt"]),
+            Query.select(["score", "quesCount", "paperId", "tradeName", "$createdAt", "startTime", "endTime"]),
             Query.orderDesc("$createdAt"),
-            Query.limit(10),
           ]),
         ]);
 
         setOverallStats(attStats);
-        setRecentTests(tests || []);
+        setRecentTests(tests ? tests.slice(0, 10) : []);
 
         if (tests?.length > 0) {
           const avg = parseFloat(
             (tests.reduce((s, t) => s + (t.quesCount > 0 ? (t.score / t.quesCount) * 100 : 0), 0) / tests.length).toFixed(1)
           );
           setTestStats({ count: tests.length, avgScore: avg });
+
+          // Compute advanced profile statistics
+          let totalQues = 0;
+          let correctAns = 0;
+          let totalDurationMs = 0;
+          let durationCount = 0;
+          let currentMonthXp = 0;
+          const subjectStats = {};
+
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+          tests.forEach((test) => {
+            totalQues += test.quesCount || 0;
+            correctAns += test.score || 0;
+
+            // Average completion time
+            if (test.startTime && test.endTime) {
+              const duration = new Date(test.endTime).getTime() - new Date(test.startTime).getTime();
+              // Validate realistic completion time: between 1 second and 4 hours
+              if (duration > 1000 && duration < 4 * 60 * 60 * 1000) {
+                totalDurationMs += duration;
+                durationCount++;
+              }
+            }
+
+            // Monthly XP (estimate based on 10 XP per correct question this month)
+            if (test.$createdAt && new Date(test.$createdAt) >= startOfMonth) {
+              currentMonthXp += (test.score || 0) * 10;
+            }
+
+            // Subject performance mapping
+            const subject = test.tradeName || "General";
+            if (!subjectStats[subject]) {
+              subjectStats[subject] = { correct: 0, total: 0 };
+            }
+            subjectStats[subject].correct += test.score || 0;
+            subjectStats[subject].total += test.quesCount || 0;
+          });
+
+          // Strongest / Weakest Subject logic
+          let strongestSub = "N/A";
+          let strongestRate = -1;
+          let weakestSub = "N/A";
+          let weakestRate = 2; // > 100%
+
+          Object.keys(subjectStats).forEach((sub) => {
+            const subData = subjectStats[sub];
+            if (subData.total > 0) {
+              const rate = subData.correct / subData.total;
+              if (rate > strongestRate) {
+                strongestRate = rate;
+                strongestSub = sub;
+              }
+              if (rate < weakestRate) {
+                weakestRate = rate;
+                weakestSub = sub;
+              }
+            }
+          });
+
+          const avgTimeSeconds = durationCount > 0 ? Math.round((totalDurationMs / durationCount) / 1000) : 0;
+          const formatTime = (secs) => {
+            if (secs <= 0) return "—";
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            return m > 0 ? `${m}m ${s}s` : `${s}s`;
+          };
+
+          // Accuracy chart series of the last 10 tests (sorted oldest to newest)
+          const last10Tests = [...tests].slice(0, 10).reverse();
+          const accuracySeries = last10Tests.map((t) =>
+            t.quesCount > 0 ? Math.round((t.score / t.quesCount) * 100) : 0
+          );
+
+          setProfileStats({
+            totalQuestions: totalQues,
+            correctAnswers: correctAns,
+            averageTimeStr: formatTime(avgTimeSeconds),
+            monthlyXp: currentMonthXp,
+            strongestSubject: strongestSub,
+            weakestSubject: weakestSub,
+            accuracySeries,
+          });
         }
       } catch (err) {
         console.error("[StudentDashboard] Error:", err);
@@ -252,9 +599,11 @@ const StudentDashboard = ({
       // Correct answers
       if (isCorrect) {
         incrementProgress("correct_answers", 1);
-        // Streak missions — check current streak from stats
-        const currentStreak = stats?.currentStreak || 0;
-        if (currentStreak > 0) incrementProgress("correct_streak", 1);
+        // Streak missions
+        incrementProgress("correct_streak", 1);
+      } else {
+        // Reset streak missions if answered incorrectly
+        resetProgress("correct_streak");
       }
     } catch (missionErr) {
       console.warn("[Mission] progress update failed:", missionErr);
@@ -346,8 +695,8 @@ const StudentDashboard = ({
           <GameWorld
             user={user}
             stats={stats}
-            profile={profile}
-            leaderboard={leaderboard}
+            profile={gamifiedProfile}
+            leaderboard={gamifiedLeaderboard}
             batchContext={batchContext}
             activeSettings={activeSettings}
             onAttemptQuestion={() => setIsQuestionOpen(true)}
@@ -377,7 +726,7 @@ const StudentDashboard = ({
 
             {/* Premium Gamer Profile Card (Compact Landscape Mode) */}
             {activeTab === "profile" && (
-              <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-r from-[#23174B] via-[#2D2165] to-[#3B2F86] border border-white/10 shadow-[0_15px_30px_rgba(0,0,0,0.3)] p-4 flex flex-col lg:flex-row items-center justify-between gap-4 w-full">
+              <div className={profileCardClass}>
               {/* Custom Gamer Keyframe Animations */}
               <style>{`
                 @keyframes breath {
@@ -422,18 +771,31 @@ const StudentDashboard = ({
                 <div className="relative shrink-0 animate-breath">
                   <div className="absolute inset-0 bg-[#4D8CFF]/25 rounded-[16px] blur-sm pointer-events-none" />
                   <Avatar className="h-[56px] w-[56px] border-2 border-white rounded-[16px] shadow-[0_0_10px_rgba(255,46,166,0.35)] relative z-10">
-                    <AvatarImage src={fixProfileImage(profile?.profileImage)} />
+                    <AvatarImage src={fixProfileImage(gamifiedProfile?.profileImage)} />
                     <AvatarFallback className="text-xl font-black bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-white rounded-[16px]">
-                      {profile?.userName?.charAt(0) || "U"}
+                      {gamifiedProfile?.userName?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
+                  {/* Equipped Frame Overlay */}
+                  {equippedFrame && (
+                    <div className={`absolute inset-[-4px] rounded-[18px] pointer-events-none z-20 ${
+                      COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+                    }`} />
+                  )}
                 </div>
 
                 {/* Info Text Stack */}
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-base sm:text-lg font-black text-white tracking-wide uppercase leading-tight font-poppins truncate">
-                    {profile?.userName || "RAKESH RAMA TARI"}
-                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-black text-white tracking-wide uppercase leading-tight font-poppins truncate">
+                      {profile?.userName || "RAKESH RAMA TARI"}
+                    </h2>
+                    {equippedTitle && (
+                      <span className="text-[8px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-1.5 items-center mt-1">
                     {batchContext.batchName && (
                       <div className="flex items-center gap-1 px-2.5 py-1 bg-white/10 dark:bg-white/5 border border-white/10 rounded-full text-[10px] font-medium text-white shadow-sm">
@@ -576,76 +938,76 @@ const StudentDashboard = ({
                     className="space-y-5"
                   >
                     {/* Top 3 podium display */}
-                    {leaderboard.length > 0 && (
+                    {gamifiedLeaderboard.length > 0 && (
                       <div className="flex justify-center items-end gap-3 sm:gap-6 pt-10 pb-4 max-w-md mx-auto relative">
                         {/* 2nd Place */}
-                        {leaderboard[1] && (
+                        {gamifiedLeaderboard[1] && (
                           <div className="flex flex-col items-center">
                             <InteractiveAvatar
-                              src={leaderboard[1].profileImage}
-                              fallbackText={leaderboard[1].userName.charAt(0)}
-                              userId={leaderboard[1].studentId}
-                              userName={leaderboard[1].userName}
+                              src={gamifiedLeaderboard[1].profileImage}
+                              fallbackText={gamifiedLeaderboard[1].userName.charAt(0)}
+                              userId={gamifiedLeaderboard[1].studentId}
+                              userName={gamifiedLeaderboard[1].userName}
                               showStatus={true}
                               statusSize="xs"
                               className="h-12 w-12 border-2 border-slate-300 ring-2 ring-slate-400/20 rounded-xl mb-1 shadow-md"
                             />
                             <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
-                              {leaderboard[1].userName}
+                              {gamifiedLeaderboard[1].userName}
                             </p>
                             <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-900 border border-slate-300 dark:border-slate-800 rounded-t-xl h-20 flex flex-col items-center justify-center mt-2 shadow-lg">
                               <span className="text-xl font-black text-slate-700 dark:text-slate-300">2</span>
-                              <span className="text-[9px] font-bold text-slate-500">{leaderboard[1].xp} XP</span>
+                              <span className="text-[9px] font-bold text-slate-500">{gamifiedLeaderboard[1].xp} XP</span>
                             </div>
                           </div>
                         )}
 
                         {/* 1st Place */}
-                        {leaderboard[0] && (
+                        {gamifiedLeaderboard[0] && (
                           <div className="flex flex-col items-center z-10 -mt-8">
                             <div className="relative">
                               <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-yellow-500 animate-bounce">
                                 👑
                               </div>
                               <InteractiveAvatar
-                                src={leaderboard[0].profileImage}
-                                fallbackText={leaderboard[0].userName.charAt(0)}
-                                userId={leaderboard[0].studentId}
-                                userName={leaderboard[0].userName}
+                                src={gamifiedLeaderboard[0].profileImage}
+                                fallbackText={gamifiedLeaderboard[0].userName.charAt(0)}
+                                userId={gamifiedLeaderboard[0].studentId}
+                                userName={gamifiedLeaderboard[0].userName}
                                 showStatus={true}
                                 statusSize="xs"
                                 className="h-16 w-16 border-2 border-yellow-400 ring-4 ring-yellow-400/20 rounded-2xl mb-1 shadow-xl"
                               />
                             </div>
                             <p className="text-xs font-black text-slate-800 dark:text-white max-w-[85px] truncate text-center">
-                              {leaderboard[0].userName}
+                              {gamifiedLeaderboard[0].userName}
                             </p>
                             <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-400 to-amber-500 dark:from-yellow-600 dark:to-amber-950 border border-yellow-300 dark:border-amber-900 rounded-t-2xl h-28 flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-pulse" />
                               <span className="text-3xl font-black text-slate-900 dark:text-yellow-100">1</span>
-                              <span className="text-[10px] font-black text-slate-800 dark:text-yellow-200">{leaderboard[0].xp} XP</span>
+                              <span className="text-[10px] font-black text-slate-800 dark:text-yellow-200">{gamifiedLeaderboard[0].xp} XP</span>
                             </div>
                           </div>
                         )}
 
                         {/* 3rd Place */}
-                        {leaderboard[2] && (
+                        {gamifiedLeaderboard[2] && (
                           <div className="flex flex-col items-center">
                             <InteractiveAvatar
-                              src={leaderboard[2].profileImage}
-                              fallbackText={leaderboard[2].userName.charAt(0)}
-                              userId={leaderboard[2].studentId}
-                              userName={leaderboard[2].userName}
+                              src={gamifiedLeaderboard[2].profileImage}
+                              fallbackText={gamifiedLeaderboard[2].userName.charAt(0)}
+                              userId={gamifiedLeaderboard[2].studentId}
+                              userName={gamifiedLeaderboard[2].userName}
                               showStatus={true}
                               statusSize="xs"
                               className="h-11 w-11 border-2 border-amber-600/40 ring-2 ring-amber-600/15 rounded-xl mb-1 shadow-md"
                             />
                             <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
-                              {leaderboard[2].userName}
+                              {gamifiedLeaderboard[2].userName}
                             </p>
                             <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-900 border border-amber-600/30 dark:border-slate-800 rounded-t-xl h-16 flex flex-col items-center justify-center mt-2 shadow-lg">
                               <span className="text-base font-black text-amber-700 dark:text-amber-400">3</span>
-                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500">{leaderboard[2].xp} XP</span>
+                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500">{gamifiedLeaderboard[2].xp} XP</span>
                             </div>
                           </div>
                         )}
@@ -658,8 +1020,12 @@ const StudentDashboard = ({
                         <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Batch Ranking Leaderboard</h3>
                       </div>
                       <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                        {leaderboard.map((entry, index) => {
+                        {gamifiedLeaderboard.map((entry, index) => {
                           const isMe = entry.studentId === user?.$id;
+                          const entryCosmetics = cosmeticsService.parseCosmetics(entry);
+                          const entryFrame = entryCosmetics.equipped?.frame;
+                          const entryTitle = entryCosmetics.equipped?.title;
+
                           return (
                             <div
                               key={entry.studentId}
@@ -671,18 +1037,30 @@ const StudentDashboard = ({
                                 <span className="text-xs font-black text-slate-400 dark:text-slate-500 w-5">
                                   #{entry.rank}
                                 </span>
-                                <InteractiveAvatar
-                                  src={entry.profileImage}
-                                  fallbackText={entry.userName.charAt(0)}
-                                  userId={entry.studentId}
-                                  userName={entry.userName}
-                                  showStatus={true}
-                                  statusSize="xs"
-                                  className="h-8 w-8 rounded-lg"
-                                />
+                                <div className="relative shrink-0">
+                                  <InteractiveAvatar
+                                    src={entry.profileImage}
+                                    fallbackText={entry.userName.charAt(0)}
+                                    userId={entry.studentId}
+                                    userName={entry.userName}
+                                    showStatus={true}
+                                    statusSize="xs"
+                                    className="h-8 w-8 rounded-lg"
+                                  />
+                                  {entryFrame && (
+                                    <div className={`absolute inset-[-2px] rounded-lg pointer-events-none z-20 ${
+                                      COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
+                                    }`} style={{ transform: "scale(1.08)" }} />
+                                  )}
+                                </div>
                                 <div>
-                                  <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                  <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
                                     {entry.userName}
+                                    {entryTitle && (
+                                      <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
+                                        {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
+                                      </span>
+                                    )}
                                     {isMe && (
                                       <span className="text-[8px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded-full uppercase">
                                         You
@@ -737,6 +1115,22 @@ const StudentDashboard = ({
                   </motion.div>
                 )}
 
+                {activeTab === "store" && (
+                  <motion.div
+                    key="store"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
+                  >
+                    <CosmeticStoreTab
+                      stats={stats}
+                      purchaseCosmetic={purchaseCosmetic}
+                      equipCosmetic={equipCosmetic}
+                    />
+                  </motion.div>
+                )}
+
                 {activeTab === "profile" && (
                   <motion.div
                     key="profile"
@@ -752,7 +1146,7 @@ const StudentDashboard = ({
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                           <StatCard
                             icon={TrendingUp}
                             label="Attendance"
@@ -761,22 +1155,34 @@ const StudentDashboard = ({
                             color="bg-gradient-to-br from-emerald-500 to-green-600"
                           />
                           <StatCard
-                            icon={Calendar}
-                            label="Present"
-                            value={overallStats?.presentDays || 0}
-                            color="bg-gradient-to-br from-pink-500 to-rose-600"
-                          />
-                          <StatCard
-                            icon={ClipboardList}
-                            label="Tests"
-                            value={testStats.count}
-                            color="bg-gradient-to-br from-purple-500 to-indigo-600"
-                          />
-                          <StatCard
                             icon={Award}
                             label="Avg Score"
                             value={`${testStats.avgScore}%`}
                             color="bg-gradient-to-br from-amber-500 to-orange-600"
+                          />
+                          <StatCard
+                            icon={ClipboardList}
+                            label="Total Questions"
+                            value={profileStats.totalQuestions}
+                            color="bg-gradient-to-br from-purple-500 to-indigo-600"
+                          />
+                          <StatCard
+                            icon={CheckCircle2}
+                            label="Correct Answers"
+                            value={profileStats.correctAnswers}
+                            color="bg-gradient-to-br from-blue-500 to-sky-600"
+                          />
+                          <StatCard
+                            icon={Clock}
+                            label="Average Time"
+                            value={profileStats.averageTimeStr}
+                            color="bg-gradient-to-br from-pink-500 to-rose-600"
+                          />
+                          <StatCard
+                            icon={Zap}
+                            label="Monthly XP"
+                            value={`${profileStats.monthlyXp} XP`}
+                            color="bg-gradient-to-br from-yellow-400 to-amber-500"
                           />
                         </div>
 
@@ -800,87 +1206,125 @@ const StudentDashboard = ({
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                          {/* Recent Tests Table */}
-                          {recentTests.length > 0 && (
-                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden h-fit">
-                              <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-purple-500" />
-                                <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Recent Tests</h3>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                          {/* Left Column (8 cols): Accuracy Graph & Subject Analysis */}
+                          <div className="lg:col-span-8 space-y-5">
+                            <AccuracyGraph series={profileStats.accuracySeries} />
+
+                            {/* Subject Performance */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Strongest Subject */}
+                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+                                <div className="p-3 bg-emerald-500/10 rounded-2xl shrink-0">
+                                  <Trophy className="w-6 h-6 text-emerald-500" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Strongest Subject</p>
+                                  <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.strongestSubject}</h4>
+                                </div>
                               </div>
-                              <div className="divide-y divide-white/20 dark:divide-slate-800/50">
-                                {recentTests.slice(0, 5).map((test, idx) => {
-                                  const pct = test.quesCount > 0 ? ((test.score / test.quesCount) * 100).toFixed(1) : 0;
-                                  return (
-                                    <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors">
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{test.tradeName || test.paperId}</p>
-                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                                          <Clock className="w-3.5 h-3.5 mr-1" />
-                                          {test.$createdAt ? format(new Date(test.$createdAt), "dd MMM yyyy") : "—"}
-                                        </p>
-                                      </div>
-                                      <span className={`text-xs font-extrabold tabular-nums ${
-                                        pct >= 75 ? "text-emerald-600 dark:text-emerald-400"
-                                        : pct >= 50 ? "text-amber-600 dark:text-amber-400"
-                                        : "text-red-600 dark:text-red-400"
-                                      }`}>
-                                        {pct}%
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+
+                              {/* Weakest Subject */}
+                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
+                                <div className="p-3 bg-red-500/10 rounded-2xl shrink-0">
+                                  <AlertCircle className="w-6 h-6 text-red-500" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Needs Focus (Weakest)</p>
+                                  <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.weakestSubject}</h4>
+                                </div>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Achievement Badges Section */}
-                          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 h-fit">
-                            <div className="mb-4">
-                              <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                <Award className="w-5 h-5 text-pink-500" />
-                                Achievement Badges
-                              </h3>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                Milestone medals unlocked during training.
-                              </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                              {Object.values(BADGES).map((badge) => {
-                                const isUnlocked = achievements.some((a) => a.achievementId === badge.id);
-
-                                return (
-                                  <div
-                                    key={badge.id}
-                                    className={`p-3 rounded-2xl border flex flex-col items-center text-center transition-all ${
-                                      isUnlocked
-                                        ? "bg-gradient-to-b from-slate-900 to-slate-950 border-pink-500/20 text-white shadow-md"
-                                        : "bg-white/40 dark:bg-slate-900/40 border-white/20 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-60"
-                                    }`}
-                                  >
-                                    <div className={`p-2 rounded-xl mb-2 ${
-                                      isUnlocked ? "bg-gradient-to-br " + badge.color : "bg-slate-200 dark:bg-slate-800"
-                                    }`}>
-                                      {getBadgeIcon(badge.icon)}
-                                    </div>
-                                    <h4 className="text-[10px] font-black tracking-tight leading-tight">{badge.title}</h4>
-                                    <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 max-w-[120px] leading-normal font-medium">
-                                      {badge.description}
-                                    </p>
-                                    
-                                    <span className={`text-[8px] font-black tracking-wider uppercase mt-2 px-1.5 py-0.5 rounded-full ${
-                                      isUnlocked
-                                        ? "bg-pink-500/20 text-pink-400 border border-pink-500/30"
-                                        : "bg-slate-200 dark:bg-slate-800 text-slate-400"
-                                    }`}>
-                                      {isUnlocked ? "Unlocked" : "Locked"}
-                                    </span>
-                                  </div>
-                                );
-                              })}
                             </div>
                           </div>
+
+                          {/* Right Column (4 cols): Recent Badges Ribbon & Recent Tests */}
+                          <div className="lg:col-span-4 space-y-5">
+                            <RecentBadgesRibbon achievements={achievements} badges={BADGES} />
+
+                            {/* Recent Tests Table */}
+                            {recentTests.length > 0 && (
+                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden h-fit">
+                                <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
+                                  <BookOpen className="w-5 h-5 text-purple-500" />
+                                  <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Recent Tests</h3>
+                                </div>
+                                <div className="divide-y divide-white/20 dark:divide-slate-800/50">
+                                  {recentTests.slice(0, 5).map((test, idx) => {
+                                    const pct = test.quesCount > 0 ? ((test.score / test.quesCount) * 100).toFixed(1) : 0;
+                                    return (
+                                      <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors">
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{test.tradeName || test.paperId}</p>
+                                          <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+                                            <Clock className="w-3.5 h-3.5 mr-1" />
+                                            {test.$createdAt ? format(new Date(test.$createdAt), "dd MMM yyyy") : "—"}
+                                          </p>
+                                        </div>
+                                        <span className={`text-xs font-extrabold tabular-nums ${
+                                          pct >= 75 ? "text-emerald-600 dark:text-emerald-400"
+                                          : pct >= 50 ? "text-amber-600 dark:text-amber-400"
+                                          : "text-red-600 dark:text-red-400"
+                                        }`}>
+                                          {pct}%
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Full Achievements Badge Grid */}
+                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5">
+                          <div className="mb-4">
+                            <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                              <Award className="w-5 h-5 text-pink-500" />
+                              Achievement Badges Milestone Inventory
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              Unlock medals by achieving training milestones.
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {Object.values(BADGES).map((badge) => {
+                              const isUnlocked = achievements.some((a) => a.achievementId === badge.id);
+
+                              return (
+                                <div
+                                  key={badge.id}
+                                  className={`p-3 rounded-2xl border flex flex-col items-center text-center transition-all ${
+                                    isUnlocked
+                                      ? "bg-gradient-to-b from-slate-900 to-slate-950 border-pink-500/20 text-white shadow-md"
+                                      : "bg-white/40 dark:bg-slate-900/40 border-white/20 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-65"
+                                  }`}
+                                >
+                                  <div className={`p-2 rounded-xl mb-2 ${
+                                    isUnlocked ? "bg-gradient-to-br " + badge.color : "bg-slate-250 dark:bg-slate-800"
+                                  }`}>
+                                    {getBadgeIcon(badge.icon)}
+                                  </div>
+                                  <h4 className="text-[10px] font-black tracking-tight leading-tight">{badge.title}</h4>
+                                  <p className="text-[9px] text-slate-400 dark:text-slate-550 mt-0.5 max-w-[120px] leading-normal font-medium">
+                                    {badge.description}
+                                  </p>
+                                  
+                                  <span className={`text-[8px] font-black tracking-wider uppercase mt-2 px-1.5 py-0.5 rounded-full ${
+                                    isUnlocked
+                                      ? "bg-pink-500/20 text-pink-400 border border-pink-500/30"
+                                      : "bg-slate-200 dark:bg-slate-800 text-slate-405"
+                                  }`}>
+                                    {isUnlocked ? "Unlocked" : "Locked"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                           
                           {/* Active Game Settings Rules Card */}
                           <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 h-fit lg:col-span-2">
@@ -922,8 +1366,7 @@ const StudentDashboard = ({
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </>
+                        </>
                     )}
                   </motion.div>
                 )}

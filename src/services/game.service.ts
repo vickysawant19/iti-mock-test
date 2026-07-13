@@ -21,6 +21,7 @@ export interface StudentGameStats {
   lastQuestionTime?: string;
   lastActive?: string;
   lastWheelSpinTime?: string;
+  unlockedCosmetics?: string;
   $createdAt?: string;
   $updatedAt?: string;
 }
