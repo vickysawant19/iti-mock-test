@@ -16,6 +16,7 @@ import {
   Users,
   CheckCircle,
   Settings,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ const TeacherDashboard = ({
   const [challengeXP, setChallengeXP] = useState(100);
   const [challengeCoins, setChallengeCoins] = useState(50);
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
+  const [expandedStudentId, setExpandedStudentId] = useState(null);
 
   // Automatically populate fields when template changes
   useEffect(() => {
@@ -497,30 +499,110 @@ const TeacherDashboard = ({
                       <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Batch Gamified Leaderboard</h3>
                     </div>
                     <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                      {leaderboard.map((student, idx) => (
-                        <div key={student.studentId} className="flex justify-between items-center px-5 py-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-black text-slate-400 w-5">#{idx + 1}</span>
-                            <InteractiveAvatar
-                              src={student.profileImage}
-                              fallbackText={student.userName.charAt(0)}
-                              userId={student.studentId}
-                              userName={student.userName}
-                              showStatus={true}
-                              statusSize="xs"
-                              className="h-8 w-8 rounded-lg"
-                            />
-                            <div>
-                              <p className="text-xs font-bold text-slate-750 dark:text-slate-300">{student.userName}</p>
-                              <p className="text-[9px] text-slate-400 font-medium">Level {student.level} • Wins: {student.wins} / Losses: {student.losses}</p>
+                      {leaderboard.map((student, idx) => {
+                        const isExpanded = expandedStudentId === student.studentId;
+                        return (
+                          <div key={student.studentId} className="border-b border-white/10 dark:border-slate-800/40 last:border-b-0">
+                            {/* Row Header clickable to toggle expand */}
+                            <div
+                              onClick={() => setExpandedStudentId(isExpanded ? null : student.studentId)}
+                              className="flex justify-between items-center px-5 py-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all cursor-pointer select-none"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-black text-slate-400 w-5">#{idx + 1}</span>
+                                <InteractiveAvatar
+                                  src={student.profileImage}
+                                  fallbackText={student.userName?.charAt(0) || "?"}
+                                  userId={student.studentId}
+                                  userName={student.userName}
+                                  showStatus={true}
+                                  statusSize="xs"
+                                  className="h-8 w-8 rounded-lg"
+                                />
+                                <div>
+                                  <p className="text-xs font-bold text-slate-750 dark:text-slate-350">{student.userName}</p>
+                                  <p className="text-[9px] text-slate-400 font-bold">Level {student.level} • {student.xp} XP</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-right">
+                                <div>
+                                  <span className="text-xs font-black text-pink-500">{student.accuracy}% Accuracy</span>
+                                  <p className="text-[9px] text-slate-400 font-bold">{student.wins} / {student.questionsAttempted || 0} Correct</p>
+                                </div>
+                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isExpanded ? "rotate-180 text-pink-500" : ""}`} />
+                              </div>
                             </div>
+
+                            {/* Expanded stats panel */}
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="px-5 pb-4 bg-slate-50/50 dark:bg-slate-900/10 border-t border-white/5 dark:border-slate-800/20 overflow-hidden"
+                              >
+                                <div className="pt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  {/* Today's Activity */}
+                                  <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 p-4 rounded-2xl space-y-3">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                        Today's Activity
+                                      </span>
+                                      <span className="text-[9px] font-extrabold text-pink-400 bg-pink-500/5 px-2.5 py-0.5 rounded-full border border-pink-500/10">
+                                        {student.dailyQuestionsAttempted > 0
+                                          ? (((student.dailyWins || 0) / student.dailyQuestionsAttempted) * 100).toFixed(0) + "% Acc"
+                                          : "No Activity"}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-center">
+                                      <div className="bg-slate-100/50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-200/20">
+                                        <p className="text-sm font-black text-slate-700 dark:text-slate-300">{student.dailyQuestionsAttempted || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5 tracking-wider">Solved</p>
+                                      </div>
+                                      <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/15">
+                                        <p className="text-sm font-black text-emerald-500">{student.dailyWins || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-400/80 uppercase mt-0.5 tracking-wider">Correct</p>
+                                      </div>
+                                      <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/15">
+                                        <p className="text-sm font-black text-red-500">{student.dailyLosses || 0}</p>
+                                        <p className="text-[8px] font-black text-red-400/80 uppercase mt-0.5 tracking-wider">Wrong</p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* All-Time Stats */}
+                                  <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 p-4 rounded-2xl space-y-3">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                        <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                                        All-Time Record
+                                      </span>
+                                      <span className="text-[9px] font-extrabold text-purple-400 bg-purple-500/5 px-2.5 py-0.5 rounded-full border border-purple-500/10">
+                                        {student.accuracy || 0}% Acc
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-center">
+                                      <div className="bg-slate-100/50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-200/20">
+                                        <p className="text-sm font-black text-slate-700 dark:text-slate-300">{student.questionsAttempted || 0}</p>
+                                        <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5 tracking-wider">Total</p>
+                                      </div>
+                                      <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/15">
+                                        <p className="text-sm font-black text-emerald-500">{student.wins || 0}</p>
+                                        <p className="text-[8px] font-black text-emerald-400/80 uppercase mt-0.5 tracking-wider">Correct</p>
+                                      </div>
+                                      <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/15">
+                                        <p className="text-sm font-black text-red-500">{student.losses || 0}</p>
+                                        <p className="text-[8px] font-black text-red-400/80 uppercase mt-0.5 tracking-wider">Wrong</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
                           </div>
-                          <div className="text-right">
-                            <span className="text-xs font-black text-pink-500">{student.xp} XP</span>
-                            <p className="text-[9px] text-slate-400 font-bold">Accuracy: {student.accuracy}%</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {leaderboard.length === 0 && (
                         <p className="text-xs text-slate-400 text-center py-10">No game scores recorded.</p>
                       )}
