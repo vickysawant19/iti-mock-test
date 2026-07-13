@@ -293,6 +293,8 @@ const StudentDashboard = ({
   // Modals
   const [isQuestionOpen, setIsQuestionOpen] = useState(false);
   const [isWheelOpen, setIsWheelOpen] = useState(false);
+  const [profileSubTab, setProfileSubTab] = useState("stats"); // "stats" | "store"
+
 
   const studentTabsLeft = [
     { id: "game", label: "Game World", shortLabel: "Game", icon: Gamepad2 },
@@ -301,7 +303,6 @@ const StudentDashboard = ({
 
   const studentTabsRight = [
     { id: "missions", label: "Missions", shortLabel: "Missions", icon: Star },
-    { id: "store", label: "Store", shortLabel: "Store", icon: Sparkles },
     { id: "profile", label: "My Profile", shortLabel: "Profile", icon: User },
   ];
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -1115,21 +1116,7 @@ const StudentDashboard = ({
                   </motion.div>
                 )}
 
-                {activeTab === "store" && (
-                  <motion.div
-                    key="store"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <CosmeticStoreTab
-                      stats={stats}
-                      purchaseCosmetic={purchaseCosmetic}
-                      equipCosmetic={equipCosmetic}
-                    />
-                  </motion.div>
-                )}
+
 
                 {activeTab === "profile" && (
                   <motion.div
@@ -1139,12 +1126,37 @@ const StudentDashboard = ({
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
+                    {/* Profile Sub-tabs Switcher */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-slate-900/40 border border-white/5 max-w-lg relative z-10 select-none">
+                      {[
+                        { id: "stats", label: "Overview" },
+                        { id: "analysis", label: "Analysis" },
+                        { id: "badges", label: "Badges" },
+                        { id: "store", label: "Avatar Store" }
+                      ].map((tab) => {
+                        const isActive = profileSubTab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setProfileSubTab(tab.id)}
+                            className={`flex-1 min-w-[70px] rounded-xl py-2 px-2 text-[9px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer text-center ${
+                              isActive
+                                ? "bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-white border border-pink-500/25 shadow-sm scale-102"
+                                : "text-slate-400 hover:text-slate-200"
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {/* Stats cards */}
                     {isStatsLoading ? (
                       <div className="flex justify-center py-10">
                         <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
                       </div>
-                    ) : (
+                    ) : profileSubTab === "stats" ? (
                       <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                           <StatCard
@@ -1282,7 +1294,7 @@ const StudentDashboard = ({
                                       <span>Overall Accuracy</span>
                                       <span className="text-purple-400 font-extrabold">{stats.accuracy || 0}%</span>
                                     </div>
-                                    <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                    <div className="w-full bg-slate-200/60 dark:bg-slate-850 rounded-full h-1.5 overflow-hidden">
                                       <div
                                         className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-700"
                                         style={{ width: `${stats.accuracy || 0}%` }}
@@ -1314,79 +1326,81 @@ const StudentDashboard = ({
                             Mock Tests
                           </Button>
                         </div>
+                      </>
+                    ) : profileSubTab === "analysis" ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        {/* Left Column (8 cols): Accuracy Graph & Subject Analysis */}
+                        <div className="lg:col-span-8 space-y-5">
+                          <AccuracyGraph series={profileStats.accuracySeries} />
 
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                          {/* Left Column (8 cols): Accuracy Graph & Subject Analysis */}
-                          <div className="lg:col-span-8 space-y-5">
-                            <AccuracyGraph series={profileStats.accuracySeries} />
-
-                            {/* Subject Performance */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {/* Strongest Subject */}
-                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
-                                <div className="p-3 bg-emerald-500/10 rounded-2xl shrink-0">
-                                  <Trophy className="w-6 h-6 text-emerald-500" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Strongest Subject</p>
-                                  <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.strongestSubject}</h4>
-                                </div>
+                          {/* Subject Performance */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {/* Strongest Subject */}
+                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+                              <div className="p-3 bg-emerald-500/10 rounded-2xl shrink-0">
+                                <Trophy className="w-6 h-6 text-emerald-500" />
                               </div>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Strongest Subject</p>
+                                <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.strongestSubject}</h4>
+                              </div>
+                            </div>
 
-                              {/* Weakest Subject */}
-                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
-                                <div className="p-3 bg-red-500/10 rounded-2xl shrink-0">
-                                  <AlertCircle className="w-6 h-6 text-red-500" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Needs Focus (Weakest)</p>
-                                  <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.weakestSubject}</h4>
-                                </div>
+                            {/* Weakest Subject */}
+                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-4 shadow-sm relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
+                              <div className="p-3 bg-red-500/10 rounded-2xl shrink-0">
+                                <AlertCircle className="w-6 h-6 text-red-500" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Needs Focus (Weakest)</p>
+                                <h4 className="text-xs font-black text-slate-800 dark:text-white mt-1 truncate">{profileStats.weakestSubject}</h4>
                               </div>
                             </div>
                           </div>
-
-                          {/* Right Column (4 cols): Recent Badges Ribbon & Recent Tests */}
-                          <div className="lg:col-span-4 space-y-5">
-                            <RecentBadgesRibbon achievements={achievements} badges={BADGES} />
-
-                            {/* Recent Tests Table */}
-                            {recentTests.length > 0 && (
-                              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden h-fit">
-                                <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
-                                  <BookOpen className="w-5 h-5 text-purple-500" />
-                                  <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Recent Tests</h3>
-                                </div>
-                                <div className="divide-y divide-white/20 dark:divide-slate-800/50">
-                                  {recentTests.slice(0, 5).map((test, idx) => {
-                                    const pct = test.quesCount > 0 ? ((test.score / test.quesCount) * 100).toFixed(1) : 0;
-                                    return (
-                                      <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors">
-                                        <div className="min-w-0">
-                                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{test.tradeName || test.paperId}</p>
-                                          <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                                            <Clock className="w-3.5 h-3.5 mr-1" />
-                                            {test.$createdAt ? format(new Date(test.$createdAt), "dd MMM yyyy") : "—"}
-                                          </p>
-                                        </div>
-                                        <span className={`text-xs font-extrabold tabular-nums ${
-                                          pct >= 75 ? "text-emerald-600 dark:text-emerald-400"
-                                          : pct >= 50 ? "text-amber-600 dark:text-amber-400"
-                                          : "text-red-600 dark:text-red-400"
-                                        }`}>
-                                          {pct}%
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
                         </div>
 
+                        {/* Right Column (4 cols): Recent Badges Ribbon & Recent Tests */}
+                        <div className="lg:col-span-4 space-y-5">
+                          <RecentBadgesRibbon achievements={achievements} badges={BADGES} />
+
+                          {/* Recent Tests Table */}
+                          {recentTests.length > 0 && (
+                            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden h-fit">
+                              <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800 flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-purple-500" />
+                                <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">Recent Tests</h3>
+                              </div>
+                              <div className="divide-y divide-white/20 dark:divide-slate-800/50">
+                                {recentTests.slice(0, 5).map((test, idx) => {
+                                  const pct = test.quesCount > 0 ? ((test.score / test.quesCount) * 100).toFixed(1) : 0;
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors">
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{test.tradeName || test.paperId}</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+                                          <Clock className="w-3.5 h-3.5 mr-1" />
+                                          {test.$createdAt ? format(new Date(test.$createdAt), "dd MMM yyyy") : "—"}
+                                        </p>
+                                      </div>
+                                      <span className={`text-xs font-extrabold tabular-nums ${
+                                        pct >= 75 ? "text-emerald-600 dark:text-emerald-400"
+                                        : pct >= 50 ? "text-amber-600 dark:text-amber-400"
+                                        : "text-red-650 dark:text-red-400"
+                                      }`}>
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : profileSubTab === "badges" ? (
+                      <div className="space-y-5">
                         {/* Full Achievements Badge Grid */}
                         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5">
                           <div className="mb-4">
@@ -1394,7 +1408,7 @@ const StudentDashboard = ({
                               <Award className="w-5 h-5 text-pink-500" />
                               Achievement Badges Milestone Inventory
                             </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
                               Unlock medals by achieving training milestones.
                             </p>
                           </div>
@@ -1434,48 +1448,56 @@ const StudentDashboard = ({
                             })}
                           </div>
                         </div>
-                          
-                          {/* Active Game Settings Rules Card */}
-                          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 h-fit lg:col-span-2">
-                            <div className="flex items-center gap-2.5 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-                              <div className="p-2 bg-pink-500/10 rounded-xl">
-                                <Gamepad2 className="w-5 h-5 text-pink-500" />
-                              </div>
-                              <div>
-                                <h3 className="text-base font-bold text-slate-850 dark:text-white tracking-tight">Active Batch Game Settings</h3>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Configured by Batch Instructor for {batchContext?.batchName || "your batch"}</p>
-                              </div>
+
+                        {/* Active Game Settings Rules Card */}
+                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-5 h-fit lg:col-span-2">
+                          <div className="flex items-center gap-2.5 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <div className="p-2 bg-pink-500/10 rounded-xl">
+                              <Gamepad2 className="w-5 h-5 text-pink-500" />
                             </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center sm:text-left">
-                              <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Question Filter Scope</span>
-                                <span className="text-xs font-bold text-slate-880 dark:text-white mt-1 uppercase">
-                                  {activeSettings?.questionFilter === "first_year" ? "First Year Only"
-                                   : activeSettings?.questionFilter === "second_year" ? "Second Year Only"
-                                   : activeSettings?.questionFilter === "module" ? `Module: ${activeSettings?.selectedModuleName || activeSettings?.selectedModuleId || "Specific Module"}`
-                                   : "All Subject Questions"}
-                                </span>
-                              </div>
-                              
-                              <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Correct Answer Clear Payout</span>
-                                <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
-                                  ⭐ +{activeSettings?.correctAnswerXp !== undefined ? activeSettings.correctAnswerXp : 10} XP
-                                  {" | "}
-                                  🪙 +{activeSettings?.correctAnswerCoins !== undefined ? activeSettings.correctAnswerCoins : 5} Coins
-                                </span>
-                              </div>
-                              
-                              <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Active Streak Bonus</span>
-                                <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
-                                  🔥 +{activeSettings?.streakXpBonus !== undefined ? activeSettings.streakXpBonus : 2} XP per consecutive day
-                                </span>
-                              </div>
+                            <div>
+                              <h3 className="text-base font-bold text-slate-855 dark:text-white tracking-tight">Active Batch Game Settings</h3>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Configured by Batch Instructor for {batchContext?.batchName || "your batch"}</p>
                             </div>
                           </div>
-                        </>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center sm:text-left">
+                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Question Filter Scope</span>
+                              <span className="text-xs font-bold text-slate-880 dark:text-white mt-1 uppercase">
+                                {activeSettings?.questionFilter === "first_year" ? "First Year Only"
+                                 : activeSettings?.questionFilter === "second_year" ? "Second Year Only"
+                                 : activeSettings?.questionFilter === "module" ? `Module: ${activeSettings?.selectedModuleName || activeSettings?.selectedModuleId || "Specific Module"}`
+                                 : "All Subject Questions"}
+                              </span>
+                            </div>
+                            
+                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-555">Correct Answer Clear Payout</span>
+                              <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
+                                ⭐ +{activeSettings?.correctAnswerXp !== undefined ? activeSettings.correctAnswerXp : 10} XP
+                                {" | "}
+                                🪙 +{activeSettings?.correctAnswerCoins !== undefined ? activeSettings.correctAnswerCoins : 5} Coins
+                              </span>
+                            </div>
+                            
+                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Active Streak Bonus</span>
+                              <span className="text-xs font-bold text-slate-850 dark:text-white mt-1">
+                                🔥 +{activeSettings?.streakXpBonus !== undefined ? activeSettings.streakXpBonus : 2} XP per consecutive day
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="animate-fade-in relative z-10">
+                        <CosmeticStoreTab
+                          stats={stats}
+                          purchaseCosmetic={purchaseCosmetic}
+                          equipCosmetic={equipCosmetic}
+                        />
+                      </div>
                     )}
                   </motion.div>
                 )}

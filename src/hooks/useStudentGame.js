@@ -65,12 +65,61 @@ export function useStudentGame(studentId, batchId, tradeId) {
     }
   }, [tradeId, batchId, activeSettings]);
 
+  // Fetch batch leaderboard
+  const fetchLeaderboard = useCallback(async () => {
+    if (!batchId) return;
+    setIsLoadingLeaderboard(true);
+    try {
+      const data = await leaderboardService.getBatchLeaderboard(batchId);
+      setLeaderboard(data);
+    } catch (err) {
+      console.error("[useStudentGame] Error fetching leaderboard:", err);
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
+  }, [batchId]);
+
+  // Fetch batch challenges with student progress
+  const fetchChallenges = useCallback(async () => {
+    if (!batchId || !studentId) return;
+    setIsLoadingChallenges(true);
+    try {
+      const data = await challengeService.listChallengesWithProgress(batchId, studentId);
+      setChallenges(data);
+    } catch (err) {
+      console.error("[useStudentGame] Error fetching challenges:", err);
+    } finally {
+      setIsLoadingChallenges(false);
+    }
+  }, [batchId, studentId]);
+
   // Submit MCQ answer
   const submitAnswer = useCallback(async (isCorrect, isFiftyFiftyUsed) => {
     if (!studentId || !batchId || !tradeId) return null;
     try {
       const res = await gameService.submitAnswer(studentId, batchId, tradeId, isCorrect, isFiftyFiftyUsed);
       setStats(res.stats);
+
+      // Update batch challenges progress dynamically
+      try {
+        await challengeService.incrementChallengeProgress(batchId, studentId, "questions", 1);
+        if (isCorrect) {
+          await challengeService.incrementChallengeProgress(batchId, studentId, "correct_answers", 1);
+          // If they got it correct, increment the streak progress
+          await challengeService.incrementChallengeProgress(batchId, studentId, "correct_streak", 1);
+        } else {
+          // If wrong, reset streak progress
+          await challengeService.resetChallengeProgress(batchId, studentId, "correct_streak");
+        }
+        if (res && res.xpGained > 0) {
+          await challengeService.incrementChallengeProgress(batchId, studentId, "xp", res.xpGained);
+        }
+      } catch (challengeErr) {
+        console.warn("[useStudentGame] Failed to update challenge progress:", challengeErr);
+      }
+
+      // Refresh challenges list
+      fetchChallenges();
 
       // Check if any achievements unlocked
       const newUnlocks = await rewardService.checkAndUnlockAchievements(res.stats, batchId);
@@ -89,35 +138,8 @@ export function useStudentGame(studentId, batchId, tradeId) {
       console.error("[useStudentGame] Error submitting answer:", err);
       return null;
     }
-  }, [studentId, batchId, tradeId]);
+  }, [studentId, batchId, tradeId, fetchChallenges, fetchLeaderboard]);
 
-  // Fetch batch leaderboard
-  const fetchLeaderboard = useCallback(async () => {
-    if (!batchId) return;
-    setIsLoadingLeaderboard(true);
-    try {
-      const data = await leaderboardService.getBatchLeaderboard(batchId);
-      setLeaderboard(data);
-    } catch (err) {
-      console.error("[useStudentGame] Error fetching leaderboard:", err);
-    } finally {
-      setIsLoadingLeaderboard(false);
-    }
-  }, [batchId]);
-
-  // Fetch batch challenges
-  const fetchChallenges = useCallback(async () => {
-    if (!batchId) return;
-    setIsLoadingChallenges(true);
-    try {
-      const data = await challengeService.listChallenges(batchId);
-      setChallenges(data);
-    } catch (err) {
-      console.error("[useStudentGame] Error fetching challenges:", err);
-    } finally {
-      setIsLoadingChallenges(false);
-    }
-  }, [batchId]);
 
   // Claim challenge reward
   const claimChallengeReward = useCallback(async (challengeId) => {
@@ -128,7 +150,7 @@ export function useStudentGame(studentId, batchId, tradeId) {
       
       // Update challenges list
       setChallenges((prev) =>
-        prev.map((c) => (c.$id === challengeId ? res.challenge : c))
+        prev.map((c) => (c.$id === challengeId ? { ...c, ...res.challenge, claimed: true } : c))
       );
 
       // Check achievements

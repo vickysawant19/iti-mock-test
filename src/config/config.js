@@ -29,6 +29,7 @@ const conf = {
   gameStatsCollectionId: import.meta.env.VITE_GAME_STATS_COLLECTION_ID || "student_game_stats",
   challengesCollectionId: import.meta.env.VITE_CHALLENGES_COLLECTION_ID || "batch_challenges",
   achievementsCollectionId: import.meta.env.VITE_ACHIEVEMENTS_COLLECTION_ID || "student_achievements",
+  challengesProgressCollectionId: "batch_challenge_progress",
 };
 
 export default conf;

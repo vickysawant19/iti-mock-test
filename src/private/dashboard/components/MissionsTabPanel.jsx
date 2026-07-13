@@ -31,8 +31,9 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
       </div>
 
       {challenges.map((challenge) => {
-        const completedList = challenge.completedStudents || [];
-        const isClaimed = completedList.includes(userId);
+        const isClaimed = challenge.claimed || false;
+        const isManual = !challenge.type || challenge.type === "manual" || !challenge.target;
+        const isCompleted = isManual ? true : (challenge.progress || 0) >= (challenge.target || 0);
 
         return (
           <motion.div
@@ -43,6 +44,8 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
             className={`rounded-2xl border p-3.5 transition-all ${
               isClaimed
                 ? "border-white/5 bg-slate-900/20 opacity-55"
+                : isCompleted
+                ? "border-emerald-500/20 bg-emerald-500/5 animate-pulse"
                 : "border-purple-500/20 bg-purple-500/5"
             }`}
           >
@@ -52,6 +55,8 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
                 <div className="flex items-center gap-1.5 mb-0.5">
                   {isClaimed ? (
                     <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />
+                  ) : isCompleted ? (
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400 animate-bounce" />
                   ) : (
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400 animate-pulse" />
                   )}
@@ -64,6 +69,29 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
                     {challenge.description}
                   </p>
                 )}
+
+                {/* Progress bar visual for tracking challenges */}
+                {!isManual && !isClaimed && (
+                  <div className="mt-2.5 ml-3.5 space-y-1 select-none">
+                    <div className="flex justify-between items-center text-[9px] font-extrabold text-slate-400">
+                      <span>Progress</span>
+                      <span className={isCompleted ? "text-emerald-400 font-black" : "text-purple-300"}>
+                        {challenge.progress || 0} / {challenge.target}
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-950/60 rounded-full h-1.5 overflow-hidden border border-slate-800/80">
+                      <div
+                        className={`h-full rounded-full transition-all duration-750 ${
+                          isCompleted
+                            ? "bg-gradient-to-r from-emerald-500 to-green-400 shadow-[0_0_6px_rgba(16,185,129,0.4)]"
+                            : "bg-gradient-to-r from-purple-500 to-pink-500"
+                        }`}
+                        style={{ width: `${Math.min(((challenge.progress || 0) / (challenge.target || 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 mt-2 ml-3.5">
                   {(challenge.rewardXP || 0) > 0 && (
                     <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-pink-400">
@@ -84,8 +112,13 @@ function ChallengesSection({ challenges, userId, onClaimChallenge }) {
               ) : (
                 <Button
                   size="sm"
+                  disabled={!isCompleted}
                   onClick={() => onClaimChallenge(challenge.$id)}
-                  className="h-7 shrink-0 cursor-pointer rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-2.5 text-[10px] font-black text-white hover:from-purple-400 hover:to-pink-400 active:scale-95 shadow-none border-0"
+                  className={`h-7 shrink-0 cursor-pointer rounded-xl px-2.5 text-[10px] font-black text-white active:scale-95 shadow-none border-0 transition-all ${
+                    isCompleted
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 hover:shadow-[0_2px_8px_rgba(236,72,153,0.35)]"
+                      : "bg-slate-800/80 text-slate-500 border border-slate-700/30 cursor-not-allowed"
+                  }`}
                 >
                   Claim
                 </Button>
