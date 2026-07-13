@@ -111,9 +111,19 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
       });
       setHolidays(hSet);
 
-      // 3. Fetch attendance stats (limit 1 count) for each student and monthly trends in parallel
+      // 3. Fetch present-day counts using N concurrent limit-1 count queries
+      //    (each response is ~1.5 kB). Absent is derived from calendar working days,
+      //    so we never need a second round of N queries for absent status.
       const statsMap = {};
       const trendMap = {};
+
+      // Compute monthly working days for percentage calculation in the hook
+      let monthlyWorkingDays = 0;
+      if (monthStartStr && monthEndStr) {
+        const mStart = startOfDay(new Date(monthStartStr));
+        const mEnd = endOfDay(new Date(monthEndStr));
+        monthlyWorkingDays = countWorkingDays(mStart, mEnd, hSet);
+      }
 
       const now = new Date();
       const last6Months = Array.from({ length: 6 }, (_, i) => {
@@ -126,54 +136,45 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         };
       }).reverse();
 
-      await Promise.all([
-        // Fetch per-student counts
-        ...studentIds.map(async (sid) => {
-          try {
-            const [overall, monthly] = await Promise.all([
-              newAttendanceService.getStudentAttendanceStats(sid, batchId),
-              monthStartStr && monthEndStr
-                ? newAttendanceService.getStudentAttendanceStats(sid, batchId, monthStartStr, monthEndStr)
-                : Promise.resolve({ presentDays: 0, percentage: 0 }),
-            ]);
-            statsMap[sid] = { overall, monthly };
-          } catch (err) {
-            console.error(`Error fetching stats for student ${sid}:`, err);
-            statsMap[sid] = {
-              overall: { presentDays: 0, percentage: 0 },
-              monthly: { presentDays: 0, percentage: 0 },
-            };
-          }
-        }),
-        // Fetch trend counts
-        ...last6Months.map(async (m) => {
-          try {
-            const count = await newAttendanceService.database.listRows({
-              databaseId: conf.databaseId,
-              tableId: conf.newAttendanceCollectionId,
-              queries: [
-                Query.equal("batchId", batchId),
-                Query.equal("status", "present"),
-                Query.greaterThanEqual("date", m.start),
-                Query.lessThanEqual("date", m.end),
-                Query.limit(1),
-              ]
-            }).then((res) => res.total);
-            trendMap[m.monthKey] = {
-              label: m.label,
-              count,
-              monthKey: m.monthKey,
-            };
-          } catch (err) {
-            console.error(`Error fetching trend for ${m.monthKey}:`, err);
-            trendMap[m.monthKey] = {
-              label: m.label,
-              count: 0,
-              monthKey: m.monthKey,
-            };
-          }
-        })
+      // Fire all requests in parallel:
+      //   - N count queries for overall present (one per student)
+      //   - N count queries for monthly present (only if month selected)
+      //   - 6 count queries for trend
+      const [overallCounts, monthlyCounts, ...trendResults] = await Promise.all([
+        newAttendanceService.getBatchPresentCountsForStudents(studentIds, batchId),
+        monthStartStr && monthEndStr
+          ? newAttendanceService.getBatchPresentCountsForStudents(studentIds, batchId, monthStartStr, monthEndStr)
+          : Promise.resolve({}),
+        ...last6Months.map((m) =>
+          newAttendanceService.database.listRows({
+            databaseId: conf.databaseId,
+            tableId: conf.newAttendanceCollectionId,
+            queries: [
+              Query.equal("batchId", batchId),
+              Query.equal("status", "present"),
+              Query.greaterThanEqual("date", m.start),
+              Query.lessThanEqual("date", m.end),
+              Query.limit(1),
+            ]
+          })
+          .then((res) => ({ monthKey: m.monthKey, label: m.label, count: res.total }))
+          .catch(() => ({ monthKey: m.monthKey, label: m.label, count: 0 }))
+        ),
       ]);
+
+      // Build statsMap — percentages are computed in studentRows using calendar days
+      for (const sid of studentIds) {
+        statsMap[sid] = {
+          overallPresentDays: (overallCounts[sid] || {}).presentDays || 0,
+          monthlyPresentDays: (monthlyCounts[sid] || {}).presentDays || 0,
+          monthlyWorkingDays,
+        };
+      }
+
+      // Build trendMap
+      for (const result of trendResults) {
+        trendMap[result.monthKey] = result;
+      }
 
       setStudentStats(statsMap);
       setRawTrend(trendMap);
@@ -222,13 +223,21 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
       const sid = s.studentId;
       const profile = profiles[sid] || {};
       const stat = studentStats[sid] || {
-        overall: { presentDays: 0, percentage: 0 },
-        monthly: { presentDays: 0, percentage: 0 }
+        overallPresentDays: 0,
+        monthlyPresentDays: 0,
+        monthlyWorkingDays: 0,
       };
 
-      const presentDays = stat.overall.presentDays || 0;
-      const totalAtt = stat.overall.percentage || 0;
-      const monthAtt = stat.monthly.percentage || 0;
+      const presentDays = stat.overallPresentDays || 0;
+      // Derive attendance % from calendar working days (no absent query needed)
+      const totalAtt = totalWorkingDays > 0
+        ? parseFloat(((presentDays / totalWorkingDays) * 100).toFixed(1))
+        : 0;
+      const monthlyPresentDays = stat.monthlyPresentDays || 0;
+      const mWorkingDays = stat.monthlyWorkingDays || 0;
+      const monthAtt = mWorkingDays > 0
+        ? parseFloat(((monthlyPresentDays / mWorkingDays) * 100).toFixed(1))
+        : 0;
 
       // Compute mock test stats from raw tests
       const studentTests = testsByUser[sid] || [];
@@ -258,6 +267,8 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         monthlyAttendancePercent: monthAtt,
         presentDays,
         totalWorkingDays,
+        monthlyPresentDays,
+        monthlyWorkingDays: mWorkingDays,
         testsSubmitted,
         avgScore,
         status,

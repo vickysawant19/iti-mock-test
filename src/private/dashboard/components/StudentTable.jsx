@@ -1,52 +1,78 @@
 import React, { useState, useMemo } from "react";
-import { Search, ChevronUp, ChevronDown, Filter, Users } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronUp, ChevronDown, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 
-const StatusBadge = ({ status }) => {
-  const styles = {
-    active: "bg-emerald-100/60 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50",
-    warning: "bg-amber-100/60 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50",
-    critical: "bg-red-100/60 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200/50 dark:border-red-800/50",
-  };
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
+const attColor = (p) =>
+  p >= 95 ? "emerald" : p >= 80 ? "green" : p >= 60 ? "amber" : "red";
+
+const attLabel = (p) =>
+  p >= 95 ? "Excellent" : p >= 80 ? "Good" : p >= 60 ? "Average" : "Poor";
+
+const colorMap = {
+  emerald: {
+    bar:    "from-emerald-400 to-emerald-500",
+    text:   "text-emerald-600 dark:text-emerald-400",
+    badge:  "bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-900/25 dark:text-emerald-400 dark:border-emerald-800/50",
+    dot:    "bg-emerald-500",
+  },
+  green: {
+    bar:    "from-green-400 to-green-500",
+    text:   "text-green-600 dark:text-green-400",
+    badge:  "bg-green-50 text-green-700 border-green-200/70 dark:bg-green-900/25 dark:text-green-400 dark:border-green-800/50",
+    dot:    "bg-green-500",
+  },
+  amber: {
+    bar:    "from-amber-400 to-amber-500",
+    text:   "text-amber-600 dark:text-amber-400",
+    badge:  "bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-900/25 dark:text-amber-400 dark:border-amber-800/50",
+    dot:    "bg-amber-500",
+  },
+  red: {
+    bar:    "from-red-400 to-red-500",
+    text:   "text-red-600 dark:text-red-400",
+    badge:  "bg-red-50 text-red-700 border-red-200/70 dark:bg-red-900/25 dark:text-red-400 dark:border-red-800/50",
+    dot:    "bg-red-500",
+  },
+};
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+
+const StatusChip = ({ percent }) => {
+  const c = colorMap[attColor(percent)];
   return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border backdrop-blur-sm ${styles[status] || styles.active}`}>
-      {status === "critical" ? "Low" : status === "warning" ? "Warn" : "Good"}
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+      {attLabel(percent)}
     </span>
   );
 };
 
-const AttendanceBar = ({ percent }) => {
-  let color = "from-emerald-400 to-emerald-600";
-  if (percent < 50) color = "from-red-400 to-red-600";
-  else if (percent < 75) color = "from-amber-400 to-amber-600";
-
+const ProgressBar = ({ percent }) => {
+  const c = colorMap[attColor(percent)];
   return (
-    <div className="flex items-center gap-2 min-w-[120px]">
-      <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-800/80 overflow-hidden">
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${color} transition-all duration-500`}
+          className={`h-full rounded-full bg-gradient-to-r ${c.bar} transition-all duration-500`}
           style={{ width: `${Math.min(percent, 100)}%` }}
         />
       </div>
-      <span className={`text-xs font-bold tabular-nums w-10 text-right ${
-        percent < 50 ? "text-red-600 dark:text-red-400" : percent < 75 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
-      }`}>
+      <span className={`text-sm font-black tabular-nums w-10 text-right ${c.text}`}>
         {percent}%
       </span>
     </div>
   );
 };
 
-const SortHeader = ({ label, field, currentSort, onSort, className = "" }) => {
+const SortHeader = ({ label, field, currentSort, onSort }) => {
   const isActive = currentSort.field === field;
-  const icon = isActive && currentSort.dir === "asc" ? ChevronUp : ChevronDown;
-  const Icon = icon;
+  const Icon = isActive && currentSort.dir === "asc" ? ChevronUp : ChevronDown;
   return (
     <button
       onClick={() => onSort(field)}
-      className={`flex items-center gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer ${className}`}
+      className="flex items-center gap-0.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-pink-600 dark:hover:text-pink-400 transition-colors cursor-pointer"
     >
       {label}
       <Icon className={`w-3 h-3 ${isActive ? "text-pink-500" : "text-slate-300 dark:text-slate-600"}`} />
@@ -54,42 +80,190 @@ const SortHeader = ({ label, field, currentSort, onSort, className = "" }) => {
   );
 };
 
-const StudentTable = ({ studentRows = [], selectedMonth }) => {
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState({ field: "totalAttendancePercent", dir: "desc" });
-  const [showLowOnly, setShowLowOnly] = useState(false);
+// ─── Desktop row ─────────────────────────────────────────────────────────────
 
-  const handleSort = (field) => {
-    setSort((prev) =>
-      prev.field === field
-        ? { field, dir: prev.dir === "asc" ? "desc" : "asc" }
-        : { field, dir: "desc" }
-    );
-  };
+const DesktopRow = ({ row }) => {
+  const absent = Math.max(0, (row.totalWorkingDays || 0) - (row.presentDays || 0));
+  const mAbsent = Math.max(0, (row.monthlyWorkingDays || 0) - (row.monthlyPresentDays || 0));
+  const c = colorMap[attColor(row.totalAttendancePercent)];
+
+  return (
+    <tr className="border-b border-slate-100/60 dark:border-slate-800/40 hover:bg-pink-50/20 dark:hover:bg-pink-900/5 transition-colors group">
+      {/* Student */}
+      <td className="px-5 py-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9 shrink-0 ring-2 ring-white dark:ring-slate-800 shadow-sm">
+            <AvatarImage src={row.profileImage} />
+            <AvatarFallback className={`text-xs font-black ${c.badge} border-0`}>
+              {row.userName?.charAt(0) || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[220px]">{row.userName}</p>
+            {row.registerId && <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{row.registerId}</p>}
+          </div>
+        </div>
+      </td>
+
+      {/* Overall attendance — bar + chips */}
+      <td className="px-3 py-3 min-w-[170px]">
+        <div className="flex flex-col gap-1.5">
+          <ProgressBar percent={row.totalAttendancePercent} />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-200/50 dark:border-emerald-800/40 tabular-nums">
+              🟢 {row.presentDays ?? 0}
+            </span>
+            <span className="text-[9px] font-bold text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded border border-red-200/50 dark:border-red-800/40 tabular-nums">
+              🔴 {absent}
+            </span>
+            <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
+              /{row.totalWorkingDays ?? 0}d
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* Monthly compact */}
+      <td className="px-3 py-3 hidden sm:table-cell">
+        <div className="flex flex-col gap-1">
+          <span className={`text-sm font-black tabular-nums ${colorMap[attColor(row.monthlyAttendancePercent)].text}`}>
+            {row.monthlyAttendancePercent}%
+          </span>
+          {(row.monthlyWorkingDays || 0) > 0 ? (
+            <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
+              📅 {row.monthlyPresentDays ?? 0}/{row.monthlyWorkingDays}d
+            </span>
+          ) : (
+            <span className="text-[9px] text-slate-300 dark:text-slate-600">—</span>
+          )}
+        </div>
+      </td>
+
+      {/* Tests + Score */}
+      <td className="px-3 py-3 hidden md:table-cell">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300 tabular-nums">📝 {row.testsSubmitted}</span>
+          <span className={`text-[11px] font-black tabular-nums ${
+            row.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-400"
+            : row.avgScore >= 50 ? "text-amber-600 dark:text-amber-400"
+            : "text-red-600 dark:text-red-400"
+          }`}>⭐ {row.avgScore}%</span>
+        </div>
+      </td>
+
+      {/* Status */}
+      <td className="px-3 py-3">
+        <StatusChip percent={row.totalAttendancePercent} />
+      </td>
+    </tr>
+  );
+};
+
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+
+const MobileCard = ({ row }) => {
+  const absent  = Math.max(0, (row.totalWorkingDays  || 0) - (row.presentDays       || 0));
+  const mAbsent = Math.max(0, (row.monthlyWorkingDays || 0) - (row.monthlyPresentDays || 0));
+  const c = colorMap[attColor(row.totalAttendancePercent)];
+
+  return (
+    <div className="px-4 py-3.5 flex flex-col gap-2.5 border-b border-slate-100 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+      {/* Row 1: Avatar + Name + Status chip */}
+      <div className="flex items-center gap-3">
+        <Avatar className={`h-10 w-10 shrink-0 ring-2 ring-white dark:ring-slate-800 shadow-sm`}>
+          <AvatarImage src={row.profileImage} />
+          <AvatarFallback className={`text-sm font-black ${c.badge} border-0`}>
+            {row.userName?.charAt(0) || "?"}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black text-slate-900 dark:text-white truncate leading-tight">{row.userName}</p>
+          {row.registerId && <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{row.registerId}</p>}
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <StatusChip percent={row.totalAttendancePercent} />
+          <span className={`text-base font-black tabular-nums leading-none ${c.text}`}>
+            {row.totalAttendancePercent}%
+          </span>
+        </div>
+      </div>
+
+      {/* Row 2: Progress bar */}
+      <ProgressBar percent={row.totalAttendancePercent} />
+
+      {/* Row 3: Attendance pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg border border-emerald-200/60 dark:border-emerald-800/40 tabular-nums">
+          🟢 {row.presentDays ?? 0}
+        </span>
+        <span className="flex items-center gap-1 text-[10px] font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-lg border border-red-200/60 dark:border-red-800/40 tabular-nums">
+          🔴 {absent}
+        </span>
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
+          of {row.totalWorkingDays ?? 0} days
+        </span>
+        {/* Monthly pill — only if month is selected */}
+        {(row.monthlyWorkingDays || 0) > 0 && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg border border-blue-200/60 dark:border-blue-800/40 tabular-nums ml-auto">
+            📅 {row.monthlyPresentDays ?? 0}/{row.monthlyWorkingDays}d
+          </span>
+        )}
+      </div>
+
+      {/* Row 4: Tests + Avg score */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+          📝 {row.testsSubmitted} Tests
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border tabular-nums ${
+          row.avgScore >= 75
+            ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-800/40"
+            : row.avgScore >= 50
+            ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200/60 dark:border-amber-800/40"
+            : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-800/40"
+        }`}>
+          ⭐ {row.avgScore}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+const StudentTable = ({ studentRows = [], selectedMonth }) => {
+  const [search,      setSearch]      = useState("");
+  const [sort,        setSort]        = useState({ field: "totalAttendancePercent", dir: "desc" });
+  const [showLowOnly, setShowLowOnly] = useState(false);
+  const [showFilter,  setShowFilter]  = useState(false);
+
+  const handleSort = (field) =>
+    setSort((p) => p.field === field ? { field, dir: p.dir === "asc" ? "desc" : "asc" } : { field, dir: "desc" });
 
   const filtered = useMemo(() => {
     let rows = [...studentRows];
-
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       rows = rows.filter((r) => r.userName?.toLowerCase().includes(q));
     }
-
-    // Low attendance filter
-    if (showLowOnly) {
-      rows = rows.filter((r) => r.totalAttendancePercent < 75);
-    }
-
-    // Sort
+    if (showLowOnly) rows = rows.filter((r) => r.totalAttendancePercent < 75);
     rows.sort((a, b) => {
-      const valA = a[sort.field] ?? 0;
-      const valB = b[sort.field] ?? 0;
-      return sort.dir === "asc" ? valA - valB : valB - valA;
+      const va = a[sort.field] ?? 0, vb = b[sort.field] ?? 0;
+      return sort.dir === "asc" ? va - vb : vb - va;
     });
-
     return rows;
   }, [studentRows, search, showLowOnly, sort]);
+
+  // Quick class stats
+  const classStats = useMemo(() => {
+    if (!studentRows.length) return null;
+    const n = studentRows.length;
+    return {
+      avgAtt:   parseFloat((studentRows.reduce((s, r) => s + r.totalAttendancePercent, 0) / n).toFixed(1)),
+      avgScore: parseFloat((studentRows.reduce((s, r) => s + r.avgScore, 0) / n).toFixed(1)),
+      lowCount: studentRows.filter((r) => r.totalAttendancePercent < 75).length,
+    };
+  }, [studentRows]);
 
   if (studentRows.length === 0) {
     return (
@@ -101,193 +275,99 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
   }
 
   return (
-    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
-      {/* Header */}
-      <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Users className="w-5 h-5 text-purple-500 shrink-0" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">
-            Students <span className="text-slate-400 font-normal">({filtered.length})</span>
-          </h3>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {/* Search */}
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-2 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 w-full sm:w-44"
-            />
+    <div className="bg-transparent sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
+
+      {/* ── Quick class summary strip ───────────────────────────────────── */}
+      {classStats && (
+        <div className="px-4 py-3 sm:px-5 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2 mr-auto min-w-0">
+            <Users className="w-4 h-4 text-purple-500 shrink-0" />
+            <span className="text-sm font-bold text-slate-800 dark:text-white">
+              Students <span className="text-slate-400 font-normal">({filtered.length})</span>
+            </span>
           </div>
-          {/* Filter button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLowOnly(!showLowOnly)}
-            className={`rounded-xl text-xs font-semibold flex-1 sm:flex-none justify-center ${
-              showLowOnly
-                ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
-                : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Filter className="w-3.5 h-3.5 mr-1" />
-            {showLowOnly ? "Low <75%" : "Filter"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center leading-none">
+              <span className={`text-sm font-black tabular-nums ${colorMap[attColor(classStats.avgAtt)].text}`}>
+                {classStats.avgAtt}%
+              </span>
+              <span className="text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Avg Att.</span>
+            </div>
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
+            <div className="flex flex-col items-center leading-none">
+              <span className={`text-sm font-black tabular-nums ${
+                classStats.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-400"
+                : classStats.avgScore >= 50 ? "text-amber-600 dark:text-amber-400"
+                : "text-red-600 dark:text-red-400"
+              }`}>
+                {classStats.avgScore}%
+              </span>
+              <span className="text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Avg Score</span>
+            </div>
+            {classStats.lowCount > 0 && (
+              <>
+                <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
+                <div className="flex flex-col items-center leading-none">
+                  <span className="text-sm font-black tabular-nums text-red-600 dark:text-red-400">{classStats.lowCount}</span>
+                  <span className="text-[8px] font-semibold text-red-400 dark:text-red-500 uppercase tracking-wider mt-0.5">Low Att.</span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* ── Search + filter row ─────────────────────────────────────────── */}
+      <div className="px-4 py-2.5 sm:px-5 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search students..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-pink-500/30 focus:border-pink-400/40 placeholder-slate-400 dark:placeholder-slate-500"
+          />
+        </div>
+        <button
+          onClick={() => setShowLowOnly(!showLowOnly)}
+          className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-colors shrink-0 ${
+            showLowOnly
+              ? "bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400"
+              : "bg-slate-50 border-slate-200/60 text-slate-500 dark:bg-slate-800/60 dark:border-slate-700/60 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+          }`}
+          title={showLowOnly ? "Showing low attendance" : "Filter by attendance"}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+        </button>
       </div>
 
-      {/* Table (Desktop only) */}
+      {/* ── Desktop table ────────────────────────────────────────────────── */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-white/20 dark:border-slate-800">
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Student</th>
-              <th className="px-3 py-3"><SortHeader label="Overall" field="totalAttendancePercent" currentSort={sort} onSort={handleSort} /></th>
-              <th className="px-3 py-3 hidden sm:table-cell"><SortHeader label="Monthly" field="monthlyAttendancePercent" currentSort={sort} onSort={handleSort} /></th>
-              <th className="px-3 py-3 hidden md:table-cell"><SortHeader label="Tests" field="testsSubmitted" currentSort={sort} onSort={handleSort} /></th>
-              <th className="px-3 py-3 hidden md:table-cell"><SortHeader label="Avg Score" field="avgScore" currentSort={sort} onSort={handleSort} /></th>
-              <th className="px-3 py-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+            <tr className="border-b border-slate-100 dark:border-slate-800">
+              <th className="px-5 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Student</th>
+              <th className="px-3 py-2.5"><SortHeader label="Overall" field="totalAttendancePercent" currentSort={sort} onSort={handleSort} /></th>
+              <th className="px-3 py-2.5 hidden sm:table-cell"><SortHeader label="Monthly" field="monthlyAttendancePercent" currentSort={sort} onSort={handleSort} /></th>
+              <th className="px-3 py-2.5"><SortHeader label="Tests / Score" field="testsSubmitted" currentSort={sort} onSort={handleSort} /></th>
+              <th className="px-3 py-2.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => (
-              <tr
-                key={row.studentId}
-                className="border-b border-white/10 dark:border-slate-800/50 hover:bg-pink-50/30 dark:hover:bg-pink-900/5 transition-colors"
-              >
-                {/* Student Info */}
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={row.profileImage} />
-                      <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300">
-                        {row.userName?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-[260px]">{row.userName}</p>
-                      {row.registerId && (
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{row.registerId}</p>
-                      )}
-                    </div>
-                  </div>
-                </td>
-
-                {/* Overall Attendance */}
-                <td className="px-3 py-3">
-                  <AttendanceBar percent={row.totalAttendancePercent} />
-                </td>
-
-                {/* Monthly Attendance */}
-                <td className="px-3 py-3 hidden sm:table-cell">
-                  <AttendanceBar percent={row.monthlyAttendancePercent} />
-                </td>
-
-                {/* Tests */}
-                <td className="px-3 py-3 hidden md:table-cell">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 tabular-nums">{row.testsSubmitted}</span>
-                </td>
-
-                {/* Avg Score */}
-                <td className="px-3 py-3 hidden md:table-cell">
-                  <span className={`text-sm font-bold tabular-nums ${
-                    row.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-400"
-                    : row.avgScore >= 50 ? "text-amber-600 dark:text-amber-400"
-                    : "text-red-600 dark:text-red-400"
-                  }`}>
-                    {row.avgScore}%
-                  </span>
-                </td>
-
-                {/* Status */}
-                <td className="px-3 py-3">
-                  <StatusBadge status={row.status} />
-                </td>
-              </tr>
-            ))}
+            {filtered.map((row) => <DesktopRow key={row.studentId} row={row} />)}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile Card Layout */}
-      <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/40">
-        {filtered.map((row) => (
-          <div key={row.studentId} className="py-3 px-2 flex flex-col gap-2.5 hover:bg-pink-50/10 dark:hover:bg-pink-900/5 transition-colors">
-            {/* Header: Student Info + Status */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={row.profileImage} />
-                  <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 text-pink-700 dark:text-pink-300">
-                    {row.userName?.charAt(0) || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="text-xs font-black text-slate-850 dark:text-white truncate max-w-[160px]">{row.userName}</p>
-                  {row.registerId && (
-                    <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{row.registerId}</p>
-                  )}
-                </div>
-              </div>
-              <StatusBadge status={row.status} />
-            </div>
-
-            {/* Attendance Progress Bars */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-1">
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Overall Att.</span>
-                  <span className={`text-[10px] font-extrabold ${
-                    row.totalAttendancePercent < 50 ? 'text-red-500' : row.totalAttendancePercent < 75 ? 'text-amber-500' : 'text-emerald-500'
-                  }`}>{row.totalAttendancePercent}%</span>
-                </div>
-                <div className="w-full h-1 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${
-                    row.totalAttendancePercent < 50 ? 'bg-red-500' : row.totalAttendancePercent < 75 ? 'bg-amber-500' : 'bg-emerald-500'
-                  }`} style={{ width: `${Math.min(row.totalAttendancePercent, 100)}%` }} />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Monthly Att.</span>
-                  <span className={`text-[10px] font-extrabold ${
-                    row.monthlyAttendancePercent < 50 ? 'text-red-500' : row.monthlyAttendancePercent < 75 ? 'text-amber-500' : 'text-emerald-500'
-                  }`}>{row.monthlyAttendancePercent}%</span>
-                </div>
-                <div className="w-full h-1 bg-slate-100 dark:bg-slate-800/60 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${
-                    row.monthlyAttendancePercent < 50 ? 'bg-red-500' : row.monthlyAttendancePercent < 75 ? 'bg-amber-500' : 'bg-emerald-500'
-                  }`} style={{ width: `${Math.min(row.monthlyAttendancePercent, 100)}%` }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Test Stats */}
-            <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 px-0.5">
-              <div className="flex items-center gap-1">
-                <span>Tests:</span>
-                <span className="font-extrabold text-slate-700 dark:text-slate-300">{row.testsSubmitted}</span>
-              </div>
-              <span>•</span>
-              <div className="flex items-center gap-1">
-                <span>Avg Score:</span>
-                <span className={`font-black ${
-                  row.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-450"
-                  : row.avgScore >= 50 ? "text-amber-600 dark:text-amber-450"
-                  : "text-red-600 dark:text-red-450"
-                }`}>{row.avgScore}%</span>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* ── Mobile card list ─────────────────────────────────────────────── */}
+      <div className="block md:hidden">
+        {filtered.map((row) => <MobileCard key={row.studentId} row={row} />)}
       </div>
 
       {filtered.length === 0 && studentRows.length > 0 && (
         <div className="p-8 text-center text-sm text-slate-400 dark:text-slate-500">
-          No students match your search or filter.
+          No students match your search{showLowOnly ? " or filter" : ""}.
         </div>
       )}
     </div>

@@ -470,8 +470,55 @@ class NewAttendanceService {
     }
   }
 
+  /**
+   * Fetch ONLY the present-day count for each student in a batch using
+   * N concurrent limit-1 count queries (each response is ~1.5 kB).
+   *
+   * Absent days are intentionally NOT fetched here — the caller derives
+   * absent = calendarWorkingDays - presentDays, which avoids a second
+   * round of N queries while remaining accurate.
+   *
+   * @param {string[]} studentIds
+   * @param {string}   batchId
+   * @param {string|null} startDate  "yyyy-MM-dd" or null
+   * @param {string|null} endDate    "yyyy-MM-dd" or null
+   * @returns {Object}  { [userId]: { presentDays } }
+   */
+  async getBatchPresentCountsForStudents(studentIds, batchId, startDate = null, endDate = null) {
+    if (!batchId || !studentIds?.length) return {};
+    try {
+      const results = await Promise.all(
+        studentIds.map((sid) => {
+          const queries = [
+            Query.equal("userId", sid),
+            Query.equal("batchId", batchId),
+            Query.equal("status", "present"),
+            Query.limit(1),
+          ];
+          if (startDate) queries.push(Query.greaterThanEqual("date", startDate));
+          if (endDate)   queries.push(Query.lessThanEqual("date", endDate));
+
+          return this.database
+            .listRows({ databaseId: conf.databaseId, tableId: conf.newAttendanceCollectionId, queries })
+            .then((res) => ({ sid, presentDays: res.total }))
+            .catch(() => ({ sid, presentDays: 0 }));
+        })
+      );
+
+      const counts = {};
+      for (const { sid, presentDays } of results) {
+        counts[sid] = { presentDays };
+      }
+      return counts;
+    } catch (error) {
+      console.error("[newAttendanceService] getBatchPresentCountsForStudents error:", error);
+      throw error;
+    }
+  }
+
   // Get batch attendance statistics for a specific date
   async getBatchAttendanceStats(batchId, date) {
+
     if (!batchId) return { total: 0, present: 0, absent: 0, late: 0, holiday: 0, percentage: 0 };
     try {
       const formattedDate = this.formatDate(date);

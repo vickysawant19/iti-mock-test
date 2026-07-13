@@ -17,6 +17,8 @@ import {
   CheckCircle,
   Settings,
   ChevronDown,
+  Coins,
+  Flame,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -24,8 +26,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fixProfileImage } from "@/services/appwriteClient";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import BatchOverviewCard from "./components/BatchOverviewCard";
-import StudentTable from "./components/StudentTable";
-import AttendanceTrendChart from "./components/AttendanceTrendChart";
+import TeacherAttendanceTab from "./components/TeacherAttendanceTab";
+import TeacherLeaderboardTab from "./components/TeacherLeaderboardTab";
+import TeacherChallengesTab from "./components/TeacherChallengesTab";
+import TeacherPrizesTab from "./components/TeacherPrizesTab";
+import TeacherSettingsTab from "./components/TeacherSettingsTab";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { challengeService, CHALLENGE_TEMPLATES } from "@/services/challenge.service";
@@ -400,50 +405,11 @@ const TeacherDashboard = ({
                   <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
                 </div>
               ) : (
-                <>
-                  {/* Student Table */}
-                  <StudentTable studentRows={studentRows} selectedMonth={selectedMonth} />
-
-
-                  {/* Visual Insights */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <AttendanceTrendChart data={attendanceTrend} />
-
-                    {/* Needs Attention List */}
-                    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
-                      <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-amber-500" />
-                        <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">
-                          Needs Attention
-                        </h3>
-                      </div>
-                      <div className="py-2 px-0 sm:p-4 space-y-2 max-h-56 overflow-y-auto">
-                        {studentRows
-                          .filter((s) => s.totalAttendancePercent < 75)
-                          .sort((a, b) => a.totalAttendancePercent - b.totalAttendancePercent)
-                          .slice(0, 8)
-                          .map((s) => (
-                            <div
-                              key={s.studentId}
-                              className="flex items-center justify-between gap-2 py-2 px-1 sm:p-2.5 sm:rounded-xl sm:bg-red-50/40 sm:dark:bg-red-900/10 border-b border-slate-100 dark:border-slate-800/30 sm:border sm:border-red-100/30 sm:dark:border-red-900/20 last:border-b-0"
-                            >
-                              <span className="text-xs font-bold text-slate-700 dark:text-slate-350 truncate">
-                                {s.userName}
-                              </span>
-                              <span className="text-xs font-extrabold text-red-650 dark:text-red-400 tabular-nums shrink-0">
-                                {s.totalAttendancePercent}%
-                              </span>
-                            </div>
-                          ))}
-                        {studentRows.filter((s) => s.totalAttendancePercent < 75).length === 0 && (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">
-                            All students have ≥75% attendance 🎉
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </>
+                <TeacherAttendanceTab
+                  studentRows={studentRows}
+                  selectedMonth={selectedMonth}
+                  attendanceTrend={attendanceTrend}
+                />
               )}
             </motion.div>
           )}
@@ -456,163 +422,18 @@ const TeacherDashboard = ({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              {loadingGame ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                </div>
-              ) : (
-                <>
-                  {/* Game Stats overview */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex items-center gap-4 text-white">
-                      <div className="p-3 bg-pink-500/20 rounded-2xl text-pink-500">
-                        <Sparkles className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Batch XP</p>
-                        <p className="text-2xl font-black text-white mt-0.5">{totalBatchXP} XP</p>
-                      </div>
-                    </div>
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex items-center gap-4 text-white">
-                      <div className="p-3 bg-purple-500/20 rounded-2xl text-purple-500">
-                        <Target className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Average Accuracy</p>
-                        <p className="text-2xl font-black text-white mt-0.5">{avgAccuracy}%</p>
-                      </div>
-                    </div>
-                    <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex items-center gap-4 text-white">
-                      <div className="p-3 bg-amber-500/20 rounded-2xl text-amber-500">
-                        <Zap className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Average Level</p>
-                        <p className="text-2xl font-black text-white mt-0.5">LVL {avgLevel}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Batch Game Leaderboard */}
-                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Batch Gamified Leaderboard</h3>
-                    </div>
-                    <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                      {leaderboard.map((student, idx) => {
-                        const isExpanded = expandedStudentId === student.studentId;
-                        return (
-                          <div key={student.studentId} className="border-b border-white/10 dark:border-slate-800/40 last:border-b-0">
-                            {/* Row Header clickable to toggle expand */}
-                            <div
-                              onClick={() => setExpandedStudentId(isExpanded ? null : student.studentId)}
-                              className="flex justify-between items-center px-5 py-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all cursor-pointer select-none"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-black text-slate-400 w-5">#{idx + 1}</span>
-                                <InteractiveAvatar
-                                  src={student.profileImage}
-                                  fallbackText={student.userName?.charAt(0) || "?"}
-                                  userId={student.studentId}
-                                  userName={student.userName}
-                                  showStatus={true}
-                                  statusSize="xs"
-                                  className="h-8 w-8 rounded-lg"
-                                />
-                                <div>
-                                  <p className="text-xs font-bold text-slate-750 dark:text-slate-350">{student.userName}</p>
-                                  <p className="text-[9px] text-slate-400 font-bold">Level {student.level} • {student.xp} XP</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4 text-right">
-                                <div>
-                                  <span className="text-xs font-black text-pink-500">{student.accuracy}% Accuracy</span>
-                                  <p className="text-[9px] text-slate-400 font-bold">{student.wins} / {student.questionsAttempted || 0} Correct</p>
-                                </div>
-                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isExpanded ? "rotate-180 text-pink-500" : ""}`} />
-                              </div>
-                            </div>
-
-                            {/* Expanded stats panel */}
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="px-5 pb-4 bg-slate-50/50 dark:bg-slate-900/10 border-t border-white/5 dark:border-slate-800/20 overflow-hidden"
-                              >
-                                <div className="pt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  {/* Today's Activity */}
-                                  <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 p-4 rounded-2xl space-y-3">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                        Today's Activity
-                                      </span>
-                                      <span className="text-[9px] font-extrabold text-pink-400 bg-pink-500/5 px-2.5 py-0.5 rounded-full border border-pink-500/10">
-                                        {student.dailyQuestionsAttempted > 0
-                                          ? (((student.dailyWins || 0) / student.dailyQuestionsAttempted) * 100).toFixed(0) + "% Acc"
-                                          : "No Activity"}
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-center">
-                                      <div className="bg-slate-100/50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-200/20">
-                                        <p className="text-sm font-black text-slate-700 dark:text-slate-300">{student.dailyQuestionsAttempted || 0}</p>
-                                        <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5 tracking-wider">Solved</p>
-                                      </div>
-                                      <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/15">
-                                        <p className="text-sm font-black text-emerald-500">{student.dailyWins || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-400/80 uppercase mt-0.5 tracking-wider">Correct</p>
-                                      </div>
-                                      <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/15">
-                                        <p className="text-sm font-black text-red-500">{student.dailyLosses || 0}</p>
-                                        <p className="text-[8px] font-black text-red-400/80 uppercase mt-0.5 tracking-wider">Wrong</p>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* All-Time Stats */}
-                                  <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/50 p-4 rounded-2xl space-y-3">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                        <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                                        All-Time Record
-                                      </span>
-                                      <span className="text-[9px] font-extrabold text-purple-400 bg-purple-500/5 px-2.5 py-0.5 rounded-full border border-purple-500/10">
-                                        {student.accuracy || 0}% Acc
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-center">
-                                      <div className="bg-slate-100/50 dark:bg-slate-800/40 rounded-xl p-2 border border-slate-200/20">
-                                        <p className="text-sm font-black text-slate-700 dark:text-slate-300">{student.questionsAttempted || 0}</p>
-                                        <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5 tracking-wider">Total</p>
-                                      </div>
-                                      <div className="bg-emerald-500/5 rounded-xl p-2 border border-emerald-500/15">
-                                        <p className="text-sm font-black text-emerald-500">{student.wins || 0}</p>
-                                        <p className="text-[8px] font-black text-emerald-400/80 uppercase mt-0.5 tracking-wider">Correct</p>
-                                      </div>
-                                      <div className="bg-red-500/5 rounded-xl p-2 border border-red-500/15">
-                                        <p className="text-sm font-black text-red-500">{student.losses || 0}</p>
-                                        <p className="text-[8px] font-black text-red-400/80 uppercase mt-0.5 tracking-wider">Wrong</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {leaderboard.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-10">No game scores recorded.</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+              <TeacherLeaderboardTab
+                loadingGame={loadingGame}
+                totalBatchXP={totalBatchXP}
+                avgAccuracy={avgAccuracy}
+                avgLevel={avgLevel}
+                leaderboard={leaderboard}
+                expandedStudentId={expandedStudentId}
+                setExpandedStudentId={setExpandedStudentId}
+                studentRows={studentRows}
+              />
             </motion.div>
           )}
-
           {activeTab === "challenges" && (
             <motion.div
               key="challenges"
@@ -621,161 +442,27 @@ const TeacherDashboard = ({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              {loadingGame ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                </div>
-              ) : (
-                <>
-                  {/* Launch Challenge Form */}
-                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
-                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                      <PlusCircle className="w-5 h-5 text-pink-500" />
-                      Launch New Challenge
-                    </h3>
-                    <form onSubmit={handleCreateChallenge} className="space-y-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Predefined Challenge Template</label>
-                        <select
-                          value={selectedTemplateId}
-                          onChange={(e) => setSelectedTemplateId(e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold text-slate-800 dark:text-white"
-                        >
-                          {CHALLENGE_TEMPLATES.map((t) => (
-                            <option key={t.templateId} value={t.templateId}>
-                              {t.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Challenge Title</label>
-                        <input
-                          required
-                          disabled={selectedTemplateId !== "custom"}
-                          type="text"
-                          placeholder="e.g. Solve 50 questions"
-                          value={challengeTitle}
-                          onChange={(e) => setChallengeTitle(e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium disabled:opacity-60"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Description</label>
-                        <textarea
-                          required
-                          disabled={selectedTemplateId !== "custom"}
-                          rows="2"
-                          placeholder="Detail the instructions or criteria for students..."
-                          value={challengeDesc}
-                          onChange={(e) => setChallengeDesc(e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium disabled:opacity-60"
-                        />
-                      </div>
-
-                      {/* Render type and target editors if custom, or a read-only preview badge if preset */}
-                      {selectedTemplateId === "custom" ? (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Tracking Metric (Type)</label>
-                            <select
-                              value={challengeType}
-                              onChange={(e) => setChallengeType(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
-                            >
-                              <option value="questions">Questions Answered</option>
-                              <option value="correct_answers">Correct Answers</option>
-                              <option value="correct_streak">Consecutive Correct Answers</option>
-                              <option value="xp">XP Earned</option>
-                              <option value="manual">Manual (Claim Only)</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Target Count</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={challengeTarget}
-                              onChange={(e) => setChallengeTarget(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl bg-purple-500/5 border border-purple-500/10 p-3 text-[10px] text-purple-400 font-extrabold flex justify-between select-none">
-                          <span className="flex items-center gap-1">🎯 Tracking: <span className="uppercase text-slate-200 font-black">{challengeType}</span></span>
-                          <span className="flex items-center gap-1">📈 Target: <span className="text-slate-200 font-black">{challengeTarget}</span></span>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">XP Reward</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={challengeXP}
-                            onChange={(e) => setChallengeXP(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Coins Reward</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={challengeCoins}
-                            onChange={(e) => setChallengeCoins(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                          />
-                        </div>
-                      </div>
-                      <Button
-                        disabled={isCreatingChallenge}
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-pink-500/10 cursor-pointer"
-                      >
-                        {isCreatingChallenge ? "Launching..." : "Launch Challenge"}
-                      </Button>
-                    </form>
-                  </div>
-
-                  {/* Active Challenges List */}
-                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 border-b border-white/30 dark:border-slate-800">
-                      <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Active Batch Challenges</h3>
-                    </div>
-                    <div className="divide-y divide-white/20 dark:divide-slate-800/40">
-                      {challenges.map((challenge) => {
-                        const completionsCount = challenge.completedStudents?.length || 0;
-                        const totalStudents = studentRows?.length || 0;
-                        return (
-                          <div key={challenge.$id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                            <div>
-                              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">{challenge.title}</h4>
-                              <p className="text-[11px] text-slate-400 mt-0.5">{challenge.description}</p>
-                              {challenge.type && challenge.type !== "manual" && (
-                                <span className="inline-block mt-1 text-[9px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase">
-                                  Metric: {challenge.type} • Target: {challenge.target}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] font-extrabold bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              {completionsCount} / {totalStudents} Completed
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {challenges.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-10">No challenges launched yet.</p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+              <TeacherChallengesTab
+                loadingGame={loadingGame}
+                selectedTemplateId={selectedTemplateId}
+                setSelectedTemplateId={setSelectedTemplateId}
+                challengeTitle={challengeTitle}
+                setChallengeTitle={setChallengeTitle}
+                challengeDesc={challengeDesc}
+                setChallengeDesc={setChallengeDesc}
+                challengeType={challengeType}
+                setChallengeType={setChallengeType}
+                challengeTarget={challengeTarget}
+                setChallengeTarget={setChallengeTarget}
+                challengeXP={challengeXP}
+                setChallengeXP={setChallengeXP}
+                challengeCoins={challengeCoins}
+                setChallengeCoins={setChallengeCoins}
+                isCreatingChallenge={isCreatingChallenge}
+                handleCreateChallenge={handleCreateChallenge}
+                challenges={challenges}
+                studentRows={studentRows}
+              />
             </motion.div>
           )}
 
@@ -787,111 +474,22 @@ const TeacherDashboard = ({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              {loadingGame ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                </div>
-              ) : (
-                <>
-                  {/* Prize Dispatcher Form */}
-                  <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 p-5 rounded-3xl space-y-4">
-                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                      <Award className="w-5 h-5 text-purple-500" />
-                      Badge & Prize Dispatcher
-                    </h3>
-                    <form onSubmit={handleDispatchPrize} className="space-y-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Student</label>
-                        <select
-                          required
-                          value={selectedStudent}
-                          onChange={(e) => setSelectedStudent(e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
-                        >
-                          <option value="">-- Choose Student --</option>
-                          {studentRows.map((s) => (
-                            <option key={s.studentId} value={s.studentId}>
-                              {s.userName}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Prize Type</label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                            <input
-                              type="radio"
-                              checked={prizeType === "bonus"}
-                              onChange={() => setPrizeType("bonus")}
-                            />
-                            XP & Coins Bonus
-                          </label>
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                            <input
-                              type="radio"
-                              checked={prizeType === "badge"}
-                              onChange={() => setPrizeType("badge")}
-                            />
-                            Achievement Badge
-                          </label>
-                        </div>
-                      </div>
-
-                      {prizeType === "badge" ? (
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Badge</label>
-                          <select
-                            required
-                            value={selectedBadge}
-                            onChange={(e) => setSelectedBadge(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-bold"
-                          >
-                            <option value="">-- Choose Badge --</option>
-                            {Object.values(BADGES).map((badge) => (
-                              <option key={badge.id} value={badge.id}>
-                                🏆 {badge.title} - {badge.description}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus XP</label>
-                            <input
-                              type="number"
-                              min="10"
-                              value={bonusXP}
-                              onChange={(e) => setBonusXP(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Bonus Coins</label>
-                            <input
-                              type="number"
-                              min="5"
-                              value={bonusCoins}
-                              onChange={(e) => setBonusCoins(e.target.value)}
-                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <Button
-                        disabled={isDispatchingPrize}
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-bold py-3 text-xs shadow-md shadow-indigo-500/10 cursor-pointer"
-                      >
-                        {isDispatchingPrize ? "Dispatching..." : "Dispatch Prize"}
-                      </Button>
-                    </form>
-                  </div>
-                </>
-              )}
+              <TeacherPrizesTab
+                loadingGame={loadingGame}
+                selectedStudent={selectedStudent}
+                setSelectedStudent={setSelectedStudent}
+                prizeType={prizeType}
+                setPrizeType={setPrizeType}
+                selectedBadge={selectedBadge}
+                setSelectedBadge={setSelectedBadge}
+                bonusXP={bonusXP}
+                setBonusXP={setBonusXP}
+                bonusCoins={bonusCoins}
+                setBonusCoins={setBonusCoins}
+                isDispatchingPrize={isDispatchingPrize}
+                handleDispatchPrize={handleDispatchPrize}
+                studentRows={studentRows}
+              />
             </motion.div>
           )}
 
@@ -903,133 +501,22 @@ const TeacherDashboard = ({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-5"
             >
-              <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
-                  <div className="p-2 bg-pink-500/10 rounded-xl">
-                    <Settings className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-800 dark:text-white">Batch Game Configuration</h3>
-                    <p className="text-[11px] text-slate-400 font-medium">Control the question scope and gameplay rewards for batch members</p>
-                  </div>
-                </div>
-
-                {isLoadingSettings ? (
-                  <div className="flex justify-center items-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-                  </div>
-                ) : (
-                  <form onSubmit={handleSaveSettings} className="space-y-5">
-                    {/* Part 1: Question Pool Scope Filter */}
-                    <div className="space-y-3">
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Question Source Pool</label>
-                      <p className="text-[10px] text-slate-450 dark:text-slate-400 font-medium">Specify which questions are served to students in Game Mode</p>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                        {/* Selector option */}
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-450 uppercase block">Question Filter Mode</label>
-                          <select
-                            value={questionFilter}
-                            onChange={(e) => setQuestionFilter(e.target.value)}
-                            className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium"
-                          >
-                            <option value="all">All Subject Questions (Default)</option>
-                            <option value="first_year">First Year Questions Only</option>
-                            <option value="second_year">Second Year Questions Only</option>
-                            <option value="module">Specific Module Only</option>
-                          </select>
-                        </div>
-
-                        {/* Module Selector dropdown, only visible if filter mode is "module" */}
-                        {questionFilter === "module" && (
-                          <div className="space-y-2 animate-float-in">
-                            <label className="text-[10px] font-bold text-slate-450 uppercase block">Select Trade Module</label>
-                            <select
-                              value={selectedModuleId}
-                              onChange={(e) => setSelectedModuleId(e.target.value)}
-                              required
-                              className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium"
-                            >
-                              <option value="">-- Choose Module --</option>
-                              {modulesList.map((m) => (
-                                <option key={m.$id} value={m.moduleId}>
-                                  {m.moduleId} — {m.moduleName} (Year {m.year})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <hr className="border-slate-100 dark:border-slate-800 my-2" />
-
-                    {/* Part 2: Rewards and Payout Setting values */}
-                    <div className="space-y-4">
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Correct Answer Rewards</label>
-                      <p className="text-[10px] text-slate-455 dark:text-slate-400 font-medium">Fine-tune the gaming payouts awarded to students upon successfully clearing nodes</p>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-450 uppercase block">XP Payout per Answer</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={correctAnswerXp}
-                            onChange={(e) => setCorrectAnswerXp(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-455 uppercase block">Coins Payout per Answer</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={correctAnswerCoins}
-                            onChange={(e) => setCorrectAnswerCoins(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-455 uppercase block">Daily Streak XP Bonus</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="20"
-                            value={streakXpBonus}
-                            onChange={(e) => setStreakXpBonus(e.target.value)}
-                            className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium text-slate-800 dark:text-white"
-                          />
-                          <span className="text-[8px] text-slate-400 font-bold block mt-1">Bonus XP = (current streak days) × value</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Part 3: Form Submit Action */}
-                    <div className="pt-2 flex justify-end">
-                      <Button
-                        type="submit"
-                        disabled={isSavingSettings}
-                        className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 transition-all cursor-pointer h-10 px-6"
-                      >
-                        {isSavingSettings ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                            Saving Settings...
-                          </>
-                        ) : (
-                          "Save Game Configuration"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                )}
-              </div>
+              <TeacherSettingsTab
+                isLoadingSettings={isLoadingSettings}
+                questionFilter={questionFilter}
+                setQuestionFilter={setQuestionFilter}
+                selectedModuleId={selectedModuleId}
+                setSelectedModuleId={setSelectedModuleId}
+                modulesList={modulesList}
+                correctAnswerXp={correctAnswerXp}
+                setCorrectAnswerXp={setCorrectAnswerXp}
+                correctAnswerCoins={correctAnswerCoins}
+                setCorrectAnswerCoins={setCorrectAnswerCoins}
+                streakXpBonus={streakXpBonus}
+                setStreakXpBonus={setStreakXpBonus}
+                isSavingSettings={isSavingSettings}
+                handleSaveSettings={handleSaveSettings}
+              />
             </motion.div>
           )}
         </AnimatePresence>
