@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { Permission, Role, Channel, Query } from "appwrite";
+import { Permission, Role } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import { presenceClient, presenceService, realtime } from "@/services/appwriteClient";
+import { presenceClient } from "@/services/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
 const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
 const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
 
-const getPresenceResources = () => ({ presenceClient, presenceService, realtime });
+const getPresenceResources = () => ({ presenceClient });
 
 /**
  * usePresence — manages the current user's live presence and tracks online/offline status of all users.
@@ -27,7 +27,6 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const activeBatchId = useSelector(selectActiveBatchId);
   const location = useLocation();
 
-  const [onlineUsers, setOnlineUsers] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -178,40 +177,12 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     isMountedRef.current = true;
     disabledRef.current = false; // Reset on user sign-in
 
-    // 1. Initial register self
-    upsertSelfPresence();
-
-    const { presenceService, realtime: presenceRealtime } = getPresenceResources();
-
-    // 2. Fetch the current snapshot of online users
-    const fetchInitialPresences = async () => {
-      try {
-        const response = await presenceService.list({
-          queries: [Query.limit(100)],
-        });
-        if (isMountedRef.current) {
-          const map = {};
-          (response.presences ?? []).forEach((p) => {
-            map[p.userId] = p;
-          });
-          setOnlineUsers(map);
-        }
-      } catch (err) {
-        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
-          console.error("[usePresence] list failed:", err.message);
-        }
-      } finally {
-        if (isMountedRef.current) setIsLoading(false);
-      }
-    };
-    fetchInitialPresences();
-
-    // 3. Heartbeat: push expiresAt forward periodically
+    // Heartbeat: push expiresAt forward periodically
     const heartbeatId = setInterval(() => {
       upsertSelfPresence();
     }, HEARTBEAT_INTERVAL_MS);
 
-    // 4. Activity / Inactivity Idle Tracking
+    // Inactivity Idle Tracking
     const resetIdleTimer = () => {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
@@ -243,7 +214,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     activityEvents.forEach((ev) => window.addEventListener(ev, handleUserActivity));
     resetIdleTimer();
 
-    // 5. Focus/Blur states with transition grace period
+    // Focus/Blur states with transition grace period
     const onFocus = () => {
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
       const wasFocused = isFocusedRef.current;
@@ -267,47 +238,11 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
 
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
-
-    // 6. Subscribe to live presence changes
-    let subscription = null;
-    let isSubscribed = true;
-
-    const setupSubscription = async () => {
-      try {
-        const sub = await presenceRealtime.subscribe(Channel.presences(), (response) => {
-          if (!isSubscribed || !isMountedRef.current) return;
-          const event = response.events[0] ?? "";
-          const payload = response.payload;
-          if (!payload?.userId) return;
-
-          setOnlineUsers((prev) => {
-            const updated = { ...prev };
-            if (event.endsWith(".delete")) {
-              delete updated[payload.userId];
-            } else {
-              updated[payload.userId] = payload;
-            }
-            return updated;
-          });
-        });
-
-        if ((!isSubscribed || !isMountedRef.current) && sub?.unsubscribe) {
-          sub.unsubscribe();
-        } else {
-          subscription = sub;
-        }
-      } catch (err) {
-        if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
-          console.error("[usePresence] subscription failed:", err);
-        }
-      }
-    };
-    setupSubscription();
+    setIsLoading(false);
 
     // Cleanup
     return () => {
       isMountedRef.current = false;
-      isSubscribed = false;
 
       clearInterval(heartbeatId);
       
@@ -317,10 +252,6 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
       activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
-
-      if (subscription?.unsubscribe) {
-        subscription.unsubscribe();
-      }
 
       // Cleanup presence when user signs out or hook is unmounted
       deleteSelfPresence(effectiveUserId);
@@ -332,10 +263,19 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     if (!effectiveUserId) return;
     isIdleRef.current = false; // Reset idle status when manual state changes
     upsertSelfPresence();
-  }, [effectiveUserId, currentStatus, location.pathname, activeBatchId, profile, upsertSelfPresence]);
+  }, [
+    effectiveUserId,
+    currentStatus,
+    location.pathname,
+    activeBatchId,
+    profile?.userName,
+    profile?.profileImage,
+    profile?.role?.[0],
+    upsertSelfPresence
+  ]);
 
   return {
-    onlineUsers: Object.values(onlineUsers),
+    onlineUsers: [],
     isLoading,
     error,
     /** Call this to manually refresh own presence (e.g., on action/route change) */

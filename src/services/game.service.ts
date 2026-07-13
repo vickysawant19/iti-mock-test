@@ -22,6 +22,11 @@ export interface StudentGameStats {
   lastActive?: string;
   lastWheelSpinTime?: string;
   unlockedCosmetics?: string;
+  // Daily stats
+  dailyWins?: number;
+  dailyLosses?: number;
+  dailyQuestionsAttempted?: number;
+  dailyStatsDate?: string;
   $createdAt?: string;
   $updatedAt?: string;
 }
@@ -81,6 +86,10 @@ export class GameService extends DatabaseService {
         highestStreak: 1,
         lastQuestionTime: new Date().toISOString(),
         lastActive: new Date().toISOString(),
+        dailyWins: 0,
+        dailyLosses: 0,
+        dailyQuestionsAttempted: 0,
+        dailyStatsDate: new Date().toISOString().slice(0, 10),
       };
 
       return await this.createRow<StudentGameStats>(newStats, undefined, ID.unique());
@@ -286,8 +295,19 @@ export class GameService extends DatabaseService {
 
     stats.questionsAttempted += 1;
 
-    // Daily active streak calculation (Duolingo style)
+    // Daily stats: reset if date changed
     const now = new Date();
+    const todayDate = now.toISOString().slice(0, 10);
+    if (stats.dailyStatsDate !== todayDate) {
+      stats.dailyWins = 0;
+      stats.dailyLosses = 0;
+      stats.dailyQuestionsAttempted = 0;
+      stats.dailyStatsDate = todayDate;
+    }
+    stats.dailyQuestionsAttempted = (stats.dailyQuestionsAttempted || 0) + 1;
+
+    // Daily active streak calculation (Duolingo style)
+
     let diffDays = 0;
 
     if (stats.lastQuestionTime) {
@@ -319,6 +339,7 @@ export class GameService extends DatabaseService {
       stats.xp += xpGained;
       stats.coins += coinsGained;
       stats.wins += 1;
+      stats.dailyWins = (stats.dailyWins || 0) + 1;
 
       // Update streak only on correct answer
       if (diffDays === 1) {
@@ -340,6 +361,7 @@ export class GameService extends DatabaseService {
       xpGained = -3;
       stats.xp = Math.max(0, stats.xp + xpGained); // Floor at 0
       stats.losses += 1;
+      stats.dailyLosses = (stats.dailyLosses || 0) + 1;
 
       // If they missed consecutive days, their streak is broken
       if (diffDays >= 2) {
@@ -370,6 +392,10 @@ export class GameService extends DatabaseService {
           highestStreak: stats.highestStreak,
           lastQuestionTime: stats.lastQuestionTime,
           lastActive: stats.lastActive,
+          dailyWins: stats.dailyWins,
+          dailyLosses: stats.dailyLosses,
+          dailyQuestionsAttempted: stats.dailyQuestionsAttempted,
+          dailyStatsDate: stats.dailyStatsDate,
         });
       } catch (err) {
         console.warn("[GameService] Failed to update stats in DB, proceeding with in-memory state:", err);

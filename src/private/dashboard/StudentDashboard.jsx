@@ -1186,6 +1186,115 @@ const StudentDashboard = ({
                           />
                         </div>
 
+                        {/* Game Stats — Today & All-Time */}
+                        {stats && (
+                          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+                            {/* Section Header */}
+                            <div className="px-5 py-3.5 border-b border-white/20 dark:border-slate-800 flex items-center gap-2.5">
+                              <div className="p-1.5 bg-pink-500/10 rounded-lg">
+                                <Gamepad2 className="w-4 h-4 text-pink-500" />
+                              </div>
+                              <h3 className="text-sm font-extrabold text-slate-800 dark:text-white tracking-tight">Game Stats</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/20 dark:divide-slate-800">
+                              {/* Today's Stats */}
+                              <div className="p-5 space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                                  Today's Activity
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {/* Questions Today */}
+                                  <div className="flex flex-col items-center justify-center bg-slate-100/60 dark:bg-slate-800/50 rounded-2xl py-3 px-2 gap-0.5 border border-slate-200/60 dark:border-slate-700/40">
+                                    <span className="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                      {stats.dailyQuestionsAttempted || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center leading-tight mt-0.5">Questions</span>
+                                  </div>
+                                  {/* Correct Today */}
+                                  <div className="flex flex-col items-center justify-center bg-emerald-500/8 dark:bg-emerald-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-emerald-500/20">
+                                    <span className="text-xl font-black text-emerald-500 leading-none">
+                                      {stats.dailyWins || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Correct</span>
+                                  </div>
+                                  {/* Wrong Today */}
+                                  <div className="flex flex-col items-center justify-center bg-red-500/8 dark:bg-red-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-red-500/20">
+                                    <span className="text-xl font-black text-red-500 leading-none">
+                                      {stats.dailyLosses || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-red-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Wrong</span>
+                                  </div>
+                                </div>
+                                {/* Today's accuracy mini bar */}
+                                {(stats.dailyQuestionsAttempted || 0) > 0 && (
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between text-[9px] font-bold text-slate-400">
+                                      <span>Today's Accuracy</span>
+                                      <span className="text-pink-400 font-extrabold">
+                                        {(((stats.dailyWins || 0) / (stats.dailyQuestionsAttempted || 1)) * 100).toFixed(0)}%
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-700"
+                                        style={{ width: `${(((stats.dailyWins || 0) / (stats.dailyQuestionsAttempted || 1)) * 100).toFixed(0)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* All-Time Stats */}
+                              <div className="p-5 space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                  <Trophy className="w-3 h-3 text-yellow-400" />
+                                  All-Time Record
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {/* Total Questions */}
+                                  <div className="flex flex-col items-center justify-center bg-slate-100/60 dark:bg-slate-800/50 rounded-2xl py-3 px-2 gap-0.5 border border-slate-200/60 dark:border-slate-700/40">
+                                    <span className="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                      {stats.questionsAttempted || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center leading-tight mt-0.5">Total</span>
+                                  </div>
+                                  {/* Total Correct */}
+                                  <div className="flex flex-col items-center justify-center bg-emerald-500/8 dark:bg-emerald-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-emerald-500/20">
+                                    <span className="text-xl font-black text-emerald-500 leading-none">
+                                      {stats.wins || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Correct</span>
+                                  </div>
+                                  {/* Total Wrong */}
+                                  <div className="flex flex-col items-center justify-center bg-red-500/8 dark:bg-red-900/20 rounded-2xl py-3 px-2 gap-0.5 border border-red-500/20">
+                                    <span className="text-xl font-black text-red-500 leading-none">
+                                      {stats.losses || 0}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-red-500/70 uppercase tracking-wider text-center leading-tight mt-0.5">Wrong</span>
+                                  </div>
+                                </div>
+                                {/* All-time accuracy mini bar */}
+                                {(stats.questionsAttempted || 0) > 0 && (
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between text-[9px] font-bold text-slate-400">
+                                      <span>Overall Accuracy</span>
+                                      <span className="text-purple-400 font-extrabold">{stats.accuracy || 0}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-700"
+                                        style={{ width: `${stats.accuracy || 0}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Quick Actions */}
                         <div className="grid grid-cols-2 gap-3">
                           <Button

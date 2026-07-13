@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useDragControls } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Award, XCircle, CheckCircle, ArrowRight, Sparkles, X, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { gameService } from "@/services/game.service";
@@ -41,7 +41,6 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
   const timerRef = useRef(null);
 
   const isMobile = useIsMobile();
-  const dragControls = useDragControls();
   const sheetRef = useRef(null);
 
   const optionLabels = ["A", "B", "C", "D"];
@@ -91,7 +90,7 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            handleTimeout();
+            // No penalty on timeout — just stop the timer silently
             return 0;
           }
           return prev - 1;
@@ -112,36 +111,8 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
     return text.length > 110 || text.includes("calculate") || text.includes("formula") || text.includes("convert") || text.includes("what is the value") || text.includes("resistance") || text.includes("voltage") || text.includes("current");
   })();
 
-  const handleTimeout = async () => {
-    if (submitted) return;
-    setSubmitted(true);
-    setIsTimeout(true);
-    setShake(true);
-    setTimeout(() => setShake(false), 500);
-
-    // Reset combo on incorrect
-    setSessionCombo(0);
-    localStorage.setItem("session_combo", "0");
-
-    try {
-      const res = await onAnswerSubmit(false, isFiftyFiftyUsed);
-      setGradingResult({
-        isCorrect: false,
-        xpGained: -3,
-        coinsGained: 0,
-        streakBonus: 0,
-        levelUp: false,
-      });
-    } catch (err) {
-      console.error(err);
-      setGradingResult({
-        isCorrect: false,
-        xpGained: -3,
-        coinsGained: 0,
-        streakBonus: 0,
-        levelUp: false,
-      });
-    }
+  const handleTimeout = () => {
+    // No-op: timer expires silently, no penalty applied
   };
 
   const handleSelect = (idx) => {
@@ -209,16 +180,11 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
   };
 
   const handleClose = () => {
-    if (submitted) return; // once graded, must use "Continue Journey" not swipe/backdrop
+    if (submitted) return; // once graded, must use "Continue Journey"
     onClose();
   };
 
-  const handleDragEnd = (_e, info) => {
-    if (submitted) return;
-    if (info.offset.y > 120 || info.velocity.y > 600) {
-      onClose();
-    }
-  };
+  // Removed: handleDragEnd — swipe-to-dismiss is disabled
 
   // Confetti burst for correct answers
   const renderConfetti = () => {
@@ -258,7 +224,6 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-        onClick={handleClose}
       />
 
       {/* Sheet / Card */}
@@ -276,12 +241,7 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
             default: { type: "spring", damping: 30, stiffness: 300 },
             x: { duration: 0.5, ease: "easeInOut" },
           }}
-          drag={isMobile ? "y" : false}
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={{ top: 0, bottom: 0.5 }}
-          onDragEnd={handleDragEnd}
+          drag={false}
           className={[
             "relative z-10 flex w-full flex-col overflow-hidden border border-slate-800 bg-slate-900 text-white shadow-2xl",
             "max-h-[92dvh] rounded-t-[2rem] md:max-h-[85vh] md:max-w-lg md:rounded-3xl",
@@ -292,20 +252,13 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
             <div className="pointer-events-none absolute left-1/2 top-1/3 z-50">{renderConfetti()}</div>
           )}
 
-          {/* Drag handle — mobile only */}
-          <div
-            onPointerDown={(e) => !submitted && dragControls.start(e)}
-            className="flex shrink-0 cursor-grab touch-none justify-center pb-1 pt-2.5 active:cursor-grabbing md:hidden"
-          >
-            <div className="h-1.5 w-10 rounded-full bg-slate-700" />
-          </div>
 
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 pb-3 pt-1 md:pt-5 bg-slate-950/20">
             <div className="min-w-0">
               <h3 className="flex items-center gap-1.5 text-sm font-black tracking-tight text-pink-500">
                 <Award className="h-4.5 w-4.5 text-pink-500 shrink-0" />
-                {question ? `QUESTION ${((stats?.wins || 0) % 10) + 1}/10` : "GAMIFIED CHALLENGE"}
+                GAMIFIED CHALLENGE
               </h3>
             </div>
             <div className="flex items-center gap-2">
