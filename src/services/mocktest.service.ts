@@ -2,6 +2,7 @@ import { Query, functions } from "./appwriteClient";
 import conf from "../config/config";
 import { DatabaseService } from "./database.service";
 import { questionService } from "./question.service";
+import userStatsService from "../appwrite/userStats";
 
 export interface MockTestPaper {
   $id?: string;
@@ -198,6 +199,13 @@ class MockTestService extends DatabaseService {
         quesCount: paper.quesCount
       });
       functions.createExecution(conf.userManageFunctionId, payload, false);
+
+      // Trigger full client-side stats recalculation/update to keep everything in sync
+      if (paper.batchId) {
+        userStatsService.recalculateStudentsStats([paper.userId], paper.batchId).catch((err: any) => {
+          console.error("Failed to trigger recalculateStudentsStats after test submit:", err);
+        });
+      }
     } catch (err) {
       console.error("Failed to trigger updateBatchStatsFromTest", err);
     }

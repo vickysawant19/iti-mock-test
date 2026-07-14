@@ -112,6 +112,7 @@ export default function BatchEnrollmentStatus() {
     setIsLoggingOut(true);
     try {
       await authService.logout();
+      userProfileService.clearCache();
       dispatch(removeUser());
       dispatch(removeProfile());
       navigate("/");

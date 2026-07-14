@@ -93,6 +93,8 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     try {
       setIsLogoutLoading(true);
       await authService.logout();
+      // Clear profile cache so next login doesn't get stale data
+      userProfileService.clearCache();
       dispatch(removeUser());
       dispatch(removeProfile());
 

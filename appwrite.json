@@ -17,6 +17,11 @@
             "graphql": true,
             "messaging": true
         },
+        "protocols": {
+            "rest": true,
+            "graphql": true,
+            "websocket": true
+        },
         "auth": {
             "methods": {
                 "jwt": true,
@@ -29,9 +34,9 @@
             },
             "security": {
                 "duration": 31536000,
-                "limit": 0,
+                "limit": null,
                 "sessionsLimit": 10,
-                "passwordHistory": 0,
+                "passwordHistory": null,
                 "passwordDictionary": false,
                 "personalDataCheck": false,
                 "sessionAlerts": false,
@@ -2265,90 +2270,6 @@
             ]
         },
         {
-            "$id": "batch_challenge_progress",
-            "$permissions": [
-                "read(\"any\")",
-                "create(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "batch_challenge_progress",
-            "enabled": true,
-            "rowSecurity": false,
-            "columns": [
-                {
-                    "key": "challengeId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "studentId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 36,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "progress",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "claimed",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                }
-            ],
-            "indexes": [
-                {
-                    "key": "unique_student_challenge",
-                    "type": "unique",
-                    "status": "available",
-                    "columns": [
-                        "studentId",
-                        "challengeId"
-                    ],
-                    "orders": [
-                        "asc",
-                        "asc"
-                    ]
-                },
-                {
-                    "key": "idx_batch_progress",
-                    "type": "key",
-                    "status": "available",
-                    "columns": [
-                        "batchId"
-                    ],
-                    "orders": [
-                        "asc"
-                    ]
-                }
-            ]
-        },
-        {
             "$id": "student_game_stats",
             "$permissions": [
                 "read(\"any\")",
@@ -2879,6 +2800,90 @@
                     "orders": [
                         "asc",
                         "asc",
+                        "asc"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "batch_challenge_progress",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "batch_challenge_progress",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "challengeId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "studentId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "progress",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "claimed",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "unique_student_challenge",
+                    "type": "unique",
+                    "status": "available",
+                    "columns": [
+                        "studentId",
+                        "challengeId"
+                    ],
+                    "orders": [
+                        "asc",
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "idx_batch_progress",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId"
+                    ],
+                    "orders": [
                         "asc"
                     ]
                 }

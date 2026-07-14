@@ -1,6 +1,7 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
+import { checkProfileCompletion } from "../utils/profileCompletion";
 
 export class UserProfileService {
   constructor() {
@@ -52,6 +53,8 @@ export class UserProfileService {
       });
 
       if (response && response.userId) {
+        // Clear any stale 'not found' cache entry before storing the real profile
+        this.profileCache.delete(response.userId);
         this.profileCache.set(response.userId, response);
       }
 
@@ -226,7 +229,6 @@ export class UserProfileService {
 
     // 1. Check if we already have a cached profile (avoid redundant reads)
     if (this.profileCache.has(userId)) {
-      console.log("[DEBUG] Returning cached user profile for userId:", userId);
       return this.profileCache.get(userId);
     }
 
@@ -238,24 +240,38 @@ export class UserProfileService {
 
     const promise = (async () => {
       try {
-        console.log("[DEBUG] Fetching user profile from Appwrite for userId:", userId);
         const userProfile = await this.database.listRows({
           databaseId: conf.databaseId,
           tableId: conf.userProfilesCollectionId,
           queries: [Query.equal("userId", String(userId))]
         });
-        console.log("[DEBUG] Appwrite response for getUserProfile:", userProfile);
 
         if (userProfile.total === 0) {
-          console.warn("[DEBUG] No profile found in DB for userId:", userId);
           this.profileCache.set(userId, false);
           return false;
         }
 
         const profile = userProfile.rows[0];
-        console.log("[DEBUG] Successfully retrieved profile:", profile);
+
+        // ── Auto-patch missing isProfileComplete field ──────────────────────────
+        // Profiles created before this field existed have isProfileComplete: undefined.
+        // Run checkProfileCompletion on the raw data and silently patch DB if needed.
+        if (profile.isProfileComplete === undefined || profile.isProfileComplete === null) {
+          const { isComplete } = checkProfileCompletion(profile);
+          profile.isProfileComplete = isComplete;
+          if (isComplete && profile.$id) {
+            // Fire-and-forget — patch DB in background, don't block the return
+            this.database.updateRow({
+              databaseId: conf.databaseId,
+              tableId: conf.userProfilesCollectionId,
+              rowId: profile.$id,
+              data: { isProfileComplete: true }
+            }).catch((e) => console.warn("[auto-patch] Failed to patch isProfileComplete:", e));
+          }
+        }
+
         this.profileCache.set(userId, profile);
-        return profile; 
+        return profile;
       } catch (error) {
         console.error("[DEBUG] Caught an error in getUserProfile:", error);
         if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
@@ -271,6 +287,16 @@ export class UserProfileService {
 
     this.profileRequests.set(userId, promise);
     return promise;
+  }
+
+  /**
+   * Clears the entire profile cache.
+   * Call this on logout to prevent stale profile data persisting across sessions
+   * in the same browser tab (the service is a singleton).
+   */
+  clearCache() {
+    this.profileCache.clear();
+    this.profileRequests.clear();
   }
 
   /**

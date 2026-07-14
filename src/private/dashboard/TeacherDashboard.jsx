@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Coins,
   Flame,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -374,21 +375,35 @@ const TeacherDashboard = ({
             >
               {/* Controls Bar */}
               <div className="flex flex-row items-center justify-between gap-3 w-full">
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Month</label>
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 font-medium"
-                  />
+                <div className="flex items-center gap-3">
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-widest">Month</label>
+                  <div className="relative">
+                    <div className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800 backdrop-blur-sm pointer-events-none select-none text-slate-800 dark:text-slate-200">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>
+                        {(() => {
+                          if (!selectedMonth) return "";
+                          const [year, month] = selectedMonth.split("-");
+                          const date = new Date(year, parseInt(month) - 1, 1);
+                          return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                        })()}
+                      </span>
+                      <ChevronDown className="w-3 h-3 text-slate-400 ml-1 shrink-0" />
+                    </div>
+                    <input
+                      type="month"
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={refetch}
                   disabled={isLoading}
-                  className="text-xs font-semibold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl cursor-pointer"
+                  className="text-xs font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
                   Refresh

@@ -12,6 +12,7 @@ import authService from "@/services/auth.service";
 import userProfileService from "@/appwrite/userProfileService";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import { initializeActiveBatch } from "@/store/activeBatchSlice";
+import { checkProfileCompletion } from "@/utils/profileCompletion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,24 +44,49 @@ const Login = () => {
     setIsLoading(true);
     try {
       // Login and get user
-      const user = await authService.login(data);
-      console.log("[DEBUG Login.jsx] user response from authService.login:", user);
-      if (!user) {
+      const loggedInUser = await authService.login(data);
+      if (!loggedInUser) {
         throw new Error("Unable to retrieve user details. Please try again.");
       }
-      dispatch(addUser({ data: user }));
+      dispatch(addUser({ data: loggedInUser, isLoading: false }));
 
       // Fetch user profile
-      console.log("[DEBUG Login.jsx] Calling getUserProfile with user.$id:", user.$id);
-      const res = await userProfileService.getUserProfile(user?.$id);
+      console.group("[LOGIN DEBUG] Post-login profile fetch");
+      console.log("user.$id:", loggedInUser?.$id);
+      const res = await userProfileService.getUserProfile(loggedInUser?.$id);
+      console.log("getUserProfile res:", res);
+      console.log("res truthy?:", !!res);
       if (res) {
-        dispatch(addProfile({ data: res, isLoading: false }));
+        console.log("isProfileComplete:", res.isProfileComplete);
+      } else {
+        console.log("→ navigating to /onboarding (no profile found)");
+      }
+      console.groupEnd();
+
+      const isTeacher = loggedInUser?.labels?.includes("Teacher");
+      const isAdmin = loggedInUser?.labels?.includes("admin");
+
+      const isOnboarded = res 
+        ? (res.isProfileComplete ?? checkProfileCompletion(res).isComplete)
+        : false;
+      const needsOnboarding = !res || (!isOnboarded && !isAdmin);
+
+      if (res) {
+        // Dispatch profile + mark app as initialized before navigating
+        // so ProtectedRoute's isInitialized gate is open when /arena renders
+        dispatch(addProfile({ data: res, isLoading: false, isInitialized: true }));
         dispatch(initializeActiveBatch(res));
+      } else {
+        // No profile — mark initialized before navigating to onboarding
+        dispatch(addProfile({ isLoading: false, isInitialized: true }));
+      }
+
+      if (needsOnboarding) {
+        toast.info("Please setup your profile to continue.");
+        navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", { replace: true });
+      } else {
         toast.success("Welcome back! Login successful.");
         navigate("/arena", { replace: true });
-      } else {
-        toast.info("Please setup your profile to continue.");
-        navigate("/onboarding");
       }
     } catch (error) {
       console.error("Login Error:", error);

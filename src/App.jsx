@@ -8,6 +8,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { addUser, selectUser } from "./store/userSlice";
 import { addProfile, selectProfile } from "./store/profileSlice";
 import { initializeActiveBatch } from "./store/activeBatchSlice";
+import { store } from "./store/store";
 import authService from "./services/auth.service";
 import userProfileService from "./appwrite/userProfileService";
 import Navbar from "./components/navbar/Navbar";
@@ -38,7 +39,11 @@ function App() {
       
       if (currentUser) {
         dispatch(addUser({ data: currentUser, isLoading: false }));
-        if (!profile) {
+
+        // Read profile from live Redux state to avoid stale closure bug
+        const freshProfile = store.getState().profile.data;
+
+        if (!freshProfile) {
           const profileRes = await userProfileService.getUserProfile(
             currentUser.$id
           );
@@ -49,6 +54,8 @@ function App() {
               navigate("/arena");
             }
           } else {
+            // No profile in DB — send to onboarding
+            dispatch(addProfile({ isLoading: false }));
             if (currentUser.labels && currentUser.labels.includes("Teacher")) {
               navigate("/onboarding/teacher");
             } else {
@@ -56,19 +63,27 @@ function App() {
             }
           }
         } else {
-            // Re-initialize active batch whenever App mounts and profile already exists
-            dispatch(initializeActiveBatch(profile));
+          // Profile already in Redux — just sync batch, no extra DB call
+          dispatch(addUser({ isLoading: false }));
+          dispatch(addProfile({ isLoading: false }));
+          dispatch(initializeActiveBatch(freshProfile));
         }
+      } else {
+        // Not logged in
+        dispatch(addUser({ isLoading: false }));
+        dispatch(addProfile({ isLoading: false }));
       }
     } catch (error) {
       console.error("Error checking user status: ", error);
+      dispatch(addUser({ isLoading: false }));
+      dispatch(addProfile({ isLoading: false }));
       if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
         navigate("/quota-exceeded");
       }
     } finally {
       setIsLoading(false);
-      dispatch(addUser({ isLoading: false }));
-      dispatch(addProfile({ isLoading: false }));
+      // Signal that App's first auth check is complete — ProtectedRoute may now evaluate redirects
+      dispatch(addProfile({ isInitialized: true }));
     }
   };
 
@@ -84,7 +99,7 @@ function App() {
           <Navbar
             isNavOpen={isNavOpen}
             setIsNavOpen={setIsNavOpen}
-            isLoading={!isLoading}
+            isLoading={isLoading}
           />
         )}
 

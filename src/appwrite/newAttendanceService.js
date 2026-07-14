@@ -2,6 +2,7 @@ import { Query, ID } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import { format } from "date-fns";
+import userStatsService from "./userStats";
 
 class NewAttendanceService {
   constructor() {
@@ -275,6 +276,12 @@ class NewAttendanceService {
           markedBy: markedBy || null,
         }
       });
+
+      // Trigger stats recalculation in the background
+      userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
+        console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
+      });
+
       return data;
     } catch (error) {
       throw error;
@@ -300,6 +307,16 @@ class NewAttendanceService {
       if (!resData.success) {
         throw new Error(resData.error || "Failed to create multiple attendance");
       }
+
+      // Trigger stats update for these students
+      if (attendanceRecords && attendanceRecords.length > 0) {
+        const studentIds = [...new Set(attendanceRecords.map((r) => r.userId))];
+        const batchId = attendanceRecords[0].batchId;
+        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on createMultipleAttendance:", err);
+        });
+      }
+
       return resData.data;
     } catch (error) {
       throw error;
@@ -314,12 +331,25 @@ class NewAttendanceService {
         updates.date = this.formatDate(updates.date);
       }
 
+      const existingRecord = await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId
+      }).catch(() => null);
+
       const data = await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: conf.newAttendanceCollectionId,
         rowId: documentId,
         data: updates
       });
+
+      if (existingRecord) {
+        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on updateAttendance:", err);
+        });
+      }
+
       return data;
     } catch (error) {
       throw error;
@@ -334,12 +364,25 @@ class NewAttendanceService {
         updates.remarks = remarks;
       }
 
+      const existingRecord = await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId
+      }).catch(() => null);
+
       const data = await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: conf.newAttendanceCollectionId,
         rowId: documentId,
         data: updates
       });
+
+      if (existingRecord) {
+        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on updateAttendanceStatus:", err);
+        });
+      }
+
       return data;
     } catch (error) {
       throw error;
@@ -349,11 +392,24 @@ class NewAttendanceService {
   // Delete attendance record
   async deleteAttendance(documentId) {
     try {
+      const existingRecord = await this.database.getRow({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        rowId: documentId
+      }).catch(() => null);
+
       await this.database.deleteRow({
         databaseId: conf.databaseId,
         tableId: conf.newAttendanceCollectionId,
         rowId: documentId
       });
+
+      if (existingRecord) {
+        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on deleteAttendance:", err);
+        });
+      }
+
       return documentId;
     } catch (error) {
       throw error;
@@ -365,6 +421,13 @@ class NewAttendanceService {
       if (!documentIds || documentIds.length === 0) {
         return []; // Nothing to delete, return empty array immediately
       }
+
+      // Fetch records before deleting to get userId and batchId
+      const recordsToQuery = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries: [Query.equal("$id", documentIds), Query.limit(100)]
+      }).then(res => res.rows || []).catch(() => []);
 
       const functions = appwriteService.getFunctions();
       const payload = JSON.stringify({
@@ -382,6 +445,15 @@ class NewAttendanceService {
       if (!resData.success) {
         throw new Error(resData.error || "Failed to delete multiple attendance");
       }
+
+      if (recordsToQuery.length > 0) {
+        const studentIds = [...new Set(recordsToQuery.map((r) => r.userId))];
+        const batchId = recordsToQuery[0].batchId;
+        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on deleteMultipleAttendance:", err);
+        });
+      }
+
       return resData.data.deletedIds;
     } catch (error) {
       console.error("Error in deleteMultipleAttendance:", error);
@@ -594,6 +666,15 @@ class NewAttendanceService {
       if (!resData.success) {
         throw new Error(resData.error || "Failed to mark batch attendance");
       }
+
+      // Trigger stats update for these students
+      if (attendanceData && attendanceData.length > 0) {
+        const studentIds = attendanceData.map((r) => r.userId);
+        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on markBatchAttendance:", err);
+        });
+      }
+
       return resData.data;
     } catch (error) {
       console.error("markBatchAttendance error:", error);

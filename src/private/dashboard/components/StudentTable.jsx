@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Search, SlidersHorizontal, ChevronUp, ChevronDown, Users } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronUp, ChevronDown, Users, CheckCircle, XCircle, Calendar, BookOpen, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -163,23 +163,34 @@ const DesktopRow = ({ row }) => {
 
 const MobileCard = ({ row }) => {
   const absent  = Math.max(0, (row.totalWorkingDays  || 0) - (row.presentDays       || 0));
-  const mAbsent = Math.max(0, (row.monthlyWorkingDays || 0) - (row.monthlyPresentDays || 0));
+  const mWorking = row.monthlyWorkingDays || 0;
+  const mPresent = row.monthlyPresentDays || 0;
+  const mText = mWorking > 0 ? `${mPresent}/${mWorking}d` : "—";
   const c = colorMap[attColor(row.totalAttendancePercent)];
 
   return (
-    <div className="px-4 py-3.5 flex flex-col gap-2.5 border-b border-slate-100 dark:border-slate-800/50 last:border-b-0 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-      {/* Row 1: Avatar + Name + Status chip */}
-      <div className="flex items-center gap-3">
-        <Avatar className={`h-10 w-10 shrink-0 ring-2 ring-white dark:ring-slate-800 shadow-sm`}>
-          <AvatarImage src={row.profileImage} />
-          <AvatarFallback className={`text-sm font-black ${c.badge} border-0`}>
-            {row.userName?.charAt(0) || "?"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-slate-900 dark:text-white truncate leading-tight">{row.userName}</p>
-          {row.registerId && <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{row.registerId}</p>}
+    <div className="bg-white/40 dark:bg-slate-900/40 border border-slate-100/80 dark:border-slate-800/80 shadow-sm p-4 rounded-3xl flex flex-col gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition-all">
+      {/* Top section: Avatar + Name on left, Status + % on right */}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-11 w-11 shrink-0 ring-2 ring-white dark:ring-slate-800 shadow-sm">
+            <AvatarImage src={row.profileImage} />
+            <AvatarFallback className={`text-sm font-black ${c.badge} border-0`}>
+              {row.userName?.charAt(0) || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-sm font-black text-slate-900 dark:text-white truncate leading-tight">
+              {row.userName}
+            </p>
+            {row.registerId && (
+              <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                {row.registerId}
+              </p>
+            )}
+          </div>
         </div>
+
         <div className="flex flex-col items-end gap-1 shrink-0">
           <StatusChip percent={row.totalAttendancePercent} />
           <span className={`text-base font-black tabular-nums leading-none ${c.text}`}>
@@ -188,42 +199,75 @@ const MobileCard = ({ row }) => {
         </div>
       </div>
 
-      {/* Row 2: Progress bar */}
-      <ProgressBar percent={row.totalAttendancePercent} />
+      {/* Divider */}
+      <div className="h-px w-full bg-slate-100 dark:bg-slate-800/60" />
 
-      {/* Row 3: Attendance pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg border border-emerald-200/60 dark:border-emerald-800/40 tabular-nums">
-          🟢 {row.presentDays ?? 0}
-        </span>
-        <span className="flex items-center gap-1 text-[10px] font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-lg border border-red-200/60 dark:border-red-800/40 tabular-nums">
-          🔴 {absent}
-        </span>
-        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 tabular-nums">
-          of {row.totalWorkingDays ?? 0} days
-        </span>
-        {/* Monthly pill — only if month is selected */}
-        {(row.monthlyWorkingDays || 0) > 0 && (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg border border-blue-200/60 dark:border-blue-800/40 tabular-nums ml-auto">
-            📅 {row.monthlyPresentDays ?? 0}/{row.monthlyWorkingDays}d
+      {/* Grid of 5 stats */}
+      <div className="grid grid-cols-5 gap-1.5 w-full">
+        {/* Stat 1: Present */}
+        <div className="flex flex-col items-center text-center">
+          <div className="p-1 rounded-full bg-emerald-500/10 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 mb-1 flex items-center justify-center shrink-0">
+            <CheckCircle className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-black text-slate-850 dark:text-white leading-tight">
+            {row.presentDays ?? 0}
           </span>
-        )}
-      </div>
+          <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
+            Present
+          </span>
+        </div>
 
-      {/* Row 4: Tests + Avg score */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
-          📝 {row.testsSubmitted} Tests
-        </span>
-        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border tabular-nums ${
-          row.avgScore >= 75
-            ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-800/40"
-            : row.avgScore >= 50
-            ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200/60 dark:border-amber-800/40"
-            : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-800/40"
-        }`}>
-          ⭐ {row.avgScore}%
-        </span>
+        {/* Stat 2: Absent */}
+        <div className="flex flex-col items-center text-center">
+          <div className="p-1 rounded-full bg-red-500/10 dark:bg-red-950/30 text-red-600 dark:text-red-400 mb-1 flex items-center justify-center shrink-0">
+            <XCircle className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-black text-slate-850 dark:text-white leading-tight">
+            {absent}
+          </span>
+          <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
+            Absent
+          </span>
+        </div>
+
+        {/* Stat 3: This Month */}
+        <div className="flex flex-col items-center text-center">
+          <div className="p-1 rounded-full bg-blue-500/10 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 mb-1 flex items-center justify-center shrink-0">
+            <Calendar className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-black text-slate-850 dark:text-white leading-tight">
+            {mText}
+          </span>
+          <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
+            This Month
+          </span>
+        </div>
+
+        {/* Stat 4: Tests */}
+        <div className="flex flex-col items-center text-center">
+          <div className="p-1 rounded-full bg-amber-500/10 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 mb-1 flex items-center justify-center shrink-0">
+            <BookOpen className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-black text-slate-850 dark:text-white leading-tight">
+            {row.testsSubmitted ?? 0}
+          </span>
+          <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
+            Tests
+          </span>
+        </div>
+
+        {/* Stat 5: Avg Score */}
+        <div className="flex flex-col items-center text-center">
+          <div className="p-1 rounded-full bg-yellow-500/10 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 mb-1 flex items-center justify-center shrink-0">
+            <Star className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-black text-slate-850 dark:text-white leading-tight">
+            {row.avgScore ?? 0}%
+          </span>
+          <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">
+            Avg Score
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -281,9 +325,9 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
       {classStats && (
         <div className="px-4 py-3 sm:px-5 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2 mr-auto min-w-0">
-            <Users className="w-4 h-4 text-purple-500 shrink-0" />
-            <span className="text-sm font-bold text-slate-800 dark:text-white">
-              Students <span className="text-slate-400 font-normal">({filtered.length})</span>
+            <Users className="w-4.5 h-4.5 text-purple-500 shrink-0" />
+            <span className="text-sm font-extrabold text-slate-800 dark:text-white">
+              Students <span className="text-slate-400 font-normal">({studentRows.length})</span>
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -291,9 +335,9 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
               <span className={`text-sm font-black tabular-nums ${colorMap[attColor(classStats.avgAtt)].text}`}>
                 {classStats.avgAtt}%
               </span>
-              <span className="text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Avg Att.</span>
+              <span className="text-[8px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">AVG ATT.</span>
             </div>
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60" />
             <div className="flex flex-col items-center leading-none">
               <span className={`text-sm font-black tabular-nums ${
                 classStats.avgScore >= 75 ? "text-emerald-600 dark:text-emerald-400"
@@ -302,17 +346,15 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
               }`}>
                 {classStats.avgScore}%
               </span>
-              <span className="text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">Avg Score</span>
+              <span className="text-[8px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">AVG SCORE</span>
             </div>
-            {classStats.lowCount > 0 && (
-              <>
-                <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
-                <div className="flex flex-col items-center leading-none">
-                  <span className="text-sm font-black tabular-nums text-red-600 dark:text-red-400">{classStats.lowCount}</span>
-                  <span className="text-[8px] font-semibold text-red-400 dark:text-red-500 uppercase tracking-wider mt-0.5">Low Att.</span>
-                </div>
-              </>
-            )}
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60" />
+            <div className="flex flex-col items-center leading-none">
+              <span className="text-sm font-black tabular-nums text-red-600 dark:text-red-400">
+                {classStats.lowCount}
+              </span>
+              <span className="text-[8px] font-extrabold text-red-400 dark:text-red-500 uppercase tracking-wider mt-0.5">LOW ATT.</span>
+            </div>
           </div>
         </div>
       )}
@@ -361,7 +403,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
       </div>
 
       {/* ── Mobile card list ─────────────────────────────────────────────── */}
-      <div className="block md:hidden">
+      <div className="block md:hidden space-y-3">
         {filtered.map((row) => <MobileCard key={row.studentId} row={row} />)}
       </div>
 

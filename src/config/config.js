@@ -6,7 +6,7 @@ const conf = {
   questionPapersCollectionId: import.meta.env.VITE_QUESTIONPAPER_COLLECTION_ID || "",
   tradeCollectionId: import.meta.env.VITE_TRADE_COLLECTION_ID || "",
   bucketId: import.meta.env.VITE_APPWRITE_BUCKET_ID || "",
-  userStatsCollectionId: import.meta.env.VITE_USER_STATS_COLLECTION_ID || "",
+  userStatsCollectionId: "userBatchStats",
   userProfilesCollectionId: import.meta.env.VITE_USER_PROFILE_COLLECTION_ID || "",
   batchesCollectionId: import.meta.env.VITE_BATCH_COLLECTION_ID || "",
   collegeTradeCollectionId: import.meta.env.VITE_COLLEGE_TRADE_COLLECTION_ID || "",
