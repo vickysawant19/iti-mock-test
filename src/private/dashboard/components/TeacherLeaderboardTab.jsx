@@ -36,33 +36,33 @@ export default function TeacherLeaderboardTab({
       {/* Game Stats overview */}
       <div className="grid grid-cols-3 gap-2 md:gap-4">
         {/* Card 1 */}
-        <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-white min-w-0">
-          <div className="p-2 sm:p-3 bg-pink-500/20 rounded-xl sm:rounded-2xl text-pink-500 shrink-0">
+        <div className="bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/40 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm backdrop-blur-xl">
+          <div className="p-2 sm:p-3 bg-pink-500/25 dark:bg-pink-500/20 rounded-xl sm:rounded-2xl text-pink-600 dark:text-pink-400 shrink-0">
             <Sparkles className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Total XP</p>
-            <p className="text-xs sm:text-2xl font-black text-white mt-0.5 sm:mt-1 truncate">{totalBatchXP} XP</p>
+            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Total XP</p>
+            <p className="text-xs sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">{totalBatchXP} XP</p>
           </div>
         </div>
         {/* Card 2 */}
-        <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-white min-w-0">
-          <div className="p-2 sm:p-3 bg-purple-500/20 rounded-xl sm:rounded-2xl text-purple-500 shrink-0">
+        <div className="bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/40 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm backdrop-blur-xl">
+          <div className="p-2 sm:p-3 bg-purple-500/25 dark:bg-purple-500/20 rounded-xl sm:rounded-2xl text-purple-600 dark:text-purple-400 shrink-0">
             <Target className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Accuracy</p>
-            <p className="text-xs sm:text-2xl font-black text-white mt-0.5 sm:mt-1 truncate">{avgAccuracy}%</p>
+            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Accuracy</p>
+            <p className="text-xs sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">{avgAccuracy}%</p>
           </div>
         </div>
         {/* Card 3 */}
-        <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-white min-w-0">
-          <div className="p-2 sm:p-3 bg-amber-500/20 rounded-xl sm:rounded-2xl text-amber-500 shrink-0">
+        <div className="bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-slate-800/40 p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm backdrop-blur-xl">
+          <div className="p-2 sm:p-3 bg-amber-500/25 dark:bg-amber-500/20 rounded-xl sm:rounded-2xl text-amber-600 dark:text-amber-400 shrink-0">
             <Zap className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Avg Level</p>
-            <p className="text-xs sm:text-2xl font-black text-white mt-0.5 sm:mt-1 truncate">LVL {avgLevel}</p>
+            <p className="text-[7px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Avg Level</p>
+            <p className="text-xs sm:text-2xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">LVL {avgLevel}</p>
           </div>
         </div>
       </div>

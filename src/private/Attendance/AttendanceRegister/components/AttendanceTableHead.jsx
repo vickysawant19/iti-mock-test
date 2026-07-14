@@ -41,12 +41,15 @@ const AttendanceTableHead = ({
       {/* ════════════════════════════════════════════════════════════════════
           ROW 1 – Column Group Labels (topmost sticky row)
       ════════════════════════════════════════════════════════════════════ */}
-      <tr className="sticky top-0 z-40 bg-indigo-700 dark:bg-indigo-800">
+      {/* ════════════════════════════════════════════════════════════════════
+          ROW 1 – Column Group Labels (topmost sticky row)
+      ════════════════════════════════════════════════════════════════════ */}
+      <tr className="sticky top-0 z-40 bg-indigo-700 dark:bg-slate-900">
         {/* Previous month group label */}
         {columnVisibility.previous && (
           <th
             colSpan={prevCount}
-            className={`${cell} border border-emerald-500 bg-emerald-700 dark:bg-emerald-800 text-xs font-bold text-center tracking-wide`}
+            className={`${cell} border border-emerald-500 dark:border-emerald-800 bg-emerald-700 dark:bg-emerald-950/80 text-xs font-bold text-center tracking-wide`}
             scope="colgroup"
           >
             {compactView ? "Prev" : "Previous Month Stats"}
@@ -56,7 +59,7 @@ const AttendanceTableHead = ({
         {/* Always-present sticky info columns (Student Name + Action) */}
         <th
           colSpan={2}
-          className={`${stickyCell} sticky left-0 z-50 border border-indigo-500 bg-indigo-700 dark:bg-indigo-800 text-xs font-bold text-left tracking-wide`}
+          className={`${stickyCell} sticky left-0 z-50 border border-indigo-500 dark:border-slate-800 bg-indigo-700 dark:bg-slate-900 text-xs font-bold text-left tracking-wide`}
           scope="colgroup"
         >
           {compactView ? "Students" : "Student Info"}
@@ -66,7 +69,7 @@ const AttendanceTableHead = ({
         {columnVisibility.daily && (
           <th
             colSpan={dailyCount}
-            className={`${cell} border border-sky-500 bg-sky-700 dark:bg-sky-800 text-xs font-bold text-center tracking-wide`}
+            className={`${cell} border border-sky-500 dark:border-sky-850 bg-sky-700 dark:bg-sky-950/80 text-xs font-bold text-center tracking-wide`}
             scope="colgroup"
           >
             {compactView
@@ -79,7 +82,7 @@ const AttendanceTableHead = ({
         {columnVisibility.summary && (
           <th
             colSpan={summaryCount}
-            className={`${cell} border border-blue-500 bg-blue-700 dark:bg-blue-800 text-xs font-bold text-center tracking-wide`}
+            className={`${cell} border border-blue-500 dark:border-blue-800 bg-blue-700 dark:bg-blue-950/80 text-xs font-bold text-center tracking-wide`}
             scope="colgroup"
           >
             {compactView ? "This Month" : "Monthly Summary"}
@@ -90,35 +93,35 @@ const AttendanceTableHead = ({
       {/* ════════════════════════════════════════════════════════════════════
           ROW 2 – Date Numbers / Column Headers
       ════════════════════════════════════════════════════════════════════ */}
-      <tr className="sticky z-40 bg-indigo-600 dark:bg-indigo-700" style={{ top: groupRowH }}>
+      <tr className="sticky z-40 bg-indigo-600 dark:bg-slate-800" style={{ top: groupRowH }}>
         {/* GROUP: Previous month stats */}
         {columnVisibility.previous && (
           <>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-emerald-600 dark:bg-emerald-700 font-semibold text-xs w-16 min-w-16`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-emerald-600 dark:bg-emerald-900/60 font-semibold text-xs w-16 min-w-16`}
             >
               <div className="text-center">Prev Work</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-emerald-600 dark:bg-emerald-700 font-semibold text-xs w-16 min-w-16`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-emerald-600 dark:bg-emerald-900/60 font-semibold text-xs w-16 min-w-16`}
             >
               <div className="text-center">Prev Pres</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-emerald-600 dark:bg-emerald-700 font-semibold text-xs w-16 min-w-16`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-emerald-600 dark:bg-emerald-900/60 font-semibold text-xs w-16 min-w-16`}
             >
               <div className="text-center">Prev Abs</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-emerald-600 dark:bg-emerald-700 font-semibold text-xs w-16 min-w-16`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-emerald-600 dark:bg-emerald-900/60 font-semibold text-xs w-16 min-w-16`}
             >
               <div className="text-center">Total %</div>
             </th>
@@ -129,14 +132,14 @@ const AttendanceTableHead = ({
         <th
           rowSpan={2}
           scope="col"
-          className={`${stickyCell} z-50 border border-slate-300 dark:border-slate-600 sticky left-0 bg-indigo-600 dark:bg-indigo-700 font-semibold text-left text-sm w-28 sm:w-48 min-w-28 sm:min-w-48`}
+          className={`${stickyCell} z-50 border border-slate-300 dark:border-slate-700 sticky left-0 bg-indigo-600 dark:bg-slate-900 font-semibold text-left text-sm w-28 sm:w-48 min-w-28 sm:min-w-48`}
         >
           Student Name
         </th>
         <th
           rowSpan={2}
           scope="col"
-          className={`${stickyCell} z-50 border border-slate-300 dark:border-slate-600 sticky left-28 sm:left-48 bg-indigo-600 dark:bg-indigo-700 font-semibold text-left text-sm w-16 min-w-16`}
+          className={`${stickyCell} z-50 border border-slate-300 dark:border-slate-700 sticky left-28 sm:left-48 bg-indigo-600 dark:bg-slate-900 font-semibold text-left text-sm w-16 min-w-16`}
         >
           Action
         </th>
@@ -160,8 +163,8 @@ const AttendanceTableHead = ({
                 title={`${day}, ${formatDate(currentDate, "dd MMM yyyy")}${isHoliday ? " · Holiday" : ""}`}
                 className={`${cell} border ${
                   isHoliday || currentDate.getDay() === 0
-                    ? "bg-rose-500 border-rose-400 dark:bg-rose-600 dark:border-rose-500"
-                    : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
+                    ? "bg-rose-500 border-rose-400 dark:bg-rose-900/60 dark:border-rose-800"
+                    : "bg-sky-500 border-sky-400 dark:bg-sky-900/60 dark:border-sky-800"
                 } w-9 min-w-9`}
               >
                 <div className="text-center">
@@ -178,28 +181,28 @@ const AttendanceTableHead = ({
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-blue-600 dark:bg-blue-700 font-semibold text-xs w-14 min-w-14`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-blue-600 dark:bg-blue-900/60 font-semibold text-xs w-14 min-w-14`}
             >
               <div className="text-center">Work Days</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-blue-600 dark:bg-blue-700 font-semibold text-xs w-14 min-w-14`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-blue-600 dark:bg-blue-900/60 font-semibold text-xs w-14 min-w-14`}
             >
               <div className="text-center">Present</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-blue-600 dark:bg-blue-700 font-semibold text-xs w-14 min-w-14`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-blue-600 dark:bg-blue-900/60 font-semibold text-xs w-14 min-w-14`}
             >
               <div className="text-center">Absent</div>
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-slate-300 dark:border-slate-600 bg-blue-600 dark:bg-blue-700 font-semibold text-xs w-14 min-w-14 sticky right-0 z-50`}
+              className={`${cell} border border-slate-300 dark:border-slate-700 bg-blue-600 dark:bg-blue-900/60 font-semibold text-xs w-14 min-w-14 sticky right-0 z-50`}
             >
               <div className="text-center">%</div>
             </th>
@@ -210,7 +213,7 @@ const AttendanceTableHead = ({
       {/* ════════════════════════════════════════════════════════════════════
           ROW 3 – Mark Attendance Buttons (daily columns only)
       ════════════════════════════════════════════════════════════════════ */}
-      <tr className="sticky z-30 bg-sky-500 dark:bg-sky-600" style={{ top: markRowTop }}>
+      <tr className="sticky z-30 bg-sky-500 dark:bg-slate-800" style={{ top: markRowTop }}>
         {columnVisibility.daily &&
           monthDates.map((date) => {
             const currentDate = new Date(
@@ -228,17 +231,17 @@ const AttendanceTableHead = ({
               <th
                 key={`mark-${date}`}
                 scope="col"
-                className={`${compactView ? "py-1 px-1" : "py-2 px-1 sm:px-2"} border border-slate-300 dark:border-slate-600 text-center ${
+                className={`${compactView ? "py-1 px-1" : "py-2 px-1 sm:px-2"} border border-slate-300 dark:border-slate-700 text-center ${
                   isHoliday || isSunday
-                    ? "bg-rose-500 border-rose-400 dark:bg-rose-600 dark:border-rose-500"
-                    : "bg-sky-500 border-sky-400 dark:bg-sky-600 dark:border-sky-500"
+                    ? "bg-rose-500 border-rose-400 dark:bg-rose-900/60 dark:border-rose-800"
+                    : "bg-sky-500 border-sky-400 dark:bg-sky-900/60 dark:border-sky-800"
                 }`}
               >
                 <button
                   disabled={loadingAttendance}
                   onClick={() => onMarkAttendance(fullDate)}
                   title={isFuture ? "Mark Holiday (Attendance blocked)" : "Mark Attendance / Holiday"}
-                  className="px-1.5 py-0.5 text-xs font-medium bg-white text-sky-700 rounded shadow-sm hover:bg-sky-50 hover:shadow-md transition-all duration-200 border border-sky-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-400 rounded shadow-sm hover:bg-sky-50 dark:hover:bg-slate-700 transition-all duration-200 border border-sky-200 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Mark
                 </button>

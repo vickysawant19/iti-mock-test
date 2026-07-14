@@ -180,7 +180,7 @@ const MarkAttendanceModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 animate-fadeIn dark:bg-opacity-80">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200/80 dark:border-slate-800">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 dark:from-indigo-800 dark:to-purple-800">
@@ -214,15 +214,15 @@ const MarkAttendanceModal = ({
         {!isExistingHoliday && !isMarkingHoliday && !isFuture && (
           <>
             {/* Stats Bar */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-b dark:border-gray-600 flex gap-3">
-              <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600">
+            <div className="bg-slate-50 dark:bg-slate-800 px-4 py-3 border-b dark:border-slate-800 flex gap-3">
+              <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <Users className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span className="text-xs font-medium text-slate-650 dark:text-slate-400">
                     Total
                   </span>
                 </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
                   {actualStudents.length}
                 </p>
               </div>
@@ -251,7 +251,7 @@ const MarkAttendanceModal = ({
             </div>
 
             {/* Filters & Actions */}
-            <div className="px-4 py-2 border-b dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+            <div className="px-4 py-2 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
               <div className="flex flex-wrap gap-2 mb-2">
                 {["all", "present", "absent"].map((f) => (
                   <button
@@ -260,7 +260,7 @@ const MarkAttendanceModal = ({
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
                       filter === f
                         ? "bg-indigo-600 text-white dark:bg-indigo-800"
-                        : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-600"
+                        : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                     }`}
                   >
                     {f} {f === "all" ? `(${actualStudents.length})` : f === "present" ? `(${presentCount})` : `(${absentCount})`}
@@ -303,10 +303,10 @@ const MarkAttendanceModal = ({
                 <div className="bg-amber-100 dark:bg-amber-900 rounded-full p-4 mb-3">
                   <Palmtree className="w-10 h-10 text-amber-600 dark:text-amber-300" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 animate-pulse">
+                <h3 className="text-lg font-bold text-slate-850 dark:text-slate-100 mb-1 animate-pulse">
                   Holiday Marked
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 max-w-md text-xs mb-3">
+                <p className="text-slate-500 dark:text-slate-400 max-w-md text-xs mb-3">
                   This date is currently marked as a holiday. Students are exempted.
                 </p>
                 
@@ -335,13 +335,13 @@ const MarkAttendanceModal = ({
 
               {/* Show Teacher Attendance Selection if Teacher exists */}
               {teachersList.length > 0 && (
-                <div className="border-t dark:border-gray-700 pt-4">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Teacher Attendance</h4>
+                <div className="border-t dark:border-slate-800 pt-4">
+                  <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Teacher Attendance</h4>
                   <div className="space-y-2">
                     {teachersList.map((student) => (
                       <div
                         key={student.userId}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 border-l-purple-500"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 border-l-purple-500"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -355,10 +355,10 @@ const MarkAttendanceModal = ({
                                />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">
+                              <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate">
                                 {student.userName}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                 ID: {student.studentId}
                               </p>
                             </div>
@@ -371,7 +371,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "present"
                                   ? "bg-green-600 text-white dark:bg-green-800 animate-in zoom-in-95 duration-200"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Present
@@ -383,7 +383,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "absent"
                                   ? "bg-red-600 text-white dark:bg-red-800 animate-in zoom-in-95 duration-200"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Absent
@@ -407,10 +407,10 @@ const MarkAttendanceModal = ({
                     <Palmtree className="w-8 h-8 text-amber-600 dark:text-amber-300" />
                   </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 text-center">
+                <h3 className="text-lg font-bold text-slate-850 dark:text-slate-100 mb-2 text-center">
                   Set as Holiday
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 text-center">
                   {isFuture 
                     ? "Attendance marking is restricted to today or earlier. You may still set this future date as a holiday."
                     : "This will mark all students as exempted for today."}
@@ -419,7 +419,7 @@ const MarkAttendanceModal = ({
                   value={holidayReason}
                   onChange={(e) => setHolidayReason(e.target.value)}
                   placeholder="e.g., National Festival, Heavy Rain, etc."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-750 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none resize-none bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-100 placeholder-slate-450 dark:placeholder-slate-500"
                   rows="3"
                   autoFocus
                 />
@@ -442,12 +442,12 @@ const MarkAttendanceModal = ({
             <div className="space-y-4 animate-fadeIn">
               {teachersList.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Instructor</h4>
+                  <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider uppercase mb-2">Instructor</h4>
                   <div className="space-y-2">
                     {teachersList.map((student) => (
                       <div
                         key={student.userId}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:shadow-sm transition-shadow"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -461,10 +461,10 @@ const MarkAttendanceModal = ({
                                />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                                 {student.userName}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                 ID: {student.studentId}
                               </p>
                             </div>
@@ -477,7 +477,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "present"
                                   ? "bg-green-600 text-white dark:bg-green-800"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Present
@@ -489,7 +489,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "absent"
                                   ? "bg-red-600 text-white dark:bg-red-800"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Absent
@@ -504,12 +504,12 @@ const MarkAttendanceModal = ({
 
               {studentsList.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Students</h4>
+                  <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider uppercase mb-2">Students</h4>
                   <div className="space-y-2">
                     {studentsList.map((student) => (
                       <div
                         key={student.userId}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:shadow-sm transition-shadow"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -523,10 +523,10 @@ const MarkAttendanceModal = ({
                                />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">
+                              <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">
                                 {student.userName}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                 ID: {student.studentId}
                               </p>
                             </div>
@@ -539,7 +539,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "present"
                                   ? "bg-green-600 text-white dark:bg-green-800"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Present
@@ -551,7 +551,7 @@ const MarkAttendanceModal = ({
                               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 attendanceStatuses[student.userId] === "absent"
                                   ? "bg-red-600 text-white dark:bg-red-800"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  : "bg-slate-100 text-slate-650 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                             >
                               Absent
@@ -574,12 +574,12 @@ const MarkAttendanceModal = ({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2.5 border-t dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+        <div className="px-4 py-2.5 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
           <div className="flex gap-2">
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               Close
             </button>

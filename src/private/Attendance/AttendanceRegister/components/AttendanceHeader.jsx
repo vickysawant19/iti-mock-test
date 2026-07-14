@@ -89,7 +89,7 @@ const AttendanceHeader = ({
   const isAtMax = activeYear === maxYear  && activeMonth >= maxMonth;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/85 px-4 py-3 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
 
         {/* ── Page Title ── */}
@@ -98,17 +98,17 @@ const AttendanceHeader = ({
             <ClipboardList className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-tight">
+            <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">
               Attendance Register
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight hidden sm:block">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight hidden sm:block">
               {format(selectedMonth, "MMMM yyyy")}
             </p>
           </div>
         </div>
 
         {/* ── Divider (desktop) ── */}
-        <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+        <div className="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700/80 flex-shrink-0" />
 
         {/* ── Controls Row ── */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 flex-1">
@@ -120,7 +120,7 @@ const AttendanceHeader = ({
               value={selectedBatch}
               onChange={(e) => setSelectedBatch(e.target.value)}
               disabled={loadingBatch}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none pr-8"
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none pr-8"
             >
               <option value="">Select Batch</option>
               {batches.map((batch) => (
@@ -129,7 +129,7 @@ const AttendanceHeader = ({
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
               {loadingBatch ? (
                 <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
               ) : (
@@ -160,13 +160,13 @@ const AttendanceHeader = ({
                 value={activeMonth}
                 disabled={isLoading}
                 onChange={(e) => onMonthSelect(Number(e.target.value))}
-                className="pl-3 pr-7 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-semibold"
+                className="pl-3 pr-7 py-2 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-semibold"
               >
                 {availableMonths.map(({ label, index }) => (
                   <option key={label} value={index}>{label}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             </div>
 
             {/* Year select */}
@@ -176,13 +176,13 @@ const AttendanceHeader = ({
                 value={activeYear}
                 disabled={isLoading}
                 onChange={(e) => onYearSelect(Number(e.target.value))}
-                className="pl-3 pr-7 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-semibold"
+                className="pl-3 pr-7 py-2 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed appearance-none font-semibold"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             </div>
 
             {/* Loading spinner overlay */}

@@ -69,8 +69,8 @@ const AttendanceTableBody = ({
               student.isTeacher
                 ? "bg-purple-100 dark:bg-purple-900/40 border-b-2 border-purple-300 dark:border-purple-700"
                 : idx % 2 === 0
-                ? "bg-white dark:bg-slate-800"
-                : "bg-slate-50 dark:bg-slate-850"
+                ? "bg-white dark:bg-slate-900"
+                : "bg-slate-50 dark:bg-slate-800/40"
             } ${studentUpdating ? "opacity-60" : ""}`}
             onClick={() => onOpenStudentAttendanceModal(student)}
           >
@@ -125,7 +125,7 @@ const AttendanceTableBody = ({
               </>
             )}
 
-            <td className={`${stickyCell} border border-slate-300 dark:border-slate-600 sticky left-0 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100 shadow-2xl`}>
+            <td className={`${stickyCell} border border-slate-300 dark:border-slate-700 sticky left-0 ${student.isTeacher ? "bg-purple-100 dark:bg-purple-950" : idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50 dark:bg-slate-800"} z-10 font-medium text-slate-900 dark:text-slate-100 shadow-2xl`}>
               <div className="flex items-center gap-2">
                 <div className={`flex flex-col flex-1 ${compactView ? "w-28 min-w-28" : "w-28 sm:w-48 min-w-28 sm:min-w-48"}`}>
                   <span className="font-semibold text-xs text-wrap">
@@ -146,7 +146,7 @@ const AttendanceTableBody = ({
               </div>
             </td>
 
-            <td className={`${stickyCell} border border-slate-300 dark:border-slate-600 sticky left-28 sm:left-48 bg-inherit z-10 font-medium text-slate-900 dark:text-slate-100`}>
+            <td className={`${stickyCell} border border-slate-300 dark:border-slate-700 sticky left-28 sm:left-48 ${student.isTeacher ? "bg-purple-100 dark:bg-purple-950" : idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50 dark:bg-slate-800"} z-10 font-medium text-slate-900 dark:text-slate-100`}>
               <button
                 type="button"
                 onClick={(e) => {
