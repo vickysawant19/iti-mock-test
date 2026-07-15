@@ -16,11 +16,16 @@ import { Label } from "@/components/ui/label";
 import VerifiedTagInput from "@/components/components/VerifiedTagInput";
 
 export function ConfigurationSection({ tradesList, subjects, modules, fetchModules }) {
-  const { register, control, watch, formState: { errors } } = useFormContext();
+  const { register, control, watch, setValue, formState: { errors } } = useFormContext();
   const currentMode = watch("mode");
   const tradeId = watch("tradeId");
   const subjectId = watch("subjectId");
   const year = watch("year");
+  const quesCountVal = watch("quesCount");
+  const selectedModulesVal = watch("selectedModules");
+  const tagsVal = watch("tags");
+
+  const [isTitleManuallyEdited, setIsTitleManuallyEdited] = React.useState(false);
 
   // Fetch modules when dependencies change
   React.useEffect(() => {
@@ -28,6 +33,73 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
       fetchModules(tradeId, subjectId, year);
     }
   }, [tradeId, subjectId, year, fetchModules]);
+
+  // Auto-generate test title based on selections
+  React.useEffect(() => {
+    if (isTitleManuallyEdited) return;
+
+    // 1. Trade part
+    const tradeObj = tradesList.find(t => t.$id === tradeId);
+    let tradePart = "";
+    if (tradeObj) {
+      const name = tradeObj.tradeName;
+      if (name.toLowerCase().includes("electronics mechanic")) tradePart = "ElecMech";
+      else if (name.toLowerCase().includes("electrician")) tradePart = "Electrician";
+      else if (name.toLowerCase().includes("fitter")) tradePart = "Fitter";
+      else if (name.toLowerCase().includes("wireman")) tradePart = "Wireman";
+      else {
+        const words = name.split(" ");
+        tradePart = words.length > 1 ? words.map(w => w[0]).join("").toUpperCase() : name;
+      }
+    }
+
+    // 2. Year part
+    const yearPart = year === "FIRST" ? "Y1" : year === "SECOND" ? "Y2" : "";
+
+    // 3. Subject part
+    const subObj = subjects.find(s => s.$id === subjectId);
+    let subPart = "";
+    if (subObj) {
+      const name = subObj.subjectName;
+      if (name.toLowerCase().includes("trade theory")) subPart = "Theory";
+      else if (name.toLowerCase().includes("workshop calculation")) subPart = "WCS";
+      else if (name.toLowerCase().includes("employability skills")) subPart = "ES";
+      else if (name.toLowerCase().includes("practical")) subPart = "Practical";
+      else subPart = name.substring(0, 8);
+    }
+
+    // 4. Questions count
+    const qPart = quesCountVal ? `${quesCountVal}Q` : "";
+
+    // Assemble parts
+    const parts = [tradePart, yearPart, subPart].filter(Boolean);
+
+    // 5. Add Module or Tag specific indicators
+    if (currentMode === "module" && Array.isArray(selectedModulesVal) && selectedModulesVal.length > 0) {
+      parts.push(`Mod-${selectedModulesVal.length}`);
+    } else if (Array.isArray(tagsVal) && tagsVal.length > 0) {
+      parts.push(`Tag-${tagsVal[0]}`);
+    }
+
+    if (qPart) {
+      parts.push(qPart);
+    }
+
+    const generated = parts.join(" ");
+    setValue("title", generated, { shouldValidate: true });
+  }, [
+    tradeId,
+    year,
+    subjectId,
+    quesCountVal,
+    currentMode,
+    selectedModulesVal,
+    tagsVal,
+    tradesList,
+    subjects,
+    isTitleManuallyEdited,
+    setValue
+  ]);
 
   // Subject shown for both modes; modules only for "module" mode
   const showSubjectSelection = true;
@@ -50,10 +122,25 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Title */}
           <div className="space-y-2 lg:col-span-2">
-            <Label className="text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider block">Test Title</Label>
+            <div className="flex justify-between items-center">
+              <Label className="text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider block">Test Title</Label>
+              {isTitleManuallyEdited && (
+                <button
+                  type="button"
+                  onClick={() => setIsTitleManuallyEdited(false)}
+                  className="text-[10px] text-pink-500 font-extrabold uppercase tracking-wider hover:underline cursor-pointer"
+                >
+                  Reset to Auto-Generated Title
+                </button>
+              )}
+            </div>
             <input
-              {...register("title")}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white placeholder-slate-450 dark:placeholder-slate-500 font-medium transition-all"
+              {...register("title", {
+                onChange: () => {
+                  setIsTitleManuallyEdited(true);
+                }
+              })}
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white placeholder-slate-455 dark:placeholder-slate-500 font-medium transition-all"
               placeholder="e.g. Weekly Assessment - Fitter 1st Year"
             />
             {errors.title && <p className="text-red-500 text-xs mt-1 font-bold">{errors.title.message}</p>}
