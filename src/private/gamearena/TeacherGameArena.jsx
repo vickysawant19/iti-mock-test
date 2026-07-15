@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useEffect, useState, useCallback } from "react";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useNavigate } from "react-router-dom";
 import {
   Loader2,
@@ -20,6 +21,8 @@ import {
   Coins,
   Flame,
   Calendar,
+  GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -350,17 +353,8 @@ const TeacherGameArena = ({
         {/* Batch Overview Hero */}
         <BatchOverviewCard batchContext={batchContext} batchOverview={batchOverview} />
 
-        {/* Live Class Lobby - Sleek Touch-to-Expand Tracker */}
-        <div className="relative z-30 flex items-center justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-3 shadow-sm select-none">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-450 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">Class Lobby</span>
-          </div>
-          <OnlineBatchMembers batchId={batchContext?.batchId} currentUserId={profile?.userId} compact={true} align="right" />
-        </div>
+        {/* Live Class Lobby - Expandable Inline Panel */}
+        <ClassLobbyCard batchContext={batchContext} profile={profile} />
 
         {/* Bottom Navigation Dock replaces old tabs on mobile and desktop */}
 
@@ -572,6 +566,188 @@ const TeacherGameArena = ({
           })}
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Class Lobby Card ───────────────────────────────────────────────────────
+const ClassLobbyCard = ({ batchContext, profile }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { onlineUsers } = useOnlineUsers();
+
+  const batchId = batchContext?.batchId;
+  const currentUserId = profile?.userId;
+
+  const members = Array.from(onlineUsers.values()).filter(
+    (u) => u.metadata?.activeBatchId === batchId
+  );
+  const teachers = members.filter((m) => m.metadata?.role === "Teacher");
+  const students = members.filter((m) => m.metadata?.role !== "Teacher");
+  const totalCount = members.length;
+
+  const getActivity = (path) => {
+    if (!path) return "Online";
+    if (path === "/arena" || path === "/") return "In Game Arena";
+    if (path === "/profile") return "Viewing Profile";
+    if (path.includes("mock-test")) return "Taking Mock Test";
+    if (path.includes("leaderboard")) return "Leaderboard";
+    if (path.includes("attendance")) return "Attendance";
+    return "Browsing App";
+  };
+
+  return (
+    <div className="relative z-30 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+      {/* Header Row — always visible, tap to expand */}
+      <button
+        onClick={() => setIsOpen((p) => !p)}
+        className="w-full flex items-center justify-between p-3 select-none cursor-pointer"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 tracking-tight">
+            Class Lobby
+          </span>
+          {totalCount > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              {totalCount} Online
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Mini avatar stack preview */}
+          {totalCount > 0 && !isOpen && (
+            <div className="flex -space-x-1.5">
+              {members.slice(0, 4).map((m) => (
+                <InteractiveAvatar
+                  key={m.userId}
+                  src={m.metadata?.profileImage}
+                  fallbackText={m.metadata?.userName?.charAt(0) || "?"}
+                  userId={m.userId}
+                  showStatus={false}
+                  className="w-5 h-5 rounded-full border border-white dark:border-slate-900 shrink-0"
+                />
+              ))}
+              {members.length > 4 && (
+                <div className="flex items-center justify-center w-5 h-5 rounded-full border border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 text-[8px] font-black text-slate-500 dark:text-slate-400 z-10">
+                  +{members.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          </motion.div>
+        </div>
+      </button>
+
+      {/* Expandable panel */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="lobby-panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 space-y-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+              {totalCount === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4 font-semibold">
+                  No batch members are online right now.
+                </p>
+              ) : (
+                <>
+                  {/* Teachers */}
+                  {teachers.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                        <Briefcase className="w-3 h-3 text-pink-500" /> Instructors
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {teachers.map((m) => (
+                          <div
+                            key={m.userId}
+                            className="flex items-center gap-2.5 p-2 rounded-xl bg-pink-500/5 border border-pink-500/10 dark:bg-pink-900/10 dark:border-pink-900/20"
+                          >
+                            <InteractiveAvatar
+                              src={m.metadata?.profileImage}
+                              fallbackText={m.metadata?.userName?.charAt(0) || "T"}
+                              userId={m.userId}
+                              showStatus
+                              statusSize="xs"
+                              className="w-7 h-7 shrink-0 rounded-lg ring-2 ring-pink-100 dark:ring-pink-900/30"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-bold text-slate-800 dark:text-white truncate">
+                                {m.metadata?.userName || "Instructor"}
+                                {m.userId === currentUserId && (
+                                  <span className="ml-1 text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded">
+                                    You
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-pink-500 dark:text-pink-400 font-medium truncate">
+                                {getActivity(m.metadata?.page)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Students */}
+                  {students.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                        <GraduationCap className="w-3 h-3 text-purple-500" /> Students ({students.length})
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {students.map((m) => (
+                          <div
+                            key={m.userId}
+                            className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/50 hover:bg-white dark:hover:bg-slate-800/50 transition-colors"
+                          >
+                            <InteractiveAvatar
+                              src={m.metadata?.profileImage}
+                              fallbackText={m.metadata?.userName?.charAt(0) || "S"}
+                              userId={m.userId}
+                              showStatus
+                              statusSize="xs"
+                              className="w-7 h-7 shrink-0 rounded-lg"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">
+                                {m.metadata?.userName || "Student"}
+                                {m.userId === currentUserId && (
+                                  <span className="ml-1 text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded">
+                                    You
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
+                                {getActivity(m.metadata?.page)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
