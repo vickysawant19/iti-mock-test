@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
 
-const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic }) => {
+const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic, hideHeader = false }) => {
   const [activeCategory, setActiveCategory] = useState("avatar");
   const [isPurchasing, setIsPurchasing] = useState(null);
   const [isEquipping, setIsEquipping] = useState(null);
@@ -111,30 +111,32 @@ const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic }) => {
   return (
     <div className="space-y-6">
       {/* Top Header Card with Coins info */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pink-600/90 via-purple-600/90 to-blue-600/90 border border-white/20 p-6 text-white shadow-xl">
-        <div className="absolute top-[-20%] right-[-10%] w-60 h-60 rounded-full bg-white/10 blur-[80px] pointer-events-none" />
-        
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-          <div className="text-center sm:text-left">
-            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center justify-center sm:justify-start gap-2">
-              <ShoppingBag className="w-6 h-6 animate-pulse" />
-              Cosmetic Store
-            </h2>
-            <p className="text-xs text-pink-100 mt-1 font-medium">
-              Spend your training coins on exclusive cosmetics to customize your gamer profile!
-            </p>
-          </div>
+      {!hideHeader && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pink-600/90 via-purple-600/90 to-blue-600/90 border border-white/20 p-6 text-white shadow-xl">
+          <div className="absolute top-[-20%] right-[-10%] w-60 h-60 rounded-full bg-white/10 blur-[80px] pointer-events-none" />
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+            <div className="text-center sm:text-left">
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center justify-center sm:justify-start gap-2">
+                <ShoppingBag className="w-6 h-6 animate-pulse" />
+                Cosmetic Store
+              </h2>
+              <p className="text-xs text-pink-100 mt-1 font-medium">
+                Spend your training coins on exclusive cosmetics to customize your gamer profile!
+              </p>
+            </div>
 
-          {/* Current balance card */}
-          <div className="bg-slate-950/50 backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg shrink-0">
-            <Coins className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: "8s" }} />
-            <div>
-              <p className="text-[9px] font-black text-slate-300 uppercase tracking-wider leading-none">Your Coins Balance</p>
-              <p className="text-xl font-black text-white mt-1 leading-none tabular-nums">{userCoins}</p>
+            {/* Current balance card */}
+            <div className="bg-slate-950/50 backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg shrink-0">
+              <Coins className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: "8s" }} />
+              <div>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-wider leading-none">Your Coins Balance</p>
+                <p className="text-xl font-black text-white mt-1 leading-none tabular-nums">{userCoins}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {errorMsg && (
         <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">

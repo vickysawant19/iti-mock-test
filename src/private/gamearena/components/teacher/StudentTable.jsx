@@ -19,17 +19,17 @@ const pct = (v) => Math.min(Math.max(v || 0, 0), 100);
 
 const attTheme = (p) =>
   p >= 75
-    ? { bar: "bg-blue-500", text: "text-blue-500 dark:text-blue-400" }
+    ? { bar: "bg-blue-550 dark:bg-blue-500", text: "text-blue-600 dark:text-blue-400" }
     : p >= 50
-    ? { bar: "bg-amber-500", text: "text-amber-500 dark:text-amber-400" }
-    : { bar: "bg-red-500", text: "text-red-500 dark:text-red-400" };
+    ? { bar: "bg-amber-550 dark:bg-amber-500", text: "text-amber-600 dark:text-amber-400" }
+    : { bar: "bg-red-550 dark:bg-red-500", text: "text-red-600 dark:text-red-400" };
 
 const scoreTheme = (p) =>
   p >= 75
-    ? "text-emerald-500 dark:text-emerald-400"
+    ? "text-emerald-600 dark:text-emerald-400"
     : p >= 50
-    ? "text-amber-500 dark:text-amber-400"
-    : "text-red-500 dark:text-red-400";
+    ? "text-amber-600 dark:text-amber-400"
+    : "text-red-650 dark:text-red-450";
 
 // ─── Month label ─────────────────────────────────────────────────────────────
 
@@ -57,10 +57,10 @@ const StudentCard = ({ row, selectedMonth }) => {
 
   return (
     <div
-      className={`rounded-2xl bg-[#111827] border transition-all duration-200 overflow-hidden ${
+      className={`rounded-2xl bg-white/60 dark:bg-slate-900/50 backdrop-blur-sm border transition-all duration-200 overflow-hidden ${
         open
           ? "border-blue-500/40 shadow-lg shadow-blue-500/5"
-          : "border-slate-800/60 hover:border-slate-700/60"
+          : "border-slate-200/80 dark:border-slate-800/60 hover:border-slate-350 dark:hover:border-slate-700/60"
       }`}
     >
       {/* ── Clickable Header ── */}
@@ -72,15 +72,15 @@ const StudentCard = ({ row, selectedMonth }) => {
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Avatar className="h-10 w-10 shrink-0 rounded-xl">
             <AvatarImage src={row.profileImage} />
-            <AvatarFallback className="rounded-xl bg-slate-800 text-white text-sm font-black">
+            <AvatarFallback className="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-black">
               {row.userName?.charAt(0) || "?"}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="text-[15px] font-semibold text-white truncate leading-tight">
+            <p className="text-[15px] font-semibold text-slate-800 dark:text-white truncate leading-tight">
               {row.userName}
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
               {row.tradeName || row.registerId || "Student"}
             </p>
           </div>
@@ -88,27 +88,27 @@ const StudentCard = ({ row, selectedMonth }) => {
 
         {/* Chevron */}
         <div className={`mt-0.5 shrink-0 transition-transform duration-200 ${open ? "rotate-0" : "rotate-180"}`}>
-          <ChevronUp className={`w-4 h-4 ${open ? "text-blue-400" : "text-slate-500"}`} />
+          <ChevronUp className={`w-4 h-4 ${open ? "text-blue-500 dark:text-blue-400" : "text-slate-500"}`} />
         </div>
       </div>
 
       {/* ── Quick Stats Row (always visible) ── */}
-      <div className="grid grid-cols-3 divide-x divide-slate-800/60 border-t border-slate-800/60">
+      <div className="grid grid-cols-3 divide-x divide-slate-200/80 dark:divide-slate-800/60 border-t border-slate-200/80 dark:border-slate-800/60">
         {/* Attendance */}
         <div className="flex flex-col items-center justify-center py-2.5 px-2">
           <span className={`text-xl font-black tabular-nums leading-none ${theme.text}`}>
             {att}%
           </span>
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">
+          <span className="text-[9px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider mt-1">
             Attendance
           </span>
         </div>
         {/* Tests */}
         <div className="flex flex-col items-center justify-center py-2.5 px-2">
-          <span className="text-xl font-black tabular-nums leading-none text-white">
+          <span className="text-xl font-black tabular-nums leading-none text-slate-850 dark:text-white">
             {tests}
           </span>
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">
+          <span className="text-[9px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-wider mt-1">
             Tests
           </span>
         </div>
@@ -117,7 +117,7 @@ const StudentCard = ({ row, selectedMonth }) => {
           <span className={`text-xl font-black tabular-nums leading-none ${scoreTheme(score)}`}>
             {score}%
           </span>
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-1">
+          <span className="text-[9px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider mt-1">
             Score
           </span>
         </div>
@@ -134,12 +134,12 @@ const StudentCard = ({ row, selectedMonth }) => {
             transition={{ duration: 0.22, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-3 space-y-4 border-t border-slate-800/60">
+            <div className="px-4 pb-4 pt-3 space-y-4 border-t border-slate-200/80 dark:border-slate-800/60">
 
               {/* Attendance section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Attendance
                   </span>
                   <span className={`text-[11px] font-black tabular-nums ${theme.text}`}>
@@ -148,7 +148,7 @@ const StudentCard = ({ row, selectedMonth }) => {
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
                     className={`h-full rounded-full ${theme.bar} transition-all duration-500`}
                     style={{ width: `${att}%` }}
@@ -157,17 +157,17 @@ const StudentCard = ({ row, selectedMonth }) => {
 
                 {/* Present / Absent / Working */}
                 <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     {row.presentDays ?? 0}
                     <span className="text-slate-500 font-normal">Present</span>
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] font-semibold text-red-400">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-red-600 dark:text-red-400">
                     <XCircle className="w-3.5 h-3.5" />
                     {absent}
                     <span className="text-slate-500 font-normal">Absent</span>
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     <CalendarDays className="w-3.5 h-3.5" />
                     {row.totalWorkingDays ?? 0}
                     <span className="text-slate-500 font-normal">Days</span>
@@ -179,13 +179,13 @@ const StudentCard = ({ row, selectedMonth }) => {
                   <span className="text-[11px] text-slate-500 font-medium">
                     {monthLabel(selectedMonth)}
                   </span>
-                  <span className="text-[11px] font-bold text-slate-300">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     {row.monthlyPresentDays ?? 0} / {row.monthlyWorkingDays ?? 0} Days
                   </span>
                 </div>
 
                 {/* Monthly bar */}
-                <div className="w-full h-1 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
                     className={`h-full rounded-full ${mTheme.bar} transition-all duration-500`}
                     style={{ width: `${mAtt}%` }}
@@ -194,23 +194,23 @@ const StudentCard = ({ row, selectedMonth }) => {
               </div>
 
               {/* Divider */}
-              <div className="border-t border-slate-800/60" />
+              <div className="border-t border-slate-200/80 dark:border-slate-800/60" />
 
               {/* Mock Test section */}
               <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Mock Tests
                 </span>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-pink-400 shrink-0" />
+                    <BookOpen className="w-4 h-4 text-pink-500 dark:text-pink-400 shrink-0" />
                     <div>
-                      <p className="text-base font-black text-white leading-none">{tests}</p>
+                      <p className="text-base font-black text-slate-800 dark:text-white leading-none">{tests}</p>
                       <p className="text-[10px] text-slate-500 font-medium mt-0.5">Tests taken</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-400 shrink-0" />
+                    <Star className="w-4 h-4 text-amber-500 dark:text-amber-450 shrink-0" />
                     <div>
                       <p className={`text-base font-black leading-none ${scoreTheme(score)}`}>
                         {score}%
@@ -265,9 +265,9 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
 
   if (!studentRows.length) {
     return (
-      <div className="rounded-2xl bg-[#111827] border border-slate-800/60 p-10 text-center">
-        <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-        <p className="text-slate-500 font-medium text-sm">
+      <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60 p-10 text-center">
+        <Users className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+        <p className="text-slate-500 dark:text-slate-450 font-medium text-sm">
           No students enrolled in this batch yet.
         </p>
       </div>
@@ -285,7 +285,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
           placeholder="Search students..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl bg-[#111827] border border-slate-800/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 placeholder-slate-600 text-white"
+          className="w-full pl-10 pr-4 py-2.5 text-sm rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 placeholder-slate-450 dark:placeholder-slate-600 text-slate-800 dark:text-white"
         />
       </div>
 
@@ -301,7 +301,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
               className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all duration-150 cursor-pointer border ${
                 active
                   ? "bg-blue-600 border-blue-500 text-white shadow-sm shadow-blue-500/20"
-                  : "bg-[#111827] border-slate-800/60 text-slate-400 hover:border-slate-600"
+                  : "bg-white/60 dark:bg-slate-900/50 border-slate-200/80 dark:border-slate-800/60 text-slate-500 dark:text-slate-400 hover:border-slate-350 dark:hover:border-slate-700"
               }`}
             >
               {opt.label}
@@ -311,7 +311,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
         })}
 
         {/* Summary pill */}
-        <div className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/40 border border-slate-800/60 text-[11px] text-slate-400">
+        <div className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/60 text-[11px] text-slate-500 dark:text-slate-400">
           <TrendingUp className="w-3 h-3" />
           {filtered.length} / {studentRows.length}
         </div>
@@ -323,7 +323,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
           <StudentCard key={row.studentId} row={row} selectedMonth={selectedMonth} />
         ))}
         {filtered.length === 0 && (
-          <div className="rounded-2xl bg-[#111827] border border-slate-800/60 p-8 text-center text-sm text-slate-500">
+          <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60 p-8 text-center text-sm text-slate-500">
             No students match your search.
           </div>
         )}

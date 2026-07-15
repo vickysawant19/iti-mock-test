@@ -55,7 +55,7 @@ import StudentProfileCard from "./components/student/StudentProfileCard";
 import OverviewTab from "./components/student/OverviewTab";
 import AnalysisTab from "./components/student/AnalysisTab";
 import BadgesTab from "./components/student/BadgesTab";
-import AvatarStoreTab from "./components/student/AvatarStoreTab";
+import StoreTab from "./components/student/StoreTab";
 import LeaderboardTab from "./components/student/LeaderboardTab";
 import BottomNavDock from "./components/student/BottomNavDock";
 import CelebrationOverlays from "./components/student/CelebrationOverlays";
@@ -124,6 +124,7 @@ const StudentGameArena = ({
     canSpin,
     purchaseCosmetic,
     equipCosmetic,
+    convertXpToCoins,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId);
 
   // Daily Missions
@@ -524,7 +525,7 @@ const StudentGameArena = ({
                         { id: "stats", label: "Overview", icon: LayoutGrid },
                         { id: "analysis", label: "Analysis", icon: BarChart2 },
                         { id: "badges", label: "Badges", icon: Trophy },
-                        { id: "store", label: "Avatar Store", icon: Gamepad2 }
+                        { id: "store", label: "Store", icon: Coins }
                       ].map((tab) => {
                         const isActive = profileSubTab === tab.id;
                         const Icon = tab.icon;
@@ -558,9 +559,6 @@ const StudentGameArena = ({
                       </div>
                     ) : profileSubTab === "stats" ? (
                       <OverviewTab
-                        overallStats={overallStats}
-                        testStats={testStats}
-                        profileStats={profileStats}
                         stats={stats}
                         navigate={navigate}
                       />
@@ -577,8 +575,9 @@ const StudentGameArena = ({
                         activeSettings={activeSettings}
                       />
                     ) : (
-                      <AvatarStoreTab
+                      <StoreTab
                         stats={stats}
+                        convertXpToCoins={convertXpToCoins}
                         purchaseCosmetic={purchaseCosmetic}
                         equipCosmetic={equipCosmetic}
                       />

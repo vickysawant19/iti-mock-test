@@ -13,7 +13,7 @@ import { TrendingUp } from "lucide-react";
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl px-3 py-2 shadow-lg border border-white/40 dark:border-slate-800">
+    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl px-3 py-2 shadow-lg border border-slate-200/80 dark:border-slate-800/60">
       <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{label}</p>
       <p className="text-sm font-extrabold text-pink-600 dark:text-pink-400">
         {payload[0].value}%
@@ -25,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 const AttendanceTrendChart = ({ data = [] }) => {
   if (data.length === 0) {
     return (
-      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-6 text-center">
+      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 text-center">
         <TrendingUp className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
         <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
           No attendance data to display yet.
@@ -35,7 +35,7 @@ const AttendanceTrendChart = ({ data = [] }) => {
   }
 
   return (
-    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
+    <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-slate-200/80 sm:dark:border-slate-800/60 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
       <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-emerald-500" />
         <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">

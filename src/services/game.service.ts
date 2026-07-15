@@ -440,6 +440,51 @@ export class GameService extends DatabaseService {
   }
 
   /**
+   * Converts a student's XP into coins at the given rate.
+   * Default rate: 10 XP → 1 coin.
+   * @param xpAmount  The amount of XP to convert (must be > 0 and ≤ current XP).
+   * @param rate      XP per 1 coin (default 10).
+   */
+  async convertXpToCoins(
+    studentId: string,
+    batchId: string,
+    tradeId: string,
+    xpAmount: number,
+    rate: number = 10
+  ): Promise<{ stats: StudentGameStats; coinsGained: number }> {
+    if (xpAmount <= 0) throw new Error("XP amount must be greater than 0");
+
+    const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
+
+    if ((stats.xp || 0) < xpAmount) {
+      throw new Error(`Not enough XP. You have ${stats.xp} XP.`);
+    }
+
+    const coinsGained = Math.floor(xpAmount / rate);
+    if (coinsGained < 1) {
+      throw new Error(`Minimum conversion is ${rate} XP for 1 coin.`);
+    }
+
+    stats.xp = Math.max(0, stats.xp - xpAmount);
+    stats.coins = (stats.coins || 0) + coinsGained;
+    stats.level = Math.floor(stats.xp / 100) + 1;
+    stats.lastActive = new Date().toISOString();
+
+    let updatedStats = stats;
+    if (stats.$id) {
+      updatedStats = await this.updateRow<StudentGameStats>(stats.$id, {
+        xp: stats.xp,
+        coins: stats.coins,
+        level: stats.level,
+        lastActive: stats.lastActive,
+      });
+    }
+
+    return { stats: updatedStats, coinsGained };
+  }
+
+
+  /**
    * Processes a daily spin reward for the lucky wheel.
    * Leverages both localStorage and database fields for last spin tracking.
    */

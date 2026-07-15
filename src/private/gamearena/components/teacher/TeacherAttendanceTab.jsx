@@ -18,7 +18,7 @@ export default function TeacherAttendanceTab({
         <AttendanceTrendChart data={attendanceTrend} />
 
         {/* Needs Attention List */}
-        <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-white/40 sm:dark:border-slate-800 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
+        <div className="bg-transparent border-0 shadow-none sm:bg-white/60 sm:dark:bg-slate-900/60 sm:backdrop-blur-xl sm:border sm:border-slate-200/80 sm:dark:border-slate-800/60 sm:rounded-3xl sm:shadow-sm sm:overflow-hidden">
           <div className="px-2 py-3 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-amber-500" />
             <h3 className="text-base font-bold text-slate-800 dark:text-white tracking-tight">

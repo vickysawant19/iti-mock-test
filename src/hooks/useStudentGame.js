@@ -349,6 +349,19 @@ export function useStudentGame(studentId, batchId, tradeId) {
         throw err;
       }
     }, [studentId, batchId, tradeId]),
+
+    convertXpToCoins: useCallback(async (xpAmount, rate = 10) => {
+      if (!studentId || !batchId || !tradeId) return null;
+      try {
+        const res = await gameService.convertXpToCoins(studentId, batchId, tradeId, xpAmount, rate);
+        setStats(res.stats);
+        fetchLeaderboard();
+        return res;
+      } catch (err) {
+        console.error("[useStudentGame] Error converting XP to coins:", err);
+        throw err;
+      }
+    }, [studentId, batchId, tradeId, fetchLeaderboard]),
   };
 }
 

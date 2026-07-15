@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight, Coins, Target, Flame, Zap } from "lucide-react";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
 
@@ -19,7 +19,7 @@ export default function LeaderboardTab({
       exit={{ opacity: 0, y: -10 }}
       className="space-y-5"
     >
-      {/* Leaderboard list container */}
+      {/* Podium Card display */}
       <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl rounded-3xl overflow-hidden shadow-sm">
         {/* Top 3 podium display */}
         {gamifiedLeaderboard.length > 0 && (
@@ -34,14 +34,14 @@ export default function LeaderboardTab({
                   userName={gamifiedLeaderboard[1].userName}
                   showStatus={true}
                   statusSize="xs"
-                  className="h-12 w-12 border-2 border-slate-350 dark:border-slate-850 rounded-xl mb-1 shadow-md"
+                  className="h-12 w-12 border-2 border-slate-300 dark:border-slate-800 rounded-xl mb-1 shadow-md"
                 />
                 <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                   {gamifiedLeaderboard[1].userName}
                 </p>
-                <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-905 rounded-t-xl h-20 flex flex-col items-center justify-center mt-2 shadow-lg">
+                <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-900 rounded-t-xl h-20 flex flex-col items-center justify-center mt-2 shadow-lg">
                   <span className="text-xl font-black text-slate-700 dark:text-slate-300">2</span>
-                  <span className="text-[9px] font-bold text-slate-500">{gamifiedLeaderboard[1].xp} XP</span>
+                  <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">{gamifiedLeaderboard[1].xp} XP</span>
                 </div>
               </div>
             )}
@@ -66,7 +66,7 @@ export default function LeaderboardTab({
                 <p className="text-xs font-black text-slate-800 dark:text-white max-w-[85px] truncate text-center">
                   {gamifiedLeaderboard[0].userName}
                 </p>
-                <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-400 to-amber-500 dark:from-yellow-600 dark:to-amber-955 rounded-t-2xl h-28 flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
+                <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-450 to-amber-500 dark:from-yellow-600 dark:to-amber-900 rounded-t-2xl h-28 flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-pulse" />
                   <span className="text-3xl font-black text-slate-900 dark:text-yellow-100">1</span>
                   <span className="text-[10px] font-black text-slate-800 dark:text-yellow-200">{gamifiedLeaderboard[0].xp} XP</span>
@@ -89,7 +89,7 @@ export default function LeaderboardTab({
                 <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                   {gamifiedLeaderboard[2].userName}
                 </p>
-                <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-905 rounded-t-xl h-16 flex flex-col items-center justify-center mt-2 shadow-lg">
+                <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-900 rounded-t-xl h-16 flex flex-col items-center justify-center mt-2 shadow-lg">
                   <span className="text-base font-black text-amber-700 dark:text-amber-400">3</span>
                   <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500">{gamifiedLeaderboard[2].xp} XP</span>
                 </div>
@@ -100,170 +100,262 @@ export default function LeaderboardTab({
         <div className="p-4">
           <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Batch Ranking Leaderboard</h3>
         </div>
-        <div className="divide-y divide-slate-200/50 dark:divide-slate-800/40">
-          {gamifiedLeaderboard.map((entry) => {
-            const isMe = entry.studentId === user?.$id;
-            const isExpanded = expandedStudentId === entry.studentId;
-            const entryCosmetics = cosmeticsService.parseCosmetics(entry);
-            const entryFrame = entryCosmetics.equipped?.frame;
-            const entryTitle = entryCosmetics.equipped?.title;
+      </div>
 
-            return (
-              <div key={entry.studentId} className="flex flex-col">
-                {/* Clickable Header Row */}
-                <div
-                  onClick={() => setExpandedStudentId(isExpanded ? null : entry.studentId)}
-                  className={`flex items-center justify-between px-4 py-3.5 transition-colors cursor-pointer select-none ${
-                    isMe 
-                      ? "bg-pink-500/5 dark:bg-pink-900/10" 
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
-                  } ${isExpanded ? "bg-slate-50/50 dark:bg-slate-800/20" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Rank Visualizer */}
-                    {entry.rank === 1 ? (
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-yellow-500/15 dark:bg-yellow-500/20 border border-yellow-500/35 text-yellow-600 dark:text-yellow-450 text-[10px] font-black shrink-0">
-                        1
-                      </span>
-                    ) : entry.rank === 2 ? (
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-300/20 dark:bg-slate-400/25 border border-slate-350 dark:border-slate-600/40 text-slate-655 dark:text-slate-300 text-[10px] font-black shrink-0">
-                        2
-                      </span>
-                    ) : entry.rank === 3 ? (
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-400 text-[10px] font-black shrink-0">
-                        3
-                      </span>
-                    ) : (
-                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center shrink-0">
-                        #{entry.rank}
-                      </span>
+      {/* List of distinct student rows with vertical spacing */}
+      <div className="space-y-2.5">
+        {gamifiedLeaderboard.map((entry) => {
+          const isMe = entry.studentId === user?.$id;
+          const isExpanded = expandedStudentId === entry.studentId;
+          const entryCosmetics = cosmeticsService.parseCosmetics(entry);
+          const entryFrame = entryCosmetics.equipped?.frame;
+          const entryTitle = entryCosmetics.equipped?.title;
+
+          // Name strip background gradient
+          let nameStripBg = "bg-gradient-to-r from-slate-100/70 to-transparent dark:from-slate-800/30";
+          let nameStripBorder = "border-l-[3px] border-slate-300 dark:border-slate-800";
+          if (entry.rank === 1) {
+            nameStripBg = "bg-gradient-to-r from-yellow-500/10 to-transparent dark:from-yellow-500/15";
+            nameStripBorder = "border-l-[3px] border-yellow-500";
+          } else if (entry.rank === 2) {
+            nameStripBg = "bg-gradient-to-r from-slate-300/15 to-transparent dark:from-slate-700/15";
+            nameStripBorder = "border-l-[3px] border-slate-400";
+          } else if (entry.rank === 3) {
+            nameStripBg = "bg-gradient-to-r from-orange-500/10 to-transparent dark:from-orange-500/15";
+            nameStripBorder = "border-l-[3px] border-orange-500";
+          } else if (isMe) {
+            nameStripBg = "bg-gradient-to-r from-pink-500/10 to-transparent dark:from-pink-500/15";
+            nameStripBorder = "border-l-[3px] border-pink-500";
+          }
+
+          return (
+            <div
+              key={entry.studentId}
+              className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-200 ${
+                isMe
+                  ? "ring-2 ring-pink-500/30"
+                  : isExpanded
+                  ? "ring-2 ring-pink-500/20"
+                  : ""
+              }`}
+            >
+              {/* Clickable Header Row */}
+              <div
+                onClick={() => setExpandedStudentId(isExpanded ? null : entry.studentId)}
+                className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-5 sm:py-3.5 gap-3 sm:gap-4 hover:bg-slate-100/40 dark:hover:bg-slate-800/40 transition-colors cursor-pointer select-none ${
+                  isMe
+                    ? "bg-pink-500/5 dark:bg-pink-900/10"
+                    : isExpanded
+                    ? "bg-slate-50/50 dark:bg-slate-800/20"
+                    : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Rank Visualizer */}
+                  {entry.rank === 1 ? (
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-yellow-500/15 dark:bg-yellow-500/20 border border-yellow-500/35 text-yellow-600 dark:text-yellow-450 text-[10px] font-black shrink-0">
+                      1
+                    </span>
+                  ) : entry.rank === 2 ? (
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-300/20 dark:bg-slate-400/25 border border-slate-350 dark:border-slate-600/45 text-slate-600 dark:text-slate-300 text-[10px] font-black shrink-0">
+                      2
+                    </span>
+                  ) : entry.rank === 3 ? (
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-400 text-[10px] font-black shrink-0">
+                      3
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center shrink-0">
+                      #{entry.rank}
+                    </span>
+                  )}
+
+                  {/* Profile Avatar (Circular) */}
+                  <div className="relative shrink-0">
+                    <InteractiveAvatar
+                      src={entry.profileImage}
+                      fallbackText={entry.userName.charAt(0)}
+                      userId={entry.studentId}
+                      userName={entry.userName}
+                      showStatus={true}
+                      statusSize="xs"
+                      className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm animate-in zoom-in-95 duration-200"
+                    />
+                    {entryFrame && (
+                      <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
+                        COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
+                      }`} style={{ transform: "scale(1.09)" }} />
                     )}
+                  </div>
 
-                    {/* Profile Avatar (Circular) */}
-                    <div className="relative shrink-0">
-                      <InteractiveAvatar
-                        src={entry.profileImage}
-                        fallbackText={entry.userName.charAt(0)}
-                        userId={entry.studentId}
-                        userName={entry.userName}
-                        showStatus={true}
-                        statusSize="xs"
-                        className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm animate-in zoom-in-95 duration-200"
-                      />
-                      {entryFrame && (
-                        <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
-                          COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
-                        }`} style={{ transform: "scale(1.09)" }} />
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-bold text-slate-850 dark:text-white flex items-center gap-1.5 flex-wrap">
+                  {/* Name with side color strip accent and Level */}
+                  <div className="min-w-0 flex-1">
+                    <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
+                      <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
                         {entry.userName}
-                        {entryTitle && (
-                          <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-600 dark:text-yellow-455 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
-                            {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
-                          </span>
-                        )}
                         {isMe && (
-                          <span className="text-[8px] font-extrabold bg-pink-500 text-white px-1.5 py-0.5 rounded-full uppercase">
+                          <span className="text-[7px] font-extrabold bg-pink-500 text-white px-1 py-0.2 rounded-full uppercase scale-90">
                             You
                           </span>
                         )}
                       </p>
-                      <div className="flex items-center gap-2 text-[9px] text-slate-450 dark:text-slate-400 font-bold mt-0.5">
-                        <span>LVL {entry.level}</span>
-                        <span>•</span>
-                        <span>Accuracy: {entry.accuracy}%</span>
-                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-xs font-black text-pink-600 dark:text-pink-400">{entry.xp} XP</p>
-                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Streak: 🔥 {entry.currentStreak}</p>
+                    <div className="flex items-center gap-2 text-[9px] text-slate-450 dark:text-slate-400 font-bold mt-1 px-1">
+                      <span>LVL {entry.level}</span>
+                      {entryTitle && (
+                        <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
+                          {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
+                        </span>
+                      )}
                     </div>
-                    <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90 text-pink-500" : ""}`} />
                   </div>
                 </div>
 
-                {/* Expanded content */}
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      key="expanded"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: "easeOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 pt-2.5 bg-slate-55/70 dark:bg-slate-900/40 border-t border-slate-200/50 dark:border-slate-800/60 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs select-none">
-                        {/* Level XP Bar */}
-                        <div className="space-y-1.5 col-span-2 sm:col-span-1">
-                          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Level Progress</span>
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-650 dark:text-slate-300">
-                            <span>LVL {entry.level}</span>
-                            <span className="text-pink-600 dark:text-pink-400">{entry.xp % 100} / 100 XP</span>
-                          </div>
-                          <div className="w-full bg-slate-200 dark:bg-slate-950/80 rounded-full h-1.5 overflow-hidden border border-slate-250 dark:border-slate-800">
-                            <div 
-                              className="bg-pink-500 h-full rounded-full" 
-                              style={{ width: `${entry.xp % 100}%` }}
-                            />
-                          </div>
-                        </div>
+                {/* Right Side Columns */}
+                <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-5 shrink-0 pt-2.5 sm:pt-0 border-t border-slate-100 dark:border-slate-800/40 sm:border-0 flex-wrap sm:flex-nowrap">
+                  {/* XP Column */}
+                  <div className="flex items-center gap-1.5 min-w-[50px]">
+                    <div className="p-1 bg-pink-500/10 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg shrink-0">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                        {entry.xp}
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
+                        XP
+                      </p>
+                    </div>
+                  </div>
 
-                        {/* Accuracy details */}
-                        <div className="space-y-1.5">
-                          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Overall Accuracy</span>
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-650 dark:text-slate-300">
-                            <span>Accuracy</span>
-                            <span className="text-emerald-600 dark:text-emerald-400">{entry.accuracy}%</span>
-                          </div>
-                          <div className="w-full bg-slate-200 dark:bg-slate-950/80 rounded-full h-1.5 overflow-hidden border border-slate-250 dark:border-slate-800">
-                            <div 
-                              className="bg-emerald-500 h-full rounded-full" 
-                              style={{ width: `${entry.accuracy}%` }}
-                            />
-                          </div>
-                        </div>
+                  {/* Coins Column */}
+                  <div className="flex items-center gap-1.5 min-w-[50px]">
+                    <div className="p-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-450 rounded-lg shrink-0">
+                      <Coins className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                        {entry.coins || 0}
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
+                        Coins
+                      </p>
+                    </div>
+                  </div>
 
-                        {/* Streak details */}
-                        <div className="flex flex-col justify-between h-fit py-0.5">
-                          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Activity Streak</span>
-                          <span className="text-[12px] font-black text-slate-700 dark:text-slate-250 flex items-center gap-1.5 mt-0.5">
-                            🔥 {entry.currentStreak} Days Streak
-                          </span>
-                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400 font-bold mt-1">Max Streak: {entry.maxStreak || entry.currentStreak}</span>
-                        </div>
+                  {/* MCQs Column */}
+                  <div className="flex items-center gap-1.5 min-w-[70px]">
+                    <div className="p-1 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-450 rounded-lg shrink-0">
+                      <Target className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                        {entry.wins} <span className="text-[9px] font-normal text-slate-400">/{entry.questionsAttempted || 0}</span>
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
+                        MCQs
+                      </p>
+                    </div>
+                  </div>
 
-                        {/* Equipped cosmetics and coins details */}
-                        <div className="flex flex-col justify-between h-fit py-0.5">
-                          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Equipped Title</span>
-                          <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-200 truncate mt-0.5">
-                            {entryTitle ? (
-                              <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-450 px-2 py-0.5 rounded border border-yellow-500/20 uppercase tracking-wider text-[9px] font-black">
-                                {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
-                              </span>
-                            ) : (
-                              "None equipped"
-                            )}
-                          </span>
-                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400 font-bold mt-1">Coins Balance: 🪙 {entry.coins || 0}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  {/* Streak Column */}
+                  <div className="flex items-center gap-1.5 min-w-[55px]">
+                    <div className="p-1 bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-lg shrink-0">
+                      <Flame className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] sm:text-xs font-black text-orange-600 dark:text-orange-450 leading-none">
+                        {entry.currentStreak || 0}d
+                      </p>
+                      <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
+                        Streak
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90 text-pink-500" : ""}`} />
+                </div>
               </div>
-            );
-          })}
-          {gamifiedLeaderboard.length === 0 && (
-            <p className="text-xs text-slate-400 text-center py-10">No scores recorded yet in this batch.</p>
-          )}
-        </div>
+
+              {/* Expanded content */}
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    key="expanded"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    {(() => {
+                      const dailyAccuracy = entry.dailyQuestionsAttempted > 0
+                        ? Math.round(((entry.dailyWins || 0) / entry.dailyQuestionsAttempted) * 100)
+                        : 0;
+                      const levelProgress = entry.xp % 100;
+                      return (
+                        <div className="px-4 pb-4 pt-3 bg-slate-50/20 dark:bg-slate-900/10 border-t border-slate-205/50 dark:border-slate-800/50 grid grid-cols-2 sm:grid-cols-4 gap-3.5 select-none">
+
+                          {/* Card 1: Today's Solved */}
+                          <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                            <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Today's Solved</p>
+                            <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
+                              {entry.dailyWins || 0} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">/ {entry.dailyQuestionsAttempted || 0}</span>
+                            </p>
+                            <p className="text-[10.5px] font-extrabold text-pink-500 mt-2">
+                              {entry.dailyQuestionsAttempted > 0 ? `${dailyAccuracy}% Acc` : "—"}
+                            </p>
+                          </div>
+
+                          {/* Card 2: All-Time Solved */}
+                          <div className="bg-white/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                            <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">All-Time Solved</p>
+                            <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
+                              {entry.wins || 0} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">/ {entry.questionsAttempted || 0}</span>
+                            </p>
+                            <p className="text-[10.5px] font-extrabold text-purple-500 mt-2">
+                              {entry.accuracy || 0}% Acc
+                            </p>
+                          </div>
+
+                          {/* Card 3: Current Level */}
+                          <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                            <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Current Level</p>
+                            <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
+                              LVL {entry.level}
+                            </p>
+                            <div className="w-full bg-slate-200 dark:bg-slate-850 rounded-full h-1 mt-2.5 overflow-hidden">
+                              <div
+                                  className="h-full rounded-full bg-gradient-to-r from-yellow-450 to-amber-500"
+                                  style={{ width: `${levelProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-[8px] text-slate-450 dark:text-slate-500 font-bold mt-1 text-right">{levelProgress}/100 XP</p>
+                          </div>
+
+                          {/* Card 4: Streak */}
+                          <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center flex flex-col justify-between">
+                            <div>
+                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Streak</p>
+                              <p className="text-base font-black text-orange-500 mt-1.5 flex items-center justify-center gap-1 leading-none">
+                                🔥 {entry.currentStreak || 0}d
+                              </p>
+                            </div>
+                            <p className="text-[9px] text-slate-400 dark:text-slate-500 font-extrabold mt-2">Best: {entry.maxStreak || entry.currentStreak}d</p>
+                          </div>
+
+                        </div>
+                      );
+                    })()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+        {gamifiedLeaderboard.length === 0 && (
+          <p className="text-xs text-slate-400 text-center py-10">No scores recorded yet in this batch.</p>
+        )}
       </div>
     </motion.div>
   );
