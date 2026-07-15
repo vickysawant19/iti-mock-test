@@ -27,13 +27,13 @@ function ChallengeRow({ challenge, studentRows }) {
       if (existing) {
         const timeStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
         await notificationService.updateNotification(existing.$id, {
-          message: `RE-NOTIFICATION: New Challenge: ${challenge.title} — Reward: ${challenge.xp || 0} XP, ${challenge.coins || 0} Coins (Sent: ${timeStr})`,
+          message: `RE-NOTIFICATION: New Challenge: ${challenge.title} — Reward: ${challenge.rewardXP || 0} XP, ${challenge.rewardCoins || 0} Coins (Sent: ${timeStr})`,
           readBy: [],
         });
         toast.success("Notification resent to all batch members!");
       } else {
         await notificationService.createNotification({
-          message: `New Challenge: ${challenge.title} — Reward: ${challenge.xp || 0} XP, ${challenge.coins || 0} Coins`,
+          message: `New Challenge: ${challenge.title} — Reward: ${challenge.rewardXP || 0} XP, ${challenge.rewardCoins || 0} Coins`,
           type: "challenge_assigned",
           batchId: challenge.batchId,
           teacherId: user?.$id || "",
@@ -53,7 +53,7 @@ function ChallengeRow({ challenge, studentRows }) {
   const totalStudents = studentRows?.length || 0;
 
   const handleShare = async () => {
-    const text = `🔔 *New Batch Challenge Active!* 🔔\n\n🏆 *${challenge.title}*\n📝 ${challenge.description}\n\n🎁 *Rewards:*\n✨ *${challenge.xp || 0} XP*\n🪙 *${challenge.coins || 0} Coins*\n\nLog in to the ITI Mitra portal and start solving now! 🚀`;
+    const text = `🔔 *New Batch Challenge Active!* 🔔\n\n🏆 *${challenge.title}*\n📝 ${challenge.description}\n\n🎁 *Rewards:*\n✨ *${challenge.rewardXP || 0} XP*\n🪙 *${challenge.rewardCoins || 0} Coins*\n\nLog in to the ITI Mitra portal and start solving now! 🚀`;
 
     if (navigator.share) {
       try {
