@@ -191,21 +191,29 @@ export class GameService extends DatabaseService {
           baseQueries.push(Query.equal("year", "SECOND"));
           settingsSuffix = "second_year";
         } else if (settings.questionFilter === "module" && modulesList.length > 0) {
-          baseQueries.push(
-            Query.or(
-              modulesList.map(m => Query.equal("moduleId", m))
-            )
-          );
+          if (modulesList.length === 1) {
+            baseQueries.push(Query.equal("moduleId", modulesList[0]));
+          } else {
+            baseQueries.push(
+              Query.or(
+                modulesList.map(m => Query.equal("moduleId", m))
+              )
+            );
+          }
           settingsSuffix = `module_${modulesList.join("_")}`;
         }
 
         // Apply optional tags filter if configured
         if (tagsList.length > 0) {
-          baseQueries.push(
-            Query.or(
-              tagsList.map(t => Query.contains("tags", t))
-            )
-          );
+          if (tagsList.length === 1) {
+            baseQueries.push(Query.contains("tags", tagsList[0]));
+          } else {
+            baseQueries.push(
+              Query.or(
+                tagsList.map(t => Query.contains("tags", t))
+              )
+            );
+          }
           settingsSuffix += `_tags_${tagsList.join("_")}`;
         }
       }

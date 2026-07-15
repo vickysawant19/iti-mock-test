@@ -184,6 +184,57 @@ export class DailyMissionsService extends DatabaseService {
       return null;
     }
   }
+
+  /**
+   * Consolidates progress updates for all today's missions for a student in a single read.
+   */
+  async updateMissionsProgress(
+    studentId: string,
+    updates: { [type: string]: number | "reset" }
+  ): Promise<void> {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      // Fetch all of today's missions for this student (max 10) in a single read
+      const res = await this.listRows<DailyMission>([
+        Query.equal("studentId", studentId),
+        Query.equal("date", today),
+        Query.limit(10),
+      ]);
+
+      const writePromises: Promise<any>[] = [];
+
+      for (const mission of res.rows) {
+        if (!mission.$id || !mission.type || mission.claimed) continue;
+
+        const updateVal = updates[mission.type];
+        if (updateVal === undefined) continue;
+
+        if (updateVal === "reset") {
+          // Reset progress if it's not already 0 and mission is not completed
+          if (mission.progress !== 0 && (mission.progress || 0) < mission.target) {
+            writePromises.push(
+              this.updateRow<DailyMission>(mission.$id, { progress: 0 })
+            );
+          }
+        } else {
+          // Increment progress
+          const amount = updateVal;
+          const newProgress = Math.min((mission.progress || 0) + amount, mission.target);
+          if (newProgress !== mission.progress) {
+            writePromises.push(
+              this.updateRow<DailyMission>(mission.$id, { progress: newProgress })
+            );
+          }
+        }
+      }
+
+      if (writePromises.length > 0) {
+        await Promise.all(writePromises);
+      }
+    } catch (err) {
+      console.warn("[DailyMissionsService] updateMissionsProgress failed:", err);
+    }
+  }
 }
 
 export const dailyMissionsService = new DailyMissionsService();

@@ -10,7 +10,7 @@ import conf from "@/config/config";
  * useStudentGame Hook
  * Orchestrates gamified interactions for students.
  */
-export function useStudentGame(studentId, batchId, tradeId) {
+export function useStudentGame(studentId, batchId, tradeId, activeTab) {
   const [stats, setStats] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -100,20 +100,21 @@ export function useStudentGame(studentId, batchId, tradeId) {
       const res = await gameService.submitAnswer(studentId, batchId, tradeId, isCorrect, isFiftyFiftyUsed);
       setStats(res.stats);
 
-      // Update batch challenges progress dynamically
+      // Update batch challenges progress dynamically in one consolidated batch call
       try {
-        await challengeService.incrementChallengeProgress(batchId, studentId, "questions", 1);
+        const challengeUpdates = {
+          questions: 1,
+        };
         if (isCorrect) {
-          await challengeService.incrementChallengeProgress(batchId, studentId, "correct_answers", 1);
-          // If they got it correct, increment the streak progress
-          await challengeService.incrementChallengeProgress(batchId, studentId, "correct_streak", 1);
+          challengeUpdates.correct_answers = 1;
+          challengeUpdates.correct_streak = 1;
+          if (res && res.xpGained > 0) {
+            challengeUpdates.xp = res.xpGained;
+          }
         } else {
-          // If wrong, reset streak progress
-          await challengeService.resetChallengeProgress(batchId, studentId, "correct_streak");
+          challengeUpdates.correct_streak = "reset";
         }
-        if (res && res.xpGained > 0) {
-          await challengeService.incrementChallengeProgress(batchId, studentId, "xp", res.xpGained);
-        }
+        await challengeService.updateChallengesProgress(batchId, studentId, challengeUpdates);
       } catch (challengeErr) {
         console.warn("[useStudentGame] Failed to update challenge progress:", challengeErr);
       }
@@ -121,8 +122,9 @@ export function useStudentGame(studentId, batchId, tradeId) {
       // Refresh challenges list
       fetchChallenges();
 
-      // Check if any achievements unlocked
-      const newUnlocks = await rewardService.checkAndUnlockAchievements(res.stats, batchId);
+      // Check if any achievements unlocked using loaded achievements list in memory
+      const unlockedIdsSet = new Set(achievements.map((a) => a.achievementId));
+      const newUnlocks = await rewardService.checkAndUnlockAchievements(res.stats, batchId, unlockedIdsSet);
       if (newUnlocks.length > 0) {
         setUnlockedBadges((prev) => [...prev, ...newUnlocks]);
         // Refresh achievements list
@@ -130,15 +132,12 @@ export function useStudentGame(studentId, batchId, tradeId) {
         setAchievements(achs);
       }
 
-      // Refresh leaderboard list in background
-      fetchLeaderboard();
-
       return res;
     } catch (err) {
       console.error("[useStudentGame] Error submitting answer:", err);
       return null;
     }
-  }, [studentId, batchId, tradeId, fetchChallenges, fetchLeaderboard]);
+  }, [studentId, batchId, tradeId, achievements, fetchChallenges]);
 
 
   // Claim challenge reward
@@ -181,15 +180,21 @@ export function useStudentGame(studentId, batchId, tradeId) {
     }
   }, [studentId, batchId]);
 
-  // Load everything on mount/dependency change
+  // Load stats, challenges, achievements on mount
   useEffect(() => {
     if (studentId && batchId) {
       fetchStats();
-      fetchLeaderboard();
       fetchChallenges();
       fetchAchievements();
     }
-  }, [studentId, batchId, fetchStats, fetchLeaderboard, fetchChallenges, fetchAchievements]);
+  }, [studentId, batchId, fetchStats, fetchChallenges, fetchAchievements]);
+
+  // Fetch leaderboard ONLY when active tab is "leaderboard"
+  useEffect(() => {
+    if (activeTab === "leaderboard" && batchId) {
+      fetchLeaderboard();
+    }
+  }, [activeTab, batchId, fetchLeaderboard]);
 
   // Realtime subscription for game stats collection to update leaderboard live
   useEffect(() => {
@@ -212,8 +217,10 @@ export function useStudentGame(studentId, batchId, tradeId) {
           const payload = response.payload;
           
           if (payload?.batchId === batchId) {
-            // Trigger leaderboard reload
-            fetchLeaderboard();
+            // Trigger leaderboard reload ONLY if user is viewing it
+            if (activeTab === "leaderboard") {
+              fetchLeaderboard();
+            }
             
             // If the changed doc belongs to the current student, update local stats
             if (payload?.studentId === studentId) {
@@ -234,7 +241,7 @@ export function useStudentGame(studentId, batchId, tradeId) {
         sub.unsubscribe();
       }
     };
-  }, [batchId, studentId, fetchLeaderboard]);
+  }, [batchId, studentId, activeTab, fetchLeaderboard]);
 
   // Realtime subscription for batch game settings
   useEffect(() => {
@@ -284,6 +291,55 @@ export function useStudentGame(studentId, batchId, tradeId) {
       }
     };
   }, [batchId]);
+
+  // Realtime subscription for batch challenges
+  useEffect(() => {
+    if (!batchId) return;
+
+    let challengesSub = null;
+    let mounted = true;
+
+    const setupChallengesRealtime = async () => {
+      try {
+        const { appwriteService } = await import("@/services/appwriteClient");
+        const realtime = appwriteService.getRealtime();
+        const { Channel } = await import("appwrite");
+        const channel = Channel.tablesdb(conf.databaseId)
+          .table(conf.challengesCollectionId)
+          .row();
+
+        challengesSub = await realtime.subscribe(channel, (response) => {
+          if (!mounted) return;
+          const payload = response.payload;
+          
+          if (payload?.batchId === batchId) {
+            console.log("[useStudentGame] Realtime challenges updated:", payload);
+            
+            // Invalidate the cache
+            try {
+              challengeService.invalidateCache(batchId);
+            } catch (err) {
+              console.warn("Failed to invalidate challenges cache:", err);
+            }
+            
+            // Trigger refetch
+            fetchChallenges();
+          }
+        });
+      } catch (err) {
+        console.warn("[useStudentGame] Challenges realtime subscription failed:", err);
+      }
+    };
+
+    setupChallengesRealtime();
+
+    return () => {
+      mounted = false;
+      if (challengesSub && typeof challengesSub.unsubscribe === "function") {
+        challengesSub.unsubscribe();
+      }
+    };
+  }, [batchId, fetchChallenges]);
 
   return {
     stats,

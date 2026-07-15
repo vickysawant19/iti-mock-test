@@ -47,6 +47,8 @@ export const CHALLENGE_TEMPLATES = [
 ];
 
 export class ChallengeService extends DatabaseService {
+  private challengesCache = new Map<string, { data: BatchChallenge[]; timestamp: number }>();
+
   constructor() {
     super(conf.challengesCollectionId);
   }
@@ -56,6 +58,7 @@ export class ChallengeService extends DatabaseService {
    */
   async createChallenge(data: Omit<BatchChallenge, "$id" | "$createdAt" | "$updatedAt">): Promise<BatchChallenge> {
     try {
+      this.challengesCache.delete(data.batchId);
       const challengeData = {
         ...data,
         completedStudents: data.completedStudents || [],
@@ -73,13 +76,20 @@ export class ChallengeService extends DatabaseService {
    * Lists all challenges assigned to a batch.
    */
   async listChallenges(batchId: string): Promise<BatchChallenge[]> {
+    const cached = this.challengesCache.get(batchId);
+    const cacheDuration = 10 * 1000; // 10 seconds cache duration
+    if (cached && Date.now() - cached.timestamp < cacheDuration) {
+      return cached.data;
+    }
     try {
       const response = await this.listRows<BatchChallenge>([
         Query.equal("batchId", batchId),
         Query.orderDesc("$createdAt"),
         Query.limit(100),
       ]);
-      return response.rows || [];
+      const data = response.rows || [];
+      this.challengesCache.set(batchId, { data, timestamp: Date.now() });
+      return data;
     } catch (error) {
       console.error("[ChallengeService] listChallenges failed:", error);
       return [];
@@ -255,6 +265,7 @@ export class ChallengeService extends DatabaseService {
 
       // 3. Append student to completed list
       const updatedList = [...completedList, studentId];
+      this.challengesCache.delete(challenge.batchId);
       const updatedChallenge = await this.updateRow<BatchChallenge>(challengeId, {
         completedStudents: updatedList,
       });
@@ -328,6 +339,99 @@ export class ChallengeService extends DatabaseService {
       console.error("[ChallengeService] getChallengeProgressForBatch failed:", error);
       return [];
     }
+  }
+
+  /**
+   * Consolidates and updates progress for matching active challenges for a batch in a single pass.
+   */
+  async updateChallengesProgress(
+    batchId: string,
+    studentId: string,
+    updates: { [type: string]: number | "reset" }
+  ): Promise<void> {
+    try {
+      const challenges = await this.listChallenges(batchId);
+      if (challenges.length === 0) return;
+
+      const progressService = new DatabaseService(conf.challengesProgressCollectionId);
+
+      // Load all progress records for this student and batch once
+      const progressRes = await progressService.listRows<BatchChallengeProgress>([
+        Query.equal("batchId", batchId),
+        Query.equal("studentId", studentId),
+        Query.limit(100)
+      ]);
+      const progressMap = new Map<string, BatchChallengeProgress>();
+      for (const p of progressRes.rows) {
+        progressMap.set(p.challengeId, p);
+      }
+
+      const writePromises: Promise<any>[] = [];
+
+      for (const challenge of challenges) {
+        if (!challenge.$id || !challenge.type) continue;
+        
+        // Skip if student already completed
+        if ((challenge.completedStudents || []).includes(studentId)) continue;
+
+        const updateVal = updates[challenge.type];
+        if (updateVal === undefined) continue;
+
+        let progressDoc = progressMap.get(challenge.$id) || null;
+
+        if (updateVal === "reset") {
+          if (progressDoc && progressDoc.$id && !progressDoc.claimed && progressDoc.progress !== 0) {
+            writePromises.push(
+              progressService.updateRow<BatchChallengeProgress>(progressDoc.$id, {
+                progress: 0
+              })
+            );
+          }
+        } else {
+          const amount = updateVal;
+          if (!progressDoc) {
+            writePromises.push(
+              (async () => {
+                try {
+                  await progressService.createRow<BatchChallengeProgress>({
+                    challengeId: challenge.$id!,
+                    studentId,
+                    batchId,
+                    progress: amount,
+                    claimed: false
+                  }, undefined, ID.unique());
+                } catch (err) {
+                  console.warn("[ChallengeService] error creating progress row:", err);
+                }
+              })()
+            );
+          } else if (!progressDoc.claimed) {
+            const maxTarget = challenge.target || 0;
+            const newProgress = Math.min((progressDoc.progress || 0) + amount, maxTarget);
+            if (newProgress !== progressDoc.progress && progressDoc.$id) {
+              writePromises.push(
+                progressService.updateRow<BatchChallengeProgress>(progressDoc.$id, {
+                  progress: newProgress
+                })
+              );
+            }
+          }
+        }
+      }
+
+      if (writePromises.length > 0) {
+        await Promise.all(writePromises);
+      }
+    } catch (err) {
+      console.error("[ChallengeService] updateChallengesProgress failed:", err);
+    }
+  }
+
+  /**
+   * Invalidates the challenges cache for a given batch.
+   */
+  invalidateCache(batchId: string): void {
+    this.challengesCache.delete(batchId);
   }
 }
 

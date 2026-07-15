@@ -52,30 +52,16 @@ export function useDailyMissions(studentId, batchId) {
   }, [claimingId]);
 
   /**
-   * Increment progress on missions of a given type (call after game events).
+   * Update progress on multiple daily missions in a single pass.
    */
-  const incrementProgress = useCallback(async (type, amount = 1) => {
+  const updateProgress = useCallback(async (updates) => {
     if (!studentId) return;
     try {
-      await dailyMissionsService.incrementProgress(studentId, type, amount);
-      // Refresh local state after increment
+      await dailyMissionsService.updateMissionsProgress(studentId, updates);
+      // Refresh local state after updating
       await fetchMissions();
     } catch (err) {
-      console.error("[useDailyMissions] incrementProgress failed:", err);
-    }
-  }, [studentId, fetchMissions]);
-
-  /**
-   * Reset progress on missions of a given type (call after streak is broken).
-   */
-  const resetProgress = useCallback(async (type) => {
-    if (!studentId) return;
-    try {
-      await dailyMissionsService.resetProgress(studentId, type);
-      // Refresh local state after reset
-      await fetchMissions();
-    } catch (err) {
-      console.error("[useDailyMissions] resetProgress failed:", err);
+      console.error("[useDailyMissions] updateProgress failed:", err);
     }
   }, [studentId, fetchMissions]);
 
@@ -95,8 +81,7 @@ export function useDailyMissions(studentId, batchId) {
     allClaimed,
     fetchMissions,
     claimMission,
-    incrementProgress,
-    resetProgress,
+    updateProgress,
   };
 }
 

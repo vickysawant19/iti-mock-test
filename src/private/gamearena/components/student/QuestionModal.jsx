@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Award, XCircle, CheckCircle, ArrowRight, Sparkles, X, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,38 +45,40 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
 
   const optionLabels = ["A", "B", "C", "D"];
 
+  // Fetch next question
+  const fetchNextQuestion = useCallback(async () => {
+    if (!tradeId) return;
+    setLoading(true);
+    setQuestion(null);
+    setSelectedOption(null);
+    setSubmitted(false);
+    setGradingResult(null);
+    setShake(false);
+    setIsFiftyFiftyUsed(false);
+    setEliminatedOptions([]);
+    
+    // Reset timer and confidence
+    setTimeLeft(30);
+    setIsTimeout(false);
+    setConfidence(null);
+
+    try {
+      const settings = batchId ? await gameService.getBatchGameSettings(batchId) : undefined;
+      const q = await gameService.getRandomQuestion(tradeId, settings);
+      setQuestion(q);
+    } catch (err) {
+      console.error("[QuestionModal] Failed to load question:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tradeId, batchId]);
+
   // Fetch question on mount
   useEffect(() => {
     if (isOpen && tradeId) {
-      setLoading(true);
-      setQuestion(null);
-      setSelectedOption(null);
-      setSubmitted(false);
-      setGradingResult(null);
-      setShake(false);
-      setIsFiftyFiftyUsed(false);
-      setEliminatedOptions([]);
-      
-      // Reset timer and confidence
-      setTimeLeft(30);
-      setIsTimeout(false);
-      setConfidence(null);
-
-      const loadQuestion = async () => {
-        try {
-          const settings = batchId ? await gameService.getBatchGameSettings(batchId) : undefined;
-          const q = await gameService.getRandomQuestion(tradeId, settings);
-          setQuestion(q);
-        } catch (err) {
-          console.error("[QuestionModal] Failed to load question:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadQuestion();
+      fetchNextQuestion();
     }
-  }, [isOpen, tradeId, batchId]);
+  }, [isOpen, tradeId, batchId, fetchNextQuestion]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -544,12 +546,20 @@ export default function QuestionModal({ isOpen, onClose, tradeId, batchId, onAns
                   Submit Answer
                 </Button>
               ) : (
-                <Button
-                  onClick={onClose}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-800 py-6 text-sm font-black text-white hover:bg-slate-700"
-                >
-                  Continue Journey <ArrowRight className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-3 w-full">
+                  <Button
+                    onClick={onClose}
+                    className="flex-1 cursor-pointer rounded-2xl bg-slate-800 py-6 text-sm font-black text-white hover:bg-slate-700"
+                  >
+                    Continue Journey
+                  </Button>
+                  <Button
+                    onClick={fetchNextQuestion}
+                    className="flex-1 cursor-pointer rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 py-6 text-sm font-black text-white shadow-lg shadow-pink-500/20 hover:from-pink-600 hover:to-purple-700"
+                  >
+                    Next Question <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
           )}

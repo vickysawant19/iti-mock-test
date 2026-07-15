@@ -9,7 +9,6 @@ import {
   Trophy,
 } from "lucide-react";
 import { BADGES } from "@/services/reward.service";
-import ActiveGameSettingsCard from "./ActiveGameSettingsCard";
 
 const getBadgeIcon = (iconName) => {
   switch (iconName) {
@@ -76,12 +75,6 @@ export default function BadgesTab({
           })}
         </div>
       </div>
-
-      {/* Active Game Settings Rules Card Component */}
-      <ActiveGameSettingsCard
-        batchContext={batchContext}
-        activeSettings={activeSettings}
-      />
     </div>
   );
 }

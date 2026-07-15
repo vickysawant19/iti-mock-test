@@ -87,11 +87,17 @@ export class RewardService extends DatabaseService {
    */
   async checkAndUnlockAchievements(
     stats: StudentGameStats,
-    batchId: string
+    batchId: string,
+    unlockedIdsSet?: Set<string>
   ): Promise<BadgeDefinition[]> {
     try {
-      const unlocked = await this.getStudentAchievements(stats.studentId, batchId);
-      const unlockedIds = new Set(unlocked.map((a) => a.achievementId));
+      let unlockedIds: Set<string>;
+      if (unlockedIdsSet) {
+        unlockedIds = unlockedIdsSet;
+      } else {
+        const unlocked = await this.getStudentAchievements(stats.studentId, batchId);
+        unlockedIds = new Set(unlocked.map((a) => a.achievementId));
+      }
 
       const newUnlocks: BadgeDefinition[] = [];
 

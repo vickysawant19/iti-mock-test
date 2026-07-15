@@ -32,6 +32,7 @@ import {
   Wrench,
   LayoutGrid,
   BarChart2,
+  Settings,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ import OverviewTab from "./components/student/OverviewTab";
 import AnalysisTab from "./components/student/AnalysisTab";
 import BadgesTab from "./components/student/BadgesTab";
 import StoreTab from "./components/student/StoreTab";
+import ActiveGameSettingsCard from "./components/student/ActiveGameSettingsCard";
 import LeaderboardTab from "./components/student/LeaderboardTab";
 import BottomNavDock from "./components/student/BottomNavDock";
 import CelebrationOverlays from "./components/student/CelebrationOverlays";
@@ -125,7 +127,7 @@ const StudentGameArena = ({
     purchaseCosmetic,
     equipCosmetic,
     convertXpToCoins,
-  } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId);
+  } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId, activeTab);
 
   // Daily Missions
   const {
@@ -138,8 +140,7 @@ const StudentGameArena = ({
     allClaimed,
     fetchMissions,
     claimMission,
-    incrementProgress,
-    resetProgress,
+    updateProgress,
   } = useDailyMissions(user?.$id, activeBatchId);
 
   // Parse equipped cosmetics
@@ -313,7 +314,7 @@ const StudentGameArena = ({
   // Fire login mission once per session when user is ready
   useEffect(() => {
     if (user?.$id && activeBatchId) {
-      incrementProgress("login", 1);
+      updateProgress({ login: 1 });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.$id, activeBatchId]);
@@ -378,22 +379,22 @@ const StudentGameArena = ({
       setShowLevelUp(true);
     }
 
-    // Update daily mission progress (fire-and-forget, non-blocking)
+    // Update daily mission progress (fire-and-forget, non-blocking) in one consolidated call
     try {
-      // Every answered question counts
-      incrementProgress("questions", 1);
-      // XP earned counts toward xp missions
+      const missionUpdates = {
+        questions: 1,
+      };
       const xpGained = result?.xpGained || 0;
-      if (xpGained > 0) incrementProgress("xp", xpGained);
-      // Correct answers
-      if (isCorrect) {
-        incrementProgress("correct_answers", 1);
-        // Streak missions
-        incrementProgress("correct_streak", 1);
-      } else {
-        // Reset streak missions if answered incorrectly
-        resetProgress("correct_streak");
+      if (xpGained > 0) {
+        missionUpdates.xp = xpGained;
       }
+      if (isCorrect) {
+        missionUpdates.correct_answers = 1;
+        missionUpdates.correct_streak = 1;
+      } else {
+        missionUpdates.correct_streak = "reset";
+      }
+      updateProgress(missionUpdates);
     } catch (missionErr) {
       console.warn("[Mission] progress update failed:", missionErr);
     }
@@ -525,7 +526,8 @@ const StudentGameArena = ({
                         { id: "stats", label: "Overview", icon: LayoutGrid },
                         { id: "analysis", label: "Analysis", icon: BarChart2 },
                         { id: "badges", label: "Badges", icon: Trophy },
-                        { id: "store", label: "Store", icon: Coins }
+                        { id: "store", label: "Store", icon: Coins },
+                        { id: "settings", label: "Rules", icon: Settings }
                       ].map((tab) => {
                         const isActive = profileSubTab === tab.id;
                         const Icon = tab.icon;
@@ -571,6 +573,11 @@ const StudentGameArena = ({
                     ) : profileSubTab === "badges" ? (
                       <BadgesTab
                         achievements={achievements}
+                        batchContext={batchContext}
+                        activeSettings={activeSettings}
+                      />
+                    ) : profileSubTab === "settings" ? (
+                      <ActiveGameSettingsCard
                         batchContext={batchContext}
                         activeSettings={activeSettings}
                       />
