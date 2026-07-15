@@ -165,15 +165,48 @@ export class GameService extends DatabaseService {
       // Apply settings filter if available
       let settingsSuffix = "all";
       if (settings) {
+        // Extract moduleId(s) and tags list (format: "m15,m16|tag1,tag2")
+        let modulesList: string[] = [];
+        let tagsList: string[] = [];
+
+        if (settings.selectedModuleId) {
+          if (settings.selectedModuleId.includes("|")) {
+            const parts = settings.selectedModuleId.split("|");
+            if (parts[0]) {
+              modulesList = parts[0].split(",").map(m => m.trim()).filter(Boolean);
+            }
+            if (parts[1]) {
+              tagsList = parts[1].split(",").map(t => t.trim()).filter(Boolean);
+            }
+          } else {
+            // Backward compatibility
+            modulesList = [settings.selectedModuleId];
+          }
+        }
+
         if (settings.questionFilter === "first_year") {
           baseQueries.push(Query.equal("year", "FIRST"));
           settingsSuffix = "first_year";
         } else if (settings.questionFilter === "second_year") {
           baseQueries.push(Query.equal("year", "SECOND"));
           settingsSuffix = "second_year";
-        } else if (settings.questionFilter === "module" && settings.selectedModuleId) {
-          baseQueries.push(Query.equal("moduleId", settings.selectedModuleId));
-          settingsSuffix = `module_${settings.selectedModuleId}`;
+        } else if (settings.questionFilter === "module" && modulesList.length > 0) {
+          baseQueries.push(
+            Query.or(
+              modulesList.map(m => Query.equal("moduleId", m))
+            )
+          );
+          settingsSuffix = `module_${modulesList.join("_")}`;
+        }
+
+        // Apply optional tags filter if configured
+        if (tagsList.length > 0) {
+          baseQueries.push(
+            Query.or(
+              tagsList.map(t => Query.contains("tags", t))
+            )
+          );
+          settingsSuffix += `_tags_${tagsList.join("_")}`;
         }
       }
 

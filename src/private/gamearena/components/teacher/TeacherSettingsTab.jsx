@@ -1,6 +1,7 @@
 import React from "react";
 import { Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import VerifiedTagInput from "@/components/components/VerifiedTagInput";
 
 export default function TeacherSettingsTab({
   isLoadingSettings,
@@ -18,6 +19,40 @@ export default function TeacherSettingsTab({
   isSavingSettings,
   handleSaveSettings,
 }) {
+  const [localModules, setLocalModules] = React.useState([]);
+  const [localTags, setLocalTags] = React.useState([]);
+
+  // Sync state from selectedModuleId safely
+  React.useEffect(() => {
+    let modsArr = [];
+    let tagsArr = [];
+    if (selectedModuleId) {
+      if (selectedModuleId.includes("|")) {
+        const parts = selectedModuleId.split("|");
+        if (parts[0]) {
+          modsArr = parts[0].split(",").map((m) => m.trim()).filter(Boolean);
+        }
+        if (parts[1]) {
+          tagsArr = parts[1].split(",").map((t) => t.trim()).filter(Boolean);
+        }
+      } else {
+        modsArr = [selectedModuleId];
+      }
+    }
+
+    if (JSON.stringify(modsArr) !== JSON.stringify(localModules)) {
+      setLocalModules(modsArr);
+    }
+    if (JSON.stringify(tagsArr) !== JSON.stringify(localTags)) {
+      setLocalTags(tagsArr);
+    }
+  }, [selectedModuleId, localModules, localTags]);
+
+  const syncConfig = (modsArrVal, tagsArrVal) => {
+    const serialized = modsArrVal.join(",") + "|" + tagsArrVal.join(",");
+    setSelectedModuleId(serialized);
+  };
+
   return (
     <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
       <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
@@ -39,43 +74,78 @@ export default function TeacherSettingsTab({
           {/* Part 1: Question Pool Scope Filter */}
           <div className="space-y-3">
             <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Question Source Pool</label>
-            <p className="text-[10px] text-slate-450 dark:text-slate-400 font-medium">Specify which questions are served to students in Game Mode</p>
+            <p className="text-[10px] text-slate-455 dark:text-slate-400 font-medium">Specify which questions are served to students in Game Mode</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               {/* Selector option */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-450 uppercase block">Question Filter Mode</label>
+                <label className="text-[10px] font-bold text-slate-455 uppercase block">Question Filter Mode</label>
                 <select
                   value={questionFilter}
-                  onChange={(e) => setQuestionFilter(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium"
+                  onChange={(e) => {
+                    setQuestionFilter(e.target.value);
+                    // Reset module ID if not in module mode, preserving tags
+                    syncConfig([], localTags);
+                  }}
+                  className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium cursor-pointer"
                 >
                   <option value="all">All Subject Questions (Default)</option>
                   <option value="first_year">First Year Questions Only</option>
                   <option value="second_year">Second Year Questions Only</option>
-                  <option value="module">Specific Module Only</option>
+                  <option value="module">Specific Modules Only</option>
                 </select>
               </div>
 
-              {/* Module Selector dropdown, only visible if filter mode is "module" */}
+              {/* Module Selector checkbox grid list, only visible if filter mode is "module" */}
               {questionFilter === "module" && (
-                <div className="space-y-2 animate-float-in">
-                  <label className="text-[10px] font-bold text-slate-450 uppercase block">Select Trade Module</label>
-                  <select
-                    value={selectedModuleId}
-                    onChange={(e) => setSelectedModuleId(e.target.value)}
-                    required
-                    className="w-full px-3 py-2.5 text-xs rounded-xl bg-white/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium"
-                  >
-                    <option value="">-- Choose Module --</option>
-                    {modulesList.map((m) => (
-                      <option key={m.$id} value={m.moduleId}>
-                        {m.moduleId} — {m.moduleName} (Year {m.year})
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-1.5 md:col-span-2 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white/40 dark:bg-slate-800/40 animate-float-in">
+                  <label className="text-[10px] font-bold text-slate-455 uppercase block mb-1">
+                    Select Target Modules ({localModules.length} selected)
+                  </label>
+                  {modulesList.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1.5 border border-slate-200/50 dark:border-slate-700/50 rounded-xl bg-white/50 dark:bg-slate-850/50 custom-scrollbar">
+                      {modulesList.map((m) => {
+                        const isChecked = localModules.includes(m.moduleId);
+                        return (
+                          <label key={m.$id} className="flex items-center space-x-2 p-2 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              className="w-3.5 h-3.5 text-pink-500 rounded border-slate-350 dark:border-slate-750 focus:ring-pink-500/20 cursor-pointer"
+                              onChange={(e) => {
+                                const nextMods = e.target.checked
+                                  ? [...localModules, m.moduleId]
+                                  : localModules.filter((id) => id !== m.moduleId);
+                                setLocalModules(nextMods);
+                                syncConfig(nextMods, localTags);
+                              }}
+                            />
+                            <span className="text-[10px] font-semibold text-slate-750 dark:text-slate-300 leading-none">
+                              {m.moduleId} — {m.moduleName} (Yr {m.year === "FIRST" ? "1" : "2"})
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-450 font-semibold italic">No modules loaded for this trade</p>
+                  )}
                 </div>
               )}
+
+              {/* Optional tags selector, visible for ALL modes */}
+              <div className="space-y-2 md:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-850 mt-2">
+                <label className="text-[10px] font-bold text-slate-455 uppercase block">Filter by Tags (Optional)</label>
+                <p className="text-[9px] text-slate-450 font-semibold mb-1">Questions served will be matched against these tags if specified</p>
+                <VerifiedTagInput
+                  value={localTags}
+                  onChange={(newTags) => {
+                    setLocalTags(newTags);
+                    syncConfig(localModules, newTags);
+                  }}
+                  placeholder="Search and select gameplay tags..."
+                />
+              </div>
             </div>
           </div>
 
@@ -88,7 +158,7 @@ export default function TeacherSettingsTab({
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-450 uppercase block">XP Payout per Answer</label>
+                <label className="text-[10px] font-bold text-slate-455 uppercase block">XP Payout per Answer</label>
                 <input
                   type="number"
                   min="1"

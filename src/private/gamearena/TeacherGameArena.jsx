@@ -180,12 +180,19 @@ const TeacherGameArena = ({
     if (!batchContext?.batchId) return;
     setIsSavingSettings(true);
     try {
-      const selectedMod = modulesList.find(m => m.moduleId === selectedModuleId);
+      let selectedNames = "";
+      if (questionFilter === "module" && selectedModuleId) {
+        const modsPart = selectedModuleId.includes("|") ? selectedModuleId.split("|")[0] : selectedModuleId;
+        const modsListIds = modsPart.split(",").map(id => id.trim()).filter(Boolean);
+        const matchedMods = modulesList.filter(m => modsListIds.includes(m.moduleId));
+        selectedNames = matchedMods.map(m => m.moduleName).join(", ");
+      }
+
       const payload = {
         batchId: batchContext.batchId,
         questionFilter,
-        selectedModuleId: questionFilter === "module" ? selectedModuleId : "",
-        selectedModuleName: questionFilter === "module" ? (selectedMod?.moduleName || "") : "",
+        selectedModuleId: selectedModuleId || "",
+        selectedModuleName: selectedNames,
         correctAnswerXp: Number(correctAnswerXp),
         correctAnswerCoins: Number(correctAnswerCoins),
         streakXpBonus: Number(streakXpBonus),
