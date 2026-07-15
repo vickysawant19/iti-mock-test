@@ -32,6 +32,13 @@ export class AuthService {
       if (!password) {
         throw new Error("Password is required for email login.");
       }
+      if (typeof window !== "undefined" && window.localStorage) {
+        const theme = localStorage.getItem("app-theme");
+        localStorage.clear();
+        if (theme) {
+          localStorage.setItem("app-theme", theme);
+        }
+      }
       const session = await account.createEmailPasswordSession(email, password);
       const user = await this.getCurrentUser();
       if (!user) {
@@ -67,6 +74,13 @@ export class AuthService {
         await realtime.disconnect();
       } catch (err) {
         console.warn("Failed to disconnect realtime WebSocket:", err);
+      }
+      if (typeof window !== "undefined" && window.localStorage) {
+        const theme = localStorage.getItem("app-theme");
+        localStorage.clear();
+        if (theme) {
+          localStorage.setItem("app-theme", theme);
+        }
       }
       return await account.deleteSession("current");
     } catch (error) {

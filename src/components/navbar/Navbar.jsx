@@ -49,7 +49,7 @@ import {
   selectUserLoading,
 } from "@/store/userSlice";
 import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
-import { setActiveBatch } from "@/store/activeBatchSlice";
+import { setActiveBatch, clearActiveBatch } from "@/store/activeBatchSlice";
 import userProfileService from "@/appwrite/userProfileService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
@@ -97,6 +97,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
       userProfileService.clearCache();
       dispatch(removeUser());
       dispatch(removeProfile());
+      dispatch(clearActiveBatch());
 
       // Only redirect when loading completes
       if (!isLoading) {

@@ -38,6 +38,18 @@ function App() {
       console.log("[DEBUG App.jsx] currentUser from authService:", currentUser);
       
       if (currentUser) {
+        // Detect login user change to prevent data swapping
+        const lastUserId = localStorage.getItem("last_active_user");
+        if (lastUserId && lastUserId !== currentUser.$id) {
+          console.warn("[App.jsx] Logged-in user changed. Cleaning localStorage user caches...");
+          const theme = localStorage.getItem("app-theme");
+          localStorage.clear();
+          if (theme) {
+            localStorage.setItem("app-theme", theme);
+          }
+        }
+        localStorage.setItem("last_active_user", currentUser.$id);
+
         dispatch(addUser({ data: currentUser, isLoading: false }));
 
         // Read profile from live Redux state to avoid stale closure bug
@@ -70,6 +82,7 @@ function App() {
         }
       } else {
         // Not logged in
+        localStorage.removeItem("last_active_user");
         dispatch(addUser({ isLoading: false }));
         dispatch(addProfile({ isLoading: false }));
       }

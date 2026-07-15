@@ -5,7 +5,7 @@ import { Clock, Building, BookOpen, Users, RefreshCw, LogOut, ArrowRight, Shield
 
 import { selectProfile, addProfile, removeProfile } from "@/store/profileSlice";
 import { selectUser, removeUser } from "@/store/userSlice";
-import { selectActiveBatchId } from "@/store/activeBatchSlice";
+import { selectActiveBatchId, clearActiveBatch } from "@/store/activeBatchSlice";
 import authService from "@/services/auth.service";
 import userProfileService from "@/appwrite/userProfileService";
 import batchRequestService from "@/appwrite/batchRequestService";
@@ -115,6 +115,7 @@ export default function BatchEnrollmentStatus() {
       userProfileService.clearCache();
       dispatch(removeUser());
       dispatch(removeProfile());
+      dispatch(clearActiveBatch());
       navigate("/");
     } catch {
       toast.error("Logout failed.");
