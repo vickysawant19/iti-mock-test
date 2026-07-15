@@ -26,12 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fixProfileImage } from "@/services/appwriteClient";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
-import BatchOverviewCard from "./components/BatchOverviewCard";
-import TeacherAttendanceTab from "./components/TeacherAttendanceTab";
-import TeacherLeaderboardTab from "./components/TeacherLeaderboardTab";
-import TeacherChallengesTab from "./components/TeacherChallengesTab";
-import TeacherPrizesTab from "./components/TeacherPrizesTab";
-import TeacherSettingsTab from "./components/TeacherSettingsTab";
+import BatchOverviewCard from "./components/teacher/BatchOverviewCard";
+import TeacherAttendanceTab from "./components/teacher/TeacherAttendanceTab";
+import TeacherLeaderboardTab from "./components/teacher/TeacherLeaderboardTab";
+import TeacherChallengesTab from "./components/teacher/TeacherChallengesTab";
+import TeacherPrizesTab from "./components/teacher/TeacherPrizesTab";
+import TeacherSettingsTab from "./components/teacher/TeacherSettingsTab";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { challengeService, CHALLENGE_TEMPLATES } from "@/services/challenge.service";
@@ -40,7 +40,7 @@ import { leaderboardService } from "@/services/leaderboard.service";
 import { BADGES } from "@/services/reward.service";
 import { ID } from "appwrite";
 
-const TeacherDashboard = ({
+const TeacherGameArena = ({
   profile,
   batchContext,
   batchOverview,
@@ -585,4 +585,4 @@ const GradientBackground = () => (
   </div>
 );
 
-export default TeacherDashboard;
+export default TeacherGameArena;

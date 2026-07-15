@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText } from "lucide-react";
+import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Trophy } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import notificationService from "@/services/notification.service";
@@ -11,16 +11,21 @@ function NotifItem({ notif, onClose, user }) {
   const isApproved = notif.type === "request_approved";
   const isRejected = notif.type === "request_rejected";
   const isMockTest = notif.type === "mock_test_assigned";
+  const isChallenge = notif.type === "challenge_assigned";
 
   const handleClick = async () => {
-    if (isMockTest) {
+    if (isMockTest || isChallenge) {
       try {
         await notificationService.markAsRead(notif.id, user.$id);
       } catch (error) {
         console.error("Failed to mark as read", error);
       }
       onClose();
-      navigate(`/attain-test?paperid=${notif.paperId}`);
+      if (isMockTest) {
+        navigate(`/attain-test?paperid=${notif.paperId}`);
+      } else {
+        navigate("/arena?tab=missions&sub=challenges");
+      }
     } else {
       onClose();
       if (isTeacher) {
@@ -33,7 +38,7 @@ function NotifItem({ notif, onClose, user }) {
     <button
       onClick={handleClick}
       className={`w-full text-left flex items-start gap-3 p-3 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
-        isTeacher ? "cursor-pointer" : "cursor-default"
+        isTeacher || isMockTest || isChallenge ? "cursor-pointer" : "cursor-default"
       }`}
     >
       <div
@@ -44,6 +49,8 @@ function NotifItem({ notif, onClose, user }) {
             ? "bg-red-100 dark:bg-red-900/30"
             : isMockTest
             ? "bg-blue-100 dark:bg-blue-900/30"
+            : isChallenge
+            ? "bg-pink-100 dark:bg-pink-900/30"
             : "bg-amber-100 dark:bg-amber-900/30"
         }`}
       >
@@ -51,6 +58,7 @@ function NotifItem({ notif, onClose, user }) {
         {isRejected && <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />}
         {isTeacher && <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
         {isMockTest && <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+        {isChallenge && <Trophy className="w-4 h-4 text-pink-600 dark:text-pink-400" />}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -69,7 +77,7 @@ function NotifItem({ notif, onClose, user }) {
           </p>
         )}
       </div>
-      {(isTeacher || isMockTest) && <ArrowRight className="w-4 h-4 text-slate-400 mt-1 shrink-0" />}
+      {(isTeacher || isMockTest || isChallenge) && <ArrowRight className="w-4 h-4 text-slate-400 mt-1 shrink-0" />}
     </button>
   );
 }

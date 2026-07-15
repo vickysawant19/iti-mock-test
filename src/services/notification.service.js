@@ -29,6 +29,20 @@ class NotificationService {
     }
   }
 
+  async updateNotification(notificationId, payload) {
+    try {
+      return await databases.updateDocument(
+        this.databaseId,
+        this.collectionId,
+        notificationId,
+        payload
+      );
+    } catch (error) {
+      console.error("Error updating notification", error);
+      throw error;
+    }
+  }
+
   async getNotificationsByBatch(batchIds) {
     if (!batchIds || batchIds.length === 0) return [];
     try {

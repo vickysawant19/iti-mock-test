@@ -33,7 +33,7 @@ import AttainTest from "./private/mocktest/AttainMockTest/index.jsx";
 import MockTestResults from "./private/mocktest/MockTestResults.jsx";
 import ExamSummary from "./private/mocktest/ExamSummary.jsx";
 
-import Dash from "./pages/Dash.jsx";
+import GameArena from "./pages/GameArena.jsx";
 import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
 import ForgetPass from "./Auth/ForgetPass.jsx";
@@ -118,7 +118,7 @@ const router = (
             element={<TeacherOnboardingWizard />}
           />
           <Route path="batch-enroll" element={<BatchEnrollmentStatus />} />
-          <Route path="arena" element={<Dash />} />
+          <Route path="arena" element={<GameArena />} />
           <Route path="browse-batches" element={<BrowseBatches />} />
           <Route
             path="student-attendance"

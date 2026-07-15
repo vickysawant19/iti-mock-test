@@ -41,26 +41,26 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import GameWorld from "./components/gameworld/GameWorld";
-import QuestionModal from "./components/QuestionModal";
-import LuckyWheelModal from "./components/LuckyWheelModal";
-import MissionsTabPanel from "./components/MissionsTabPanel";
+import GameWorld from "./components/student/gameworld/GameWorld";
+import QuestionModal from "./components/student/QuestionModal";
+import LuckyWheelModal from "./components/student/LuckyWheelModal";
+import MissionsTabPanel from "./components/student/MissionsTabPanel";
 import useStudentGame from "@/hooks/useStudentGame";
 import useDailyMissions from "@/hooks/useDailyMissions";
 import { BADGES } from "@/services/reward.service";
 import { fixProfileImage } from "@/services/appwriteClient";
-import CosmeticStoreTab from "./components/CosmeticStoreTab";
+import CosmeticStoreTab from "./components/student/CosmeticStoreTab";
 import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
-import StudentProfileCard from "./components/StudentProfileCard";
-import OverviewTab from "./components/OverviewTab";
-import AnalysisTab from "./components/AnalysisTab";
-import BadgesTab from "./components/BadgesTab";
-import AvatarStoreTab from "./components/AvatarStoreTab";
-import LeaderboardTab from "./components/LeaderboardTab";
-import BottomNavDock from "./components/BottomNavDock";
-import CelebrationOverlays from "./components/CelebrationOverlays";
+import StudentProfileCard from "./components/student/StudentProfileCard";
+import OverviewTab from "./components/student/OverviewTab";
+import AnalysisTab from "./components/student/AnalysisTab";
+import BadgesTab from "./components/student/BadgesTab";
+import AvatarStoreTab from "./components/student/AvatarStoreTab";
+import LeaderboardTab from "./components/student/LeaderboardTab";
+import BottomNavDock from "./components/student/BottomNavDock";
+import CelebrationOverlays from "./components/student/CelebrationOverlays";
 
-const StudentDashboard = ({
+const StudentGameArena = ({
   user,
   profile,
   batchContext,
@@ -505,6 +505,7 @@ const StudentDashboard = ({
                       challenges={challenges}
                       userId={user?.$id}
                       onClaimChallenge={handleClaimChallenge}
+                      initialSection={searchParams.get("sub") || "quests"}
                     />
                   </motion.div>
                 )}
@@ -631,4 +632,4 @@ const GradientBackground = () => (
     <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-400/10 blur-[100px] animate-pulse" />
   </div>
 );
-export default StudentDashboard;
+export default StudentGameArena;

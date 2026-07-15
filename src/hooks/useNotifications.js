@@ -130,26 +130,31 @@ export function useNotifications() {
 
           if (uniqueNotifsMap.size > 0) {
             try {
-              const paperIdsArray = Array.from(uniqueNotifsMap.keys());
-              // Get tests for the active notifications to see if the user has attempted them
-              const userPapers = await mockTestService.listQuestions([
-                Query.equal("userId", user.$id),
-                Query.equal("paperId", paperIdsArray)
-              ]);
-              
-              // Consider a test "attempted" if it has been submitted or at least started
-              const attemptedPaperIds = new Set(
-                userPapers
-                  .filter((p) => p.submitted || p.startTime)
-                  .map((p) => p.paperId)
-              );
+              // Extract only mock test paperIds to check for attempts
+              const mockTestNotifIds = Array.from(uniqueNotifsMap.values())
+                .filter(n => n.type === "mock_test_assigned")
+                .map(n => n.paperId);
 
-              for (const [paperId, notif] of uniqueNotifsMap.entries()) {
-                if (attemptedPaperIds.has(paperId)) {
-                  // Mark as read in DB so it doesn't fetch again next time
-                  notificationService.markAsRead(notif.id, user.$id).catch(console.error);
-                  // Remove from local UI map
-                  uniqueNotifsMap.delete(paperId);
+              if (mockTestNotifIds.length > 0) {
+                const userPapers = await mockTestService.listQuestions([
+                  Query.equal("userId", user.$id),
+                  Query.equal("paperId", mockTestNotifIds)
+                ]);
+                
+                // Consider a test "attempted" if it has been submitted or at least started
+                const attemptedPaperIds = new Set(
+                  userPapers
+                    .filter((p) => p.submitted || p.startTime)
+                    .map((p) => p.paperId)
+                );
+
+                for (const [paperId, notif] of uniqueNotifsMap.entries()) {
+                  if (notif.type === "mock_test_assigned" && attemptedPaperIds.has(paperId)) {
+                    // Mark as read in DB so it doesn't fetch again next time
+                    notificationService.markAsRead(notif.id, user.$id).catch(console.error);
+                    // Remove from local UI map
+                    uniqueNotifsMap.delete(paperId);
+                  }
                 }
               }
             } catch (err) {
@@ -193,20 +198,26 @@ export function useNotifications() {
           const sub = await realtime.subscribe(
             notifChannel,
             (response) => {
-              if (response.events.some(e => e.includes('.create'))) {
+              if (response.events.some(e => e.includes('.create') || e.includes('.update'))) {
                 const doc = response.payload;
-                // Prepend to notifications instead of fetching
+                
+                // If user has already read it, remove from unread state
+                if (doc.readBy && doc.readBy.includes(user.$id)) {
+                  setNotifications(prev => prev.filter(n => n.id !== doc.$id));
+                  return;
+                }
+
+                // Upsert to the top of the unread list
                 setNotifications(prev => {
-                  // check if it already exists to prevent duplicate realtime pushes
-                  if (prev.some(n => n.paperId === doc.paperId && n.type === doc.type)) return prev;
+                  const filtered = prev.filter(n => n.id !== doc.$id);
                   return [{
                     id: doc.$id,
                     type: doc.type,
                     message: doc.message,
                     batchId: doc.batchId,
                     paperId: doc.paperId,
-                    createdAt: doc.$createdAt,
-                  }, ...prev];
+                    createdAt: doc.$updatedAt || doc.$createdAt,
+                  }, ...filtered];
                 });
               }
             },

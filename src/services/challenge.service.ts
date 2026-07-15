@@ -308,6 +308,27 @@ export class ChallengeService extends DatabaseService {
       throw error;
     }
   }
+
+  /**
+   * Fetches completion progress/status for all students in a batch for a given challenge.
+   */
+  async getChallengeProgressForBatch(
+    challengeId: string,
+    batchId: string
+  ): Promise<BatchChallengeProgress[]> {
+    try {
+      const progressService = new DatabaseService(conf.challengesProgressCollectionId);
+      const response = await progressService.listRows<BatchChallengeProgress>([
+        Query.equal("challengeId", challengeId),
+        Query.equal("batchId", batchId),
+        Query.limit(100),
+      ]);
+      return response.rows || [];
+    } catch (error: any) {
+      console.error("[ChallengeService] getChallengeProgressForBatch failed:", error);
+      return [];
+    }
+  }
 }
 
 export const challengeService = new ChallengeService();

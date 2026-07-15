@@ -1,14 +1,14 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import TeacherDashboard from "@/private/dashboard/TeacherDashboard";
-import StudentDashboard from "@/private/dashboard/StudentDashboard";
+import TeacherGameArena from "@/private/gamearena/TeacherGameArena";
+import StudentGameArena from "@/private/gamearena/StudentGameArena";
 
 /**
- * Dashboard — Role-aware wrapper.
- * Delegates to TeacherDashboard or StudentDashboard based on user role.
+ * GameArena — Role-aware wrapper.
+ * Delegates to TeacherGameArena or StudentGameArena based on user role.
  */
-const Dashboard = () => {
+const GameArena = () => {
   const data = useDashboardData();
 
   // Global loading spinner while batch context resolves
@@ -22,7 +22,7 @@ const Dashboard = () => {
 
   if (data.isTeacher || data.isAdmin) {
     return (
-      <TeacherDashboard
+      <TeacherGameArena
         profile={data.profile}
         batchContext={data.batchContext}
         batchOverview={data.batchOverview}
@@ -39,7 +39,7 @@ const Dashboard = () => {
   }
 
   return (
-    <StudentDashboard
+    <StudentGameArena
       user={data.user}
       profile={data.profile}
       batchContext={data.batchContext}
@@ -51,4 +51,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default GameArena;

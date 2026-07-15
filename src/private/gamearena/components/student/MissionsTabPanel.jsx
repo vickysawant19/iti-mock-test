@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Target, Zap, Coins, CheckCircle2 } from "lucide-react";
 import DailyMissionsPanel from "./DailyMissionsPanel";
@@ -155,8 +155,15 @@ export default function MissionsTabPanel({
   challenges,
   userId,
   onClaimChallenge,
+  initialSection = "quests",
 }) {
-  const [activeSection, setActiveSection] = useState("quests");
+  const [activeSection, setActiveSection] = useState(initialSection);
+
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   const unclaimedChallenges = (challenges || []).filter((c) => {
     const completedList = c.completedStudents || [];
