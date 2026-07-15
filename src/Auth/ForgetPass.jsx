@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaArrowLeft, FaEnvelope } from "react-icons/fa";
-import { ClipLoader } from "react-spinners";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import authService from "@/services/auth.service";
+import authImg from "@/assets/auth-illustration.png";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-const ForgetPass = () => {
+export default function ForgetPass() {
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     let timer;
@@ -28,102 +30,96 @@ const ForgetPass = () => {
     if (cooldown > 0) return;
     
     setIsLoading(true);
-    setMessage("");
-    setError("");
-    
     try {
       await authService.forgotPassword(email);
-      setMessage("Password reset email sent! Please check your inbox.");
+      toast.success("Password reset email sent! Please check your inbox.");
       setCooldown(60); // 60 seconds cooldown
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message || "Failed to send reset email.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 relative">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="h-16 w-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-            <FaEnvelope className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          </div>
+    <div className="min-h-screen w-full flex bg-slate-50 dark:bg-slate-950">
+      {/* Left Section - Image */}
+      <div className="hidden lg:flex w-1/2 bg-blue-50 dark:bg-slate-900 relative overflow-hidden">
+        <img
+          src={authImg}
+          alt="Authentication"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 via-blue-900/40 to-transparent z-10"></div>
+        <div className="absolute bottom-10 left-10 z-20">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Reset Password</h2>
+          <p className="text-slate-600 dark:text-slate-300 text-lg">Follow simple instructions to safely regain access to your account.</p>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          Forgot your password?
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          No worries, we'll send you reset instructions.
-        </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-xl sm:px-10 border border-gray-100 dark:border-gray-700">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email address
-              </label>
-              <div className="mt-2">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-                  placeholder="Enter your email"
-                />
+      {/* Right Section - Forget Password Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
+        <Card className="w-full max-w-md border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-white dark:sm:bg-slate-900">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">Forgot password?</CardTitle>
+            <CardDescription className="text-center">
+              No worries, we'll send you reset instructions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pr-10"
+                  />
+                  <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <button
-                type="submit"
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                type="submit" 
                 disabled={isLoading || cooldown > 0}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isLoading ? (
-                  <ClipLoader size={20} color="#ffffff" />
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending instructions...
+                  </>
                 ) : cooldown > 0 ? (
                   `Resend email in ${cooldown}s`
                 ) : (
-                  "Reset Password"
+                  "Send Reset Email"
                 )}
-              </button>
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="relative w-full">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200 dark:border-slate-700" />
+              </div>
             </div>
-          </form>
-
-          {/* Success Message */}
-          {message && (
-            <div className="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800">
-              <p className="text-sm text-green-800 dark:text-green-300 text-center font-medium">
-                {message}
-              </p>
+            <div className="flex flex-col gap-2 items-center text-sm w-full">
+              <Link 
+                to="/login" 
+                className="flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Return to Login
+              </Link>
             </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="mt-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-800 dark:text-red-300 text-center font-medium">
-                {error}
-              </p>
-            </div>
-          )}
-          
-          <div className="mt-6 text-center">
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors text-sm">
-              Return to Login
-            </Link>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default ForgetPass;
+}
