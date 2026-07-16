@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle, User, MapPin, CalendarDays, GraduationCap, ArrowLeft } from "lucide-react";
+import { CheckCircle, User, MapPin, CalendarDays, GraduationCap, ArrowLeft, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
