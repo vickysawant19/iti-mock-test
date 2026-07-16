@@ -86,7 +86,7 @@ const CreateQuestion = () => {
       const subjects = await subjectService.listSubjects();
       setSubjects(subjects.rows || []); // listSubjects uses listRows → .rows
     } catch (error) {
-      console.log(error);
+      console.error("Error listing subjects:", error);
     }
   };
 
@@ -110,7 +110,7 @@ const CreateQuestion = () => {
 
       setModules(sortedSyllabusData);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching modules:", error);
       toast.error("Failed to fetch Modules");
     }
   };
@@ -123,7 +123,6 @@ const CreateQuestion = () => {
 
   useEffect(() => {
     if (tradeId && subjectId && year) {
-      console.log("Fetching modules based on updated form values...");
       fetchModules();
     }
   }, [tradeId, subjectId, year]);

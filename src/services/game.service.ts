@@ -225,7 +225,6 @@ export class GameService extends DatabaseService {
         }
       }
 
-      console.log("[GameService] getRandomQuestion: tradeId =", tradeId, "subjectId =", subjectId, "settings =", settings, "queries =", baseQueries);
 
       // Step 1: Get count of questions (with localStorage caching)
       const cacheKey = `ques_count_${tradeId}_${subjectId || "no_sub"}_${settingsSuffix}`;
@@ -334,7 +333,6 @@ export class GameService extends DatabaseService {
   ): Promise<{ stats: StudentGameStats; xpGained: number; coinsGained: number; streakBonus?: number; levelUp: boolean }> {
     const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
     const settings = await this.getBatchGameSettings(batchId);
-    console.log("[GameService] submitAnswer: batchId =", batchId, "settings =", settings);
     
     const oldLevel = stats.level;
     let xpGained = 0;

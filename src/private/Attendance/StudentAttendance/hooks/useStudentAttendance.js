@@ -192,7 +192,7 @@ export const useStudentAttendance = (profile) => {
       const data = await batchService.getBatch(batchId);
       setBatchData(data || null);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching batch:", error);
     }
   }, []);
 
@@ -201,10 +201,9 @@ export const useStudentAttendance = (profile) => {
       const data = await tradeservice.getTrade(tradeId);
       setTradeData(data || null);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching trade:", error);
     }
   }, []);
-  console.log(profile);
 
   useEffect(() => {
     if (resolvedBatchId) fetchBatchData(resolvedBatchId);

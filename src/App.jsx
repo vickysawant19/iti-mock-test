@@ -35,7 +35,6 @@ function App() {
     dispatch(addProfile({ isLoading: true }));
     try {
       const currentUser = await authService.getCurrentUser();
-      console.log("[DEBUG App.jsx] currentUser from authService:", currentUser);
       
       if (currentUser) {
         // Detect login user change to prevent data swapping

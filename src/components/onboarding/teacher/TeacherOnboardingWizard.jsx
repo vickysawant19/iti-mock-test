@@ -31,11 +31,9 @@ export default function TeacherOnboardingWizard() {
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    console.log("[WIZARD useEffect] fired — hasInitializedRef:", hasInitializedRef.current, "| existingProfile:", existingProfile ? `onboardingStep=${existingProfile.onboardingStep}, isProfileComplete=${existingProfile.isProfileComplete}` : "null");
 
     if (existingProfile) {
       if (!hasInitializedRef.current) {
-        console.log("[WIZARD useEffect] FIRST MOUNT — hydrating formData and checking step resume");
         setFormData({
           ...existingProfile,
           userName: existingProfile.userName || user?.name || "",
@@ -48,7 +46,6 @@ export default function TeacherOnboardingWizard() {
 
       // Already complete → go to dash
       if (existingProfile.isProfileComplete) {
-        console.log("[WIZARD useEffect] isProfileComplete=true → navigating to /arena");
         navigate("/arena");
         return;
       }
@@ -56,7 +53,6 @@ export default function TeacherOnboardingWizard() {
       // Only restore saved step on FIRST mount (resume mid-progress)
       if (!hasInitializedRef.current) {
         if (existingProfile.onboardingStep > 0 && existingProfile.onboardingStep <= 3) {
-          console.log("[WIZARD useEffect] Restoring step to:", existingProfile.onboardingStep);
           setCurrentStep(Math.min(existingProfile.onboardingStep, 3));
         }
         hasInitializedRef.current = true;
@@ -72,7 +68,6 @@ export default function TeacherOnboardingWizard() {
   }, [existingProfile, user, navigate]);
 
   const saveProgress = async (stepData, nextStep) => {
-    console.log(`[WIZARD saveProgress] called — currentStep: ${currentStep}, nextStep: ${nextStep}`);
     if (!user) return false;
     setIsSaving(true);
 
@@ -95,7 +90,6 @@ export default function TeacherOnboardingWizard() {
       };
 
       const { isComplete } = checkProfileCompletion(basePayload);
-      console.log("[WIZARD saveProgress] checkProfileCompletion result:", isComplete);
 
       const payload = {
         ...basePayload,

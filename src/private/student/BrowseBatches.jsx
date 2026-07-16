@@ -54,14 +54,12 @@ export default function BrowseBatches() {
       setIsLoadingRequests(true);
       try {
         const requestsRes = await batchRequestService.getStudentRequests(user.$id);
-        console.log("[BrowseBatches] batchRequests:", requestsRes);
         setRequests(requestsRes || []);
 
         // Fetch batch details for each request in bulk
         const batchIds = [...new Set((requestsRes || []).map(r => r.batchId).filter(Boolean))];
         if (batchIds.length > 0) {
           const batchDocs = await batchService.getBatchesByIds(batchIds);
-          console.log("[BrowseBatches] request batchDocs:", batchDocs);
           const map = {};
           batchDocs.forEach(b => { map[b.$id] = b; });
           setRequestBatchMap(map);

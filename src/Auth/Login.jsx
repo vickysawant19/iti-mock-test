@@ -51,17 +51,7 @@ const Login = () => {
       dispatch(addUser({ data: loggedInUser, isLoading: false }));
 
       // Fetch user profile
-      console.group("[LOGIN DEBUG] Post-login profile fetch");
-      console.log("user.$id:", loggedInUser?.$id);
       const res = await userProfileService.getUserProfile(loggedInUser?.$id);
-      console.log("getUserProfile res:", res);
-      console.log("res truthy?:", !!res);
-      if (res) {
-        console.log("isProfileComplete:", res.isProfileComplete);
-      } else {
-        console.log("→ navigating to /onboarding (no profile found)");
-      }
-      console.groupEnd();
 
       const isTeacher = loggedInUser?.labels?.includes("Teacher");
       const isAdmin = loggedInUser?.labels?.includes("admin");

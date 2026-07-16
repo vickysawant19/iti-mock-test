@@ -54,9 +54,7 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
         settings = await gameService.getBatchGameSettings(batchId);
         setActiveSettings(settings);
       }
-      console.log("[useStudentGame] fetchQuestion: settings =", settings);
       const data = await gameService.getRandomQuestion(tradeId, settings);
-      console.log("[useStudentGame] fetchQuestion: question =", data);
       setCurrentQuestion(data);
     } catch (err) {
       console.error("[useStudentGame] Error fetching question:", err);
@@ -264,7 +262,6 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
           const payload = response.payload;
           
           if (payload?.batchId === batchId) {
-            console.log("[useStudentGame] Realtime settings updated:", payload);
             setActiveSettings(payload);
             
             // Cache locally as fallback and update in-memory cache in gameService
@@ -313,8 +310,6 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
           const payload = response.payload;
           
           if (payload?.batchId === batchId) {
-            console.log("[useStudentGame] Realtime challenges updated:", payload);
-            
             // Invalidate the cache
             try {
               challengeService.invalidateCache(batchId);

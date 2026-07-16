@@ -38,7 +38,6 @@ export default function StepPersonalInfo({ initialData, onNext, onBack, isSaving
   };
 
   const onSubmit = (data) => {
-    console.log("[StepPersonalInfo] Submitting data:", data);
     onNext(data);
   };
 
