@@ -4,6 +4,13 @@ import { Query } from "./appwriteClient";
 import userProfileService from "../appwrite/userProfileService";
 import { StudentGameStats } from "./game.service";
 
+// Helper to get local date string in YYYY-MM-DD format (respecting user's local timezone / IST)
+function getLocalDateString(date: Date = new Date()): string {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split("T")[0];
+}
+
 export interface LeaderboardEntry extends StudentGameStats {
   userName: string;
   profileImage: string | null;
@@ -77,12 +84,13 @@ export class LeaderboardService extends DatabaseService {
           if (b.highestStreak !== a.highestStreak) {
             return b.highestStreak - a.highestStreak;
           }
-          
+
           const dateA = new Date(a.lastActive || a.lastQuestionTime || 0).getTime();
           const dateB = new Date(b.lastActive || b.lastQuestionTime || 0).getTime();
           return dateB - dateA;
         });
 
+        const todayDate = getLocalDateString();
         // 4. Map to final LeaderboardEntry structures with ranks
         const result = statsList.map((stat, index) => {
           const profile = profileMap[stat.studentId] || {
@@ -90,8 +98,14 @@ export class LeaderboardService extends DatabaseService {
             profileImage: null,
           };
 
+          const isStale = stat.dailyStatsDate !== todayDate;
+
           return {
             ...stat,
+            dailyWins: isStale ? 0 : (stat.dailyWins || 0),
+            dailyLosses: isStale ? 0 : (stat.dailyLosses || 0),
+            dailyQuestionsAttempted: isStale ? 0 : (stat.dailyQuestionsAttempted || 0),
+            dailyStatsDate: isStale ? todayDate : stat.dailyStatsDate,
             userName: profile.userName,
             profileImage: profile.profileImage,
             rank: index + 1,

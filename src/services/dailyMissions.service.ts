@@ -3,6 +3,13 @@ import conf from "../config/config";
 import { Query } from "./appwriteClient";
 import { ID } from "appwrite";
 
+// Helper to get local date string in YYYY-MM-DD format (respecting user's local timezone / IST)
+function getLocalDateString(date: Date = new Date()): string {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split("T")[0];
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DailyMission {
@@ -58,7 +65,7 @@ export class DailyMissionsService extends DatabaseService {
    * Returns today's missions for a student, creating them if they don't exist yet.
    */
   async getTodayMissions(studentId: string, batchId: string): Promise<DailyMission[]> {
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const today = getLocalDateString(); // "YYYY-MM-DD" in local time (IST)
 
     try {
       const res = await this.listRows<DailyMission>([
@@ -119,7 +126,7 @@ export class DailyMissionsService extends DatabaseService {
     type: string,
     amount: number = 1
   ): Promise<void> {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getLocalDateString();
     try {
       const res = await this.listRows<DailyMission>([
         Query.equal("studentId", studentId),
@@ -147,7 +154,7 @@ export class DailyMissionsService extends DatabaseService {
     studentId: string,
     type: string
   ): Promise<void> {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getLocalDateString();
     try {
       const res = await this.listRows<DailyMission>([
         Query.equal("studentId", studentId),
@@ -192,7 +199,7 @@ export class DailyMissionsService extends DatabaseService {
     studentId: string,
     updates: { [type: string]: number | "reset" }
   ): Promise<void> {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getLocalDateString();
     try {
       // Fetch all of today's missions for this student (max 10) in a single read
       const res = await this.listRows<DailyMission>([

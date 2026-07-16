@@ -4,6 +4,13 @@ import { Query } from "./appwriteClient";
 import subjectService from "../appwrite/subjectService";
 import { ID } from "appwrite";
 
+// Helper to get local date string in YYYY-MM-DD format (respecting user's local timezone / IST)
+function getLocalDateString(date: Date = new Date()): string {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split("T")[0];
+}
+
 export interface StudentGameStats {
   $id?: string;
   studentId: string;
@@ -89,7 +96,7 @@ export class GameService extends DatabaseService {
         dailyWins: 0,
         dailyLosses: 0,
         dailyQuestionsAttempted: 0,
-        dailyStatsDate: new Date().toISOString().slice(0, 10),
+        dailyStatsDate: getLocalDateString(),
       };
 
       return await this.createRow<StudentGameStats>(newStats, undefined, ID.unique());
@@ -338,7 +345,7 @@ export class GameService extends DatabaseService {
 
     // Daily stats: reset if date changed
     const now = new Date();
-    const todayDate = now.toISOString().slice(0, 10);
+    const todayDate = getLocalDateString(now);
     if (stats.dailyStatsDate !== todayDate) {
       stats.dailyWins = 0;
       stats.dailyLosses = 0;
