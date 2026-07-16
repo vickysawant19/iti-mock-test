@@ -953,29 +953,44 @@ const MockTestResults = () => {
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 w-full overflow-x-hidden">
-        {/* ── Header ── */}
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-20">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">
-                Mock Test Results
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate flex items-center gap-2">
-                Paper ID: <span className="font-mono">{paperId}</span>
-              </p>
-            </div>
+        {/* ── Sticky Header ── */}
+        <div className="sticky top-0 z-20 w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/60 shadow-sm transition-all duration-300">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
             
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Left Side: Back button, Title, Status & Paper ID */}
+            <div className="flex items-center gap-3.5 min-w-0">
+              <button
+                onClick={() => navigate(-1)}
+                className="group flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-slate-800 dark:hover:text-white shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer shrink-0"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+              </button>
+              
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="p-1 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0 hidden sm:block">
+                    <Trophy className="w-3.5 h-3.5" />
+                  </div>
+                  <h1 className="text-xs sm:text-sm md:text-base font-black text-slate-805 dark:text-white leading-tight tracking-tight">
+                    Mock Test Results
+                  </h1>
+                  <span className="inline-flex items-center text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md border border-emerald-500/10 dark:border-emerald-900/20">
+                    Live Leaderboard
+                  </span>
+                  <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800/60 text-slate-450 dark:text-slate-400 px-2 py-0.5 rounded-md border border-slate-200/40 dark:border-slate-700/40 select-all">
+                    ID: {paperId}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Quick Action buttons (Export, Protect, Delete, Share) */}
+            <div className="flex items-center gap-2 flex-wrap justify-start md:justify-end">
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-gray-500 hover:bg-gray-600 text-white transition-colors shrink-0 whitespace-nowrap outline-none focus:ring-2 focus:ring-gray-400">
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Share</span>
+                <DropdownMenuTrigger className="group flex items-center justify-center gap-1.5 px-3.5 py-2 h-9 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-650 hover:text-slate-800 dark:text-slate-350 dark:hover:text-white shadow-sm transition-all duration-200 hover:scale-102 hover:shadow-md cursor-pointer shrink-0 text-xs font-extrabold uppercase tracking-wider outline-none">
+                  <Share2 className="w-3.5 h-3.5 transition-transform group-hover:scale-105" />
+                  <span>Share</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   {navigator.share && (
@@ -995,30 +1010,34 @@ const MockTestResults = () => {
                   <button
                     onClick={onToggleProtection}
                     disabled={isTogglingProtection}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white transition-colors shrink-0 whitespace-nowrap"
+                    className={`group flex items-center gap-1.5 px-3.5 py-2 h-9 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 hover:scale-102 hover:shadow-md shrink-0 whitespace-nowrap border cursor-pointer ${
+                      paperData.isProtected
+                        ? "bg-amber-500/10 hover:bg-amber-500/15 border-amber-500/25 text-amber-600 dark:text-amber-450"
+                        : "bg-emerald-500/10 hover:bg-emerald-500/15 border-emerald-500/25 text-emerald-600 dark:text-emerald-450"
+                    }`}
                   >
                     {isTogglingProtection ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : paperData.isProtected ? (
-                      <Lock className="w-3.5 h-3.5" />
+                      <Lock className="w-3.5 h-3.5 text-amber-550" />
                     ) : (
-                      <Unlock className="w-3.5 h-3.5" />
+                      <Unlock className="w-3.5 h-3.5 text-emerald-555" />
                     )}
-                    <span className="hidden sm:inline">
-                      {paperData.isProtected ? "Protected" : "Unprotect"}
+                    <span>
+                      {paperData.isProtected ? "Protected" : "Public"}
                     </span>
                   </button>
                   <button
                     onClick={handleDeletePaper}
                     disabled={isDeleting}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white transition-colors shrink-0 whitespace-nowrap"
+                    className="group flex items-center gap-1.5 px-3.5 py-2 h-9 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-red-500/10 hover:bg-red-500/15 border border-red-500/25 text-red-600 dark:text-red-450 transition-all duration-200 hover:scale-102 hover:shadow-md shrink-0 whitespace-nowrap cursor-pointer"
                   >
                     {isDeleting ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-550" />
                     )}
-                    <span className="hidden sm:inline">Delete</span>
+                    <span>Delete</span>
                   </button>
                 </>
               )}
@@ -1026,11 +1045,10 @@ const MockTestResults = () => {
               {isTeacher && (
                 <button
                   onClick={exportCSV}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 whitespace-nowrap"
+                  className="group flex items-center gap-1.5 px-3.5 py-2 h-9 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/10 transition-all duration-200 hover:scale-102 hover:shadow-lg shrink-0 whitespace-nowrap cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Export CSV</span>
-                  <span className="sm:hidden">Export</span>
+                  <Download className="w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5" />
+                  <span>Export CSV</span>
                 </button>
               )}
             </div>

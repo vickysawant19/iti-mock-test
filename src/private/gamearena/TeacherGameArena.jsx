@@ -369,6 +369,11 @@ const TeacherGameArena = ({
           avgLevel={avgLevel}
         />
 
+        {/* Class Lobby (Full-width right after the Batch Overview Card) - Mobile/Tablet only */}
+        <div className="lg:hidden">
+          <ClassLobbyCard batchContext={batchContext} profile={profile} />
+        </div>
+
         {/* Desktop Split-Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           {/* Main Content Area (3 columns on desktop) */}
@@ -549,7 +554,10 @@ const TeacherGameArena = ({
 
           {/* Sidebar Area (1 column on desktop) */}
           <div className="lg:col-span-1 space-y-5">
-            <ClassLobbyCard batchContext={batchContext} profile={profile} />
+            {/* Class Lobby - Desktop only */}
+            <div className="hidden lg:block">
+              <ClassLobbyCard batchContext={batchContext} profile={profile} />
+            </div>
 
             {/* Quick Actions Panel */}
             <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm space-y-3">
