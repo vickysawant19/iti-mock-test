@@ -317,17 +317,126 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
         </div>
       </div>
 
-      {/* ── Card list ── */}
-      <div className="space-y-2.5">
+      {/* Desktop-optimized Table View */}
+      {filtered.length > 0 && (
+        <div className="hidden md:block overflow-x-auto bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 rounded-[24px] shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-150/40 dark:border-slate-800/40 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">
+                <th className="py-4 px-5">Student</th>
+                <th className="py-4 px-5 text-center">Overall Attendance</th>
+                <th className="py-4 px-5 text-center">{monthLabel(selectedMonth)} Attendance</th>
+                <th className="py-4 px-5 text-center">Present / Working Days</th>
+                <th className="py-4 px-5 text-center">Mock Tests</th>
+                <th className="py-4 px-5 text-center">Avg Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row) => {
+                const att = pct(row.totalAttendancePercent);
+                const mAtt = pct(row.monthlyAttendancePercent);
+                const theme = attTheme(att);
+                const mTheme = attTheme(mAtt);
+                const tests = row.testsSubmitted ?? 0;
+                const score = row.avgScore ?? 0;
+
+                return (
+                  <tr key={row.studentId} className="border-b border-slate-150/40 dark:border-slate-800/40 transition-colors hover:bg-slate-105/20 dark:hover:bg-slate-800/20">
+                    {/* Student */}
+                    <td className="py-3.5 px-5">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 shrink-0 rounded-xl">
+                          <AvatarImage src={row.profileImage} />
+                          <AvatarFallback className="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black">
+                            {row.userName?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-black text-slate-850 dark:text-white truncate leading-tight">
+                            {row.userName}
+                          </p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                            {row.tradeName || row.registerId || "Student"}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Overall Attendance */}
+                    <td className="py-3 px-5">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className={`text-xs font-black tabular-nums ${theme.text}`}>
+                          {att}%
+                        </span>
+                        <div className="w-24 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mt-1.5">
+                          <div
+                            className={`h-full rounded-full ${theme.bar}`}
+                            style={{ width: `${att}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Monthly Attendance */}
+                    <td className="py-3 px-5">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className={`text-xs font-black tabular-nums ${mTheme.text}`}>
+                          {mAtt}%
+                        </span>
+                        <div className="w-24 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mt-1.5">
+                          <div
+                            className={`h-full rounded-full ${mTheme.bar}`}
+                            style={{ width: `${mAtt}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Working Days */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          {row.presentDays ?? 0} / {row.totalWorkingDays ?? 0} Days
+                        </span>
+                        <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                          {row.monthlyPresentDays ?? 0} / {row.monthlyWorkingDays ?? 0} in {monthLabel(selectedMonth)}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Tests taken */}
+                    <td className="py-3 px-5 text-center">
+                      <span className="text-xs font-black text-slate-850 dark:text-white">
+                        {tests}
+                      </span>
+                    </td>
+
+                    {/* Average Score */}
+                    <td className="py-3 px-5 text-center">
+                      <span className={`text-xs font-black leading-none ${scoreTheme(score)}`}>
+                        {score}%
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Mobile Card list */}
+      <div className="md:hidden space-y-2.5">
         {filtered.map((row) => (
           <StudentCard key={row.studentId} row={row} selectedMonth={selectedMonth} />
         ))}
-        {filtered.length === 0 && (
-          <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60 p-8 text-center text-sm text-slate-500">
-            No students match your search.
-          </div>
-        )}
       </div>
+
+      {filtered.length === 0 && (
+        <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/60 p-8 text-center text-sm text-slate-500">
+          No students match your search.
+        </div>
+      )}
     </div>
   );
 };

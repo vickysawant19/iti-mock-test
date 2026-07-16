@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState, useCallback } from "react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Loader2,
   RefreshCw,
@@ -31,6 +31,7 @@ import { fixProfileImage } from "@/services/appwriteClient";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import BatchOverviewCard from "./components/teacher/BatchOverviewCard";
 import TeacherAttendanceTab from "./components/teacher/TeacherAttendanceTab";
+import AttendanceTrendChart from "./components/teacher/AttendanceTrendChart";
 import TeacherLeaderboardTab from "./components/teacher/TeacherLeaderboardTab";
 import TeacherChallengesTab from "./components/teacher/TeacherChallengesTab";
 import TeacherPrizesTab from "./components/teacher/TeacherPrizesTab";
@@ -59,8 +60,11 @@ const TeacherGameArena = ({
   const navigate = useNavigate();
   const { isComplete, missingFields } = checkProfileCompletion(profile);
 
-  // Tab: attendance, gamification or settings
-  const [activeTab, setActiveTab] = useState("attendance");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "attendance";
+  const setActiveTab = (tabId) => {
+    setSearchParams({ tab: tabId });
+  };
 
   // Game Settings Tab States
   const [questionFilter, setQuestionFilter] = useState("all");
@@ -336,7 +340,7 @@ const TeacherGameArena = ({
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden pb-20 md:pb-24">
       <GradientBackground />
-      <div className="relative z-10 max-w-6xl mx-auto p-4 sm:p-6 space-y-5 pb-0">
+      <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 space-y-5 pb-0">
         
         {/* Profile Incomplete Banner */}
         {!isComplete && (
@@ -356,186 +360,275 @@ const TeacherGameArena = ({
             </Button>
           </div>
         )}
-
         {/* Batch Overview Hero */}
-        <BatchOverviewCard batchContext={batchContext} batchOverview={batchOverview} />
+        <BatchOverviewCard
+          batchContext={batchContext}
+          batchOverview={batchOverview}
+          totalBatchXP={totalBatchXP}
+          avgAccuracy={avgAccuracy}
+          avgLevel={avgLevel}
+        />
 
-        {/* Live Class Lobby - Expandable Inline Panel */}
-        <ClassLobbyCard batchContext={batchContext} profile={profile} />
-
-        {/* Bottom Navigation Dock replaces old tabs on mobile and desktop */}
-
-        <AnimatePresence mode="wait">
-          {activeTab === "attendance" && (
-            <motion.div
-              key="attendance"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-5"
-            >
-              {/* Controls Bar */}
-              <div className="flex flex-row items-center justify-between gap-3 w-full">
-                <div className="flex items-center gap-3">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-505 uppercase tracking-widest">Month</label>
-                  <div className="relative">
-                    <div className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800 backdrop-blur-sm pointer-events-none select-none text-slate-800 dark:text-slate-200">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>
-                        {(() => {
-                          if (!selectedMonth) return "";
-                          const [year, month] = selectedMonth.split("-");
-                          const date = new Date(year, parseInt(month) - 1, 1);
-                          return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-                        })()}
-                      </span>
-                      <ChevronDown className="w-3 h-3 text-slate-400 ml-1 shrink-0" />
-                    </div>
-                    <input
-                      type="month"
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={refetch}
-                  disabled={isLoading}
-                  className="text-xs font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl cursor-pointer"
+        {/* Desktop Split-Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          {/* Main Content Area (3 columns on desktop) */}
+          <div className="lg:col-span-3 space-y-5">
+            <AnimatePresence mode="wait">
+              {activeTab === "attendance" && (
+                <motion.div
+                  key="attendance"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-5"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
-                  Refresh
+                  {/* Controls Bar */}
+                  <div className="flex flex-row items-center justify-between gap-3 w-full">
+                    <div className="flex items-center gap-3">
+                      <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Month</label>
+                      <div className="relative">
+                        <div className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800 backdrop-blur-sm pointer-events-none select-none text-slate-800 dark:text-slate-200">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>
+                            {(() => {
+                              if (!selectedMonth) return "";
+                              const [year, month] = selectedMonth.split("-");
+                              const date = new Date(year, parseInt(month) - 1, 1);
+                              return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                            })()}
+                          </span>
+                          <ChevronDown className="w-3 h-3 text-slate-400 ml-1 shrink-0" />
+                        </div>
+                        <input
+                          type="month"
+                          value={selectedMonth}
+                          onChange={(e) => setSelectedMonth(e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={refetch}
+                      disabled={isLoading}
+                      className="text-xs font-bold text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+                      Refresh
+                    </Button>
+                  </div>
+
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                      <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+                    </div>
+                  ) : error ? (
+                    <div className="bg-red-50/60 dark:bg-red-900/20 backdrop-blur-xl border border-red-200/50 dark:border-red-800 rounded-3xl p-6 text-center">
+                      <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+                    </div>
+                  ) : (
+                    <TeacherAttendanceTab
+                      studentRows={studentRows}
+                      selectedMonth={selectedMonth}
+                      attendanceTrend={attendanceTrend}
+                    />
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === "leaderboard" && (
+                <motion.div
+                  key="leaderboard"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  <TeacherLeaderboardTab
+                    loadingGame={loadingGame}
+                    totalBatchXP={totalBatchXP}
+                    avgAccuracy={avgAccuracy}
+                    avgLevel={avgLevel}
+                    leaderboard={leaderboard}
+                    expandedStudentId={expandedStudentId}
+                    setExpandedStudentId={setExpandedStudentId}
+                    studentRows={studentRows}
+                  />
+                </motion.div>
+              )}
+
+              {activeTab === "challenges" && (
+                <motion.div
+                  key="challenges"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  <TeacherChallengesTab
+                    loadingGame={loadingGame}
+                    selectedTemplateId={selectedTemplateId}
+                    setSelectedTemplateId={setSelectedTemplateId}
+                    challengeTitle={challengeTitle}
+                    setChallengeTitle={setChallengeTitle}
+                    challengeDesc={challengeDesc}
+                    setChallengeDesc={setChallengeDesc}
+                    challengeType={challengeType}
+                    setChallengeType={setChallengeType}
+                    challengeTarget={challengeTarget}
+                    setChallengeTarget={setChallengeTarget}
+                    challengeXP={challengeXP}
+                    setChallengeXP={setChallengeXP}
+                    challengeCoins={challengeCoins}
+                    setChallengeCoins={setChallengeCoins}
+                    isCreatingChallenge={isCreatingChallenge}
+                    handleCreateChallenge={handleCreateChallenge}
+                    challenges={challenges}
+                    studentRows={studentRows}
+                  />
+                </motion.div>
+              )}
+
+              {activeTab === "prizes" && (
+                <motion.div
+                  key="prizes"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  <TeacherPrizesTab
+                    loadingGame={loadingGame}
+                    selectedStudent={selectedStudent}
+                    setSelectedStudent={setSelectedStudent}
+                    prizeType={prizeType}
+                    setPrizeType={setPrizeType}
+                    selectedBadge={selectedBadge}
+                    setSelectedBadge={setSelectedBadge}
+                    bonusXP={bonusXP}
+                    setBonusXP={setBonusXP}
+                    bonusCoins={bonusCoins}
+                    setBonusCoins={setBonusCoins}
+                    isDispatchingPrize={isDispatchingPrize}
+                    handleDispatchPrize={handleDispatchPrize}
+                    studentRows={studentRows}
+                  />
+                </motion.div>
+              )}
+
+              {activeTab === "settings" && (
+                <motion.div
+                  key="settings"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-5"
+                >
+                  <TeacherSettingsTab
+                    isLoadingSettings={isLoadingSettings}
+                    questionFilter={questionFilter}
+                    setQuestionFilter={setQuestionFilter}
+                    selectedModuleId={selectedModuleId}
+                    setSelectedModuleId={setSelectedModuleId}
+                    modulesList={modulesList}
+                    correctAnswerXp={correctAnswerXp}
+                    setCorrectAnswerXp={setCorrectAnswerXp}
+                    correctAnswerCoins={correctAnswerCoins}
+                    setCorrectAnswerCoins={setCorrectAnswerCoins}
+                    streakXpBonus={streakXpBonus}
+                    setStreakXpBonus={setStreakXpBonus}
+                    isSavingSettings={isSavingSettings}
+                    handleSaveSettings={handleSaveSettings}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Sidebar Area (1 column on desktop) */}
+          <div className="lg:col-span-1 space-y-5">
+            <ClassLobbyCard batchContext={batchContext} profile={profile} />
+
+            {/* Quick Actions Panel */}
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm space-y-3">
+              <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                Quick Tools
+              </h4>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/manage-batch/students")}
+                  className="w-full text-xs font-bold rounded-xl justify-start bg-white/40 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5 mr-2 text-pink-500" />
+                  Manage Students
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/manage-batch/create")}
+                  className="w-full text-xs font-bold rounded-xl justify-start bg-white/40 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 mr-2 text-fuchsia-500" />
+                  Create New Batch
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/add-bulk-questions")}
+                  className="w-full text-xs font-bold rounded-xl justify-start bg-white/40 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 mr-2 text-purple-500" />
+                  Bulk Questions
                 </Button>
               </div>
+            </div>
 
-              {isLoading ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+            {/* Conditionally show Attendance Trend & Alerts under Quick Tools when activeTab is "attendance" */}
+            {activeTab === "attendance" && (
+              <>
+                <AttendanceTrendChart data={attendanceTrend} />
+
+                {/* Needs Attention List */}
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-4.5 shadow-sm space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/40">
+                    <AlertCircle className="w-4.5 h-4.5 text-amber-500" />
+                    <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                      Needs Attention
+                    </h4>
+                  </div>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pt-1">
+                    {studentRows
+                      ?.filter((s) => s.totalAttendancePercent < 75)
+                      .sort((a, b) => a.totalAttendancePercent - b.totalAttendancePercent)
+                      .slice(0, 8)
+                      .map((s) => (
+                        <div
+                          key={s.studentId}
+                          className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-xl bg-red-550/5 border border-red-500/10 dark:bg-red-900/10 dark:border-red-900/20"
+                        >
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350 truncate">
+                            {s.userName}
+                          </span>
+                          <span className="text-[11px] font-extrabold text-red-600 dark:text-red-400 tabular-nums shrink-0">
+                            {s.totalAttendancePercent}%
+                          </span>
+                        </div>
+                      ))}
+                    {studentRows?.filter((s) => s.totalAttendancePercent < 75).length === 0 && (
+                      <p className="text-xs text-slate-400 dark:text-slate-505 text-center py-4">
+                        All students have ≥75% attendance 🎉
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ) : error ? (
-                <div className="bg-red-50/60 dark:bg-red-900/20 backdrop-blur-xl border border-red-200/50 dark:border-red-800 rounded-3xl p-6 text-center">
-                  <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
-                </div>
-              ) : (
-                <TeacherAttendanceTab
-                  studentRows={studentRows}
-                  selectedMonth={selectedMonth}
-                  attendanceTrend={attendanceTrend}
-                />
-              )}
-            </motion.div>
-          )}
-
-          {activeTab === "leaderboard" && (
-            <motion.div
-              key="leaderboard"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
-              <TeacherLeaderboardTab
-                loadingGame={loadingGame}
-                totalBatchXP={totalBatchXP}
-                avgAccuracy={avgAccuracy}
-                avgLevel={avgLevel}
-                leaderboard={leaderboard}
-                expandedStudentId={expandedStudentId}
-                setExpandedStudentId={setExpandedStudentId}
-                studentRows={studentRows}
-              />
-            </motion.div>
-          )}
-          {activeTab === "challenges" && (
-            <motion.div
-              key="challenges"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
-              <TeacherChallengesTab
-                loadingGame={loadingGame}
-                selectedTemplateId={selectedTemplateId}
-                setSelectedTemplateId={setSelectedTemplateId}
-                challengeTitle={challengeTitle}
-                setChallengeTitle={setChallengeTitle}
-                challengeDesc={challengeDesc}
-                setChallengeDesc={setChallengeDesc}
-                challengeType={challengeType}
-                setChallengeType={setChallengeType}
-                challengeTarget={challengeTarget}
-                setChallengeTarget={setChallengeTarget}
-                challengeXP={challengeXP}
-                setChallengeXP={setChallengeXP}
-                challengeCoins={challengeCoins}
-                setChallengeCoins={setChallengeCoins}
-                isCreatingChallenge={isCreatingChallenge}
-                handleCreateChallenge={handleCreateChallenge}
-                challenges={challenges}
-                studentRows={studentRows}
-              />
-            </motion.div>
-          )}
-
-          {activeTab === "prizes" && (
-            <motion.div
-              key="prizes"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
-              <TeacherPrizesTab
-                loadingGame={loadingGame}
-                selectedStudent={selectedStudent}
-                setSelectedStudent={setSelectedStudent}
-                prizeType={prizeType}
-                setPrizeType={setPrizeType}
-                selectedBadge={selectedBadge}
-                setSelectedBadge={setSelectedBadge}
-                bonusXP={bonusXP}
-                setBonusXP={setBonusXP}
-                bonusCoins={bonusCoins}
-                setBonusCoins={setBonusCoins}
-                isDispatchingPrize={isDispatchingPrize}
-                handleDispatchPrize={handleDispatchPrize}
-                studentRows={studentRows}
-              />
-            </motion.div>
-          )}
-
-          {activeTab === "settings" && (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-5"
-            >
-              <TeacherSettingsTab
-                isLoadingSettings={isLoadingSettings}
-                questionFilter={questionFilter}
-                setQuestionFilter={setQuestionFilter}
-                selectedModuleId={selectedModuleId}
-                setSelectedModuleId={setSelectedModuleId}
-                modulesList={modulesList}
-                correctAnswerXp={correctAnswerXp}
-                setCorrectAnswerXp={setCorrectAnswerXp}
-                correctAnswerCoins={correctAnswerCoins}
-                setCorrectAnswerCoins={setCorrectAnswerCoins}
-                streakXpBonus={streakXpBonus}
-                setStreakXpBonus={setStreakXpBonus}
-                isSavingSettings={isSavingSettings}
-                handleSaveSettings={handleSaveSettings}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Bottom Navigation Dock */}

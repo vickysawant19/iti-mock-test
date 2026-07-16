@@ -62,39 +62,7 @@ export default function TeacherLeaderboardTab({
 
   return (
     <>
-      {/* Game Stats overview */}
-      <div className="grid grid-cols-3 gap-2 md:gap-4">
-        {/* Card 1 */}
-        <div className="bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] p-2.5 sm:p-5 rounded-[18px] flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm">
-          <div className="p-2 sm:p-3 bg-pink-500/10 rounded-xl text-pink-600 dark:text-pink-400 shrink-0">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest truncate">Total XP</p>
-            <p className="text-xs sm:text-xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">{totalBatchXP} XP</p>
-          </div>
-        </div>
-        {/* Card 2 */}
-        <div className="bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] p-2.5 sm:p-5 rounded-[18px] flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm">
-          <div className="p-2 sm:p-3 bg-purple-500/10 rounded-xl text-purple-600 dark:text-purple-400 shrink-0">
-            <Target className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest truncate">Avg Accuracy</p>
-            <p className="text-xs sm:text-xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">{avgAccuracy}%</p>
-          </div>
-        </div>
-        {/* Card 3 */}
-        <div className="bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] p-2.5 sm:p-5 rounded-[18px] flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-slate-800 dark:text-white min-w-0 shadow-sm">
-          <div className="p-2 sm:p-3 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400 shrink-0">
-            <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="min-w-0 text-center sm:text-left">
-            <p className="text-[7px] sm:text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest truncate">Avg Level</p>
-            <p className="text-xs sm:text-xl font-black text-slate-800 dark:text-white mt-0.5 sm:mt-1 truncate">LVL {avgLevel}</p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Batch Game Leaderboard */}
       <div className="space-y-3">
@@ -135,8 +103,170 @@ export default function TeacherLeaderboardTab({
           })}
         </div>
 
-        {/* List of distinct student rows with vertical spacing */}
-        <div className="space-y-2.5">
+        {/* Desktop-optimized Table View */}
+        <div className="hidden md:block overflow-x-auto bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] rounded-[24px] shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-150/40 dark:border-slate-800/40 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">
+                <th className="py-4 px-5 w-16 text-center">Rank</th>
+                <th className="py-4 px-5">Student</th>
+                <th className="py-4 px-5 text-center">Level</th>
+                <th className="py-4 px-5 text-center">XP</th>
+                <th className="py-4 px-5 text-center">Coins</th>
+                <th className="py-4 px-5 text-center">Streak</th>
+                <th className="py-4 px-5 text-center">Today's Solved</th>
+                <th className="py-4 px-5 text-center">All-Time Solved</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedLeaderboard.map((student, idx) => {
+                const rank = idx + 1;
+                const dailyAccuracy = student.dailyQuestionsAttempted > 0
+                  ? Math.round(((student.dailyWins || 0) / student.dailyQuestionsAttempted) * 100)
+                  : 0;
+
+                // Define specialized rankings theme
+                let rowBg = "hover:bg-slate-100/40 dark:hover:bg-slate-805/20";
+                let rankBadgeBg = "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+                let rankIcon = null;
+
+                if (rank === 1) {
+                  rowBg = "bg-yellow-500/5 hover:bg-yellow-500/10 dark:bg-yellow-500/5 dark:hover:bg-yellow-500/10";
+                  rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
+                  rankIcon = <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />;
+                } else if (rank === 2) {
+                  rowBg = "bg-slate-100/15 hover:bg-slate-150/20 dark:bg-slate-700/5 dark:hover:bg-slate-700/10";
+                  rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
+                  rankIcon = <Award className="w-3.5 h-3.5 text-slate-450 fill-slate-400" />;
+                } else if (rank === 3) {
+                  rowBg = "bg-orange-500/5 hover:bg-orange-500/10 dark:bg-orange-500/5 dark:hover:bg-orange-500/10";
+                  rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
+                  rankIcon = <Award className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />;
+                }
+
+                // Name strip background gradient
+                let nameStripBg = "bg-gradient-to-r from-slate-100/70 to-transparent dark:from-slate-800/30";
+                let nameStripBorder = "border-l-[3px] border-slate-300 dark:border-slate-800";
+                if (rank === 1) {
+                  nameStripBg = "bg-gradient-to-r from-yellow-500/10 to-transparent dark:from-yellow-500/15";
+                  nameStripBorder = "border-l-[3px] border-yellow-500";
+                } else if (rank === 2) {
+                  nameStripBg = "bg-gradient-to-r from-slate-300/15 to-transparent dark:from-slate-700/15";
+                  nameStripBorder = "border-l-[3px] border-slate-400";
+                } else if (rank === 3) {
+                  nameStripBg = "bg-gradient-to-r from-orange-500/10 to-transparent dark:from-orange-500/15";
+                  nameStripBorder = "border-l-[3px] border-orange-500";
+                }
+
+                return (
+                  <tr key={student.studentId} className={`border-b border-slate-150/40 dark:border-slate-800/40 transition-colors ${rowBg}`}>
+                    {/* Rank */}
+                    <td className="py-4 px-5 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className={`w-6 h-6 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${rankBadgeBg}`}>
+                          {rank}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Student Info */}
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <InteractiveAvatar
+                            src={student.profileImage}
+                            fallbackText={student.userName?.charAt(0) || "?"}
+                            userId={student.studentId}
+                            userName={student.userName}
+                            showStatus={true}
+                            statusSize="xs"
+                            className="h-9 w-9 rounded-2xl"
+                          />
+                          {rank === 1 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 p-0.5 rounded-full ring-2 ring-white dark:ring-slate-900 text-[10px] select-none">
+                              👑
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
+                            <p className="text-xs sm:text-sm font-black text-slate-850 dark:text-white truncate">
+                              {student.userName}
+                            </p>
+                            {rankIcon}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Level */}
+                    <td className="py-3 px-5 text-center">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-md">
+                        LVL {student.level}
+                      </span>
+                    </td>
+
+                    {/* XP */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-pink-500" />
+                        <span className="text-xs font-black text-slate-850 dark:text-slate-100">{student.xp}</span>
+                      </div>
+                    </td>
+
+                    {/* Coins */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Coins className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-xs font-black text-slate-850 dark:text-slate-100">{student.coins || 0}</span>
+                      </div>
+                    </td>
+
+                    {/* Streak */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="flex items-center gap-1 text-xs font-black text-orange-600 dark:text-orange-450 leading-none">
+                          <Flame className="w-3.5 h-3.5" />
+                          <span>{student.currentStreak || 0}d</span>
+                        </div>
+                        <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                          Best: {student.highestStreak || 0}d
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Today's Solved */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-slate-850 dark:text-white leading-none">
+                          {student.dailyWins || 0} <span className="text-[9px] text-slate-450 font-bold">/ {student.dailyQuestionsAttempted || 0}</span>
+                        </span>
+                        <span className="text-[9.5px] font-extrabold text-pink-500 mt-1">
+                          {student.dailyQuestionsAttempted > 0 ? `${dailyAccuracy}% Acc` : "—"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* All-Time Solved */}
+                    <td className="py-3 px-5 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-slate-850 dark:text-white leading-none">
+                          {student.wins || 0} <span className="text-[9px] text-slate-450 font-bold">/ {student.questionsAttempted || 0}</span>
+                        </span>
+                        <span className="text-[9.5px] font-extrabold text-purple-500 mt-1">
+                          {student.accuracy || 0}% Acc
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile List View (click-to-expand) */}
+        <div className="md:hidden space-y-2.5">
           {sortedLeaderboard.map((student, idx) => {
             const isExpanded = expandedStudentId === student.studentId;
             const rank = idx + 1;
@@ -212,7 +342,7 @@ export default function TeacherLeaderboardTab({
                     {/* Name with side color strip accent and Level */}
                     <div className="min-w-0 flex-1">
                       <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
-                        <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-white">
+                        <p className="text-xs sm:text-sm font-black text-slate-850 dark:text-white">
                           {student.userName}
                         </p>
                         {rankIcon}
@@ -233,7 +363,7 @@ export default function TeacherLeaderboardTab({
                         <Zap className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                        <p className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
                           {student.xp}
                         </p>
                         <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
@@ -248,7 +378,7 @@ export default function TeacherLeaderboardTab({
                         <Coins className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                        <p className="text-[11px] sm:text-xs font-black text-slate-855 dark:text-slate-100 leading-none">
                           {student.coins || 0}
                         </p>
                         <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
@@ -263,8 +393,8 @@ export default function TeacherLeaderboardTab({
                         <Target className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
-                          {student.wins} <span className="text-[9px] font-normal text-slate-400">/{student.questionsAttempted || 0}</span>
+                        <p className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
+                          {student.wins} <span className="text-[9px] font-normal text-slate-450">/{student.questionsAttempted || 0}</span>
                         </p>
                         <p className="text-[8px] font-bold text-slate-405 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
                           MCQs
@@ -315,9 +445,9 @@ export default function TeacherLeaderboardTab({
                             
                             {/* Card 1: Today's Solved */}
                             <div className="bg-white/50 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
-                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Today's Solved</p>
+                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-505 uppercase tracking-wider">Today's Solved</p>
                               <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
-                                {student.dailyWins || 0} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">/ {student.dailyQuestionsAttempted || 0}</span>
+                                {student.dailyWins || 0} <span className="text-xs text-slate-450 dark:text-slate-500 font-bold">/ {student.dailyQuestionsAttempted || 0}</span>
                               </p>
                               <p className="text-[10.5px] font-extrabold text-pink-500 mt-2">
                                 {student.dailyQuestionsAttempted > 0 ? `${dailyAccuracy}% Acc` : "—"}
@@ -326,9 +456,9 @@ export default function TeacherLeaderboardTab({
 
                             {/* Card 2: All-Time Solved */}
                             <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
-                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">All-Time Solved</p>
+                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-550 uppercase tracking-wider">All-Time Solved</p>
                               <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
-                                {student.wins || 0} <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">/ {student.questionsAttempted || 0}</span>
+                                {student.wins || 0} <span className="text-xs text-slate-450 dark:text-slate-500 font-bold">/ {student.questionsAttempted || 0}</span>
                               </p>
                               <p className="text-[10.5px] font-extrabold text-purple-500 mt-2">
                                 {student.accuracy || 0}% Acc
@@ -337,7 +467,7 @@ export default function TeacherLeaderboardTab({
 
                             {/* Card 3: Current Level */}
                             <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
-                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Current Level</p>
+                              <p className="text-[10px] font-black text-slate-450 dark:text-slate-505 uppercase tracking-wider">Current Level</p>
                               <p className="text-base font-black text-slate-800 dark:text-white mt-1.5 leading-none">
                                 LVL {student.level}
                               </p>
@@ -347,13 +477,13 @@ export default function TeacherLeaderboardTab({
                                   style={{ width: `${levelProgress}%` }}
                                 />
                               </div>
-                              <p className="text-[8px] text-slate-450 dark:text-slate-500 font-bold mt-1 text-right">{levelProgress}/100 XP</p>
+                              <p className="text-[8px] text-slate-450 dark:text-slate-505 font-bold mt-1 text-right">{levelProgress}/100 XP</p>
                             </div>
 
                             {/* Card 4: Streak */}
                             <div className="bg-white/50 dark:bg-slate-950/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center flex flex-col justify-between">
                               <div>
-                                <p className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Streak</p>
+                                <p className="text-[10px] font-black text-slate-450 dark:text-slate-505 uppercase tracking-wider">Streak</p>
                                 <p className="text-base font-black text-orange-500 mt-1.5 flex items-center justify-center gap-1 leading-none">
                                   🔥 {student.currentStreak || 0}d
                                 </p>

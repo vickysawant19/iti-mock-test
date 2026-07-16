@@ -68,7 +68,6 @@ import StudentAttendancePage from "./private/Attendance/StudentAttendance/Studen
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
 // and force client-side redirect since the cached SW bypassed Vercel's redirect
-console.log(window.location.hostname, "Redirecting from old domain");
 if (window.location.hostname === "itimocktest.vercel.app") {
   const forceRedirect = () => {
     window.location.replace(
@@ -101,7 +100,7 @@ if (window.location.hostname === "itimocktest.vercel.app") {
 }
 
 const router = (
-  <Router>
+  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <Routes>
       <Route path="/" element={<App />}>
         <Route index element={<Home />} />

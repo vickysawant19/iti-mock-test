@@ -102,8 +102,196 @@ export default function LeaderboardTab({
         </div>
       </div>
 
-      {/* List of distinct student rows with vertical spacing */}
-      <div className="space-y-2.5">
+      {/* Desktop-optimized Table View */}
+      <div className="hidden md:block overflow-x-auto bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 rounded-[24px] shadow-sm">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-150/40 dark:border-slate-800/40 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">
+              <th className="py-4 px-5 w-16 text-center">Rank</th>
+              <th className="py-4 px-5">Student</th>
+              <th className="py-4 px-5 text-center">Level</th>
+              <th className="py-4 px-5 text-center">XP</th>
+              <th className="py-4 px-5 text-center">Coins</th>
+              <th className="py-4 px-5 text-center">Streak</th>
+              <th className="py-4 px-5 text-center">Today's Solved</th>
+              <th className="py-4 px-5 text-center">All-Time Solved</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gamifiedLeaderboard.map((entry) => {
+              const isMe = entry.studentId === user?.$id;
+              const dailyAccuracy = entry.dailyQuestionsAttempted > 0
+                ? Math.round(((entry.dailyWins || 0) / entry.dailyQuestionsAttempted) * 100)
+                : 0;
+
+              const entryCosmetics = cosmeticsService.parseCosmetics(entry);
+              const entryFrame = entryCosmetics.equipped?.frame;
+              const entryTitle = entryCosmetics.equipped?.title;
+
+              // Define specialized rankings theme
+              let rowBg = isMe
+                ? "bg-pink-500/5 hover:bg-pink-500/10 dark:bg-pink-900/10 dark:hover:bg-pink-900/15"
+                : "hover:bg-slate-100/40 dark:hover:bg-slate-805/20";
+              let rankBadgeBg = "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+              let rankIcon = null;
+
+              if (entry.rank === 1) {
+                if (!isMe) rowBg = "bg-yellow-500/5 hover:bg-yellow-500/10 dark:bg-yellow-500/5 dark:hover:bg-yellow-500/10";
+                rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
+                rankIcon = <span className="text-yellow-500">👑</span>;
+              } else if (entry.rank === 2) {
+                if (!isMe) rowBg = "bg-slate-100/15 hover:bg-slate-150/20 dark:bg-slate-700/5 dark:hover:bg-slate-700/10";
+                rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
+                rankIcon = <span className="text-slate-450">🥈</span>;
+              } else if (entry.rank === 3) {
+                if (!isMe) rowBg = "bg-orange-500/5 hover:bg-orange-500/10 dark:bg-orange-500/5 dark:hover:bg-orange-500/10";
+                rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
+                rankIcon = <span className="text-orange-500">🥉</span>;
+              }
+
+              // Name strip background gradient
+              let nameStripBg = "bg-gradient-to-r from-slate-100/70 to-transparent dark:from-slate-800/30";
+              let nameStripBorder = "border-l-[3px] border-slate-300 dark:border-slate-800";
+              if (entry.rank === 1) {
+                nameStripBg = "bg-gradient-to-r from-yellow-500/10 to-transparent dark:from-yellow-500/15";
+                nameStripBorder = "border-l-[3px] border-yellow-500";
+              } else if (entry.rank === 2) {
+                nameStripBg = "bg-gradient-to-r from-slate-300/15 to-transparent dark:from-slate-700/15";
+                nameStripBorder = "border-l-[3px] border-slate-400";
+              } else if (entry.rank === 3) {
+                nameStripBg = "bg-gradient-to-r from-orange-500/10 to-transparent dark:from-orange-500/15";
+                nameStripBorder = "border-l-[3px] border-orange-500";
+              } else if (isMe) {
+                nameStripBg = "bg-gradient-to-r from-pink-500/10 to-transparent dark:from-pink-500/15";
+                nameStripBorder = "border-l-[3px] border-pink-500";
+              }
+
+              return (
+                <tr key={entry.studentId} className={`border-b border-slate-150/40 dark:border-slate-800/40 transition-colors ${rowBg}`}>
+                  {/* Rank */}
+                  <td className="py-4 px-5 text-center">
+                    <div className="flex items-center justify-center">
+                      <div className={`w-6 h-6 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${rankBadgeBg}`}>
+                        {entry.rank}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Student Info */}
+                  <td className="py-3 px-5">
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <InteractiveAvatar
+                          src={entry.profileImage}
+                          fallbackText={entry.userName.charAt(0)}
+                          userId={entry.studentId}
+                          userName={entry.userName}
+                          showStatus={true}
+                          statusSize="xs"
+                          className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm"
+                        />
+                        {entryFrame && (
+                          <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
+                            COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
+                          }`} style={{ transform: "scale(1.09)" }} />
+                        )}
+                        {entry.rank === 1 && (
+                          <span className="absolute -top-1.5 -right-1.5 bg-yellow-500 p-0.5 rounded-full ring-2 ring-white dark:ring-slate-900 text-[10px] select-none">
+                            👑
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
+                          <p className="text-xs sm:text-sm font-black text-slate-855 dark:text-white truncate flex items-center gap-1.5">
+                            {entry.userName}
+                            {isMe && (
+                              <span className="text-[7px] font-extrabold bg-pink-500 text-white px-1 py-0.2 rounded-full uppercase">
+                                You
+                              </span>
+                            )}
+                            {rankIcon}
+                          </p>
+                        </div>
+                        {entryTitle && (
+                          <div className="mt-1 px-1">
+                            <span className="text-[7.5px] font-black bg-yellow-500/20 text-yellow-600 dark:text-yellow-450 border border-yellow-500/30 px-1.5 py-0.2 rounded uppercase tracking-wider">
+                              {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Level */}
+                  <td className="py-3 px-5 text-center">
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-md">
+                      LVL {entry.level}
+                    </span>
+                  </td>
+
+                  {/* XP */}
+                  <td className="py-3 px-5 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-pink-500" />
+                      <span className="text-xs font-black text-slate-850 dark:text-slate-100">{entry.xp}</span>
+                    </div>
+                  </td>
+
+                  {/* Coins */}
+                  <td className="py-3 px-5 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Coins className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-xs font-black text-slate-855 dark:text-slate-100">{entry.coins || 0}</span>
+                    </div>
+                  </td>
+
+                  {/* Streak */}
+                  <td className="py-3 px-5 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="flex items-center gap-1 text-xs font-black text-orange-600 dark:text-orange-450 leading-none">
+                        <Flame className="w-3.5 h-3.5" />
+                        <span>{entry.currentStreak || 0}d</span>
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                        Best: {entry.maxStreak || entry.currentStreak}d
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Today's Solved */}
+                  <td className="py-3 px-5 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-xs font-black text-slate-850 dark:text-white leading-none">
+                        {entry.dailyWins || 0} <span className="text-[9px] text-slate-450 font-bold">/ {entry.dailyQuestionsAttempted || 0}</span>
+                      </span>
+                      <span className="text-[9.5px] font-extrabold text-pink-500 mt-1">
+                        {entry.dailyQuestionsAttempted > 0 ? `${dailyAccuracy}% Acc` : "—"}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* All-Time Solved */}
+                  <td className="py-3 px-5 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-xs font-black text-slate-855 dark:text-white leading-none">
+                        {entry.wins || 0} <span className="text-[9px] text-slate-450 font-bold">/ {entry.questionsAttempted || 0}</span>
+                      </span>
+                      <span className="text-[9.5px] font-extrabold text-purple-500 mt-1">
+                        {entry.accuracy || 0}% Acc
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile List View (click-to-expand) */}
+      <div className="md:hidden space-y-2.5">
         {gamifiedLeaderboard.map((entry) => {
           const isMe = entry.studentId === user?.$id;
           const isExpanded = expandedStudentId === entry.studentId;
@@ -161,7 +349,7 @@ export default function LeaderboardTab({
                       2
                     </span>
                   ) : entry.rank === 3 ? (
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-400 text-[10px] font-black shrink-0">
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-455 text-[10px] font-black shrink-0">
                       3
                     </span>
                   ) : (
@@ -219,7 +407,7 @@ export default function LeaderboardTab({
                       <Zap className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                      <p className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
                         {entry.xp}
                       </p>
                       <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
@@ -230,11 +418,11 @@ export default function LeaderboardTab({
 
                   {/* Coins Column */}
                   <div className="flex items-center gap-1.5 min-w-[50px]">
-                    <div className="p-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-450 rounded-lg shrink-0">
+                    <div className="p-1 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-455 rounded-lg shrink-0">
                       <Coins className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                      <p className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
                         {entry.coins || 0}
                       </p>
                       <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
@@ -245,11 +433,11 @@ export default function LeaderboardTab({
 
                   {/* MCQs Column */}
                   <div className="flex items-center gap-1.5 min-w-[70px]">
-                    <div className="p-1 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-450 rounded-lg shrink-0">
+                    <div className="p-1 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-455 rounded-lg shrink-0">
                       <Target className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <p className="text-[11px] sm:text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
+                      <p className="text-[11px] sm:text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
                         {entry.wins} <span className="text-[9px] font-normal text-slate-400">/{entry.questionsAttempted || 0}</span>
                       </p>
                       <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
@@ -264,7 +452,7 @@ export default function LeaderboardTab({
                       <Flame className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <p className="text-[11px] sm:text-xs font-black text-orange-600 dark:text-orange-450 leading-none">
+                      <p className="text-[11px] sm:text-xs font-black text-orange-600 dark:text-orange-455 leading-none">
                         {entry.currentStreak || 0}d
                       </p>
                       <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">
