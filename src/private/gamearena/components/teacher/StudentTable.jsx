@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
+import { fixProfileImage } from "@/services/appwriteClient";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ const StudentCard = ({ row, selectedMonth }) => {
         {/* Avatar + Name */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Avatar className="h-10 w-10 shrink-0 rounded-xl">
-            <AvatarImage src={row.profileImage} />
+            <AvatarImage src={fixProfileImage(row.profileImage)} />
             <AvatarFallback className="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-black">
               {row.userName?.charAt(0) || "?"}
             </AvatarFallback>
@@ -346,7 +347,7 @@ const StudentTable = ({ studentRows = [], selectedMonth }) => {
                     <td className="py-3.5 px-5">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 shrink-0 rounded-xl">
-                          <AvatarImage src={row.profileImage} />
+                          <AvatarImage src={fixProfileImage(row.profileImage)} />
                           <AvatarFallback className="rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black">
                             {row.userName?.charAt(0) || "?"}
                           </AvatarFallback>
