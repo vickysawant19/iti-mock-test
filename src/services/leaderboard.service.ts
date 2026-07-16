@@ -20,6 +20,7 @@ export interface LeaderboardEntry extends StudentGameStats {
 export class LeaderboardService extends DatabaseService {
   private leaderboardCache = new Map<string, { time: number; data: LeaderboardEntry[] }>();
   private leaderboardRequests = new Map<string, Promise<LeaderboardEntry[]>>();
+  private profileCache = new Map<string, { userName: string; profileImage: string | null }>();
 
   constructor() {
     super(conf.gameStatsCollectionId);
@@ -55,20 +56,34 @@ export class LeaderboardService extends DatabaseService {
         const statsList = response.rows || [];
         if (statsList.length === 0) return [];
 
-        // 2. Fetch user profiles for these studentIds to get their names and avatars
+        // 2. Fetch user profiles for these studentIds to get their names and avatars (using cache to optimize!)
         const studentIds = statsList.map((s) => s.studentId);
-        const profiles = await userProfileService.getBatchUserProfile([
-          Query.equal("userId", studentIds),
-          Query.limit(100),
-          Query.select(["userId", "userName", "profileImage"]),
-        ]);
+        const missingIds = studentIds.filter((id) => !this.profileCache.has(id));
+
+        if (missingIds.length > 0) {
+          try {
+            const profiles = await userProfileService.getBatchUserProfile([
+              Query.equal("userId", missingIds),
+              Query.limit(100),
+              Query.select(["userId", "userName", "profileImage"]),
+            ]);
+            profiles.forEach((p) => {
+              this.profileCache.set(p.userId, {
+                userName: p.userName || "Student",
+                profileImage: p.profileImage || null,
+              });
+            });
+          } catch (profileError) {
+            console.error("[LeaderboardService] Failed to load user profiles:", profileError);
+          }
+        }
 
         // Map profiles for quick lookup
         const profileMap: Record<string, { userName: string; profileImage: string | null }> = {};
-        profiles.forEach((p) => {
-          profileMap[p.userId] = {
-            userName: p.userName || "Student",
-            profileImage: p.profileImage || null,
+        studentIds.forEach((id) => {
+          profileMap[id] = this.profileCache.get(id) || {
+            userName: "Unknown Student",
+            profileImage: null,
           };
         });
 

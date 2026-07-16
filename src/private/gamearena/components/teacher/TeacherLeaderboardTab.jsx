@@ -22,6 +22,7 @@ export default function TeacherLeaderboardTab({
   leaderboard,
   expandedStudentId,
   setExpandedStudentId,
+  recentlyUpdatedStudents = {},
 }) {
   const [leaderboardFilter, setLeaderboardFilter] = useState("xp");
 
@@ -125,29 +126,40 @@ export default function TeacherLeaderboardTab({
                   ? Math.round(((student.dailyWins || 0) / student.dailyQuestionsAttempted) * 100)
                   : 0;
 
+                const isHighlighted = recentlyUpdatedStudents[student.studentId];
+
                 // Define specialized rankings theme
-                let rowBg = "hover:bg-slate-100/40 dark:hover:bg-slate-805/20";
-                let rankBadgeBg = "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+                let rowBg = isHighlighted
+                  ? "bg-indigo-500/15 dark:bg-indigo-500/20 animate-pulse border-y border-y-indigo-500/30"
+                  : "hover:bg-slate-100/40 dark:hover:bg-slate-855/20";
+                let rankBadgeBg = isHighlighted
+                  ? "bg-indigo-500 text-white font-black ring-2 ring-indigo-400/30"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
                 let rankIcon = null;
 
-                if (rank === 1) {
-                  rowBg = "bg-yellow-500/5 hover:bg-yellow-500/10 dark:bg-yellow-500/5 dark:hover:bg-yellow-500/10";
-                  rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
-                  rankIcon = <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />;
-                } else if (rank === 2) {
-                  rowBg = "bg-slate-100/15 hover:bg-slate-150/20 dark:bg-slate-700/5 dark:hover:bg-slate-700/10";
-                  rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
-                  rankIcon = <Award className="w-3.5 h-3.5 text-slate-450 fill-slate-400" />;
-                } else if (rank === 3) {
-                  rowBg = "bg-orange-500/5 hover:bg-orange-500/10 dark:bg-orange-500/5 dark:hover:bg-orange-500/10";
-                  rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
-                  rankIcon = <Award className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />;
+                if (!isHighlighted) {
+                  if (rank === 1) {
+                    rowBg = "bg-yellow-500/5 hover:bg-yellow-500/10 dark:bg-yellow-500/5 dark:hover:bg-yellow-500/10";
+                    rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
+                    rankIcon = <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />;
+                  } else if (rank === 2) {
+                    rowBg = "bg-slate-100/15 hover:bg-slate-150/20 dark:bg-slate-700/5 dark:hover:bg-slate-700/10";
+                    rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
+                    rankIcon = <Award className="w-3.5 h-3.5 text-slate-450 fill-slate-400" />;
+                  } else if (rank === 3) {
+                    rowBg = "bg-orange-500/5 hover:bg-orange-500/10 dark:bg-orange-500/5 dark:hover:bg-orange-500/10";
+                    rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
+                    rankIcon = <Award className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />;
+                  }
                 }
 
                 // Name strip background gradient
                 let nameStripBg = "bg-gradient-to-r from-slate-100/70 to-transparent dark:from-slate-800/30";
                 let nameStripBorder = "border-l-[3px] border-slate-300 dark:border-slate-800";
-                if (rank === 1) {
+                if (isHighlighted) {
+                  nameStripBg = "bg-gradient-to-r from-indigo-500/15 to-transparent dark:from-indigo-500/20";
+                  nameStripBorder = "border-l-[3px] border-indigo-500";
+                } else if (rank === 1) {
                   nameStripBg = "bg-gradient-to-r from-yellow-500/10 to-transparent dark:from-yellow-500/15";
                   nameStripBorder = "border-l-[3px] border-yellow-500";
                 } else if (rank === 2) {
@@ -270,26 +282,34 @@ export default function TeacherLeaderboardTab({
           {sortedLeaderboard.map((student, idx) => {
             const isExpanded = expandedStudentId === student.studentId;
             const rank = idx + 1;
+            const isHighlighted = recentlyUpdatedStudents[student.studentId];
 
             // Define specialized rankings theme
-            let rankBadgeBg = "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+            let rankBadgeBg = isHighlighted
+              ? "bg-indigo-500 text-white font-black ring-2 ring-indigo-400/30"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
             let rankIcon = null;
 
-            if (rank === 1) {
-              rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
-              rankIcon = <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />;
-            } else if (rank === 2) {
-              rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
-              rankIcon = <Award className="w-3.5 h-3.5 text-slate-450 fill-slate-400" />;
-            } else if (rank === 3) {
-              rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
-              rankIcon = <Award className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />;
+            if (!isHighlighted) {
+              if (rank === 1) {
+                rankBadgeBg = "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black";
+                rankIcon = <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />;
+              } else if (rank === 2) {
+                rankBadgeBg = "bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black";
+                rankIcon = <Award className="w-3.5 h-3.5 text-slate-450 fill-slate-400" />;
+              } else if (rank === 3) {
+                rankBadgeBg = "bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black";
+                rankIcon = <Award className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />;
+              }
             }
 
             // Name strip background gradient
             let nameStripBg = "bg-gradient-to-r from-slate-100/70 to-transparent dark:from-slate-800/30";
             let nameStripBorder = "border-l-[3px] border-slate-300 dark:border-slate-800";
-            if (rank === 1) {
+            if (isHighlighted) {
+              nameStripBg = "bg-gradient-to-r from-indigo-500/15 to-transparent dark:from-indigo-500/20";
+              nameStripBorder = "border-l-[3px] border-indigo-500";
+            } else if (rank === 1) {
               nameStripBg = "bg-gradient-to-r from-yellow-500/10 to-transparent dark:from-yellow-500/15";
               nameStripBorder = "border-l-[3px] border-yellow-500";
             } else if (rank === 2) {
@@ -300,12 +320,16 @@ export default function TeacherLeaderboardTab({
               nameStripBorder = "border-l-[3px] border-orange-500";
             }
 
+            const glowCardClass = isHighlighted
+              ? "border-indigo-500 dark:border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.35)] ring-2 ring-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-950/20 animate-pulse"
+              : "";
+
             return (
               <div
                 key={student.studentId}
                 className={`bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] rounded-2xl overflow-hidden shadow-sm transition-all duration-200 ${
                   isExpanded ? "ring-2 ring-pink-500/20" : ""
-                }`}
+                } ${glowCardClass}`}
               >
                 {/* Row Header */}
                 <div

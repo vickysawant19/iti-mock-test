@@ -43,6 +43,7 @@ import { gameService } from "@/services/game.service";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { BADGES } from "@/services/reward.service";
 import { ID } from "appwrite";
+import conf from "@/config/config";
 
 const TeacherGameArena = ({
   profile,
@@ -91,6 +92,7 @@ const TeacherGameArena = ({
   const [challengeCoins, setChallengeCoins] = useState(50);
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [expandedStudentId, setExpandedStudentId] = useState(null);
+  const [recentlyUpdatedStudents, setRecentlyUpdatedStudents] = useState({});
 
   // Automatically populate fields when template changes
   useEffect(() => {
@@ -115,9 +117,9 @@ const TeacherGameArena = ({
   const [isDispatchingPrize, setIsDispatchingPrize] = useState(false);
 
   // Fetch teacher-specific gamification stats
-  const fetchGamificationData = useCallback(async () => {
+  const fetchGamificationData = useCallback(async (isBackground = false) => {
     if (!batchContext?.batchId) return;
-    setLoadingGame(true);
+    if (!isBackground) setLoadingGame(true);
     try {
       const [challengesList, leaderboardList] = await Promise.all([
         challengeService.listChallenges(batchContext.batchId),
@@ -128,7 +130,18 @@ const TeacherGameArena = ({
     } catch (err) {
       console.error("[TeacherDashboard] Error fetching gamification:", err);
     } finally {
-      setLoadingGame(false);
+      if (!isBackground) setLoadingGame(false);
+    }
+  }, [batchContext?.batchId]);
+
+  // Fetch only leaderboard stats (highly optimized)
+  const fetchLeaderboardData = useCallback(async () => {
+    if (!batchContext?.batchId) return;
+    try {
+      const leaderboardList = await leaderboardService.getBatchLeaderboard(batchContext.batchId);
+      setLeaderboard(leaderboardList);
+    } catch (err) {
+      console.error("[TeacherDashboard] Error fetching leaderboard:", err);
     }
   }, [batchContext?.batchId]);
 
@@ -142,6 +155,70 @@ const TeacherGameArena = ({
       fetchGamificationData();
     }
   }, [batchContext?.batchId, activeTab, fetchGamificationData]);
+
+  // Realtime subscription for game stats (updates leaderboard live for the teacher)
+  useEffect(() => {
+    if (!batchContext?.batchId) return;
+
+    let sub = null;
+    let mounted = true;
+
+    const setupRealtime = async () => {
+      try {
+        const { appwriteService } = await import("@/services/appwriteClient");
+        const realtime = appwriteService.getRealtime();
+        const { Channel } = await import("appwrite");
+        const channel = Channel.tablesdb(conf.databaseId)
+          .table(conf.gameStatsCollectionId)
+          .row();
+
+        sub = await realtime.subscribe(channel, (response) => {
+          if (!mounted) return;
+          const payload = response.payload;
+          
+          if (payload?.batchId === batchContext.batchId) {
+            if (payload?.studentId) {
+              setRecentlyUpdatedStudents((prev) => ({
+                ...prev,
+                [payload.studentId]: Date.now(),
+              }));
+              
+              // Clear highlight after 4 seconds
+              setTimeout(() => {
+                if (mounted) {
+                  setRecentlyUpdatedStudents((prev) => {
+                    const next = { ...prev };
+                    delete next[payload.studentId];
+                    return next;
+                  });
+                }
+              }, 4000);
+            }
+
+            // Trigger leaderboard reload in background
+            if (
+              activeTab === "leaderboard" ||
+              activeTab === "prizes" ||
+              activeTab === "challenges"
+            ) {
+              fetchLeaderboardData();
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("[TeacherGameArena] Realtime leaderboard subscription failed:", err);
+      }
+    };
+
+    setupRealtime();
+
+    return () => {
+      mounted = false;
+      if (sub && typeof sub.unsubscribe === "function") {
+        sub.unsubscribe();
+      }
+    };
+  }, [batchContext?.batchId, activeTab, fetchLeaderboardData]);
 
   // Reset scroll position to top on tab changes
   useEffect(() => {
@@ -460,6 +537,7 @@ const TeacherGameArena = ({
                     expandedStudentId={expandedStudentId}
                     setExpandedStudentId={setExpandedStudentId}
                     studentRows={studentRows}
+                    recentlyUpdatedStudents={recentlyUpdatedStudents}
                   />
                 </motion.div>
               )}
