@@ -27,7 +27,13 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  ListTodo
+  ListTodo,
+  Gamepad2,
+  Trophy,
+  Coins,
+  Sparkles,
+  Zap,
+  Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,6 +84,12 @@ const Home = () => {
       color: "purple",
     },
     {
+      icon: <Gamepad2 className="w-8 h-8" />,
+      title: "Interactive Game Arena",
+      desc: "Drive learner motivation with custom quest roads, daily missions, leveling systems, and live leaderboards.",
+      color: "pink",
+    },
+    {
       icon: <LineChart className="w-8 h-8" />,
       title: "Student Progress Tracking",
       desc: "Visualize learning curves with powerful analytics and dynamically generated performance scorecards.",
@@ -95,6 +107,12 @@ const Home = () => {
       desc: "Evaluate practical jobs with custom grading metrics and generate professional PDF reports instantly.",
       color: "cyan",
     },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: "Class Lobby & Presence",
+      desc: "Build community with real-time indicators showing online batch members and their active learning status.",
+      color: "fuchsia",
+    },
   ];
 
   const roles = [
@@ -109,7 +127,12 @@ const Home = () => {
       title: "Teacher Dashboard",
       icon: <UserCircle className="w-10 h-10 text-blue-600 dark:text-blue-400" />,
       desc: "Tools to empower educators.",
-      features: ["Create & grade mock tests", "Log daily diaries", "Evaluate practical jobs"],
+      features: [
+        "Create & grade mock tests",
+        "Log daily diaries & evaluate practical jobs",
+        "Configure Game Arena modules & settings",
+        "Launch challenges & award custom badges"
+      ],
       bg: "bg-blue-50 dark:bg-blue-900/20",
       border: "border-blue-200 dark:border-blue-800",
     },
@@ -117,7 +140,12 @@ const Home = () => {
       title: "Student Portal",
       icon: <GraduationCap className="w-10 h-10 text-green-600 dark:text-green-400" />,
       desc: "A personalized learning hub.",
-      features: ["Take mock exams", "View attendance", "Track performance scores"],
+      features: [
+        "Take mock exams & view attendance",
+        "Earn XP/Coins & climb batch leaderboards",
+        "Navigate visual quest stages in Game World",
+        "Unlock premium avatars & spin the lucky wheel"
+      ],
       bg: "bg-green-50 dark:bg-green-900/20",
       border: "border-green-200 dark:border-green-800",
     },
@@ -137,6 +165,8 @@ const Home = () => {
     amber: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
     rose: "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400",
     cyan: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400",
+    pink: "bg-pink-100 text-pink-600 dark:bg-pink-900/40 dark:text-pink-400",
+    fuchsia: "bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/40 dark:text-fuchsia-400",
   };
 
   return (
@@ -411,6 +441,222 @@ const Home = () => {
 
            </div>
          </div>
+      </section>
+
+      {/* 3.5. Game Arena Showcase Section */}
+      <section className="py-24 bg-slate-900 dark:bg-slate-950 text-white relative overflow-hidden">
+        {/* Glow Effects inside the dark container */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              
+              {/* Left Column: Information & Details */}
+              <div className="space-y-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 text-pink-400 text-sm font-semibold border border-pink-500/25">
+                  <Gamepad2 className="w-4 h-4 animate-bounce" /> Gamified Learning
+                </div>
+                
+                <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                  Step into the <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-amber-300">
+                    Game Arena
+                  </span>
+                </h2>
+                
+                <p className="text-lg text-slate-300 leading-relaxed">
+                  Turn study sessions into an exciting RPG adventure! The Game Arena bridges course modules with game mechanics, driving trainee engagement through competitive, self-paced, and rewarded quests.
+                </p>
+                
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {[
+                    {
+                      icon: <Trophy className="w-5 h-5 text-pink-400" />,
+                      title: "Ranked Leaderboards",
+                      desc: "Climb the local ranks from Bronze to Diamond based on XP earned from mock tests and daily missions."
+                    },
+                    {
+                      icon: <Coins className="w-5 h-5 text-amber-400" />,
+                      title: "Cosmetic Store",
+                      desc: "Spend earned gold coins on premium custom avatars, neon profile borders, and titles."
+                    },
+                    {
+                      icon: <Sparkles className="w-5 h-5 text-purple-400" />,
+                      title: "Daily Lucky Spin",
+                      desc: "Spin the wheel every 24 hours to win bonus gold, rare cosmetics, or boost points."
+                    },
+                    {
+                      icon: <Zap className="w-5 h-5 text-yellow-400" />,
+                      title: "Interactive Quest Roads",
+                      desc: "Progress through visual maps representing trade topics, answering MCQs to unlock new stages."
+                    }
+                  ].map((item, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                          {item.icon}
+                        </div>
+                        <h4 className="font-bold text-white text-base">{item.title}</h4>
+                      </div>
+                      <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4">
+                  <Button
+                    size="lg"
+                    onClick={() => navigate(isLoggedIn ? "/arena" : "/signup")}
+                    className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-pink-500/20 transition-all hover:-translate-y-1"
+                  >
+                    {isLoggedIn ? "Enter Game Arena" : "Join the Arena"} <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Right Column: Visual Game Mockup */}
+              <div className="relative">
+                {/* Visual Glow behind Mockup */}
+                <div className="absolute -inset-2 bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 rounded-3xl blur-2xl opacity-30"></div>
+                
+                {/* Main Mockup Box */}
+                <div className="relative bg-slate-950/80 border border-purple-500/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-6">
+                  
+                  {/* Game Hub Header Mock */}
+                  <div className="flex items-center justify-between pb-4 border-b border-purple-900/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-pink-500/20">
+                        IM
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                          Trainee League <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        </div>
+                        <div className="text-xs text-purple-400 font-medium">Diamond Division</div>
+                      </div>
+                    </div>
+                    
+                    {/* Currencies */}
+                    <div className="flex gap-3">
+                      <div className="flex items-center gap-1 bg-purple-950/50 border border-purple-800/40 rounded-full px-3 py-1 text-xs">
+                        <Zap className="w-3.5 h-3.5 text-pink-400 fill-pink-400 animate-pulse" />
+                        <span className="font-bold text-slate-200">1,450 <span className="text-[10px] text-purple-400 font-normal">XP</span></span>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-950/50 border border-amber-800/40 rounded-full px-3 py-1 text-xs">
+                        <Coins className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="font-bold text-slate-200">380 <span className="text-[10px] text-amber-500 font-normal">G</span></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Game Road Map */}
+                  <div className="bg-slate-900/60 border border-purple-950/50 rounded-2xl p-4 relative overflow-hidden h-48 flex flex-col justify-between">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-950/20 via-transparent to-transparent"></div>
+                    <div className="text-xs font-bold text-purple-300 uppercase tracking-widest relative z-10 flex justify-between">
+                      <span>World Map: Basic Trade Theory</span>
+                      <span className="text-pink-400">Stage 3 of 10</span>
+                    </div>
+
+                    {/* Dotted Road Map Representation */}
+                    <div className="relative flex items-center justify-between px-6 py-4 z-10 h-full">
+                      {/* Dotted Path (SVG) */}
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none px-6" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 10 40 Q 75 10, 150 40 T 290 40" stroke="rgba(168, 85, 247, 0.4)" strokeWidth="3" strokeDasharray="6,6" />
+                      </svg>
+
+                      {/* Map Nodes */}
+                      {[
+                        { state: 'completed', label: '1', pos: 'translate-y-4' },
+                        { state: 'completed', label: '2', pos: '-translate-y-2' },
+                        { state: 'active', label: '3', pos: 'translate-y-6' },
+                        { state: 'locked', label: '4', pos: '-translate-y-2' },
+                        { state: 'locked', label: '5', pos: 'translate-y-2' },
+                      ].map((node, i) => (
+                        <div key={i} className={`relative flex flex-col items-center ${node.pos} transition-transform`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2 ${
+                            node.state === 'completed' 
+                              ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' 
+                              : node.state === 'active'
+                              ? 'bg-pink-600 border-pink-400 text-white animate-pulse shadow-pink-600/30 scale-110'
+                              : 'bg-slate-800 border-slate-700 text-slate-500'
+                          }`}>
+                            {node.label}
+                          </div>
+                          {node.state === 'active' && (
+                            <div className="absolute top-9 bg-pink-600 text-[9px] font-bold text-white px-2 py-0.5 rounded-md whitespace-nowrap shadow-md">
+                              Current Quest
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-pink-500 to-purple-600 rounded-full" style={{ width: '45%' }}></div>
+                    </div>
+                  </div>
+
+                  {/* Lower Row: Profile Badge/Border Preview & Daily Quest Tracker */}
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {/* Student Card Cosmetic Preview */}
+                    <div className="bg-gradient-to-br from-[#1b0d3a]/60 via-[#110926]/60 to-[#0c051e]/60 border border-pink-500/40 rounded-2xl p-4 flex flex-col items-center text-center relative group overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-pink-600 text-[8px] font-black uppercase text-white px-2.5 py-0.5 rounded-bl-lg">
+                        Neon Frame
+                      </div>
+                      
+                      {/* Glowing Ring representing equipped border */}
+                      <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 animate-pulse mb-2">
+                        <div className="bg-slate-950 p-0.5 rounded-full">
+                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center font-black text-white text-lg">
+                            🤖
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-xs font-bold text-white">Vicky Sawant</div>
+                      <div className="text-[10px] text-pink-400 font-extrabold uppercase tracking-wider mt-0.5">Master Technician</div>
+                      <div className="text-[9px] text-slate-400 mt-2 flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-orange-500 fill-orange-500" /> 12 Day Streak
+                      </div>
+                    </div>
+
+                    {/* Daily Missions Tracker Mock */}
+                    <div className="bg-slate-900/60 border border-purple-950/60 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="text-[11px] font-bold text-purple-300 uppercase tracking-wider">
+                        Daily Quests
+                      </div>
+                      
+                      <div className="space-y-2.5 mt-2.5">
+                        {[
+                          { title: 'Answer 5 Questions', done: 5, target: 5, complete: true },
+                          { title: 'Maintain Streak', done: 1, target: 1, complete: true },
+                          { title: 'Earn 100 XP today', done: 40, target: 100, complete: false }
+                        ].map((q, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className={`font-semibold ${q.complete ? 'text-slate-300 line-through decoration-slate-500/60' : 'text-slate-200'}`}>
+                                {q.title}
+                              </span>
+                              <span className="text-purple-400 font-bold">{q.done}/{q.target}</span>
+                            </div>
+                            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${q.complete ? 'bg-emerald-500' : 'bg-purple-500'}`} style={{ width: `${(q.done/q.target)*100}%` }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 4. User Roles Section */}
