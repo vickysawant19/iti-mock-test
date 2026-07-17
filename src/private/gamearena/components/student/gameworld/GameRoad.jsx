@@ -18,6 +18,7 @@ export default function GameRoad({
     <svg
       viewBox={`0 0 500 ${canvasHeight}`}
       preserveAspectRatio="none"
+      aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 h-full w-full"
     >
       <defs>

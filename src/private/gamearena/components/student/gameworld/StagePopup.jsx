@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Lock, Award, Trophy, Zap, Coins, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function StagePopup({
   node,
@@ -43,7 +44,7 @@ export default function StagePopup({
       setIsFlipped(shouldFlip);
 
       // 2. Clamp horizontally to keep inside viewport
-      const popupWidth = typeof window !== "undefined" && window.innerWidth < 640 ? 195 : 215;
+      const popupWidth = typeof window !== "undefined" && window.innerWidth < 640 ? 220 : 240;
       const padding = 12;
 
       const leftOver = screenX - popupWidth / 2;
@@ -134,7 +135,7 @@ export default function StagePopup({
           top: isFlipped ? "28px" : "auto",
         }}
         className={[
-          "w-[195px] sm:w-[215px] rounded-2xl border border-white/10 bg-slate-950/95 p-3 text-white shadow-2xl backdrop-blur-xl",
+          "w-[220px] sm:w-[240px] rounded-2xl border border-white/10 bg-slate-950/95 p-3.5 text-white shadow-2xl backdrop-blur-xl",
           isFlipped ? "origin-top" : "origin-bottom",
         ].join(" ")}
       >
@@ -176,50 +177,51 @@ export default function StagePopup({
         {/* Content */}
         <div className="my-2 space-y-1.5">
           {/* Rewards */}
-          <div className="grid grid-cols-2 gap-1">
-            <div className="flex items-center gap-1 rounded-lg bg-white/5 p-1" title={rewardDetailText}>
-              <Zap className="h-3 w-3 text-pink-500 shrink-0" />
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="flex items-center gap-1.5 rounded-lg bg-white/5 p-1.5" title={rewardDetailText}>
+              <Zap className="h-3.5 w-3.5 text-pink-500 shrink-0" />
               <div>
-                <span className="block text-[5px] font-bold uppercase text-slate-500">XP</span>
-                <span className="text-[9px] font-black text-white">
-                  +{xpReward} {streakBonus > 0 && <span className="text-[7.5px] text-pink-400 font-bold" title={`Streak Bonus: +${streakBonus} XP`}>🔥</span>}
+                <span className="block text-[8px] font-bold uppercase text-slate-500">XP</span>
+                <span className="text-[11px] font-black text-white">
+                  +{xpReward} {streakBonus > 0 && <span className="text-[8px] text-pink-400 font-bold" title={`Streak Bonus: +${streakBonus} XP`}>🔥</span>}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1 rounded-lg bg-white/5 p-1">
-              <Coins className="h-3 w-3 text-yellow-400 shrink-0" />
+            <div className="flex items-center gap-1.5 rounded-lg bg-white/5 p-1.5">
+              <Coins className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
               <div>
-                <span className="block text-[5px] font-bold uppercase text-slate-500">Gold</span>
-                <span className="text-[9px] font-black text-white">+{coinReward}</span>
+                <span className="block text-[8px] font-bold uppercase text-slate-500">Gold</span>
+                <span className="text-[11px] font-black text-white">+{coinReward}</span>
               </div>
             </div>
           </div>
 
           {/* Requirements Banner if locked */}
           {isLocked && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-1.5 text-center text-[8.5px] font-extrabold text-red-400">
-              <Lock className="mr-1 inline-block h-2.5 w-2.5 shrink-0" />
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2 text-center text-[9px] font-extrabold text-red-400">
+              <Lock className="mr-1 inline-block h-3 w-3 shrink-0" />
               Requires Stage {index}
             </div>
           )}
         </div>
 
-        <button
+        <Button
           onClick={(e) => {
             e.stopPropagation();
             if (!isLocked && onPlay) onPlay();
           }}
           disabled={isLocked}
+          size="sm"
           className={[
-            "w-full h-7.5 font-poppins text-[9px] font-black uppercase tracking-wider text-white shadow-md transition-all active:scale-[0.98] rounded-lg flex items-center justify-center gap-1 focus:outline-none cursor-pointer",
+            "w-full font-poppins text-[10px] font-black uppercase tracking-wider text-white transition-all active:scale-[0.98] cursor-pointer",
             isLocked
               ? "bg-slate-800 text-slate-500 cursor-not-allowed hover:bg-slate-800 shadow-none border border-slate-700/10"
-              : "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 hover:-translate-y-0.5",
+              : "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 hover:-translate-y-0.5 shadow-md",
           ].join(" ")}
         >
-          {!isLocked && <Play className="h-3 w-3 fill-white text-white animate-pulse" />}
+          {!isLocked && <Play className="h-3.5 w-3.5 fill-white text-white animate-pulse" />}
           {isLocked ? "LOCKED" : isCompleted ? "REPLAY STAGE" : "PLAY STAGE"}
-        </button>
+        </Button>
       </motion.div>
     </div>
   );

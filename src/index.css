@@ -17,6 +17,12 @@
   --font-hindi: Noto Sans Devanagari, sans-serif;
 
   --line-clamp-2: 2;
+
+  /* GameArena design tokens */
+  --color-game-sidebar: #150f35;
+  --color-game-deep: #0c051e;
+  --color-game-glow-pink: rgba(255, 46, 166, 0.35);
+  --color-game-glow-purple: rgba(160, 32, 240, 0.35);
 }
 
 /*
@@ -41,6 +47,14 @@
 @layer utilities {
   html {
     scroll-behavior: smooth;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
@@ -127,6 +141,8 @@
 
 :root {
   --radius: 0.625rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-height: 3.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -209,5 +225,48 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ─── GameArena Keyframe Animations ──────────────────────────────── */
+
+@keyframes breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(1); opacity: 0; }
+}
+@keyframes gamerBounce {
+  0%, 100% { transform: scale(1) translateY(0); }
+  15% { transform: scale(0.9) translateY(0); }
+  50% { transform: scale(1.1) translateY(-3px); }
+  75% { transform: scale(1) translateY(0); }
+}
+@keyframes gamerShine {
+  0% { transform: translateX(-150%) rotate(35deg); }
+  100% { transform: translateX(150%) rotate(35deg); }
+}
+
+@layer utilities {
+  .animate-breath { animation: breath 4s infinite ease-in-out; }
+  .animate-float { animation: float 3s infinite ease-in-out; }
+  .animate-gamer-bounce { animation: gamerBounce 4s infinite ease-in-out; }
+  .animate-gamer-shine { animation: gamerShine 4s infinite ease-in-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-breath,
+  .animate-float,
+  .animate-gamer-bounce,
+  .animate-gamer-shine {
+    animation: none;
   }
 }

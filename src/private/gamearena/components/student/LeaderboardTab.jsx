@@ -39,7 +39,7 @@ export default function LeaderboardTab({
                 <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                   {gamifiedLeaderboard[1].userName}
                 </p>
-                <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-900 rounded-t-xl h-20 flex flex-col items-center justify-center mt-2 shadow-lg">
+                <div className="w-20 sm:w-24 bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-700 dark:to-slate-900 rounded-t-xl h-[clamp(4.5rem,12vw,6rem)] flex flex-col items-center justify-center mt-2 shadow-lg">
                   <span className="text-xl font-black text-slate-700 dark:text-slate-300">2</span>
                   <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">{gamifiedLeaderboard[1].xp} XP</span>
                 </div>
@@ -66,7 +66,7 @@ export default function LeaderboardTab({
                 <p className="text-xs font-black text-slate-800 dark:text-white max-w-[85px] truncate text-center">
                   {gamifiedLeaderboard[0].userName}
                 </p>
-                <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-450 to-amber-500 dark:from-yellow-600 dark:to-amber-900 rounded-t-2xl h-28 flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
+                <div className="w-24 sm:w-28 bg-gradient-to-b from-yellow-450 to-amber-500 dark:from-yellow-600 dark:to-amber-900 rounded-t-2xl h-[clamp(6rem,16vw,8rem)] flex flex-col items-center justify-center mt-2 shadow-2xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-pulse" />
                   <span className="text-3xl font-black text-slate-900 dark:text-yellow-100">1</span>
                   <span className="text-[10px] font-black text-slate-800 dark:text-yellow-200">{gamifiedLeaderboard[0].xp} XP</span>
@@ -89,7 +89,7 @@ export default function LeaderboardTab({
                 <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 max-w-[70px] truncate text-center">
                   {gamifiedLeaderboard[2].userName}
                 </p>
-                <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-900 rounded-t-xl h-16 flex flex-col items-center justify-center mt-2 shadow-lg">
+                <div className="w-20 sm:w-24 bg-gradient-to-b from-amber-600/20 to-amber-600/40 dark:from-amber-900/30 dark:to-slate-900 rounded-t-xl h-[clamp(3.5rem,10vw,5rem)] flex flex-col items-center justify-center mt-2 shadow-lg">
                   <span className="text-base font-black text-amber-700 dark:text-amber-400">3</span>
                   <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500">{gamifiedLeaderboard[2].xp} XP</span>
                 </div>
@@ -338,69 +338,74 @@ export default function LeaderboardTab({
                     : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {/* Rank Visualizer */}
-                  {entry.rank === 1 ? (
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-yellow-500/15 dark:bg-yellow-500/20 border border-yellow-500/35 text-yellow-600 dark:text-yellow-450 text-[10px] font-black shrink-0">
-                      1
-                    </span>
-                  ) : entry.rank === 2 ? (
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-300/20 dark:bg-slate-400/25 border border-slate-350 dark:border-slate-600/45 text-slate-600 dark:text-slate-300 text-[10px] font-black shrink-0">
-                      2
-                    </span>
-                  ) : entry.rank === 3 ? (
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-455 text-[10px] font-black shrink-0">
-                      3
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center shrink-0">
-                      #{entry.rank}
-                    </span>
-                  )}
-
-                  {/* Profile Avatar (Circular) */}
-                  <div className="relative shrink-0">
-                    <InteractiveAvatar
-                      src={entry.profileImage}
-                      fallbackText={entry.userName.charAt(0)}
-                      userId={entry.studentId}
-                      userName={entry.userName}
-                      showStatus={true}
-                      statusSize="xs"
-                      className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm animate-in zoom-in-95 duration-200"
-                    />
-                    {entryFrame && (
-                      <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
-                        COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
-                      }`} style={{ transform: "scale(1.09)" }} />
+                <div className="flex items-center justify-between w-full sm:w-auto">
+                  <div className="flex items-center gap-3">
+                    {/* Rank Visualizer */}
+                    {entry.rank === 1 ? (
+                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-yellow-500/15 dark:bg-yellow-500/20 border border-yellow-500/35 text-yellow-600 dark:text-yellow-450 text-[10px] font-black shrink-0">
+                        1
+                      </span>
+                    ) : entry.rank === 2 ? (
+                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-300/20 dark:bg-slate-400/25 border border-slate-350 dark:border-slate-600/45 text-slate-600 dark:text-slate-300 text-[10px] font-black shrink-0">
+                        2
+                      </span>
+                    ) : entry.rank === 3 ? (
+                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-amber-600/15 dark:bg-amber-600/20 border border-amber-600/35 text-amber-700 dark:text-amber-455 text-[10px] font-black shrink-0">
+                        3
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400 dark:text-slate-500 w-5 text-center shrink-0">
+                        #{entry.rank}
+                      </span>
                     )}
-                  </div>
 
-                  {/* Name with side color strip accent and Level */}
-                  <div className="min-w-0 flex-1">
-                    <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
-                      <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
-                        {entry.userName}
-                        {isMe && (
-                          <span className="text-[7px] font-extrabold bg-pink-500 text-white px-1 py-0.2 rounded-full uppercase scale-90">
-                            You
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-[9px] text-slate-450 dark:text-slate-400 font-bold mt-1 px-1">
-                      <span>LVL {entry.level}</span>
-                      {entryTitle && (
-                        <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
-                          {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
-                        </span>
+                    {/* Profile Avatar (Circular) */}
+                    <div className="relative shrink-0">
+                      <InteractiveAvatar
+                        src={entry.profileImage}
+                        fallbackText={entry.userName.charAt(0)}
+                        userId={entry.studentId}
+                        userName={entry.userName}
+                        showStatus={true}
+                        statusSize="xs"
+                        className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm animate-in zoom-in-95 duration-200"
+                      />
+                      {entryFrame && (
+                        <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
+                          COSMETIC_ITEMS.find((i) => i.id === entryFrame)?.value
+                        }`} style={{ transform: "scale(1.09)" }} />
                       )}
                     </div>
+
+                    {/* Name with side color strip accent and Level */}
+                    <div className="min-w-0 flex-1">
+                      <div className={`px-2.5 py-0.5 rounded-lg ${nameStripBg} ${nameStripBorder} flex items-center gap-1.5 w-fit max-w-full`}>
+                        <p className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
+                          {entry.userName}
+                          {isMe && (
+                            <span className="text-[7px] font-extrabold bg-pink-500 text-white px-1 py-0.2 rounded-full uppercase scale-90">
+                              You
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 text-[9px] text-slate-450 dark:text-slate-400 font-bold mt-1 px-1">
+                        <span>LVL {entry.level}</span>
+                        {entryTitle && (
+                          <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95">
+                            {COSMETIC_ITEMS.find((i) => i.id === entryTitle)?.value}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Chevron Right (visible on mobile next to name row) */}
+                  <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 sm:hidden ${isExpanded ? "rotate-90 text-pink-500" : ""}`} />
                 </div>
 
-                {/* Right Side Columns */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-5 shrink-0 pt-2.5 sm:pt-0 border-t border-slate-100 dark:border-slate-800/40 sm:border-0 flex-wrap sm:flex-nowrap">
+                {/* Right Side Columns - Grid on mobile, flex row on tablet/desktop */}
+                <div className="grid grid-cols-2 gap-2 mt-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/40 w-full sm:grid-cols-none sm:flex sm:mt-0 sm:pt-0 sm:border-0 sm:w-auto sm:gap-5 sm:items-center sm:justify-end shrink-0">
                   {/* XP Column */}
                   <div className="flex items-center gap-1.5 min-w-[50px]">
                     <div className="p-1 bg-pink-500/10 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 rounded-lg shrink-0">
@@ -461,7 +466,8 @@ export default function LeaderboardTab({
                     </div>
                   </div>
 
-                  <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90 text-pink-500" : ""}`} />
+                  {/* Chevron Right (hidden on mobile, visible on tablet/desktop) */}
+                  <ChevronRight className={`hidden sm:block w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-90 text-pink-500" : ""}`} />
                 </div>
               </div>
 

@@ -56,12 +56,12 @@ export default function GameStage({
   if (isActive) {
     icon = <Play className="ml-0.5 h-6 w-6 fill-white text-white" />;
     nodeColor = "bg-gradient-to-br from-pink-500 to-purple-600 border-white text-white";
-    glow = "ring-4 ring-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.5)]";
+    glow = "ring-4 ring-pink-500/50 shadow-[0_0_24px_rgba(236,72,153,0.55)]";
     scaleClass = "scale-110";
   } else if (isCompleted) {
     icon = <Award className="h-5 w-5 text-white" />;
     nodeColor = "bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400 text-white";
-    glow = "shadow-lg shadow-emerald-500/20";
+    glow = "shadow-lg shadow-emerald-500/25";
   } else if (isLocked) {
     icon = <Lock className="h-4 w-4 text-slate-600" />;
     nodeColor = "bg-slate-900/90 border-slate-800 text-slate-700 opacity-60";
@@ -104,7 +104,7 @@ export default function GameStage({
         <div style={{ transform: "rotateX(-12deg)" }} className="flex flex-col items-center">
           <div
             className={[
-              "relative flex h-10 w-10 items-center justify-center rounded-full border-2 opacity-50",
+              "relative flex h-11 w-11 items-center justify-center rounded-full border-2 opacity-50",
               nodeColor,
             ].join(" ")}
           >
@@ -229,7 +229,7 @@ export default function GameStage({
               : `Stage ${index + 1}${isActive ? " — play" : ""}`
           }
           className={[
-            "relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-11 sm:w-11",
+            "relative flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all duration-300",
             "cursor-pointer hover:scale-110 active:scale-90",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/70",
             nodeColor,
@@ -238,7 +238,7 @@ export default function GameStage({
           ].join(" ")}
         >
           {icon}
-          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-slate-800 bg-slate-950/70 px-1.5 py-0.5 text-[9px] font-extrabold text-slate-400">
+          <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-slate-800 bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-extrabold text-slate-400">
             Stage {index + 1}
           </span>
         </button>

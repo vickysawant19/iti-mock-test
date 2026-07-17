@@ -13,10 +13,16 @@ import {
   Flame,
   Zap,
   Coins,
+  ChevronUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { fixProfileImage } from "@/services/appwriteClient";
 import { BADGES } from "@/services/reward.service";
@@ -109,6 +115,7 @@ export default function GameWorld({
   const [activeDetail, setActiveDetail] = useState(null);
   const [focusedStage, setFocusedStage] = useState(currentStep);
   const [popupStageIndex, setPopupStageIndex] = useState(null);
+  const [isStatsSheetOpen, setIsStatsSheetOpen] = useState(false);
   const prevStepRef = useRef(undefined);
   const hasCenteredRef = useRef(false);
 
@@ -190,32 +197,7 @@ export default function GameWorld({
 
   return (
     <div className="relative flex h-full w-full select-none flex-col overflow-hidden bg-gradient-to-b from-indigo-950 via-slate-900 to-indigo-900 md:flex-row">
-      <style>{`
-        @keyframes breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-        @keyframes floatUp {
-          0% { transform: translateY(0) scale(0.6); opacity: 0; }
-          10% { opacity: 0.8; }
-          90% { opacity: 0.8; }
-          100% { transform: translateY(-40px) scale(1); opacity: 0; }
-        }
-        @keyframes gamerBounce {
-          0%, 100% { transform: scale(1) translateY(0); }
-          15% { transform: scale(0.9) translateY(0); }
-          50% { transform: scale(1.1) translateY(-3px); }
-          75% { transform: scale(1) translateY(0); }
-        }
-        @keyframes gamerShine { 0% { transform: translateX(-150%) rotate(35deg); } 100% { transform: translateX(150%) rotate(35deg); } }
-        .animate-breath { animation: breath 4s infinite ease-in-out; }
-        .animate-float { animation: float 3s infinite ease-in-out; }
-        .animate-gamer-bounce { animation: gamerBounce 4s infinite ease-in-out; }
-        .animate-gamer-shine { animation: gamerShine 4s infinite ease-in-out; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-breath, .animate-float, .animate-gamer-bounce, .animate-gamer-shine { animation: none; }
-        }
-      `}</style>
+
 
       {/* ── MAP COLUMN ───────────────────────────────────────────────── */}
       <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden">
@@ -229,63 +211,75 @@ export default function GameWorld({
           <div className="absolute bottom-1/4 right-1/4 h-48 w-48 rounded-full bg-purple-500/15 blur-[100px]" />
         </div>
 
-        {/* Mobile HUD — compact header + scrollable stat strip */}
-        <div className="z-20 w-full shrink-0 select-none p-3 pb-2 md:hidden">
-          <button
-            onClick={() => setActiveDetail((d) => (d === "level" ? null : "level"))}
-            className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-lg backdrop-blur-md transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60 ${
-              equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/60"
-            }`}
-          >
-            <div className="relative shrink-0 animate-breath">
-              <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-[0_0_10px_rgba(255,46,166,0.35)]">
-                <AvatarImage src={fixProfileImage(profile?.profileImage)} />
-                <AvatarFallback className="bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-xl font-black text-white">
-                  {profile?.userName?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              {equippedFrame && (
-                <div className={`absolute inset-[-2px] rounded-full pointer-events-none z-20 ${
-                  COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
-                }`} />
-              )}
-              <div className="absolute -bottom-1 -right-1 rounded-full border border-white/20 bg-gradient-to-r from-pink-500 to-purple-600 px-1.5 py-0.5 text-[8px] font-black text-white shadow-md">
-                LVL {currentLevel}
+        {/* Mobile HUD — improved header + scrollable stat strip */}
+        <div className="z-20 w-full shrink-0 select-none p-3 pb-1.5 md:hidden">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveDetail((d) => (d === "level" ? null : "level"))}
+              className={`flex flex-1 min-w-0 items-center gap-3 rounded-2xl border px-3.5 py-3 shadow-lg backdrop-blur-lg transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-400/60 ${
+                equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/70"
+              }`}
+            >
+              <div className="relative shrink-0 animate-breath">
+                <Avatar className="h-11 w-11 rounded-full border-2 border-white shadow-[0_0_10px_var(--color-game-glow-pink)]">
+                  <AvatarImage src={fixProfileImage(profile?.profileImage)} />
+                  <AvatarFallback className="bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-lg font-black text-white">
+                    {profile?.userName?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {equippedFrame && (
+                  <div className={`absolute inset-[-2px] rounded-full pointer-events-none z-20 ${
+                    COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+                  }`} />
+                )}
+                <div className="absolute -bottom-1 -right-1 rounded-full border border-white/20 bg-gradient-to-r from-pink-500 to-purple-600 px-1.5 py-0.5 text-[8px] font-black text-white shadow-md">
+                  LVL {currentLevel}
+                </div>
               </div>
-            </div>
 
-            <div className="min-w-0 flex-1 text-left">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <h2 className="max-w-[110px] truncate font-poppins text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
-                  {profile?.userName || "Player"}
-                  {equippedTitle && (
-                    <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
-                      {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+              <div className="min-w-0 flex-1 text-left">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h2 className="max-w-[120px] truncate font-poppins text-xs font-black uppercase tracking-wider text-white flex items-center gap-1">
+                    {profile?.userName || "Player"}
+                    {equippedTitle && (
+                      <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.5 rounded uppercase tracking-wider scale-95 shrink-0">
+                        {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+                      </span>
+                    )}
+                  </h2>
+                  {batchContext.batchName && (
+                    <span className="max-w-[72px] shrink-0 truncate rounded-md bg-pink-500/20 border border-pink-500/30 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-wider text-pink-300">
+                      {batchContext.batchName}
                     </span>
                   )}
-                </h2>
-                {batchContext.batchName && (
-                  <span className="max-w-[70px] shrink-0 truncate rounded bg-pink-500/20 border border-pink-500/30 px-1.5 py-0.5 text-[7px] font-extrabold uppercase tracking-wider text-pink-300">
-                    {batchContext.batchName}
-                  </span>
-                )}
-              </div>
-              <div className="mt-1.5">
-                <div className="flex items-center justify-between text-[7px] font-black uppercase tracking-wider text-slate-400">
-                  <span>XP Progress</span>
-                  <span className="text-pink-400">{xpIntoLevel} / 100</span>
                 </div>
-                <div className="relative mt-0.5 h-1 w-full overflow-hidden rounded-full border border-white/5 bg-slate-950/80">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] transition-all duration-1000 ease-out"
-                    style={{ width: `${xpIntoLevel}%` }}
-                  />
+                <div className="mt-1.5">
+                  <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-wider text-slate-400">
+                    <span>XP Progress</span>
+                    <span className="text-pink-400">{xpIntoLevel} / 100</span>
+                  </div>
+                  <div className="relative mt-0.5 h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-slate-950/80">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] transition-all duration-1000 ease-out"
+                      style={{ width: `${xpIntoLevel}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
+            </button>
 
-          <div className="mt-2.5 grid grid-cols-4 gap-1.5 w-full">
+            {/* Sheet trigger — opens full stats panel */}
+            <button
+              onClick={() => setIsStatsSheetOpen(true)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all active:scale-90 shadow-lg"
+              aria-label="Open stats panel"
+            >
+              <ChevronUp className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Scrollable stat pills */}
+          <div className="mt-2 flex gap-2 overflow-x-auto no-scrollbar pb-1 w-full">
             <StatTile
               compact
               icon={<Coins className="h-4 w-4 text-yellow-400" />}
@@ -386,7 +380,7 @@ export default function GameWorld({
           )}
 
           {/* HUD Overlays (Rendered outside viewport so they don't move/pan) */}
-          <div className="pointer-events-auto absolute top-4 left-4 z-30 select-none">
+          <div className="pointer-events-auto absolute top-3 left-3 z-30 select-none md:top-4 md:left-4">
             <OnlineBatchMembers
               batchId={batchContext?.batchId || stats?.batchId}
               currentUserId={currentStudentId}
@@ -396,51 +390,73 @@ export default function GameWorld({
 
           {/* Floating Lucky Spin Button on map */}
           {canSpin && setIsWheelOpen && (
-            <div className="pointer-events-auto absolute top-4 right-4 z-30 select-none">
+            <div className="pointer-events-auto absolute top-3 right-3 z-30 select-none md:top-4 md:right-4">
               <button
                 onClick={() => setIsWheelOpen(true)}
-                className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-900 border border-amber-500/30 rounded-xl px-2.5 py-1.5 backdrop-blur-md transition-all active:scale-95 cursor-pointer pointer-events-auto shadow-sm select-none"
+                className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-900 border border-amber-500/30 rounded-xl px-3 py-2 backdrop-blur-lg transition-all active:scale-95 cursor-pointer pointer-events-auto shadow-lg select-none"
               >
                 <span className="text-sm animate-spin" style={{ animationDuration: '6s' }}>🎡</span>
-                <span className={`text-[10px] font-black uppercase tracking-wider ${canSpin() ? "text-amber-450 animate-pulse" : "text-slate-405 dark:text-slate-400"}`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${canSpin() ? "text-amber-450 animate-pulse" : "text-slate-400"}`}>
                   {canSpin() ? "Lucky Spin" : "Spun Today"}
                 </span>
               </button>
             </div>
           )}
 
-          {/* Floating map controls */}
-          <div className="absolute bottom-[calc(100px+env(safe-area-inset-bottom,0px))] right-4 z-30 flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/60 p-2 shadow-2xl backdrop-blur-lg md:bottom-6 md:right-6">
-            <button
-              onClick={() => camera.zoomTo(Math.min(1.6, camera.scale.get() + 0.15))}
-              aria-label="Zoom in"
-              className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
-            >
-              <ZoomIn className="h-[18px] w-[18px]" />
-            </button>
-            <button
-              onClick={() => camera.zoomTo(Math.max(0.8, camera.scale.get() - 0.15))}
-              aria-label="Zoom out"
-              className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
-            >
-              <ZoomOut className="h-[18px] w-[18px]" />
-            </button>
-            <button
-              onClick={() => recenterOn(true)}
-              aria-label="Recenter map"
-              className="rounded-xl bg-white/10 p-2 text-yellow-400 transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
-            >
-              <Compass className="h-[18px] w-[18px] animate-pulse" />
-            </button>
-            <div className="h-px w-full bg-white/10" />
-            <button
-              onClick={() => setIsInfoOpen(true)}
-              aria-label="Daily challenge rules"
-              className="rounded-xl bg-white/10 p-2 text-blue-400 transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
-            >
-              <Info className="h-[18px] w-[18px]" />
-            </button>
-          </div>
+          {/* Floating map controls with tooltips */}
+          <TooltipProvider delayDuration={300}>
+            <div className="absolute bottom-[calc(var(--bottom-nav-height)+var(--safe-bottom)+1rem)] right-3 z-30 flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-slate-900/70 p-1.5 shadow-2xl backdrop-blur-lg md:bottom-6 md:right-6 md:gap-2 md:p-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => camera.zoomTo(Math.min(1.6, camera.scale.get() + 0.15))}
+                    aria-label="Zoom in"
+                    className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
+                  >
+                    <ZoomIn className="h-[18px] w-[18px]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-[10px]">Zoom In</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => camera.zoomTo(Math.max(0.8, camera.scale.get() - 0.15))}
+                    aria-label="Zoom out"
+                    className="rounded-xl bg-white/10 p-2 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
+                  >
+                    <ZoomOut className="h-[18px] w-[18px]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-[10px]">Zoom Out</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => recenterOn(true)}
+                    aria-label="Recenter map"
+                    className="rounded-xl bg-white/10 p-2 text-yellow-400 transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
+                  >
+                    <Compass className="h-[18px] w-[18px] animate-pulse" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-[10px]">Recenter</TooltipContent>
+              </Tooltip>
+              <Separator className="bg-white/10" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setIsInfoOpen(true)}
+                    aria-label="Daily challenge rules"
+                    className="rounded-xl bg-white/10 p-2 text-blue-400 transition-all hover:scale-105 hover:bg-white/20 active:scale-95"
+                  >
+                    <Info className="h-[18px] w-[18px]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-[10px]">Game Rules</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
 
           {/* Desktop play FAB */}
           <div className="absolute bottom-6 right-24 z-30 hidden md:flex">
@@ -455,7 +471,7 @@ export default function GameWorld({
         </div>
 
         {/* Mobile bottom overtake strip */}
-        <div className="z-20 w-full shrink-0 border-t border-white/10 bg-slate-950/80 px-4 py-2.5 mb-[calc(56px+env(safe-area-inset-bottom,0px))] backdrop-blur-md md:hidden">
+        <div className="z-20 w-full shrink-0 border-t border-white/10 bg-slate-950/80 px-4 py-2.5 mb-[calc(var(--bottom-nav-height)+var(--safe-bottom))] backdrop-blur-lg md:hidden">
           <div className="flex items-center justify-between gap-2 text-[10px]">
             <span className="flex shrink-0 items-center gap-1.5 font-black uppercase tracking-wider text-white">
               <Trophy className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
@@ -466,7 +482,7 @@ export default function GameWorld({
                 <>
                   <Flame className="mr-1 inline h-3 w-3 fill-orange-500 text-orange-500" />
                   Need <strong className="font-extrabold text-pink-400">{xpNeeded} XP</strong> to pass{" "}
-                  <strong className="font-extrabold text-white">{nextPlayer.userName}</strong>
+                  <strong className="max-w-[100px] inline-block truncate align-bottom font-extrabold text-white">{nextPlayer.userName}</strong>
                 </>
               ) : (
                 <span className="font-bold text-yellow-400">👑 Leading the batch!</span>
@@ -477,184 +493,313 @@ export default function GameWorld({
       </div>
 
       {/* ── DESKTOP SIDEBAR ─────────────────────────────────────────── */}
-      <div className="no-scrollbar relative z-20 hidden h-full w-[340px] shrink-0 flex-col overflow-y-auto border-l border-white/10 bg-[#150f35]/95 p-5 text-white shadow-2xl backdrop-blur-md md:flex">
+      <div className="relative z-20 hidden h-full w-[340px] shrink-0 flex-col border-l border-white/10 bg-game-sidebar/95 text-white shadow-2xl backdrop-blur-md md:flex">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-pink-500/5 blur-[50px]" />
         <div className="pointer-events-none absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-purple-500/5 blur-[60px]" />
 
-        {/* Player hero card */}
-        <div className={`relative z-10 mb-5 flex min-h-[92px] items-center gap-4 overflow-hidden rounded-2xl border p-4 shadow-lg ${
-          equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/60"
-        }`}>
-          <div className="relative shrink-0 animate-breath">
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-[#FF2EA6]/25 blur-sm" />
-            <Avatar className="relative h-[54px] w-[54px] rounded-full border-2 border-white shadow-[0_0_12px_rgba(255,46,166,0.35)]">
-              <AvatarImage src={fixProfileImage(profile?.profileImage)} />
-              <AvatarFallback className="bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-xl font-black text-white">
-                {profile?.userName?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            {equippedFrame && (
-              <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
-                COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
-              }`} />
-            )}
-          </div>
+        <ScrollArea className="h-full">
+          <div className="p-5 space-y-4">
+            {/* Player hero card */}
+            <Card className={`relative z-10 flex min-h-[92px] items-center gap-4 overflow-hidden border p-4 shadow-lg bg-transparent ${
+              equippedBorder ? borderItem?.value : "border-white/10 bg-slate-900/60"
+            }`}>
+              <div className="relative shrink-0 animate-breath">
+                <div className="pointer-events-none absolute inset-0 rounded-full bg-[#FF2EA6]/25 blur-sm" />
+                <Avatar className="relative h-[54px] w-[54px] rounded-full border-2 border-white shadow-[0_0_12px_var(--color-game-glow-pink)]">
+                  <AvatarImage src={fixProfileImage(profile?.profileImage)} />
+                  <AvatarFallback className="bg-gradient-to-br from-[#FF2EA6] to-[#A020F0] text-xl font-black text-white">
+                    {profile?.userName?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                {equippedFrame && (
+                  <div className={`absolute inset-[-3px] rounded-full pointer-events-none z-20 ${
+                    COSMETIC_ITEMS.find((i) => i.id === equippedFrame)?.value
+                  }`} />
+                )}
+              </div>
 
-          <div className="min-w-0 flex-1 pr-14 text-left">
-            <h2 className="truncate font-poppins text-sm font-black uppercase leading-tight tracking-wider text-white flex items-center gap-1.5 flex-wrap">
-              {profile?.userName || "Player"}
-              {equippedTitle && (
-                <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
-                  {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+              <div className="min-w-0 flex-1 pr-14 text-left">
+                <h2 className="truncate font-poppins text-sm font-black uppercase leading-tight tracking-wider text-white flex items-center gap-1.5 flex-wrap">
+                  {profile?.userName || "Player"}
+                  {equippedTitle && (
+                    <span className="text-[7px] font-black bg-yellow-500/35 text-yellow-350 border border-yellow-500/30 px-1 py-0.5 rounded uppercase tracking-wider scale-95 shrink-0">
+                      {COSMETIC_ITEMS.find((i) => i.id === equippedTitle)?.value}
+                    </span>
+                  )}
+                </h2>
+                <div className="mt-1 flex flex-col gap-1">
+                  {batchContext.batchName && (
+                    <span className="w-fit max-w-[130px] truncate rounded-md border border-pink-500/30 bg-pink-500/20 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-pink-300">
+                      {batchContext.batchName}
+                    </span>
+                  )}
+                  {batchContext.tradeName && (
+                    <span className="w-fit max-w-[130px] truncate rounded-md border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-purple-300">
+                      {batchContext.tradeName}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute right-3 top-1/2 h-14 w-14 -translate-y-1/2 select-none">
+                <LevelShield level={currentLevel} />
+              </div>
+            </Card>
+
+            {/* XP progress */}
+            <Card className="relative z-10 border-white/10 bg-slate-900/50 p-4 shadow-inner">
+              <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-pink-500" />
+                  XP Progress
                 </span>
-              )}
-            </h2>
-            <div className="mt-1 flex flex-col gap-1">
-              {batchContext.batchName && (
-                <span className="w-fit max-w-[130px] truncate rounded-md border border-pink-500/30 bg-pink-500/20 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-pink-300">
-                  {batchContext.batchName}
-                </span>
-              )}
-              {batchContext.tradeName && (
-                <span className="w-fit max-w-[130px] truncate rounded-md border border-purple-500/30 bg-purple-500/20 px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-purple-300">
-                  {batchContext.tradeName}
-                </span>
-              )}
+                <span className="font-extrabold text-pink-400">{xpIntoLevel} / 100 XP</span>
+              </div>
+              <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full border border-slate-800/80 bg-slate-950/80 p-[1px]">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] transition-all duration-1000 ease-out" style={{ width: `${xpIntoLevel}%` }} />
+              </div>
+              <span className="mt-1 block text-right text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                Level up in {100 - xpIntoLevel} XP
+              </span>
+            </Card>
+
+            <Separator className="bg-white/5" />
+
+            {/* Stat grid: coins / league / rank / streak */}
+            <div className="relative z-10 grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => setActiveDetail((d) => (d === "coins" ? null : "coins"))}
+                className="group relative overflow-hidden rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-500/5 p-3 text-left shadow-lg transition-all hover:border-yellow-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/60"
+              >
+                <div className="pointer-events-none absolute inset-0 w-[200%] -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-gamer-shine" />
+                <Coins className="h-4 w-4 animate-gamer-bounce text-yellow-400" />
+                <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Coins</p>
+                <p className="mt-1 text-base font-black leading-none text-white">{stats?.coins || 0}</p>
+              </button>
+
+              <button
+                onClick={() => setActiveDetail((d) => (d === "league" ? null : "league"))}
+                className={`rounded-2xl border p-3 text-left shadow-inner transition-all hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 ${league.ring}`}
+              >
+                <Award className={`h-4 w-4 ${league.icon}`} />
+                <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">League</p>
+                <p className={`mt-1 truncate text-base font-black leading-none ${league.text}`}>{league.name.replace(" League", "")}</p>
+              </button>
+
+              <button
+                onClick={() => setActiveDetail((d) => (d === "rank" ? null : "rank"))}
+                className="rounded-2xl border border-white/10 bg-slate-900/50 p-3 text-left shadow-inner transition-all hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/60"
+              >
+                <Trophy className="h-4 w-4 text-yellow-500" />
+                <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Rank</p>
+                <p className="mt-1 text-base font-black leading-none text-white">{rankText}</p>
+              </button>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-3 shadow-inner">
+                <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
+                <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Streak</p>
+                <p className="mt-1 text-base font-black leading-none text-orange-400">{stats?.currentStreak || 0}d</p>
+              </div>
+            </div>
+
+            <Separator className="bg-white/5" />
+
+            {/* Overtake target */}
+            <Card className="relative z-10 border-white/10 bg-slate-900/50 p-4 shadow-inner">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Standing overtake target</p>
+              <div className="mt-2.5 text-xs font-medium text-slate-300">
+                {nextPlayer ? (
+                  <div className="flex items-start gap-2.5">
+                    <Flame className="mt-0.5 h-5 w-5 shrink-0 animate-pulse fill-orange-500 text-orange-500" />
+                    <div className="min-w-0 flex-1">
+                      <p>
+                        Need <strong className="font-extrabold text-pink-400">{xpNeeded} XP</strong> to overtake:
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <div className="relative shrink-0">
+                          <Avatar className="h-6 w-6 border border-white/20">
+                            <AvatarImage src={fixProfileImage(nextPlayer.profileImage)} />
+                            <AvatarFallback className="bg-slate-800 text-[10px] font-extrabold text-white">{nextPlayer.userName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          {(() => {
+                            const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
+                            const targetFrame = targetCosmetics.equipped?.frame;
+                            return targetFrame && (
+                              <div className={`absolute inset-[-1.5px] rounded-full pointer-events-none z-20 ${
+                                COSMETIC_ITEMS.find((i) => i.id === targetFrame)?.value
+                              }`} />
+                            );
+                          })()}
+                        </div>
+                        <span className="max-w-[100px] truncate text-xs font-black text-white">{nextPlayer.userName}</span>
+                        {(() => {
+                          const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
+                          const targetTitle = targetCosmetics.equipped?.title;
+                          return targetTitle && (
+                            <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1 py-0.5 rounded uppercase tracking-wider scale-95 shrink-0">
+                              {COSMETIC_ITEMS.find((i) => i.id === targetTitle)?.value}
+                            </span>
+                          );
+                        })()}
+                        <span className="shrink-0 text-[9px] font-bold text-slate-400">(Rank #{currentRank - 1})</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 font-bold text-yellow-400">
+                    <Trophy className="h-4 w-4 animate-bounce text-yellow-500" />
+                    <span>Overtook everyone! You lead the batch!</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Separator className="bg-white/5" />
+
+            {/* Milestone badges */}
+            <div className="relative z-10 flex-1 space-y-3 pb-2">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Milestone achievements</p>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.values(BADGES).map((badge) => {
+                  const isUnlocked = stats?.badges?.includes(badge.id);
+                  return (
+                    <div
+                      key={badge.id}
+                      title={`${badge.title}: ${badge.description}`}
+                      className={[
+                        "flex flex-col items-center rounded-xl border p-2 text-center transition-all",
+                        isUnlocked ? "border-pink-500/20 bg-slate-950 text-white shadow-md" : "border-white/5 bg-slate-900/30 text-slate-500 opacity-40",
+                      ].join(" ")}
+                    >
+                      <span className="text-base">{badge.icon}</span>
+                      <span className="mt-1 w-full truncate text-[8px] font-black leading-tight tracking-tight">{badge.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-          <div className="pointer-events-none absolute right-3 top-1/2 h-14 w-14 -translate-y-1/2 select-none">
-            <LevelShield level={currentLevel} />
-          </div>
-        </div>
-
-        {/* XP progress */}
-        <div className="relative z-10 mb-5 rounded-2xl border border-white/10 bg-slate-900/50 p-4 shadow-inner">
-          <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
-            <span className="flex items-center gap-1">
-              <Zap className="h-3.5 w-3.5 shrink-0 text-pink-500" />
-              XP Progress
-            </span>
-            <span className="font-extrabold text-pink-400">{xpIntoLevel} / 100 XP</span>
-          </div>
-          <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full border border-slate-800/80 bg-slate-950/80 p-[1px]">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] transition-all duration-1000 ease-out" style={{ width: `${xpIntoLevel}%` }} />
-          </div>
-          <span className="mt-1 block text-right text-[8px] font-bold uppercase tracking-wider text-slate-400">
-            Level up in {100 - xpIntoLevel} XP
-          </span>
-        </div>
-
-        {/* Stat grid: coins / league / rank / streak */}
-        <div className="relative z-10 mb-5 grid grid-cols-2 gap-2.5">
-          <button
-            onClick={() => setActiveDetail((d) => (d === "coins" ? null : "coins"))}
-            className="group relative overflow-hidden rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-500/5 p-3 text-left shadow-lg transition-all hover:border-yellow-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/60"
-          >
-            <div className="pointer-events-none absolute inset-0 w-[200%] -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-gamer-shine" />
-            <Coins className="h-4 w-4 animate-gamer-bounce text-yellow-400" />
-            <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Coins</p>
-            <p className="mt-1 text-base font-black leading-none text-white">{stats?.coins || 0}</p>
-          </button>
-
-          <button
-            onClick={() => setActiveDetail((d) => (d === "league" ? null : "league"))}
-            className={`rounded-2xl border p-3 text-left shadow-inner transition-all hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 ${league.ring}`}
-          >
-            <Award className={`h-4 w-4 ${league.icon}`} />
-            <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">League</p>
-            <p className={`mt-1 truncate text-base font-black leading-none ${league.text}`}>{league.name.replace(" League", "")}</p>
-          </button>
-
-          <button
-            onClick={() => setActiveDetail((d) => (d === "rank" ? null : "rank"))}
-            className="rounded-2xl border border-white/10 bg-slate-900/50 p-3 text-left shadow-inner transition-all hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/60"
-          >
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Rank</p>
-            <p className="mt-1 text-base font-black leading-none text-white">{rankText}</p>
-          </button>
-
-          <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-3 shadow-inner">
-            <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
-            <p className="mt-1.5 text-[8px] font-black uppercase tracking-wider leading-none text-slate-400">Streak</p>
-            <p className="mt-1 text-base font-black leading-none text-orange-400">{stats?.currentStreak || 0}d</p>
-          </div>
-        </div>
-
-        {/* Overtake target */}
-        <div className="relative z-10 mb-5 rounded-2xl border border-white/10 bg-slate-900/50 p-4 shadow-inner">
-          <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Standing overtake target</p>
-          <div className="mt-2.5 text-xs font-medium text-slate-300">
-            {nextPlayer ? (
-              <div className="flex items-start gap-2.5">
-                <Flame className="mt-0.5 h-5 w-5 shrink-0 animate-pulse fill-orange-500 text-orange-500" />
-                <div className="min-w-0 flex-1">
-                  <p>
-                    Need <strong className="font-extrabold text-pink-400">{xpNeeded} XP</strong> to overtake:
-                  </p>
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <div className="relative shrink-0">
-                      <Avatar className="h-6 w-6 border border-white/20">
-                        <AvatarImage src={fixProfileImage(nextPlayer.profileImage)} />
-                        <AvatarFallback className="bg-slate-800 text-[10px] font-extrabold text-white">{nextPlayer.userName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      {(() => {
-                        const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
-                        const targetFrame = targetCosmetics.equipped?.frame;
-                        return targetFrame && (
-                          <div className={`absolute inset-[-1.5px] rounded-full pointer-events-none z-20 ${
-                            COSMETIC_ITEMS.find((i) => i.id === targetFrame)?.value
-                          }`} />
-                        );
-                      })()}
-                    </div>
-                    <span className="max-w-[100px] truncate text-xs font-black text-white">{nextPlayer.userName}</span>
-                    {(() => {
-                      const targetCosmetics = cosmeticsService.parseCosmetics(nextPlayer);
-                      const targetTitle = targetCosmetics.equipped?.title;
-                      return targetTitle && (
-                        <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 px-1 py-0.2 rounded uppercase tracking-wider scale-95 shrink-0">
-                          {COSMETIC_ITEMS.find((i) => i.id === targetTitle)?.value}
-                        </span>
-                      );
-                    })()}
-                    <span className="shrink-0 text-[9px] font-bold text-slate-400">(Rank #{currentRank - 1})</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 font-bold text-yellow-400">
-                <Trophy className="h-4 w-4 animate-bounce text-yellow-500" />
-                <span>Overtook everyone! You lead the batch!</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Milestone badges */}
-        <div className="relative z-10 flex-1 space-y-3 pb-2">
-          <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Milestone achievements</p>
-          <div className="grid grid-cols-3 gap-2">
-            {Object.values(BADGES).map((badge) => {
-              const isUnlocked = stats?.badges?.includes(badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  title={`${badge.title}: ${badge.description}`}
-                  className={[
-                    "flex flex-col items-center rounded-xl border p-2 text-center transition-all",
-                    isUnlocked ? "border-pink-500/20 bg-slate-950 text-white shadow-md" : "border-white/5 bg-slate-900/30 text-slate-500 opacity-40",
-                  ].join(" ")}
-                >
-                  <span className="text-base">{badge.icon}</span>
-                  <span className="mt-1 w-full truncate text-[8px] font-black leading-tight tracking-tight">{badge.title}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </ScrollArea>
       </div>
+
+      {/* ── MOBILE STATS SHEET (slide-up panel) ─────────────────────── */}
+      <Sheet open={isStatsSheetOpen} onOpenChange={setIsStatsSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl border-t border-white/10 bg-slate-950/98 backdrop-blur-2xl text-white max-h-[85vh] p-0">
+          <SheetHeader className="px-5 pt-5 pb-3">
+            <SheetTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-white">
+              <Zap className="h-4 w-4 text-pink-500" />
+              Player Stats
+            </SheetTitle>
+          </SheetHeader>
+
+          <ScrollArea className="h-[calc(85vh-5rem)] px-5 pb-6">
+            <div className="space-y-4">
+              {/* XP Progress */}
+              <Card className="border-white/10 bg-slate-900/50 p-4 shadow-inner">
+                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Zap className="h-3.5 w-3.5 shrink-0 text-pink-500" />
+                    XP Progress
+                  </span>
+                  <span className="font-extrabold text-pink-400">{xpIntoLevel} / 100 XP</span>
+                </div>
+                <div className="relative mt-2 h-2.5 w-full overflow-hidden rounded-full border border-slate-800/80 bg-slate-950/80 p-[1px]">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#FF2EA6] via-[#A020F0] to-[#4D8CFF] transition-all duration-1000 ease-out" style={{ width: `${xpIntoLevel}%` }} />
+                </div>
+                <span className="mt-1.5 block text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                  Level {currentLevel} — {100 - xpIntoLevel} XP to next level
+                </span>
+              </Card>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={() => { setIsStatsSheetOpen(false); setActiveDetail("coins"); }}
+                  className="group relative overflow-hidden rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-500/5 p-3.5 text-left shadow-lg transition-all hover:border-yellow-500/40"
+                >
+                  <Coins className="h-4.5 w-4.5 text-yellow-400" />
+                  <p className="mt-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Coins</p>
+                  <p className="mt-1 text-lg font-black leading-none text-white">{stats?.coins || 0}</p>
+                </button>
+
+                <button
+                  onClick={() => { setIsStatsSheetOpen(false); setActiveDetail("league"); }}
+                  className={`rounded-2xl border p-3.5 text-left shadow-inner transition-all hover:brightness-110 ${league.ring}`}
+                >
+                  <Award className={`h-4.5 w-4.5 ${league.icon}`} />
+                  <p className="mt-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">League</p>
+                  <p className={`mt-1 truncate text-lg font-black leading-none ${league.text}`}>{league.name.replace(" League", "")}</p>
+                </button>
+
+                <button
+                  onClick={() => { setIsStatsSheetOpen(false); setActiveDetail("rank"); }}
+                  className="rounded-2xl border border-white/10 bg-slate-900/50 p-3.5 text-left shadow-inner transition-all hover:bg-slate-900/70"
+                >
+                  <Trophy className="h-4.5 w-4.5 text-yellow-500" />
+                  <p className="mt-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Rank</p>
+                  <p className="mt-1 text-lg font-black leading-none text-white">{rankText}</p>
+                </button>
+
+                <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-3.5 shadow-inner">
+                  <Flame className="h-4.5 w-4.5 fill-orange-500 text-orange-500" />
+                  <p className="mt-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Streak</p>
+                  <p className="mt-1 text-lg font-black leading-none text-orange-400">{stats?.currentStreak || 0}d</p>
+                </div>
+              </div>
+
+              <Separator className="bg-white/5" />
+
+              {/* Overtake target */}
+              <Card className="border-white/10 bg-slate-900/50 p-4 shadow-inner">
+                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Standing overtake target</p>
+                <div className="mt-2.5 text-xs font-medium text-slate-300">
+                  {nextPlayer ? (
+                    <div className="flex items-start gap-2.5">
+                      <Flame className="mt-0.5 h-5 w-5 shrink-0 animate-pulse fill-orange-500 text-orange-500" />
+                      <div className="min-w-0 flex-1">
+                        <p>
+                          Need <strong className="font-extrabold text-pink-400">{xpNeeded} XP</strong> to overtake{" "}
+                          <strong className="font-extrabold text-white">{nextPlayer.userName}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 font-bold text-yellow-400">
+                      <Trophy className="h-4 w-4 animate-bounce text-yellow-500" />
+                      <span>You lead the batch!</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Separator className="bg-white/5" />
+
+              {/* Milestone badges */}
+              <div className="space-y-3 pb-4">
+                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Milestone achievements</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {Object.values(BADGES).map((badge) => {
+                    const isUnlocked = stats?.badges?.includes(badge.id);
+                    return (
+                      <div
+                        key={badge.id}
+                        title={`${badge.title}: ${badge.description}`}
+                        className={[
+                          "flex flex-col items-center rounded-xl border p-2 text-center transition-all",
+                          isUnlocked ? "border-pink-500/20 bg-slate-950 text-white shadow-md" : "border-white/5 bg-slate-900/30 text-slate-500 opacity-40",
+                        ].join(" ")}
+                      >
+                        <span className="text-lg">{badge.icon}</span>
+                        <span className="mt-1 w-full truncate text-[8px] font-black leading-tight tracking-tight">{badge.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Unified stat detail dialog (mobile pills + desktop tiles) ── */}
       <Dialog open={!!activeDetail} onOpenChange={(open) => !open && setActiveDetail(null)}>

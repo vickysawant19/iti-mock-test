@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Query } from "appwrite";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
@@ -521,38 +522,32 @@ const StudentGameArena = ({
                     className="space-y-6"
                   >
                     {/* Profile Sub-tabs Switcher */}
-                    <div className="flex items-center gap-4 sm:gap-6 md:gap-8 border-b border-slate-200 dark:border-[#221a48] pb-0 relative z-10 select-none w-full">
-                      {[
-                        { id: "stats", label: "Overview", icon: LayoutGrid },
-                        { id: "analysis", label: "Analysis", icon: BarChart2 },
-                        { id: "badges", label: "Badges", icon: Trophy },
-                        { id: "store", label: "Store", icon: Coins },
-                        { id: "settings", label: "Rules", icon: Settings }
-                      ].map((tab) => {
-                        const isActive = profileSubTab === tab.id;
-                        const Icon = tab.icon;
-                        return (
-                          <button
-                            key={tab.id}
-                            onClick={() => setProfileSubTab(tab.id)}
-                            className={`relative flex items-center gap-2 py-3 px-1 cursor-pointer transition-all duration-200 text-xs sm:text-sm font-bold whitespace-nowrap ${
-                              isActive
-                                ? "text-slate-900 dark:text-white"
-                                : "text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200"
-                            }`}
-                          >
-                            <Icon className={`w-4 h-4 ${isActive ? "text-pink-500" : "text-slate-400"}`} />
-                            <span>{tab.label}</span>
-                            {isActive && (
-                              <motion.div
-                                layoutId="activeTabUnderline"
-                                className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-pink-500 to-purple-600 rounded-full"
-                              />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Tabs value={profileSubTab} onValueChange={setProfileSubTab} className="w-full relative z-10 select-none">
+                      <TabsList className="flex items-center justify-start w-full overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-[#221a48] bg-transparent p-0 h-auto rounded-none">
+                        {[
+                          { id: "stats", label: "Overview", icon: LayoutGrid },
+                          { id: "analysis", label: "Analysis", icon: BarChart2 },
+                          { id: "badges", label: "Badges", icon: Trophy },
+                          { id: "store", label: "Store", icon: Coins },
+                          { id: "settings", label: "Rules", icon: Settings }
+                        ].map((tab) => {
+                          const isActive = profileSubTab === tab.id;
+                          const Icon = tab.icon;
+                          return (
+                            <TabsTrigger
+                              key={tab.id}
+                              value={tab.id}
+                              className={`relative flex items-center gap-2 py-3 px-3 cursor-pointer transition-all duration-200 text-xs sm:text-sm font-bold whitespace-nowrap bg-transparent border-b-2 rounded-none shadow-none data-[state=active]:bg-transparent data-[state=active]:border-pink-500 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200 ${
+                                isActive ? "border-pink-500" : "border-transparent"
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 ${isActive ? "text-pink-500" : "text-slate-400"}`} />
+                              <span>{tab.label}</span>
+                            </TabsTrigger>
+                          );
+                        })}
+                      </TabsList>
+                    </Tabs>
 
                     {/* Subtab Contents */}
                     {isStatsLoading ? (

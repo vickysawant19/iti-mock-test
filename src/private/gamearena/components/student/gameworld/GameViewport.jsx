@@ -197,7 +197,7 @@ export default function GameViewport({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative h-full w-full select-none overflow-hidden bg-slate-950/20 border-b border-indigo-500/10 shadow-inner"
+      className="relative h-full w-full select-none overflow-hidden bg-slate-950/20 border-b border-indigo-500/10 shadow-inner touch-manipulation"
       style={{ perspective: 1000, touchAction: "none" }}
     >
       <div 
