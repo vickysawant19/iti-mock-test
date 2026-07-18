@@ -60,7 +60,7 @@ import BadgesTab from "./components/student/BadgesTab";
 import StoreTab from "./components/student/StoreTab";
 import ActiveGameSettingsCard from "./components/student/ActiveGameSettingsCard";
 import LeaderboardTab from "./components/student/LeaderboardTab";
-import BottomNavDock from "./components/student/BottomNavDock";
+import StudentBottomNav from "./components/student/StudentBottomNav";
 import CelebrationOverlays from "./components/student/CelebrationOverlays";
 
 const StudentGameArena = ({
@@ -593,7 +593,7 @@ const StudentGameArena = ({
       </div>{/* end layout container */}
 
       {/* Bottom Navigation Dock */}
-      <BottomNavDock
+      <StudentBottomNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         studentTabsLeft={studentTabsLeft}

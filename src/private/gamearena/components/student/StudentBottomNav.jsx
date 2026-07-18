@@ -3,7 +3,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play } from "lucide-react";
 
-export default function BottomNavDock({
+export default function StudentBottomNav({
   activeTab,
   setActiveTab,
   studentTabsLeft = [],
@@ -50,7 +50,7 @@ export default function BottomNavDock({
           })}
         </div>
 
-        {/* Center Play Game Button — flexbox-based elevation (no absolute hack) */}
+        {/* Center Play Game Button */}
         <div className="relative flex flex-col items-center justify-end px-3 -mb-1">
           {/* Outer pulsing ring glow */}
           <div className="absolute inset-0 -m-1.5 mt-auto h-14 w-14 animate-pulse rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-60 blur-md mx-auto -translate-y-3" />

@@ -36,6 +36,7 @@ import TeacherLeaderboardTab from "./components/teacher/TeacherLeaderboardTab";
 import TeacherChallengesTab from "./components/teacher/TeacherChallengesTab";
 import TeacherPrizesTab from "./components/teacher/TeacherPrizesTab";
 import TeacherSettingsTab from "./components/teacher/TeacherSettingsTab";
+import TeacherBottomNav from "./components/teacher/TeacherBottomNav";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { challengeService, CHALLENGE_TEMPLATES } from "@/services/challenge.service";
@@ -718,40 +719,7 @@ const TeacherGameArena = ({
       </div>
 
       {/* Bottom Navigation Dock */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/90 border-t border-slate-200/80 dark:border-slate-800/80 backdrop-blur-lg shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)] px-3 pt-1.5 pb-[max(0.375rem,var(--safe-bottom))] md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:max-w-xl md:rounded-2xl md:border md:border-slate-200/80 dark:md:border-slate-800/80 md:ring-1 md:ring-slate-200/30 dark:md:ring-slate-800/60">
-        <div className="flex items-center justify-start md:justify-around overflow-x-auto no-scrollbar gap-1 relative h-12 max-w-xl mx-auto">
-          {[
-            { id: "attendance", label: "Attendance & Stats", shortLabel: "Attendance", icon: Users },
-            { id: "leaderboard", label: "Leaderboard & Stats", shortLabel: "Leaderboard", icon: Trophy },
-            { id: "challenges", label: "Launch Challenges", shortLabel: "Challenges", icon: Target },
-            { id: "prizes", label: "Dispatch Prizes", shortLabel: "Prizes", icon: Award },
-            { id: "settings", label: "Game Settings", shortLabel: "Settings", icon: Settings },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center relative py-1 px-3.5 rounded-xl transition-all duration-200 cursor-pointer min-w-[76px] md:min-w-0 md:flex-1 shrink-0 ${
-                  isActive ? "text-pink-600 dark:text-pink-500 font-bold" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
-                }`}
-              >
-                <Icon className={`w-4.5 h-4.5 ${isActive ? "text-pink-600 dark:text-pink-500" : "text-slate-450 dark:text-slate-500"}`} />
-                <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight hidden md:block">{tab.label}</span>
-                <span className="text-[8px] mt-0.5 whitespace-nowrap tracking-tight block md:hidden max-w-[80px] truncate">{tab.shortLabel}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="teacherBottomTabDot"
-                    className="w-4 h-1 bg-pink-600 dark:bg-pink-500 rounded-full mt-0.5 absolute -top-0.5"
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <TeacherBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 };
