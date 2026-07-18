@@ -116,6 +116,19 @@ export default function GameWorld({
   const [focusedStage, setFocusedStage] = useState(currentStep);
   const [popupStageIndex, setPopupStageIndex] = useState(null);
   const [isStatsSheetOpen, setIsStatsSheetOpen] = useState(false);
+
+  const handleNodeClick = useCallback((clickedIndex) => {
+    setFocusedStage(clickedIndex);
+    setPopupStageIndex(clickedIndex);
+    const node = coordinates[clickedIndex];
+    if (node) {
+      camera.recenterOnNode(node, camera.scale.get(), {
+        stiffness: 160,
+        damping: 24,
+      });
+    }
+  }, [coordinates, camera]);
+
   const prevStepRef = useRef(undefined);
   const hasCenteredRef = useRef(false);
 
@@ -346,14 +359,7 @@ export default function GameWorld({
                 scale={camera.scale}
                 viewportWidth={camera.viewportWidth}
                 viewportHeight={camera.viewportHeight}
-                onNodeClick={(clickedIndex) => {
-                  setFocusedStage(clickedIndex);
-                  setPopupStageIndex(clickedIndex);
-                  camera.recenterOnNode(coordinates[clickedIndex], camera.scale.get(), {
-                    stiffness: 160,
-                    damping: 24,
-                  });
-                }}
+                onNodeClick={handleNodeClick}
               />
             ))}
           </GameViewport>

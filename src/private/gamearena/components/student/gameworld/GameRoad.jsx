@@ -1,6 +1,7 @@
+import React, { memo } from "react";
 import { motion, useTransform } from "framer-motion";
 
-export default function GameRoad({
+function GameRoad({
   curvedRoadPath,
   coordinates = [],
   totalLevels,
@@ -20,6 +21,7 @@ export default function GameRoad({
       preserveAspectRatio="none"
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+      style={{ willChange: "transform", transform: "translateZ(0)" }}
     >
       <defs>
         <linearGradient id="roadGlowGrad" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -144,3 +146,5 @@ export default function GameRoad({
     </svg>
   );
 }
+
+export default memo(GameRoad);
