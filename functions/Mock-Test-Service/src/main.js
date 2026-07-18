@@ -3,6 +3,13 @@ import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
 import generateMockTestNew from "./generateMockTestNew.js";
 import { bulkaddQuestions } from './bulkActions.js';
+import {
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  bulkUpdateQuestions,
+  bulkDeleteQuestions
+} from "./questionActions.js";
 
 
 
@@ -44,7 +51,11 @@ export default async ({ req, res, log, error }) => {
     databaseId,
     quesCollectionId,
     questionPapersCollectionId,
-    newModulesDataCollectionId
+    newModulesDataCollectionId,
+    payload,
+    id,
+    updates,
+    ids
   } = req.bodyJson;
   
 
@@ -121,11 +132,64 @@ export default async ({ req, res, log, error }) => {
       break;
 
       case "bulkaddQuestions":
+      case "bulkAddQuestions":
         result = await bulkaddQuestions({
-          questions,
+          questions: questions || (payload && payload.questions),
           error,
           database,
           ID,
+          databaseId,
+          quesCollectionId
+        });
+        break;
+
+      case "createQuestion":
+        result = await createQuestion({
+          payload: payload || req.bodyJson,
+          error,
+          database,
+          ID,
+          databaseId,
+          quesCollectionId
+        });
+        break;
+
+      case "updateQuestion":
+        result = await updateQuestion({
+          id: id || (payload && payload.id) || req.bodyJson.id,
+          payload: payload || req.bodyJson.payload || req.bodyJson,
+          error,
+          database,
+          databaseId,
+          quesCollectionId
+        });
+        break;
+
+      case "deleteQuestion":
+        result = await deleteQuestion({
+          id: id || (payload && payload.id) || req.bodyJson.id,
+          error,
+          database,
+          databaseId,
+          quesCollectionId
+        });
+        break;
+
+      case "bulkUpdateQuestions":
+        result = await bulkUpdateQuestions({
+          updates: updates || (payload && payload.updates),
+          error,
+          database,
+          databaseId,
+          quesCollectionId
+        });
+        break;
+
+      case "bulkDeleteQuestions":
+        result = await bulkDeleteQuestions({
+          ids: ids || (payload && payload.ids),
+          error,
+          database,
           databaseId,
           quesCollectionId
         });

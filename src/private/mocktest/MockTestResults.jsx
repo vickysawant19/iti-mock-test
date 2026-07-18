@@ -898,7 +898,7 @@ const MockTestResults = () => {
     if (!paperData || !paperData.$id) return;
     setIsTogglingProtection(true);
     try {
-      const updated = await mockTestService.updateQuestion(paperData.$id, {
+      const updated = await mockTestService.updateQuestionPaper(paperData.$id, {
         isProtected: !paperData.isProtected,
       });
       setPaperData(updated);

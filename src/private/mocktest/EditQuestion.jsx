@@ -22,6 +22,7 @@ import {
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import questionService from "@/services/question.service";
+import questionFunctionService from "@/services/questionFunction.service";
 import moduleServices from "@/appwrite/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectQuestions } from "@/store/questionSlice";
@@ -182,7 +183,7 @@ const EditQuestion = () => {
     }
     setIsSubmitting(true);
     try {
-      await questionService.updateQuestion(quesId, {
+      await questionFunctionService.updateQuestion(quesId, {
         question:      data.question,
         options:       data.options,
         correctAnswer: data.correctAnswer,

@@ -23,6 +23,7 @@ import {
 import * as SelectPrimitive from "@radix-ui/react-select";
 
 import questionService from "@/services/question.service";
+import questionFunctionService from "@/services/questionFunction.service";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
 import { useListTradesQuery } from "@/store/api/tradeApi";
@@ -327,7 +328,7 @@ const ManageQuestions = () => {
     if (!confirm("Are you sure you want to delete this question?")) return;
     setIsDeleting((prev) => new Set(prev).add(id));
     try {
-      await questionService.deleteQuestion(id);
+      await questionFunctionService.deleteQuestion(id);
       setQuestions((prev) => prev.filter((q) => q.$id !== id));
       setTotalQuestions((prev) => prev - 1);
       toast.success("Question deleted.");

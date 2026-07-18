@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { FaArrowLeft } from "react-icons/fa";
 
 import questionService from "@/services/question.service";
+import questionFunctionService from "@/services/questionFunction.service";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
@@ -134,7 +135,7 @@ const CreateQuestion = () => {
       data.userName = user.name;
       data.tags = (data.tags || []).join(",");
       // data.tradeId, data.subjectId, and data.year are now kept to maintain logical links
-      await questionService.createQuestion(data);
+      await questionFunctionService.createQuestion(data);
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options

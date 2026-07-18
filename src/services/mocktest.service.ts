@@ -268,11 +268,11 @@ class MockTestService extends DatabaseService {
     }
   }
 
-  async updateQuestion(id: string, data: any) {
+  async updateQuestionPaper(id: string, data: any) {
     try {
       return await this.updateRow<MockTestPaper>(id, data);
     } catch (error) {
-      console.error("Error getting Questions", error);
+      console.error("Error updating Mock Test Paper", error);
       throw error;
     }
   }

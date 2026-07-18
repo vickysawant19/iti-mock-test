@@ -144,7 +144,7 @@ const MockTestCard = ({
   const onToggleProtection = async () => {
     setIsLoading(true);
     try {
-      const data = await mockTestService.updateQuestion(test.$id, {
+      const data = await mockTestService.updateQuestionPaper(test.$id, {
         isProtected: !test.isProtected,
       });
       setMockTests((prev) =>
