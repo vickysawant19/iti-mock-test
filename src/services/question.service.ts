@@ -1,4 +1,4 @@
-import { Query, functions } from "./appwriteClient";
+import { Query } from "./appwriteClient";
 import conf from "../config/config";
 import { DatabaseService } from "./database.service";
 
@@ -21,44 +21,6 @@ class QuestionService extends DatabaseService {
     super(conf.quesCollectionId);
   }
 
-  async bulkaddQuestions(payload: any) {
-    try {
-      const response = await functions.createExecution({
-        functionId: conf.mockTestFunctionId,
-        body: JSON.stringify({
-          ...payload,
-          databaseId: conf.databaseId,
-          quesCollectionId: conf.quesCollectionId,
-        })
-      });
-
-      const result = JSON.parse(response.responseBody);
-      if (result.error) throw new Error(result.error);
-      return result;
-    } catch (err: any) {
-      throw new Error(`${err.message}`);
-    }
-  }
-
-  async createQuestion(data: QuestionData) {
-    const existing = await this.listRows(
-      [Query.equal("question", data.question), Query.limit(1)],
-      ["$id"]
-    );
-
-    if (existing.total > 0) {
-      throw new Error("The question already exists in the database.");
-    }
-    return await this.createRow<QuestionData>(data);
-  }
-
-  async updateQuestion(id: string, data: Partial<QuestionData>) {
-    return await this.updateRow<QuestionData>(id, data);
-  }
-
-  async deleteQuestion(id: string) {
-    return await this.deleteRow(id);
-  }
 
   async getQuestion(id: string) {
     return await this.getRow<QuestionData>(id);
