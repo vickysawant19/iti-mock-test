@@ -127,7 +127,6 @@ const StudentGameArena = ({
     canSpin,
     purchaseCosmetic,
     equipCosmetic,
-    convertXpToCoins,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId, activeTab);
 
   // Daily Missions
@@ -579,7 +578,6 @@ const StudentGameArena = ({
                     ) : (
                       <StoreTab
                         stats={stats}
-                        convertXpToCoins={convertXpToCoins}
                         purchaseCosmetic={purchaseCosmetic}
                         equipCosmetic={equipCosmetic}
                       />

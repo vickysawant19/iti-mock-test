@@ -74,7 +74,49 @@ export class GameService extends DatabaseService {
       ]);
 
       if (response.total > 0) {
-        return response.rows[0];
+        let stats = response.rows[0];
+        const now = new Date();
+        const todayDate = getLocalDateString(now);
+        let needsUpdate = false;
+        const updatePayload: Partial<StudentGameStats> = {};
+
+        // 1. Reset daily stats if day changed
+        if (stats.dailyStatsDate !== todayDate) {
+          stats.dailyWins = 0;
+          stats.dailyLosses = 0;
+          stats.dailyQuestionsAttempted = 0;
+          stats.dailyStatsDate = todayDate;
+
+          updatePayload.dailyWins = 0;
+          updatePayload.dailyLosses = 0;
+          updatePayload.dailyQuestionsAttempted = 0;
+          updatePayload.dailyStatsDate = todayDate;
+          needsUpdate = true;
+        }
+
+        // 2. Check if streak is broken (diffDays >= 2)
+        if (stats.lastQuestionTime) {
+          const lastTime = new Date(stats.lastQuestionTime);
+          const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const d2 = new Date(lastTime.getFullYear(), lastTime.getMonth(), lastTime.getDate());
+          const diffTime = d1.getTime() - d2.getTime();
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays >= 2 && stats.currentStreak > 0) {
+            stats.currentStreak = 0;
+            updatePayload.currentStreak = 0;
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate && stats.$id) {
+          try {
+            stats = await this.updateRow<StudentGameStats>(stats.$id, updatePayload);
+          } catch (err) {
+            console.warn("[GameService] Failed to update reset stats in DB:", err);
+          }
+        }
+        return stats;
       }
 
       // Initialize default stats
@@ -89,9 +131,9 @@ export class GameService extends DatabaseService {
         losses: 0,
         accuracy: 0,
         questionsAttempted: 0,
-        currentStreak: 1,
-        highestStreak: 1,
-        lastQuestionTime: new Date().toISOString(),
+        currentStreak: 0,
+        highestStreak: 0,
+        lastQuestionTime: "",
         lastActive: new Date().toISOString(),
         dailyWins: 0,
         dailyLosses: 0,
@@ -114,8 +156,12 @@ export class GameService extends DatabaseService {
         losses: 0,
         accuracy: 0,
         questionsAttempted: 0,
-        currentStreak: 1,
-        highestStreak: 1,
+        currentStreak: 0,
+        highestStreak: 0,
+        dailyWins: 0,
+        dailyLosses: 0,
+        dailyQuestionsAttempted: 0,
+        dailyStatsDate: getLocalDateString(),
       };
     }
   }
@@ -484,51 +530,6 @@ export class GameService extends DatabaseService {
 
     return stats;
   }
-
-  /**
-   * Converts a student's XP into coins at the given rate.
-   * Default rate: 10 XP → 1 coin.
-   * @param xpAmount  The amount of XP to convert (must be > 0 and ≤ current XP).
-   * @param rate      XP per 1 coin (default 10).
-   */
-  async convertXpToCoins(
-    studentId: string,
-    batchId: string,
-    tradeId: string,
-    xpAmount: number,
-    rate: number = 10
-  ): Promise<{ stats: StudentGameStats; coinsGained: number }> {
-    if (xpAmount <= 0) throw new Error("XP amount must be greater than 0");
-
-    const stats = await this.getStudentGameStats(studentId, batchId, tradeId);
-
-    if ((stats.xp || 0) < xpAmount) {
-      throw new Error(`Not enough XP. You have ${stats.xp} XP.`);
-    }
-
-    const coinsGained = Math.floor(xpAmount / rate);
-    if (coinsGained < 1) {
-      throw new Error(`Minimum conversion is ${rate} XP for 1 coin.`);
-    }
-
-    stats.xp = Math.max(0, stats.xp - xpAmount);
-    stats.coins = (stats.coins || 0) + coinsGained;
-    stats.level = Math.floor(stats.xp / 100) + 1;
-    stats.lastActive = new Date().toISOString();
-
-    let updatedStats = stats;
-    if (stats.$id) {
-      updatedStats = await this.updateRow<StudentGameStats>(stats.$id, {
-        xp: stats.xp,
-        coins: stats.coins,
-        level: stats.level,
-        lastActive: stats.lastActive,
-      });
-    }
-
-    return { stats: updatedStats, coinsGained };
-  }
-
 
   /**
    * Processes a daily spin reward for the lucky wheel.

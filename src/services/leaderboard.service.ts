@@ -87,9 +87,51 @@ export class LeaderboardService extends DatabaseService {
           };
         });
 
-        // 3. Sort students based on game metrics:
-        // Highest XP -> Highest Accuracy -> Highest Streak -> Latest Active
-        statsList.sort((a, b) => {
+        // 3. Map to final LeaderboardEntry structures with local timezone resets (streaks and daily stats)
+        const now = new Date();
+        const todayDate = getLocalDateString(now);
+
+        const mappedList = statsList.map((stat) => {
+          const profile = profileMap[stat.studentId] || {
+            userName: "Unknown Student",
+            profileImage: null,
+          };
+
+          const isStale = stat.dailyStatsDate !== todayDate;
+
+          let currentStreak = stat.currentStreak || 0;
+          if (stat.lastQuestionTime) {
+            const lastTime = new Date(stat.lastQuestionTime);
+            const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const d2 = new Date(lastTime.getFullYear(), lastTime.getMonth(), lastTime.getDate());
+            const diffTime = d1.getTime() - d2.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays >= 2) {
+              currentStreak = 0;
+            }
+          }
+
+          return {
+            ...stat,
+            currentStreak,
+            dailyWins: isStale ? 0 : (stat.dailyWins || 0),
+            dailyLosses: isStale ? 0 : (stat.dailyLosses || 0),
+            dailyQuestionsAttempted: isStale ? 0 : (stat.dailyQuestionsAttempted || 0),
+            dailyStatsDate: isStale ? todayDate : stat.dailyStatsDate,
+            userName: profile.userName,
+            profileImage: profile.profileImage,
+            rank: 1, // Placeholder
+          };
+        });
+
+        // 4. Sort students based on game metrics:
+        // Highest Level -> Highest XP -> Highest Accuracy -> Highest Streak -> Latest Active
+        mappedList.sort((a, b) => {
+          const levelA = a.level || 1;
+          const levelB = b.level || 1;
+          if (levelB !== levelA) {
+            return levelB - levelA;
+          }
           if (b.xp !== a.xp) {
             return b.xp - a.xp;
           }
@@ -105,27 +147,11 @@ export class LeaderboardService extends DatabaseService {
           return dateB - dateA;
         });
 
-        const todayDate = getLocalDateString();
-        // 4. Map to final LeaderboardEntry structures with ranks
-        const result = statsList.map((stat, index) => {
-          const profile = profileMap[stat.studentId] || {
-            userName: "Unknown Student",
-            profileImage: null,
-          };
-
-          const isStale = stat.dailyStatsDate !== todayDate;
-
-          return {
-            ...stat,
-            dailyWins: isStale ? 0 : (stat.dailyWins || 0),
-            dailyLosses: isStale ? 0 : (stat.dailyLosses || 0),
-            dailyQuestionsAttempted: isStale ? 0 : (stat.dailyQuestionsAttempted || 0),
-            dailyStatsDate: isStale ? todayDate : stat.dailyStatsDate,
-            userName: profile.userName,
-            profileImage: profile.profileImage,
-            rank: index + 1,
-          };
-        });
+        // 5. Assign final ranks
+        const result = mappedList.map((entry, index) => ({
+          ...entry,
+          rank: index + 1,
+        }));
 
         this.leaderboardCache.set(batchId, { time: Date.now(), data: result });
         return result;
