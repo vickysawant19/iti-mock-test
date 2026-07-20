@@ -7,16 +7,22 @@ let globalOnlineUsers = new Map();
 const listeners = new Set();
 let initialFetchPromise = null;
 let activeSubscription = null;
+let isTrackingActive = false;
 
 async function startPresenceTracking() {
+  isTrackingActive = true;
   if (initialFetchPromise) return initialFetchPromise;
 
   initialFetchPromise = (async () => {
     try {
       const result = await presences.list();
-      globalOnlineUsers = new Map(
-        (result.presences ?? []).map((p) => [p.userId, p])
-      );
+      const fetched = result.presences ?? [];
+      // Merge snapshot results, giving priority to any live event updates that already arrived
+      for (const p of fetched) {
+        if (!globalOnlineUsers.has(p.userId)) {
+          globalOnlineUsers.set(p.userId, p);
+        }
+      }
       notifyListeners();
     } catch (err) {
       if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
@@ -39,6 +45,15 @@ async function startPresenceTracking() {
         }
         notifyListeners();
       });
+
+      // If tracking was deactivated while we were subscribing, immediately unsubscribe to prevent leaks
+      if (!isTrackingActive) {
+        if (sub && typeof sub.unsubscribe === "function") {
+          sub.unsubscribe();
+        }
+        return null;
+      }
+
       activeSubscription = sub;
       return sub;
     } catch (err) {
@@ -53,6 +68,7 @@ async function startPresenceTracking() {
 }
 
 function stopPresenceTracking() {
+  isTrackingActive = false;
   if (activeSubscription) {
     if (typeof activeSubscription.unsubscribe === "function") {
       activeSubscription.unsubscribe();
