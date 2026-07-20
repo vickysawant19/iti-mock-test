@@ -8,18 +8,29 @@ const listeners = new Set();
 let initialFetchPromise = null;
 let activeSubscription = null;
 let isTrackingActive = false;
+let trackingSessionId = 0;
+const deletedDuringFetch = new Set();
 
 async function startPresenceTracking() {
   isTrackingActive = true;
+  trackingSessionId += 1;
+  const mySession = trackingSessionId;
+
   if (initialFetchPromise) return initialFetchPromise;
+
+  deletedDuringFetch.clear();
 
   initialFetchPromise = (async () => {
     try {
       const result = await presences.list();
+      
+      // If tracking was deactivated while we were listing, or another session started, immediately discard
+      if (!isTrackingActive || mySession !== trackingSessionId) return;
+
       const fetched = result.presences ?? [];
       // Merge snapshot results, giving priority to any live event updates that already arrived
       for (const p of fetched) {
-        if (!globalOnlineUsers.has(p.userId)) {
+        if (!globalOnlineUsers.has(p.userId) && !deletedDuringFetch.has(p.userId)) {
           globalOnlineUsers.set(p.userId, p);
         }
       }
@@ -40,14 +51,15 @@ async function startPresenceTracking() {
         const isDelete = response.events?.some((e) => e.includes(".delete"));
         if (isDelete) {
           globalOnlineUsers.delete(presence.userId);
+          deletedDuringFetch.add(presence.userId); // remember even after fetch resolves
         } else {
           globalOnlineUsers.set(presence.userId, presence);
         }
         notifyListeners();
       });
 
-      // If tracking was deactivated while we were subscribing, immediately unsubscribe to prevent leaks
-      if (!isTrackingActive) {
+      // If tracking was deactivated while we were subscribing, or another session started, immediately unsubscribe to prevent leaks
+      if (!isTrackingActive || mySession !== trackingSessionId) {
         if (sub && typeof sub.unsubscribe === "function") {
           sub.unsubscribe();
         }
@@ -69,18 +81,21 @@ async function startPresenceTracking() {
 
 function stopPresenceTracking() {
   isTrackingActive = false;
+  trackingSessionId += 1; // invalidates any in-flight subscribe from this point on
   if (activeSubscription) {
     if (typeof activeSubscription.unsubscribe === "function") {
       activeSubscription.unsubscribe();
     }
   }
   globalOnlineUsers.clear();
+  deletedDuringFetch.clear();
   initialFetchPromise = null;
   activeSubscription = null;
 }
 
 function notifyListeners() {
-  listeners.forEach((listener) => listener(new Map(globalOnlineUsers)));
+  const snapshot = new Map(globalOnlineUsers);
+  listeners.forEach((listener) => listener(snapshot));
 }
 
 /**
