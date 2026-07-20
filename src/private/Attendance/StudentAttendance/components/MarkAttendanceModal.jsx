@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Check, X, MapPin, Loader2 } from "lucide-react";
-import useLocationManager from "@/hooks/useLocationManager";
+
 
 const MarkAttendanceModal = ({ 
   isOpen, 
@@ -10,12 +10,16 @@ const MarkAttendanceModal = ({
   onMarkAttendance,
   selectedDate,
   selectedAttendance,
-  todayAttendance
+  todayAttendance,
+  deviceLocation,
+  locationText,
+  locLoading,
+  locError,
+  calculateDistance,
 }) => {
   const [isMarking, setIsMarking] = useState(false);
   const [markedStatus, setMarkedStatus] = useState(null);
 
-  const { deviceLocation, locationText, loading: locLoading, error: locError, calculateDistance } = useLocationManager(false);
 
   const distance = useMemo(() => {
     if (!deviceLocation || !batchData?.location) return Infinity;

@@ -117,7 +117,7 @@ const AttendanceTracker = () => {
     error: locationError,
     getDeviceLocation,
     calculateDistance,
-  } = useLocationManager();
+  } = useLocationManager(true);
 
   useEffect(() => {
     if (batchData) {

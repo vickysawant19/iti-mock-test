@@ -37,14 +37,11 @@ const StudentAttendancePage = () => {
     setSelectedDate,
     handleMonthChange,
     markAttendance,
-    markBulkBlank,
-    isBulkMarking,
-    blankDays,
     lastUpdatedDate,
   } = useStudentAttendance(profile);
 
-  // Also getting live location status for the header strip
-  const { deviceLocation, locationText, loading: locLoading, calculateDistance } = useLocationManager(false);
+  // Single GPS tracker for this page — shared with the modal via props
+  const { deviceLocation, locationText, loading: locLoading, error: locError, calculateDistance } = useLocationManager(true);
   const distance = (!deviceLocation || !batchData?.location) ? Infinity : calculateDistance(
       deviceLocation.lat, deviceLocation.lon, batchData.location.lat, batchData.location.lon
   );
@@ -103,12 +100,16 @@ const StudentAttendancePage = () => {
 
           {/* Location Strip */}
           <div className="relative z-10 mt-5 pt-4 border-t border-white/10 flex items-center gap-3">
-             <div className="w-8 h-8 bg-emerald-400/20 rounded-lg flex items-center justify-center flex-shrink-0">
-               <MapPin className="w-4 h-4 text-emerald-300" />
+             <div className={`w-8 h-8 ${locLoading ? 'bg-white/10' : locError ? 'bg-rose-500/30 border border-rose-300/35' : isInLocationRange ? 'bg-emerald-400/20' : 'bg-rose-400/20'} rounded-lg flex items-center justify-center flex-shrink-0 transition-colors`}>
+               <MapPin className={`w-4 h-4 ${locLoading ? 'text-white/60' : locError ? 'text-rose-200' : isInLocationRange ? 'text-emerald-300' : 'text-rose-300'}`} />
              </div>
              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold">{locLoading ? "Checking Location..." : (isInLocationRange ? "Inside College Area" : "Outside Area")}</div>
-                <div className="text-[11px] text-white/70 truncate">{distance === Infinity || locLoading ? locationText || "Locating..." : `${Math.round(distance)}m from institute`}</div>
+                <div className="text-[13px] font-bold">
+                  {locLoading ? "Checking Location..." : locError ? "Location Error" : isInLocationRange ? "Inside College Area" : "Outside Area"}
+                </div>
+                <div className="text-[11px] text-white/70 truncate">
+                  {locError ? (locError.message || "Location access denied") : (distance === Infinity || locLoading ? locationText || "Locating..." : `${Math.round(distance)}m from institute`)}
+                </div>
              </div>
              {todayAttendance?.status === 'present' && (
                 <div className="bg-emerald-400/20 border border-emerald-400/40 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 flex-shrink-0">
@@ -140,37 +141,6 @@ const StudentAttendancePage = () => {
           </button>
         </div>
 
-        {/* Bulk-mark banner — only shown when both marking and past-marking are on, and there are blank days */}
-        {!isLoadingAttendance && batchData?.canMarkAttendance && batchData?.canMarkPrevious && blankDays.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3 mb-4 shadow-sm">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Users size={14} className="text-slate-400 flex-shrink-0" />
-              <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300 truncate">
-                <span className="font-extrabold text-blue-600">{blankDays.length}</span> blank day{blankDays.length !== 1 ? "s" : ""} with no record this month
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                id="bulk-mark-present-btn"
-                disabled={isBulkMarking}
-                onClick={() => markBulkBlank("present", "Bulk marked present")}
-                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 shadow-sm"
-              >
-                {isBulkMarking ? <Loader2 size={11} className="animate-spin" /> : <span className="text-[13px] leading-none">✓</span>}
-                Mark All Present
-              </button>
-              <button
-                id="bulk-mark-absent-btn"
-                disabled={isBulkMarking}
-                onClick={() => markBulkBlank("absent", "Bulk marked absent")}
-                className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 shadow-sm"
-              >
-                {isBulkMarking ? <Loader2 size={11} className="animate-spin" /> : <span className="text-[13px] leading-none">✗</span>}
-                Mark All Absent
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Main Grid Split */}
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
@@ -284,6 +254,11 @@ const StudentAttendancePage = () => {
          selectedDate={modalDate}
          selectedAttendance={modalAttendance}
          todayAttendance={todayAttendance}
+         deviceLocation={deviceLocation}
+         locationText={locationText}
+         locLoading={locLoading}
+         locError={locError}
+         calculateDistance={calculateDistance}
       />
     </div>
   );

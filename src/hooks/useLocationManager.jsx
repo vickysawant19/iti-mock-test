@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { haversineDistance } from "@/utils/haversineDistance";
 
-/**
- * Calculate haversine distance between two geographic points
- * @param {Object} coords1 - First point with lat and lon properties
- * @param {Object} coords2 - Second point with lat and lon properties
- * @returns {number} - Distance in meters
- */
+// Module-level cache — persists for the lifetime of the page session.
+// Stores the last coordinate pair we successfully reverse-geocoded.
+let geocodeCache = { lat: null, lon: null, text: "" };
 
 /**
  * Custom hook to manage device location and related calculations
@@ -18,10 +15,11 @@ const useLocationManager = (enableLocation = false) => {
   const [locationText, setLocationText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const geocodeFetchingRef = useRef(false); // prevent concurrent fetches
 
   // Set up continuous location tracking
   useEffect(() => {
-    if (enableLocation) return;
+    if (!enableLocation) return;  // disabled — skip GPS tracking
     setLoading(true);
 
     // Check if geolocation is available
@@ -44,12 +42,20 @@ const useLocationManager = (enableLocation = false) => {
           timestamp: position.timestamp,
         };
 
-        setDeviceLocation(newLocation);
+        setDeviceLocation((prev) => {
+          // Only update state (and trigger reverse-geocode) if moved > 30 m
+          if (prev) {
+            const dlat = Math.abs(prev.lat - newLocation.lat);
+            const dlon = Math.abs(prev.lon - newLocation.lon);
+            // ~30 m in degrees latitude ≈ 0.00027
+            if (dlat < 0.00027 && dlon < 0.00027) return prev;
+          }
+          return newLocation;
+        });
         setLoading(false);
         setError(null);
       },
       (error) => {
-        
         setError({
           code: error.code,
           message: error.message,
@@ -59,7 +65,7 @@ const useLocationManager = (enableLocation = false) => {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0,
+        maximumAge: 30000, // reuse a cached fix up to 30 s old
       }
     );
 
@@ -138,27 +144,46 @@ const useLocationManager = (enableLocation = false) => {
     return haversineDistance(coords1, coords2);
   };
 
-  // Update location text when device location changes
+  // Update location text when device location changes.
+  // Only calls the reverse-geocode API when the user has moved > 200m from
+  // the position we last geocoded — GPS oscillation within 200m reuses the cache.
   useEffect(() => {
-    if (enableLocation) return;
+    if (!enableLocation) return; // disabled — skip reverse-geocode
+    if (!deviceLocation) return;
 
-    if (deviceLocation) {
-      // Fetch location text for device coordinates
-      const updateLocationText = async () => {
-        try {
-          const deviceText = await fetchLocationText(
-            deviceLocation.lat,
-            deviceLocation.lon
-          );
-
-          setLocationText(deviceText);
-        } catch (error) {
-          console.error("Error updating location text:", error);
+    const updateLocationText = async () => {
+      // Reuse cached text if we haven't moved more than 200 m
+      if (geocodeCache.lat !== null) {
+        const movedMeters = haversineDistance(
+          { lat: geocodeCache.lat, lon: geocodeCache.lon },
+          { lat: deviceLocation.lat, lon: deviceLocation.lon }
+        );
+        if (movedMeters < 200) {
+          // Close enough — reuse cached text without a network call
+          if (geocodeCache.text) setLocationText(geocodeCache.text);
+          return;
         }
-      };
+      }
 
-      updateLocationText();
-    }
+      // Guard against concurrent fetches
+      if (geocodeFetchingRef.current) return;
+      geocodeFetchingRef.current = true;
+
+      try {
+        const deviceText = await fetchLocationText(
+          deviceLocation.lat,
+          deviceLocation.lon
+        );
+        geocodeCache = { lat: deviceLocation.lat, lon: deviceLocation.lon, text: deviceText };
+        setLocationText(deviceText);
+      } catch (error) {
+        console.error("Error updating location text:", error);
+      } finally {
+        geocodeFetchingRef.current = false;
+      }
+    };
+
+    updateLocationText();
   }, [deviceLocation, enableLocation]);
 
   return {

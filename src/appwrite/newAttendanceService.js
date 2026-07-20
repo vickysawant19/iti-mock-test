@@ -1,7 +1,6 @@
-import { Query, ID } from "appwrite";
+import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
-import { format } from "date-fns";
 import userStatsService from "./userStats";
 
 class NewAttendanceService {
@@ -260,29 +259,36 @@ class NewAttendanceService {
     try {
       // Ensure date is in YYYY-MM-DD format (10 characters)
       const formattedDate = this.formatDate(date);
-      const data = await this.database.createRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: ID.unique(),
-
-        data: {
-          userId,
-          batchId,
-          tradeId,
-          date: formattedDate,
-          status,
-          remarks: remarks || null,
-          markedAt: markedAt || new Date().toISOString(),
-          markedBy: markedBy || null,
-        }
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "createAttendance",
+        userId,
+        batchId,
+        tradeId,
+        date: formattedDate,
+        status,
+        remarks,
+        markedAt: markedAt || new Date().toISOString(),
+        markedBy
       });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to create attendance");
+      }
 
       // Trigger stats recalculation in the background
       userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
         console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
       });
 
-      return data;
+      return resData.data;
     } catch (error) {
       throw error;
     }
@@ -331,26 +337,25 @@ class NewAttendanceService {
         updates.date = this.formatDate(updates.date);
       }
 
-      const existingRecord = await this.database.getRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId
-      }).catch(() => null);
-
-      const data = await this.database.updateRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId,
-        data: updates
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "updateAttendance",
+        documentId,
+        updates
       });
 
-      if (existingRecord) {
-        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on updateAttendance:", err);
-        });
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to update attendance");
       }
 
-      return data;
+      return resData.data;
     } catch (error) {
       throw error;
     }
@@ -363,27 +368,7 @@ class NewAttendanceService {
       if (remarks !== null) {
         updates.remarks = remarks;
       }
-
-      const existingRecord = await this.database.getRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId
-      }).catch(() => null);
-
-      const data = await this.database.updateRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId,
-        data: updates
-      });
-
-      if (existingRecord) {
-        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on updateAttendanceStatus:", err);
-        });
-      }
-
-      return data;
+      return await this.updateAttendance(documentId, updates);
     } catch (error) {
       throw error;
     }
@@ -392,22 +377,21 @@ class NewAttendanceService {
   // Delete attendance record
   async deleteAttendance(documentId) {
     try {
-      const existingRecord = await this.database.getRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId
-      }).catch(() => null);
-
-      await this.database.deleteRow({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        rowId: documentId
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "deleteAttendance",
+        documentId
       });
 
-      if (existingRecord) {
-        userStatsService.recalculateStudentsStats([existingRecord.userId], existingRecord.batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on deleteAttendance:", err);
-        });
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to delete attendance");
       }
 
       return documentId;
