@@ -3,22 +3,57 @@ import React, { useState } from "react";
 import {
   Zap,
   Coins,
-  ArrowRight,
   Loader2,
-  CheckCircle2,
   ShoppingBag,
   Sparkles,
   Star,
   Gift,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import CosmeticStoreTab from "./CosmeticStoreTab";
 
-const SpendSection = ({ stats }) => {
+const SpendSection = ({ stats, purchasePowerUp }) => {
+  const [isPurchasing, setIsPurchasing] = useState(null);
+
+  // Parse inventory from unlockedCosmetics JSON
+  let powerups = { streakShieldsCount: 0, extraSpins: 0, xpBoosterUntil: null };
+  try {
+    if (stats?.unlockedCosmetics) {
+      const parsed = typeof stats.unlockedCosmetics === "string"
+        ? JSON.parse(stats.unlockedCosmetics)
+        : stats.unlockedCosmetics;
+      if (parsed?.powerups) {
+        powerups = parsed.powerups;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to parse powerups inside StoreTab", err);
+  }
+
+  // Calculate remaining booster time
+  const xpBoosterUntil = powerups.xpBoosterUntil ? new Date(powerups.xpBoosterUntil).getTime() : 0;
+  const now = Date.now();
+  const boosterDiffMs = xpBoosterUntil - now;
+  const boosterMinutesLeft = boosterDiffMs > 0 ? Math.ceil(boosterDiffMs / (1000 * 60)) : 0;
+
   const items = [
-    { icon: Sparkles, label: "XP Booster", desc: "2× XP for 1 hour", cost: 50, color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/20" },
-    { icon: Star, label: "Streak Shield", desc: "Protect your streak for 1 day", cost: 30, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
-    { icon: Gift, label: "Lucky Spin ×2", desc: "Extra wheel spin today", cost: 20, color: "text-pink-500", bg: "bg-pink-500/10 border-pink-500/20" },
+    { id: "xp_booster", icon: Sparkles, label: "XP Booster", desc: "2× XP for 1 hour", cost: 50, color: "text-violet-500", bg: "bg-violet-500/10 border-violet-500/20" },
+    { id: "streak_shield", icon: Star, label: "Streak Shield", desc: "Protect your streak for 1 day", cost: 30, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
+    { id: "lucky_spin", icon: Gift, label: "Lucky Spin ×2", desc: "Extra wheel spin today", cost: 20, color: "text-pink-500", bg: "bg-pink-500/10 border-pink-500/20" },
   ];
+
+  const handleBuy = async (item) => {
+    if (isPurchasing) return;
+    setIsPurchasing(item.id);
+    try {
+      await purchasePowerUp(item.id);
+      toast.success(`${item.label} purchased successfully! 🎉`);
+    } catch (err) {
+      toast.error(err.message || `Failed to purchase ${item.label}.`);
+    } finally {
+      setIsPurchasing(null);
+    }
+  };
 
   return (
     <div className="bg-white/40 dark:bg-[#110d29]/30 backdrop-blur-md border border-slate-200/85 dark:border-[#221a48] rounded-2xl overflow-hidden shadow-sm">
@@ -45,6 +80,8 @@ const SpendSection = ({ stats }) => {
       <div className="p-4 space-y-2.5">
         {items.map((item) => {
           const canAfford = (stats?.coins ?? 0) >= item.cost;
+          const isCurrentPurchasing = isPurchasing === item.id;
+          
           return (
             <div
               key={item.label}
@@ -54,19 +91,37 @@ const SpendSection = ({ stats }) => {
                 <item.icon className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{item.label}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{item.label}</p>
+                  <span className={`text-[8.5px] px-1.5 py-0.5 rounded font-black uppercase ${
+                    item.id === "xp_booster" && boosterMinutesLeft > 0
+                      ? "bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/30"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/50 dark:border-slate-700/50"
+                  }`}>
+                    {item.id === "xp_booster" ? (boosterMinutesLeft > 0 ? `Active (${boosterMinutesLeft}m)` : "Inactive") :
+                     item.id === "streak_shield" ? `Owned: ${powerups.streakShieldsCount || 0}` :
+                     `Spins: ${powerups.extraSpins || 0}`}
+                  </span>
+                </div>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">{item.desc}</p>
               </div>
               <button
-                disabled={!canAfford}
-                className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all cursor-pointer ${
-                  canAfford
+                disabled={!canAfford || isCurrentPurchasing}
+                onClick={() => handleBuy(item)}
+                className={`shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black transition-all cursor-pointer min-w-[62px] h-8 ${
+                  canAfford && !isCurrentPurchasing
                     ? "bg-yellow-500 hover:bg-yellow-400 text-white shadow-sm shadow-yellow-500/20 active:scale-95"
                     : "bg-slate-100 dark:bg-slate-800/60 text-slate-400 cursor-not-allowed"
                 }`}
               >
-                <Coins className="w-3 h-3" />
-                {item.cost}
+                {isCurrentPurchasing ? (
+                  <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
+                ) : (
+                  <>
+                    <Coins className="w-3 h-3" />
+                    {item.cost}
+                  </>
+                )}
               </button>
             </div>
           );
@@ -83,11 +138,12 @@ export default function StoreTab({
   stats,
   purchaseCosmetic,
   equipCosmetic,
+  purchasePowerUp,
 }) {
   return (
     <div className="space-y-6">
       {/* Spend Coins on Power-ups */}
-      <SpendSection stats={stats} />
+      <SpendSection stats={stats} purchasePowerUp={purchasePowerUp} />
 
       {/* Spend Coins on Avatars/Cosmetics */}
       <div className="space-y-3">

@@ -4,6 +4,7 @@ import { cosmeticsService } from "@/services/cosmetics.service";
 import { leaderboardService } from "@/services/leaderboard.service";
 import { challengeService } from "@/services/challenge.service";
 import { rewardService } from "@/services/reward.service";
+import { powerUpsService } from "@/services/powerups.service";
 import conf from "@/config/config";
 
 /**
@@ -397,6 +398,18 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
         return res;
       } catch (err) {
         console.error("[useStudentGame] Error equipping cosmetic:", err);
+        throw err;
+      }
+    }, [studentId, batchId, tradeId]),
+
+    purchasePowerUp: useCallback(async (powerUpId) => {
+      if (!studentId || !batchId || !tradeId) return null;
+      try {
+        const res = await powerUpsService.purchasePowerUp(studentId, batchId, tradeId, powerUpId);
+        setStats(res);
+        return res;
+      } catch (err) {
+        console.error("[useStudentGame] Error purchasing power-up:", err);
         throw err;
       }
     }, [studentId, batchId, tradeId]),

@@ -127,6 +127,7 @@ const StudentGameArena = ({
     canSpin,
     purchaseCosmetic,
     equipCosmetic,
+    purchasePowerUp,
   } = useStudentGame(user?.$id, activeBatchId, activeBatchData?.tradeId, activeTab);
 
   // Daily Missions
@@ -580,6 +581,7 @@ const StudentGameArena = ({
                         stats={stats}
                         purchaseCosmetic={purchaseCosmetic}
                         equipCosmetic={equipCosmetic}
+                        purchasePowerUp={purchasePowerUp}
                       />
                     )}
                   </motion.div>

@@ -103,9 +103,24 @@ export class GameService extends DatabaseService {
           const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
           
           if (diffDays >= 2 && stats.currentStreak > 0) {
-            stats.currentStreak = 0;
-            updatePayload.currentStreak = 0;
-            needsUpdate = true;
+            const { cosmeticsService } = await import("./cosmetics.service");
+            const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+            const shieldCount = cosmeticsState.powerups?.streakShieldsCount || 0;
+            if (shieldCount > 0) {
+              cosmeticsState.powerups!.streakShieldsCount = shieldCount - 1;
+              stats.unlockedCosmetics = JSON.stringify(cosmeticsState);
+              updatePayload.unlockedCosmetics = stats.unlockedCosmetics;
+              
+              // Set lastQuestionTime to yesterday to preserve the streak
+              const yesterday = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+              stats.lastQuestionTime = yesterday.toISOString();
+              updatePayload.lastQuestionTime = stats.lastQuestionTime;
+              needsUpdate = true;
+            } else {
+              stats.currentStreak = 0;
+              updatePayload.currentStreak = 0;
+              needsUpdate = true;
+            }
           }
         }
 
@@ -413,6 +428,24 @@ export class GameService extends DatabaseService {
       diffDays = 999;
     }
 
+    // Process Streak Shield if day missed
+    let usedStreakShield = false;
+    if (diffDays >= 2) {
+      try {
+        const { cosmeticsService } = await import("./cosmetics.service");
+        const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+        const shieldCount = cosmeticsState.powerups?.streakShieldsCount || 0;
+        if (shieldCount > 0) {
+          cosmeticsState.powerups!.streakShieldsCount = shieldCount - 1;
+          stats.unlockedCosmetics = JSON.stringify(cosmeticsState);
+          usedStreakShield = true;
+          diffDays = 1; // Preserve streak
+        }
+      } catch (err) {
+        console.warn("Failed to check streak shield in submitAnswer", err);
+      }
+    }
+
     if (isCorrect) {
       const baseXP = settings?.correctAnswerXp !== undefined ? Number(settings.correctAnswerXp) : 10;
       const baseCoins = settings?.correctAnswerCoins !== undefined ? Number(settings.correctAnswerCoins) : 5;
@@ -426,6 +459,19 @@ export class GameService extends DatabaseService {
 
       xpGained = isFiftyFiftyUsed ? Math.round(baseXP / 2) : baseXP;
       xpGained += streakBonus;
+
+      // Apply XP Booster (2x XP) if active
+      try {
+        const { cosmeticsService } = await import("./cosmetics.service");
+        const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+        const xpBoosterUntil = cosmeticsState.powerups?.xpBoosterUntil ? new Date(cosmeticsState.powerups.xpBoosterUntil) : null;
+        if (xpBoosterUntil && xpBoosterUntil.getTime() > now.getTime()) {
+          xpGained = xpGained * 2;
+        }
+      } catch (err) {
+        console.warn("Failed to check XP Booster active state", err);
+      }
+
       coinsGained = baseCoins;
       
       stats.xp += xpGained;
@@ -472,7 +518,7 @@ export class GameService extends DatabaseService {
     let updatedStats = stats;
     if (stats.$id) {
       try {
-        updatedStats = await this.updateRow<StudentGameStats>(stats.$id, {
+        const updatePayload: Partial<StudentGameStats> = {
           xp: stats.xp,
           coins: stats.coins,
           level: stats.level,
@@ -488,7 +534,11 @@ export class GameService extends DatabaseService {
           dailyLosses: stats.dailyLosses,
           dailyQuestionsAttempted: stats.dailyQuestionsAttempted,
           dailyStatsDate: stats.dailyStatsDate,
-        });
+        };
+        if (usedStreakShield) {
+          updatePayload.unlockedCosmetics = stats.unlockedCosmetics;
+        }
+        updatedStats = await this.updateRow<StudentGameStats>(stats.$id, updatePayload);
       } catch (err) {
         console.warn("[GameService] Failed to update stats in DB, proceeding with in-memory state:", err);
       }
@@ -556,20 +606,50 @@ export class GameService extends DatabaseService {
       console.warn("Failed to save spin time to localStorage", e);
     }
 
+    // Handle lucky spin x2 powerup decrement if they already spun today
+    const lastSpinStr = stats.lastWheelSpinTime;
+    let usedExtraSpin = false;
+    if (lastSpinStr) {
+      const lastSpin = new Date(lastSpinStr);
+      const now = new Date();
+      if (
+        lastSpin.getFullYear() === now.getFullYear() &&
+        lastSpin.getMonth() === now.getMonth() &&
+        lastSpin.getDate() === now.getDate()
+      ) {
+        try {
+          const { cosmeticsService } = await import("./cosmetics.service");
+          const cosmeticsState = cosmeticsService.parseCosmetics(stats);
+          const extraSpins = cosmeticsState.powerups?.extraSpins || 0;
+          if (extraSpins > 0) {
+            cosmeticsState.powerups!.extraSpins = extraSpins - 1;
+            stats.unlockedCosmetics = JSON.stringify(cosmeticsState);
+            usedExtraSpin = true;
+          }
+        } catch (err) {
+          console.warn("Failed to consume extra spin powerup", err);
+        }
+      }
+    }
+
     if (stats.$id) {
       try {
         const { databases } = await import("./appwriteClient");
+        const updatePayload: any = {
+          xp: stats.xp,
+          coins: stats.coins,
+          level: stats.level,
+          lastActive: stats.lastActive,
+          lastWheelSpinTime: spinTime,
+        };
+        if (usedExtraSpin) {
+          updatePayload.unlockedCosmetics = stats.unlockedCosmetics;
+        }
         const updated = await databases.updateDocument(
           conf.databaseId,
           conf.gameStatsCollectionId,
           stats.$id,
-          {
-            xp: stats.xp,
-            coins: stats.coins,
-            level: stats.level,
-            lastActive: stats.lastActive,
-            lastWheelSpinTime: spinTime,
-          }
+          updatePayload
         );
         return updated as unknown as StudentGameStats;
       } catch (err: any) {
@@ -577,12 +657,16 @@ export class GameService extends DatabaseService {
           "[GameService] Failed to write lastWheelSpinTime to database. Falling back to writing standard fields.",
           err
         );
-        return await this.updateRow<StudentGameStats>(stats.$id, {
+        const fallbackPayload: any = {
           xp: stats.xp,
           coins: stats.coins,
           level: stats.level,
           lastActive: stats.lastActive,
-        });
+        };
+        if (usedExtraSpin) {
+          fallbackPayload.unlockedCosmetics = stats.unlockedCosmetics;
+        }
+        return await this.updateRow<StudentGameStats>(stats.$id, fallbackPayload);
       }
     }
 
@@ -609,11 +693,29 @@ export class GameService extends DatabaseService {
     const lastSpin = new Date(lastSpinStr);
     const now = new Date();
 
-    return (
-      lastSpin.getFullYear() !== now.getFullYear() ||
-      lastSpin.getMonth() !== now.getMonth() ||
-      lastSpin.getDate() !== now.getDate()
+    const alreadySpunToday = (
+      lastSpin.getFullYear() === now.getFullYear() &&
+      lastSpin.getMonth() === now.getMonth() &&
+      lastSpin.getDate() === now.getDate()
     );
+
+    if (alreadySpunToday) {
+      if (stats && stats.unlockedCosmetics) {
+        try {
+          const parsed = typeof stats.unlockedCosmetics === "string"
+            ? JSON.parse(stats.unlockedCosmetics)
+            : stats.unlockedCosmetics;
+          if (parsed?.powerups?.extraSpins > 0) {
+            return true;
+          }
+        } catch (err) {
+          console.warn("Failed to check extraSpins in canSpinLuckyWheel", err);
+        }
+      }
+      return false;
+    }
+
+    return true;
   }
 
   /**

@@ -56,6 +56,11 @@ export interface UnlockedCosmeticsState {
     emoji?: string | null;
     border?: string | null;
   };
+  powerups?: {
+    xpBoosterUntil?: string | null;
+    streakShieldsCount?: number;
+    extraSpins?: number;
+  };
 }
 
 // ─── Cosmetics Service ────────────────────────────────────────────────────────
@@ -70,15 +75,19 @@ export class CosmeticsService extends DatabaseService {
    */
   parseCosmetics(stats: StudentGameStats | null | undefined): UnlockedCosmeticsState {
     if (!stats || !stats.unlockedCosmetics) {
-      return { unlocked: [], equipped: {} };
+      return { unlocked: [], equipped: {}, powerups: { streakShieldsCount: 0, extraSpins: 0 } };
     }
     try {
-      return typeof stats.unlockedCosmetics === "string"
+      const parsed = typeof stats.unlockedCosmetics === "string"
         ? JSON.parse(stats.unlockedCosmetics)
         : stats.unlockedCosmetics;
+      if (!parsed.powerups) {
+        parsed.powerups = { streakShieldsCount: 0, extraSpins: 0 };
+      }
+      return parsed;
     } catch (e) {
       console.warn("[CosmeticsService] Failed to parse unlockedCosmetics JSON:", e);
-      return { unlocked: [], equipped: {} };
+      return { unlocked: [], equipped: {}, powerups: { streakShieldsCount: 0, extraSpins: 0 } };
     }
   }
 
