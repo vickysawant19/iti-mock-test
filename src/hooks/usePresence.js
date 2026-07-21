@@ -236,8 +236,13 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       }, AWAY_DELAY_MS);
     };
 
+    const handleBeforeUnload = () => {
+      deleteSelfPresence(effectiveUserId);
+    };
+
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     setIsLoading(false);
 
     // Cleanup
@@ -251,6 +256,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
 
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
 
       // Cleanup presence when user signs out or hook is unmounted

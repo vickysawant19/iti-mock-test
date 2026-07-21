@@ -213,6 +213,7 @@ function ChallengeRow({ challenge, studentRows }) {
                               fallbackText={student.userName?.charAt(0) || "?"}
                               userId={student.studentId}
                               userName={student.userName}
+                              lastseen={student.lastseen}
                               showStatus={true}
                               statusSize="xs"
                               className="h-8 w-8 rounded-lg shrink-0"

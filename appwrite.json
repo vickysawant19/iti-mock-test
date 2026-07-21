@@ -56,7 +56,9 @@
             ],
             "enabled": true,
             "logging": true,
-            "events": [],
+            "events": [
+                "presences.*.delete"
+            ],
             "schedule": "",
             "timeout": 15,
             "commands": "npm install",
@@ -468,6 +470,14 @@
                     "required": false,
                     "array": false,
                     "default": false
+                },
+                {
+                    "key": "lastseen",
+                    "type": "datetime",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "format": ""
                 }
             ],
             "indexes": [

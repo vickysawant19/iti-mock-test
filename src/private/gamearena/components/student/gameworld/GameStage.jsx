@@ -149,6 +149,7 @@ function GameStage({
                   src={profile?.profileImage}
                   fallbackText={profile?.userName?.charAt(0) || "U"}
                   userId={profile?.userId}
+                  lastseen={profile?.lastseen}
                   showStatus={true}
                   statusSize="xs"
                   userName={profile?.userName}
@@ -181,6 +182,7 @@ function GameStage({
                       src={student.profileImage}
                       fallbackText={student.userName?.charAt(0) || "U"}
                       userId={student.studentId}
+                      lastseen={student.lastseen}
                       showStatus={true}
                       statusSize="xs"
                       userName={student.userName}

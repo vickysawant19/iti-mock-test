@@ -5,10 +5,32 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { Upload, Trash2, Loader2, Image as ImageIcon, Camera, RefreshCw, X } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import profileImageService from "@/appwrite/profileImageService";
 import OnlineIndicator from "./OnlineIndicator";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { fixProfileImage } from "@/services/appwriteClient";
+
+function getShortRelativeTime(lastseen) {
+  if (!lastseen) return "";
+  const diffMs = Date.now() - new Date(lastseen).getTime();
+  if (isNaN(diffMs) || diffMs < 0) return "";
+  
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffSecs < 60) return "1m";
+  
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d`;
+  
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths}mo`;
+}
 
 const InteractiveAvatar = forwardRef(({
   src,
@@ -20,6 +42,7 @@ const InteractiveAvatar = forwardRef(({
   showStatus = false,
   statusSize = "sm",
   userName = "",
+  lastseen = null,
 }, ref) => {
   const fixedSrc = (() => {
     const fixed = fixProfileImage(src);
@@ -35,8 +58,26 @@ const InteractiveAvatar = forwardRef(({
   })();
   const { getStatus } = useOnlineUsers();
   const isOnline = userId ? getStatus(userId) === "online" : false;
+  const status = userId ? getStatus(userId) : "offline";
+  const isActive = status === "online" || status === "away";
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  const [localLastSeen, setLocalLastSeen] = useState(lastseen);
+
+  // Sync with prop updates
+  React.useEffect(() => {
+    setLocalLastSeen(lastseen);
+  }, [lastseen]);
+
+  // Track active state transition to offline
+  const wasActiveRef = useRef(isActive);
+  React.useEffect(() => {
+    if (wasActiveRef.current && !isActive) {
+      setLocalLastSeen(new Date().toISOString());
+    }
+    wasActiveRef.current = isActive;
+  }, [isActive]);
 
   // Reset image error state when image source changes
   React.useEffect(() => {
@@ -186,11 +227,22 @@ const InteractiveAvatar = forwardRef(({
               )}
             </Avatar>
             {showStatus && userId && (
-              <OnlineIndicator
-                userId={userId}
-                size={statusSize}
-                className="absolute -bottom-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-950"
-              />
+              isActive ? (
+                <OnlineIndicator
+                  userId={userId}
+                  size={statusSize}
+                  className="absolute -bottom-0.5 -right-0.5 ring-2 ring-white dark:ring-slate-950"
+                />
+              ) : (
+                localLastSeen && (
+                  <span
+                    className="absolute -bottom-1 -right-1 flex items-center justify-center px-1 py-0.5 rounded-full text-[7.5px] font-black leading-none bg-slate-800/90 text-slate-300 dark:bg-slate-900/90 border border-slate-700/60 shadow-md ring-2 ring-white dark:ring-slate-950 select-none pointer-events-none whitespace-nowrap"
+                    title={`Last active: ${new Date(localLastSeen).toLocaleString()}`}
+                  >
+                    {getShortRelativeTime(localLastSeen)}
+                  </span>
+                )
+              )
             )}
           </div>
         </DialogTrigger>
@@ -333,11 +385,17 @@ const InteractiveAvatar = forwardRef(({
               <h3 className="text-sm font-black text-white tracking-wider uppercase">
                 {userName || "Live Member"}
               </h3>
-              {userId && isOnline && (
+              {userId && isOnline ? (
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live Member
                 </div>
+              ) : (
+                localLastSeen && (
+                  <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-500/15 border border-slate-500/30 text-slate-400">
+                    Last active {formatDistanceToNow(new Date(localLastSeen), { addSuffix: true })}
+                  </div>
+                )
               )}
             </div>
           </div>

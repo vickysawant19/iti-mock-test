@@ -1,4 +1,4 @@
-import { Client, Users, Databases, TablesDB } from 'node-appwrite';
+import { Client, Users, Databases, TablesDB, Query } from 'node-appwrite';
 import { validateAppwriteKey } from './utils.js';
 import { handleUserAction } from './userActions.js';
 import { handleAttendanceAction } from './attendanceActions.js';
@@ -11,14 +11,8 @@ export default async ({ req, res, log, error }) => {
   };
 
   try {
-    if (!req.bodyJson) {
-      throw new Error('Request body is required');
-    }
-
-    const { action } = req.bodyJson;
-    if (!action) {
-      throw new Error('Action is required');
-    }
+    const event = req.headers['x-appwrite-event'];
+    trace(`Triggered by event: ${event}`);
 
     // Validate Appwrite API key header and environment variables
     validateAppwriteKey(req.headers['x-appwrite-key']);
@@ -35,8 +29,67 @@ export default async ({ req, res, log, error }) => {
       .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
       .setKey(req.headers['x-appwrite-key']);
 
-    const users = new Users(client);
     const databases = new Databases(client);
+
+    // ── Handle Presence Deletion Event ──
+    if (event && event.startsWith('presences.') && event.endsWith('.delete')) {
+      const presence = req.bodyJson;
+      if (!presence || !presence.userId) {
+        throw new Error('Event body is missing presence details (userId)');
+      }
+
+      const userId = presence.userId;
+      trace(`User offline event for userId: ${userId}`);
+
+      const databaseId = process.env.DATABASE_ID || 'itimocktest';
+      const userProfileCollectionId = process.env.USER_PROFILE_COLLECTION_ID || '66937340001047368f32';
+
+      // Locate profile row
+      const profileList = await databases.listDocuments(
+        databaseId,
+        userProfileCollectionId,
+        [Query.equal('userId', userId), Query.limit(1)]
+      );
+
+      if (profileList.total === 0) {
+        trace(`No profile found for userId: ${userId}. Skipping update.`);
+        return res.json({ success: true, message: 'No profile found', logs: debugLogs });
+      }
+
+      const profile = profileList.documents[0];
+      trace(`Updating lastseen for profile: ${profile.$id}`);
+
+      const updatedProfile = await databases.updateDocument(
+        databaseId,
+        userProfileCollectionId,
+        profile.$id,
+        {
+          lastseen: new Date().toISOString()
+        }
+      );
+
+      trace(`Successfully updated lastseen to ${updatedProfile.lastseen}`);
+      return res.json({
+        success: true,
+        data: {
+          profileId: profile.$id,
+          lastseen: updatedProfile.lastseen,
+        },
+        logs: debugLogs,
+      });
+    }
+
+    // ── Existing HTTP Execution Logic ──
+    if (!req.bodyJson) {
+      throw new Error('Request body is required');
+    }
+
+    const { action } = req.bodyJson;
+    if (!action) {
+      throw new Error('Action is required');
+    }
+
+    const users = new Users(client);
     const tablesDB = new TablesDB(client);
     let response;
 

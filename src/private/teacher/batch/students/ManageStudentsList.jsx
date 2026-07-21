@@ -22,8 +22,9 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { selectUser } from "@/store/userSlice";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import batchRequestService from "@/appwrite/batchRequestService";
 import {
   Dialog,
@@ -368,6 +369,7 @@ function ProfileField({ icon: Icon, label, value, className = "" }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ManageStudentsList({ selectedBatch, batchData }) {
   const user = useSelector(selectUser);
+  const { getStatus } = useOnlineUsers();
 
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -481,6 +483,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           requestId,
           enrollmentDate: activeRecord ? activeRecord.enrollmentDate : null,
           enrollmentStatus: activeRecord ? activeRecord.status : null,
+          lastseen: profile.lastseen || null,
         };
       });
 
@@ -878,7 +881,12 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           className="w-8 h-8 text-xs rounded-full border border-gray-100 shadow-sm"
                         />
                         <div className="font-medium text-gray-800 dark:text-gray-200">
-                          {student.userName}
+                          <div>{student.userName}</div>
+                          {getStatus(student.userId) === "offline" && student.lastseen && (
+                            <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                              Last active {formatDistanceToNow(new Date(student.lastseen), { addSuffix: true })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -1055,6 +1063,11 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                       <div className="font-bold text-slate-800 dark:text-slate-200">
                         {student.userName}
                       </div>
+                      {getStatus(student.userId) === "offline" && student.lastseen && (
+                        <div className="text-[10px] text-gray-400 font-normal mt-0.5">
+                          Last active {formatDistanceToNow(new Date(student.lastseen), { addSuffix: true })}
+                        </div>
+                      )}
                       <div className="text-[11px] text-slate-400 mt-0.5">
                         {student.email}
                       </div>

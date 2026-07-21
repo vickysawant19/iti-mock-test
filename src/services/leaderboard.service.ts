@@ -14,13 +14,14 @@ function getLocalDateString(date: Date = new Date()): string {
 export interface LeaderboardEntry extends StudentGameStats {
   userName: string;
   profileImage: string | null;
+  lastseen: string | null;
   rank: number;
 }
 
 export class LeaderboardService extends DatabaseService {
   private leaderboardCache = new Map<string, { time: number; data: LeaderboardEntry[] }>();
   private leaderboardRequests = new Map<string, Promise<LeaderboardEntry[]>>();
-  private profileCache = new Map<string, { userName: string; profileImage: string | null }>();
+  private profileCache = new Map<string, { userName: string; profileImage: string | null; lastseen: string | null }>();
 
   constructor() {
     super(conf.gameStatsCollectionId);
@@ -56,21 +57,21 @@ export class LeaderboardService extends DatabaseService {
         const statsList = response.rows || [];
         if (statsList.length === 0) return [];
 
-        // 2. Fetch user profiles for these studentIds to get their names and avatars (using cache to optimize!)
+        // 2. Fetch user profiles for these studentIds to get their names, avatars, and lastseen times
         const studentIds = statsList.map((s) => s.studentId);
-        const missingIds = studentIds.filter((id) => !this.profileCache.has(id));
 
-        if (missingIds.length > 0) {
+        if (studentIds.length > 0) {
           try {
             const profiles = await userProfileService.getBatchUserProfile([
-              Query.equal("userId", missingIds),
+              Query.equal("userId", studentIds),
               Query.limit(100),
-              Query.select(["userId", "userName", "profileImage"]),
+              Query.select(["userId", "userName", "profileImage", "lastseen"]),
             ]);
             profiles.forEach((p) => {
               this.profileCache.set(p.userId, {
                 userName: p.userName || "Student",
                 profileImage: p.profileImage || null,
+                lastseen: p.lastseen || null,
               });
             });
           } catch (profileError) {
@@ -79,11 +80,12 @@ export class LeaderboardService extends DatabaseService {
         }
 
         // Map profiles for quick lookup
-        const profileMap: Record<string, { userName: string; profileImage: string | null }> = {};
+        const profileMap: Record<string, { userName: string; profileImage: string | null; lastseen: string | null }> = {};
         studentIds.forEach((id) => {
           profileMap[id] = this.profileCache.get(id) || {
             userName: "Unknown Student",
             profileImage: null,
+            lastseen: null,
           };
         });
 
@@ -95,6 +97,7 @@ export class LeaderboardService extends DatabaseService {
           const profile = profileMap[stat.studentId] || {
             userName: "Unknown Student",
             profileImage: null,
+            lastseen: null,
           };
 
           const isStale = stat.dailyStatsDate !== todayDate;
@@ -120,6 +123,7 @@ export class LeaderboardService extends DatabaseService {
             dailyStatsDate: isStale ? todayDate : stat.dailyStatsDate,
             userName: profile.userName,
             profileImage: profile.profileImage,
+            lastseen: profile.lastseen,
             rank: 1, // Placeholder
           };
         });

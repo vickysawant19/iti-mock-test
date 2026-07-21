@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectProfile } from "@/store/profileSlice";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import {
   Eye,
   Edit3,
@@ -25,6 +26,7 @@ import EditEnrollmentTab from "../students/EditEnrollmentTab";
 
 const ViewProfiles = ({ students, batchId }) => {
   const profile = useSelector(selectProfile);
+  const { getStatus } = useOnlineUsers();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
   const [activeProfileTab, setActiveProfileTab] = useState("profile");
@@ -102,6 +104,8 @@ const ViewProfiles = ({ students, batchId }) => {
                   fallbackText={student.userName?.charAt(0) || "U"}
                   userId={student.userId}
                   editable={false}
+                  showStatus={true}
+                  statusSize="xs"
                   className="w-12 h-12 rounded-xl ring-2 ring-gray-50 dark:ring-gray-800 shadow-md text-lg font-black"
                 />
                 <div
@@ -119,6 +123,11 @@ const ViewProfiles = ({ students, batchId }) => {
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                   {student.userName}
                 </h3>
+                {getStatus(student.userId) === "offline" && student.lastseen && (
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                    Last active {formatDistanceToNow(new Date(student.lastseen), { addSuffix: true })}
+                  </p>
+                )}
                 <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
                   {student.email || "No email"}
                 </p>

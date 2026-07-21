@@ -32,6 +32,7 @@ export default function LeaderboardTab({
                   fallbackText={gamifiedLeaderboard[1].userName.charAt(0)}
                   userId={gamifiedLeaderboard[1].studentId}
                   userName={gamifiedLeaderboard[1].userName}
+                  lastseen={gamifiedLeaderboard[1].lastseen}
                   showStatus={true}
                   statusSize="xs"
                   className="h-12 w-12 border-2 border-slate-300 dark:border-slate-800 rounded-xl mb-1 shadow-md"
@@ -58,6 +59,7 @@ export default function LeaderboardTab({
                     fallbackText={gamifiedLeaderboard[0].userName.charAt(0)}
                     userId={gamifiedLeaderboard[0].studentId}
                     userName={gamifiedLeaderboard[0].userName}
+                    lastseen={gamifiedLeaderboard[0].lastseen}
                     showStatus={true}
                     statusSize="xs"
                     className="h-16 w-16 border-2 border-yellow-400 rounded-2xl mb-1 shadow-xl"
@@ -82,6 +84,7 @@ export default function LeaderboardTab({
                   fallbackText={gamifiedLeaderboard[2].userName.charAt(0)}
                   userId={gamifiedLeaderboard[2].studentId}
                   userName={gamifiedLeaderboard[2].userName}
+                  lastseen={gamifiedLeaderboard[2].lastseen}
                   showStatus={true}
                   statusSize="xs"
                   className="h-11 w-11 border-2 border-amber-600/30 dark:border-amber-900 rounded-xl mb-1 shadow-md"
@@ -186,6 +189,7 @@ export default function LeaderboardTab({
                           fallbackText={entry.userName.charAt(0)}
                           userId={entry.studentId}
                           userName={entry.userName}
+                          lastseen={entry.lastseen}
                           showStatus={true}
                           statusSize="xs"
                           className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm"
@@ -366,6 +370,7 @@ export default function LeaderboardTab({
                         fallbackText={entry.userName.charAt(0)}
                         userId={entry.studentId}
                         userName={entry.userName}
+                        lastseen={entry.lastseen}
                         showStatus={true}
                         statusSize="xs"
                         className="h-8.5 w-8.5 rounded-full ring-2 ring-slate-150 dark:ring-slate-800/80 shadow-sm animate-in zoom-in-95 duration-200"

@@ -190,6 +190,7 @@ export default function TeacherLeaderboardTab({
                             fallbackText={student.userName?.charAt(0) || "?"}
                             userId={student.studentId}
                             userName={student.userName}
+                            lastseen={student.lastseen}
                             showStatus={true}
                             statusSize="xs"
                             className="h-9 w-9 rounded-2xl"
@@ -352,6 +353,7 @@ export default function TeacherLeaderboardTab({
                         fallbackText={student.userName?.charAt(0) || "?"}
                         userId={student.studentId}
                         userName={student.userName}
+                        lastseen={student.lastseen}
                         showStatus={true}
                         statusSize="xs"
                         className="h-9 w-9 sm:h-10 sm:w-10 rounded-2xl"
