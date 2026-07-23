@@ -1,6 +1,7 @@
 import { Query, ID } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
+import PermissionBuilder from "../utils/permissionBuilder";
 
 export class DailyDiaryService {
   constructor() {
@@ -33,17 +34,19 @@ export class DailyDiaryService {
     }
   }
 
-  async createDocument(data) {
+  async createDocument(data, teamId = null) {
     try {
-      const timestamp = new Date().toISOString();
+      const activeTeamId = teamId || data.teamId;
+      const permissions = activeTeamId ? PermissionBuilder.diary(activeTeamId) : undefined;
+
       return await this.database.createRow({
         databaseId: conf.databaseId,
         tableId: this.collectionId,
         rowId: ID.unique(),
-
         data: {
           ...data,
-        }
+        },
+        permissions: permissions
       });
     } catch (error) {
       console.error("Appwrite error: creating daily diary entry:", error);

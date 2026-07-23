@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Channel } from "appwrite";
 import { presenceService as presences, realtime } from "@/services/appwriteClient";
 
@@ -100,15 +100,11 @@ function notifyListeners() {
 
 /**
  * Maintains a live Map<userId, presence> of every online/away user.
- * Shares a single global WebSocket subscription and snapshot fetch.
+ * Option to filter online users by teamId or batchId.
  *
- * Returns:
- *   onlineUsers   - Map<userId, presence>
- *   isOnline(id)  - true if status === 'online'
- *   isAway(id)    - true if status === 'away'
- *   getStatus(id) - 'online' | 'away' | 'offline'
+ * @param {string|null} filterTeamId - Optional teamId to filter live roster
  */
-export function useOnlineUsers() {
+export function useOnlineUsers(filterTeamId = null) {
   const [onlineUsers, setOnlineUsers] = useState(new Map(globalOnlineUsers));
 
   useEffect(() => {
@@ -128,14 +124,26 @@ export function useOnlineUsers() {
     };
   }, []);
 
+  const filteredUsers = useMemo(() => {
+    if (!filterTeamId) return onlineUsers;
+    const map = new Map();
+    for (const [userId, presence] of onlineUsers.entries()) {
+      const meta = presence?.metadata;
+      if (meta?.teamId === filterTeamId || meta?.batchId === filterTeamId || meta?.activeBatchId === filterTeamId) {
+        map.set(userId, presence);
+      }
+    }
+    return map;
+  }, [onlineUsers, filterTeamId]);
+
   // ── Derived helpers ───────────────────────────────────────────────────────
   const getStatus = useCallback(
     (userId) => {
       if (!userId) return "offline";
-      const p = onlineUsers.get(userId);
+      const p = filteredUsers.get(userId);
       return p?.status ?? "offline";
     },
-    [onlineUsers]
+    [filteredUsers]
   );
 
   const isOnline = useCallback(
@@ -148,5 +156,5 @@ export function useOnlineUsers() {
     [getStatus]
   );
 
-  return { onlineUsers, isOnline, isAway, getStatus };
+  return { onlineUsers: filteredUsers, isOnline, isAway, getStatus };
 }

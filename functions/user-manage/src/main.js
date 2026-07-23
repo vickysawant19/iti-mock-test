@@ -2,6 +2,7 @@ import { Client, Users, Databases, TablesDB, Query } from 'node-appwrite';
 import { validateAppwriteKey } from './utils.js';
 import { handleUserAction } from './userActions.js';
 import { handleAttendanceAction } from './attendanceActions.js';
+import { handleBatchAction } from './batchActions.js';
 
 export default async ({ req, res, log, error }) => {
   const debugLogs = [];
@@ -96,7 +97,12 @@ export default async ({ req, res, log, error }) => {
     // Check if the action belongs to user management
     response = await handleUserAction(action, req, res, users, log, trace);
 
-    // If not a user action, check if it belongs to attendance/statistics
+    // Check if the action belongs to batch management
+    if (response === null) {
+      response = await handleBatchAction(action, req, res, client, log, trace);
+    }
+
+    // If not user or batch action, check if it belongs to attendance/statistics
     if (response === null) {
       response = await handleAttendanceAction(action, req, res, client, databases, tablesDB, log, error);
     }

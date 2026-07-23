@@ -1,6 +1,21 @@
 import { ID, Query } from 'node-appwrite';
 import migrateAttendanceFunc from './migrateAttendance.js';
 import { updateBatchStatsHelper, bulkUpdateBatchStats } from './statsHelper.js';
+import PermissionPolicy from './policies/permissionPolicy.js';
+
+const getBatchTeamPermissions = async (tablesDB, DB_ID, batchId, fallbackTeamId = null) => {
+  let teamId = fallbackTeamId;
+  if (!teamId && batchId) {
+    try {
+      const BATCH_COL_ID = process.env.BATCH_COLLECTION_ID || '66936df000108d8e2364';
+      const batchRow = await tablesDB.getRow({ databaseId: DB_ID, tableId: BATCH_COL_ID, rowId: batchId });
+      teamId = batchRow?.teamId;
+    } catch (e) {
+      // ignore
+    }
+  }
+  return teamId ? PermissionPolicy.attendance(teamId) : [];
+};
 
 export const handleAttendanceAction = async (action, req, res, client, databases, tablesDB, log, error) => {
   const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
@@ -86,10 +101,12 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       return { success: true };
     }
     case 'markBatchAttendance': {
-      const { batchId, date, attendanceData } = req.bodyJson;
+      const { batchId, date, attendanceData, teamId } = req.bodyJson;
       if (!batchId || !date || !attendanceData) {
         throw new Error('Missing required fields for markBatchAttendance');
       }
+
+      const teamPermissions = await getBatchTeamPermissions(tablesDB, DB_ID, batchId, teamId);
 
       // 1. Fetch existing attendance docs for that batch and date
       const existingDocsRes = await databases.listDocuments(
@@ -126,6 +143,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
               markedAt: existing.markedAt,
               status: record.status,
               remarks: record.remarks || null,
+              ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
             });
             statsToUpdate.push(record);
           }
@@ -139,6 +157,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             status: record.status,
             remarks: record.remarks || null,
             markedAt: new Date().toISOString(),
+            ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
           });
           statsToUpdate.push(record);
         }

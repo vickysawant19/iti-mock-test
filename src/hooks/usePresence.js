@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { Permission, Role } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import { selectActiveBatchId } from "@/store/activeBatchSlice";
+import { selectActiveBatchId, selectActiveBatch } from "@/store/activeBatchSlice";
 import { presenceClient } from "@/services/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
@@ -25,6 +25,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const reduxUser = useSelector(selectUser);
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector(selectActiveBatchId);
+  const activeBatch = useSelector(selectActiveBatch);
   const location = useLocation();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -48,16 +49,33 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const userIdRef = useRef(effectiveUserId);
   userIdRef.current = effectiveUserId;
 
+  const sessionIdRef = useRef(Math.random().toString(36).substring(2, 9));
+
   const statusRef = useRef(currentStatus);
   statusRef.current = currentStatus;
+
+  const getActivityType = (path) => {
+    if (path.includes("mock")) return "Mock Test";
+    if (path.includes("attendance")) return "Attendance";
+    if (path.includes("leaderboard")) return "Leaderboard";
+    if (path.includes("profile")) return "Profile";
+    if (path.includes("settings")) return "Settings";
+    return "Dashboard";
+  };
 
   const metadataRef = useRef(metadata);
   metadataRef.current = {
     page: location.pathname,
+    activity: getActivityType(location.pathname),
     userName: profile?.userName || reduxUser?.name || "User",
     profileImage: profile?.profileImage || null,
     role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
     activeBatchId: activeBatchId || null,
+    batchId: activeBatchId || null,
+    teamId: activeBatch?.teamId || null,
+    device: typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
+    sessionId: sessionIdRef.current,
+    lastSeen: new Date().toISOString(),
     ...metadata,
   };
 

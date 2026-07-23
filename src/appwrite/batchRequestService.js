@@ -2,6 +2,7 @@ import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import batchStudentService from "./batchStudentService";
+import teamService from "./teamService";
 
 export class BatchRequestService {
   constructor() {
@@ -192,8 +193,13 @@ export class BatchRequestService {
     // 1. Mark request as approved
     const updatedRequest = await this.updateRequestStatus(requestId, "approved");
     
-    // 2. Add student to batch with enrollment details
-    await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
+    // 2. Add student to batch and Appwrite Team via teamService
+    try {
+      await teamService.approveStudent(batchId, studentId, enrollmentDetails);
+    } catch (err) {
+      console.warn("teamService.approveStudent failed, falling back to batchStudentService:", err);
+      await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
+    }
     
     return updatedRequest;
   }
@@ -250,8 +256,13 @@ export class BatchRequestService {
       throw new Error("batchId and studentId are required");
     }
 
-    // 1. Remove active enrollment from batch
-    await batchStudentService.removeStudent(batchId, studentId);
+    // 1. Remove active enrollment from batch and Appwrite Team via teamService
+    try {
+      await teamService.removeStudent(batchId, studentId);
+    } catch (err) {
+      console.warn("teamService.removeStudent failed, falling back to batchStudentService:", err);
+      await batchStudentService.removeStudent(batchId, studentId);
+    }
 
     // 2. Mark corresponding request as rejected
     if (requestId) {

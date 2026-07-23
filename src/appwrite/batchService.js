@@ -1,6 +1,7 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
+import teamService from "./teamService";
 
 export class BatchService {
   constructor() {
@@ -9,49 +10,49 @@ export class BatchService {
   }
 
   async createBatch(data) {
-    //end_date	BatchName	start_date	teacherId	teacherName	tradeId	collegeId	studentIds	Created	Updated
     try {
-      const timestamp = new Date().toISOString();
-      const batchData = {
-        ...data,
-      };
-
+      return await teamService.createBatch(data);
+    } catch (error) {
+      console.warn("Server function createBatch failed, falling back to database create:", error);
       return await this.database.createRow({
         databaseId: conf.databaseId,
         tableId: conf.batchesCollectionId,
         rowId: "unique()",
-        data: batchData
+        data: {
+          ...data,
+          status: "active",
+          memberCount: 1,
+          version: 1,
+        },
       });
-    } catch (error) {
-      console.error("Appwrite error: creating batch:", error);
-      throw new Error(`${error.message}`);
     }
   }
 
   async updateBatch(batchId, updatedData) {
     try {
+      return await teamService.updateBatch(batchId, updatedData);
+    } catch (error) {
+      console.warn("Server function updateBatch failed, falling back to database update:", error);
       return await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: conf.batchesCollectionId,
         rowId: batchId,
-        data: updatedData
+        data: updatedData,
       });
-    } catch (error) {
-      console.error("Appwrite error: updating batch:", error);
-      throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
 
   async deleteBatch(batchId) {
     try {
-      return await this.database.deleteRow({
+      return await teamService.deleteBatch(batchId);
+    } catch (error) {
+      console.warn("Server function deleteBatch failed, falling back to database delete:", error);
+      return await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: conf.batchesCollectionId,
-        rowId: batchId
+        rowId: batchId,
+        data: { status: "deleted" },
       });
-    } catch (error) {
-      console.error("Appwrite error: deleting batch:", error);
-      throw new Error(`Error: ${error.message.split(".")[0]}`);
     }
   }
 

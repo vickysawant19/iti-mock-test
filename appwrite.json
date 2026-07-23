@@ -1,7 +1,7 @@
 {
+    "organizationId": "69e9c435002d17565742",
     "projectId": "itimocktest",
     "projectName": "iti mitra",
-    "endpoint": "https://api.itimitra.in/v1",
     "settings": {
         "services": {
             "account": true,
@@ -63,30 +63,32 @@
             "timeout": 15,
             "commands": "npm install",
             "scopes": [
-                "sessions.write",
                 "users.read",
                 "users.write",
+                "sessions.write",
                 "teams.read",
                 "teams.write",
                 "databases.read",
                 "databases.write",
                 "tables.read",
-                "collections.read",
                 "tables.write",
-                "collections.write",
                 "columns.read",
-                "attributes.read",
                 "columns.write",
-                "attributes.write",
                 "indexes.read",
                 "indexes.write",
                 "rows.read",
-                "documents.read",
                 "rows.write",
-                "documents.write"
+                "collections.read",
+                "collections.write",
+                "attributes.read",
+                "attributes.write",
+                "documents.read",
+                "documents.write",
+                "presences.read",
+                "presences.write"
             ],
-            "buildSpecification": "s-0.5vcpu-512mb",
-            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "buildSpecification": "s-8vcpu-8gb",
+            "runtimeSpecification": "s-8vcpu-8gb",
             "deploymentRetention": 0
         },
         {
@@ -646,6 +648,42 @@
                     "required": false,
                     "array": false,
                     "default": true
+                },
+                {
+                    "key": "teamId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 20,
+                    "default": "active",
+                    "encrypt": false
+                },
+                {
+                    "key": "memberCount",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": 0,
+                    "max": 100000
+                },
+                {
+                    "key": "version",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 1,
+                    "min": 1,
+                    "max": 1000000
                 }
             ],
             "indexes": [
@@ -2923,17 +2961,25 @@
     "teams": [
         {
             "$id": "678d2eaf00394e9cf871",
-            "$createdAt": "2025-01-19T16:56:18.106+00:00",
-            "$updatedAt": "2025-01-19T16:57:24.903+00:00",
+            "$createdAt": "2026-04-23T09:52:13.482+00:00",
+            "$updatedAt": "2026-04-23T09:52:13.877+00:00",
             "name": "instructor",
             "total": 1,
             "prefs": {}
         },
         {
             "$id": "678d3021000b4b403cef",
-            "$createdAt": "2025-01-19T17:02:27.330+00:00",
-            "$updatedAt": "2025-01-19T17:02:27.330+00:00",
+            "$createdAt": "2026-04-23T09:52:13.503+00:00",
+            "$updatedAt": "2026-04-23T09:52:13.503+00:00",
             "name": "student",
+            "total": 0,
+            "prefs": {}
+        },
+        {
+            "$id": "6a59e4f80036d38e884c",
+            "$createdAt": "2026-07-17T08:16:56.888+00:00",
+            "$updatedAt": "2026-07-17T08:16:56.888+00:00",
+            "name": "Batch",
             "total": 0,
             "prefs": {}
         }

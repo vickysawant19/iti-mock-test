@@ -188,6 +188,7 @@ export const { clearActiveBatch } = activeBatchSlice.actions;
 // Selectors
 export const selectActiveBatchId = (state) => state.activeBatch.activeBatchId;
 export const selectActiveBatchData = (state) => state.activeBatch.activeBatchData;
+export const selectActiveBatch = (state) => state.activeBatch.activeBatchData;
 export const selectUserBatches = (state) => state.activeBatch.userBatches;
 export const selectActiveBatchLoading = (state) => state.activeBatch.isLoading;
 

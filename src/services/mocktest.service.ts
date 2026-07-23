@@ -3,6 +3,7 @@ import conf from "../config/config";
 import { DatabaseService } from "./database.service";
 import { questionService } from "./question.service";
 import userStatsService from "../appwrite/userStats";
+import PermissionBuilder from "../utils/permissionBuilder";
 
 export interface MockTestPaper {
   $id?: string;
@@ -20,6 +21,7 @@ export interface MockTestPaper {
   isOriginal?: boolean;
   quesCount?: number;
   batchId?: string;
+  teamId?: string;
   totalMinutes?: number;
 }
 
@@ -28,7 +30,7 @@ class MockTestService extends DatabaseService {
     super(conf.questionPapersCollectionId);
   }
 
-  async createPaper(paperData: MockTestPaper) {
+  async createPaper(paperData: MockTestPaper, teamId: string | null = null) {
     const formattedData = {
       ...paperData,
       questions: paperData.questions.map((item: any) => 
@@ -36,7 +38,10 @@ class MockTestService extends DatabaseService {
       )
     };
     
-    const response = await this.createRow<MockTestPaper>(formattedData);
+    const activeTeamId = teamId || paperData.teamId;
+    const permissions = activeTeamId ? PermissionBuilder.test(activeTeamId) : undefined;
+
+    const response = await this.createRow<MockTestPaper>(formattedData, permissions);
     
     return {
       ...response,
