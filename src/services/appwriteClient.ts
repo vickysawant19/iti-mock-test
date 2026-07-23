@@ -107,24 +107,35 @@ export const presenceService = new Presences(presenceClient);
 
 // Dynamically fix legacy/cloud appwrite endpoints using config Url host
 export const fixProfileImage = (url: string | null | undefined): string | null | undefined => {
-  if (!url) return url;
+  if (!url || typeof url !== "string") return url;
   if (url.startsWith("/")) return url;
   try {
     const imgUrl = new URL(url);
-    const configUrl = new URL(conf.appwriteUrl);
+    const configUrl = new URL(conf.appwriteUrl || "https://auth.itimitra.in/v1");
     
     // Only rewrite Appwrite or itimitra domain URLs
-    const isAppwrite = imgUrl.host.includes("appwrite") || imgUrl.host.includes("itimitra") || imgUrl.pathname.includes("/storage/buckets/");
+    const isAppwrite =
+      imgUrl.host.includes("appwrite") ||
+      imgUrl.host.includes("itimitra") ||
+      imgUrl.pathname.includes("/storage/buckets/");
+
     if (!isAppwrite) {
       return url;
     }
     
-    imgUrl.protocol = configUrl.protocol;
-    imgUrl.host = configUrl.host;
-    return imgUrl.toString();
+    let path = imgUrl.pathname;
+    if (!path.startsWith("/v1/")) {
+      path = "/v1" + (path.startsWith("/") ? path : "/" + path);
+    }
+
+    return `${configUrl.origin}${path}${imgUrl.search}`;
   } catch (e) {
-    if (url.includes("cloud.appwrite.io")) {
-      return url.replace("cloud.appwrite.io", "auth.itimitra.in");
+    if (url.includes("cloud.appwrite.io") || url.includes("api.itimitra.in")) {
+      return url
+        .replace(/https?:\/\/cloud\.appwrite\.io\/v1/g, "https://auth.itimitra.in/v1")
+        .replace(/https?:\/\/api\.itimitra\.in\/v1/g, "https://auth.itimitra.in/v1")
+        .replace(/cloud\.appwrite\.io/g, "auth.itimitra.in")
+        .replace(/api\.itimitra\.in/g, "auth.itimitra.in");
     }
     return url;
   }

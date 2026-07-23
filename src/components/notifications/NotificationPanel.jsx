@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Trophy } from "lucide-react";
+import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Trophy, Megaphone, AlertCircle } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import notificationService from "@/services/notification.service";
@@ -12,9 +12,11 @@ function NotifItem({ notif, onClose, user }) {
   const isRejected = notif.type === "request_rejected";
   const isMockTest = notif.type === "mock_test_assigned";
   const isChallenge = notif.type === "challenge_assigned";
+  const isUrgent = notif.type === "urgent_announcement";
+  const isAnnouncement = notif.type === "announcement" || isUrgent;
 
   const handleClick = async () => {
-    if (isMockTest || isChallenge) {
+    if (isMockTest || isChallenge || isAnnouncement) {
       try {
         await notificationService.markAsRead(notif.id, user.$id);
       } catch (error) {
@@ -23,7 +25,7 @@ function NotifItem({ notif, onClose, user }) {
       onClose();
       if (isMockTest) {
         navigate(`/attain-test?paperid=${notif.paperId}`);
-      } else {
+      } else if (isChallenge) {
         navigate("/arena?tab=missions&sub=challenges");
       }
     } else {
@@ -38,12 +40,22 @@ function NotifItem({ notif, onClose, user }) {
     <button
       onClick={handleClick}
       className={`w-full text-left flex items-start gap-3 p-3 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
-        isTeacher || isMockTest || isChallenge ? "cursor-pointer" : "cursor-default"
+        isUrgent
+          ? "border-l-4 border-red-500 bg-red-50/30 dark:bg-red-950/10"
+          : isAnnouncement
+          ? "border-l-4 border-amber-500 bg-amber-50/20 dark:bg-amber-950/10"
+          : ""
+      } ${
+        isTeacher || isMockTest || isChallenge || isAnnouncement ? "cursor-pointer" : "cursor-default"
       }`}
     >
       <div
         className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-          isApproved
+          isUrgent
+            ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+            : isAnnouncement
+            ? "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
+            : isApproved
             ? "bg-green-100 dark:bg-green-900/30"
             : isRejected
             ? "bg-red-100 dark:bg-red-900/30"
@@ -54,6 +66,8 @@ function NotifItem({ notif, onClose, user }) {
             : "bg-amber-100 dark:bg-amber-900/30"
         }`}
       >
+        {isUrgent && <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 animate-pulse" />}
+        {isAnnouncement && !isUrgent && <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
         {isApproved && <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />}
         {isRejected && <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />}
         {isTeacher && <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />}

@@ -10,6 +10,7 @@ import {
   BookOpen,
   Award,
   Loader2,
+  Activity,
 } from "lucide-react";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
@@ -28,10 +29,12 @@ import TraineeLeaveRecord from "./leave-record/LeaveRecord";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
 import Assignment from "./assignment/Assignment";
+import LiveClassroom from "./classroom/LiveClassroom";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const TABS = [
+  { id: "live-classroom", label: "Live Classroom", icon: Activity },
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
@@ -190,6 +193,8 @@ const ViewBatch = () => {
     }
 
     switch (activeTab) {
+      case "live-classroom":
+        return <LiveClassroom students={data.students} batchData={data.selectedBatchData} />;
       case "profiles":
         return <ViewProfiles students={data.students} batchId={selectedBatch} />;
       case "attendance":

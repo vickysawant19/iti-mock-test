@@ -9,28 +9,24 @@ export const PermissionBuilder = {
   ],
 
   teacherWrite: (teamId) => [
-    Permission.create(Role.team(teamId, "teacher")),
     Permission.update(Role.team(teamId, "teacher")),
     Permission.delete(Role.team(teamId, "teacher")),
   ],
 
   attendance: (teamId) => [
     Permission.read(Role.team(teamId)),
-    Permission.create(Role.team(teamId)),
     Permission.update(Role.team(teamId, "teacher")),
     Permission.delete(Role.team(teamId, "teacher")),
   ],
 
   assignment: (teamId) => [
     Permission.read(Role.team(teamId)),
-    Permission.create(Role.team(teamId, "teacher")),
     Permission.update(Role.team(teamId, "teacher")),
     Permission.delete(Role.team(teamId, "teacher")),
   ],
 
   diary: (teamId) => [
     Permission.read(Role.team(teamId)),
-    Permission.create(Role.team(teamId, "teacher")),
     Permission.update(Role.team(teamId, "teacher")),
     Permission.delete(Role.team(teamId, "teacher")),
   ],
@@ -41,14 +37,14 @@ export const PermissionBuilder = {
 
   test: (teamId) => [
     Permission.read(Role.team(teamId)),
-    Permission.create(Role.team(teamId, "teacher")),
     Permission.update(Role.team(teamId, "teacher")),
     Permission.delete(Role.team(teamId, "teacher")),
   ],
 
   message: (teamId) => [
     Permission.read(Role.team(teamId)),
-    Permission.create(Role.team(teamId)),
+    Permission.update(Role.team(teamId, "teacher")),
+    Permission.delete(Role.team(teamId, "teacher")),
   ],
 };
 

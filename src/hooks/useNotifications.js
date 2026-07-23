@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import { selectUserBatches, selectActiveBatchLoading } from "@/store/activeBatchSlice";
+import { selectUserBatches, selectActiveBatchLoading, selectActiveBatch } from "@/store/activeBatchSlice";
 import { Query, Channel } from "appwrite";
+import { toast } from "react-toastify";
 import batchRequestService from "@/appwrite/batchRequestService";
 import notificationService from "@/services/notification.service";
 import { realtime } from "@/services/appwriteClient";
@@ -205,6 +206,15 @@ export function useNotifications() {
                 if (doc.readBy && doc.readBy.includes(user.$id)) {
                   setNotifications(prev => prev.filter(n => n.id !== doc.$id));
                   return;
+                }
+
+                // Fire real-time toast alert for announcements
+                if (response.events.some(e => e.includes('.create'))) {
+                  if (doc.type === "urgent_announcement") {
+                    toast.error(`🚨 URGENT ANNOUNCEMENT: ${doc.message}`, { autoClose: 10000 });
+                  } else if (doc.type === "announcement") {
+                    toast.info(`📣 Announcement: ${doc.message}`, { autoClose: 7000 });
+                  }
                 }
 
                 // Upsert to the top of the unread list

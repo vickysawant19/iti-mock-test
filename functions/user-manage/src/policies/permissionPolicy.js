@@ -16,7 +16,6 @@ export class PermissionPolicy {
   static attendance(teamId) {
     return [
       Permission.read(Role.team(teamId)),
-      Permission.create(Role.team(teamId)),
       Permission.update(Role.team(teamId, 'teacher')),
       Permission.delete(Role.team(teamId, 'teacher')),
     ];
@@ -25,7 +24,6 @@ export class PermissionPolicy {
   static assignment(teamId) {
     return [
       Permission.read(Role.team(teamId)),
-      Permission.create(Role.team(teamId, 'teacher')),
       Permission.update(Role.team(teamId, 'teacher')),
       Permission.delete(Role.team(teamId, 'teacher')),
     ];
@@ -40,13 +38,16 @@ export class PermissionPolicy {
   static message(teamId) {
     return [
       Permission.read(Role.team(teamId)),
-      Permission.create(Role.team(teamId)),
+      Permission.update(Role.team(teamId, 'teacher')),
+      Permission.delete(Role.team(teamId, 'teacher')),
     ];
   }
 
   static test(teamId) {
     return [
       Permission.read(Role.team(teamId)),
+      Permission.update(Role.team(teamId, 'teacher')),
+      Permission.delete(Role.team(teamId, 'teacher')),
     ];
   }
 }

@@ -1,6 +1,7 @@
 import { ID, Query } from "appwrite";
 import { databases } from "@/services/appwriteClient";
 import conf from "@/config/config";
+import PermissionBuilder from "@/utils/permissionBuilder";
 
 class NotificationService {
   constructor() {
@@ -8,8 +9,10 @@ class NotificationService {
     this.collectionId = "notifications";
   }
 
-  async createNotification({ message, type, batchId, teacherId, paperId }) {
+  async createNotification({ message, type, batchId, teacherId, paperId, teamId }) {
     try {
+      const permissions = teamId ? PermissionBuilder.message(teamId) : undefined;
+
       return await databases.createDocument(
         this.databaseId,
         this.collectionId,
@@ -18,15 +21,26 @@ class NotificationService {
           message,
           type,
           batchId,
-          teacherId,
-          paperId,
+          teacherId: teacherId || "system",
+          paperId: paperId || "N/A",
           readBy: []
-        }
+        },
+        permissions
       );
     } catch (error) {
       console.error("Error creating notification", error);
       throw error;
     }
+  }
+
+  async createAnnouncement({ message, batchId, teamId, teacherId, isUrgent = false }) {
+    return await this.createNotification({
+      message,
+      type: isUrgent ? "urgent_announcement" : "announcement",
+      batchId,
+      teacherId,
+      teamId
+    });
   }
 
   async updateNotification(notificationId, payload) {
