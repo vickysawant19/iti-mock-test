@@ -8,7 +8,7 @@ export class BatchMemberRepository {
     this.collectionId = batchStudentsCollectionId || process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
   }
 
-  async addMember(batchId, userId, details = {}) {
+  async addMember(batchId, userId, details = {}, permissions = undefined) {
     const {
       role = 'student',
       status = 'active',
@@ -32,7 +32,7 @@ export class BatchMemberRepository {
         status: 'active',
         role,
         teamId,
-      });
+      }, permissions);
     }
 
     return await withRetry(() =>
@@ -50,17 +50,19 @@ export class BatchMemberRepository {
           rollNumber,
           registerId,
         },
+        permissions: permissions,
       })
     );
   }
 
-  async updateMember(memberDocId, fields = {}) {
+  async updateMember(memberDocId, fields = {}, permissions = undefined) {
     return await withRetry(() =>
       this.tablesDB.updateRow({
         databaseId: this.databaseId,
         tableId: this.collectionId,
         rowId: memberDocId,
         data: fields,
+        permissions: permissions,
       })
     );
   }

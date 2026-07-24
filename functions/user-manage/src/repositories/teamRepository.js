@@ -6,7 +6,7 @@ export class TeamRepository {
     this.teams = new Teams(client);
   }
 
-  async create(teamId, name, roles = ['owner', 'teacher', 'assistant', 'monitor', 'student']) {
+  async create(teamId, name, roles = ['owner', 'teacher', 'Teacher', 'assistant', 'monitor', 'student']) {
     return await withRetry(() => this.teams.create(teamId, name, roles));
   }
 

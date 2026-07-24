@@ -398,7 +398,7 @@
             "databaseId": "itimocktest",
             "name": "questionPaperData",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "tradeId",
@@ -533,7 +533,7 @@
             "databaseId": "itimocktest",
             "name": "userStats",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "userId",
@@ -742,7 +742,7 @@
             "databaseId": "itimocktest",
             "name": "batchesTable",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "end_date",
@@ -1330,7 +1330,7 @@
             "databaseId": "itimocktest",
             "name": "batchStudents",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "batchId",

@@ -1,10 +1,11 @@
 import { RollbackStack } from '../helpers/rollbackHelper.js';
 
 export class MembershipDomain {
-  constructor(batchRepo, teamRepo, batchMemberRepo, log) {
+  constructor(batchRepo, teamRepo, batchMemberRepo, permissionPolicy, log) {
     this.batchRepo = batchRepo;
     this.teamRepo = teamRepo;
     this.batchMemberRepo = batchMemberRepo;
+    this.permissionPolicy = permissionPolicy;
     this.log = log || console.log;
   }
 
@@ -25,13 +26,14 @@ export class MembershipDomain {
       }
 
       this.log(`[MembershipDomain] Creating/updating BatchMember database record...`);
+      const permissions = this.permissionPolicy?.batchStudent ? this.permissionPolicy.batchStudent(batchId) : undefined;
       await this.batchMemberRepo.addMember(batchId, studentId, {
         role,
         status: 'active',
         joinedBy: actorId,
         teamId: batch.teamId,
         ...details,
-      });
+      }, permissions);
 
       this.log(`[MembershipDomain] Incrementing memberCount for batch ${batchId}...`);
       await this.batchRepo.incrementMemberCount(batchId, 1);
