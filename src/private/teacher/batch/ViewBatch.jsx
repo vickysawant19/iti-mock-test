@@ -70,7 +70,7 @@ const ViewBatch = () => {
     }
   }, [activeBatchId, searchParams.get("batchid")]);
   const [activeTab, setActiveTab] = useState(
-    searchParams.get("active") || "profiles"
+    searchParams.get("active") || "live-classroom"
   );
   const fetchedStudentsRef = useRef(false);
 
