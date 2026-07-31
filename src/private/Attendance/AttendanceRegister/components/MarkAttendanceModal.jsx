@@ -226,25 +226,25 @@ const MarkAttendanceModal = ({
                   {actualStudents.length}
                 </p>
               </div>
-              <div className="flex-1 bg-green-50 dark:bg-green-900 rounded-lg px-3 py-2 border border-green-200 dark:border-green-700">
+              <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg px-3 py-2 border border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-300" />
-                  <span className="text-xs font-medium text-green-600 dark:text-green-300">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
                     Present
                   </span>
                 </div>
-                <p className="text-xl font-bold text-green-700 dark:text-green-200">
+                <p className="text-xl font-bold text-emerald-800 dark:text-emerald-200">
                   {presentCount}
                 </p>
               </div>
-              <div className="flex-1 bg-red-50 dark:bg-red-900 rounded-lg px-3 py-2 border border-red-200 dark:border-red-700">
+              <div className="flex-1 bg-rose-50 dark:bg-rose-950/40 rounded-lg px-3 py-2 border border-rose-200 dark:border-rose-800">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <UserX className="w-3.5 h-3.5 text-red-600 dark:text-red-300" />
-                  <span className="text-xs font-medium text-red-600 dark:text-red-300">
+                  <UserX className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span className="text-xs font-medium text-rose-700 dark:text-rose-300">
                     Absent
                   </span>
                 </div>
-                <p className="text-xl font-bold text-red-700 dark:text-red-200">
+                <p className="text-xl font-bold text-rose-800 dark:text-rose-200">
                   {absentCount}
                 </p>
               </div>
@@ -259,8 +259,8 @@ const MarkAttendanceModal = ({
                     onClick={() => setFilter(f)}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
                       filter === f
-                        ? "bg-indigo-600 text-white dark:bg-indigo-800"
-                        : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                        ? "bg-indigo-600 text-white dark:bg-indigo-700"
+                        : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                     }`}
                   >
                     {f} {f === "all" ? `(${actualStudents.length})` : f === "present" ? `(${presentCount})` : `(${absentCount})`}
@@ -271,19 +271,19 @@ const MarkAttendanceModal = ({
               <div className="flex gap-2">
                 <button
                   onClick={markAllPresent}
-                  className="flex-1 px-2 py-1.5 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 rounded-md text-xs font-medium hover:bg-green-200 dark:hover:bg-green-700 transition-colors"
+                  className="flex-1 px-2 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-md text-xs font-semibold hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 transition-colors"
                 >
                   Mark All Present
                 </button>
                 <button
                   onClick={markAllAbsent}
-                  className="flex-1 px-2 py-1.5 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md text-xs font-medium hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+                  className="flex-1 px-2 py-1.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded-md text-xs font-semibold hover:bg-rose-200 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 transition-colors"
                 >
                   Mark All Absent
                 </button>
                 <button
                   onClick={handleHolidayToggle}
-                  className="flex-1 px-2 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800 rounded-md text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 px-2 py-1.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-800 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Palmtree className="w-3.5 h-3.5" />
                   Mark Holiday

@@ -170,21 +170,21 @@ const StudentAttendanceEditModal = ({
                     onClick={() => onAttendanceStatusChange(student.userId, dateKey, nextStatus)}
                     className={`h-[62px] rounded-md border text-left p-2 transition disabled:cursor-not-allowed disabled:opacity-60 ${
                       (isHoliday && !student.isTeacher)
-                        ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/30 dark:border-rose-700"
+                        ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
                         : (isBeforeBatch || isAfterBatch)
                         ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
                         : status === "present"
-                        ? "bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700"
+                        ? "bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
                         : status === "absent"
-                        ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700"
-                        : "bg-white border-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800"
+                        ? "bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
+                        : "bg-white border-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-200"
                     }`}
                     title={(isHoliday && !student.isTeacher) ? holidays.get(dateKey)?.holidayText || "Holiday" : isBeforeBatch ? "Date is before batch start" : isAfterBatch ? "Date is after batch end" : "Toggle attendance"}
                   >
                     <p className={`text-xs font-semibold ${isAfterBatch ? "line-through opacity-50" : ""}`}>
                       {format(day, "d")}
                     </p>
-                    <p className="text-[10px] mt-1 uppercase tracking-wide">
+                    <p className="text-[10px] mt-1 uppercase tracking-wide font-bold">
                       {(isHoliday && !student.isTeacher)
                         ? "Holiday"
                         : isBeforeBatch
@@ -205,20 +205,20 @@ const StudentAttendanceEditModal = ({
             <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-3">Month Stats</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2">
-                <span className="flex items-center gap-2"><BriefcaseBusiness className="h-4 w-4" /> Working Days</span>
-                <strong>{monthStats.workingDays}</strong>
+                <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><BriefcaseBusiness className="h-4 w-4 text-indigo-500" /> Working Days</span>
+                <strong className="text-slate-900 dark:text-slate-100">{monthStats.workingDays}</strong>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2">
-                <span className="flex items-center gap-2"><User className="h-4 w-4 text-emerald-600" /> Present Days</span>
-                <strong>{monthStats.presentDays}</strong>
+                <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Present Days</span>
+                <strong className="text-emerald-700 dark:text-emerald-400">{monthStats.presentDays}</strong>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2">
-                <span className="flex items-center gap-2"><User className="h-4 w-4 text-amber-600" /> Absent Days</span>
-                <strong>{monthStats.absentDays}</strong>
+                <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><User className="h-4 w-4 text-rose-600 dark:text-rose-400" /> Absent Days</span>
+                <strong className="text-rose-700 dark:text-rose-400">{monthStats.absentDays}</strong>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2">
-                <span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-rose-600" /> Holidays</span>
-                <strong>{monthStats.holidaysCount}</strong>
+                <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><CalendarDays className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Holidays</span>
+                <strong className="text-amber-700 dark:text-amber-400">{monthStats.holidaysCount}</strong>
               </div>
             </div>
 
@@ -249,9 +249,9 @@ const StudentAttendanceEditModal = ({
                     <span className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">Present</span>
                     <strong className="text-emerald-800 dark:text-emerald-100">{studentStats.presentDays}</strong>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2 border-l-2 border-amber-500">
-                    <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">Absent</span>
-                    <strong className="text-amber-800 dark:text-amber-100">{studentStats.absentDays}</strong>
+                  <div className="flex items-center justify-between rounded-lg bg-white dark:bg-slate-900 p-2 border-l-2 border-rose-500">
+                    <span className="text-rose-700 dark:text-rose-400 text-xs font-medium">Absent</span>
+                    <strong className="text-rose-800 dark:text-rose-100">{studentStats.absentDays}</strong>
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-indigo-600 p-2 text-white shadow-sm">
                     <span className="text-xs font-medium">Overall %</span>

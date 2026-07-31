@@ -209,6 +209,7 @@ const AttendanceTable = ({
                 attendanceMap={attendanceMap}
                 formatDate={formatDate}
                 columnVisibility={columnVisibility}
+                compactView={compactView}
               />
             </table>
           </div>

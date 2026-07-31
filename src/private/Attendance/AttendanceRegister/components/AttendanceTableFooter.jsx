@@ -8,27 +8,33 @@ const AttendanceTableFooter = ({
   attendanceMap,
   formatDate,
   columnVisibility = { previous: true, daily: true, summary: true },
+  compactView = false,
 }) => {
   const prevColSpan = columnVisibility.previous ? 4 : 0;
   const summaryColSpan = columnVisibility.summary ? 4 : 0;
 
+  // Standardized Column Widths & Sticky Positions (Matches Head and Body)
+  const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
+  const actionColWidth = "w-28 min-w-28";
+  const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
+
   const footerRows = [
     {
       label: "Present Students",
-      color: "text-green-700 dark:text-green-400",
+      color: "text-emerald-700 dark:text-emerald-400",
       countFn: (studentRecords, fullDate) =>
         studentRecords?.get(fullDate) === "present" ? 1 : 0,
       keyPrefix: "summary-present",
     },
     {
       label: "Absent Students",
-      color: "text-red-700 dark:text-red-400",
+      color: "text-rose-700 dark:text-rose-400",
       countFn: (studentRecords, fullDate) =>
         studentRecords?.get(fullDate) === "absent" ? 1 : 0,
       keyPrefix: "summary-absent",
     },
     {
-      label: "Total Students",
+      label: "Total Marked",
       color: "text-indigo-700 dark:text-indigo-400",
       countFn: (studentRecords, fullDate) => {
         const s = studentRecords?.get(fullDate);
@@ -39,26 +45,26 @@ const AttendanceTableFooter = ({
   ];
 
   return (
-    <tfoot className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+    <tfoot className="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-700 select-none">
       {footerRows.map(({ label, color, countFn, keyPrefix }) => (
-        <tr key={keyPrefix} className="font-bold">
-          {/* Previous group blank span */}
+        <tr key={keyPrefix} className="text-xs">
+          {/* Previous Group Blank Span */}
           {columnVisibility.previous && (
             <td
               colSpan={prevColSpan}
-              className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
+              className="py-1.5 px-2 border border-slate-200 dark:border-slate-700"
             />
           )}
 
-          {/* Sticky label cell */}
-          <td className="sticky left-0 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10 text-xs sm:text-sm">
+          {/* Sticky Student Name Cell */}
+          <td className={`${nameColWidth} sticky left-0 py-1.5 px-3 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 z-20`}>
             {label}
           </td>
 
-          {/* Sticky action cell */}
-          <td className="sticky left-28 sm:left-48 py-2 sm:py-3 px-2 sm:px-4 border border-slate-300 dark:border-slate-600 text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-700 z-10" />
+          {/* Sticky Action Cell */}
+          <td className={`${actionColWidth} ${actionStickyPos} sticky py-1.5 px-2 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 z-20 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)]`} />
 
-          {/* Daily columns */}
+          {/* Daily Columns */}
           {columnVisibility.daily &&
             monthDates.map((date) => {
               const fullDate = formatDate(
@@ -80,8 +86,8 @@ const AttendanceTableFooter = ({
               return (
                 <td
                   key={`${keyPrefix}-${date}`}
-                  className={`py-2 sm:py-3 px-1 sm:px-2 border border-slate-300 dark:border-slate-600 text-center ${color} text-xs sm:text-sm ${
-                    isHoliday ? "bg-rose-50 dark:bg-rose-900/30" : ""
+                  className={`py-1.5 px-1 border border-slate-200 dark:border-slate-700 text-center ${color} ${
+                    isHoliday ? "bg-rose-50 dark:bg-rose-950/30" : ""
                   }`}
                 >
                   {isHoliday ? (count > 0 ? count : "-") : count}
@@ -89,11 +95,11 @@ const AttendanceTableFooter = ({
               );
             })}
 
-          {/* Summary group blank span */}
+          {/* Summary Group Blank Span */}
           {columnVisibility.summary && (
             <td
               colSpan={summaryColSpan}
-              className="py-2 sm:py-3 px-2 sm:px-3 border border-slate-300 dark:border-slate-600"
+              className="py-1.5 px-2 border border-slate-200 dark:border-slate-700"
             />
           )}
         </tr>
