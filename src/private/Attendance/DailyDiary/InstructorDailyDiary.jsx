@@ -51,33 +51,24 @@ function InstructorDailyDiary() {
     });
   }, [currentMonth]);
 
-  // Fetch dynamic names once
+  // Fetch dynamic names once (cached by collegeId & tradeId key)
+  const fetchedNamesKeyRef = useRef("");
   useEffect(() => {
-    const fetchNames = async () => {
-      const cId = profile?.collegeId || batchData?.collegeId;
-      if (cId) {
-        try {
-          const colRes = await collegeService.getCollege(cId);
-          if (colRes?.collageName) setCollegeName(colRes.collageName.toUpperCase());
-        } catch (e) {
-          console.error("Error fetching college name:", e);
-        }
-      }
+    const cId = profile?.collegeId || batchData?.collegeId;
+    const tId = profile?.tradeId || batchData?.tradeId;
+    const key = `${cId || ""}_${tId || ""}`;
 
-      const tId = profile?.tradeId || batchData?.tradeId;
-      if (tId) {
-        try {
-          const tradeRes = await tradeservice.getTrade(tId);
-          if (tradeRes?.tradeName) setTradeName(tradeRes.tradeName.toUpperCase());
-        } catch (e) {
-          console.error("Error fetching trade name:", e);
-        }
-      }
-    };
-    if (profile || batchData) {
-      fetchNames();
-    }
-  }, [profile, batchData]);
+    if ((!cId && !tId) || fetchedNamesKeyRef.current === key) return;
+    fetchedNamesKeyRef.current = key;
+
+    Promise.all([
+      cId ? collegeService.getCollege(cId).catch(() => null) : Promise.resolve(null),
+      tId ? tradeservice.getTrade(tId).catch(() => null) : Promise.resolve(null),
+    ]).then(([colRes, tradeRes]) => {
+      if (colRes?.collageName) setCollegeName(colRes.collageName.toUpperCase());
+      if (tradeRes?.tradeName) setTradeName(tradeRes.tradeName.toUpperCase());
+    });
+  }, [profile?.collegeId, profile?.tradeId, batchData?.collegeId, batchData?.tradeId]);
 
   const fetchDataForMonth = useCallback(async () => {
     if (!profile?.userId || !activeBatchId) return;
@@ -87,36 +78,41 @@ function InstructorDailyDiary() {
       const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
       const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
-      const attendanceRes =
-        await newAttendanceService.getTeacherAttendanceByDateRange(
+      // Parallelize month attendance, holidays, and diary entries using Promise.all
+      const [attendanceRes, holidayData, diaryRes] = await Promise.all([
+        newAttendanceService.getTeacherAttendanceByDateRange(
           profile.userId,
           activeBatchId,
           startDate,
           endDate,
-          [Query.select(["date", "status"])],
-        );
+          [Query.select(["date", "status"])]
+        ),
+        holidayService.getBatchHolidaysByDateRange(
+          activeBatchId,
+          startDate,
+          endDate
+        ),
+        dailyDiaryService.getBatchInstructorDiary(
+          activeBatchId,
+          profile.userId,
+          startDate,
+          endDate
+        ),
+      ]);
+
       const attendanceMap = new Map();
-      attendanceRes.documents.forEach((item) =>
-        attendanceMap.set(item.date, item.status),
-      );
+      if (attendanceRes?.documents) {
+        attendanceRes.documents.forEach((item) =>
+          attendanceMap.set(item.date, item.status)
+        );
+      }
       setAttendance(attendanceMap);
 
-      // Fetch holidays
-      const holidayData = await holidayService.getBatchHolidaysByDateRange(
-        activeBatchId,
-        startDate,
-        endDate,
-      );
       const holidayMap = new Map();
-      holidayData.forEach((item) => holidayMap.set(item.date, item));
+      if (holidayData) {
+        holidayData.forEach((item) => holidayMap.set(item.date, item));
+      }
       setHolidays(holidayMap);
-      // Fetch daily diary
-      const diaryRes = await dailyDiaryService.getBatchInstructorDiary(
-        activeBatchId,
-        profile.userId,
-        startDate,
-        endDate,
-      );
 
       const ownDiary =
         diaryRes?.filter((doc) => doc.instructorId === profile.userId) || [];
@@ -135,7 +131,7 @@ function InstructorDailyDiary() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [profile, activeBatchId, currentMonth]);
+  }, [profile?.userId, activeBatchId, currentMonth]);
 
   useEffect(() => {
     fetchDataForMonth();
