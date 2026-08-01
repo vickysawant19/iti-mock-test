@@ -1,5 +1,5 @@
-import path from "path"
-import fs from "fs"
+import path from "path";
+import fs from "fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -18,14 +18,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/v1': {
-        target: 'https://api.itimitra.in',
+      "/v1": {
+        target: "https://api.itimitra.in",
         changeOrigin: true,
-        cookieDomainRewrite: 'localhost',
-        ws: true,           // ← proxy WebSocket upgrades (Appwrite Realtime)
-        secure: false,      // allow self-signed certs if any
-      }
-    }
+        cookieDomainRewrite: "localhost",
+        ws: true, // ← proxy WebSocket upgrades (Appwrite Realtime)
+        secure: false, // allow self-signed certs if any
+      },
+    },
   },
   plugins: [
     react(),
@@ -35,12 +35,9 @@ export default defineConfig({
         // 5MB cache limit
         maximumFileSizeToCacheInBytes: 5000000,
         // your normal SPA fallback
-        navigateFallback: '/',
+        navigateFallback: "/",
         // don’t redirect sitemap.xml or robots.txt to the SPA
-        navigateFallbackDenylist: [
-          /^\/sitemap\.xml$/,
-          /^\/robots\.txt$/
-        ],
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],
       },
       manifest: {
         id: "/",
@@ -73,7 +70,7 @@ export default defineConfig({
           if (req.url === "/sitemap.xml") {
             const sitemap = fs.readFileSync(
               path.resolve(__dirname, "public/sitemap.xml"),
-              "utf-8"
+              "utf-8",
             );
             res.setHeader("Content-Type", "application/xml");
             res.end(sitemap);

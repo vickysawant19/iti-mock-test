@@ -1,34 +1,55 @@
 const conf = {
-  appwriteUrl: (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname.startsWith("192.168."))) ? (window.location.origin + "/v1") : (import.meta.env.VITE_APPWRITE_URL || import.meta.env.VITE_APPWRITE_ENDPOINT || "https://api.itimitra.in/v1"),
+  appwriteUrl:
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.startsWith("192.168."))
+      ? window.location.origin + "/v1"
+      : import.meta.env.VITE_APPWRITE_URL ||
+        import.meta.env.VITE_APPWRITE_ENDPOINT ||
+        "https://api.itimitra.in/v1",
   projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || "",
   databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || "",
   quesCollectionId: import.meta.env.VITE_APPWRITE_QUES_COLLECTION_ID || "",
-  questionPapersCollectionId: import.meta.env.VITE_QUESTIONPAPER_COLLECTION_ID || "",
+  questionPapersCollectionId:
+    import.meta.env.VITE_QUESTIONPAPER_COLLECTION_ID || "",
   tradeCollectionId: import.meta.env.VITE_TRADE_COLLECTION_ID || "",
   bucketId: import.meta.env.VITE_APPWRITE_BUCKET_ID || "",
   userStatsCollectionId: "userBatchStats",
-  userProfilesCollectionId: import.meta.env.VITE_USER_PROFILE_COLLECTION_ID || "",
+  userProfilesCollectionId:
+    import.meta.env.VITE_USER_PROFILE_COLLECTION_ID || "",
   batchesCollectionId: import.meta.env.VITE_BATCH_COLLECTION_ID || "",
-  collegeTradeCollectionId: import.meta.env.VITE_COLLEGE_TRADE_COLLECTION_ID || "",
+  collegeTradeCollectionId:
+    import.meta.env.VITE_COLLEGE_TRADE_COLLECTION_ID || "",
   collegesCollectionId: import.meta.env.VITE_COLLEGE_COLLECTION_ID || "",
   subjectsCollectionId: import.meta.env.VITE_SUBJECTS_COLLECTION_ID || "",
   modulesesCollectionId: import.meta.env.VITE_MODULES_COLLECTION_ID || "",
   mockTestFunctionId: import.meta.env.VITE_MOCKTEST_FUNCTION_ID || "",
-  studentAttendanceCollectionId: import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID || "",
-  faceAttendanceCollectionId: import.meta.env.VITE_FACE_ATTENDANCE_COLLECTION_ID || "",
-  newAttendanceCollectionId: import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID || "",
-  holidayDaysCollectionId: import.meta.env.VITE_HOLIDAY_DAYS_COLLECTION_ID || "",
-  batchRequestsCollectionId: import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "",
-  batchStudentsCollectionId: import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "",
+  studentAttendanceCollectionId:
+    import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID || "",
+  faceAttendanceCollectionId:
+    import.meta.env.VITE_FACE_ATTENDANCE_COLLECTION_ID || "",
+  newAttendanceCollectionId:
+    import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID || "",
+  holidayDaysCollectionId:
+    import.meta.env.VITE_HOLIDAY_DAYS_COLLECTION_ID || "",
+  batchRequestsCollectionId:
+    import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "",
+  batchStudentsCollectionId:
+    import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "",
   profileImagesBucketId: import.meta.env.VITE_PROFILE_IMAGES_BUCKET_ID || "",
   dailyDiaryCollectionId: import.meta.env.VITE_DAILY_DIARY_COLLECTION_ID || "",
   userManageFunctionId: import.meta.env.VITE_USER_MANAGE_FUNCTION_ID || "",
   imageUploadFunctionId: import.meta.env.VITE_IMAGE_UPLOAD_FUNCTION_ID || "",
-  newModulesDataCollectionId: import.meta.env.VITE_NEW_MODULES_DATA_COLLECTION_ID || "",
+  newModulesDataCollectionId:
+    import.meta.env.VITE_NEW_MODULES_DATA_COLLECTION_ID || "",
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
-  gameStatsCollectionId: import.meta.env.VITE_GAME_STATS_COLLECTION_ID || "student_game_stats",
-  challengesCollectionId: import.meta.env.VITE_CHALLENGES_COLLECTION_ID || "batch_challenges",
-  achievementsCollectionId: import.meta.env.VITE_ACHIEVEMENTS_COLLECTION_ID || "student_achievements",
+  gameStatsCollectionId:
+    import.meta.env.VITE_GAME_STATS_COLLECTION_ID || "student_game_stats",
+  challengesCollectionId:
+    import.meta.env.VITE_CHALLENGES_COLLECTION_ID || "batch_challenges",
+  achievementsCollectionId:
+    import.meta.env.VITE_ACHIEVEMENTS_COLLECTION_ID || "student_achievements",
   challengesProgressCollectionId: "batch_challenge_progress",
 };
 

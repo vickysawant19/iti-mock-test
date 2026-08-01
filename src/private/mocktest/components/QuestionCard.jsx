@@ -28,22 +28,51 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
 
       {/* Question content */}
       <div className="px-6 pb-6 flex-1 flex flex-col">
-        <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 leading-snug mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-          {question.question}
+        {question.languageType && question.languageType !== "unknown" && (
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider">
+              {question.languageType}
+            </span>
+            {question.schemaVersion === 2 && (
+              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                v2 Migrated
+              </span>
+            )}
+          </div>
+        )}
+
+        <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 leading-snug mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {question.questionEnglish || question.question}
         </h2>
 
-        {/* Images */}
-        {images.length > 0 && (
+        {question.questionMarathi && question.questionMarathi !== question.questionEnglish && (
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 leading-relaxed mb-4 italic">
+            {question.questionMarathi}
+          </p>
+        )}
+
+        {/* Question Image or CDN URL */}
+        {(question.questionImageUrl || images.length > 0) && (
           <div className="mb-6 space-y-3">
-            {images.map((img) => (
-              <div key={img.id} className="relative aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+            {question.questionImageUrl ? (
+              <div className="relative aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
                 <img
-                  src={img.url}
+                  src={question.questionImageUrl}
                   alt="Question visual"
                   className="w-full h-full object-contain"
                 />
               </div>
-            ))}
+            ) : (
+              images.map((img) => (
+                <div key={img.id} className="relative aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+                  <img
+                    src={img.url}
+                    alt="Question visual"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))
+            )}
           </div>
         )}
 
@@ -51,6 +80,9 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
         <div className="space-y-2.5">
           {options.map((option, index) => {
             const isCorrect = getOptionIndex(question.correctAnswer) === index;
+            const engOpt = question.optionsEnglish?.[index] || option;
+            const marOpt = question.optionsMarathi?.[index];
+
             return (
               <div
                 key={index}
@@ -69,15 +101,22 @@ const QuestionCard = ({ question, onDelete, isDeleting, getOptionIndex }) => {
                 >
                   {optionLabels[index]}
                 </div>
-                <span
-                  className={`text-sm font-medium leading-tight ${
-                    isCorrect
-                      ? "text-blue-900 dark:text-blue-100"
-                      : "text-gray-600 dark:text-gray-300"
-                  }`}
-                >
-                  {option}
-                </span>
+                <div className="flex-1 flex flex-col">
+                  <span
+                    className={`text-sm font-medium leading-tight ${
+                      isCorrect
+                        ? "text-blue-900 dark:text-blue-100"
+                        : "text-gray-600 dark:text-gray-300"
+                    }`}
+                  >
+                    {engOpt}
+                  </span>
+                  {marOpt && marOpt !== engOpt && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 italic">
+                      {marOpt}
+                    </span>
+                  )}
+                </div>
                 {isCorrect && (
                    <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-auto" />
                 )}

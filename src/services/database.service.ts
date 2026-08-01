@@ -17,28 +17,60 @@ export class DatabaseService {
   }
 
   /**
-   * Fetch multiple rows from a table with optimized query selection
+   * Universal Rate-Limit (429) Interceptor & Exponential Backoff Retry
+   */
+  protected async withRateLimitRetry<T>(
+    operationName: string,
+    operation: () => Promise<T>,
+    maxRetries: number = 6
+  ): Promise<T> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        const is429 =
+          error?.code === 429 ||
+          error?.type === "general_rate_limit_exceeded" ||
+          error?.status === 429 ||
+          (typeof error?.message === "string" && error.message.includes("Rate limit"));
+
+        if (is429 && attempt < maxRetries - 1) {
+          const waitMs = (attempt + 1) * 2500;
+          console.warn(
+            `[Appwrite 429 RateLimit Intercepted - ${operationName}] Cooling down ${waitMs / 1000}s (Attempt ${attempt + 1}/${maxRetries})...`
+          );
+          await new Promise((r) => setTimeout(r, waitMs));
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error(`Rate limit exceeded after ${maxRetries} retries for ${operationName}`);
+  }
+
+  /**
+   * Fetch multiple rows from a table with optimized query selection & rate limit retry
    */
   async listRows<T>(
     queries: string[] = [],
     selectFields?: string[]
   ): Promise<ListRowsResponse<T>> {
     try {
+      const activeQueries = [...queries];
       if (selectFields && selectFields.length > 0) {
-        queries.push(Query.select(selectFields));
+        activeQueries.push(Query.select(selectFields));
       }
 
-      const response = await tablesDb.listRows(
-        this.databaseId,
-        this.tableId,
-        queries
+      const response = await this.withRateLimitRetry(`listRows(${this.tableId})`, () =>
+        tablesDb.listRows(this.databaseId, this.tableId, activeQueries)
       );
 
+      const rows = (response as any).rows || (response as any).documents || [];
+      const total = typeof response.total === "number" ? response.total : rows.length;
+
       return {
-        total: response.total,
-        // Map the new signature, Appwrite uses `rows` in TablesDB response, 
-        // fallback to documents if SDK returned something mixed
-        rows: (response as any).rows || (response as any).documents,
+        total,
+        rows,
       };
     } catch (error: any) {
       console.error(`Error in listRows (${this.tableId}):`, error);
@@ -58,11 +90,8 @@ export class DatabaseService {
         ? [Query.select(selectFields)] 
         : [];
 
-      return await tablesDb.getRow(
-        this.databaseId,
-        this.tableId,
-        rowId,
-        queries
+      return await this.withRateLimitRetry(`getRow(${this.tableId}/${rowId})`, () =>
+        tablesDb.getRow(this.databaseId, this.tableId, rowId, queries)
       ) as T;
     } catch (error: any) {
       console.error(`Error in getRow (${this.tableId}/${rowId}):`, error);
@@ -79,12 +108,14 @@ export class DatabaseService {
     customId?: string
   ): Promise<T> {
     try {
-      return await tablesDb.createRow(
-        this.databaseId,
-        this.tableId,
-        customId || ID.unique(),
-        data,
-        permissions
+      return await this.withRateLimitRetry(`createRow(${this.tableId})`, () =>
+        tablesDb.createRow(
+          this.databaseId,
+          this.tableId,
+          customId || ID.unique(),
+          data,
+          permissions
+        )
       ) as T;
     } catch (error: any) {
       console.error(`Error creating row in ${this.tableId}:`, error);
@@ -101,12 +132,14 @@ export class DatabaseService {
     permissions?: string[]
   ): Promise<T> {
     try {
-      return await tablesDb.updateRow(
-        this.databaseId,
-        this.tableId,
-        rowId,
-        data,
-        permissions
+      return await this.withRateLimitRetry(`updateRow(${this.tableId}/${rowId})`, () =>
+        tablesDb.updateRow(
+          this.databaseId,
+          this.tableId,
+          rowId,
+          data,
+          permissions
+        )
       ) as T;
     } catch (error: any) {
       console.error(`Error updating row (${this.tableId}/${rowId}):`, error);
@@ -115,14 +148,12 @@ export class DatabaseService {
   }
 
   /**
-   * Delete a row by its ID
+   * Delete a row by its ID with 429 rate limit backoff retry
    */
   async deleteRow(rowId: string): Promise<boolean> {
     try {
-      await tablesDb.deleteRow(
-        this.databaseId,
-        this.tableId,
-        rowId
+      await this.withRateLimitRetry(`deleteRow(${this.tableId}/${rowId})`, () =>
+        tablesDb.deleteRow(this.databaseId, this.tableId, rowId)
       );
       return true;
     } catch (error: any) {

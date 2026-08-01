@@ -8,6 +8,7 @@ import { FaArrowLeft } from "react-icons/fa";
 
 import questionService from "@/services/question.service";
 import questionFunctionService from "@/services/questionFunction.service";
+import migrationService from "@/services/migration/migrationService";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import moduleServices from "@/appwrite/moduleServices";
@@ -134,20 +135,22 @@ const CreateQuestion = () => {
       data.userId = user.$id;
       data.userName = user.name;
       data.tags = (data.tags || []).join(",");
-      // data.tradeId, data.subjectId, and data.year are now kept to maintain logical links
-      await questionFunctionService.createQuestion(data);
+      
+      // Auto-compute schema v2 multilingual & hash attributes
+      const v2Payload = migrationService.prepareMigratedDocument(data);
+      const fullData = { ...data, ...v2Payload };
+
+      await questionFunctionService.createQuestion(fullData);
       reset({
         question: "",
         options: ["", "", "", ""], // Clears all 4 options
       });
-      toast.success("Question created");
-      // navigate("/manage-questions");
+      toast.success("Question created with Schema v2 support");
     } catch (error) {
       toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleTradeChange = (event) => {

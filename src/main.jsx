@@ -58,6 +58,7 @@ import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
 
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
+import MigrationDashboard from "./private/admin/MigrationDashboard.jsx";
 import AttendanceRegister from "./private/Attendance/AttendanceRegister/AttendanceRegister.jsx";
 import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
 import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx";
@@ -170,6 +171,7 @@ const router = (
           <Route element={<ProtectedAdminRoutes />}>
             <Route path="add-modules" element={<Modules />} />
             <Route path="add-bulk-questions" element={<AddBulkQuestions />} />
+            <Route path="migration-dashboard" element={<MigrationDashboard />} />
             <Route path="manage-trades" element={<ManageTrades />} />
             <Route path="manage-colleges" element={<ManageColleges />} />
           </Route>

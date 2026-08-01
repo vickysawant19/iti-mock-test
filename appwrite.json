@@ -51,10 +51,14 @@
       "runtime": "node-22",
       "path": "functions/user-manage",
       "entrypoint": "src/main.js",
-      "execute": ["any"],
+      "execute": [
+        "any"
+      ],
       "enabled": true,
       "logging": true,
-      "events": ["presences.*.delete"],
+      "events": [
+        "presences.*.delete"
+      ],
       "schedule": "",
       "timeout": 15,
       "commands": "npm install",
@@ -93,7 +97,9 @@
       "runtime": "node-18.0",
       "path": "functions/mock-test-service",
       "entrypoint": "src/main.js",
-      "execute": ["any"],
+      "execute": [
+        "any"
+      ],
       "enabled": true,
       "logging": true,
       "events": [],
@@ -123,14 +129,18 @@
       "runtime": "node-18.0",
       "path": "functions/imageupload",
       "entrypoint": "src/main.js",
-      "execute": ["any"],
+      "execute": [
+        "any"
+      ],
       "enabled": true,
       "logging": true,
       "events": [],
       "schedule": "",
       "timeout": 15,
       "commands": "npm install",
-      "scopes": ["users.read"],
+      "scopes": [
+        "users.read"
+      ],
       "buildSpecification": "s-0.5vcpu-512mb",
       "runtimeSpecification": "s-0.5vcpu-512mb",
       "deploymentRetention": 0
@@ -174,8 +184,8 @@
           "required": false,
           "array": false,
           "default": 1,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "description",
@@ -208,15 +218,23 @@
           "key": "unique_tradeName",
           "type": "unique",
           "status": "available",
-          "columns": ["tradeName"],
-          "orders": ["asc"]
+          "columns": [
+            "tradeName"
+          ],
+          "orders": [
+            "asc"
+          ]
         },
         {
           "key": "unique_tradeCode",
           "type": "unique",
           "status": "available",
-          "columns": ["tradeCode"],
-          "orders": ["asc"]
+          "columns": [
+            "tradeCode"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -250,8 +268,12 @@
           "key": "fulltext_name",
           "type": "fulltext",
           "status": "available",
-          "columns": ["subjectName"],
-          "orders": ["asc"]
+          "columns": [
+            "subjectName"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -414,8 +436,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "parentContact",
@@ -423,8 +445,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "experience",
@@ -465,22 +487,34 @@
           "key": "userId_unique",
           "type": "unique",
           "status": "available",
-          "columns": ["userId"],
-          "orders": ["asc"]
+          "columns": [
+            "userId"
+          ],
+          "orders": [
+            "asc"
+          ]
         },
         {
           "key": "email_unique",
           "type": "unique",
           "status": "available",
-          "columns": ["email"],
-          "orders": ["asc"]
+          "columns": [
+            "email"
+          ],
+          "orders": [
+            "asc"
+          ]
         },
         {
           "key": "userName_fulltext",
           "type": "fulltext",
           "status": "available",
-          "columns": ["userName"],
-          "orders": ["asc"]
+          "columns": [
+            "userName"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -657,22 +691,38 @@
           "key": "teacherId_key",
           "type": "key",
           "status": "available",
-          "columns": ["teacherId", "start_date"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "teacherId",
+            "start_date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "isActive_key",
           "type": "key",
           "status": "available",
-          "columns": ["isActive", "end_date"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "isActive",
+            "end_date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "BatchName_fulltext",
           "type": "fulltext",
           "status": "available",
-          "columns": ["BatchName"],
-          "orders": ["asc"]
+          "columns": [
+            "BatchName"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -753,15 +803,27 @@
           "key": "idx_student_batch",
           "type": "unique",
           "status": "available",
-          "columns": ["studentId", "batchId"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "studentId",
+            "batchId"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "idx_batch_status",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "status"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "batchId",
+            "status"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         }
       ]
     },
@@ -863,22 +925,36 @@
           "key": "idx_batch",
           "type": "key",
           "status": "available",
-          "columns": ["batchId"],
-          "orders": ["ASC"]
+          "columns": [
+            "batchId"
+          ],
+          "orders": [
+            "ASC"
+          ]
         },
         {
           "key": "idx_student",
           "type": "key",
           "status": "available",
-          "columns": ["studentId"],
-          "orders": ["ASC"]
+          "columns": [
+            "studentId"
+          ],
+          "orders": [
+            "ASC"
+          ]
         },
         {
           "key": "idx_unique_membership",
           "type": "unique",
           "status": "available",
-          "columns": ["batchId", "studentId"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "batchId",
+            "studentId"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         }
       ]
     },
@@ -1002,44 +1078,269 @@
           "array": false,
           "default": "medium",
           "format": "enum",
-          "elements": ["easy", "medium", "hard"]
+          "elements": [
+            "easy",
+            "medium",
+            "hard"
+          ]
+        },
+        {
+          "key": "questionEnglish",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 5000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "questionMarathi",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 5000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "optionsEnglish",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "optionsMarathi",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "questionImageUrl",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "optionImageUrls",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "explanationEnglish",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 5000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "explanationMarathi",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 5000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "languageType",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "default": "unknown",
+          "size": 50,
+          "encrypt": false
+        },
+        {
+          "key": "normalizedHash",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 256,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "exactDuplicateHash",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 256,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "partialDuplicateHash",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 256,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "normalizedQuestion",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 5000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "searchText",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "schemaVersion",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": 2,
+          "min": 1,
+          "max": 100
+        },
+        {
+          "key": "migrationStatus",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 50,
+          "default": "pending",
+          "encrypt": false
+        },
+        {
+          "key": "migrationDate",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100,
+          "default": null,
+          "encrypt": false
         }
       ],
       "indexes": [
         {
-          "key": "tags_search",
-          "type": "fulltext",
-          "status": "available",
-          "columns": ["tags"],
-          "orders": []
-        },
-        {
           "key": "moduleId_index",
           "type": "key",
           "status": "available",
-          "columns": ["moduleId"],
+          "columns": [
+            "moduleId"
+          ],
           "orders": []
         },
         {
           "key": "idx_tradeId",
           "type": "key",
           "status": "available",
-          "columns": ["tradeId"],
+          "columns": [
+            "tradeId"
+          ],
           "orders": []
         },
         {
           "key": "idx_subjectId",
           "type": "key",
           "status": "available",
-          "columns": ["subjectId"],
+          "columns": [
+            "subjectId"
+          ],
           "orders": []
         },
         {
           "key": "idx_year",
           "type": "key",
           "status": "available",
-          "columns": ["year"],
+          "columns": [
+            "year"
+          ],
           "orders": []
+        },
+        {
+          "key": "key_normalizedHash",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "normalizedHash"
+          ],
+          "orders": [
+            "asc"
+          ]
+        },
+        {
+          "key": "key_exactDuplicateHash",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "exactDuplicateHash"
+          ],
+          "orders": [
+            "asc"
+          ]
+        },
+        {
+          "key": "key_partialDuplicateHash",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "partialDuplicateHash"
+          ],
+          "orders": [
+            "asc"
+          ]
+        },
+        {
+          "key": "key_migrationStatus",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "migrationStatus"
+          ],
+          "orders": [
+            "asc"
+          ]
+        },
+        {
+          "key": "key_languageType",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "languageType"
+          ],
+          "orders": [
+            "asc"
+          ]
+        },
+        {
+          "key": "search_searchText",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "searchText",
+            "tags"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -1166,8 +1467,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "quesCount",
@@ -1175,8 +1476,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "totalMinutes",
@@ -1184,8 +1485,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "answeredCount",
@@ -1193,8 +1494,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "title",
@@ -1219,7 +1520,10 @@
           "array": false,
           "default": "draft",
           "format": "enum",
-          "elements": ["draft", "published"]
+          "elements": [
+            "draft",
+            "published"
+          ]
         },
         {
           "key": "difficultyLevel",
@@ -1228,14 +1532,23 @@
           "array": false,
           "default": "mixed",
           "format": "enum",
-          "elements": ["easy", "medium", "hard", "mixed"]
+          "elements": [
+            "easy",
+            "medium",
+            "hard",
+            "mixed"
+          ]
         }
       ],
       "indexes": []
     },
     {
       "$id": "668fa985001e955e54f5",
-      "$permissions": ["create(\"any\")", "read(\"any\")", "update(\"any\")"],
+      "$permissions": [
+        "create(\"any\")",
+        "read(\"any\")",
+        "update(\"any\")"
+      ],
       "databaseId": "itimocktest",
       "name": "userStats",
       "enabled": true,
@@ -1310,8 +1623,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "day_testsCount",
@@ -1319,8 +1632,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "day_maxScore",
@@ -1328,8 +1641,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "week_questionsCount",
@@ -1337,8 +1650,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "week_testsCount",
@@ -1346,8 +1659,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "week_maxScore",
@@ -1355,8 +1668,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "month_questionsCount",
@@ -1364,8 +1677,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "month_testsCount",
@@ -1373,8 +1686,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "month_maxScore",
@@ -1382,8 +1695,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "year_questionsCount",
@@ -1391,8 +1704,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "year_testsCount",
@@ -1400,8 +1713,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "year_maxScore",
@@ -1409,8 +1722,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "allTime_questionsCount",
@@ -1418,8 +1731,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "allTime_testsCount",
@@ -1427,8 +1740,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "allTime_maxScore",
@@ -1436,8 +1749,8 @@
           "required": false,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         }
       ],
       "indexes": []
@@ -1534,22 +1847,42 @@
           "key": "idx_user_batch",
           "type": "key",
           "status": "available",
-          "columns": ["userId", "batchId"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "userId",
+            "batchId"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "idx_batch_date",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "date"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "batchId",
+            "date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "idx_user_batch_date",
           "type": "unique",
           "status": "available",
-          "columns": ["userId", "batchId", "date"],
-          "orders": ["ASC", "ASC", "ASC"]
+          "columns": [
+            "userId",
+            "batchId",
+            "date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC",
+            "ASC"
+          ]
         }
       ]
     },
@@ -1653,8 +1986,14 @@
           "key": "idx_batch_date",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "date"],
-          "orders": ["ASC", "DESC"]
+          "columns": [
+            "batchId",
+            "date"
+          ],
+          "orders": [
+            "ASC",
+            "DESC"
+          ]
         }
       ]
     },
@@ -1705,8 +2044,14 @@
           "key": "idx_batch_date",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "date"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "batchId",
+            "date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         }
       ]
     },
@@ -1748,8 +2093,8 @@
           "required": true,
           "array": false,
           "default": null,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "moduleDescription",
@@ -1812,7 +2157,7 @@
           "array": false,
           "default": null,
           "min": 0,
-          "max": 9223372036854775807
+          "max": 9223372036854776000
         },
         {
           "key": "topics",
@@ -1856,15 +2201,31 @@
           "key": "idx_trade_subject_year",
           "type": "key",
           "status": "available",
-          "columns": ["tradeId", "subjectId", "year"],
-          "orders": ["ASC", "ASC", "ASC"]
+          "columns": [
+            "tradeId",
+            "subjectId",
+            "year"
+          ],
+          "orders": [
+            "ASC",
+            "ASC",
+            "ASC"
+          ]
         },
         {
           "key": "index_2",
           "type": "unique",
           "status": "available",
-          "columns": ["tradeId", "subjectId", "moduleId"],
-          "orders": ["asc", "asc", "asc"]
+          "columns": [
+            "tradeId",
+            "subjectId",
+            "moduleId"
+          ],
+          "orders": [
+            "asc",
+            "asc",
+            "asc"
+          ]
         }
       ]
     },
@@ -1959,8 +2320,14 @@
           "key": "idx_batch_user",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "userId"],
-          "orders": ["ASC", "ASC"]
+          "columns": [
+            "batchId",
+            "userId"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
         }
       ]
     },
@@ -2089,8 +2456,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "rewardCoins",
@@ -2098,8 +2465,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "startDate",
@@ -2143,8 +2510,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         }
       ],
       "indexes": [
@@ -2152,8 +2519,12 @@
           "key": "idx_batch_challenges",
           "type": "key",
           "status": "available",
-          "columns": ["batchId"],
-          "orders": ["asc"]
+          "columns": [
+            "batchId"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -2203,8 +2574,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "coins",
@@ -2212,8 +2583,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "level",
@@ -2221,8 +2592,8 @@
           "required": false,
           "array": false,
           "default": 1,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "wins",
@@ -2230,8 +2601,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "losses",
@@ -2239,8 +2610,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "accuracy",
@@ -2248,8 +2619,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -1.7976931348623157e308,
-          "max": 1.7976931348623157e308
+          "min": -1.7976931348623157e+308,
+          "max": 1.7976931348623157e+308
         },
         {
           "key": "questionsAttempted",
@@ -2257,8 +2628,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "currentStreak",
@@ -2266,8 +2637,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "highestStreak",
@@ -2275,8 +2646,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "lastQuestionTime",
@@ -2319,8 +2690,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "dailyLosses",
@@ -2328,8 +2699,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "dailyQuestionsAttempted",
@@ -2337,8 +2708,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "dailyStatsDate",
@@ -2355,15 +2726,27 @@
           "key": "unique_student_batch",
           "type": "unique",
           "status": "available",
-          "columns": ["studentId", "batchId"],
-          "orders": ["asc", "asc"]
+          "columns": [
+            "studentId",
+            "batchId"
+          ],
+          "orders": [
+            "asc",
+            "asc"
+          ]
         },
         {
           "key": "idx_batch_xp",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "xp"],
-          "orders": ["asc", "desc"]
+          "columns": [
+            "batchId",
+            "xp"
+          ],
+          "orders": [
+            "asc",
+            "desc"
+          ]
         }
       ]
     },
@@ -2422,8 +2805,16 @@
           "key": "unique_student_ach",
           "type": "unique",
           "status": "available",
-          "columns": ["studentId", "achievementId", "batchId"],
-          "orders": ["asc", "asc", "asc"]
+          "columns": [
+            "studentId",
+            "achievementId",
+            "batchId"
+          ],
+          "orders": [
+            "asc",
+            "asc",
+            "asc"
+          ]
         }
       ]
     },
@@ -2509,8 +2900,12 @@
           "key": "unique_batch_settings",
           "type": "unique",
           "status": "available",
-          "columns": ["batchId"],
-          "orders": ["asc"]
+          "columns": [
+            "batchId"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     },
@@ -2630,22 +3025,42 @@
           "key": "idx_student_date",
           "type": "key",
           "status": "available",
-          "columns": ["studentId", "date"],
-          "orders": ["asc", "asc"]
+          "columns": [
+            "studentId",
+            "date"
+          ],
+          "orders": [
+            "asc",
+            "asc"
+          ]
         },
         {
           "key": "idx_batch_date",
           "type": "key",
           "status": "available",
-          "columns": ["batchId", "date"],
-          "orders": ["asc", "asc"]
+          "columns": [
+            "batchId",
+            "date"
+          ],
+          "orders": [
+            "asc",
+            "asc"
+          ]
         },
         {
           "key": "unique_student_mission_date",
           "type": "unique",
           "status": "available",
-          "columns": ["studentId", "missionId", "date"],
-          "orders": ["asc", "asc", "asc"]
+          "columns": [
+            "studentId",
+            "missionId",
+            "date"
+          ],
+          "orders": [
+            "asc",
+            "asc",
+            "asc"
+          ]
         }
       ]
     },
@@ -2695,8 +3110,8 @@
           "required": false,
           "array": false,
           "default": 0,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
         },
         {
           "key": "claimed",
@@ -2711,15 +3126,25 @@
           "key": "unique_student_challenge",
           "type": "unique",
           "status": "available",
-          "columns": ["studentId", "challengeId"],
-          "orders": ["asc", "asc"]
+          "columns": [
+            "studentId",
+            "challengeId"
+          ],
+          "orders": [
+            "asc",
+            "asc"
+          ]
         },
         {
           "key": "idx_batch_progress",
           "type": "key",
           "status": "available",
-          "columns": ["batchId"],
-          "orders": ["asc"]
+          "columns": [
+            "batchId"
+          ],
+          "orders": [
+            "asc"
+          ]
         }
       ]
     }

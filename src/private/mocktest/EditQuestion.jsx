@@ -23,6 +23,7 @@ import { useListTradesQuery } from "@/store/api/tradeApi";
 import subjectService from "@/appwrite/subjectService";
 import questionService from "@/services/question.service";
 import questionFunctionService from "@/services/questionFunction.service";
+import migrationService from "@/services/migration/migrationService";
 import moduleServices from "@/appwrite/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectQuestions } from "@/store/questionSlice";
@@ -183,14 +184,18 @@ const EditQuestion = () => {
     }
     setIsSubmitting(true);
     try {
-      await questionFunctionService.updateQuestion(quesId, {
+      const payloadData = {
         question:      data.question,
         options:       data.options,
         correctAnswer: data.correctAnswer,
-        moduleId:      quesId ? undefined : undefined, // unchanged
         tags:          (data.tags || []).join(", "),
-      });
-      toast.success("Question updated successfully!");
+      };
+
+      const v2Payload = migrationService.prepareMigratedDocument(payloadData);
+      const updateData = { ...payloadData, ...v2Payload };
+
+      await questionFunctionService.updateQuestion(quesId, updateData);
+      toast.success("Question updated successfully with Schema v2!");
     } catch (err) {
       console.error(err);
       toast.error("Failed to update question");

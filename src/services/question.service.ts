@@ -14,6 +14,27 @@ export interface QuestionData {
   tradeId?: string;
   subjectId?: string;
   year?: string;
+  difficulty?: string;
+  imageId?: string;
+  
+  // Phase 2 Multilingual & Migration attributes
+  questionEnglish?: string;
+  questionMarathi?: string;
+  optionsEnglish?: string[];
+  optionsMarathi?: string[];
+  questionImageUrl?: string;
+  optionImageUrls?: string[];
+  explanationEnglish?: string;
+  explanationMarathi?: string;
+  languageType?: "english" | "marathi" | "bilingual" | "unknown";
+  normalizedHash?: string;
+  exactDuplicateHash?: string;
+  partialDuplicateHash?: string;
+  normalizedQuestion?: string;
+  searchText?: string;
+  schemaVersion?: number;
+  migrationStatus?: "pending" | "completed" | "failed";
+  migrationDate?: string;
 }
 
 class QuestionService extends DatabaseService {
@@ -48,10 +69,54 @@ class QuestionService extends DatabaseService {
     }
   }
 
-  async listQuestions(queries: string[] = [Query.orderDesc("$createdAt")]) {
-    // Legacy mapping uses 'documents', we ensure it returns list formats smoothly
-    const res = await this.listRows<QuestionData>(queries);
-    return { documents: res.rows, total: res.total };
+  async listQuestions(queries: string[] = []) {
+    try {
+      const res = await this.listRows<QuestionData>(queries);
+      const docs = res.rows || (res as any).documents || [];
+      const total = typeof res.total === "number" ? res.total : docs.length;
+      return { documents: docs, rows: docs, total };
+    } catch (error) {
+      console.error("Error in listQuestions:", error);
+      return { documents: [], rows: [], total: 0 };
+    }
+  }
+
+  /**
+   * Paginates through all documents using res.total to fetch 100% of questions in the collection
+   */
+  async fetchAllQuestions(onProgress?: (fetched: number, total: number) => void) {
+    let allDocuments: QuestionData[] = [];
+    const limit = 100;
+    let offset = 0;
+
+    const initialRes = await this.listRows<QuestionData>([
+      Query.limit(limit),
+      Query.offset(0),
+      Query.orderDesc("$createdAt"),
+    ]);
+
+    const total = initialRes.total || 0;
+    allDocuments = allDocuments.concat(initialRes.rows || []);
+
+    if (onProgress) onProgress(allDocuments.length, total);
+
+    offset += limit;
+    while (offset < total) {
+      const pageRes = await this.listRows<QuestionData>([
+        Query.limit(limit),
+        Query.offset(offset),
+        Query.orderDesc("$createdAt"),
+      ]);
+
+      const docs = pageRes.rows || [];
+      allDocuments = allDocuments.concat(docs);
+
+      if (onProgress) onProgress(allDocuments.length, total);
+      offset += limit;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    return { documents: allDocuments, total };
   }
 
   async getQuestionsByUser(userId: string) {
@@ -67,6 +132,44 @@ class QuestionService extends DatabaseService {
       Query.search("tags", tags),
       Query.orderDesc("$createdAt")
     ]);
+    return { documents: res.rows, total: res.total };
+  }
+
+  /**
+   * Phase 11 Multilingual & Fuzzy Search using searchText and normalized fields
+   */
+  async searchMultilingual({
+    searchTerm = "",
+    tradeId,
+    subjectId,
+    moduleId,
+    languageType,
+    limit = 25,
+  }: {
+    searchTerm?: string;
+    tradeId?: string;
+    subjectId?: string;
+    moduleId?: string;
+    languageType?: string;
+    limit?: number;
+  }) {
+    const queries: string[] = [Query.orderDesc("$createdAt"), Query.limit(limit)];
+
+    if (tradeId) queries.push(Query.equal("tradeId", tradeId));
+    if (subjectId) queries.push(Query.equal("subjectId", subjectId));
+    if (moduleId) queries.push(Query.equal("moduleId", moduleId));
+    if (languageType) queries.push(Query.equal("languageType", languageType));
+
+    if (searchTerm && searchTerm.trim()) {
+      const cleanTerm = searchTerm.trim().toLowerCase();
+      try {
+        queries.push(Query.search("searchText", cleanTerm));
+      } catch (_) {
+        queries.push(Query.search("question", cleanTerm));
+      }
+    }
+
+    const res = await this.listRows<QuestionData>(queries);
     return { documents: res.rows, total: res.total };
   }
 
@@ -129,6 +232,10 @@ class QuestionService extends DatabaseService {
       console.error("Error getting all tags", error);
       return [];
     }
+  }
+
+  async deleteQuestion(id: string) {
+    return await this.deleteRow(id);
   }
 }
 

@@ -8,6 +8,7 @@ import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check, Loader2, Upload, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import questionFunctionService from "@/services/questionFunction.service";
+import migrationService from "@/services/migration/migrationService";
 import moduleServices from "@/appwrite/moduleServices";
 
 const AddBulkQuestions = () => {
@@ -266,21 +267,26 @@ ${criteriaRule}
     setSubmitStatus(null);
 
     try {
-      const enrichedQuestions = parsedQuestions.map((q) => ({
-        question: q.question,
-        correctAnswer: q.correctAnswer,
-        options: q.options,
-        moduleId: modulesData.selectedModule
-          ? modulesData.selectedModule.moduleId
-          : "",
-        tradeId: tradeData.selectedTrade.$id,
-        subjectId: subjectData.selectedSubject.$id,
-        year: selectedTradeYear,
-        tags: getTagsString(),
-        userId: profile.userId,
-        userName: profile.userName,
-        difficulty: q.difficulty || selectedDifficulty,
-      }));
+      const enrichedQuestions = parsedQuestions.map((q) => {
+        const baseDoc = {
+          question: q.question,
+          correctAnswer: q.correctAnswer,
+          options: q.options,
+          moduleId: modulesData.selectedModule
+            ? modulesData.selectedModule.moduleId
+            : "",
+          tradeId: tradeData.selectedTrade.$id,
+          subjectId: subjectData.selectedSubject.$id,
+          year: selectedTradeYear,
+          tags: getTagsString(),
+          userId: profile.userId,
+          userName: profile.userName,
+          difficulty: q.difficulty || selectedDifficulty,
+        };
+
+        const v2Payload = migrationService.prepareMigratedDocument(baseDoc);
+        return { ...baseDoc, ...v2Payload };
+      });
 
       const payload = {
         action: "bulkaddQuestions",
