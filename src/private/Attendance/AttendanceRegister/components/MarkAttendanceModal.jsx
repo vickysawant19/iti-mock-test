@@ -23,6 +23,7 @@ const MarkAttendanceModal = ({
   holidays, // Assuming this is a Map or Object where key is dateString
   handleAddHoliday,
   handleRemoveHoliday,
+  initialMode = "attendance",
 }) => {
   const [attendanceStatuses, setAttendanceStatuses] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -54,11 +55,15 @@ const MarkAttendanceModal = ({
       });
       setAttendanceStatuses(statuses);
 
-      // 2. Reset holiday form
-      setIsMarkingHoliday(isFuture && !isExistingHoliday);
+      // 2. Reset holiday form (force true if initialMode === "holiday")
+      if (initialMode === "holiday") {
+        setIsMarkingHoliday(true);
+      } else {
+        setIsMarkingHoliday(isFuture && !isExistingHoliday);
+      }
       setHolidayReason("");
     }
-  }, [isOpen, students, date, existingAttendance]);
+  }, [isOpen, students, date, existingAttendance, initialMode, isFuture, isExistingHoliday]);
 
   if (!isOpen) return null;
 

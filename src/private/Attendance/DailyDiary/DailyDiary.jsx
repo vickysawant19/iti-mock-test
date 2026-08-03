@@ -18,6 +18,8 @@ import StudentDailyDiary from "./StudentDailyDiary";
 import DiaryWeekView from "./DiaryWeekView";
 import { useDiaryData } from "./useDiaryData";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
+import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
+import { useDailyDiaryActions } from "./useDailyDiaryActions";
 
 function DailyDiary() {
   const user = useSelector(selectUser);
@@ -45,10 +47,43 @@ function TeacherDiaryView() {
     dailyDateLabel,
     canGoPreviousPeriod,
     batchData,
+    fetchData,
+    attendanceDocIds,
+    setAttendance,
+    setAttendanceDocIds,
   } = useDiaryData({
     viewType: activeTab === "daily" ? "daily" : "weekly",
     role: "teacher",
     enabled: activeTab !== "monthly",
+  });
+
+  const handleTeacherAttendanceUpdate = useCallback((dateStr, newStatus) => {
+    setAttendance((prev) => new Map(prev).set(dateStr, newStatus));
+  }, [setAttendance]);
+
+  const handleUpdateAttendanceDocId = useCallback((dateStr, docId) => {
+    setAttendanceDocIds((prev) => new Map(prev).set(dateStr, docId));
+  }, [setAttendanceDocIds]);
+
+  const {
+    isModalOpen,
+    modalDate,
+    modalMode,
+    students,
+    existingAttendance,
+    actionLoadingDates,
+    openAttendanceModal,
+    closeAttendanceModal,
+    handleSaveAttendance,
+    handleAddHoliday,
+    handleRemoveHoliday,
+    handleSetTeacherAttendance,
+  } = useDailyDiaryActions({
+    onRefreshData: fetchData,
+    batchData,
+    attendanceDocIds,
+    onTeacherAttendanceUpdate: handleTeacherAttendanceUpdate,
+    updateAttendanceDocId: handleUpdateAttendanceDocId,
   });
 
   const updateDiaryField = useCallback(
@@ -230,6 +265,19 @@ function TeacherDiaryView() {
             </div>
           ) : (
             <div className="w-full space-y-4">
+              <MarkAttendanceModal
+                isOpen={isModalOpen}
+                onClose={closeAttendanceModal}
+                students={students}
+                date={modalDate}
+                batchId={activeBatchId}
+                onSave={handleSaveAttendance}
+                existingAttendance={existingAttendance}
+                holidays={holidays}
+                handleAddHoliday={handleAddHoliday}
+                handleRemoveHoliday={(d) => handleRemoveHoliday(d, holidays)}
+                initialMode={modalMode}
+              />
               {/* Responsive Navigation attached to header */}
               <div className="flex items-center justify-between bg-white dark:bg-gray-900 p-2 sm:p-3 rounded-b-[22px] shadow-lg border border-gray-200 dark:border-gray-800 border-t-0 mb-4 sticky top-4 z-20">
                 <Button variant="ghost" size="sm" onClick={handlePreviousWeek} disabled={!canGoPreviousPeriod} className="flex-1 sm:flex-none justify-start px-2 sm:px-4 active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -248,10 +296,14 @@ function TeacherDiaryView() {
                 attendance={attendance}
                 holidays={holidays}
                 isLoading={isLoading}
+                actionLoadingDates={actionLoadingDates}
                 isTeacher={true}
                 isSubmitting={isSubmitting}
                 updateDiaryField={updateDiaryField}
                 toggleEditing={toggleEditing}
+                onOpenAttendanceModal={openAttendanceModal}
+                onSetTeacherAttendance={handleSetTeacherAttendance}
+                onRemoveHoliday={(dateKey) => handleRemoveHoliday(dateKey, holidays)}
               />
             </div>
           )}

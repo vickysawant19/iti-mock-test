@@ -54,6 +54,7 @@ export function useDiaryData({
 
   const [diaryData, setDiaryData] = useState({});
   const [attendance, setAttendance] = useState(new Map());
+  const [attendanceDocIds, setAttendanceDocIds] = useState(new Map());
   const [holidays, setHolidays] = useState(new Map());
   const [isLoading, setIsLoading] = useState(false);
 
@@ -106,84 +107,96 @@ export function useDiaryData({
     return weekNumber > 1;
   }, [batchData, viewType, currentDay, weekNumber]);
 
-  const fetchData = useCallback(async () => {
-    if (!enabled || !effectiveUserId || !resolvedBatchId) return;
+  const fetchData = useCallback(
+    async (showLoading = true) => {
+      if (!enabled || !effectiveUserId || !resolvedBatchId) return;
 
-    setIsLoading(true);
-    try {
-      let startDate;
-      let endDate;
-      if (viewType === "daily") {
-        const d0 = startOfDay(currentDay);
-        startDate = format(d0, "yyyy-MM-dd");
-        endDate = format(addDays(d0, 1), "yyyy-MM-dd");
-      } else {
-        startDate = format(currentWeekStart, "yyyy-MM-dd");
-        endDate = format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd");
+      if (showLoading) {
+        setIsLoading(true);
       }
+      try {
+        let startDate;
+        let endDate;
+        if (viewType === "daily") {
+          const d0 = startOfDay(currentDay);
+          startDate = format(d0, "yyyy-MM-dd");
+          endDate = format(addDays(d0, 1), "yyyy-MM-dd");
+        } else {
+          startDate = format(currentWeekStart, "yyyy-MM-dd");
+          endDate = format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd");
+        }
 
-      const attendancePromise =
-        role === "teacher"
-          ? newAttendanceService.getTeacherAttendanceByDateRange(
-              effectiveUserId,
-              resolvedBatchId,
-              startDate,
-              endDate,
-              [Query.select(["date", "status"])]
-            )
-          : newAttendanceService.getStudentAttendanceByDateRange(
-              effectiveUserId,
-              resolvedBatchId,
-              startDate,
-              endDate,
-              [Query.select(["date", "status"])]
-            );
+        const attendancePromise =
+          role === "teacher"
+            ? newAttendanceService.getTeacherAttendanceByDateRange(
+                effectiveUserId,
+                resolvedBatchId,
+                startDate,
+                endDate,
+                [Query.select(["$id", "date", "status"])]
+              )
+            : newAttendanceService.getStudentAttendanceByDateRange(
+                effectiveUserId,
+                resolvedBatchId,
+                startDate,
+                endDate,
+                [Query.select(["$id", "date", "status"])]
+              );
 
-      const [attendanceRes, holidayData, diaryRes] = await Promise.all([
-        attendancePromise,
-        holidayService.getBatchHolidaysByDateRange(
-          resolvedBatchId,
-          startDate,
-          endDate
-        ),
-        dailyDiaryService.getBatchInstructorDiary(
-          resolvedBatchId,
-          null,
-          startDate,
-          endDate
-        ),
-      ]);
+        const [attendanceRes, holidayData, diaryRes] = await Promise.all([
+          attendancePromise,
+          holidayService.getBatchHolidaysByDateRange(
+            resolvedBatchId,
+            startDate,
+            endDate
+          ),
+          dailyDiaryService.getBatchInstructorDiary(
+            resolvedBatchId,
+            null,
+            startDate,
+            endDate
+          ),
+        ]);
 
-      const attendanceMap = new Map();
-      attendanceRes.documents.forEach((item) =>
-        attendanceMap.set(item.date, item.status)
-      );
-      setAttendance(attendanceMap);
+        const attendanceMap = new Map();
+        const docIdsMap = new Map();
+        if (attendanceRes?.documents) {
+          attendanceRes.documents.forEach((item) => {
+            attendanceMap.set(item.date, item.status);
+            if (item.$id) docIdsMap.set(item.date, item.$id);
+          });
+        }
+        setAttendance(attendanceMap);
+        setAttendanceDocIds(docIdsMap);
 
-      const holidayMap = new Map();
-      holidayData.forEach((item) => holidayMap.set(item.date, item));
-      setHolidays(holidayMap);
+        const holidayMap = new Map();
+        holidayData.forEach((item) => holidayMap.set(item.date, item));
+        setHolidays(holidayMap);
 
-      let docs = diaryRes || [];
-      if (role === "teacher" && effectiveUserId) {
-        docs = docs.filter((doc) => doc.instructorId === effectiveUserId);
+        let docs = diaryRes || [];
+        if (role === "teacher" && effectiveUserId) {
+          docs = docs.filter((doc) => doc.instructorId === effectiveUserId);
+        }
+
+        const formattedDiary = {};
+        if (docs.length > 0) {
+          docs.forEach((doc) => {
+            const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
+            formattedDiary[dateKey] = doc;
+          });
+        }
+        setDiaryData(formattedDiary);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data");
+      } finally {
+        if (showLoading) {
+          setIsLoading(false);
+        }
       }
-
-      const formattedDiary = {};
-      if (docs.length > 0) {
-        docs.forEach((doc) => {
-          const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
-          formattedDiary[dateKey] = doc;
-        });
-      }
-      setDiaryData(formattedDiary);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load data");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [enabled, profile, effectiveUserId, viewType, role, currentWeekStart, currentDay]);
+    },
+    [enabled, effectiveUserId, resolvedBatchId, viewType, role, currentWeekStart, currentDay]
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -216,12 +229,16 @@ export function useDiaryData({
     diaryData,
     batchData,
     attendance,
+    attendanceDocIds,
+    setAttendance,
+    setAttendanceDocIds,
     holidays,
     isLoading: enabled ? isLoading || isBatchLoading || isResolvingBatch : false,
     isError,
     handlePreviousWeek,
     handleNextWeek,
     setDiaryData,
+    fetchData,
     /** Daily view: formatted label for the header */
     dailyDateLabel:
       viewType === "daily" ? format(startOfDay(currentDay), "EEEE, MMM d, yyyy") : null,

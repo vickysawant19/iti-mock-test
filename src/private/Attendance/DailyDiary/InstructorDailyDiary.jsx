@@ -21,11 +21,14 @@ import DiaryTable from "./DiaryTable";
 import { parseISO } from "date-fns";
 import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
 import PrintConfigModal, { DEFAULT_PRINT_CONFIG } from "./PrintConfigModal";
+import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
+import { useDailyDiaryActions } from "./useDailyDiaryActions";
 
 function InstructorDailyDiary() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [diaryData, setDiaryData] = useState({});
   const [attendance, setAttendance] = useState(new Map());
+  const [attendanceDocIds, setAttendanceDocIds] = useState(new Map());
   const [holidays, setHolidays] = useState(new Map());
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -37,6 +40,14 @@ function InstructorDailyDiary() {
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector((state) => state.activeBatch.activeBatchId);
   const printRef = useRef();
+
+  const handleTeacherAttendanceUpdate = useCallback((dateStr, newStatus) => {
+    setAttendance((prev) => new Map(prev).set(dateStr, newStatus));
+  }, []);
+
+  const handleUpdateAttendanceDocId = useCallback((dateStr, docId) => {
+    setAttendanceDocIds((prev) => new Map(prev).set(dateStr, docId));
+  }, []);
 
   const {
     data: batchData,
@@ -70,68 +81,78 @@ function InstructorDailyDiary() {
     });
   }, [profile?.collegeId, profile?.tradeId, batchData?.collegeId, batchData?.tradeId]);
 
-  const fetchDataForMonth = useCallback(async () => {
-    if (!profile?.userId || !activeBatchId) return;
+  const fetchDataForMonth = useCallback(
+    async (showLoading = true) => {
+      if (!profile?.userId || !activeBatchId) return;
 
-    setIsLoadingData(true);
-    try {
-      const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-      const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-
-      // Parallelize month attendance, holidays, and diary entries using Promise.all
-      const [attendanceRes, holidayData, diaryRes] = await Promise.all([
-        newAttendanceService.getTeacherAttendanceByDateRange(
-          profile.userId,
-          activeBatchId,
-          startDate,
-          endDate,
-          [Query.select(["date", "status"])]
-        ),
-        holidayService.getBatchHolidaysByDateRange(
-          activeBatchId,
-          startDate,
-          endDate
-        ),
-        dailyDiaryService.getBatchInstructorDiary(
-          activeBatchId,
-          profile.userId,
-          startDate,
-          endDate
-        ),
-      ]);
-
-      const attendanceMap = new Map();
-      if (attendanceRes?.documents) {
-        attendanceRes.documents.forEach((item) =>
-          attendanceMap.set(item.date, item.status)
-        );
+      if (showLoading) {
+        setIsLoadingData(true);
       }
-      setAttendance(attendanceMap);
+      try {
+        const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+        const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
-      const holidayMap = new Map();
-      if (holidayData) {
-        holidayData.forEach((item) => holidayMap.set(item.date, item));
+        // Parallelize month attendance, holidays, and diary entries using Promise.all
+        const [attendanceRes, holidayData, diaryRes] = await Promise.all([
+          newAttendanceService.getTeacherAttendanceByDateRange(
+            profile.userId,
+            activeBatchId,
+            startDate,
+            endDate,
+            [Query.select(["$id", "date", "status"])]
+          ),
+          holidayService.getBatchHolidaysByDateRange(
+            activeBatchId,
+            startDate,
+            endDate
+          ),
+          dailyDiaryService.getBatchInstructorDiary(
+            activeBatchId,
+            profile.userId,
+            startDate,
+            endDate
+          ),
+        ]);
+
+        const attendanceMap = new Map();
+        const docIdsMap = new Map();
+        if (attendanceRes?.documents) {
+          attendanceRes.documents.forEach((item) => {
+            attendanceMap.set(item.date, item.status);
+            if (item.$id) docIdsMap.set(item.date, item.$id);
+          });
+        }
+        setAttendance(attendanceMap);
+        setAttendanceDocIds(docIdsMap);
+
+        const holidayMap = new Map();
+        if (holidayData) {
+          holidayData.forEach((item) => holidayMap.set(item.date, item));
+        }
+        setHolidays(holidayMap);
+
+        const ownDiary =
+          diaryRes?.filter((doc) => doc.instructorId === profile.userId) || [];
+
+        const formattedDiary = {};
+        if (ownDiary.length > 0) {
+          ownDiary.forEach((doc) => {
+            const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
+            formattedDiary[dateKey] = doc;
+          });
+        }
+        setDiaryData(formattedDiary);
+      } catch (error) {
+        console.error("Error fetching data for month:", error);
+        toast.error("Failed to load monthly diary data");
+      } finally {
+        if (showLoading) {
+          setIsLoadingData(false);
+        }
       }
-      setHolidays(holidayMap);
-
-      const ownDiary =
-        diaryRes?.filter((doc) => doc.instructorId === profile.userId) || [];
-
-      const formattedDiary = {};
-      if (ownDiary.length > 0) {
-        ownDiary.forEach((doc) => {
-          const dateKey = format(parseISO(doc.date), "yyyy-MM-dd");
-          formattedDiary[dateKey] = doc;
-        });
-      }
-      setDiaryData(formattedDiary);
-    } catch (error) {
-      console.error("Error fetching month data:", error);
-      toast.error("Failed to load monthly data");
-    } finally {
-      setIsLoadingData(false);
-    }
-  }, [profile?.userId, activeBatchId, currentMonth]);
+    },
+    [profile?.userId, activeBatchId, currentMonth]
+  );
 
   useEffect(() => {
     fetchDataForMonth();
@@ -283,6 +304,27 @@ function InstructorDailyDiary() {
     }
   };
 
+  const {
+    isModalOpen,
+    modalDate,
+    modalMode,
+    students,
+    existingAttendance,
+    actionLoadingDates,
+    openAttendanceModal,
+    closeAttendanceModal,
+    handleSaveAttendance,
+    handleAddHoliday,
+    handleRemoveHoliday,
+    handleSetTeacherAttendance,
+  } = useDailyDiaryActions({
+    onRefreshData: fetchDataForMonth,
+    batchData,
+    attendanceDocIds,
+    onTeacherAttendanceUpdate: handleTeacherAttendanceUpdate,
+    updateAttendanceDocId: handleUpdateAttendanceDocId,
+  });
+
   if (isBatchLoading) {
     return <Loader isLoading={isBatchLoading} />;
   }
@@ -302,6 +344,19 @@ function InstructorDailyDiary() {
         onClose={() => setIsPrintModalOpen(false)}
         onPrint={handleConfiguredPrint}
       />
+      <MarkAttendanceModal
+        isOpen={isModalOpen}
+        onClose={closeAttendanceModal}
+        students={students}
+        date={modalDate}
+        batchId={activeBatchId}
+        onSave={handleSaveAttendance}
+        existingAttendance={existingAttendance}
+        holidays={holidays}
+        handleAddHoliday={handleAddHoliday}
+        handleRemoveHoliday={(d) => handleRemoveHoliday(d, holidays)}
+        initialMode={modalMode}
+      />
       <DiaryHeader
         selectedMonth={currentMonth}
         onMonthChange={setCurrentMonth}
@@ -317,7 +372,11 @@ function InstructorDailyDiary() {
         holidays={holidays}
         attendance={attendance}
         isLoadingData={isLoadingData}
+        actionLoadingDates={actionLoadingDates}
         onUpdateEntry={handleUpdateEntry}
+        onOpenAttendanceModal={openAttendanceModal}
+        onSetTeacherAttendance={handleSetTeacherAttendance}
+        onRemoveHoliday={(dateKey) => handleRemoveHoliday(dateKey, holidays)}
       />
       <DailyDiaryPrintTemplate
         ref={printRef}
