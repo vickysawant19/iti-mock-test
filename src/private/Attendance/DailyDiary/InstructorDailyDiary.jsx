@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parse } from "date-fns";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useReactToPrint } from "react-to-print";
 
@@ -23,9 +24,10 @@ import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
 import PrintConfigModal, { DEFAULT_PRINT_CONFIG } from "./PrintConfigModal";
 import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
 import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";
+import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
 
 function InstructorDailyDiary() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const { currentMonth, setCurrentMonth } = useDailyDiaryQueryParams();
   const [diaryData, setDiaryData] = useState({});
   const [attendance, setAttendance] = useState(new Map());
   const [attendanceDocIds, setAttendanceDocIds] = useState(new Map());

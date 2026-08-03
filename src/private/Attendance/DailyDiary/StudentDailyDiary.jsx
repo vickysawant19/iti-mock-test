@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, parse } from "date-fns";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import batchStudentService from "@/appwrite/batchStudentService";
@@ -17,26 +17,16 @@ import DiaryWeekView from "./DiaryWeekView";
 import { useDiaryData } from "./hooks/useDiaryData";
 import DiaryPageHeader from "./components/DiaryPageHeader";
 import DiaryPeriodNav from "./components/DiaryPeriodNav";
+import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
 
 function StudentDailyDiary() {
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector(selectActiveBatchId);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["monthly", "weekly", "daily"];
-  const tabParam = searchParams.get("tab");
-  const activeTab = validTabs.includes(tabParam) ? tabParam : "monthly";
-
-  const handleTabChange = (newTab) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", newTab);
-      return next;
-    });
-  };
+  const { activeTab, setActiveTab, currentMonth, setCurrentMonth } =
+    useDailyDiaryQueryParams();
 
   const [rollNumber, setRollNumber] = useState(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [monthlyDiaryData, setMonthlyDiaryData] = useState({});
   const [monthlyAttendance, setMonthlyAttendance] = useState(new Map());
   const [monthlyHolidays, setMonthlyHolidays] = useState(new Map());
@@ -181,7 +171,7 @@ function StudentDailyDiary() {
           extraId={rollNumber ? `ID: ${rollNumber}` : null}
           batchName={batchData?.BatchName}
           activeTab={activeTab}
-          onTabChange={handleTabChange}
+          onTabChange={setActiveTab}
           gradient="from-emerald-600 to-teal-600"
         />
 

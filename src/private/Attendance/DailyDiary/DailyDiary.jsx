@@ -17,23 +17,14 @@ import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";
 import DiaryPageHeader from "./components/DiaryPageHeader";
 import DiaryPeriodNav from "./components/DiaryPeriodNav";
 
+import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
+
 export default function DailyDiary() {
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector(selectActiveBatchId);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["monthly", "weekly", "daily"];
-  const tabParam = searchParams.get("tab");
-  const activeTab = validTabs.includes(tabParam) ? tabParam : "monthly";
-
-  const handleTabChange = (newTab) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", newTab);
-      return next;
-    });
-  };
+  const { activeTab, setActiveTab } = useDailyDiaryQueryParams();
 
   const userLabels = user?.labels || profile?.labels || [];
   const isTeacher = userLabels.includes("Teacher") || profile?.role === "teacher" || profile?.role === "instructor";
@@ -159,7 +150,7 @@ export default function DailyDiary() {
           extraId={profile?.email}
           batchName={batchData?.BatchName}
           activeTab={activeTab}
-          onTabChange={handleTabChange}
+          onTabChange={setActiveTab}
           gradient="from-blue-600 to-purple-600"
         />
 
