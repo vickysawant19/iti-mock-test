@@ -13,6 +13,7 @@ import holidayService from "@/appwrite/holidaysService";
 export function useDailyDiaryActions({
   onRefreshData,
   batchData,
+  attendance,
   attendanceDocIds,
   onTeacherAttendanceUpdate,
   updateAttendanceDocId,
@@ -49,38 +50,39 @@ export function useDailyDiaryActions({
           Query.select(["$id", "userId", "userName", "profileImage"]),
           Query.limit(100),
         ]);
-
-        enrichedStudents = (profiles || [])
-          .map((p) => ({
+        enrichedStudents = (profiles || []).map((p) => {
+          const m = memberMap.get(p.userId);
+          return {
             ...p,
-            studentId: memberMap.get(p.userId)?.rollNumber ?? null,
-          }))
-          .sort((a, b) => {
-            const valA = a.studentId ? parseInt(a.studentId, 10) : Infinity;
-            const valB = b.studentId ? parseInt(b.studentId, 10) : Infinity;
-            return valA - valB;
-          });
+            rollNumber: m?.rollNumber || "",
+          };
+        });
       }
 
-      // Prepend teacher row
-      const teacherRow = {
-        $id: profile?.$id || profile?.userId,
-        userId: profile?.userId,
-        userName: `${profile?.userName || profile?.name || "Instructor"} - Teacher`,
-        studentId: "Teacher",
-        profileImage: profile?.profileImage || "",
-        isTeacher: true,
-      };
+      if (profile?.userId) {
+        const teacherExists = enrichedStudents.some(
+          (s) => s.userId === profile.userId
+        );
+        if (!teacherExists) {
+          enrichedStudents.unshift({
+            $id: profile.$id || profile.userId,
+            userId: profile.userId,
+            userName: profile.userName || profile.name || "Teacher (You)",
+            profileImage: profile.profileImage,
+            rollNumber: "INSTRUCTOR",
+            isTeacherRole: true,
+          });
+        }
+      }
 
-      return [teacherRow, ...enrichedStudents];
-    } catch (err) {
-      console.error("Error loading students for attendance modal:", err);
-      toast.error("Failed to load students list");
+      return enrichedStudents;
+    } catch (error) {
+      console.error("Error loading batch students:", error);
+      toast.error("Failed to load students");
       return [];
     }
   }, [activeBatchId, profile]);
 
-  // Open modal for a specific date with mode ('attendance' | 'holiday')
   const openAttendanceModal = useCallback(
     async (dateStr, mode = "attendance") => {
       setModalDate(dateStr);
@@ -89,93 +91,63 @@ export function useDailyDiaryActions({
       setIsLoadingModalData(true);
 
       try {
-        const [studentList, attRes] = await Promise.all([
-          students.length > 0 ? Promise.resolve(students) : loadStudents(),
-          newAttendanceService.getBatchAttendanceByDate(activeBatchId, dateStr),
+        const [studentList, attendanceRes] = await Promise.all([
+          loadStudents(),
+          newAttendanceService.getBatchAttendanceByDate(
+            activeBatchId,
+            dateStr,
+            [Query.limit(100)]
+          ),
         ]);
-
-        if (studentList && studentList.length > 0) {
-          setStudents(studentList);
-        }
-        setExistingAttendance(attRes?.documents || []);
+        setStudents(studentList);
+        setExistingAttendance(attendanceRes?.documents || []);
       } catch (error) {
-        console.error("Error opening attendance modal:", error);
-        toast.error("Failed to load attendance details");
+        console.error("Error opening modal:", error);
+        toast.error("Failed to load modal data");
       } finally {
         setIsLoadingModalData(false);
       }
     },
-    [activeBatchId, loadStudents, students]
+    [activeBatchId, loadStudents]
   );
 
   const closeAttendanceModal = useCallback(() => {
     setIsModalOpen(false);
     setModalDate(null);
-    setModalMode("attendance");
+    setStudents([]);
+    setExistingAttendance([]);
   }, []);
 
-  // Save attendance for batch from modal
-  const handleSaveAttendance = useCallback(
-    async (statuses) => {
-      if (!activeBatchId || !modalDate) return;
-      try {
-        const records = Object.entries(statuses).map(([userId, status]) => ({
-          userId,
-          batchId: activeBatchId,
-          tradeId: batchData?.tradeId ?? null,
-          date: modalDate,
-          status,
-          marketAt: new Date().toISOString(),
-          remarks: null,
-        }));
+  const handleSaveAttendance = useCallback(async () => {
+    toast.success("Attendance saved successfully");
+    closeAttendanceModal();
+    if (onRefreshData) onRefreshData(false);
+  }, [closeAttendanceModal, onRefreshData]);
 
-        await newAttendanceService.markBatchAttendance(activeBatchId, modalDate, records);
-        toast.success("Attendance saved successfully");
-        if (onRefreshData) onRefreshData(false);
-      } catch (error) {
-        console.error("Error saving attendance:", error);
-        toast.error("Failed to save attendance");
-      }
-    },
-    [activeBatchId, modalDate, batchData, onRefreshData]
-  );
-
-  // Set day as holiday
   const handleAddHoliday = useCallback(
-    async (dateStr, holidayReason) => {
+    async (dateStr, holidayText) => {
       if (!activeBatchId) return;
       try {
-        // Delete existing attendance records for date if any
-        const attRes = await newAttendanceService.getBatchAttendanceByDate(activeBatchId, dateStr);
-        const idsToDelete = (attRes?.documents || []).map((doc) => doc.$id);
-        if (idsToDelete.length > 0) {
-          await newAttendanceService.deleteMultipleAttendance(idsToDelete);
-        }
-
         await holidayService.addHoliday({
-          date: dateStr,
           batchId: activeBatchId,
-          holidayText: holidayReason,
+          date: dateStr,
+          holidayText,
         });
-
-        toast.success("Holiday set successfully");
+        toast.success("Holiday added successfully");
         if (onRefreshData) onRefreshData(false);
       } catch (error) {
         console.error("Error adding holiday:", error);
-        toast.error("Failed to set holiday");
+        toast.error("Failed to add holiday");
       }
     },
     [activeBatchId, onRefreshData]
   );
 
-  // Remove holiday
   const handleRemoveHoliday = useCallback(
     async (dateStr, holidaysMap) => {
-      const holidayObj = holidaysMap instanceof Map ? holidaysMap.get(dateStr) : holidaysMap?.[dateStr];
-      if (!holidayObj?.$id) {
-        toast.error("Holiday record not found");
-        return;
-      }
+      const holidayObj = holidaysMap.get(dateStr);
+      if (!holidayObj || !holidayObj.$id) return;
+
       try {
         await holidayService.removeHoliday(holidayObj.$id);
         toast.success("Holiday removed successfully");
@@ -190,12 +162,15 @@ export function useDailyDiaryActions({
 
   const [actionLoadingDates, setActionLoadingDates] = useState({});
 
-  // Direct Teacher Attendance setter (Present or Absent)
   const handleSetTeacherAttendance = useCallback(
     async (dateStr, targetStatus) => {
       if (!profile?.userId || !activeBatchId) return;
 
-      // 1. Optimistic local state update (0ms latency!)
+      const currentStatus = attendance?.get?.(dateStr) || attendance?.[dateStr];
+      if (currentStatus === targetStatus) {
+        return;
+      }
+
       if (onTeacherAttendanceUpdate) {
         onTeacherAttendanceUpdate(dateStr, targetStatus);
       }
@@ -203,25 +178,12 @@ export function useDailyDiaryActions({
       setActionLoadingDates((prev) => ({ ...prev, [dateStr]: targetStatus }));
 
       try {
-        // 2. Check in-memory cache for document $id to avoid preliminary DB listRows query
         let docId = attendanceDocIds?.get?.(dateStr) || attendanceDocIds?.[dateStr];
-
-        if (!docId) {
-          const existingRecord = await newAttendanceService.getAttendanceByDate(
-            profile.userId,
-            activeBatchId,
-            dateStr
-          );
-          docId = existingRecord?.$id;
-        }
 
         if (docId) {
           await newAttendanceService.updateAttendance(docId, {
             status: targetStatus,
           });
-          if (updateAttendanceDocId) {
-            updateAttendanceDocId(dateStr, docId);
-          }
         } else {
           const newDoc = await newAttendanceService.createAttendance({
             userId: profile.userId,
@@ -238,11 +200,9 @@ export function useDailyDiaryActions({
         }
 
         toast.success(`Teacher attendance marked as ${targetStatus}`);
-        // NOTE: Local state is ALREADY updated optimistically, so no 4-query re-fetch is needed!
       } catch (error) {
         console.error("Error updating teacher attendance:", error);
         toast.error("Failed to update teacher attendance");
-        // Re-fetch only on error to sync clean state
         if (onRefreshData) onRefreshData(false);
       } finally {
         setActionLoadingDates((prev) => {
@@ -255,7 +215,8 @@ export function useDailyDiaryActions({
     [
       profile?.userId,
       activeBatchId,
-      batchData,
+      batchData?.tradeId,
+      attendance,
       attendanceDocIds,
       onTeacherAttendanceUpdate,
       updateAttendanceDocId,

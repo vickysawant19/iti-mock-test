@@ -1,45 +1,160 @@
-import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { selectProfile } from "@/store/profileSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import batchStudentService from "@/appwrite/batchStudentService";
-import { useState, useEffect } from "react";
+import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import holidayService from "@/appwrite/holidaysService";
+import dailyDiaryService from "@/appwrite/dailyDiaryService";
 
+import { Card, CardContent } from "@/components/ui/card";
 import Loader from "@/components/components/Loader";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import DiaryHeader from "./DiaryHeader";
+import DiaryTable from "./DiaryTable";
 import DiaryWeekView from "./DiaryWeekView";
-import { useWeeklyDiaryData } from "./useWeeklyDiaryData";
-import { avatarFallback } from "@/utils/avatarFallback";
-import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import { useDiaryData } from "./hooks/useDiaryData";
+import DiaryPageHeader from "./components/DiaryPageHeader";
+import DiaryPeriodNav from "./components/DiaryPeriodNav";
 
 function StudentDailyDiary() {
   const profile = useSelector(selectProfile);
+  const activeBatchId = useSelector(selectActiveBatchId);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ["monthly", "weekly", "daily"];
+  const tabParam = searchParams.get("tab");
+  const activeTab = validTabs.includes(tabParam) ? tabParam : "monthly";
+
+  const handleTabChange = (newTab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", newTab);
+      return next;
+    });
+  };
+
   const [rollNumber, setRollNumber] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [monthlyDiaryData, setMonthlyDiaryData] = useState({});
+  const [monthlyAttendance, setMonthlyAttendance] = useState(new Map());
+  const [monthlyHolidays, setMonthlyHolidays] = useState(new Map());
+  const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
 
   useEffect(() => {
     if (profile?.userId) {
-      batchStudentService.getStudentBatches(profile.userId).then(res => {
-         if (res && res.length > 0) setRollNumber(res[0].rollNumber);
-      }).catch(console.error);
+      batchStudentService
+        .getStudentBatches(profile.userId)
+        .then((res) => {
+          if (res && res.length > 0) setRollNumber(res[0].rollNumber);
+        })
+        .catch(console.error);
     }
   }, [profile?.userId]);
 
+  // Hook for Weekly and Daily views
   const {
     weekDays,
     weekNumber,
-    diaryData,
-    attendance,
-    holidays,
-    isLoading,
+    diaryData: periodDiaryData,
+    attendance: periodAttendance,
+    holidays: periodHolidays,
+    isLoading: isPeriodLoading,
     isError,
     handlePreviousWeek,
     handleNextWeek,
+    dailyDateLabel,
+    canGoPreviousPeriod,
     batchData,
-  } = useWeeklyDiaryData();
+    fetchData: fetchPeriodData,
+  } = useDiaryData({
+    viewType: activeTab === "daily" ? "daily" : "weekly",
+    role: "student",
+    enabled: activeTab !== "monthly",
+  });
 
-  // The full page loader has been removed here. DiaryWeekView handles it gracefully with Skeleton loaders.
+  // Fetch data for Monthly view
+  const monthDays = useCallback(() => {
+    return eachDayOfInterval({
+      start: startOfMonth(currentMonth),
+      end: endOfMonth(currentMonth),
+    });
+  }, [currentMonth])();
+
+  const fetchMonthlyData = useCallback(async () => {
+    if (!profile?.userId || !activeBatchId || activeTab !== "monthly") return;
+    setIsMonthlyLoading(true);
+    try {
+      const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+
+      const [attendanceRes, holidayData, diaryRes] = await Promise.all([
+        newAttendanceService.getStudentAttendanceByDateRange(
+          profile.userId,
+          activeBatchId,
+          startDate,
+          endDate
+        ),
+        holidayService.getBatchHolidaysByDateRange(
+          activeBatchId,
+          startDate,
+          endDate
+        ),
+        dailyDiaryService.getBatchInstructorDiary(
+          activeBatchId,
+          null,
+          startDate,
+          endDate
+        ),
+      ]);
+
+      const attendanceMap = new Map();
+      if (attendanceRes?.documents) {
+        attendanceRes.documents.forEach((item) => {
+          attendanceMap.set(item.date, item.status);
+        });
+      }
+      setMonthlyAttendance(attendanceMap);
+
+      const holidayMap = new Map();
+      if (holidayData) {
+        holidayData.forEach((holiday) => {
+          holidayMap.set(holiday.date, holiday);
+        });
+      }
+      setMonthlyHolidays(holidayMap);
+
+      const diaryMap = {};
+      if (diaryRes) {
+        diaryRes.forEach((entry) => {
+          const dateKey = format(parseISO(entry.date), "yyyy-MM-dd");
+          diaryMap[dateKey] = {
+            $id: entry.$id,
+            theoryWork: entry.theoryWork || "",
+            practicalWork: entry.practicalWork || "",
+            practicalNumbers: Array.isArray(entry.practicalNumbers)
+              ? entry.practicalNumbers
+              : [],
+            extraWork: entry.extraWork || "",
+            hours: entry.hours || "",
+            remarks: entry.remarks || "",
+          };
+        });
+      }
+      setMonthlyDiaryData(diaryMap);
+    } catch (error) {
+      console.error("Error fetching student monthly diary:", error);
+    } finally {
+      setIsMonthlyLoading(false);
+    }
+  }, [profile?.userId, activeBatchId, currentMonth, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "monthly") {
+      fetchMonthlyData();
+    }
+  }, [fetchMonthlyData, activeTab]);
 
   if (isError) {
     return (
@@ -57,67 +172,60 @@ function StudentDailyDiary() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4">
-        
-        {/* Beautiful Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-600 rounded-t-[22px] p-5 sm:p-6 text-white shadow-none">
-          <div className="absolute top-[-80px] right-[-60px] w-[260px] h-[260px] rounded-full bg-white/10 blur-xl" />
-          <div className="absolute bottom-[-60px] left-[-60px] w-[160px] h-[160px] rounded-full bg-white/10 blur-xl" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 flex items-center justify-center">
-                 <InteractiveAvatar
-                    src={profile?.profileImage}
-                    fallbackText={profile?.userName?.charAt(0) || profile?.name?.charAt(0) || "S"}
-                    userId={profile?.userId}
-                    editable={false}
-                    className="w-12 h-12 shadow-sm border-2 border-white/30"
-                 />
-              </div>
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-0.5">Student Portal</div>
-                <h1 className="text-xl sm:text-2xl font-extrabold leading-tight shadow-sm">My Diary</h1>
-                <div className="text-xs text-white/80 mt-1 flex items-center gap-2 flex-wrap">
-                  <span>{profile?.userName || profile?.name || "Student"}</span>
-                  {rollNumber && (
-                    <>
-                      <span className="opacity-50">·</span>
-                      <span>ID: {rollNumber}</span>
-                    </>
-                  )}
-                  {batchData?.BatchName && (
-                    <>
-                      <span className="opacity-50">·</span>
-                      <span>{batchData.BatchName}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Responsive Navigation */}
-        <div className="flex items-center justify-between bg-white dark:bg-gray-900 p-2 sm:p-3 rounded-b-[22px] shadow-lg border border-gray-200 dark:border-gray-800 border-t-0 mb-6 sticky top-4 z-20">
-          <Button variant="ghost" size="sm" onClick={handlePreviousWeek} disabled={weekNumber <= 1} className="flex-1 sm:flex-none justify-start px-2 sm:px-4 active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800">
-            <ChevronLeft className="h-5 w-5 sm:mr-1" /> <span className="hidden sm:inline font-bold">Previous</span>
-          </Button>
-          <div className="px-2 sm:px-6 text-center font-extrabold text-sm sm:text-base text-gray-800 dark:text-gray-100 whitespace-nowrap">
-            Week {weekNumber}
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleNextWeek} className="flex-1 sm:flex-none justify-end px-2 sm:px-4 active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-gray-800">
-            <span className="hidden sm:inline font-bold">Next</span> <ChevronRight className="h-5 w-5 sm:ml-1" />
-          </Button>
-        </div>
-
-        <DiaryWeekView
-          weekDays={weekDays}
-          diaryData={diaryData}
-          attendance={attendance}
-          holidays={holidays}
-          isLoading={isLoading}
-          isTeacher={false}
+      <div className="w-full px-2 sm:px-4 py-2">
+        {/* Modular Header with Tab Switcher */}
+        <DiaryPageHeader
+          profile={profile}
+          badgeText="Student Portal"
+          title="My Diary"
+          extraId={rollNumber ? `ID: ${rollNumber}` : null}
+          batchName={batchData?.BatchName}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          gradient="from-emerald-600 to-teal-600"
         />
+
+        {/* Content Render */}
+        <div className="animate-in fade-in duration-300">
+          {activeTab === "monthly" ? (
+            <div className="w-full space-y-4">
+              <DiaryHeader
+                selectedMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                batchStartDate={batchData?.start_date}
+              />
+              <DiaryTable
+                monthDays={monthDays}
+                diaryData={monthlyDiaryData}
+                holidays={monthlyHolidays}
+                attendance={monthlyAttendance}
+                isLoadingData={isMonthlyLoading}
+                isTeacher={false}
+                batchStartDate={batchData?.start_date}
+              />
+            </div>
+          ) : (
+            <div className="w-full space-y-4">
+              {/* Floating Period Navigation */}
+              <DiaryPeriodNav
+                onPrevious={handlePreviousWeek}
+                onNext={handleNextWeek}
+                canPrevious={canGoPreviousPeriod}
+                canNext={true}
+                label={activeTab === "daily" ? dailyDateLabel : `Week ${weekNumber}`}
+              />
+
+              <DiaryWeekView
+                weekDays={weekDays}
+                diaryData={periodDiaryData}
+                attendance={periodAttendance}
+                holidays={periodHolidays}
+                isLoading={isPeriodLoading}
+                isTeacher={false}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

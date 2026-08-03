@@ -22,7 +22,7 @@ import { parseISO } from "date-fns";
 import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
 import PrintConfigModal, { DEFAULT_PRINT_CONFIG } from "./PrintConfigModal";
 import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
-import { useDailyDiaryActions } from "./useDailyDiaryActions";
+import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";
 
 function InstructorDailyDiary() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -320,6 +320,7 @@ function InstructorDailyDiary() {
   } = useDailyDiaryActions({
     onRefreshData: fetchDataForMonth,
     batchData,
+    attendance,
     attendanceDocIds,
     onTeacherAttendanceUpdate: handleTeacherAttendanceUpdate,
     updateAttendanceDocId: handleUpdateAttendanceDocId,
@@ -373,6 +374,7 @@ function InstructorDailyDiary() {
         attendance={attendance}
         isLoadingData={isLoadingData}
         actionLoadingDates={actionLoadingDates}
+        batchStartDate={batchData?.start_date}
         onUpdateEntry={handleUpdateEntry}
         onOpenAttendanceModal={openAttendanceModal}
         onSetTeacherAttendance={handleSetTeacherAttendance}

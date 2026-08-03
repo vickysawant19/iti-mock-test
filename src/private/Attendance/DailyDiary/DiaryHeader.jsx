@@ -1,8 +1,8 @@
 import React from "react";
 import { format } from "date-fns";
-import { Download } from "lucide-react";
+import { Download, Calendar, Printer, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function DiaryHeader({
   selectedMonth,
@@ -10,7 +10,7 @@ export default function DiaryHeader({
   onExport,
   onPrint,
   isExporting,
-  onRefresh, // Pass refresh callback for Add Diary Form
+  onRefresh,
   batchStartDate,
 }) {
   // input type="month" expects "YYYY-MM"
@@ -20,54 +20,64 @@ export default function DiaryHeader({
   const handleChange = (e) => {
     const value = e.target.value;
     if (value) {
-      // value is "YYYY-MM", convert to Date
       const [year, month] = value.split("-");
       onMonthChange(new Date(year, month - 1, 1));
     }
   };
 
   return (
-    <Card className="rounded-t-none rounded-b-[22px] shadow-lg border-gray-200 dark:border-gray-800 border-t-0 relative z-20 mb-6">
-      <CardHeader className="py-4 px-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 w-full sm:w-auto bg-gray-50 dark:bg-gray-900/50 p-1.5 rounded-lg border border-gray-200 dark:border-gray-800">
-            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 pl-2">
-              Month
-            </span>
+    <Card className="rounded-2xl shadow-xs border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md relative z-20 mb-4 transition-all">
+      <CardContent className="p-3.5 sm:p-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Month Selector Group */}
+          <div className="flex items-center gap-3 w-full sm:w-auto bg-slate-100/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+            <div className="flex items-center gap-2 pl-2 text-slate-600 dark:text-slate-300">
+              <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Month:
+              </span>
+            </div>
             <input
               id="month-picker"
               type="month"
               min={minMonthString}
               value={monthString}
               onChange={handleChange}
-              className="px-3 py-1.5 rounded-md shadow-sm bg-white dark:bg-gray-950 border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 text-sm font-bold text-gray-800 dark:text-gray-200 w-full sm:w-auto outline-none transition-all"
+              className="px-3 py-1.5 rounded-lg shadow-2xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 text-xs font-extrabold text-slate-800 dark:text-slate-200 w-full sm:w-auto outline-none transition-all cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrint}
-              disabled={isExporting}
-              className="flex-1 sm:flex-none w-full sm:w-auto bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold px-4 rounded-[10px] shadow-sm transition-all active:scale-95"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Print PDF
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={onExport}
-              disabled={isExporting}
-              className="flex-1 sm:flex-none w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded-[10px] shadow-sm transition-all active:scale-95"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Exporting..." : "Export Excel"}
-            </Button>
-          </div>
+          {/* Export & Print Action Buttons */}
+          {(onPrint || onExport) && (
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              {onPrint && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onPrint}
+                  disabled={isExporting}
+                  className="flex-1 sm:flex-none w-full sm:w-auto bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold px-4 rounded-xl shadow-2xs transition-all active:scale-95 h-10 text-xs flex items-center gap-2"
+                >
+                  <Printer className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                  <span>Print PDF</span>
+                </Button>
+              )}
+              {onExport && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onExport}
+                  disabled={isExporting}
+                  className="flex-1 sm:flex-none w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 rounded-xl shadow-2xs transition-all active:scale-95 h-10 text-xs flex items-center gap-2"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <span>{isExporting ? "Exporting..." : "Export Excel"}</span>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 }
