@@ -254,6 +254,7 @@ class NewAttendanceService {
     remarks = null,
     markedAt = null,
     markedBy = null,
+    skipStats = false,
   }) {
     if (!batchId) return null;
     try {
@@ -283,10 +284,12 @@ class NewAttendanceService {
         throw new Error(resData.error || "Failed to create attendance");
       }
 
-      // Trigger stats recalculation in the background
-      userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
-        console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
-      });
+      // Trigger stats recalculation in the background (only for students, skip for teachers)
+      if (!skipStats) {
+        userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
+          console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
+        });
+      }
 
       return resData.data;
     } catch (error) {

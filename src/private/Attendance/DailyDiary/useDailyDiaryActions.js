@@ -230,6 +230,7 @@ export function useDailyDiaryActions({
             date: dateStr,
             status: targetStatus,
             remarks: null,
+            skipStats: true,
           });
           if (newDoc?.$id && updateAttendanceDocId) {
             updateAttendanceDocId(dateStr, newDoc.$id);
