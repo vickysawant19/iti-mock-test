@@ -19,6 +19,7 @@ export default function DiaryTable({
   onUpdateEntry,
   onOpenAttendanceModal,
   onSetTeacherAttendance,
+  onDeleteTeacherAttendance,
   onRemoveHoliday,
 }) {
   const stats = useMemo(() => {
@@ -152,6 +153,7 @@ export default function DiaryTable({
                   onUpdateEntry={onUpdateEntry}
                   onOpenAttendanceModal={onOpenAttendanceModal}
                   onSetTeacherAttendance={onSetTeacherAttendance}
+                  onDeleteTeacherAttendance={onDeleteTeacherAttendance}
                 />
               </React.Fragment>
             );
@@ -278,6 +280,7 @@ export default function DiaryTable({
                             onUpdateEntry={onUpdateEntry}
                             onOpenAttendanceModal={onOpenAttendanceModal}
                             onSetTeacherAttendance={onSetTeacherAttendance}
+                            onDeleteTeacherAttendance={onDeleteTeacherAttendance}
                           />
                         </React.Fragment>
                       );

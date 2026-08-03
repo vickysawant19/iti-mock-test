@@ -319,6 +319,7 @@ function InstructorDailyDiary() {
     handleAddHoliday,
     handleRemoveHoliday,
     handleSetTeacherAttendance,
+    handleDeleteTeacherAttendance,
   } = useDailyDiaryActions({
     onRefreshData: fetchDataForMonth,
     batchData,
@@ -380,6 +381,7 @@ function InstructorDailyDiary() {
         onUpdateEntry={handleUpdateEntry}
         onOpenAttendanceModal={openAttendanceModal}
         onSetTeacherAttendance={handleSetTeacherAttendance}
+        onDeleteTeacherAttendance={handleDeleteTeacherAttendance}
         onRemoveHoliday={(dateKey) => handleRemoveHoliday(dateKey, holidays)}
       />
       <DailyDiaryPrintTemplate

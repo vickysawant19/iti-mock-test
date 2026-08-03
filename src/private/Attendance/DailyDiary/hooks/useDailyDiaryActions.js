@@ -124,16 +124,69 @@ export function useDailyDiaryActions({
     if (onRefreshData) onRefreshData(false);
   }, [closeAttendanceModal, onRefreshData]);
 
+  const handleDeleteTeacherAttendance = useCallback(
+    async (dateStr) => {
+      if (!profile?.userId || !activeBatchId) return;
+
+      let docId = attendanceDocIds?.get?.(dateStr) || attendanceDocIds?.[dateStr];
+      if (!docId) {
+        toast.error("No attendance record found to delete");
+        return;
+      }
+
+      setActionLoadingDates((prev) => ({ ...prev, [dateStr]: "deleting" }));
+      try {
+        await newAttendanceService.deleteAttendance(docId);
+        if (onTeacherAttendanceUpdate) onTeacherAttendanceUpdate(dateStr, null);
+        if (updateAttendanceDocId) updateAttendanceDocId(dateStr, null);
+        toast.success("Attendance deleted successfully");
+      } catch (error) {
+        console.error("Error deleting teacher attendance:", error);
+        toast.error("Failed to delete attendance");
+      } finally {
+        setActionLoadingDates((prev) => {
+          const next = { ...prev };
+          delete next[dateStr];
+          return next;
+        });
+      }
+    },
+    [
+      profile?.userId,
+      activeBatchId,
+      attendanceDocIds,
+      onTeacherAttendanceUpdate,
+      updateAttendanceDocId,
+    ]
+  );
+
   const handleAddHoliday = useCallback(
     async (dateStr, holidayText) => {
       if (!activeBatchId) return;
       try {
+        // First add the holiday
         await holidayService.addHoliday({
           batchId: activeBatchId,
           date: dateStr,
           holidayText,
         });
-        toast.success("Holiday added successfully");
+
+        // Then delete ALL attendance records for that date in the batch (students + teacher)
+        try {
+          const batchAttendanceRes = await newAttendanceService.getBatchAttendanceByDate(
+            activeBatchId,
+            dateStr,
+            []
+          );
+          const docIds = (batchAttendanceRes?.documents || []).map((d) => d.$id).filter(Boolean);
+          if (docIds.length > 0) {
+            await newAttendanceService.deleteMultipleAttendance(docIds);
+          }
+        } catch (cleanupError) {
+          console.error("Warning: could not clear attendance for holiday date:", cleanupError);
+        }
+
+        toast.success("Holiday added and attendance cleared for this date");
         if (onRefreshData) onRefreshData(false);
       } catch (error) {
         console.error("Error adding holiday:", error);
@@ -238,5 +291,6 @@ export function useDailyDiaryActions({
     handleAddHoliday,
     handleRemoveHoliday,
     handleSetTeacherAttendance,
+    handleDeleteTeacherAttendance,
   };
 }

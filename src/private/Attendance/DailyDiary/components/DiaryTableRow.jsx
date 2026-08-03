@@ -18,6 +18,7 @@ import {
   Edit,
   Save,
   MoreVertical,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ export const DiaryTableRow = React.memo(({
   onUpdateEntry,
   onOpenAttendanceModal,
   onSetTeacherAttendance,
+  onDeleteTeacherAttendance,
   updateDiaryField,
   toggleEditing,
 }) => {
@@ -256,6 +258,7 @@ export const DiaryTableRow = React.memo(({
       <td className="p-3.5 align-middle whitespace-nowrap">
         {isTeacher && onSetTeacherAttendance ? (
           <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 w-fit">
+            {/* Present button — always shown */}
             <button
               type="button"
               disabled={isPresentLoading || isAbsentLoading}
@@ -270,20 +273,37 @@ export const DiaryTableRow = React.memo(({
               {isPresentLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
               Present
             </button>
-            <button
-              type="button"
-              disabled={isPresentLoading || isAbsentLoading}
-              onClick={() => onSetTeacherAttendance(dateKey, "absent")}
-              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 active:scale-95 ${
-                teacherStatus === "absent"
-                  ? "bg-rose-600 text-white shadow-xs"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-              } ${isAbsentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
-              title="Mark Teacher Absent"
-            >
-              {isAbsentLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
-              Absent
-            </button>
+
+            {/* On holiday: no Absent button. Show Delete if any attendance marked (present or absent). */}
+            {isHoliday ? (
+              teacherStatus && onDeleteTeacherAttendance ? (
+                <button
+                  type="button"
+                  disabled={actionLoadingDates?.[dateKey] === "deleting"}
+                  onClick={() => onDeleteTeacherAttendance(dateKey)}
+                  className="px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 active:scale-95 bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-400"
+                  title="Undo attendance for this holiday"
+                >
+                  {actionLoadingDates?.[dateKey] === "deleting" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Undo
+                </button>
+              ) : null
+            ) : (
+              <button
+                type="button"
+                disabled={isPresentLoading || isAbsentLoading}
+                onClick={() => onSetTeacherAttendance(dateKey, "absent")}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 active:scale-95 ${
+                  teacherStatus === "absent"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                } ${isAbsentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
+                title="Mark Teacher Absent"
+              >
+                {isAbsentLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                Absent
+              </button>
+            )}
           </div>
         ) : (
           renderStatusBadge()

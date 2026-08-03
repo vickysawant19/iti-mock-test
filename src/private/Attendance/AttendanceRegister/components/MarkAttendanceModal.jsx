@@ -420,6 +420,23 @@ const MarkAttendanceModal = ({
                     ? "Attendance marking is restricted to today or earlier. You may still set this future date as a holiday."
                     : "This will mark all students as exempted for today."}
                 </p>
+                {/* Quick-fill preset buttons */}
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {["Sunday", "Second Saturday", "Fourth Saturday"].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setHolidayReason(preset)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-all active:scale-95 ${
+                        holidayReason === preset
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : "bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
                 <textarea
                   value={holidayReason}
                   onChange={(e) => setHolidayReason(e.target.value)}

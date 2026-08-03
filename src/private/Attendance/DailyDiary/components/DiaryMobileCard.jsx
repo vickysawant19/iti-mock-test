@@ -21,6 +21,7 @@ import {
   MoreVertical,
   BookOpen,
   Wrench,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ export const DiaryMobileCard = React.memo(({
   onUpdateEntry,
   onOpenAttendanceModal,
   onSetTeacherAttendance,
+  onDeleteTeacherAttendance,
   updateDiaryField,
   toggleEditing,
 }) => {
@@ -381,6 +383,7 @@ export const DiaryMobileCard = React.memo(({
                       Teacher Attendance:
                     </span>
                     <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                      {/* Present button — always shown on holidays */}
                       <button
                         type="button"
                         disabled={isPresentLoading || isAbsentLoading}
@@ -394,19 +397,35 @@ export const DiaryMobileCard = React.memo(({
                         {isPresentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
                         Present
                       </button>
-                      <button
-                        type="button"
-                        disabled={isPresentLoading || isAbsentLoading}
-                        onClick={() => onSetTeacherAttendance(dateKey, "absent")}
-                        className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-                          teacherStatus === "absent"
-                            ? "bg-rose-600 text-white shadow-xs"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-                        } ${isAbsentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
-                      >
-                        {isAbsentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserX className="w-4 h-4" />}
-                        Absent
-                      </button>
+
+                      {/* On holiday: no Absent. Show Undo if any attendance is marked (present or absent). */}
+                      {isHoliday ? (
+                        teacherStatus && onDeleteTeacherAttendance ? (
+                          <button
+                            type="button"
+                            disabled={actionLoadingDates?.[dateKey] === "deleting"}
+                            onClick={() => onDeleteTeacherAttendance(dateKey)}
+                            className="flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-400"
+                          >
+                            {actionLoadingDates?.[dateKey] === "deleting" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            Undo
+                          </button>
+                        ) : null
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isPresentLoading || isAbsentLoading}
+                          onClick={() => onSetTeacherAttendance(dateKey, "absent")}
+                          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
+                            teacherStatus === "absent"
+                              ? "bg-rose-600 text-white shadow-xs"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                          } ${isAbsentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
+                        >
+                          {isAbsentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserX className="w-4 h-4" />}
+                          Absent
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
