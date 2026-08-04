@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
 
 export const calculateStats = ({
   userId,
@@ -17,6 +17,7 @@ export const calculateStats = ({
       presentDays: 0,
       absentDays: 0,
       holidayDays: 0,
+      leaveDays: 0,
       attendancePercentage: 0,
       monthlyAttendance: {},
     };
@@ -24,66 +25,24 @@ export const calculateStats = ({
     setAttendanceStats && setAttendanceStats(stats);
     return stats;
   }
+
   setAttendance && setAttendance(data);
-  // Calculate attendance statistics
-  const normalizeStatus = (rawStatus) => {
-    const value = String(rawStatus || "").trim().toLowerCase();
-    if (["present", "p"].includes(value)) return "present";
-    if (["absent", "a"].includes(value)) return "absent";
-    if (["leave", "l"].includes(value)) return "leave";
-    return value;
-  };
 
-  let presentDays = 0;
-  let absentDays = 0;
-  let holidayDays = 0;
-  const monthlyAttendance = {};
-
-  data.forEach((record) => {
-    if (!record || typeof record === "string") return;
-    const dateStr = record.date;
-    if (!dateStr) return;
-
-    const month = format(new Date(dateStr), "MMMM yyyy");
-    const status = normalizeStatus(record.status);
-
-    if (!monthlyAttendance[month]) {
-      monthlyAttendance[month] = {
-        presentDays: 0,
-        absentDays: 0,
-        holidayDays: 0,
-      };
-    }
-
-    if (record.isHoliday) {
-      holidayDays++;
-      monthlyAttendance[month].holidayDays++;
-    }
-
-    if (status === "present") {
-      presentDays++;
-      monthlyAttendance[month].presentDays++;
-    } else if (status === "absent") {
-      absentDays++;
-      monthlyAttendance[month].absentDays++;
-    }
-  });
-
-  const totalDays = presentDays + absentDays;
-
-  const attendancePercentage =
-    totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
+  const computed = attendanceAnalyticsService.computeStats({ records: data });
 
   const stats = {
     studentId,
     userName,
     userId,
-    totalDays,
-    presentDays,
-    absentDays,
-    holidayDays,
-    attendancePercentage,
-    monthlyAttendance,
+    totalDays: computed.totalDays,
+    workingDays: computed.workingDays,
+    presentDays: computed.presentDays,
+    absentDays: computed.absentDays,
+    holidayDays: computed.holidayDays,
+    leaveDays: computed.leaveDays,
+    leaveBreakdown: computed.leaveBreakdown,
+    attendancePercentage: computed.attendancePercentage,
+    monthlyAttendance: computed.monthlyAttendance,
   };
 
   setAttendanceStats && setAttendanceStats(stats);

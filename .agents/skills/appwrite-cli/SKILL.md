@@ -315,6 +315,55 @@ appwrite tables-db get-row \
     --database-id "<DATABASE_ID>" --table-id "<TABLE_ID>" --row-id "<ROW_ID>"
 ```
 
+### Server-Side Bulk Operations & Transactions
+
+Bulk operations (`createRows`, `updateRows`, `upsertRows`, `deleteRows`) allow manipulating multiple rows in a single API call from Server SDKs (Node.js, Deno, Python, etc.) or Appwrite Cloud Functions:
+
+- **Atomic Behavior**: All-or-nothing (if 1 row fails, the entire bulk request rolls back).
+- **Limits**: Free (100 rows/request), Pro (1,000 rows/request).
+- **Custom Timestamps**: `$createdAt` and `$updatedAt` ISO date-time strings can be specified in each row payload.
+- **Transactions**: All bulk methods accept optional `transactionId` for atomic multi-step workflow staging.
+
+```javascript
+// Example Server SDK (Node.js) Bulk Operations
+const tablesDB = new sdk.TablesDB(client);
+
+// Create rows
+await tablesDB.createRows({
+  databaseId: '<DATABASE_ID>',
+  tableId: '<TABLE_ID>',
+  rows: [
+    { $id: sdk.ID.unique(), name: 'Row 1' },
+    { $id: sdk.ID.unique(), name: 'Row 2' }
+  ]
+});
+
+// Upsert rows (Insert new or update existing row ID)
+await tablesDB.upsertRows({
+  databaseId: '<DATABASE_ID>',
+  tableId: '<TABLE_ID>',
+  rows: [
+    { $id: sdk.ID.unique(), name: 'New Row' },
+    { $id: 'existing-id-123', name: 'Updated Row' }
+  ]
+});
+
+// Update rows by query
+await tablesDB.updateRows({
+  databaseId: '<DATABASE_ID>',
+  tableId: '<TABLE_ID>',
+  data: { status: 'published' },
+  queries: [sdk.Query.equal('status', 'draft')]
+});
+
+// Delete rows by query
+await tablesDB.deleteRows({
+  databaseId: '<DATABASE_ID>',
+  tableId: '<TABLE_ID>',
+  queries: [sdk.Query.equal('status', 'archived')]
+});
+```
+
 ## Managing Buckets (Storage)
 
 ```bash

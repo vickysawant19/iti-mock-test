@@ -229,6 +229,55 @@ await tablesDB.deleteRow({
 });
 ```
 
+#### Bulk Operations (Server-Side SDK `node-appwrite`)
+
+Bulk operations are atomic (all-or-nothing) operations performed via Server SDKs to reduce API roundtrips:
+
+- **Limits**: Free Plan (100 rows/request), Pro Plan (1,000 rows/request).
+- **Events**: Fires Webhook / Realtime events per row manipulated.
+- **Relationships**: Bulk operations are not supported on tables with relationship columns.
+
+```typescript
+import { Client, TablesDB, ID, Query } from 'node-appwrite';
+
+const tablesDB = new TablesDB(client);
+
+// 1. Bulk Create Rows (createRows)
+const createdRows = await tablesDB.createRows({
+    databaseId: '[DATABASE_ID]',
+    tableId: '[TABLE_ID]',
+    rows: [
+        { $id: ID.unique(), name: 'Row 1', status: 'active' },
+        { $id: ID.unique(), name: 'Row 2', status: 'active' }
+    ]
+});
+
+// 2. Bulk Upsert Rows (upsertRows) - Inserts or updates existing rowId
+const upsertedRows = await tablesDB.upsertRows({
+    databaseId: '[DATABASE_ID]',
+    tableId: '[TABLE_ID]',
+    rows: [
+        { $id: ID.unique(), name: 'New Row' },
+        { $id: 'existing-row-id', name: 'Updated Row Name' }
+    ]
+});
+
+// 3. Bulk Update Rows by Query (updateRows)
+const updatedRows = await tablesDB.updateRows({
+    databaseId: '[DATABASE_ID]',
+    tableId: '[TABLE_ID]',
+    data: { status: 'archived' },
+    queries: [Query.equal('status', 'draft')]
+});
+
+// 4. Bulk Delete Rows by Query (deleteRows)
+await tablesDB.deleteRows({
+    databaseId: '[DATABASE_ID]',
+    tableId: '[TABLE_ID]',
+    queries: [Query.equal('status', 'archived')]
+});
+```
+
 #### String Column Types
 
 > **Note:** The legacy `string` type is deprecated. Use explicit column types for all new columns.

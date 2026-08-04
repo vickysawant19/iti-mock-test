@@ -151,7 +151,8 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
             queries: [
               Query.equal("batchId", batchId),
               Query.equal("userId", staleStudentIds),
-              Query.equal("status", "present"),
+              Query.equal("dayType", "WORKING"),
+              Query.equal("attendanceStatus", "PRESENT"),
               Query.limit(500),
             ],
           }).then((res) => res.rows || []).catch(() => []),

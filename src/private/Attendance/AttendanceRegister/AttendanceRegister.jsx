@@ -423,16 +423,39 @@ const AttendanceRegister = () => {
   const handleSaveAttendance = useCallback(
     async (statuses) => {
       try {
-        const batch   = batches.get(selectedBatch);
-        const records = Object.entries(statuses).map(([userId, status]) => ({
-          userId,
-          batchId:   selectedBatch,
-          tradeId:   batch?.tradeId ?? null,
-          date:      selectedDate,
-          status,
-          marketAt:  new Date().toISOString(),
-          remarks:   null,
-        }));
+        const batch = batches.get(selectedBatch);
+        const isHoliday = holidays.has(selectedDate);
+        const dayType = isHoliday ? "HOLIDAY" : "WORKING";
+
+        const records = Object.entries(statuses).map(([userId, statusVal]) => {
+          const statusStr = String(statusVal || "").toLowerCase();
+          let attendanceStatus = "PRESENT";
+          let leaveType = null;
+
+          if (["present", "p"].includes(statusStr)) attendanceStatus = "PRESENT";
+          else if (["absent", "a"].includes(statusStr)) attendanceStatus = "ABSENT";
+          else if (["late"].includes(statusStr)) attendanceStatus = "LATE";
+          else if (["half_day", "halfday"].includes(statusStr)) attendanceStatus = "HALF_DAY";
+          else if (["leave", "l", "casual", "sick", "on_duty", "special"].includes(statusStr)) {
+            attendanceStatus = "LEAVE";
+            leaveType = statusStr === "sick" ? "SICK" : statusStr === "on_duty" ? "ON_DUTY" : statusStr === "special" ? "SPECIAL" : "CASUAL";
+          }
+
+          return {
+            userId,
+            batchId: selectedBatch,
+            tradeId: batch?.tradeId ?? null,
+            date: selectedDate,
+            dayType,
+            attendanceStatus,
+            leaveType,
+            source: "MANUAL",
+            status: statusStr,
+            isHoliday,
+            markedAt: new Date().toISOString(),
+            remarks: null,
+          };
+        });
 
         const response = await newAttendanceService.markBatchAttendance(
           selectedBatch,

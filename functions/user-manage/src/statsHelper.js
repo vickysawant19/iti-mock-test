@@ -18,7 +18,25 @@ export const updateBatchStatsHelper = async (
     [Query.equal('userId', userId), Query.equal('batchId', batchId)]
   );
 
-  let isPresent = status === 'present' ? 1 : 0;
+  const getIsPresent = (recordOrStatus, dayTypeParam, isHolidayParam) => {
+    let dayType = dayTypeParam;
+    let status = typeof recordOrStatus === 'string' ? recordOrStatus : recordOrStatus?.attendanceStatus || recordOrStatus?.status;
+    let isHoliday = isHolidayParam;
+
+    if (typeof recordOrStatus === 'object' && recordOrStatus !== null) {
+      dayType = recordOrStatus.dayType || (recordOrStatus.isHoliday ? 'HOLIDAY' : 'WORKING');
+      isHoliday = recordOrStatus.isHoliday;
+    } else {
+      dayType = dayType || (isHoliday ? 'HOLIDAY' : 'WORKING');
+    }
+
+    if (dayType !== 'WORKING') return 0;
+
+    const normalizedStatus = String(status || '').trim().toUpperCase();
+    return normalizedStatus === 'PRESENT' ? 1 : 0;
+  };
+
+  let isPresent = getIsPresent(status, null, false);
 
   if (existingDocs.total > 0) {
     const existing = existingDocs.documents[0];
@@ -79,8 +97,15 @@ export const bulkUpdateBatchStats = async (
   const statsToCreate = [];
   const statsToUpdate = [];
 
+  const getIsPresent = (record) => {
+    const dayType = record.dayType || (record.isHoliday ? 'HOLIDAY' : 'WORKING');
+    if (dayType !== 'WORKING') return 0;
+    const status = String(record.attendanceStatus || record.status || '').trim().toUpperCase();
+    return status === 'PRESENT' ? 1 : 0;
+  };
+
   statsDataList.forEach((record) => {
-    let isPresent = record.status === 'present' ? 1 : 0;
+    let isPresent = getIsPresent(record);
     const existing = existingStatsMap.get(record.userId);
 
     if (existing) {

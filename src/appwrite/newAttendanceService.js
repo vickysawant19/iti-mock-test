@@ -2,6 +2,7 @@ import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import userStatsService from "./userStats";
+import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
 
 class NewAttendanceService {
   constructor() {
@@ -222,9 +223,11 @@ class NewAttendanceService {
   ) {
     if (!batchId) return { documents: [], total: 0 };
     try {
+      const upperStatus = String(status || "").toUpperCase();
       const queries = [
         Query.equal("batchId", batchId),
-        Query.equal("status", status),
+        Query.equal("dayType", "WORKING"),
+        Query.equal("attendanceStatus", upperStatus),
       ];
 
       if (startDate) {
@@ -245,18 +248,24 @@ class NewAttendanceService {
   }
 
   // Create single attendance record
-  async createAttendance({
-    userId,
-    batchId,
-    tradeId,
-    date,
-    status,
-    remarks = null,
-    markedAt = null,
-    markedBy = null,
-    skipStats = false,
-  }) {
-    if (!batchId) return null;
+  async createAttendance(
+    {
+      userId,
+      batchId,
+      tradeId,
+      date,
+      status,
+      remarks,
+      markedAt,
+      markedBy,
+      dayType,
+      attendanceStatus,
+      leaveType,
+      source,
+      holidayId,
+    },
+    skipStats = false
+  ) {
     try {
       // Ensure date is in YYYY-MM-DD format (10 characters)
       const formattedDate = this.formatDate(date);
@@ -267,10 +276,15 @@ class NewAttendanceService {
         batchId,
         tradeId,
         date: formattedDate,
-        status,
+        status: status || (attendanceStatus ? attendanceStatus.toLowerCase() : "present"),
         remarks,
         markedAt: markedAt || new Date().toISOString(),
-        markedBy
+        markedBy,
+        dayType: dayType || "WORKING",
+        attendanceStatus: attendanceStatus || (status ? status.toUpperCase() : "PRESENT"),
+        leaveType: leaveType || null,
+        source: source || "MANUAL",
+        holidayId: holidayId || null,
       });
 
       const response = await functions.createExecution(
@@ -471,78 +485,29 @@ class NewAttendanceService {
         baseQueries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
       }
 
-      // Fetch counts for each status in parallel
-      const lateCount = 0;
-      const [presentCount, absentCount] = await Promise.all([
-        this.database
-          .listRows({
-          databaseId: conf.databaseId,
-          tableId: conf.newAttendanceCollectionId,
+      const attendanceDocs = await this.fetchAllDocuments(baseQueries);
+      const computed = attendanceAnalyticsService.computeStats({
+        records: attendanceDocs.documents,
+        startDate,
+        endDate,
+      });
 
-          queries: [
-              ...baseQueries,
-              Query.equal("status", "present"),
-              Query.limit(1),
-            ]
-        })
-          .then((res) => res.total),
-
-        this.database
-          .listRows({
-          databaseId: conf.databaseId,
-          tableId: conf.newAttendanceCollectionId,
-
-          queries: [
-              ...baseQueries,
-              Query.equal("status", "absent"),
-              Query.limit(1),
-            ]
-        })
-          .then((res) => res.total),
-
-        // this.database
-        //   .listDocuments(conf.databaseId, conf.newAttendanceCollectionId, [
-        //     ...baseQueries,
-        //     Query.equal("status", "late"),
-        //     Query.limit(1),
-        //   ])
-        //   .then((res) => res.total),
-      ]);
-
-      const total = presentCount + absentCount;
-      const workingDays = total;
-      const stats = {
-        total,
-        presentDays: presentCount,
-        absentDays: absentCount,
-        lateDays: lateCount,
-        workingDays,
-        percentage:
-          workingDays > 0
-            ? parseFloat(((presentCount / workingDays) * 100).toFixed(2))
-            : 0,
+      return {
+        total: computed.workingDays || attendanceDocs.total,
+        presentDays: computed.presentDays,
+        absentDays: computed.absentDays,
+        lateDays: computed.lateDays,
+        workingDays: computed.workingDays,
+        holidayDays: computed.holidayDays,
+        leaveDays: computed.leaveDays,
+        leaveBreakdown: computed.leaveBreakdown,
+        percentage: computed.attendancePercentage,
       };
-
-      return stats;
     } catch (error) {
       throw error;
     }
   }
 
-  /**
-   * Fetch ONLY the present-day count for each student in a batch using
-   * N concurrent limit-1 count queries (each response is ~1.5 kB).
-   *
-   * Absent days are intentionally NOT fetched here — the caller derives
-   * absent = calendarWorkingDays - presentDays, which avoids a second
-   * round of N queries while remaining accurate.
-   *
-   * @param {string[]} studentIds
-   * @param {string}   batchId
-   * @param {string|null} startDate  "yyyy-MM-dd" or null
-   * @param {string|null} endDate    "yyyy-MM-dd" or null
-   * @returns {Object}  { [userId]: { presentDays } }
-   */
   async getBatchPresentCountsForStudents(studentIds, batchId, startDate = null, endDate = null) {
     if (!batchId || !studentIds?.length) return {};
     try {
@@ -551,7 +516,8 @@ class NewAttendanceService {
           const queries = [
             Query.equal("userId", sid),
             Query.equal("batchId", batchId),
-            Query.equal("status", "present"),
+            Query.equal("dayType", "WORKING"),
+            Query.equal("attendanceStatus", "PRESENT"),
             Query.limit(1),
           ];
           if (startDate) queries.push(Query.greaterThanEqual("date", startDate));
@@ -577,7 +543,6 @@ class NewAttendanceService {
 
   // Get batch attendance statistics for a specific date
   async getBatchAttendanceStats(batchId, date) {
-
     if (!batchId) return { total: 0, present: 0, absent: 0, late: 0, holiday: 0, percentage: 0 };
     try {
       const formattedDate = this.formatDate(date);
@@ -588,30 +553,19 @@ class NewAttendanceService {
       ];
 
       const data = await this.fetchAllDocuments(queries);
+      const computed = attendanceAnalyticsService.computeStats({ records: data.documents });
 
-      const stats = {
-        total: data.total,
-        present: 0,
-        absent: 0,
-        late: 0,
-        holiday: 0,
-        percentage: 0,
+      return {
+        total: computed.workingDays || data.total,
+        workingDays: computed.workingDays,
+        present: computed.presentDays,
+        absent: computed.absentDays,
+        late: computed.lateDays,
+        holiday: computed.holidayDays,
+        leave: computed.leaveDays,
+        leaveBreakdown: computed.leaveBreakdown,
+        percentage: computed.attendancePercentage,
       };
-
-      data.documents.forEach((doc) => {
-        if (doc.status === "present") stats.present++;
-        else if (doc.status === "absent") stats.absent++;
-        else if (doc.status === "late") stats.late++;
-        else if (doc.status === "holiday") stats.holiday++;
-      });
-
-      if (stats.total > 0) {
-        stats.percentage = parseFloat(
-          (((stats.present + stats.late) / stats.total) * 100).toFixed(2),
-        );
-      }
-
-      return stats;
     } catch (error) {
       throw error;
     }
@@ -695,13 +649,21 @@ class NewAttendanceService {
   }
 
   // Get direct count for student attendance
-  async getStudentAttendanceCount(userId, batchId, status, startDate = null, endDate = null) {
+  async getStudentAttendanceCount(
+    userId,
+    batchId,
+    status,
+    startDate = null,
+    endDate = null
+  ) {
     if (!userId || !batchId || !status) return 0;
     try {
+      const upperStatus = String(status || "").toUpperCase();
       const queries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
-        Query.equal("status", status),
+        Query.equal("dayType", "WORKING"),
+        Query.equal("attendanceStatus", upperStatus),
         Query.limit(1)
       ];
 

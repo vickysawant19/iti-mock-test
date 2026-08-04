@@ -84,8 +84,31 @@ class HolidayService {
         databaseId: conf.databaseId,
         tableId: conf.holidayDaysCollectionId,
         rowId: ID.unique(),
-        data: holidayData
+        data: {
+          ...holidayData,
+          dayType: holidayData.dayType || "HOLIDAY",
+        }
       });
+
+      // Cleanly clear any existing attendance records for this batch and date
+      if (holidayData.batchId && holidayData.date) {
+        try {
+          const { newAttendanceService } = await import("@/appwrite/newAttendanceService");
+          const formattedDate = String(holidayData.date).substring(0, 10);
+          const existingRes = await newAttendanceService.getBatchAttendanceByDate(
+            holidayData.batchId,
+            formattedDate,
+            []
+          );
+          const idsToDelete = (existingRes?.documents || []).map((d) => d.$id).filter(Boolean);
+          if (idsToDelete.length > 0) {
+            await newAttendanceService.deleteMultipleAttendance(idsToDelete);
+          }
+        } catch (cleanupError) {
+          console.error("[holidaysService] Could not clear attendance for added holiday date:", cleanupError);
+        }
+      }
+
       return data;
     } catch (error) {
       throw new Error(error.message);

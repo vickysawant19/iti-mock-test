@@ -1840,6 +1840,69 @@
           "size": 50,
           "default": null,
           "encrypt": false
+        },
+        {
+          "key": "dayType",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "WORKING",
+          "encrypt": false
+        },
+        {
+          "key": "attendanceStatus",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "PRESENT",
+          "encrypt": false
+        },
+        {
+          "key": "leaveType",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "MANUAL",
+          "encrypt": false
+        },
+        {
+          "key": "revision",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": 1,
+          "min": 1,
+          "max": 1000000
+        },
+        {
+          "key": "syncStatus",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "SYNCED",
+          "encrypt": false
+        },
+        {
+          "key": "holidayId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 50,
+          "default": null,
+          "encrypt": false
         }
       ],
       "indexes": [
@@ -1877,6 +1940,62 @@
             "userId",
             "batchId",
             "date"
+          ],
+          "orders": [
+            "ASC",
+            "ASC",
+            "ASC"
+          ]
+        },
+        {
+          "key": "idx_batch_dayType",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "batchId",
+            "dayType"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
+        },
+        {
+          "key": "idx_batch_attendanceStatus",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "batchId",
+            "attendanceStatus"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
+        },
+        {
+          "key": "idx_user_batch_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "userId",
+            "batchId",
+            "attendanceStatus"
+          ],
+          "orders": [
+            "ASC",
+            "ASC",
+            "ASC"
+          ]
+        },
+        {
+          "key": "idx_user_batch_dayType",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "userId",
+            "batchId",
+            "dayType"
           ],
           "orders": [
             "ASC",
@@ -2036,6 +2155,15 @@
           "array": false,
           "size": 500,
           "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "dayType",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "HOLIDAY",
           "encrypt": false
         }
       ],

@@ -134,7 +134,8 @@ export class UserStatsService {
           queries: [
             Query.equal("batchId", batchId),
             Query.equal("userId", studentIds),
-            Query.equal("status", "present"),
+            Query.equal("dayType", "WORKING"),
+            Query.equal("attendanceStatus", "PRESENT"),
             Query.limit(500),
           ],
         }).then((res) => res.rows || []).catch(() => []),

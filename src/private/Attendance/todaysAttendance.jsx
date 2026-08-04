@@ -213,6 +213,9 @@ const AttendanceTracker = () => {
           batchId: resolvedBatchId,
           tradeId: batchData?.tradeId || null,
           date: new Date(),
+          dayType: holiday ? "HOLIDAY" : "WORKING",
+          attendanceStatus: "PRESENT",
+          source: "MANUAL",
           status: "present",
           remarks: "",
         });

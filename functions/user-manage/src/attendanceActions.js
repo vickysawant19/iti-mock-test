@@ -129,11 +129,26 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       attendanceData.forEach((record) => {
         const existing = existingRecordsMap.get(record.userId);
+        const dayType = record.dayType || (record.isHoliday ? 'HOLIDAY' : 'WORKING');
+        const attendanceStatus = record.attendanceStatus || (record.status ? record.status.toUpperCase() : 'PRESENT');
+        const leaveType = record.leaveType || null;
+        const source = record.source || 'MANUAL';
+        const syncStatus = record.syncStatus || 'SYNCED';
+        const holidayId = record.holidayId || null;
+        const remarks = record.remarks || null;
+        const status = record.status || attendanceStatus.toLowerCase();
+        const isHoliday = record.isHoliday !== undefined ? record.isHoliday : (dayType === 'HOLIDAY');
+
         if (existing) {
           const needsUpdate =
-            existing.status !== record.status ||
-            existing.remarks !== record.remarks;
+            existing.status !== status ||
+            existing.attendanceStatus !== attendanceStatus ||
+            existing.dayType !== dayType ||
+            existing.leaveType !== leaveType ||
+            existing.remarks !== remarks;
+
           if (needsUpdate) {
+            const nextRevision = (existing.revision || 1) + 1;
             existingToUpdate.push({
               $id: existing.$id,
               userId: existing.userId,
@@ -141,11 +156,19 @@ export const handleAttendanceAction = async (action, req, res, client, databases
               tradeId: existing.tradeId || null,
               date: existing.date,
               markedAt: existing.markedAt,
-              status: record.status,
-              remarks: record.remarks || null,
+              status,
+              isHoliday,
+              dayType,
+              attendanceStatus,
+              leaveType,
+              source,
+              revision: nextRevision,
+              syncStatus,
+              holidayId,
+              remarks,
               ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
             });
-            statsToUpdate.push(record);
+            statsToUpdate.push({ ...record, dayType, attendanceStatus, status, isHoliday });
           }
         } else {
           newRecords.push({
@@ -154,12 +177,20 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             batchId: batchId,
             tradeId: record.tradeId || null,
             date: date,
-            status: record.status,
-            remarks: record.remarks || null,
+            status,
+            isHoliday,
+            dayType,
+            attendanceStatus,
+            leaveType,
+            source,
+            revision: 1,
+            syncStatus,
+            holidayId,
+            remarks,
             markedAt: new Date().toISOString(),
             ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
           });
-          statsToUpdate.push(record);
+          statsToUpdate.push({ ...record, dayType, attendanceStatus, status, isHoliday });
         }
       });
 
@@ -280,10 +311,30 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       return { deletedIds: documentIds };
     }
     case 'createAttendance': {
-      const { userId, batchId, tradeId, date, status, remarks, markedAt, markedBy } = req.bodyJson;
-      if (!userId || !batchId || !date || !status) {
+      const {
+        userId,
+        batchId,
+        tradeId,
+        date,
+        status,
+        remarks,
+        markedAt,
+        markedBy,
+        dayType: inputDayType,
+        attendanceStatus: inputAttendanceStatus,
+        leaveType,
+        source,
+        holidayId,
+      } = req.bodyJson;
+
+      if (!userId || !batchId || !date || (!status && !inputAttendanceStatus)) {
         throw new Error('Missing required fields for createAttendance');
       }
+
+      const dayType = inputDayType || 'WORKING';
+      const attendanceStatus = inputAttendanceStatus || (status ? status.toUpperCase() : 'PRESENT');
+      const finalStatus = status || attendanceStatus.toLowerCase();
+      const isHoliday = dayType === 'HOLIDAY';
 
       const result = await databases.createDocument(
         DB_ID,
@@ -294,7 +345,15 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           batchId,
           tradeId: tradeId || null,
           date,
-          status,
+          status: finalStatus,
+          isHoliday,
+          dayType,
+          attendanceStatus,
+          leaveType: leaveType || null,
+          source: source || 'MANUAL',
+          revision: 1,
+          syncStatus: 'SYNCED',
+          holidayId: holidayId || null,
           remarks: remarks || null,
           markedAt: markedAt || new Date().toISOString(),
           markedBy: markedBy || null,
@@ -303,7 +362,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       // Update stats
       try {
-        await updateBatchStatsHelper(databases, userId, batchId, status, date);
+        await updateBatchStatsHelper(databases, userId, batchId, { dayType, attendanceStatus, status: finalStatus, isHoliday }, date);
       } catch (err) {
         log(`Failed stats update: ${err.message}`);
       }
