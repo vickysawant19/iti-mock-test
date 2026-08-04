@@ -73,13 +73,32 @@ class AttendanceAnalyticsService {
     const rawStatus = String(record.attendanceStatus || record.status || "").trim().toLowerCase();
 
     let attendanceStatus = "NOT_MARKED";
-    if (["present", "p"].includes(rawStatus)) attendanceStatus = "PRESENT";
-    else if (["absent", "a"].includes(rawStatus)) attendanceStatus = "ABSENT";
-    else if (["late"].includes(rawStatus)) attendanceStatus = "LATE";
-    else if (["half_day", "halfday"].includes(rawStatus)) attendanceStatus = "HALF_DAY";
-    else if (["leave", "l"].includes(rawStatus)) attendanceStatus = "LEAVE";
+    let leaveType = record.leaveType || null;
 
-    const leaveType = record.leaveType || (attendanceStatus === "LEAVE" ? "CASUAL" : null);
+    if (["present", "p"].includes(rawStatus)) {
+      attendanceStatus = "PRESENT";
+    } else if (["absent", "a"].includes(rawStatus)) {
+      attendanceStatus = "ABSENT";
+    } else if (["late", "l"].includes(rawStatus)) {
+      attendanceStatus = "LATE";
+    } else if (["half_day", "halfday", "hd"].includes(rawStatus)) {
+      attendanceStatus = "HALF_DAY";
+    } else if (["casual", "cl"].includes(rawStatus)) {
+      attendanceStatus = "LEAVE";
+      leaveType = "CASUAL";
+    } else if (["sick", "sl"].includes(rawStatus)) {
+      attendanceStatus = "LEAVE";
+      leaveType = "SICK";
+    } else if (["special", "spl"].includes(rawStatus)) {
+      attendanceStatus = "LEAVE";
+      leaveType = "SPECIAL";
+    } else if (["on_duty", "od"].includes(rawStatus)) {
+      attendanceStatus = "LEAVE";
+      leaveType = "ON_DUTY";
+    } else if (["leave", "l"].includes(rawStatus)) {
+      attendanceStatus = "LEAVE";
+      leaveType = leaveType ? String(leaveType).toUpperCase() : "CASUAL";
+    }
 
     return {
       ...record,
@@ -89,6 +108,90 @@ class AttendanceAnalyticsService {
       source: record.source || "MANUAL",
       revision: record.revision || 1,
       syncStatus: record.syncStatus || "SYNCED",
+    };
+  }
+
+  /**
+   * Calculates annual leave quotas and remaining balances for a student/teacher.
+   * Quotas:
+   *  - Casual Leave (CL): 12 days / year
+   *  - Sick Leave (SL): 15 days / year (split in max 2 spells)
+   *  - Special Leave (SPL): Unlimited / Not deducted from quota
+   *  - On Duty (OD): Unlimited / Not deducted from quota
+   */
+  calculateLeaveQuota(records = [], targetYear = null) {
+    const CL_TOTAL = 12;
+    const SL_TOTAL = 15;
+    const SL_SPELLS_MAX = 2;
+
+    const normalized = (records || []).map((r) => this.normalizeRecord(r)).filter(Boolean);
+
+    const yearFiltered = targetYear
+      ? normalized.filter((r) => {
+          if (!r.date) return false;
+          const y = new Date(r.date).getFullYear();
+          return y === Number(targetYear);
+        })
+      : normalized;
+
+    let clUsed = 0;
+    let splUsed = 0;
+    let odUsed = 0;
+    const sickDates = [];
+
+    yearFiltered.forEach((rec) => {
+      if (rec.attendanceStatus === "LEAVE") {
+        const lt = String(rec.leaveType || "").toUpperCase();
+        if (lt === "CASUAL" || lt === "CL") {
+          clUsed += 1;
+        } else if (lt === "SICK" || lt === "SL") {
+          if (rec.date) sickDates.push(rec.date);
+        } else if (lt === "SPECIAL" || lt === "SPL") {
+          splUsed += 1;
+        } else if (lt === "ON_DUTY" || lt === "OD") {
+          odUsed += 1;
+        } else {
+          clUsed += 1;
+        }
+      }
+    });
+
+    const slDaysUsed = sickDates.length;
+    let slSpellsUsed = 0;
+
+    if (sickDates.length > 0) {
+      const sortedDates = [...sickDates].sort((a, b) => new Date(a) - new Date(b));
+      slSpellsUsed = 1;
+
+      for (let i = 1; i < sortedDates.length; i++) {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+        if (diffDays > 1) {
+          slSpellsUsed += 1;
+        }
+      }
+    }
+
+    const clRemaining = Math.max(0, CL_TOTAL - clUsed);
+    const slDaysRemaining = Math.max(0, SL_TOTAL - slDaysUsed);
+    const slSpellsRemaining = Math.max(0, SL_SPELLS_MAX - slSpellsUsed);
+
+    return {
+      clTotal: CL_TOTAL,
+      clUsed,
+      clRemaining,
+      slTotalDays: SL_TOTAL,
+      slDaysUsed,
+      slDaysRemaining,
+      slMaxSpells: SL_SPELLS_MAX,
+      slSpellsUsed,
+      slSpellsRemaining,
+      splUsed,
+      odUsed,
+      isClExceeded: clUsed > CL_TOTAL,
+      isSlDaysExceeded: slDaysUsed > SL_TOTAL,
+      isSlSpellsExceeded: slSpellsUsed > SL_SPELLS_MAX,
     };
   }
 
@@ -157,6 +260,9 @@ class AttendanceAnalyticsService {
           } else {
             leaveBreakdown.CASUAL++;
           }
+          // Leaves (CL, SL, SPL, OD) count towards total present days
+          presentDays++;
+          monthlyAttendance[monthKey].presentDays++;
         }
       } else if (record.dayType === "HOLIDAY") {
         holidayDays++;

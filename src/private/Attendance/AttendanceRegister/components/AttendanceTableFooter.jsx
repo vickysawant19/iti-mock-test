@@ -10,8 +10,8 @@ const AttendanceTableFooter = ({
   columnVisibility = { previous: true, daily: true, summary: true },
   compactView = false,
 }) => {
-  const prevColSpan = columnVisibility.previous ? 4 : 0;
-  const summaryColSpan = columnVisibility.summary ? 4 : 0;
+  const prevColSpan = columnVisibility.previous ? 7 : 0;
+  const summaryColSpan = columnVisibility.summary ? 7 : 0;
 
   // Standardized Column Widths & Sticky Positions (Matches Head and Body)
   const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";

@@ -221,6 +221,45 @@ export class UserProfileService {
     }
   }
 
+  /**
+   * Fetch user profiles for an array of userIds and return a Map of userId -> profile.
+   * Uses in-memory cache where available and fetches missing entries from Appwrite.
+   */
+  async getProfilesByUserIds(userIds = []) {
+    if (!userIds || userIds.length === 0) return new Map();
+
+    const map = new Map();
+    const missingIds = [];
+
+    userIds.forEach((uid) => {
+      if (this.profileCache.has(uid)) {
+        const cached = this.profileCache.get(uid);
+        if (cached) map.set(uid, cached);
+      } else {
+        missingIds.push(uid);
+      }
+    });
+
+    if (missingIds.length === 0) return map;
+
+    try {
+      const fetchedProfiles = await this.getBatchUserProfile([
+        Query.equal("userId", missingIds),
+        Query.limit(Math.min(100, missingIds.length || 100)),
+      ]);
+
+      (fetchedProfiles || []).forEach((p) => {
+        if (p.userId) {
+          map.set(p.userId, p);
+        }
+      });
+    } catch (error) {
+      console.error("Appwrite error: getProfilesByUserIds:", error);
+    }
+
+    return map;
+  }
+
   async getUserProfile(userId) {
     if (!userId) {
       console.warn("[DEBUG] getUserProfile returning early because userId is falsy!");

@@ -37,9 +37,13 @@ const AttendanceTableBody = ({
           absentDays: 0,
         };
 
-        let currentMonthPresentDays = 0;
+        let rawPresentDays = 0;
         let currentMonthWorkingDays = 0;
         let currentMonthAbsentDays = 0;
+        let currentMonthCasualLeaves = 0;
+        let currentMonthSickLeaves = 0;
+        let currentMonthSpecialLeaves = 0;
+        let currentMonthOnDutyLeaves = 0;
 
         monthDates.forEach((date) => {
           const fullDate = formatDate(
@@ -48,23 +52,44 @@ const AttendanceTableBody = ({
           );
           if (!holidays.has(fullDate)) {
             currentMonthWorkingDays++;
-            const status = studentRecords.get(fullDate);
-            if (status === "present") currentMonthPresentDays++;
-            else if (status === "absent") currentMonthAbsentDays++;
+            const status = String(studentRecords.get(fullDate) || "").toLowerCase();
+            if (status === "present" || status === "p") rawPresentDays++;
+            else if (status === "absent" || status === "a") currentMonthAbsentDays++;
+            else if (["casual", "cl"].includes(status)) currentMonthCasualLeaves++;
+            else if (["sick", "sl"].includes(status)) currentMonthSickLeaves++;
+            else if (["special", "spl"].includes(status)) currentMonthSpecialLeaves++;
+            else if (["on_duty", "od"].includes(status)) currentMonthOnDutyLeaves++;
+            else if (status === "leave") currentMonthCasualLeaves++;
           }
         });
+
+        // Total present days is sum of Present + CL + SL + SPL + OD
+        const currentMonthPresentDays =
+          rawPresentDays +
+          currentMonthCasualLeaves +
+          currentMonthSickLeaves +
+          currentMonthSpecialLeaves +
+          currentMonthOnDutyLeaves;
 
         const currentMonthPercentage =
           currentMonthWorkingDays > 0
             ? ((currentMonthPresentDays / currentMonthWorkingDays) * 100).toFixed(1)
             : 0;
 
-        const prevMonthWorkingDays = prevMonthData.presentDays + prevMonthData.absentDays;
-        const prevMonthPresentDays = prevMonthData.presentDays;
-        const prevMonthPercentage =
+        const prevMonthWorkingDays = prevMonthData.workingDays || (prevMonthData.presentDays + prevMonthData.absentDays);
+        const prevMonthCasual = prevMonthData.leaveBreakdown?.CASUAL || prevMonthData.casualDays || 0;
+        const prevMonthSick = prevMonthData.leaveBreakdown?.SICK || prevMonthData.sickDays || 0;
+        const prevMonthSpecial = prevMonthData.leaveBreakdown?.SPECIAL || prevMonthData.specialDays || 0;
+        const prevMonthOnDuty = prevMonthData.leaveBreakdown?.ON_DUTY || prevMonthData.onDutyDays || 0;
+        const prevMonthLeaveTotal = prevMonthCasual + prevMonthSick + prevMonthSpecial + prevMonthOnDuty;
+        const prevMonthTotalPresent = prevMonthData.presentDays || 0;
+        const prevMonthRawPresent = Math.max(0, prevMonthTotalPresent - prevMonthLeaveTotal);
+        const prevMonthAbsentDays = prevMonthData.absentDays || 0;
+        const prevMonthPercentage = prevMonthData.percentage !== undefined ? prevMonthData.percentage : (
           prevMonthWorkingDays > 0
-            ? ((prevMonthPresentDays / prevMonthWorkingDays) * 100).toFixed(1)
-            : 0;
+            ? ((prevMonthTotalPresent / prevMonthWorkingDays) * 100).toFixed(1)
+            : 0
+        );
 
         const studentUpdating = isStudentUpdating(student.userId);
         const isRowEven = idx % 2 === 0;
@@ -93,28 +118,49 @@ const AttendanceTableBody = ({
             {/* ── PREVIOUS MONTH STATS ── */}
             {columnVisibility.previous && (
               <>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-semibold text-slate-800 dark:text-slate-200`}>
+                <td title="Work Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
                   {loadingStats ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    prevMonthWorkingDays || prevMonthData.workingDays || 0
+                    prevMonthWorkingDays
                   )}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold`}>
+                <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    prevMonthPresentDays || 0
+                    prevMonthRawPresent
                   )}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-rose-700 dark:text-rose-400 font-extrabold`}>
+                <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    prevMonthData.absentDays || 0
+                    prevMonthAbsentDays
                   )}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-black`}>
+                <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
+                  {loadingStats ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-amber-600 dark:text-amber-400" />
+                  ) : (
+                    prevMonthCasual
+                  )}
+                </td>
+                <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
+                  {loadingStats ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-sky-600 dark:text-sky-400" />
+                  ) : (
+                    prevMonthSick
+                  )}
+                </td>
+                <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
+                  {loadingStats ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-purple-600 dark:text-purple-400" />
+                  ) : (
+                    prevMonthSpecial
+                  )}
+                </td>
+                <td title="Previous Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-black text-[10px] px-0.5`}>
                   {loadingStats ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
                   ) : (
@@ -250,19 +296,77 @@ const AttendanceTableBody = ({
                       </div>
                     )}
 
-                    {status === "present" ? (
-                      <span className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-extrabold text-xs shadow-2xs border border-emerald-300 dark:border-emerald-800">
-                        P
-                      </span>
-                    ) : status === "absent" ? (
-                      <span className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-extrabold text-xs shadow-2xs border border-rose-300 dark:border-rose-800">
-                        A
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 dark:text-slate-600 font-bold text-xs">
-                        -
-                      </span>
-                    )}
+                    {(() => {
+                      const s = String(status || "").toLowerCase();
+                      if (["present", "p"].includes(s)) {
+                        return (
+                          <span title="Present" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-extrabold text-xs shadow-2xs border border-emerald-300 dark:border-emerald-800">
+                            P
+                          </span>
+                        );
+                      }
+                      if (["absent", "a"].includes(s)) {
+                        return (
+                          <span title="Absent" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-extrabold text-xs shadow-2xs border border-rose-300 dark:border-rose-800">
+                            A
+                          </span>
+                        );
+                      }
+                      if (["casual", "cl"].includes(s)) {
+                        return (
+                          <span title="Casual Leave (CL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-extrabold text-[10px] shadow-2xs border border-amber-300 dark:border-amber-800">
+                            CL
+                          </span>
+                        );
+                      }
+                      if (["sick", "sl"].includes(s)) {
+                        return (
+                          <span title="Sick Leave (SL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 font-extrabold text-[10px] shadow-2xs border border-sky-300 dark:border-sky-800">
+                            SL
+                          </span>
+                        );
+                      }
+                      if (["special", "spl"].includes(s)) {
+                        return (
+                          <span title="Special Leave (SPL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-extrabold text-[9px] shadow-2xs border border-purple-300 dark:border-purple-800">
+                            SPL
+                          </span>
+                        );
+                      }
+                      if (["on_duty", "od"].includes(s)) {
+                        return (
+                          <span title="On Duty (OD)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 font-extrabold text-[10px] shadow-2xs border border-teal-300 dark:border-teal-800">
+                            OD
+                          </span>
+                        );
+                      }
+                      if (["half_day", "halfday", "hd"].includes(s)) {
+                        return (
+                          <span title="Half Day (HD)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300 font-extrabold text-[10px] shadow-2xs border border-yellow-300 dark:border-yellow-800">
+                            HD
+                          </span>
+                        );
+                      }
+                      if (["late", "l"].includes(s)) {
+                        return (
+                          <span title="Late (L)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-extrabold text-xs shadow-2xs border border-indigo-300 dark:border-indigo-800">
+                            L
+                          </span>
+                        );
+                      }
+                      if (["leave"].includes(s)) {
+                        return (
+                          <span title="Leave (CL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-extrabold text-[10px] shadow-2xs border border-amber-300 dark:border-amber-800">
+                            CL
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-slate-400 dark:text-slate-600 font-bold text-xs">
+                          -
+                        </span>
+                      );
+                    })()}
                   </td>
                 );
               })}
@@ -270,16 +374,25 @@ const AttendanceTableBody = ({
             {/* ── MONTHLY SUMMARY STATS ── */}
             {columnVisibility.summary && (
               <>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-semibold text-slate-800 dark:text-slate-200`}>
+                <td title="Work Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
                   {currentMonthWorkingDays}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-emerald-700 dark:text-emerald-400 font-extrabold`}>
-                  {currentMonthPresentDays}
+                <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
+                  {rawPresentDays}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-rose-700 dark:text-rose-400 font-extrabold`}>
+                <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
                   {currentMonthAbsentDays}
                 </td>
-                <td className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-black`}>
+                <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
+                  {currentMonthCasualLeaves}
+                </td>
+                <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
+                  {currentMonthSickLeaves}
+                </td>
+                <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
+                  {currentMonthSpecialLeaves}
+                </td>
+                <td title="This Month Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-black text-[10px] px-0.5`}>
                   <span
                     className={
                       Number(currentMonthPercentage) >= 75

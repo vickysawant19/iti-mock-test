@@ -182,17 +182,46 @@ export const DiaryTableRow = React.memo(({
   }`;
 
   const renderStatusBadge = () => {
-    if (teacherStatus === "present") {
+    const s = String(teacherStatus || "").toLowerCase();
+    if (["present", "p"].includes(s)) {
       return (
         <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 text-[11px] font-bold inline-flex items-center gap-1">
           <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Present
         </span>
       );
     }
-    if (teacherStatus === "absent") {
+    if (["absent", "a"].includes(s)) {
       return (
         <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 text-[11px] font-bold inline-flex items-center gap-1">
           <UserX className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" /> Absent
+        </span>
+      );
+    }
+    if (["casual", "cl"].includes(s)) {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 text-[11px] font-bold inline-flex items-center gap-1">
+          <Palmtree className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Casual Leave (CL)
+        </span>
+      );
+    }
+    if (["sick", "sl"].includes(s)) {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 text-[11px] font-bold inline-flex items-center gap-1">
+          <Palmtree className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" /> Sick Leave (SL)
+        </span>
+      );
+    }
+    if (["special", "spl"].includes(s)) {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 text-[11px] font-bold inline-flex items-center gap-1">
+          <Palmtree className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Special Leave (SPL)
+        </span>
+      );
+    }
+    if (["on_duty", "od"].includes(s)) {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 text-[11px] font-bold inline-flex items-center gap-1">
+          <Palmtree className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /> On Duty (OD)
         </span>
       );
     }

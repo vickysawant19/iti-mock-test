@@ -101,7 +101,7 @@ function InstructorDailyDiary() {
             activeBatchId,
             startDate,
             endDate,
-            [Query.select(["$id", "date", "status"])]
+            [Query.select(["$id", "date", "status", "attendanceStatus", "leaveType"])]
           ),
           holidayService.getBatchHolidaysByDateRange(
             activeBatchId,
@@ -120,7 +120,11 @@ function InstructorDailyDiary() {
         const docIdsMap = new Map();
         if (attendanceRes?.documents) {
           attendanceRes.documents.forEach((item) => {
-            const rawStatus = item.attendanceStatus ? item.attendanceStatus.toLowerCase() : item.status;
+            const rawStatus = item.leaveType
+              ? item.leaveType.toLowerCase()
+              : item.attendanceStatus
+              ? item.attendanceStatus.toLowerCase()
+              : item.status;
             attendanceMap.set(item.date, rawStatus);
             if (item.$id) docIdsMap.set(item.date, item.$id);
           });

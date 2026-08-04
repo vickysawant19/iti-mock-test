@@ -112,7 +112,11 @@ const AttendanceRegister = () => {
         inner = new Map();
         map.set(att.userId, inner);
       }
-      const rawStatus = att.attendanceStatus ? att.attendanceStatus.toLowerCase() : att.status;
+      let rawStatus = att.attendanceStatus ? att.attendanceStatus.toLowerCase() : (att.status || "");
+      if (rawStatus === "leave") {
+        const lt = String(att.leaveType || "").toLowerCase();
+        rawStatus = lt ? (lt === "casual" ? "casual" : lt === "sick" ? "sick" : lt === "special" ? "special" : lt === "on_duty" ? "on_duty" : "casual") : "casual";
+      }
       inner.set(att.date, rawStatus);
     });
     return map;
@@ -199,71 +203,52 @@ const AttendanceRegister = () => {
     fetchCacheRef.current = { attendance: null, stats: null }; // invalidate cache
 
     updateLoading("students", true);
+    updateLoading("holiday", true);
 
     try {
       const [holidaysData, studentsData] = await Promise.all([
-        // Holidays
         holidayService.getBatchHolidays(selectedBatch).catch((err) => {
           console.error("Error fetching holidays:", err);
           return [];
         }),
-
-        // Students: members → profile enrichment → sort
         (async () => {
-          const batchMembers =
-            await batchStudentService.getBatchStudents(selectedBatch);
-
-          const memberMap  = new Map();
-          const studentIds = [];
-
-          batchMembers.forEach((member) => {
-            if (member.studentId) {
-              memberMap.set(member.studentId, member);
-              studentIds.push(member.studentId);
-            }
-          });
-
-          if (studentIds.length === 0) return [];
-
-          const profiles = await userProfileService.getBatchUserProfile([
-            Query.equal("userId", studentIds),
-            Query.select(["$id", "userId", "userName", "profileImage"]),
-            Query.limit(100),
-          ]);
-
-          return profiles
-            .map((p) => ({
-              ...p,
-              studentId: memberMap.get(p.userId)?.rollNumber ?? null,
-            }))
-            .sort((a, b) => {
-              const valA = a.studentId ? parseInt(a.studentId, 10) : Infinity;
-              const valB = b.studentId ? parseInt(b.studentId, 10) : Infinity;
-              return valA - valB;
-            });
+          const batchStudents = await batchStudentService.getBatchStudents(selectedBatch);
+          const userIds = batchStudents.map((doc) => doc.studentId).filter(Boolean);
+          if (userIds.length === 0) return [];
+          const profilesMap = await userProfileService.getProfilesByUserIds(userIds);
+          return userIds
+            .map((uid) => {
+              const p = profilesMap.get(uid);
+              if (!p) return null;
+              return {
+                userId: p.userId,
+                userName: p.userName,
+                studentId: p.studentId,
+                profileImage: p.profileImage,
+              };
+            })
+            .filter(Boolean);
         })(),
       ]);
 
       if (signal.aborted) return;
 
-      // Build holiday map
       const holidayMap = new Map();
       holidaysData.forEach((h) => holidayMap.set(h.date, h));
       setHolidays(holidayMap);
 
-      // Prepend teacher row when applicable
       let finalStudents = studentsData;
-      if (user?.labels?.includes("Teacher")) {
+      if (profile?.userId) {
         finalStudents = [
           {
-            $id:          profile.$id || profile.userId,
-            userId:       profile.userId,
-            userName:     `${profile.userName || profile.name || "Instructor"} - Teacher`,
-            studentId:    "Teacher",
+            $id: profile.$id || profile.userId,
+            userId: profile.userId,
+            userName: `${profile.userName || profile.name || "Instructor"} - Teacher`,
+            studentId: "Teacher",
             profileImage: profile.profileImage || "",
-            isTeacher:    true,
+            isTeacher: true,
           },
-          ...studentsData,
+          ...studentsData.filter((s) => s.userId !== profile.userId),
         ];
       }
       setStudents(finalStudents);
@@ -275,9 +260,10 @@ const AttendanceRegister = () => {
     } finally {
       if (!signal.aborted) {
         updateLoading("students", false);
+        updateLoading("holiday", false);
       }
     }
-  }, [selectedBatch, batches, updateLoading, profile, user]);
+  }, [selectedBatch, batches, updateLoading, profile]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Fetch: attendance + stats
@@ -738,6 +724,7 @@ const AttendanceRegister = () => {
           loadingStats={loading.stats}
           batchStartDate={rawBatchStartDate}
           batchEndDate={rawBatchEndDate}
+          existingAttendance={newAttendance}
         />
 
         <MarkAttendanceModal

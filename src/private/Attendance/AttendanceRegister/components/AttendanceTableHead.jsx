@@ -30,8 +30,8 @@ const AttendanceTableHead = ({
   );
 
   const dailyCount = columnVisibility.daily ? monthDates.length : 0;
-  const prevCount = columnVisibility.previous ? 4 : 0;
-  const summaryCount = columnVisibility.summary ? 4 : 0;
+  const prevCount = columnVisibility.previous ? 7 : 0;
+  const summaryCount = columnVisibility.summary ? 7 : 0;
 
   return (
     <thead className="text-white select-none">
@@ -94,28 +94,56 @@ const AttendanceTableHead = ({
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="Previous Month Working Days"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Work
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="Previous Month Present Days"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Pres
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="Previous Month Absent Days"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Abs
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="Previous Month Casual Leaves (CL)"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-amber-600 dark:bg-amber-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              CL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="Previous Month Sick Leaves (SL)"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-sky-600 dark:bg-sky-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              SL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="Previous Month Special Leaves (SPL)"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-purple-600 dark:bg-purple-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              SPL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="Previous Month Attendance Percentage"
+              className={`${cell} border border-emerald-600/60 dark:border-emerald-900/60 bg-emerald-600 dark:bg-emerald-900/80 font-semibold text-[10px] w-11 min-w-11 text-center px-0.5`}
             >
               Prev %
             </th>
@@ -178,28 +206,56 @@ const AttendanceTableHead = ({
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="This Month Working Days"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Work
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="This Month Present Days"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Pres
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="This Month Absent Days"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
             >
               Abs
             </th>
             <th
               rowSpan={2}
               scope="col"
-              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[11px] w-14 min-w-14 text-center`}
+              title="This Month Casual Leaves (CL)"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-amber-600 dark:bg-amber-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              CL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="This Month Sick Leaves (SL)"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-sky-600 dark:bg-sky-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              SL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="This Month Special Leaves (SPL)"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-purple-600 dark:bg-purple-900/80 font-semibold text-[10px] w-9 min-w-9 text-center px-0.5`}
+            >
+              SPL
+            </th>
+            <th
+              rowSpan={2}
+              scope="col"
+              title="This Month Attendance Percentage"
+              className={`${cell} border border-blue-600/60 dark:border-blue-900/60 bg-blue-600 dark:bg-blue-900/80 font-semibold text-[10px] w-11 min-w-11 text-center px-0.5`}
             >
               Pct %
             </th>
