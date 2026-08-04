@@ -203,8 +203,9 @@ const AttendanceDashboard = () => {
         let batchAbsent = 0;
 
         attendance.forEach((item) => {
-          if (item.status === "present") batchPresent++;
-          if (item.status === "absent") batchAbsent++;
+          const st = String(item.attendanceStatus || item.status || "").toLowerCase();
+          if (st === "present") batchPresent++;
+          if (st === "absent") batchAbsent++;
         });
 
         tradeTotal += batchTotal;

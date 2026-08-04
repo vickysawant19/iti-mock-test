@@ -87,7 +87,7 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
     if (!record?.date) return;
     dateMap.set(record.date, {
       ...record,
-      status: normalizeStatus(record.status),
+      status: normalizeStatus(record.attendanceStatus || record.status),
     });
   });
   holidayEntries.forEach(([date, holidayText]) => {
@@ -132,7 +132,7 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
         </thead>
         <tbody className="divide-y divide-[#f1f5f9] dark:divide-slate-800">
           {mergedSortedRecords.map((record) => {
-            const status = normalizeStatus(record.status);
+            const status = normalizeStatus(record.attendanceStatus || record.status);
             const hasAttendanceStatus = [
               "present",
               "absent",

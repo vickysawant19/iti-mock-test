@@ -51,7 +51,8 @@ const MarkAttendanceModal = ({
           (att) => att.userId === student.userId
         );
         const dayRecord = record?.find((rec) => rec.date === date);
-        statuses[student.userId] = dayRecord?.status || "absent";
+        const rawStatus = dayRecord?.attendanceStatus ? dayRecord.attendanceStatus.toLowerCase() : (dayRecord?.status || "absent");
+        statuses[student.userId] = rawStatus;
       });
       setAttendanceStatuses(statuses);
 

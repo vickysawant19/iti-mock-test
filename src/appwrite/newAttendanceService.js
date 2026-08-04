@@ -719,10 +719,12 @@ class NewAttendanceService {
         }
 
         userAttendance[doc.userId].total++;
-        if (doc.status === "present") userAttendance[doc.userId].present++;
-        else if (doc.status === "late") userAttendance[doc.userId].late++;
-        else if (doc.status === "absent") userAttendance[doc.userId].absent++;
-        else if (doc.status === "holiday") userAttendance[doc.userId].holiday++;
+        const st = String(doc.attendanceStatus || doc.status || "").toLowerCase();
+        const dt = String(doc.dayType || "").toUpperCase();
+        if (st === "present") userAttendance[doc.userId].present++;
+        else if (st === "late") userAttendance[doc.userId].late++;
+        else if (st === "absent") userAttendance[doc.userId].absent++;
+        if (dt === "HOLIDAY" || st === "holiday") userAttendance[doc.userId].holiday++;
       });
 
       // Calculate percentage and filter
@@ -846,10 +848,10 @@ class NewAttendanceService {
         const documents = response.documents;
 
         const presentCount = documents.filter(
-          (doc) => doc.status === "present",
+          (doc) => (doc.attendanceStatus ? doc.attendanceStatus.toLowerCase() : doc.status) === "present",
         ).length;
         const absentCount = documents.filter(
-          (doc) => doc.status === "absent",
+          (doc) => (doc.attendanceStatus ? doc.attendanceStatus.toLowerCase() : doc.status) === "absent",
         ).length;
 
         const totalMarked = presentCount + absentCount;

@@ -102,7 +102,8 @@ function StudentDailyDiary() {
       const attendanceMap = new Map();
       if (attendanceRes?.documents) {
         attendanceRes.documents.forEach((item) => {
-          attendanceMap.set(item.date, item.status);
+          const rawStatus = item.attendanceStatus ? item.attendanceStatus.toLowerCase() : item.status;
+          attendanceMap.set(item.date, rawStatus);
         });
       }
       setMonthlyAttendance(attendanceMap);

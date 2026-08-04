@@ -120,7 +120,8 @@ function InstructorDailyDiary() {
         const docIdsMap = new Map();
         if (attendanceRes?.documents) {
           attendanceRes.documents.forEach((item) => {
-            attendanceMap.set(item.date, item.status);
+            const rawStatus = item.attendanceStatus ? item.attendanceStatus.toLowerCase() : item.status;
+            attendanceMap.set(item.date, rawStatus);
             if (item.$id) docIdsMap.set(item.date, item.$id);
           });
         }

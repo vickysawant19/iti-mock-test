@@ -97,7 +97,8 @@ export const TodayAttendanceModule = ({ students = [], batchData, onlineUsersMap
         const docIds = [];
         attendanceRes.documents.forEach((doc) => {
           if (doc.userId) {
-            statusMap[doc.userId] = doc.status; // 'present' or 'absent'
+            const raw = doc.attendanceStatus ? doc.attendanceStatus.toLowerCase() : doc.status;
+            statusMap[doc.userId] = raw; // 'present', 'absent', etc.
             docIds.push(doc.$id);
           }
         });
@@ -318,12 +319,14 @@ export const TodayAttendanceModule = ({ students = [], batchData, onlineUsersMap
       const savedDocIds = [];
       if (response && response.success) {
         response.success.forEach((doc) => {
-          savedMap[doc.userId] = doc.status;
+          const raw = doc.attendanceStatus ? doc.attendanceStatus.toLowerCase() : doc.status;
+          savedMap[doc.userId] = raw;
           savedDocIds.push(doc.$id);
         });
       } else {
         recordsToSave.forEach((r) => {
-          savedMap[r.userId] = r.status;
+          const raw = r.attendanceStatus ? r.attendanceStatus.toLowerCase() : r.status;
+          savedMap[r.userId] = raw;
         });
       }
 

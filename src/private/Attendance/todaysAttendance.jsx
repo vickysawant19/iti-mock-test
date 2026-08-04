@@ -164,12 +164,13 @@ const AttendanceTracker = () => {
           resolvedBatchId,
           new Date()
         );
-        if (response) {
-          setExistingAttendance(response);
-          if (response?.status === "present") {
-            setAttendanceMarked(true);
+          if (response) {
+            setExistingAttendance(response);
+            const statusVal = String(response?.attendanceStatus || response?.status || "").toLowerCase();
+            if (statusVal === "present") {
+              setAttendanceMarked(true);
+            }
           }
-        }
       } catch (e) {
         console.log(e);
       } finally {

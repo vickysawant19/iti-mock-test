@@ -53,10 +53,15 @@ const AttendanceCard = ({ record, isHoliday, holidayText }) => {
         <p className="font-semibold text-slate-900 dark:text-white">
           {format(new Date(record.date), "dd MMM yyyy")}
         </p>
-        <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(record.status)}`}>
-          {getStatusIcon(record.status)}
-          <span className="capitalize">{record.status}</span>
-        </span>
+        {(() => {
+          const statusVal = record.attendanceStatus ? record.attendanceStatus.toLowerCase() : record.status;
+          return (
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(statusVal)}`}>
+              {getStatusIcon(statusVal)}
+              <span className="capitalize">{statusVal}</span>
+            </span>
+          );
+        })()}
       </div>
       
       {record.remarks && (

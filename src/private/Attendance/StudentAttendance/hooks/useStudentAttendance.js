@@ -63,7 +63,8 @@ const normalizeAttendanceData = (records = []) => {
 
   records.forEach((record) => {
     const date = normalizeDate(record?.date);
-    const status = normalizeStatus(record?.status);
+    const rawVal = record?.attendanceStatus || record?.status;
+    const status = normalizeStatus(rawVal);
     if (!date || !["present", "absent", "leave"].includes(status)) {
       invalid.push(record);
       return;
@@ -143,9 +144,10 @@ const calculateStats = (records = [], holidayDays = 0) => {
   let leaveDays = 0;
 
   records.forEach((record) => {
-    if (record.status === "present") presentDays += 1;
-    else if (record.status === "leave") leaveDays += 1;
-    else if (record.status === "absent") absentDays += 1;
+    const st = record.attendanceStatus ? record.attendanceStatus.toLowerCase() : record.status;
+    if (st === "present") presentDays += 1;
+    else if (st === "leave") leaveDays += 1;
+    else if (st === "absent") absentDays += 1;
   });
 
   const totalDays = presentDays + absentDays;

@@ -112,7 +112,8 @@ const AttendanceRegister = () => {
         inner = new Map();
         map.set(att.userId, inner);
       }
-      inner.set(att.date, att.status);
+      const rawStatus = att.attendanceStatus ? att.attendanceStatus.toLowerCase() : att.status;
+      inner.set(att.date, rawStatus);
     });
     return map;
   }, [newAttendance]);

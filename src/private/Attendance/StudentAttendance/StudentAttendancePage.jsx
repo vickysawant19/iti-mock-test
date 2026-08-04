@@ -111,7 +111,7 @@ const StudentAttendancePage = () => {
                   {locError ? (locError.message || "Location access denied") : (distance === Infinity || locLoading ? locationText || "Locating..." : `${Math.round(distance)}m from institute`)}
                 </div>
              </div>
-             {todayAttendance?.status === 'present' && (
+             {(todayAttendance?.attendanceStatus?.toLowerCase() || todayAttendance?.status) === 'present' && (
                 <div className="bg-emerald-400/20 border border-emerald-400/40 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 flex-shrink-0">
                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
                    Marked Present
