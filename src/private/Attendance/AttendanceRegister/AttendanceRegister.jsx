@@ -24,10 +24,11 @@ import {
   subMonths,
   endOfMonth,
 } from "date-fns";
-import MarkAttendanceModal from "./components/MarkAttendanceModal";
-import StudentAttendanceEditModal from "./components/StudentAttendanceEditModal";
+import DailyBatchAttendanceModal from "./components/DailyBatchAttendanceModal";
+import StudentMonthlyAttendanceModal from "./components/StudentMonthlyAttendanceModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
+import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 import Legent from "./components/Legent";
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";
@@ -372,23 +373,17 @@ const AttendanceRegister = () => {
           (att) => att.userId === userId && att.date === date,
         );
 
-        const upperStatus = String(newStatus || "").toUpperCase();
+        const payload = attendanceTrackingService.createAttendancePayload({
+          userId,
+          batchId: selectedBatch,
+          tradeId: batches.get(selectedBatch)?.tradeId ?? null,
+          date,
+          status: newStatus,
+        });
+
         const attendanceResponse = existingRecord
-          ? await newAttendanceService.updateAttendance(existingRecord.$id, {
-              status: newStatus.toLowerCase(),
-              attendanceStatus: upperStatus,
-              dayType: "WORKING",
-            })
-          : await newAttendanceService.createAttendance({
-              userId,
-              batchId:  selectedBatch,
-              tradeId:  batches.get(selectedBatch)?.tradeId ?? null,
-              date,
-              status:   newStatus.toLowerCase(),
-              attendanceStatus: upperStatus,
-              dayType:  "WORKING",
-              remarks:  null,
-            });
+          ? await newAttendanceService.updateAttendance(existingRecord.$id, payload)
+          : await newAttendanceService.createAttendance(payload);
 
         // Merge updated record into local state
         setNewAttendance((prev) => [
@@ -420,32 +415,18 @@ const AttendanceRegister = () => {
         const dayType = isHoliday ? "HOLIDAY" : "WORKING";
 
         const records = Object.entries(statuses).map(([userId, statusVal]) => {
-          const statusStr = String(statusVal || "").toLowerCase();
-          let attendanceStatus = "PRESENT";
-          let leaveType = null;
-
-          if (["present", "p"].includes(statusStr)) attendanceStatus = "PRESENT";
-          else if (["absent", "a"].includes(statusStr)) attendanceStatus = "ABSENT";
-          else if (["late"].includes(statusStr)) attendanceStatus = "LATE";
-          else if (["half_day", "halfday"].includes(statusStr)) attendanceStatus = "HALF_DAY";
-          else if (["leave", "l", "casual", "sick", "on_duty", "special"].includes(statusStr)) {
-            attendanceStatus = "LEAVE";
-            leaveType = statusStr === "sick" ? "SICK" : statusStr === "on_duty" ? "ON_DUTY" : statusStr === "special" ? "SPECIAL" : "CASUAL";
-          }
-
-          return {
+          const payload = attendanceTrackingService.createAttendancePayload({
             userId,
             batchId: selectedBatch,
             tradeId: batch?.tradeId ?? null,
             date: selectedDate,
+            status: String(statusVal || "").toLowerCase(),
+          });
+          return {
+            ...payload,
             dayType,
-            attendanceStatus,
-            leaveType,
-            source: "MANUAL",
-            status: statusStr,
             isHoliday,
-            markedAt: new Date().toISOString(),
-            remarks: null,
+            source: "MANUAL",
           };
         });
 
@@ -708,7 +689,7 @@ const AttendanceRegister = () => {
 
         <Legent />
 
-        <StudentAttendanceEditModal
+        <StudentMonthlyAttendanceModal
           isOpen={!!selectedStudent}
           onClose={handleCloseStudentModal}
           student={selectedStudent}
@@ -727,7 +708,7 @@ const AttendanceRegister = () => {
           existingAttendance={newAttendance}
         />
 
-        <MarkAttendanceModal
+        <DailyBatchAttendanceModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           students={students}

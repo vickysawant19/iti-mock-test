@@ -1,5 +1,6 @@
 import React from "react";
 import { LoaderCircle, Edit3 } from "lucide-react";
+import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
 
 const AttendanceTableBody = ({
   students,
@@ -296,77 +297,7 @@ const AttendanceTableBody = ({
                       </div>
                     )}
 
-                    {(() => {
-                      const s = String(status || "").toLowerCase();
-                      if (["present", "p"].includes(s)) {
-                        return (
-                          <span title="Present" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-extrabold text-xs shadow-2xs border border-emerald-300 dark:border-emerald-800">
-                            P
-                          </span>
-                        );
-                      }
-                      if (["absent", "a"].includes(s)) {
-                        return (
-                          <span title="Absent" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-extrabold text-xs shadow-2xs border border-rose-300 dark:border-rose-800">
-                            A
-                          </span>
-                        );
-                      }
-                      if (["casual", "cl"].includes(s)) {
-                        return (
-                          <span title="Casual Leave (CL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-extrabold text-[10px] shadow-2xs border border-amber-300 dark:border-amber-800">
-                            CL
-                          </span>
-                        );
-                      }
-                      if (["sick", "sl"].includes(s)) {
-                        return (
-                          <span title="Sick Leave (SL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 font-extrabold text-[10px] shadow-2xs border border-sky-300 dark:border-sky-800">
-                            SL
-                          </span>
-                        );
-                      }
-                      if (["special", "spl"].includes(s)) {
-                        return (
-                          <span title="Special Leave (SPL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-extrabold text-[9px] shadow-2xs border border-purple-300 dark:border-purple-800">
-                            SPL
-                          </span>
-                        );
-                      }
-                      if (["on_duty", "od"].includes(s)) {
-                        return (
-                          <span title="On Duty (OD)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 font-extrabold text-[10px] shadow-2xs border border-teal-300 dark:border-teal-800">
-                            OD
-                          </span>
-                        );
-                      }
-                      if (["half_day", "halfday", "hd"].includes(s)) {
-                        return (
-                          <span title="Half Day (HD)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300 font-extrabold text-[10px] shadow-2xs border border-yellow-300 dark:border-yellow-800">
-                            HD
-                          </span>
-                        );
-                      }
-                      if (["late", "l"].includes(s)) {
-                        return (
-                          <span title="Late (L)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-extrabold text-xs shadow-2xs border border-indigo-300 dark:border-indigo-800">
-                            L
-                          </span>
-                        );
-                      }
-                      if (["leave"].includes(s)) {
-                        return (
-                          <span title="Leave (CL)" className="inline-flex items-center justify-center h-5.5 w-5.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-extrabold text-[10px] shadow-2xs border border-amber-300 dark:border-amber-800">
-                            CL
-                          </span>
-                        );
-                      }
-                      return (
-                        <span className="text-slate-400 dark:text-slate-600 font-bold text-xs">
-                          -
-                        </span>
-                      );
-                    })()}
+                    <AttendanceStatusBadge status={status} />
                   </td>
                 );
               })}

@@ -154,7 +154,11 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
               (acc, doc) => {
                 if (!acc[doc.userId]) acc[doc.userId] = {};
                 if (!acc[doc.userId][doc.date]) {
-                  const raw = doc.attendanceStatus ? doc.attendanceStatus.toLowerCase() : doc.status;
+                  const raw = doc.leaveType
+                    ? doc.leaveType.toLowerCase()
+                    : doc.attendanceStatus
+                    ? doc.attendanceStatus.toLowerCase()
+                    : doc.status;
                   acc[doc.userId][doc.date] = raw;
                 }
                 return acc;
