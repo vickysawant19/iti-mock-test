@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   eachDayOfInterval,
   endOfMonth,
@@ -6,21 +6,23 @@ import {
   getDay,
   isAfter,
   isBefore,
-  isSameMonth,
   startOfMonth,
+  parseISO,
 } from "date-fns";
 import {
   CalendarDays,
-  User,
   X,
-  BriefcaseBusiness,
   LoaderCircle,
   History,
   Palmtree,
   ShieldAlert,
+  Calendar as CalendarIcon,
+  Check,
+  UserX,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -28,7 +30,8 @@ const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 /**
  * Student Monthly Attendance Calendar & Leave Quotas Modal
  * Opened when clicking a student's row in the Attendance Register.
- * Displays calendar attendance status cycling and annual leave quota breakdown (CL, SL, SPL, OD).
+ * Displays calendar attendance status, annual leave quota breakdown (CL, SL, SPL, OD),
+ * and direct action buttons to switch Present, Absent, CL, SL, SPL, OD for any selected date.
  */
 export const StudentMonthlyAttendanceModal = ({
   isOpen,
@@ -46,6 +49,8 @@ export const StudentMonthlyAttendanceModal = ({
   batchEndDate,
   existingAttendance = [],
 }) => {
+  const [selectedDateKey, setSelectedDateKey] = useState(format(new Date(), "yyyy-MM-dd"));
+
   const monthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth]);
   const monthEnd = useMemo(() => endOfMonth(selectedMonth), [selectedMonth]);
 
@@ -55,6 +60,21 @@ export const StudentMonthlyAttendanceModal = ({
   );
 
   const leadingBlankDays = getDay(monthStart);
+
+  // Set default selected date when modal opens or selectedMonth changes
+  useEffect(() => {
+    if (isOpen) {
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
+      const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
+
+      if (todayStr >= monthStartStr && todayStr <= monthEndStr) {
+        setSelectedDateKey(todayStr);
+      } else {
+        setSelectedDateKey(monthStartStr);
+      }
+    }
+  }, [isOpen, selectedMonth]);
 
   // Calculate annual leave quota for student
   const leaveQuota = useMemo(() => {
@@ -127,6 +147,21 @@ export const StudentMonthlyAttendanceModal = ({
     };
   };
 
+  const selectedDateObj = parseISO(selectedDateKey);
+  const selectedStatus = attendanceMap.get(selectedDateKey);
+  const isSelectedHoliday = holidays.has(selectedDateKey);
+  const isSelectedFuture = isAfter(selectedDateObj, new Date());
+  const isSelectedBeforeBatch = batchStartDate && isBefore(selectedDateObj, new Date(batchStartDate));
+  const isSelectedAfterBatch = batchEndDate && isAfter(selectedDateObj, new Date(batchEndDate));
+  const canEditSelected = !isSelectedHoliday && !isSelectedFuture && !isSelectedBeforeBatch && !isSelectedAfterBatch;
+  const isSelectedUpdating = updatingAttendance.get(`${student.userId}-${selectedDateKey}`);
+  const selectedBadgeInfo = getStatusBadge(selectedStatus);
+
+  const handleApplyStatus = (newStatus) => {
+    if (!canEditSelected || isSelectedUpdating) return;
+    onAttendanceStatusChange(student.userId, selectedDateKey, newStatus);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -151,7 +186,7 @@ export const StudentMonthlyAttendanceModal = ({
                 )}
               </div>
               <p className="text-xs text-indigo-200/80 font-mono mt-0.5">
-                Roll No: {student.studentId || "N/A"} • Batch Attendance Calendar
+                Roll No: {student.studentId || "N/A"} • Monthly Attendance Calendar & Leave Quotas
               </p>
             </div>
           </div>
@@ -287,21 +322,136 @@ export const StudentMonthlyAttendanceModal = ({
             )}
           </div>
 
+          {/* ── DIRECT ACTION CONTROL STRIP FOR SELECTED DATE ── */}
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-3.5 sm:p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  Selected Date: {format(parseISO(selectedDateKey), "EEEE, MMM d, yyyy")}
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold border ${selectedBadgeInfo.cls}`}>
+                  {selectedBadgeInfo.label} ({selectedBadgeInfo.badge})
+                </span>
+              </div>
+              {isSelectedUpdating && (
+                <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Saving...
+                </span>
+              )}
+            </div>
+
+            {/* Direct Action Buttons */}
+            {canEditSelected ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mr-1">Switch Status:</span>
+                
+                {/* Present */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("present")}
+                  disabled={isSelectedUpdating}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "present" || String(selectedStatus || "").toLowerCase() === "p"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-105"
+                      : "bg-white text-emerald-800 hover:bg-emerald-100 border-emerald-300 dark:bg-slate-900 dark:text-emerald-300 dark:border-emerald-800"
+                  }`}
+                >
+                  <Check className="h-3.5 w-3.5" /> Present (P)
+                </button>
+
+                {/* Absent */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("absent")}
+                  disabled={isSelectedUpdating}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "absent" || String(selectedStatus || "").toLowerCase() === "a"
+                      ? "bg-rose-600 text-white border-rose-600 shadow-md scale-105"
+                      : "bg-white text-rose-800 hover:bg-rose-100 border-rose-300 dark:bg-slate-900 dark:text-rose-300 dark:border-rose-800"
+                  }`}
+                >
+                  <UserX className="h-3.5 w-3.5" /> Absent (A)
+                </button>
+
+                {/* Casual Leave */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("casual")}
+                  disabled={isSelectedUpdating}
+                  title={leaveQuota.isClExceeded ? "Warning: CL Quota Exceeded (12/yr)" : "Casual Leave"}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "casual" || String(selectedStatus || "").toLowerCase() === "cl"
+                      ? "bg-amber-500 text-white border-amber-500 shadow-md scale-105"
+                      : "bg-white text-amber-800 hover:bg-amber-100 border-amber-300 dark:bg-slate-900 dark:text-amber-300 dark:border-amber-800"
+                  }`}
+                >
+                  <span>CL ({leaveQuota.clRemaining} left)</span>
+                  {leaveQuota.isClExceeded && <AlertCircle className="w-3.5 h-3.5 text-rose-300" />}
+                </button>
+
+                {/* Sick Leave */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("sick")}
+                  disabled={isSelectedUpdating}
+                  title={leaveQuota.isSlDaysExceeded || leaveQuota.isSlSpellsExceeded ? "Warning: SL Limit Exceeded" : "Sick Leave"}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "sick" || String(selectedStatus || "").toLowerCase() === "sl"
+                      ? "bg-sky-600 text-white border-sky-600 shadow-md scale-105"
+                      : "bg-white text-sky-800 hover:bg-sky-100 border-sky-300 dark:bg-slate-900 dark:text-sky-300 dark:border-sky-800"
+                  }`}
+                >
+                  <span>SL ({leaveQuota.slDaysRemaining}d left)</span>
+                  {(leaveQuota.isSlDaysExceeded || leaveQuota.isSlSpellsExceeded) && <AlertCircle className="w-3.5 h-3.5 text-rose-300" />}
+                </button>
+
+                {/* Special Leave */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("special")}
+                  disabled={isSelectedUpdating}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "special" || String(selectedStatus || "").toLowerCase() === "spl"
+                      ? "bg-purple-600 text-white border-purple-600 shadow-md scale-105"
+                      : "bg-white text-purple-800 hover:bg-purple-100 border-purple-300 dark:bg-slate-900 dark:text-purple-300 dark:border-purple-800"
+                  }`}
+                >
+                  <span>SPL (Special)</span>
+                </button>
+
+                {/* On Duty */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyStatus("on_duty")}
+                  disabled={isSelectedUpdating}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    String(selectedStatus || "").toLowerCase() === "on_duty" || String(selectedStatus || "").toLowerCase() === "od"
+                      ? "bg-teal-600 text-white border-teal-600 shadow-md scale-105"
+                      : "bg-white text-teal-800 hover:bg-teal-100 border-teal-300 dark:bg-slate-900 dark:text-teal-300 dark:border-teal-800"
+                  }`}
+                >
+                  <span>OD (On Duty)</span>
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 italic">
+                {isSelectedHoliday
+                  ? `Exempted: ${holidays.get(selectedDateKey)?.holidayText || "Holiday"}`
+                  : isSelectedFuture
+                  ? "Future date — Attendance marking disabled."
+                  : "Date outside batch operational period."}
+              </p>
+            )}
+          </div>
+
           {/* Calendar Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4 text-indigo-500" />
-                {format(selectedMonth, "MMMM yyyy")} Calendar (Click any day cell to cycle status)
+                {format(selectedMonth, "MMMM yyyy")} Calendar Grid (Select a day cell, then use buttons above)
               </h4>
-              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-semibold">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500"></span> Present (P)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500"></span> Absent (A)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500"></span> Casual (CL)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-sky-500"></span> Sick (SL)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-purple-500"></span> Special (SPL)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-teal-500"></span> On Duty (OD)</span>
-              </div>
             </div>
 
             {/* Weekdays Header */}
@@ -332,28 +482,18 @@ export const StudentMonthlyAttendanceModal = ({
 
                 const isUpdating = updatingAttendance.get(`${student.userId}-${dateKey}`);
                 const badgeInfo = getStatusBadge(status);
+                const isSelected = selectedDateKey === dateKey;
 
                 return (
                   <button
                     key={dateKey}
                     disabled={!canEdit || isUpdating}
                     onClick={() => {
-                      const s = String(status || "").toLowerCase();
-                      const cycle = ["present", "absent", "casual", "sick", "special", "on_duty"];
-                      let idx = cycle.indexOf(s);
-                      if (idx === -1) {
-                        if (s === "p") idx = 0;
-                        else if (s === "a") idx = 1;
-                        else if (s === "cl") idx = 2;
-                        else if (s === "sl") idx = 3;
-                        else if (s === "spl") idx = 4;
-                        else if (s === "od") idx = 5;
-                        else idx = 0;
-                      }
-                      const next = cycle[(idx + 1) % cycle.length];
-                      onAttendanceStatusChange(student.userId, dateKey, next);
+                      setSelectedDateKey(dateKey);
                     }}
-                    className={`h-[68px] rounded-md border text-left p-1.5 transition disabled:cursor-not-allowed disabled:opacity-60 flex flex-col justify-between ${
+                    className={`h-[68px] rounded-md border text-left p-1.5 transition disabled:cursor-not-allowed disabled:opacity-60 flex flex-col justify-between relative ${
+                      isSelected ? "ring-2 ring-indigo-500 border-indigo-500 shadow-md scale-[1.02] z-10" : ""
+                    } ${
                       isHoliday && !student.isTeacher
                         ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
                         : isBeforeBatch || isAfterBatch
@@ -367,7 +507,7 @@ export const StudentMonthlyAttendanceModal = ({
                         ? "Date is before batch start"
                         : isAfterBatch
                         ? "Date is after batch end"
-                        : `${badgeInfo.label} - Click to cycle status`
+                        : `${badgeInfo.label} - Click to select date`
                     }
                   >
                     <div className="flex justify-between items-start">
@@ -398,7 +538,7 @@ export const StudentMonthlyAttendanceModal = ({
         {/* Footer */}
         <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
           <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
-            Edits made to calendar cells automatically save to Appwrite.
+            Select a date on the calendar grid, then click any status button (Present, Absent, CL, SL, SPL, OD) to apply changes.
           </p>
           <button
             onClick={onClose}
@@ -412,4 +552,5 @@ export const StudentMonthlyAttendanceModal = ({
   );
 };
 
+export { StudentMonthlyAttendanceModal as StudentAttendanceEditModal };
 export default StudentMonthlyAttendanceModal;

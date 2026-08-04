@@ -9,10 +9,10 @@ class NewAttendanceService {
     this.database = appwriteService.getTablesDB();
   }
 
-  // Fetch all documents using pagination (handles documents.total automatically)
+  // Fetch all documents using pagination (handles documents.total automatically with max 5000 page size)
   async fetchAllDocuments(queries = []) {
     try {
-      const limit = 100;
+      const limit = 5000;
 
       // Fetch first page with max limit
       const firstResponse = await this.database.listRows({
@@ -480,6 +480,7 @@ class NewAttendanceService {
       const baseQueries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
+        Query.select(["$id", "userId", "date", "status", "attendanceStatus", "leaveType", "dayType"]),
       ];
 
       if (startDate) {
@@ -514,36 +515,150 @@ class NewAttendanceService {
     }
   }
 
+  // Utility to chunk arrays into optimal batch sizes (default 25 IDs per query)
+  chunkArray(array, size = 25) {
+    if (!Array.isArray(array)) return [];
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
   async getBatchPresentCountsForStudents(studentIds, batchId, startDate = null, endDate = null) {
     if (!batchId || !studentIds?.length) return {};
     try {
-      const results = await Promise.all(
-        studentIds.map((sid) => {
-          const queries = [
-            Query.equal("userId", sid),
-            Query.equal("batchId", batchId),
-            Query.equal("dayType", "WORKING"),
-            Query.equal("attendanceStatus", "PRESENT"),
-            Query.limit(1),
-          ];
-          if (startDate) queries.push(Query.greaterThanEqual("date", startDate));
-          if (endDate)   queries.push(Query.lessThanEqual("date", endDate));
+      const studentChunks = this.chunkArray(studentIds, 25);
 
-          return this.database
-            .listRows({ databaseId: conf.databaseId, tableId: conf.newAttendanceCollectionId, queries })
-            .then((res) => ({ sid, presentDays: res.total }))
-            .catch(() => ({ sid, presentDays: 0 }));
+      const chunkResults = await Promise.all(
+        studentChunks.map(async (chunk) => {
+          const queries = [
+            Query.equal("batchId", batchId),
+            Query.equal("userId", chunk),
+            Query.select(["$id", "userId", "status", "attendanceStatus", "leaveType", "dayType"]),
+          ];
+          if (startDate) queries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+          if (endDate)   queries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+
+          return this.fetchAllDocuments(queries);
         })
       );
 
       const counts = {};
-      for (const { sid, presentDays } of results) {
-        counts[sid] = { presentDays };
-      }
+      (studentIds || []).forEach((sid) => {
+        counts[sid] = {
+          presentDays: 0,
+          absentDays: 0,
+          clDays: 0,
+          slDays: 0,
+          splDays: 0,
+          odDays: 0,
+          leaveDays: 0,
+        };
+      });
+
+      chunkResults.forEach((res) => {
+        (res.documents || []).forEach((row) => {
+          const sid = row.userId;
+          if (!sid || !counts[sid]) return;
+
+          const dayType = (row.dayType || "").toUpperCase();
+          if (dayType === "HOLIDAY") return;
+
+          const status = String(row.attendanceStatus || row.status || "").toLowerCase();
+
+          if (status === "present" || status === "p") {
+            counts[sid].presentDays += 1;
+          } else if (status === "absent" || status === "a") {
+            counts[sid].absentDays += 1;
+          } else if (status === "casual" || status === "cl") {
+            counts[sid].clDays += 1;
+            counts[sid].leaveDays += 1;
+            counts[sid].presentDays += 1;
+          } else if (status === "sick" || status === "sl") {
+            counts[sid].slDays += 1;
+            counts[sid].leaveDays += 1;
+            counts[sid].presentDays += 1;
+          } else if (status === "special" || status === "spl") {
+            counts[sid].splDays += 1;
+            counts[sid].leaveDays += 1;
+            counts[sid].presentDays += 1;
+          } else if (status === "on_duty" || status === "od") {
+            counts[sid].odDays += 1;
+            counts[sid].leaveDays += 1;
+            counts[sid].presentDays += 1;
+          }
+        });
+      });
+
       return counts;
     } catch (error) {
       console.error("[newAttendanceService] getBatchPresentCountsForStudents error:", error);
-      throw error;
+      return {};
+    }
+  }
+
+  // Optimized Batch Student Stats: Fetches batch attendance in parallel chunks of 25 students & computes per-student stats in memory
+  async getBatchCumulativeStudentStats(studentIds, batchId, startDate = null, endDate = null) {
+    if (!batchId || !studentIds?.length) return new Map();
+    try {
+      const studentChunks = this.chunkArray(studentIds, 25);
+
+      const chunkResponses = await Promise.all(
+        studentChunks.map(async (chunk) => {
+          const baseQueries = [
+            Query.equal("batchId", batchId),
+            Query.equal("userId", chunk),
+            Query.select(["$id", "userId", "date", "status", "attendanceStatus", "leaveType", "dayType"]),
+          ];
+
+          if (startDate) {
+            baseQueries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+          }
+          if (endDate) {
+            baseQueries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+          }
+
+          return this.fetchAllDocuments(baseQueries);
+        })
+      );
+
+      const userRecordsMap = new Map();
+      (studentIds || []).forEach((id) => userRecordsMap.set(id, []));
+
+      chunkResponses.forEach((res) => {
+        (res.documents || []).forEach((doc) => {
+          if (doc.userId && userRecordsMap.has(doc.userId)) {
+            userRecordsMap.get(doc.userId).push(doc);
+          }
+        });
+      });
+
+      const resultMap = new Map();
+      userRecordsMap.forEach((userDocs, userId) => {
+        const computed = attendanceAnalyticsService.computeStats({
+          records: userDocs,
+          startDate,
+          endDate,
+        });
+
+        resultMap.set(userId, {
+          total: computed.workingDays,
+          presentDays: computed.presentDays,
+          absentDays: computed.absentDays,
+          lateDays: computed.lateDays,
+          workingDays: computed.workingDays,
+          holidayDays: computed.holidayDays,
+          leaveDays: computed.leaveDays,
+          leaveBreakdown: computed.leaveBreakdown,
+          percentage: computed.attendancePercentage,
+        });
+      });
+
+      return resultMap;
+    } catch (error) {
+      console.error("[newAttendanceService] getBatchCumulativeStudentStats error:", error);
+      return new Map();
     }
   }
 

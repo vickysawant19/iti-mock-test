@@ -315,24 +315,16 @@ const AttendanceRegister = () => {
           const batchStart = batch.start_date;
           const endDate    = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
 
-          // Parallel fetch — one call per student (same as before but
-          // correct: no longer inside a Promise.all with a placeholder slot
-          // that made index arithmetic error-prone in the original code).
-          const allStats = await Promise.all(
-            students.map((s) =>
-              newAttendanceService.getStudentAttendanceStats(
-                s.userId,
-                selectedBatch,
-                batchStart,
-                endDate,
-              ),
-            ),
+          // Single batch query stream for all student stats
+          const statsMap = await newAttendanceService.getBatchCumulativeStudentStats(
+            studentIds,
+            selectedBatch,
+            batchStart,
+            endDate
           );
 
           if (signal?.aborted) return;
 
-          const statsMap = new Map();
-          students.forEach((s, i) => statsMap.set(s.userId, allStats[i]));
           setStudentStatsMap(statsMap);
           fetchCacheRef.current.stats = currentKey;
         }

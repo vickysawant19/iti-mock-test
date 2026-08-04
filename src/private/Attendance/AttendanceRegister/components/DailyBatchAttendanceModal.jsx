@@ -729,4 +729,5 @@ export const DailyBatchAttendanceModal = ({
   );
 };
 
+export { DailyBatchAttendanceModal as MarkAttendanceModal };
 export default DailyBatchAttendanceModal;
