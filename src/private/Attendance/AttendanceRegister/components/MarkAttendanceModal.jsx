@@ -70,8 +70,13 @@ const MarkAttendanceModal = ({
 
   // --- Handlers ---
 
-  const handleStatusChange = (userId, status) => {
-    setAttendanceStatuses((prev) => ({ ...prev, [userId]: status }));
+  const handleStatusChange = (userId, targetStatus) => {
+    setAttendanceStatuses((prev) => {
+      const current = prev[userId];
+      // Toggle if user clicks the already marked/selected status
+      const nextStatus = current === targetStatus ? (targetStatus === "present" ? "absent" : "present") : targetStatus;
+      return { ...prev, [userId]: nextStatus };
+    });
   };
 
   const handleMainSave = async () => {

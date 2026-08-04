@@ -386,16 +386,21 @@ const AttendanceRegister = () => {
           (att) => att.userId === userId && att.date === date,
         );
 
+        const upperStatus = String(newStatus || "").toUpperCase();
         const attendanceResponse = existingRecord
           ? await newAttendanceService.updateAttendance(existingRecord.$id, {
-              status: newStatus,
+              status: newStatus.toLowerCase(),
+              attendanceStatus: upperStatus,
+              dayType: "WORKING",
             })
           : await newAttendanceService.createAttendance({
               userId,
               batchId:  selectedBatch,
               tradeId:  batches.get(selectedBatch)?.tradeId ?? null,
               date,
-              status:   newStatus,
+              status:   newStatus.toLowerCase(),
+              attendanceStatus: upperStatus,
+              dayType:  "WORKING",
               remarks:  null,
             });
 

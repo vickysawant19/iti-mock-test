@@ -354,6 +354,12 @@ class NewAttendanceService {
         updates.date = this.formatDate(updates.date);
       }
 
+      if (updates.status && !updates.attendanceStatus) {
+        updates.attendanceStatus = String(updates.status).toUpperCase();
+      } else if (updates.attendanceStatus && !updates.status) {
+        updates.status = String(updates.attendanceStatus).toLowerCase();
+      }
+
       const functions = appwriteService.getFunctions();
       const payload = JSON.stringify({
         action: "updateAttendance",
