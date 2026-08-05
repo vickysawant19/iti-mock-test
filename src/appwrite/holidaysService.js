@@ -80,23 +80,21 @@ class HolidayService {
 
   async addHoliday(holidayData) {
     try {
+      const { dayType, ...cleanData } = holidayData || {};
       const data = await this.database.createRow({
         databaseId: conf.databaseId,
         tableId: conf.holidayDaysCollectionId,
         rowId: ID.unique(),
-        data: {
-          ...holidayData,
-          dayType: holidayData.dayType || "HOLIDAY",
-        }
+        data: cleanData,
       });
 
       // Cleanly clear any existing attendance records for this batch and date
-      if (holidayData.batchId && holidayData.date) {
+      if (cleanData.batchId && cleanData.date) {
         try {
           const { newAttendanceService } = await import("@/appwrite/newAttendanceService");
-          const formattedDate = String(holidayData.date).substring(0, 10);
+          const formattedDate = String(cleanData.date).substring(0, 10);
           const existingRes = await newAttendanceService.getBatchAttendanceByDate(
-            holidayData.batchId,
+            cleanData.batchId,
             formattedDate,
             []
           );
@@ -117,11 +115,12 @@ class HolidayService {
 
   async updateHoliday(holidayId, holidayData) {
     try {
+      const { dayType, ...cleanData } = holidayData || {};
       const data = await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: conf.holidayDaysCollectionId,
         rowId: holidayId,
-        data: holidayData
+        data: cleanData,
       });
       return data;
     } catch (error) {
