@@ -365,6 +365,17 @@ const AttendanceRegister = () => {
           (att) => att.userId === userId && att.date === date,
         );
 
+        if (newStatus === "clear" || newStatus === "undo" || newStatus === "none" || !newStatus) {
+          if (existingRecord) {
+            await newAttendanceService.deleteAttendance(existingRecord.$id);
+            setNewAttendance((prev) =>
+              (prev || []).filter((att) => att.$id !== existingRecord.$id),
+            );
+            toast.success("Attendance cleared successfully");
+          }
+          return;
+        }
+
         const payload = attendanceTrackingService.createAttendancePayload({
           userId,
           batchId: selectedBatch,

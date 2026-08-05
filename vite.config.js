@@ -19,7 +19,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/v1": {
-        target: "https://api.itimitra.in",
+        target: "https://auth.itimitra.in",
         changeOrigin: true,
         cookieDomainRewrite: "localhost",
         ws: true, // ← proxy WebSocket upgrades (Appwrite Realtime)
@@ -35,9 +35,9 @@ export default defineConfig({
         // 5MB cache limit
         maximumFileSizeToCacheInBytes: 5000000,
         // your normal SPA fallback
-        navigateFallback: "/",
-        // don’t redirect sitemap.xml or robots.txt to the SPA
-        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],
+        navigateFallback: "/index.html",
+        // don’t redirect sitemap.xml, robots.txt, or API routes to the SPA
+        navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/v1/],
       },
       manifest: {
         id: "/",
