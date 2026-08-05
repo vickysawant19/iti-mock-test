@@ -153,3 +153,75 @@ export const bulkUpdateBatchStats = async (
     await tablesDB.upsertRows(DB_ID, STATS_COLLECTION_ID, statsToUpdate);
   }
 };
+
+export const updateMonthlyAttendanceStatsHelper = async (
+  databases,
+  userId,
+  batchId,
+  date
+) => {
+  if (!userId || !batchId || !date) return;
+  const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+  const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
+  const NEW_ATTENDANCE_COL = 'newAttendance';
+  const yearMonth = String(date).substring(0, 7);
+  const docId = `${userId}_${batchId}_${yearMonth}`;
+
+  try {
+    const monthDocs = await databases.listDocuments(
+      DB_ID,
+      NEW_ATTENDANCE_COL,
+      [
+        Query.equal('userId', userId),
+        Query.equal('batchId', batchId),
+        Query.startsWith('date', yearMonth),
+        Query.limit(35),
+      ]
+    );
+
+    let presentDays = 0, absentDays = 0, casualLeaves = 0;
+    let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
+
+    (monthDocs.documents || []).forEach((row) => {
+      const s = String(row.status || row.attendanceStatus || '').toLowerCase();
+      if (s === 'present' || s === 'p') presentDays++;
+      else if (s === 'absent' || s === 'a') absentDays++;
+      else if (s === 'casual' || s === 'cl') casualLeaves++;
+      else if (s === 'sick' || s === 'sl') sickLeaves++;
+      else if (s === 'special' || s === 'spl') specialLeaves++;
+      else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
+      else if (s === 'half_day' || s === 'hd') halfDays++;
+      else if (s === 'late' || s === 'l') lateDays++;
+    });
+
+    const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+    const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+    const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+    const payload = {
+      userId,
+      batchId,
+      yearMonth,
+      workingDays,
+      presentDays,
+      absentDays,
+      casualLeaves,
+      sickLeaves,
+      specialLeaves,
+      onDutyLeaves,
+      halfDays,
+      lateDays,
+      totalPresent,
+      attendancePercentage,
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await databases.updateDocument(DB_ID, MONTHLY_STATS_COL, docId, payload);
+    } catch (e) {
+      await databases.createDocument(DB_ID, MONTHLY_STATS_COL, docId, payload);
+    }
+  } catch (err) {
+    console.error('Failed updating monthlyAttendanceStats in user-manage function:', err);
+  }
+};

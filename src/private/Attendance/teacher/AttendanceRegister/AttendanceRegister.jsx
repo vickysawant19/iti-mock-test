@@ -346,14 +346,21 @@ const AttendanceRegister = () => {
         if (needsStats) {
           const batchStart = batch.start_date;
           const endDate    = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
+          const yearMonthStr = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
 
-          // Single batch query stream for all student stats
-          const statsMap = await newAttendanceService.getBatchCumulativeStudentStats(
-            studentIds,
+          let statsMap = await newAttendanceService.getBatchCumulativeMonthlyStats(
             selectedBatch,
-            batchStart,
-            endDate
+            yearMonthStr
           );
+
+          if (!statsMap || statsMap.size === 0) {
+            statsMap = await newAttendanceService.getBatchCumulativeStudentStats(
+              studentIds,
+              selectedBatch,
+              batchStart,
+              endDate
+            );
+          }
 
           if (signal?.aborted) return;
 

@@ -1,6 +1,7 @@
 import { ID, Query } from 'node-appwrite';
 import migrateAttendanceFunc from './migrateAttendance.js';
-import { updateBatchStatsHelper, bulkUpdateBatchStats } from './statsHelper.js';
+import migrateMonthlyStatsFunc from './migrateMonthlyStats.js';
+import { updateBatchStatsHelper, bulkUpdateBatchStats, updateMonthlyAttendanceStatsHelper } from './statsHelper.js';
 import PermissionPolicy from './policies/permissionPolicy.js';
 
 const getBatchTeamPermissions = async (tablesDB, DB_ID, batchId, fallbackTeamId = null) => {
@@ -25,6 +26,9 @@ export const handleAttendanceAction = async (action, req, res, client, databases
   switch (action) {
     case 'migrateAttendance': {
       return await migrateAttendanceFunc(databases, log, error);
+    }
+    case 'migrateMonthlyStats': {
+      return await migrateMonthlyStatsFunc(databases, tablesDB, log, error);
     }
     case 'updateBatchStatsFromTest': {
       const { userId, batchId, score, quesCount } = req.bodyJson;
@@ -232,6 +236,11 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // Update stats
       try {
         await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
+        for (const s of statsToUpdate) {
+          if (s.userId) {
+            await updateMonthlyAttendanceStatsHelper(databases, s.userId, batchId, date);
+          }
+        }
       } catch (err) {
         log(`Failed bulk stats update: ${err.message}`);
       }
@@ -278,6 +287,11 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             recordsToInsert[0].date,
             recordsToInsert
           );
+          for (const r of recordsToInsert) {
+            if (r.userId && r.batchId && r.date) {
+              await updateMonthlyAttendanceStatsHelper(databases, r.userId, r.batchId, r.date);
+            }
+          }
         } catch (err) {
           log(`Failed bulk stats update: ${err.message}`);
         }
@@ -360,6 +374,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // Update stats
       try {
         await updateBatchStatsHelper(databases, userId, batchId, { dayType, attendanceStatus, status: finalStatus, isHoliday }, date);
+        await updateMonthlyAttendanceStatsHelper(databases, userId, batchId, date);
       } catch (err) {
         log(`Failed stats update: ${err.message}`);
       }
@@ -383,6 +398,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         documentId,
         updates
       );
+
+      if (existingRecord) {
+        try {
+          await updateMonthlyAttendanceStatsHelper(databases, existingRecord.userId, existingRecord.batchId, existingRecord.date);
+        } catch (err) {
+          log(`Failed to update monthlyAttendanceStats on updateAttendance: ${err.message}`);
+        }
+      }
 
       // If status changed, update stats
       if (existingRecord && updates.status && existingRecord.status !== updates.status) {
@@ -437,6 +460,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         NEW_ATTENDANCE_COL_ID,
         documentId
       );
+
+      if (existingRecord) {
+        try {
+          await updateMonthlyAttendanceStatsHelper(databases, existingRecord.userId, existingRecord.batchId, existingRecord.date);
+        } catch (err) {
+          log(`Failed to update monthlyAttendanceStats on deleteAttendance: ${err.message}`);
+        }
+      }
 
       // Update stats
       if (existingRecord && existingRecord.status === 'present') {

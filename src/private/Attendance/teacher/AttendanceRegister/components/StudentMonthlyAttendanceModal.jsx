@@ -541,8 +541,8 @@ export const StudentMonthlyAttendanceModal = ({
                     <span className="font-bold text-slate-800 dark:text-slate-200">{studentStats.workingDays || 0}</span>
                   </div>
                   <div className="bg-emerald-50/50 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
-                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] block font-semibold">Prev Present</span>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-300">{studentStats.presentDays || 0}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] block font-semibold">Total Present</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">{studentStats.totalPresent !== undefined ? studentStats.totalPresent : (studentStats.presentDays || 0)}</span>
                   </div>
                   <div className="bg-rose-50/50 dark:bg-rose-950/30 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50">
                     <span className="text-rose-600 dark:text-rose-400 text-[10px] block font-semibold">Prev Absent</span>
@@ -551,6 +551,24 @@ export const StudentMonthlyAttendanceModal = ({
                   <div className="bg-indigo-50/50 dark:bg-indigo-950/30 p-2 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
                     <span className="text-indigo-600 dark:text-indigo-400 text-[10px] block font-semibold">Prev Attendance %</span>
                     <span className="font-black text-indigo-700 dark:text-indigo-300">{studentStats.percentage || 0}%</span>
+                  </div>
+                  <div className="col-span-2 grid grid-cols-4 gap-1 text-[10px] pt-1.5 border-t border-slate-200 dark:border-slate-800">
+                    <div className="bg-amber-50/80 dark:bg-amber-950/50 p-1.5 rounded text-center border border-amber-200/50 dark:border-amber-900/50">
+                      <span className="text-amber-800 dark:text-amber-300 font-bold block text-[9px]">CL</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{studentStats.casualLeaves || 0}</span>
+                    </div>
+                    <div className="bg-sky-50/80 dark:bg-sky-950/50 p-1.5 rounded text-center border border-sky-200/50 dark:border-sky-900/50">
+                      <span className="text-sky-800 dark:text-sky-300 font-bold block text-[9px]">SL</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{studentStats.sickLeaves || 0}</span>
+                    </div>
+                    <div className="bg-purple-50/80 dark:bg-purple-950/50 p-1.5 rounded text-center border border-purple-200/50 dark:border-purple-900/50">
+                      <span className="text-purple-800 dark:text-purple-300 font-bold block text-[9px]">SPL</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{studentStats.specialLeaves || 0}</span>
+                    </div>
+                    <div className="bg-blue-50/80 dark:bg-blue-950/50 p-1.5 rounded text-center border border-blue-200/50 dark:border-blue-900/50">
+                      <span className="text-blue-800 dark:text-blue-300 font-bold block text-[9px]">OD</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{studentStats.onDutyLeaves || 0}</span>
+                    </div>
                   </div>
                 </div>
               ) : (

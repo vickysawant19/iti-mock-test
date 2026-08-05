@@ -299,10 +299,13 @@ class NewAttendanceService {
         throw new Error(resData.error || "Failed to create attendance");
       }
 
-      // Trigger stats recalculation in the background (only for students, skip for teachers)
+      // Trigger stats recalculation in the background (both legacy userStats & new monthlyAttendanceStats)
       if (!skipStats) {
         userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
           console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
+        });
+        this.syncMonthlyAttendanceStats(userId, batchId, formattedDate).catch((err) => {
+          console.error("[newAttendanceService] Failed to sync monthly stats on createAttendance:", err);
         });
       }
 
@@ -338,6 +341,12 @@ class NewAttendanceService {
         const batchId = attendanceRecords[0].batchId;
         userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
           console.error("[newAttendanceService] Failed to trigger stats update on createMultipleAttendance:", err);
+        });
+
+        attendanceRecords.forEach((rec) => {
+          if (rec.userId && rec.batchId && rec.date) {
+            this.syncMonthlyAttendanceStats(rec.userId, rec.batchId, rec.date).catch(() => {});
+          }
         });
       }
 
@@ -475,49 +484,108 @@ class NewAttendanceService {
     }
   }
 
-  // Get attendance statistics for a student
+  // Get attendance statistics for a student (Fast pre-aggregated query from monthlyAttendanceStats)
   async getStudentAttendanceStats(
     userId,
     batchId,
     startDate = null,
     endDate = null,
   ) {
-    if (!batchId) return { total: 0, presentDays: 0, absentDays: 0, lateDays: 0, workingDays: 0, percentage: 0 };
+    if (!userId || !batchId) return { total: 0, presentDays: 0, absentDays: 0, lateDays: 0, workingDays: 0, percentage: 0 };
     try {
-      const baseQueries = [
+      const queries = [
         Query.equal("userId", userId),
         Query.equal("batchId", batchId),
-        Query.select(["$id", "userId", "date", "status", "attendanceStatus", "leaveType", "dayType"]),
+        Query.limit(100),
       ];
 
       if (startDate) {
-        baseQueries.push(
-          Query.greaterThanEqual("date", this.formatDate(startDate)),
-        );
+        const startMonth = String(startDate).substring(0, 7);
+        queries.push(Query.greaterThanEqual("yearMonth", startMonth));
       }
       if (endDate) {
-        baseQueries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+        const endMonth = String(endDate).substring(0, 7);
+        queries.push(Query.lessThanEqual("yearMonth", endMonth));
       }
 
-      const attendanceDocs = await this.fetchAllDocuments(baseQueries);
-      const computed = attendanceAnalyticsService.computeStats({
-        records: attendanceDocs.documents,
-        startDate,
-        endDate,
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+        queries,
       });
 
+      if (!response.rows || response.rows.length === 0) {
+        // Fallback to daily documents calculation if no monthly stats row exists yet
+        const baseQueries = [
+          Query.equal("userId", userId),
+          Query.equal("batchId", batchId),
+          Query.select(["$id", "userId", "date", "status", "attendanceStatus", "leaveType", "dayType"]),
+        ];
+        if (startDate) baseQueries.push(Query.greaterThanEqual("date", this.formatDate(startDate)));
+        if (endDate) baseQueries.push(Query.lessThanEqual("date", this.formatDate(endDate)));
+
+        const attendanceDocs = await this.fetchAllDocuments(baseQueries);
+        const computed = attendanceAnalyticsService.computeStats({
+          records: attendanceDocs.documents,
+          startDate,
+          endDate,
+        });
+
+        return {
+          total: computed.workingDays || attendanceDocs.total,
+          presentDays: computed.presentDays,
+          absentDays: computed.absentDays,
+          lateDays: computed.lateDays,
+          workingDays: computed.workingDays,
+          holidayDays: computed.holidayDays,
+          leaveDays: computed.leaveDays,
+          leaveBreakdown: computed.leaveBreakdown,
+          percentage: computed.attendancePercentage,
+        };
+      }
+
+      let workingDays = 0, presentDays = 0, absentDays = 0;
+      let casualLeaves = 0, sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0;
+      let halfDays = 0, lateDays = 0, totalPresent = 0;
+
+      response.rows.forEach((row) => {
+        workingDays += (row.workingDays || 0);
+        presentDays += (row.presentDays || 0);
+        absentDays += (row.absentDays || 0);
+        casualLeaves += (row.casualLeaves || 0);
+        sickLeaves += (row.sickLeaves || 0);
+        specialLeaves += (row.specialLeaves || 0);
+        onDutyLeaves += (row.onDutyLeaves || 0);
+        halfDays += (row.halfDays || 0);
+        lateDays += (row.lateDays || 0);
+        totalPresent += (row.totalPresent || 0);
+      });
+
+      const percentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
       return {
-        total: computed.workingDays || attendanceDocs.total,
-        presentDays: computed.presentDays,
-        absentDays: computed.absentDays,
-        lateDays: computed.lateDays,
-        workingDays: computed.workingDays,
-        holidayDays: computed.holidayDays,
-        leaveDays: computed.leaveDays,
-        leaveBreakdown: computed.leaveBreakdown,
-        percentage: computed.attendancePercentage,
+        total: workingDays,
+        workingDays,
+        presentDays: totalPresent,
+        rawPresentDays: presentDays,
+        absentDays,
+        casualLeaves,
+        sickLeaves,
+        specialLeaves,
+        onDutyLeaves,
+        halfDays,
+        lateDays,
+        leaveDays: casualLeaves + sickLeaves + specialLeaves + onDutyLeaves,
+        leaveBreakdown: {
+          CASUAL: casualLeaves,
+          SICK: sickLeaves,
+          SPECIAL: specialLeaves,
+          ON_DUTY: onDutyLeaves,
+        },
+        percentage,
       };
     } catch (error) {
+      console.error("[newAttendanceService] getStudentAttendanceStats error:", error);
       throw error;
     }
   }
@@ -1057,6 +1125,400 @@ class NewAttendanceService {
     ).padStart(2, "0")}`;
 
     return { startDate, endDate, year, month };
+  }
+
+  /**
+   * Recalculate and upsert monthly pre-aggregated attendance stats for a single (userId, batchId, yearMonth).
+   * Document ID in monthlyAttendanceStats: `${userId}_${batchId}_${yearMonth}`
+   */
+  async syncMonthlyAttendanceStats(userId, batchId, dateStr) {
+    if (!userId || !batchId || !dateStr) return null;
+    const yearMonth = String(dateStr).substring(0, 7); // "YYYY-MM"
+    const docId = `${userId}_${batchId}_${yearMonth}`;
+
+    try {
+      // 1. Fetch daily rows for this user + batch in target month
+      const monthRecords = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries: [
+          Query.equal("userId", userId),
+          Query.equal("batchId", batchId),
+          Query.startsWith("date", yearMonth),
+          Query.limit(35),
+        ],
+      });
+
+      let presentDays = 0;
+      let absentDays = 0;
+      let casualLeaves = 0;
+      let sickLeaves = 0;
+      let specialLeaves = 0;
+      let onDutyLeaves = 0;
+      let halfDays = 0;
+      let lateDays = 0;
+
+      (monthRecords.rows || []).forEach((row) => {
+        const s = String(row.status || row.attendanceStatus || "").toLowerCase();
+        if (s === "present" || s === "p") presentDays++;
+        else if (s === "absent" || s === "a") absentDays++;
+        else if (s === "casual" || s === "cl") casualLeaves++;
+        else if (s === "sick" || s === "sl") sickLeaves++;
+        else if (s === "special" || s === "spl") specialLeaves++;
+        else if (s === "on_duty" || s === "od") onDutyLeaves++;
+        else if (s === "half_day" || s === "hd") halfDays++;
+        else if (s === "late" || s === "l") lateDays++;
+      });
+
+      const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+      const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+      const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+      const payload = {
+        userId,
+        batchId,
+        yearMonth,
+        workingDays,
+        presentDays,
+        absentDays,
+        casualLeaves,
+        sickLeaves,
+        specialLeaves,
+        onDutyLeaves,
+        halfDays,
+        lateDays,
+        totalPresent,
+        attendancePercentage,
+        updatedAt: new Date().toISOString(),
+      };
+
+      try {
+        return await this.database.updateRow({
+          databaseId: conf.databaseId,
+          tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+          rowId: docId,
+          data: payload,
+        });
+      } catch (err) {
+        return await this.database.createRow({
+          databaseId: conf.databaseId,
+          tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+          rowId: docId,
+          data: payload,
+        });
+      }
+    } catch (error) {
+      console.error("[newAttendanceService] Failed to sync monthly attendance stats:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Get pre-aggregated monthly stats for all students in a batch in 1 single fast query.
+   * Returns a Map: userId => monthlyStatsObject
+   */
+  async getBatchMonthlyStats(batchId, yearMonth) {
+    if (!batchId || !yearMonth) return new Map();
+    try {
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+        queries: [
+          Query.equal("batchId", batchId),
+          Query.equal("yearMonth", yearMonth),
+          Query.limit(500),
+        ],
+      });
+
+      const statsMap = new Map();
+      (response.rows || []).forEach((doc) => {
+        statsMap.set(doc.userId, doc);
+      });
+      return statsMap;
+    } catch (error) {
+      console.error("[newAttendanceService] Error fetching batch monthly stats:", error);
+      return new Map();
+    }
+  }
+
+  /**
+   * Get cumulative pre-aggregated stats for a batch across past months in 1 fast query.
+   * Returns a Map: userId => { workingDays, presentDays, absentDays, totalPresent, percentage }
+   */
+  async getBatchCumulativeMonthlyStats(batchId, beforeYearMonth) {
+    if (!batchId) return new Map();
+    try {
+      const queries = [
+        Query.equal("batchId", batchId),
+        Query.limit(5000),
+      ];
+      if (beforeYearMonth) {
+        queries.push(Query.lessThan("yearMonth", beforeYearMonth));
+      }
+
+      const response = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+        queries,
+      });
+
+      const cumulativeMap = new Map();
+
+      (response.rows || []).forEach((row) => {
+        const uid = row.userId;
+        const current = cumulativeMap.get(uid) || {
+          workingDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          casualLeaves: 0,
+          sickLeaves: 0,
+          specialLeaves: 0,
+          onDutyLeaves: 0,
+          totalPresent: 0,
+        };
+
+        current.workingDays += (row.workingDays || 0);
+        current.presentDays += (row.presentDays || 0);
+        current.absentDays += (row.absentDays || 0);
+        current.casualLeaves += (row.casualLeaves || 0);
+        current.sickLeaves += (row.sickLeaves || 0);
+        current.specialLeaves += (row.specialLeaves || 0);
+        current.onDutyLeaves += (row.onDutyLeaves || 0);
+        current.totalPresent += (row.totalPresent || 0);
+
+        cumulativeMap.set(uid, current);
+      });
+
+      cumulativeMap.forEach((val) => {
+        val.percentage = val.workingDays > 0 ? parseFloat(((val.totalPresent / val.workingDays) * 100).toFixed(1)) : 0;
+      });
+
+      return cumulativeMap;
+    } catch (error) {
+      console.error("[newAttendanceService] Error fetching cumulative monthly stats:", error);
+      return new Map();
+    }
+  }
+
+  /**
+   * Backfill / Migrate historical daily attendance into monthlyAttendanceStats for a batch.
+   */
+  async backfillBatchMonthlyStats(batchId) {
+    if (!batchId) return false;
+    try {
+      const allDailyDocs = await this.fetchAllDocuments([Query.equal("batchId", batchId)]);
+      const userMonthGroupMap = new Map();
+
+      (allDailyDocs.documents || []).forEach((doc) => {
+        if (!doc.userId || !doc.date) return;
+        const yearMonth = doc.date.substring(0, 7);
+        const key = `${doc.userId}_${yearMonth}`;
+        if (!userMonthGroupMap.has(key)) userMonthGroupMap.set(key, []);
+        userMonthGroupMap.get(key).push(doc);
+      });
+
+      for (const [key, rows] of userMonthGroupMap.entries()) {
+        const [userId, yearMonth] = key.split("_");
+        const docId = `${userId}_${batchId}_${yearMonth}`;
+
+        let presentDays = 0, absentDays = 0, casualLeaves = 0;
+        let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
+
+        rows.forEach((r) => {
+          const s = String(r.status || r.attendanceStatus || "").toLowerCase();
+          if (s === "present" || s === "p") presentDays++;
+          else if (s === "absent" || s === "a") absentDays++;
+          else if (s === "casual" || s === "cl") casualLeaves++;
+          else if (s === "sick" || s === "sl") sickLeaves++;
+          else if (s === "special" || s === "spl") specialLeaves++;
+          else if (s === "on_duty" || s === "od") onDutyLeaves++;
+          else if (s === "half_day" || s === "hd") halfDays++;
+          else if (s === "late" || s === "l") lateDays++;
+        });
+
+        const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+        const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+        const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+        const payload = {
+          userId,
+          batchId,
+          yearMonth,
+          workingDays,
+          presentDays,
+          absentDays,
+          casualLeaves,
+          sickLeaves,
+          specialLeaves,
+          onDutyLeaves,
+          halfDays,
+          lateDays,
+          totalPresent,
+          attendancePercentage,
+          updatedAt: new Date().toISOString(),
+        };
+
+        try {
+          await this.database.updateRow({
+            databaseId: conf.databaseId,
+            tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+            rowId: docId,
+            data: payload,
+          });
+        } catch (err) {
+          await this.database.createRow({
+            databaseId: conf.databaseId,
+            tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+            rowId: docId,
+            data: payload,
+          });
+        }
+      }
+
+      console.log(`[newAttendanceService] Successfully backfilled monthly stats for batch: ${batchId}`);
+      return true;
+    } catch (error) {
+      console.error("[newAttendanceService] Failed to backfill batch monthly stats:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Trigger bulk migration of monthly attendance stats for ALL batches via user-manage function.
+   */
+  async triggerBulkMonthlyStatsMigration() {
+    try {
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "migrateMonthlyStats",
+      });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed bulk migration of monthly stats");
+      }
+
+      return resData.data;
+    } catch (error) {
+      console.error("[newAttendanceService] Error triggering bulk monthly stats migration:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Client-side bulk migration of monthly attendance stats for all batches.
+   * Processes all rows in `newAttendance`, groups them by `${userId}_${batchId}_${yearMonth}`,
+   * and upserts into `monthlyAttendanceStats`.
+   */
+  async backfillAllMonthlyAttendanceStats(onProgress) {
+    try {
+      if (onProgress) onProgress("Fetching all daily attendance records from Appwrite...");
+
+      const allAttendanceRes = await this.fetchAllDocuments();
+      const allDocs = allAttendanceRes.documents || [];
+
+      if (onProgress) onProgress(`Fetched ${allDocs.length} total attendance records. Grouping by user, batch, and month...`);
+
+      const groupMap = new Map();
+
+      allDocs.forEach((doc) => {
+        if (!doc.userId || !doc.batchId || !doc.date) return;
+        const yearMonth = String(doc.date).substring(0, 7);
+        const docId = `${doc.userId}_${doc.batchId}_${yearMonth}`;
+
+        if (!groupMap.has(docId)) {
+          groupMap.set(docId, {
+            docId,
+            userId: doc.userId,
+            batchId: doc.batchId,
+            yearMonth,
+            rows: [],
+          });
+        }
+        groupMap.get(docId).rows.push(doc);
+      });
+
+      if (onProgress) onProgress(`Grouped into ${groupMap.size} unique monthly user-batch summaries. Upserting monthlyAttendanceStats...`);
+
+      let processed = 0;
+      const total = groupMap.size;
+
+      for (const group of groupMap.values()) {
+        let presentDays = 0, absentDays = 0, casualLeaves = 0;
+        let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
+
+        group.rows.forEach((r) => {
+          const s = String(r.status || r.attendanceStatus || '').toLowerCase();
+          if (s === 'present' || s === 'p') presentDays++;
+          else if (s === 'absent' || s === 'a') absentDays++;
+          else if (s === 'casual' || s === 'cl') casualLeaves++;
+          else if (s === 'sick' || s === 'sl') sickLeaves++;
+          else if (s === 'special' || s === 'spl') specialLeaves++;
+          else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
+          else if (s === 'half_day' || s === 'hd') halfDays++;
+          else if (s === 'late' || s === 'l') lateDays++;
+        });
+
+        const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+        const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+        const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+        const payload = {
+          userId: group.userId,
+          batchId: group.batchId,
+          yearMonth: group.yearMonth,
+          workingDays,
+          presentDays,
+          absentDays,
+          casualLeaves,
+          sickLeaves,
+          specialLeaves,
+          onDutyLeaves,
+          halfDays,
+          lateDays,
+          totalPresent,
+          attendancePercentage,
+          updatedAt: new Date().toISOString(),
+        };
+
+        try {
+          await this.database.updateRow({
+            databaseId: conf.databaseId,
+            tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+            rowId: group.docId,
+            data: payload,
+          });
+        } catch (e) {
+          try {
+            await this.database.createRow({
+              databaseId: conf.databaseId,
+              tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+              rowId: group.docId,
+              data: payload,
+            });
+          } catch (err) {
+            console.error(`Error saving monthly stats for ${group.docId}:`, err);
+          }
+        }
+
+        processed++;
+        if (onProgress && processed % 5 === 0) {
+          onProgress(`Upserted ${processed} / ${total} monthly stats summaries...`);
+        }
+      }
+
+      if (onProgress) onProgress(`Migration completed! Successfully processed ${total} monthly stats.`);
+      return { success: true, count: total };
+    } catch (error) {
+      console.error("[newAttendanceService] Error in backfillAllMonthlyAttendanceStats:", error);
+      throw error;
+    }
   }
 }
 

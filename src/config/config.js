@@ -37,6 +37,8 @@ const conf = {
     import.meta.env.VITE_BATCH_REQUESTS_COLLECTION_ID || "",
   batchStudentsCollectionId:
     import.meta.env.VITE_BATCH_STUDENTS_COLLECTION_ID || "",
+  monthlyAttendanceStatsCollectionId:
+    import.meta.env.VITE_MONTHLY_ATTENDANCE_STATS_COLLECTION_ID || "monthlyAttendanceStats",
   profileImagesBucketId: import.meta.env.VITE_PROFILE_IMAGES_BUCKET_ID || "",
   dailyDiaryCollectionId: import.meta.env.VITE_DAILY_DIARY_COLLECTION_ID || "",
   userManageFunctionId: import.meta.env.VITE_USER_MANAGE_FUNCTION_ID || "",

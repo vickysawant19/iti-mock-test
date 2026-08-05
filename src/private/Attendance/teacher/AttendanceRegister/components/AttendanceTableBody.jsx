@@ -77,14 +77,14 @@ const AttendanceTableBody = ({
             ? ((currentMonthPresentDays / currentMonthWorkingDays) * 100).toFixed(1)
             : 0;
 
-        const prevMonthWorkingDays = prevMonthData.workingDays || (prevMonthData.presentDays + prevMonthData.absentDays);
-        const prevMonthCasual = prevMonthData.leaveBreakdown?.CASUAL || prevMonthData.casualDays || 0;
-        const prevMonthSick = prevMonthData.leaveBreakdown?.SICK || prevMonthData.sickDays || 0;
-        const prevMonthSpecial = prevMonthData.leaveBreakdown?.SPECIAL || prevMonthData.specialDays || 0;
-        const prevMonthOnDuty = prevMonthData.leaveBreakdown?.ON_DUTY || prevMonthData.onDutyDays || 0;
+        const prevMonthWorkingDays = prevMonthData.workingDays || 0;
+        const prevMonthCasual = prevMonthData.casualLeaves ?? prevMonthData.leaveBreakdown?.CASUAL ?? prevMonthData.casualDays ?? 0;
+        const prevMonthSick = prevMonthData.sickLeaves ?? prevMonthData.leaveBreakdown?.SICK ?? prevMonthData.sickDays ?? 0;
+        const prevMonthSpecial = prevMonthData.specialLeaves ?? prevMonthData.leaveBreakdown?.SPECIAL ?? prevMonthData.specialDays ?? 0;
+        const prevMonthOnDuty = prevMonthData.onDutyLeaves ?? prevMonthData.leaveBreakdown?.ON_DUTY ?? prevMonthData.onDutyDays ?? 0;
         const prevMonthLeaveTotal = prevMonthCasual + prevMonthSick + prevMonthSpecial + prevMonthOnDuty;
-        const prevMonthTotalPresent = prevMonthData.presentDays || 0;
-        const prevMonthRawPresent = Math.max(0, prevMonthTotalPresent - prevMonthLeaveTotal);
+        const prevMonthTotalPresent = prevMonthData.totalPresent !== undefined ? prevMonthData.totalPresent : (prevMonthData.presentDays || 0);
+        const prevMonthRawPresent = prevMonthData.presentDays !== undefined && prevMonthData.totalPresent !== undefined ? prevMonthData.presentDays : Math.max(0, prevMonthTotalPresent - prevMonthLeaveTotal);
         const prevMonthAbsentDays = prevMonthData.absentDays || 0;
         const prevMonthPercentage = prevMonthData.percentage !== undefined ? prevMonthData.percentage : (
           prevMonthWorkingDays > 0
