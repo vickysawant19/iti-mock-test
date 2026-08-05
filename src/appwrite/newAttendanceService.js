@@ -299,11 +299,8 @@ class NewAttendanceService {
         throw new Error(resData.error || "Failed to create attendance");
       }
 
-      // Trigger stats recalculation in the background (both legacy userStats & new monthlyAttendanceStats)
+      // Trigger monthly attendance stats sync
       if (!skipStats) {
-        userStatsService.recalculateStudentsStats([userId], batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on createAttendance:", err);
-        });
         this.syncMonthlyAttendanceStats(userId, batchId, formattedDate).catch((err) => {
           console.error("[newAttendanceService] Failed to sync monthly stats on createAttendance:", err);
         });
@@ -336,13 +333,7 @@ class NewAttendanceService {
       }
 
       // Trigger stats update for these students
-      if (attendanceRecords && attendanceRecords.length > 0) {
-        const studentIds = [...new Set(attendanceRecords.map((r) => r.userId))];
-        const batchId = attendanceRecords[0].batchId;
-        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on createMultipleAttendance:", err);
-        });
-
+      if (resData.data && attendanceRecords.length > 0) {
         attendanceRecords.forEach((rec) => {
           if (rec.userId && rec.batchId && rec.date) {
             this.syncMonthlyAttendanceStats(rec.userId, rec.batchId, rec.date).catch(() => {});
@@ -467,14 +458,6 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to delete multiple attendance");
-      }
-
-      if (recordsToQuery.length > 0) {
-        const studentIds = [...new Set(recordsToQuery.map((r) => r.userId))];
-        const batchId = recordsToQuery[0].batchId;
-        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on deleteMultipleAttendance:", err);
-        });
       }
 
       return resData.data.deletedIds;
@@ -802,14 +785,6 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to mark batch attendance");
-      }
-
-      // Trigger stats update for these students
-      if (attendanceData && attendanceData.length > 0) {
-        const studentIds = attendanceData.map((r) => r.userId);
-        userStatsService.recalculateStudentsStats(studentIds, batchId).catch((err) => {
-          console.error("[newAttendanceService] Failed to trigger stats update on markBatchAttendance:", err);
-        });
       }
 
       return resData.data;
