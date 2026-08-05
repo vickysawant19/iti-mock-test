@@ -217,15 +217,29 @@ const AttendanceRegister = () => {
           const userIds = batchStudents.map((doc) => doc.studentId).filter(Boolean);
           if (userIds.length === 0) return [];
           const profilesMap = await userProfileService.getProfilesByUserIds(userIds);
+
+          const batchStudentMap = new Map();
+          batchStudents.forEach((bs) => {
+            if (bs.studentId) batchStudentMap.set(bs.studentId, bs);
+          });
+
           return userIds
             .map((uid) => {
               const p = profilesMap.get(uid);
-              if (!p) return null;
+              const bs = batchStudentMap.get(uid);
+              if (!p && !bs) return null;
+
+              const rollNo =
+                bs?.rollNumber ||
+                bs?.registerId ||
+                "";
+
               return {
-                userId: p.userId,
-                userName: p.userName,
-                studentId: p.studentId,
-                profileImage: p.profileImage,
+                userId: uid,
+                userName: p?.userName || p?.name || "Student",
+                studentId: rollNo, // exact rollNumber attribute from batchStudents table
+                profileImage: p?.profileImage || "",
+                rollNo: rollNo,
               };
             })
             .filter(Boolean);
@@ -238,7 +252,25 @@ const AttendanceRegister = () => {
       holidaysData.forEach((h) => holidayMap.set(h.date, h));
       setHolidays(holidayMap);
 
-      let finalStudents = studentsData;
+      console.log("[AttendanceRegister] Raw batchStudents & profiles joined:", studentsData);
+
+      const sortedStudentsData = [...studentsData].sort((a, b) => {
+        const rollA = String(a.studentId || a.rollNo || "").trim();
+        const rollB = String(b.studentId || b.rollNo || "").trim();
+        if (!rollA && !rollB) {
+          return String(a.userName || "").localeCompare(String(b.userName || ""));
+        }
+        if (!rollA) return 1;
+        if (!rollB) return -1;
+        return rollA.localeCompare(rollB, undefined, { numeric: true, sensitivity: "base" });
+      });
+
+      console.log(
+        "[AttendanceRegister] Sorted students by rollNumber:",
+        sortedStudentsData.map((s) => ({ name: s.userName, rollNumber: s.studentId })),
+      );
+
+      let finalStudents = sortedStudentsData;
       if (profile?.userId) {
         finalStudents = [
           {
@@ -249,7 +281,7 @@ const AttendanceRegister = () => {
             profileImage: profile.profileImage || "",
             isTeacher: true,
           },
-          ...studentsData.filter((s) => s.userId !== profile.userId),
+          ...sortedStudentsData.filter((s) => s.userId !== profile.userId),
         ];
       }
       setStudents(finalStudents);
