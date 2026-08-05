@@ -7,10 +7,10 @@ import { selectActiveBatchId } from "@/store/activeBatchSlice";
 
 import Loader from "@/components/components/Loader";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
-import InstructorDailyDiary from "./InstructorDailyDiary";
-import StudentDailyDiary from "./StudentDailyDiary";
-import DiaryWeekView from "./DiaryWeekView";
-import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
+import InstructorDailyDiary from "../teacher/DailyDiary/InstructorDailyDiary";
+import StudentDailyDiary from "../student/DailyDiary/StudentDailyDiary";
+import DiaryWeekView from "../teacher/DailyDiary/DiaryWeekView";
+import MarkAttendanceModal from "../teacher/AttendanceRegister/components/DailyBatchAttendanceModal";
 
 import { useDiaryData } from "./hooks/useDiaryData";
 import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";

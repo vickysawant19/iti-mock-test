@@ -3,6 +3,7 @@ import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import userStatsService from "./userStats";
 import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
+import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 
 class NewAttendanceService {
   constructor() {
@@ -355,7 +356,13 @@ class NewAttendanceService {
       }
 
       if (updates.status && !updates.attendanceStatus) {
-        updates.attendanceStatus = String(updates.status).toUpperCase();
+        const { attendanceStatus, leaveType } = attendanceTrackingService.resolveStatusPair(updates.status, updates.leaveType);
+        if (attendanceStatus) {
+          updates.attendanceStatus = attendanceStatus;
+          updates.leaveType = leaveType || null;
+        } else {
+          updates.attendanceStatus = String(updates.status).toUpperCase();
+        }
       } else if (updates.attendanceStatus && !updates.status) {
         updates.status = String(updates.attendanceStatus).toLowerCase();
       }

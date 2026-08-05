@@ -11,13 +11,13 @@ import dailyDiaryService from "@/appwrite/dailyDiaryService";
 
 import { Card, CardContent } from "@/components/ui/card";
 import Loader from "@/components/components/Loader";
-import DiaryHeader from "./DiaryHeader";
-import DiaryTable from "./DiaryTable";
-import DiaryWeekView from "./DiaryWeekView";
-import { useDiaryData } from "./hooks/useDiaryData";
-import DiaryPageHeader from "./components/DiaryPageHeader";
-import DiaryPeriodNav from "./components/DiaryPeriodNav";
-import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
+import DiaryHeader from "../../teacher/DailyDiary/DiaryHeader";
+import DiaryTable from "../../teacher/DailyDiary/DiaryTable";
+import DiaryWeekView from "../../teacher/DailyDiary/DiaryWeekView";
+import { useDiaryData } from "../../DailyDiary/hooks/useDiaryData";
+import DiaryPageHeader from "../../DailyDiary/components/DiaryPageHeader";
+import DiaryPeriodNav from "../../DailyDiary/components/DiaryPeriodNav";
+import { useDailyDiaryQueryParams } from "../../DailyDiary/hooks/useDailyDiaryQueryParams";
 
 function StudentDailyDiary() {
   const profile = useSelector(selectProfile);

@@ -21,6 +21,7 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
+import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 
 /**
  * @param {Object} options
@@ -141,7 +142,7 @@ export function useDiaryData({
           resolvedBatchId,
           startDateStr,
           endDateStr,
-          [Query.select(["$id", "date", "status"])]
+          [Query.select(["$id", "date", "status", "attendanceStatus", "leaveType"])]
         );
       } else {
         attendancePromise = newAttendanceService.getStudentAttendanceByDateRange(
@@ -171,7 +172,16 @@ export function useDiaryData({
       const docIdsMap = new Map();
       if (attendanceRes?.documents) {
         attendanceRes.documents.forEach((item) => {
-          const rawStatus = item.attendanceStatus ? item.attendanceStatus.toLowerCase() : item.status;
+          const { attendanceStatus, leaveType } = attendanceTrackingService.resolveStatusPair(
+            item.attendanceStatus || item.status,
+            item.leaveType
+          );
+          let rawStatus = item.status ? String(item.status).toLowerCase() : "absent";
+          if (leaveType) {
+            rawStatus = String(leaveType).toLowerCase();
+          } else if (attendanceStatus) {
+            rawStatus = String(attendanceStatus).toLowerCase();
+          }
           attendanceMap.set(item.date, rawStatus);
           if (item.$id) docIdsMap.set(item.date, item.$id);
         });

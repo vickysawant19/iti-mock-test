@@ -59,13 +59,13 @@ import AddStudents from "./private/teacher/batch/students/AddStudents.jsx";
 import PageNotFound from "./PageNotFound.jsx";
 import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
 import MigrationDashboard from "./private/admin/MigrationDashboard.jsx";
-import AttendanceRegister from "./private/Attendance/AttendanceRegister/AttendanceRegister.jsx";
+import AttendanceRegister from "./private/Attendance/teacher/AttendanceRegister/AttendanceRegister.jsx";
 import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
 import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx";
 import ManageTrades from "./private/admin/ManageTrades.jsx";
 import ManageColleges from "./private/admin/ManageColleges.jsx";
 import BrowseBatches from "./private/student/BrowseBatches.jsx";
-import StudentAttendancePage from "./private/Attendance/StudentAttendance/StudentAttendancePage.jsx";
+import StudentAttendancePage from "./private/Attendance/student/PersonalAttendance/StudentAttendancePage.jsx";
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
 // and force client-side redirect since the cached SW bypassed Vercel's redirect

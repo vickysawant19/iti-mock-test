@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { format } from 'date-fns';
-import { highlightAbsentRow } from './diaryAbsentHighlight';
+import { highlightAbsentRow } from '../../DailyDiary/diaryAbsentHighlight';
 import { DEFAULT_PRINT_CONFIG } from './PrintConfigModal';
 
 const DailyDiaryPrintTemplate = forwardRef((

@@ -2,8 +2,8 @@ import React from "react";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import DiaryMobileCard from "./components/DiaryMobileCard";
-import DiaryTableRow from "./components/DiaryTableRow";
+import DiaryMobileCard from "../../DailyDiary/components/DiaryMobileCard";
+import DiaryTableRow from "../../DailyDiary/components/DiaryTableRow";
 
 const DiaryWeekView = ({
   weekDays,

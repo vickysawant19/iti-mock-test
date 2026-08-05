@@ -9,7 +9,7 @@ import { useReactToPrint } from "react-to-print";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import { highlightAbsentRow } from "./diaryAbsentHighlight";
+import { highlightAbsentRow } from "../../DailyDiary/diaryAbsentHighlight";
 import { Query } from "appwrite";
 
 import holidayService from "@/appwrite/holidaysService";
@@ -22,9 +22,9 @@ import DiaryTable from "./DiaryTable";
 import { parseISO } from "date-fns";
 import DailyDiaryPrintTemplate from "./DailyDiaryPrintTemplate";
 import PrintConfigModal, { DEFAULT_PRINT_CONFIG } from "./PrintConfigModal";
-import MarkAttendanceModal from "@/private/Attendance/AttendanceRegister/components/MarkAttendanceModal";
-import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";
-import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
+import DailyBatchAttendanceModal from "../AttendanceRegister/components/DailyBatchAttendanceModal";
+import { useDailyDiaryActions } from "../../DailyDiary/hooks/useDailyDiaryActions";
+import { useDailyDiaryQueryParams } from "../../DailyDiary/hooks/useDailyDiaryQueryParams";
 
 function InstructorDailyDiary() {
   const { currentMonth, setCurrentMonth } = useDailyDiaryQueryParams();
@@ -353,7 +353,7 @@ function InstructorDailyDiary() {
         onClose={() => setIsPrintModalOpen(false)}
         onPrint={handleConfiguredPrint}
       />
-      <MarkAttendanceModal
+      <DailyBatchAttendanceModal
         isOpen={isModalOpen}
         onClose={closeAttendanceModal}
         students={students}

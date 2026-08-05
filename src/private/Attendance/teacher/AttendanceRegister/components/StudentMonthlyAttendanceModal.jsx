@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -214,43 +215,7 @@ export const StudentMonthlyAttendanceModal = ({
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {/* Casual Leave Quota */}
-              <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-amber-200 dark:border-amber-900">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Casual Leave (CL)</p>
-                <p className="text-sm sm:text-base font-extrabold text-amber-700 dark:text-amber-300 mt-0.5">
-                  {leaveQuota.clRemaining} <span className="text-[10px] font-normal text-slate-500">/ 12 left</span>
-                </p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Used: {leaveQuota.clUsed} days</p>
-              </div>
-
-              {/* Sick Leave Quota */}
-              <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-sky-200 dark:border-sky-900">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Sick Leave (SL)</p>
-                <p className="text-sm sm:text-base font-extrabold text-sky-700 dark:text-sky-300 mt-0.5">
-                  {leaveQuota.slDaysRemaining}d <span className="text-[10px] font-normal text-slate-500">({leaveQuota.slSpellsRemaining}/2 spells left)</span>
-                </p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Used: {leaveQuota.slDaysUsed}d ({leaveQuota.slSpellsUsed} spells)</p>
-              </div>
-
-              {/* Special Leave (SPL) */}
-              <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-purple-200 dark:border-purple-900">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Special Leave (SPL)</p>
-                <p className="text-sm sm:text-base font-extrabold text-purple-700 dark:text-purple-300 mt-0.5">
-                  {leaveQuota.splUsed} <span className="text-[10px] font-normal text-slate-500">taken</span>
-                </p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Not deducted from quota</p>
-              </div>
-
-              {/* On Duty (OD) */}
-              <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-teal-200 dark:border-teal-900">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">On Duty (OD)</p>
-                <p className="text-sm sm:text-base font-extrabold text-teal-700 dark:text-teal-300 mt-0.5">
-                  {leaveQuota.odUsed} <span className="text-[10px] font-normal text-slate-500">taken</span>
-                </p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Official duty leave</p>
-              </div>
-            </div>
+            <StudentLeaveQuotaBadges quota={leaveQuota} layout="grid" />
           </div>
 
           {/* Month Summary Strip */}

@@ -3,9 +3,9 @@ import { format, getDay, endOfWeek, min, parseISO, startOfWeek, differenceInCale
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, CalendarDays, Calendar } from "lucide-react";
-import DiaryMetricsSummary from "./components/DiaryMetricsSummary";
-import DiaryMobileCard from "./components/DiaryMobileCard";
-import DiaryTableRow from "./components/DiaryTableRow";
+import DiaryMetricsSummary from "../../DailyDiary/components/DiaryMetricsSummary";
+import DiaryMobileCard from "../../DailyDiary/components/DiaryMobileCard";
+import DiaryTableRow from "../../DailyDiary/components/DiaryTableRow";
 
 export default function DiaryTable({
   monthDays,

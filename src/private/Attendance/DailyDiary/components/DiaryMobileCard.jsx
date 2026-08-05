@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { format } from "date-fns";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
@@ -32,6 +32,8 @@ import {
 import { PracticalNumberInput } from "../PracticalNumberInput";
 import { TEACHER_ABSENT_ROW_CLASS } from "../diaryAbsentHighlight";
 import FieldRenderer from "./FieldRenderer";
+import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
+import TeacherAttendanceControl from "@/private/Attendance/components/TeacherAttendanceControl";
 
 export const DiaryMobileCard = React.memo(({
   day,
@@ -60,6 +62,35 @@ export const DiaryMobileCard = React.memo(({
 
   const [localIsEditing, setLocalIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingDiary, setIsDeletingDiary] = useState(false);
+
+  const handleDeleteDiaryEntry = async () => {
+    if (!entry?.$id) return;
+    if (!window.confirm(`Are you sure you want to delete the daily diary entry for ${format(day, "MMM dd, yyyy")}?`)) {
+      return;
+    }
+    setIsDeletingDiary(true);
+    try {
+      await dailyDiaryService.deleteDocument(entry.$id);
+      toast.success("Daily diary record deleted successfully");
+      if (onUpdateEntry) {
+        onUpdateEntry(dateKey, {
+          theoryWork: "",
+          practicalWork: "",
+          practicalNumbers: [],
+          extraWork: "",
+          hours: "",
+          remarks: "",
+          isEditing: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting diary document:", error);
+      toast.error("Failed to delete diary record");
+    } finally {
+      setIsDeletingDiary(false);
+    }
+  };
 
   const isEditing = isTeacher && (entry?.isEditing || localIsEditing);
 
@@ -90,6 +121,59 @@ export const DiaryMobileCard = React.memo(({
     }
   }, [entry]);
 
+  const initialRef = useRef(null);
+
+  useEffect(() => {
+    if (isEditing && !initialRef.current) {
+      initialRef.current = {
+        theoryWork: (entry?.theoryWork || entry?.theory || "").trim(),
+        practicalWork: (entry?.practicalWork || entry?.practical || "").trim(),
+        practicalNumbers: (Array.isArray(entry?.practicalNumbers)
+          ? entry.practicalNumbers.join(", ")
+          : entry?.practicalNumbers || "").trim(),
+        extraWork: (entry?.extraWork || "").trim(),
+        hours: entry?.hours !== null && entry?.hours !== undefined ? String(entry.hours).trim() : "",
+        remarks: (entry?.remarks || "").trim(),
+      };
+    } else if (!isEditing) {
+      initialRef.current = null;
+    }
+  }, [isEditing, entry]);
+
+  const currentTheory = (updateDiaryField ? (entry?.theoryWork || entry?.theory) : formData.theoryWork) || "";
+  const currentPractical = (updateDiaryField ? (entry?.practicalWork || entry?.practical) : formData.practicalWork) || "";
+  const currentPracticalNumbers = updateDiaryField
+    ? (Array.isArray(entry?.practicalNumbers) ? entry.practicalNumbers.join(", ") : entry?.practicalNumbers || "")
+    : (typeof formData.practicalNumbers === "string" ? formData.practicalNumbers : (Array.isArray(formData.practicalNumbers) ? formData.practicalNumbers.join(", ") : ""));
+  const currentExtra = (updateDiaryField ? entry?.extraWork : formData.extraWork) || "";
+  const currentHours = updateDiaryField
+    ? (entry?.hours !== null && entry?.hours !== undefined ? String(entry.hours) : "")
+    : (formData.hours !== null && formData.hours !== undefined ? String(formData.hours) : "");
+  const currentRemarks = (updateDiaryField ? entry?.remarks : formData.remarks) || "";
+
+  const isDirty = useMemo(() => {
+    const th = currentTheory.trim();
+    const pr = currentPractical.trim();
+    const pn = currentPracticalNumbers.trim();
+    const ex = currentExtra.trim();
+    const hr = currentHours.trim();
+    const rm = currentRemarks.trim();
+
+    if (!entry?.$id) {
+      return Boolean(th || pr || pn || ex || hr || (rm && rm !== "-"));
+    }
+    if (!initialRef.current) return false;
+
+    return (
+      th !== initialRef.current.theoryWork ||
+      pr !== initialRef.current.practicalWork ||
+      pn !== initialRef.current.practicalNumbers ||
+      ex !== initialRef.current.extraWork ||
+      hr !== initialRef.current.hours ||
+      rm !== initialRef.current.remarks
+    );
+  }, [entry?.$id, currentTheory, currentPractical, currentPracticalNumbers, currentExtra, currentHours, currentRemarks]);
+
   const handleToggleEdit = () => {
     if (toggleEditing) {
       toggleEditing(dateKey);
@@ -99,6 +183,19 @@ export const DiaryMobileCard = React.memo(({
   };
 
   const handleSave = async () => {
+    if (!isTeacher) return;
+
+    if (!isDirty) {
+      if (entry && entry.$id) {
+        toast.info("No changes detected to save.");
+        handleCancel();
+        return;
+      } else {
+        toast.error("Please enter some work details before saving.");
+        return;
+      }
+    }
+
     if (toggleEditing && entry?.isEditing) {
       toggleEditing(dateKey);
       return;
@@ -168,25 +265,7 @@ export const DiaryMobileCard = React.memo(({
   };
 
   const renderTeacherStatusBadge = () => {
-    if (teacherStatus === "present") {
-      return (
-        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 text-xs font-bold inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
-          <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Present
-        </span>
-      );
-    }
-    if (teacherStatus === "absent") {
-      return (
-        <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 text-xs font-bold inline-flex items-center gap-1 border border-rose-200 dark:border-rose-800">
-          <UserX className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" /> Absent
-        </span>
-      );
-    }
-    return (
-      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-semibold inline-flex items-center gap-1 border border-slate-200 dark:border-slate-700">
-        <Clock className="w-3.5 h-3.5 text-slate-400" /> Not Marked
-      </span>
-    );
+    return <AttendanceStatusBadge status={teacherStatus} showLabel={true} size="md" />;
   };
 
   return (
@@ -277,7 +356,7 @@ export const DiaryMobileCard = React.memo(({
             )}
 
             <div className="flex items-center gap-2 pt-2">
-              <Button size="sm" onClick={handleSave} disabled={isSaving || isSubmitting} className="flex-1 min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xs">
+              <Button size="sm" onClick={handleSave} disabled={!isDirty || isSaving || isSubmitting} className="flex-1 min-h-[44px] bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-sm shadow-xs">
                 {isSaving || isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save Entry
               </Button>
@@ -382,51 +461,16 @@ export const DiaryMobileCard = React.memo(({
                     <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                       Teacher Attendance:
                     </span>
-                    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                      {/* Present button — always shown on holidays */}
-                      <button
-                        type="button"
-                        disabled={isPresentLoading || isAbsentLoading}
-                        onClick={() => onSetTeacherAttendance(dateKey, "present")}
-                        className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-                          teacherStatus === "present"
-                            ? "bg-emerald-600 text-white shadow-xs"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-                        } ${isPresentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
-                      >
-                        {isPresentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
-                        Present
-                      </button>
-
-                      {/* On holiday: no Absent. Show Undo if any attendance is marked (present or absent). */}
-                      {isHoliday ? (
-                        teacherStatus && onDeleteTeacherAttendance ? (
-                          <button
-                            type="button"
-                            disabled={actionLoadingDates?.[dateKey] === "deleting"}
-                            onClick={() => onDeleteTeacherAttendance(dateKey)}
-                            className="flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-400"
-                          >
-                            {actionLoadingDates?.[dateKey] === "deleting" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            Undo
-                          </button>
-                        ) : null
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={isPresentLoading || isAbsentLoading}
-                          onClick={() => onSetTeacherAttendance(dateKey, "absent")}
-                          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-                            teacherStatus === "absent"
-                              ? "bg-rose-600 text-white shadow-xs"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-                          } ${isAbsentLoading ? "opacity-80 animate-pulse cursor-wait" : ""}`}
-                        >
-                          {isAbsentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserX className="w-4 h-4" />}
-                          Absent
-                        </button>
-                      )}
-                    </div>
+                    <TeacherAttendanceControl
+                      dateKey={dateKey}
+                      teacherStatus={teacherStatus}
+                      isHoliday={isHoliday}
+                      actionLoadingDates={actionLoadingDates}
+                      onSetTeacherAttendance={onSetTeacherAttendance}
+                      onDeleteTeacherAttendance={onDeleteTeacherAttendance}
+                      readOnly={!isTeacher}
+                      className="w-full justify-center p-1.5"
+                    />
                   </div>
                 )}
 
@@ -442,7 +486,21 @@ export const DiaryMobileCard = React.memo(({
                     <span>Edit Entry</span>
                   </Button>
 
-                  {onOpenAttendanceModal && (
+                  {entry?.$id && (teacherStatus === "absent" || teacherStatus === "a" || isAbsent) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDeleteDiaryEntry}
+                      disabled={isDeletingDiary}
+                      className="min-h-[44px] px-3 font-bold text-xs text-rose-600 border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl flex items-center gap-1.5"
+                      title="Delete diary document for this absent day"
+                    >
+                      {isDeletingDiary ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      <span>Delete Diary</span>
+                    </Button>
+                  )}
+
+                  {(onOpenAttendanceModal || (entry?.$id && (teacherStatus === "absent" || teacherStatus === "a" || isAbsent))) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -453,21 +511,40 @@ export const DiaryMobileCard = React.memo(({
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                          onClick={() => onOpenAttendanceModal(dateKey, "attendance")}
-                          className="cursor-pointer flex items-center gap-2 text-xs font-medium"
-                        >
-                          <Users className="w-4 h-4 text-indigo-600" />
-                          Student Attendance
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onOpenAttendanceModal(dateKey, "holiday")}
-                          className="cursor-pointer flex items-center gap-2 text-xs font-medium text-amber-700"
-                        >
-                          <Palmtree className="w-4 h-4 text-amber-600" />
-                          {isHoliday ? "Holiday Details" : "Set Holiday"}
-                        </DropdownMenuItem>
+                      <DropdownMenuContent align="end" className="w-52">
+                        {onOpenAttendanceModal && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onOpenAttendanceModal(dateKey, "attendance")}
+                              className="cursor-pointer flex items-center gap-2 text-xs font-medium"
+                            >
+                              <Users className="w-4 h-4 text-indigo-600" />
+                              Student Attendance
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onOpenAttendanceModal(dateKey, "holiday")}
+                              className="cursor-pointer flex items-center gap-2 text-xs font-medium text-amber-700"
+                            >
+                              <Palmtree className="w-4 h-4 text-amber-600" />
+                              {isHoliday ? "Holiday Details" : "Set Holiday"}
+                            </DropdownMenuItem>
+                          </>
+                        )}
+
+                        {entry?.$id && (teacherStatus === "absent" || teacherStatus === "a" || isAbsent) && (
+                          <DropdownMenuItem
+                            onClick={handleDeleteDiaryEntry}
+                            disabled={isDeletingDiary}
+                            className="cursor-pointer flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-950/50"
+                          >
+                            {isDeletingDiary ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                            )}
+                            Delete Diary Document
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}

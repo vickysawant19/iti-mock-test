@@ -9,6 +9,7 @@ import batchStudentService from "@/appwrite/batchStudentService";
 import userProfileService from "@/appwrite/userProfileService";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
+import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 
 export function useDailyDiaryActions({
   onRefreshData,
@@ -233,9 +234,14 @@ export function useDailyDiaryActions({
       try {
         let docId = attendanceDocIds?.get?.(dateStr) || attendanceDocIds?.[dateStr];
 
+        const { attendanceStatus, leaveType } = attendanceTrackingService.resolveStatusPair(targetStatus);
+        const finalStatus = leaveType ? leaveType.toLowerCase() : targetStatus.toLowerCase();
+
         if (docId) {
           await newAttendanceService.updateAttendance(docId, {
-            status: targetStatus,
+            status: finalStatus,
+            attendanceStatus,
+            leaveType,
           });
         } else {
           const newDoc = await newAttendanceService.createAttendance({
@@ -243,7 +249,9 @@ export function useDailyDiaryActions({
             batchId: activeBatchId,
             tradeId: batchData?.tradeId ?? null,
             date: dateStr,
-            status: targetStatus,
+            status: finalStatus,
+            attendanceStatus,
+            leaveType,
             remarks: null,
             skipStats: true,
           });
@@ -252,7 +260,8 @@ export function useDailyDiaryActions({
           }
         }
 
-        toast.success(`Teacher attendance marked as ${targetStatus}`);
+        const config = attendanceTrackingService.getStatusConfig(targetStatus);
+        toast.success(`Teacher attendance marked as ${config.label || targetStatus}`);
       } catch (error) {
         console.error("Error updating teacher attendance:", error);
         toast.error("Failed to update teacher attendance");

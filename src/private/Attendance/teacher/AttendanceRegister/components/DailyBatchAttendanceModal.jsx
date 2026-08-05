@@ -14,6 +14,7 @@ import {
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 /**
  * Daily Batch Attendance & Holiday Modal
@@ -269,36 +270,7 @@ export const DailyBatchAttendanceModal = ({
               </p>
 
               {/* Leave Quotas Badge Row */}
-              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px]">
-                <span
-                  title="Casual Leave Quota (12 / year)"
-                  className={`px-2 py-0.5 rounded-md font-semibold border transition-colors ${
-                    quota.isClExceeded
-                      ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300"
-                      : "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
-                  }`}
-                >
-                  CL: {quota.clRemaining}/12 left
-                </span>
-
-                <span
-                  title="Sick Leave Quota (15 days / max 2 spells per year)"
-                  className={`px-2 py-0.5 rounded-md font-semibold border transition-colors ${
-                    quota.isSlDaysExceeded || quota.isSlSpellsExceeded
-                      ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300"
-                      : "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300"
-                  }`}
-                >
-                  SL: {quota.slDaysRemaining}d ({quota.slSpellsRemaining}/2 spells left)
-                </span>
-
-                <span
-                  title="Special Leave (Not deducted from quota)"
-                  className="px-2 py-0.5 rounded-md font-semibold border bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300"
-                >
-                  SPL: Excluded
-                </span>
-              </div>
+              <StudentLeaveQuotaBadges quota={quota} className="mt-1" />
             </div>
           </div>
 
