@@ -23,7 +23,7 @@ const AttendanceTableBody = ({
 
   // Standardized Column Widths & Sticky Positions (Matches AttendanceTableHead)
   const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
-  const actionColWidth = "w-28 min-w-28";
+  const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
   const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
 
   let studentIndex = 1;
@@ -206,17 +206,17 @@ const AttendanceTableBody = ({
             </td>
 
             {/* ── ACTION BUTTON (STICKY LEFT) ── */}
-            <td className={`${stickyCell} ${actionColWidth} ${actionStickyPos} border border-slate-200 dark:border-slate-800 sticky z-20 ${stickyBgClass} text-center shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)]`}>
+            <td className={`${stickyCell} ${actionColWidth} ${actionStickyPos} border border-slate-200 dark:border-slate-800 sticky z-20 ${stickyBgClass} text-center shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)] px-0.5`}>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenStudentAttendanceModal(student);
                 }}
-                className="w-full px-2 py-1 text-[11px] font-bold rounded bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center gap-1 shadow-xs transition-all"
+                className="p-1 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center mx-auto shadow-xs transition-all"
+                title="Edit Student Monthly Attendance"
               >
-                <Edit3 className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit3 className="h-3.5 w-3.5" />
               </button>
             </td>
 
@@ -297,7 +297,7 @@ const AttendanceTableBody = ({
                       </div>
                     )}
 
-                    <AttendanceStatusBadge status={status} />
+                    <AttendanceStatusBadge status={status} variant="plain" />
                   </td>
                 );
               })}

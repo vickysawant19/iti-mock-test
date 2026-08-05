@@ -1,4 +1,5 @@
 import React from "react";
+import { Edit3 } from "lucide-react";
 
 const AttendanceTableHead = ({
   monthDates,
@@ -16,7 +17,7 @@ const AttendanceTableHead = ({
 
   // Standardized Column Widths & Sticky Positions
   const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
-  const actionColWidth = "w-28 min-w-28";
+  const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
   const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
 
   // Sticky top cascade offsets
@@ -163,9 +164,10 @@ const AttendanceTableHead = ({
         <th
           rowSpan={2}
           scope="col"
-          className={`${stickyCell} ${actionColWidth} ${actionStickyPos} sticky z-50 border border-indigo-600 dark:border-slate-700 bg-indigo-700 dark:bg-slate-900 font-bold text-center text-xs sm:text-sm shadow-[4px_0_10px_-2px_rgba(0,0,0,0.15)]`}
+          title="Edit Student Monthly Attendance"
+          className={`${stickyCell} ${actionColWidth} ${actionStickyPos} sticky z-50 border border-indigo-600 dark:border-slate-700 bg-indigo-700 dark:bg-slate-900 font-bold text-center text-xs shadow-[4px_0_10px_-2px_rgba(0,0,0,0.15)] px-0.5`}
         >
-          Action
+          <Edit3 className="h-3.5 w-3.5 mx-auto text-indigo-200" />
         </th>
 
         {/* Daily Date Headers */}

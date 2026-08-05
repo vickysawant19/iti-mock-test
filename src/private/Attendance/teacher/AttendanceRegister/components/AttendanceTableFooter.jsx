@@ -15,7 +15,7 @@ const AttendanceTableFooter = ({
 
   // Standardized Column Widths & Sticky Positions (Matches Head and Body)
   const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
-  const actionColWidth = "w-28 min-w-28";
+  const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
   const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
 
   const footerRows = [
