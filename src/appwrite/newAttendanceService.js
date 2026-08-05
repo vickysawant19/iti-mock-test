@@ -294,16 +294,9 @@ class NewAttendanceService {
         false
       );
 
-      const resData = JSON.parse(response.responseBody);
+      const resData = JSON.parse(response.responseBody || "{}");
       if (!resData.success) {
         throw new Error(resData.error || "Failed to create attendance");
-      }
-
-      // Trigger monthly attendance stats sync
-      if (!skipStats) {
-        this.syncMonthlyAttendanceStats(userId, batchId, formattedDate).catch((err) => {
-          console.error("[newAttendanceService] Failed to sync monthly stats on createAttendance:", err);
-        });
       }
 
       return resData.data;
@@ -330,15 +323,6 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to create multiple attendance");
-      }
-
-      // Trigger stats update for these students
-      if (resData.data && attendanceRecords.length > 0) {
-        attendanceRecords.forEach((rec) => {
-          if (rec.userId && rec.batchId && rec.date) {
-            this.syncMonthlyAttendanceStats(rec.userId, rec.batchId, rec.date).catch(() => {});
-          }
-        });
       }
 
       return resData.data;
