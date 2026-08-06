@@ -1,6 +1,6 @@
 import React, { forwardRef, useMemo } from "react";
 import { format } from "date-fns";
-import PrintLayout from "../components/PrintLayout";
+import PrintLayout from "../../components/PrintLayout";
 
 /**
  * Dynamic JSON-driven Job Evaluation Report — A4 Landscape (297mm × 210mm)

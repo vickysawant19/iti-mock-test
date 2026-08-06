@@ -1,18 +1,24 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Printer } from "lucide-react";
+import { Edit2, Printer } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
-import TraineeLeaveRecordPrint from "./TraineeLeaveRecordPrint";
+import ProgressCardPrint from "./ProgressCardPrint";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
-import { getMonthsArray } from "../util/util";
+import { getMonthsArray } from "../../../util/util";
+import EditProgressCard from "./EditProgressCard";
 import { addMonths, differenceInMonths, format } from "date-fns";
-import LoadingState from "../components/LoadingState";
+import LoadingState from "../../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import { calculateStats } from "@/private/Attendance/CalculateStats";
 import { Query } from "appwrite";
 
-const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
+const ProgressCard = ({
+  studentProfiles = [],
+  batchData,
+  setBatchData,
+}) => {
+  // Early check for missing data
   if (!studentProfiles || !studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
@@ -22,13 +28,16 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
   }
 
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [leaveData, setLeaveData] = useState(null);
+  const [progressData, setProgressData] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // ref for the printable area
   const printRef = useRef(null);
 
+  // Get college and trade data
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
     batchData.collegeId
   );
@@ -36,107 +45,13 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
     batchData.tradeId
   );
 
+  // react-to-print hook
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: `leave-record-${leaveData?.userName || "student"}`,
+    documentTitle: `progress-card-${progressData?.userName || "student"}`,
   });
 
-  const processStudentData = useMemo(() => {
-    return (student, leaveRecords, batch) => {
-      if (!student || !leaveRecords || !batch) return null;
-
-      const processAttendanceRecords = () => {
-        let attendanceMap = {};
-
-        if (leaveRecords?.monthlyAttendance) {
-          Object.entries(leaveRecords.monthlyAttendance).forEach(
-            ([dateStr, data]) => {
-              try {
-                const month = format(new Date(dateStr), "MMM yyyy");
-                attendanceMap[month] = {
-                  possibleDays: data.absentDays + data.presentDays,
-                  presentDays: data.presentDays,
-                  sickLeave: 0,
-                  casualLeave: 0,
-                };
-              } catch (error) {
-                console.error(`Error processing date: ${dateStr}`, error);
-              }
-            }
-          );
-        }
-
-        const allMonths = getMonthsArray(
-          batch.start_date,
-          batch.end_date,
-          "MMM yyyy"
-        );
-
-        const completeAttendance = allMonths.reduce((acc, month) => {
-          acc[month] = attendanceMap[month] || {
-            possibleDays: "",
-            presentDays: "",
-            sickLeave: "",
-            casualLeave: "",
-            percent: "",
-          };
-          return acc;
-        }, {});
-
-        const monthsPerPage = 12;
-        const pages = [];
-
-        for (let i = 0; i < allMonths.length; i += monthsPerPage) {
-          const pageMonths = allMonths.slice(i, i + monthsPerPage);
-          const pageData = {};
-
-          pageMonths.forEach((month) => {
-            pageData[month] = completeAttendance[month];
-          });
-
-          pages.push({
-            months: pageMonths,
-            data: pageData,
-            yearRange: `${format(
-              addMonths(new Date(batch.start_date), i),
-              "MMMM yyyy"
-            )} to ${format(
-              addMonths(
-                new Date(batch.start_date),
-                Math.min(
-                  i + 11,
-                  differenceInMonths(
-                    new Date(batch.end_date),
-                    new Date(batch.start_date)
-                  )
-                )
-              ),
-              "MMMM yyyy"
-            )}`,
-          });
-        }
-
-        return { pages };
-      };
-
-      const { pages } = processAttendanceRecords();
-
-      const collegeInfo = college ? { collageName: college.collageName } : {};
-      const tradeInfo = trade ? { tradeName: trade.name || trade.tradeName } : {};
-
-      return {
-        ...student,
-        ...collegeInfo,
-        ...tradeInfo,
-        pages,
-        stipend: "Yes",
-        casualLeaveRecords: [],
-        medicalLeaveRecords: [],
-        parentMeetings: [],
-      };
-    };
-  }, [college, trade]);
-
+  // Update search params when a student is selected
   useEffect(() => {
     if (selectedStudent) {
       setSearchParams((prevData) => {
@@ -146,6 +61,7 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
     }
   }, [selectedStudent, setSearchParams]);
 
+  // Handle student selection from URL
   useEffect(() => {
     if (selectedStudent) return;
 
@@ -162,20 +78,84 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
     ) {
       const newSelectedStudent = {
         ...foundStudent,
-        collageName: college?.collageName,
-        tradeName: trade?.tradeName,
+        collageName: college.collageName,
+        tradeName: trade.tradeName,
       };
       setSelectedStudent(newSelectedStudent);
     }
   }, [studentProfiles, college, trade, searchParams, selectedStudent]);
 
+  // Process progress data for selected student
+  const processProgressData = useMemo(() => {
+    return (student, batch, studentStats) => {
+      if (!student || !batch || !studentStats.length) return null;
+
+      const batchMarksParsed = (batch.batchMarks || []).map((item) =>
+        typeof item === "string" ? JSON.parse(item) : item
+      );
+
+      const studentMarks = batchMarksParsed.find(
+        ({ userId }) => userId === student.userId
+      );
+
+      const marks = studentMarks ? Object.fromEntries(studentMarks.marks) : {};
+
+      const monthlyRecords =
+        studentStats.find((item) => item.userId === student.userId)
+          ?.monthlyAttendance || {};
+
+      const quarterlyTests = student.quarterlyTests || new Array(3).fill({});
+
+      const allMonths = getMonthsArray(
+        batch.start_date,
+        batch.end_date,
+        "MMMM yyyy"
+      );
+
+      const completeRecords = {};
+      allMonths.forEach((monthKey) => {
+        completeRecords[monthKey] =
+          { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
+      });
+
+      const monthlyRecordArray = Object.entries(completeRecords);
+      let pages = [];
+      const monthsPerPage = 12;
+
+      for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
+        pages.push({
+          data: monthlyRecordArray.slice(i, i + monthsPerPage),
+          yearRange: `${format(
+            addMonths(new Date(batch.start_date), i),
+            "MMMM yyyy"
+          )} to ${format(
+            addMonths(
+              new Date(batch.start_date),
+              Math.min(
+                i + 11,
+                differenceInMonths(
+                  new Date(batch.end_date),
+                  new Date(batch.start_date)
+                )
+              )
+            ),
+            "MMMM yyyy"
+          )}`,
+        });
+      }
+
+      return { ...student, quarterlyTests, pages };
+    };
+  }, []);
+
+  // Update progress data when selected student changes
   useEffect(() => {
     const fetchAndProcessData = async () => {
       if (!selectedStudent || !batchData) {
-        setLeaveData(null);
+        setProgressData(null);
         return;
       }
-
+      
       setIsFetchingStats(true);
       try {
         const attendanceRecords = await newAttendanceService.getStudentAttendance(
@@ -191,35 +171,40 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
           data: attendanceRecords,
         });
 
-        const data = processStudentData(selectedStudent, studentStat, batchData);
-        setLeaveData(data);
+        const data = processProgressData(selectedStudent, batchData, [studentStat]);
+        setProgressData(data);
       } catch (error) {
-        console.error("Error fetching leave stats:", error);
+        console.error("Error fetching progress stats:", error);
       } finally {
         setIsFetchingStats(false);
       }
     };
-
+    
     fetchAndProcessData();
-  }, [selectedStudent, batchData, processStudentData]);
+  }, [selectedStudent, batchData, processProgressData]);
 
+  // Handle student selection
   const handleStudentSelect = (student) => {
+    if (!college || !trade) return;
+
     const newSelectedStudent = {
       ...student,
-      collageName: college?.collageName,
-      tradeName: trade?.tradeName,
+      collageName: college.collageName,
+      tradeName: trade.tradeName,
     };
+
     setSelectedStudent(newSelectedStudent);
     setIsDropdownOpen(false);
   };
 
+  // Display loading state
   if (collegeDataLoading || tradeDataLoading) return <LoadingState />;
 
   return (
     <div className="w-full h-full flex flex-col lg:flex-row gap-6 p-4 sm:p-6 dark:bg-gray-900 bg-gray-50 min-h-screen">
       
       {/* Left Sidebar */}
-      <div className="w-full lg:w-80 shrink-0 flex flex-col gap-6">
+      <div className="w-full lg:w-80 shrink-0 flex  flex-col gap-6">
         {/* Student Selector Dropdown */}
         <div className="relative w-full">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -264,7 +249,17 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 w-full">
-          {leaveData && (
+          {progressData && (
+            <button
+              onClick={() => setEditMode((prev) => !prev)}
+              className="w-full bg-white border border-blue-600 text-blue-600 p-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors dark:bg-gray-800 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-gray-700"
+            >
+              <Edit2 className="h-4 w-4" />{" "}
+              {editMode ? "Close Edit" : "Edit Progress Data"}
+            </button>
+          )}
+
+          {progressData && !editMode && (
             <button
               onClick={handlePrint}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-800"
@@ -276,22 +271,35 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
         </div>
       </div>
 
-      {/* Right Side: Live Preview */}
+      {/* Right Side: Edit Mode or Progress Card Preview */}
       <div className="w-full lg:flex-1 min-w-0">
-        <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 bg-white">
-          {leaveData ? (
-            <TraineeLeaveRecordPrint ref={printRef} data={leaveData} />
-          ) : (
-            <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
-              <p className="text-gray-500 dark:text-gray-400">
-                Select a student to view their leave record
-              </p>
-            </div>
-          )}
-        </div>
+        {editMode ? (
+          <div className="w-full h-full rounded-md dark:bg-gray-800">
+            <EditProgressCard
+              progressData={progressData}
+              setProgressdata={setProgressData}
+              setEditMode={setEditMode}
+              batchData={batchData}
+              setBatchData={setBatchData}
+            />
+          </div>
+        ) : (
+          <div className="overflow-auto border rounded-lg shadow-xs dark:border-gray-700 dark:bg-gray-800 bg-white">
+            {progressData ? (
+              /* Live preview — instant, no blob generation */
+              <ProgressCardPrint ref={printRef} data={progressData} />
+            ) : (
+              <div className="w-full h-[600px] sm:h-[842px] flex items-center justify-center bg-white dark:bg-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Select a student to view their progress card
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default TraineeLeaveRecord;
+export default ProgressCard;

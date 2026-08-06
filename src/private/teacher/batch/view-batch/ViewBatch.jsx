@@ -10,27 +10,25 @@ import {
   BookOpen,
   Award,
   Loader2,
-  Activity,
 } from "lucide-react";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
-import { calculateStats } from "../../Attendance/CalculateStats";
 import userProfileService from "@/appwrite/userProfileService";
 import batchService from "@/appwrite/batchService";
 import batchStudentService from "@/appwrite/batchStudentService";
 
+import BatchHeader from "./components/BatchHeader";
 import LoadingState from "./components/LoadingState";
-import TabNavigation from "./components/TabNavigation";
-import ViewProfiles from "./profiles/ViewProfiles";
-import ViewAttendance from "../../Attendance/ViewAttendance";
-import JobEvaluation from "./job-evaluation/JobEvaluation";
-import ProgressCard from "./progress-cards/ProgressCards";
-import TraineeLeaveRecord from "./leave-records/LeaveRecord";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
-import Assignment from "./assignments/Assignment";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
+
+import ViewProfiles from "./tabs/profiles/ViewProfiles";
+import ViewAttendance from "../../../Attendance/ViewAttendance";
+import JobEvaluation from "./tabs/job-evaluation/JobEvaluation";
+import ProgressCard from "./tabs/progress-cards/ProgressCards";
+import TraineeLeaveRecord from "./tabs/leave-records/LeaveRecord";
+import Assignment from "./tabs/assignments/Assignment";
 
 const TABS = [
   { id: "profiles", label: "Student Profiles", icon: Users },
@@ -67,6 +65,7 @@ const ViewBatch = () => {
       setSelectedBatch(searchParams.get("batchid"));
     }
   }, [activeBatchId, searchParams.get("batchid")]);
+
   const [activeTab, setActiveTab] = useState(
     searchParams.get("active") || "profiles"
   );
@@ -135,13 +134,13 @@ const ViewBatch = () => {
       const memberMap = {};
       batchMembers.forEach(m => { memberMap[m.studentId] = m; });
 
-      const enrichedStudents = result.map(profile => {
-        const member = memberMap[profile.userId] || {};
+      const enrichedStudents = result.map(profileItem => {
+        const member = memberMap[profileItem.userId] || {};
         return {
-          ...profile,
-          studentId: member.rollNumber || "NA", // mapping rollNumber to studentId for component compat
+          ...profileItem,
+          studentId: member.rollNumber || "NA",
           registerId: member.registerId || "NA",
-          status: member.status || "Inactive", // use batch-specific status
+          status: member.status || "Inactive",
           enrolledAt: member.enrollmentDate || member.joinedAt || "N/A",
         };
       });
@@ -177,21 +176,9 @@ const ViewBatch = () => {
     }
   }, [data.selectedBatchData]);
 
-  // Render content based on active tab
+  // Lazy Tab Content Renderer
   const renderContent = () => {
-    const isContentLoading = loadingStates.students;
-
-    if (isContentLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading {activeTab} data...</p>
-        </div>
-      );
-    }
-
     switch (activeTab) {
-      case "live-classroom":
       case "profiles":
         return (
           <ViewProfiles
@@ -212,9 +199,6 @@ const ViewBatch = () => {
           <ProgressCard
             studentProfiles={data.students}
             batchData={data.selectedBatchData}
-            setBatchData={(newData) =>
-              setData((prev) => ({ ...prev, selectedBatchData: newData }))
-            }
           />
         );
       case "leave-record":
@@ -227,30 +211,29 @@ const ViewBatch = () => {
       case "job-evaluation":
         return (
           <JobEvaluation
-            studentProfiles={
-              data.students?.filter((item) => item.role?.includes("Student")) || []
-            }
-            stats={data.attendanceStats}
+            studentProfiles={data.students}
             batchData={data.selectedBatchData}
           />
         );
       case "assignments":
         return (
           <Assignment
-            studentProfiles={
-              data.students?.filter((item) => item.role?.includes("Student")) || []
-            }
-            batchData={data.selectedBatchData}
             students={data.students}
+            batchData={data.selectedBatchData}
           />
         );
       case "achievements":
-        return <FeaturePlaceholder icon={Award} title="Achievements Coming Soon" />;
+        return (
+          <FeaturePlaceholder
+            icon={Award}
+            title="Student Achievements"
+            description="Badges, certifications, and awards earned by students in this batch will be displayed here."
+          />
+        );
       default:
         return null;
     }
   };
-
 
   const { data: tradeData } = useGetTradeQuery(
     data.selectedBatchData?.tradeId,
@@ -259,61 +242,17 @@ const ViewBatch = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-12">
-      {/* Dashboard Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Left: Batch Info */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-2xl shrink-0">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white truncate">
-                  {data.selectedBatchData?.BatchName || "Batch Details"}
-                </h1>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  {tradeData?.tradeName && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 px-2.5 py-0.5 rounded-full">
-                      <TrendingUp className="w-3 h-3" />
-                      {tradeData.tradeName}
-                    </span>
-                  )}
-                  {data.selectedBatchData?.Year && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-2.5 py-0.5 rounded-full">
-                      <Calendar className="w-3 h-3" />
-                      {data.selectedBatchData.Year}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+      {/* Dashboard Header Component */}
+      <BatchHeader
+        selectedBatchData={data.selectedBatchData}
+        tradeData={tradeData}
+        studentCount={data.students?.length}
+        tabs={TABS}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-            {/* Right: Student Count */}
-            {data.selectedBatchData && (
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-center px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/50">
-                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Enrolled</p>
-                  <p className="text-xl font-black text-blue-700 dark:text-blue-300 leading-none">{data.students?.length || 0}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Tab Navigation */}
-          {data.selectedBatchData && (
-            <div className="mt-4">
-              <TabNavigation
-                tabs={TABS}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className={`${(activeTab === "attendance" || activeTab === "profiles" || activeTab === "live-classroom") ? "w-full px-2 sm:px-4 md:px-6 lg:px-8" : "container mx-auto px-4 sm:px-6 lg:px-8"} mt-8`}>
+      <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 mt-6">
         {loadingStates.batchData && (
           <div className="flex flex-col items-center justify-center py-40">
             <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
-import EditEnrollmentTab from "../../students/EditEnrollmentTab";
+import EditEnrollmentTab from "../../../../manage-students/EditEnrollmentTab";
 
 const StudentManagementModal = ({
   viewProfileUserId,

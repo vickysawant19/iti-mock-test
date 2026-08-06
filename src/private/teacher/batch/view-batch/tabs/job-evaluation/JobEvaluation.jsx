@@ -18,7 +18,7 @@ import dailyDiaryService from "@/appwrite/dailyDiaryService";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData }) => {
-  if (!studentProfiles.length) {
+  if (!studentProfiles || !studentProfiles.length) {
     return (
       <div className="text-center text-gray-500 py-10">
         No students found in this batch
@@ -72,7 +72,8 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   };
 
   const { data: college, isLoading: collegeDataLoading } = useGetCollegeQuery(
-    batchData.collegeId,
+    batchData?.collegeId,
+    { skip: !batchData?.collegeId }
   );
 
   const { scrollToItem, itemRefs } = useScrollToItem(modules || [], "moduleId");
@@ -192,33 +193,52 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
   const fetchSubject = async () => {
     try {
-      const res = await subjectService.getSubjectByName("Trade Practical");
-      console.log("subject", res);
+      let res = await subjectService.getSubjectByName("Trade Practical");
+      if (!res || !res.$id) {
+        res = await subjectService.getSubjectByName("Practical");
+      }
+      if (!res || !res.$id) {
+        const allSubjects = await subjectService.listAllSubjects();
+        res = allSubjects.find((s) =>
+          (s.subjectName || s.name || "").toLowerCase().includes("practical")
+        ) || allSubjects[0];
+      }
+      console.log("Resolved Trade Practical subject:", res);
       return res;
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching subject:", error);
+      return null;
     }
   };
 
   // Fetch modules based on selected subject and year
   const fetchModules = async () => {
     try {
-      if (!selectedYear) return;
+      if (!selectedYear || !batchData) return;
+      const effectiveTradeId = batchData.tradeId?.$id || batchData.tradeId;
+
+      if (!effectiveTradeId) {
+        console.warn("No tradeId found in batchData:", batchData);
+        setModules([]);
+        return;
+      }
+
       const subject = await fetchSubject();
       if (!subject || !subject.$id) {
         console.warn("No Practical subject found for this trade.");
         setModules([]);
         return;
       }
+
       const data = await moduleServices.getNewModulesData(
-        batchData.tradeId,
+        effectiveTradeId,
         subject.$id,
         selectedYear,
       );
 
       const sortedData =
         data?.sort(
-          (a, b) => a.moduleId.match(/\d+/)?.[0] - b.moduleId.match(/\d+/)?.[0],
+          (a, b) => (parseInt(a.moduleId?.match(/\d+/)?.[0]) || 0) - (parseInt(b.moduleId?.match(/\d+/)?.[0]) || 0),
         ) || [];
 
       setModules(sortedData);
@@ -229,8 +249,10 @@ const JobEvaluation = ({ studentProfiles = [], batchData }) => {
 
   useEffect(() => {
     setModules([]);
-    fetchModules();
-  }, [selectedYear, batchData.tradeId]);
+    if (batchData) {
+      fetchModules();
+    }
+  }, [selectedYear, batchData?.tradeId]);
 
   // Generate base data via adapter
   const baseData = React.useMemo(() => {

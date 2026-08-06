@@ -1,9 +1,9 @@
 import React, { forwardRef } from "react";
 import { format } from "date-fns";
 import { calculateAverage, calculateTotalAttendance } from "./util";
-import PrintHeader from "../components/PrintHeader";
-import PrintStudentInfo from "../components/PrintStudentInfo";
-import PrintLayout from "../components/PrintLayout";
+import PrintHeader from "../../components/PrintHeader";
+import PrintStudentInfo from "../../components/PrintStudentInfo";
+import PrintLayout from "../../components/PrintLayout";
 
 /* ─── Shared table cell styles ─── */
 const thClass = "border-2 border-black font-bold px-1.5 py-1 text-center bg-gray-100 align-middle text-sm leading-tight";

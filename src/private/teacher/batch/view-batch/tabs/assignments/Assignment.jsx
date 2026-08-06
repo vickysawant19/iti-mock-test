@@ -13,16 +13,8 @@ import StudentDetailsModal from "./components/StudentDetailsModal";
 import Legend from "./components/Legend";
 import ErrorMessage from "./components/ErrorMessage";
 
-const Assignment = ({ students, batchData }) => {
-  const hasValidProps =
-    students && Array.isArray(students) && students.length > 0;
-  const hasBatchData = batchData && batchData.tradeId;
-
-  if (!hasValidProps || !hasBatchData) {
-    return null;
-  }
-
-  // State management
+const Assignment = ({ students = [], batchData }) => {
+  // State management (Hooks MUST be called unconditionally at top of component)
   const [subjectData, setSubjectData] = useState({
     data: [],
     selectedSubject: null,
@@ -85,9 +77,10 @@ const Assignment = ({ students, batchData }) => {
       try {
         setError(null);
         setPagination((prev) => ({ ...prev, isLoading: true }));
+        const effectiveTradeId = batchData.tradeId?.$id || batchData.tradeId;
 
         const data = await moduleServices.getNewModulesData(
-          batchData.tradeId,
+          effectiveTradeId,
           subjectData.selectedSubject.$id,
           year.selectedYear
         );
@@ -407,6 +400,27 @@ const Assignment = ({ students, batchData }) => {
   const totalPages =
     Math.ceil(pagination.totalItems / pagination.pageSize) || 1;
   const hasData = subjectData.selectedSubject && year.selectedYear;
+
+  const hasValidStudents = students && Array.isArray(students) && students.length > 0;
+  const hasBatchData = batchData && (batchData.tradeId || batchData.$id);
+
+  if (!hasBatchData) {
+    return (
+      <div className="flex items-center justify-center p-12 text-gray-500 font-medium">
+        Loading batch details...
+      </div>
+    );
+  }
+
+  if (!hasValidStudents) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm my-6">
+        <p className="text-gray-600 dark:text-gray-300 font-bold text-base">
+          No students found in this batch to evaluate assignments.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
-import PrintLayout from "../components/PrintLayout";
-import PrintHeader from "../components/PrintHeader";
-import PrintStudentInfo from "../components/PrintStudentInfo";
+import PrintLayout from "../../components/PrintLayout";
+import PrintHeader from "../../components/PrintHeader";
+import PrintStudentInfo from "../../components/PrintStudentInfo";
 
 /* ─── Design tokens ─── */
 const ACCENT = "#1a3a5c";       // deep navy

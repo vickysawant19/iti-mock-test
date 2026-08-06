@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import batchService from "@/appwrite/batchService";
-import LoadingState from "../components/LoadingState";
+import LoadingState from "../../components/LoadingState";
 
 const EditProgressCard = ({
   progressData,
