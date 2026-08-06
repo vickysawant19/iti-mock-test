@@ -21,20 +21,18 @@ import batchStudentService from "@/appwrite/batchStudentService";
 
 import LoadingState from "./components/LoadingState";
 import TabNavigation from "./components/TabNavigation";
-import ViewProfiles from "./profile/ViewProfiles";
+import ViewProfiles from "./profiles/ViewProfiles";
 import ViewAttendance from "../../Attendance/ViewAttendance";
-import JobEvaluation from "./job-evalution/JobEvalution";
-import ProgressCard from "./progress-card/ProgressCards";
-import TraineeLeaveRecord from "./leave-record/LeaveRecord";
+import JobEvaluation from "./job-evaluation/JobEvaluation";
+import ProgressCard from "./progress-cards/ProgressCards";
+import TraineeLeaveRecord from "./leave-records/LeaveRecord";
 import EmptyState from "./components/EmptyState";
 import FeaturePlaceholder from "./components/FeaturePlaceholder";
-import Assignment from "./assignment/Assignment";
-import LiveClassroom from "./classroom/LiveClassroom";
+import Assignment from "./assignments/Assignment";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const TABS = [
-  { id: "live-classroom", label: "Live Classroom", icon: Activity },
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
@@ -70,7 +68,7 @@ const ViewBatch = () => {
     }
   }, [activeBatchId, searchParams.get("batchid")]);
   const [activeTab, setActiveTab] = useState(
-    searchParams.get("active") || "live-classroom"
+    searchParams.get("active") || "profiles"
   );
   const fetchedStudentsRef = useRef(false);
 
@@ -194,9 +192,14 @@ const ViewBatch = () => {
 
     switch (activeTab) {
       case "live-classroom":
-        return <LiveClassroom students={data.students} batchData={data.selectedBatchData} />;
       case "profiles":
-        return <ViewProfiles students={data.students} batchId={selectedBatch} />;
+        return (
+          <ViewProfiles
+            students={data.students}
+            batchId={selectedBatch}
+            batchData={data.selectedBatchData}
+          />
+        );
       case "attendance":
         return (
           <ViewAttendance
@@ -310,7 +313,7 @@ const ViewBatch = () => {
         </div>
       </div>
 
-      <div className={`${activeTab === "attendance" ? "w-full px-2 sm:px-4 lg:px-8" : "container mx-auto px-4 sm:px-6 lg:px-8"} mt-8`}>
+      <div className={`${(activeTab === "attendance" || activeTab === "profiles" || activeTab === "live-classroom") ? "w-full px-2 sm:px-4 md:px-6 lg:px-8" : "container mx-auto px-4 sm:px-6 lg:px-8"} mt-8`}>
         {loadingStates.batchData && (
           <div className="flex flex-col items-center justify-center py-40">
             <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
