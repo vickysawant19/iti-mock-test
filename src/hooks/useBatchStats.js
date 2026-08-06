@@ -6,7 +6,6 @@ import userProfileService from "@/appwrite/userProfileService";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import mockTestService from "@/services/mocktest.service";
 import holidayService from "@/appwrite/holidaysService";
-import userStatsService from "@/appwrite/userStats";
 import conf from "@/config/config";
 
 const isSecondOrFourthSaturday = (d) => {
@@ -30,19 +29,19 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
   const [students, setStudents] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [studentStats, setStudentStats] = useState(null); // studentId -> stats object
+  const [rawMonthlyStatsRows, setRawMonthlyStatsRows] = useState([]);
   const [holidays, setHolidays] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Spanning reload prevention (refreshes within 10 seconds are ignored unless forced)
+  // Spanning reload prevention (refreshes within 5 seconds are ignored unless forced)
   const lastFetchRef = useRef({});
 
   const fetchData = useCallback(async (force = false) => {
     if (!batchId) return;
 
     const nowMs = Date.now();
-    if (!force && lastFetchRef.current[batchId] && (nowMs - lastFetchRef.current[batchId] < 10000)) {
-      console.log("[useBatchStats] Throttling fast reload to prevent API spam");
+    if (!force && lastFetchRef.current[batchId] && (nowMs - lastFetchRef.current[batchId] < 5000)) {
       return;
     }
     lastFetchRef.current[batchId] = nowMs;
@@ -60,173 +59,153 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
 
       if (studentIds.length === 0) {
         setStudentStats({});
+        setRawMonthlyStatsRows([]);
         setIsLoading(false);
         return;
       }
 
-      // 2. Fetch userBatchStats records, profiles, and holidays in parallel
-      const [statsDocsRes, profileDocs, holidayDocs] = await Promise.all([
-        userStatsService.getAllStats([
-          Query.equal("batchId", batchId),
-          Query.limit(100),
-        ]),
+      // 2. Fetch profiles, holidays, monthlyAttendanceStats, and mock tests in parallel
+      const [profileDocs, holidayDocs, monthlyStatsRes, testsDocsRes] = await Promise.all([
         userProfileService.getBatchUserProfile([
           Query.equal("userId", studentIds),
           Query.limit(100),
           Query.select(["userId", "userName", "profileImage"]),
         ]),
-        holidayService.getBatchHolidays(batchId, [Query.select(["date"])]),
+        holidayService.getBatchHolidays(batchId, [Query.select(["date"])]).catch(() => []),
+        newAttendanceService.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.monthlyAttendanceStatsCollectionId || "monthlyAttendanceStats",
+          queries: [
+            Query.equal("batchId", batchId),
+            Query.limit(1000),
+            Query.select([
+              "userId",
+              "batchId",
+              "yearMonth",
+              "workingDays",
+              "presentDays",
+              "absentDays",
+              "casualLeaves",
+              "sickLeaves",
+              "specialLeaves",
+              "onDutyLeaves",
+              "totalPresent",
+              "attendancePercentage",
+            ]),
+          ],
+        }).catch(() => ({ rows: [] })),
+        mockTestService.listQuestions([
+          Query.equal("userId", studentIds),
+          Query.equal("submitted", true),
+          Query.select(["userId", "score", "quesCount"]),
+        ]).catch((err) => {
+          console.error("Error fetching raw tests for batch stats:", err);
+          return [];
+        }),
       ]);
 
-      // Map profiles and holidays
+      // Map profiles
       const profileMap = {};
-      profileDocs.forEach((p) => {
+      (profileDocs || []).forEach((p) => {
         profileMap[p.userId] = p;
       });
       setProfiles(profileMap);
 
+      // Map holidays
       const hSet = new Set();
       (holidayDocs || []).forEach((h) => {
         if (h?.date) hSet.add(h.date.substring(0, 10));
       });
       setHolidays(hSet);
 
-      // Map existing cached stats
-      const cachedStatsMap = {};
-      (statsDocsRes.rows || []).forEach((d) => {
-        cachedStatsMap[d.userId] = d;
+      const rows = monthlyStatsRes?.rows || [];
+      setRawMonthlyStatsRows(rows);
+
+      // Group mock tests by student
+      const testsByUser = {};
+      (testsDocsRes || []).forEach((t) => {
+        const uid = t.userId;
+        if (!testsByUser[uid]) testsByUser[uid] = [];
+        testsByUser[uid].push(t);
       });
 
-      // 3. Separate students into fresh and stale/missing
-      const cacheDurationMs = 24 * 60 * 60 * 1000; // 24-hour TTL
-      const staleStudentIds = [];
-      const freshStats = {};
-
+      // Group monthlyAttendanceStats by student
+      const statsMap = {};
       studentIds.forEach((sid) => {
-        const doc = cachedStatsMap[sid];
-        if (!doc || (nowMs - new Date(doc.$updatedAt || doc.$createdAt).getTime()) > cacheDurationMs) {
-          staleStudentIds.push(sid);
-        } else {
-          freshStats[sid] = {
-            userId: sid,
-            presentDays: doc.presentDays ?? 0,
-            totalWorkingDays: doc.totalWorkingDays ?? 0,
-            testsSubmitted: doc.testsSubmitted ?? 0,
-            cumulativeScore: doc.cumulativeScore ?? 0,
-            latestScore: doc.latestScore ?? 0,
-            monthlyAttendance: JSON.parse(doc.monthlyAttendance || "{}"),
+        statsMap[sid] = {
+          userId: sid,
+          workingDays: 0,
+          presentDays: 0,
+          absentDays: 0,
+          casualLeaves: 0,
+          sickLeaves: 0,
+          specialLeaves: 0,
+          onDutyLeaves: 0,
+          totalPresent: 0,
+          byMonth: {},
+          testsSubmitted: 0,
+          cumulativeScore: 0,
+          latestScore: 0,
+        };
+      });
+
+      rows.forEach((row) => {
+        const sid = row.userId;
+        if (!sid || !statsMap[sid]) return;
+
+        const wDays = row.workingDays || 0;
+        const pDays = row.presentDays || 0;
+        const aDays = row.absentDays || 0;
+        const cl = row.casualLeaves || 0;
+        const sl = row.sickLeaves || 0;
+        const spl = row.specialLeaves || 0;
+        const od = row.onDutyLeaves || 0;
+        const totP = row.totalPresent !== undefined ? row.totalPresent : (pDays + cl + sl + spl + od);
+
+        statsMap[sid].workingDays += wDays;
+        statsMap[sid].presentDays += pDays;
+        statsMap[sid].absentDays += aDays;
+        statsMap[sid].casualLeaves += cl;
+        statsMap[sid].sickLeaves += sl;
+        statsMap[sid].specialLeaves += spl;
+        statsMap[sid].onDutyLeaves += od;
+        statsMap[sid].totalPresent += totP;
+
+        if (row.yearMonth) {
+          statsMap[sid].byMonth[row.yearMonth] = {
+            workingDays: wDays,
+            presentDays: pDays,
+            absentDays: aDays,
+            casualLeaves: cl,
+            sickLeaves: sl,
+            specialLeaves: spl,
+            onDutyLeaves: od,
+            totalPresent: totP,
+            percentage: row.attendancePercentage !== undefined ? row.attendancePercentage : (wDays > 0 ? parseFloat(((totP / wDays) * 100).toFixed(1)) : 0),
           };
         }
       });
 
-      // 4. Recalculate stats for stale/missing students only
-      const staleCalculatedStats = {};
-      if (staleStudentIds.length > 0) {
-        console.log(`[useBatchStats] Recalculating stats for ${staleStudentIds.length} stale/missing students`);
+      // Attach test scores
+      studentIds.forEach((sid) => {
+        const studentTests = testsByUser[sid] || [];
+        statsMap[sid].testsSubmitted = studentTests.length;
 
-        let monthStartStr = null;
-        let monthEndStr = null;
-        if (selectedMonth) {
-          const d = new Date(selectedMonth + "-01");
-          monthStartStr = format(startOfMonth(d), "yyyy-MM-dd");
-          monthEndStr = format(endOfMonth(d), "yyyy-MM-dd");
-        }
-
-        const [overallCounts, testsDocsRes, staleAttendanceDocs] = await Promise.all([
-          // Present days count
-          newAttendanceService.getBatchPresentCountsForStudents(staleStudentIds, batchId),
-          // Mock test submissions
-          mockTestService.listQuestions([
-            Query.equal("userId", staleStudentIds),
-            Query.equal("submitted", true),
-            Query.select(["userId", "score", "quesCount"]),
-          ]).catch((err) => {
-            console.error("Error fetching raw tests for stale students:", err);
-            return [];
-          }),
-          // Raw attendance rows to build monthly attendance map
-          newAttendanceService.database.listRows({
-            databaseId: conf.databaseId,
-            tableId: conf.newAttendanceCollectionId,
-            queries: [
-              Query.equal("batchId", batchId),
-              Query.equal("userId", staleStudentIds),
-              Query.equal("dayType", "WORKING"),
-              Query.equal("attendanceStatus", "PRESENT"),
-              Query.limit(500),
-            ],
-          }).then((res) => res.rows || []).catch(() => []),
-        ]);
-
-        // Group tests by student
-        const testsByUser = {};
-        (testsDocsRes || []).forEach((t) => {
-          const uid = t.userId;
-          if (!testsByUser[uid]) testsByUser[uid] = [];
-          testsByUser[uid].push(t);
+        let cumulativeScore = 0;
+        let latestScore = 0;
+        studentTests.forEach((t) => {
+          const score = t.score || 0;
+          const qCount = t.quesCount || 0;
+          const percentageScore = qCount > 0 ? (score / qCount) * 100 : 0;
+          cumulativeScore += percentageScore;
+          latestScore = percentageScore;
         });
 
-        // Group monthly attendance by student
-        const staleMonthlyMap = {};
-        staleStudentIds.forEach((sid) => {
-          staleMonthlyMap[sid] = {};
-        });
-        staleAttendanceDocs.forEach((doc) => {
-          if (doc.userId && doc.date) {
-            const m = doc.date.substring(0, 7); // "yyyy-MM"
-            if (!staleMonthlyMap[doc.userId]) staleMonthlyMap[doc.userId] = {};
-            staleMonthlyMap[doc.userId][m] = (staleMonthlyMap[doc.userId][m] || 0) + 1;
-          }
-        });
-
-        // Perform calculation and save back to userBatchStats
-        const batchStart = batchData?.start_date ? startOfDay(new Date(batchData.start_date)) : null;
-        const today = endOfDay(new Date());
-        const batchEnd = batchData?.end_date ? endOfDay(new Date(batchData.end_date)) : today;
-        const effectiveEnd = new Date(Math.min(batchEnd.getTime(), today.getTime()));
-        const calculatedWorkingDays = batchStart ? countWorkingDays(batchStart, effectiveEnd, hSet) : 0;
-
-        for (const sid of staleStudentIds) {
-          const studentTests = testsByUser[sid] || [];
-          const testsSubmitted = studentTests.length;
-
-          let cumulativeScore = 0;
-          let latestScore = 0;
-          studentTests.forEach((t) => {
-            const score = t.score || 0;
-            const qCount = t.quesCount || 0;
-            const percentageScore = qCount > 0 ? (score / qCount) * 100 : 0;
-            cumulativeScore += percentageScore;
-            latestScore = percentageScore;
-          });
-
-          const presentDays = (overallCounts[sid] || {}).presentDays || 0;
-
-          const payload = {
-            totalWorkingDays: calculatedWorkingDays,
-            presentDays,
-            monthlyAttendance: staleMonthlyMap[sid] || {},
-            testsSubmitted,
-            cumulativeScore,
-            latestScore,
-          };
-
-          staleCalculatedStats[sid] = {
-            userId: sid,
-            ...payload,
-          };
-
-          // Background silent write to database
-          userStatsService.upsertUserStats(sid, batchId, payload)
-            .catch((err) => console.error(`[useBatchStats] Failed to upsert stats for ${sid}:`, err));
-        }
-      }
-
-      // Merge and save in state
-      setStudentStats({
-        ...freshStats,
-        ...staleCalculatedStats,
+        statsMap[sid].cumulativeScore = cumulativeScore;
+        statsMap[sid].latestScore = latestScore;
       });
+
+      setStudentStats(statsMap);
 
     } catch (err) {
       console.error("[useBatchStats] Error:", err);
@@ -234,7 +213,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
     } finally {
       setIsLoading(false);
     }
-  }, [batchId, batchData, selectedMonth]);
+  }, [batchId]);
 
   useEffect(() => {
     fetchData();
@@ -244,39 +223,35 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
   const studentRows = useMemo(() => {
     if (students.length === 0 || !studentStats) return [];
 
-    let monthlyWorkingDays = 0;
-    if (selectedMonth) {
-      const d = new Date(selectedMonth + "-01");
-      const mStart = startOfDay(startOfMonth(d));
-      const mEnd = endOfDay(endOfMonth(d));
-      monthlyWorkingDays = countWorkingDays(mStart, mEnd, holidays);
-    }
-
     return students.map((s) => {
       const sid = s.studentId;
       const profile = profiles[sid] || {};
       const stat = studentStats[sid] || {
+        workingDays: 0,
         presentDays: 0,
-        totalWorkingDays: 0,
+        absentDays: 0,
+        totalPresent: 0,
+        byMonth: {},
         testsSubmitted: 0,
         cumulativeScore: 0,
-        monthlyAttendance: {},
       };
 
-      const presentDays = stat.presentDays || 0;
-      const totalWorkingDays = stat.totalWorkingDays || 0;
+      const totalWorkingDays = stat.workingDays || 0;
+      const totalPresentDays = stat.totalPresent || 0;
+      const absentDays = stat.absentDays || 0;
 
-      // Attendance percentage
+      // Cumulative overall percentage (includes Present + CL + SL + SPL + OD)
       const totalAtt = totalWorkingDays > 0
-        ? parseFloat(((presentDays / totalWorkingDays) * 100).toFixed(1))
+        ? parseFloat(((totalPresentDays / totalWorkingDays) * 100).toFixed(1))
         : 0;
 
-      // Monthly present days from JSON map
-      const monthlyMap = stat.monthlyAttendance || {};
-      const monthlyPresentDays = monthlyMap[selectedMonth] || 0;
-      const monthAtt = monthlyWorkingDays > 0
-        ? parseFloat(((monthlyPresentDays / monthlyWorkingDays) * 100).toFixed(1))
-        : 0;
+      // Selected month stats
+      const monthObj = selectedMonth ? stat.byMonth[selectedMonth] : null;
+      const monthlyWorkingDays = monthObj?.workingDays || 0;
+      const monthlyPresentDays = monthObj?.totalPresent || 0;
+      const monthAtt = monthObj?.percentage !== undefined
+        ? monthObj.percentage
+        : (monthlyWorkingDays > 0 ? parseFloat(((monthlyPresentDays / monthlyWorkingDays) * 100).toFixed(1)) : 0);
 
       const testsSubmitted = stat.testsSubmitted || 0;
       const avgScore = testsSubmitted > 0 ? parseFloat((stat.cumulativeScore / testsSubmitted).toFixed(1)) : 0;
@@ -293,17 +268,23 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
         rollNumber: s.rollNumber || null,
         totalAttendancePercent: totalAtt,
         monthlyAttendancePercent: monthAtt,
-        presentDays,
+        presentDays: totalPresentDays,
+        rawPresentDays: stat.presentDays || 0,
+        absentDays,
         totalWorkingDays,
         monthlyPresentDays,
         monthlyWorkingDays,
+        casualLeaves: stat.casualLeaves || 0,
+        sickLeaves: stat.sickLeaves || 0,
+        specialLeaves: stat.specialLeaves || 0,
+        onDutyLeaves: stat.onDutyLeaves || 0,
         testsSubmitted,
         avgScore,
         status,
         joinedAt: s.joinedAt,
       };
     });
-  }, [students, profiles, studentStats, selectedMonth, holidays]);
+  }, [students, profiles, studentStats, selectedMonth]);
 
   // Aggregated batch overview
   const batchOverview = useMemo(() => {
@@ -334,7 +315,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
 
   // Monthly attendance trend (last 6 months)
   const attendanceTrend = useMemo(() => {
-    if (!batchData?.start_date || students.length === 0 || !studentStats) return [];
+    if (students.length === 0 || !rawMonthlyStatsRows || rawMonthlyStatsRows.length === 0) return [];
 
     const now = new Date();
     const last6Months = Array.from({ length: 6 }, (_, i) => {
@@ -346,31 +327,27 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
     }).reverse();
 
     return last6Months.map((m) => {
-      const d = new Date(m.monthKey + "-01");
-      const mStart = startOfMonth(d);
-      const mEnd = endOfMonth(d);
-      const batchStart = batchData.start_date ? new Date(batchData.start_date) : mStart;
-      const effectiveStart = new Date(Math.max(mStart.getTime(), batchStart.getTime()));
-      
-      const monthWorkingDays = countWorkingDays(effectiveStart, mEnd, holidays);
-      const totalPossible = monthWorkingDays * students.length;
+      const monthRows = rawMonthlyStatsRows.filter((r) => r.yearMonth === m.monthKey);
 
-      // Sum monthly attendance from combined stats
-      let presentCount = 0;
-      Object.values(studentStats).forEach((s) => {
-        const monthlyMap = s.monthlyAttendance || {};
-        presentCount += monthlyMap[m.monthKey] || 0;
+      let sumWorking = 0;
+      let sumPresent = 0;
+
+      monthRows.forEach((r) => {
+        sumWorking += (r.workingDays || 0);
+        sumPresent += (r.totalPresent !== undefined ? r.totalPresent : ((r.presentDays || 0) + (r.casualLeaves || 0) + (r.sickLeaves || 0) + (r.specialLeaves || 0) + (r.onDutyLeaves || 0)));
       });
+
+      const percentage = sumWorking > 0
+        ? parseFloat(((sumPresent / sumWorking) * 100).toFixed(1))
+        : 0;
 
       return {
         month: m.monthKey,
         label: m.label,
-        percentage: totalPossible > 0
-          ? parseFloat(((presentCount / totalPossible) * 100).toFixed(1))
-          : 0,
+        percentage,
       };
     });
-  }, [studentStats, batchData, holidays, students]);
+  }, [students, rawMonthlyStatsRows]);
 
   return {
     studentRows,
@@ -378,7 +355,7 @@ export const useBatchStats = (batchId, batchData, selectedMonth) => {
     attendanceTrend,
     isLoading: isLoading || studentStats === null,
     error,
-    refetch: () => fetchData(true), // Force refresh bypassing the throttle
+    refetch: () => fetchData(true), // Force refresh bypassing throttle
   };
 };
 

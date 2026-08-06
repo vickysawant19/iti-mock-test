@@ -14,7 +14,9 @@ import conf from "../config/config";
 
 // Ensure conf variables exist
 if (!conf.appwriteUrl || !conf.projectId) {
-  throw new Error("Missing Appwrite configuration. Check your environment variables.");
+  throw new Error(
+    "Missing Appwrite configuration. Check your environment variables.",
+  );
 }
 
 class AppwriteService {
@@ -58,14 +60,30 @@ class AppwriteService {
   }
 
   // Backwards compatibility with appwriteConfig.js
-  getClient() { return this.client; }
-  getDatabases() { return this.databases; } // Fallback if still needed
-  getTablesDB() { return this.tablesDb; }
-  getAccount() { return this.account; }
-  getStorage() { return this.bucket; }
-  getFunctions() { return this.functions; }
-  getRealtime() { return this.realtime; }
-  getPresences() { return this.presences; }
+  getClient() {
+    return this.client;
+  }
+  getDatabases() {
+    return this.databases;
+  } // Fallback if still needed
+  getTablesDB() {
+    return this.tablesDb;
+  }
+  getAccount() {
+    return this.account;
+  }
+  getStorage() {
+    return this.bucket;
+  }
+  getFunctions() {
+    return this.functions;
+  }
+  getRealtime() {
+    return this.realtime;
+  }
+  getPresences() {
+    return this.presences;
+  }
 
   // ── Appwrite SDK v26 / Server 1.9.5 notes ──────────────────────────────────
   // realtime.subscribe() is async → returns Promise<{ unsubscribe(): Promise<void>, update(options): Promise<void> }>.
@@ -106,13 +124,17 @@ presenceClient.headers["X-Appwrite-Key"] =
 export const presenceService = new Presences(presenceClient);
 
 // Dynamically fix legacy/cloud appwrite endpoints using config Url host
-export const fixProfileImage = (url: string | null | undefined): string | null | undefined => {
+export const fixProfileImage = (
+  url: string | null | undefined,
+): string | null | undefined => {
   if (!url || typeof url !== "string") return url;
   if (url.startsWith("/")) return url;
   try {
     const imgUrl = new URL(url);
-    const configUrl = new URL(conf.appwriteUrl || "https://auth.itimitra.in/v1");
-    
+    const configUrl = new URL(
+      conf.appwriteUrl || "https://auth.itimitra.in/v1",
+    );
+
     // Only rewrite Appwrite or itimitra domain URLs
     const isAppwrite =
       imgUrl.host.includes("appwrite") ||
@@ -122,7 +144,7 @@ export const fixProfileImage = (url: string | null | undefined): string | null |
     if (!isAppwrite) {
       return url;
     }
-    
+
     let path = imgUrl.pathname;
     if (!path.startsWith("/v1/")) {
       path = "/v1" + (path.startsWith("/") ? path : "/" + path);
@@ -132,8 +154,14 @@ export const fixProfileImage = (url: string | null | undefined): string | null |
   } catch (e) {
     if (url.includes("cloud.appwrite.io") || url.includes("api.itimitra.in")) {
       return url
-        .replace(/https?:\/\/cloud\.appwrite\.io\/v1/g, "https://auth.itimitra.in/v1")
-        .replace(/https?:\/\/api\.itimitra\.in\/v1/g, "https://auth.itimitra.in/v1")
+        .replace(
+          /https?:\/\/cloud\.appwrite\.io\/v1/g,
+          "https://auth.itimitra.in/v1",
+        )
+        .replace(
+          /https?:\/\/api\.itimitra\.in\/v1/g,
+          "https://auth.itimitra.in/v1",
+        )
         .replace(/cloud\.appwrite\.io/g, "auth.itimitra.in")
         .replace(/api\.itimitra\.in/g, "auth.itimitra.in");
     }

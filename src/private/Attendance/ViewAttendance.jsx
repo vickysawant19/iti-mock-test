@@ -72,21 +72,17 @@ const ViewAttendance = ({ students = [], batchData }) => {
     const fetchOverall = async () => {
       setIsLoadingStats(true);
       try {
+        const cumulativeMap = await newAttendanceService.getBatchCumulativeMonthlyStats(batchData.$id);
         const statsMap = {};
         
-        const fetchPromises = students.map(async (student) => {
-          const [presentDays, absentDays] = await Promise.all([
-            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "present"),
-            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "absent")
-          ]);
-          
-          const total = presentDays + absentDays;
-          const attendancePercentage = total > 0 ? ((presentDays / total) * 100).toFixed(0) : 0;
-          
+        students.forEach((student) => {
+          const s = cumulativeMap.get(student.userId);
+          const presentDays = s?.totalPresent !== undefined ? s.totalPresent : (s?.presentDays || 0);
+          const absentDays = s?.absentDays || 0;
+          const attendancePercentage = s?.percentage !== undefined ? s.percentage : 0;
           statsMap[student.userId] = { presentDays, absentDays, attendancePercentage };
         });
         
-        await Promise.all(fetchPromises);
         setOverallStats(statsMap);
       } catch (err) {
         console.error("Error fetching overall stats:", err);
@@ -104,21 +100,18 @@ const ViewAttendance = ({ students = [], batchData }) => {
     const fetchMonth = async () => {
       try {
         const dateObj = parse(selectedMonth, "MMMM yyyy", new Date());
-        const minDate = format(startOfMonth(dateObj), "yyyy-MM-dd");
-        const maxDate = format(endOfMonth(dateObj), "yyyy-MM-dd");
+        const yearMonthStr = format(dateObj, "yyyy-MM");
         
+        const monthMap = await newAttendanceService.getBatchMonthlyStats(batchData.$id, yearMonthStr);
         const statsMap = {};
         
-        const fetchPromises = students.map(async (student) => {
-          const [presentDays, absentDays] = await Promise.all([
-            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "present", minDate, maxDate),
-            newAttendanceService.getStudentAttendanceCount(student.userId, batchData.$id, "absent", minDate, maxDate)
-          ]);
-          
+        students.forEach((student) => {
+          const s = monthMap.get(student.userId);
+          const presentDays = s?.totalPresent !== undefined ? s.totalPresent : (s?.presentDays || 0);
+          const absentDays = s?.absentDays || 0;
           statsMap[student.userId] = { presentDays, absentDays };
         });
         
-        await Promise.all(fetchPromises);
         setMonthlyStats(statsMap);
       } catch (err) {
         console.error("Error fetching monthly stats:", err);

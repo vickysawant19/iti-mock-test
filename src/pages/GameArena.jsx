@@ -22,32 +22,36 @@ const GameArena = () => {
 
   if (data.isTeacher || data.isAdmin) {
     return (
-      <TeacherGameArena
-        profile={data.profile}
-        batchContext={data.batchContext}
-        batchOverview={data.batchOverview}
-        studentRows={data.studentRows}
-        attendanceTrend={data.attendanceTrend}
-        selectedMonth={data.selectedMonth}
-        setSelectedMonth={data.setSelectedMonth}
-        userBatches={data.userBatches}
-        isLoading={data.isLoading}
-        error={data.error}
-        refetch={data.refetch}
-      />
+      <main id="main-content" className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <TeacherGameArena
+          profile={data.profile}
+          batchContext={data.batchContext}
+          batchOverview={data.batchOverview}
+          studentRows={data.studentRows}
+          attendanceTrend={data.attendanceTrend}
+          selectedMonth={data.selectedMonth}
+          setSelectedMonth={data.setSelectedMonth}
+          userBatches={data.userBatches}
+          isLoading={data.isLoading}
+          error={data.error}
+          refetch={data.refetch}
+        />
+      </main>
     );
   }
 
   return (
-    <StudentGameArena
-      user={data.user}
-      profile={data.profile}
-      batchContext={data.batchContext}
-      activeBatchId={data.activeBatchId}
-      activeBatchData={data.activeBatchData}
-      userBatches={data.userBatches}
-      isBatchLoading={data.isBatchLoading}
-    />
+    <main id="main-content" className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <StudentGameArena
+        user={data.user}
+        profile={data.profile}
+        batchContext={data.batchContext}
+        activeBatchId={data.activeBatchId}
+        activeBatchData={data.activeBatchData}
+        userBatches={data.userBatches}
+        isBatchLoading={data.isBatchLoading}
+      />
+    </main>
   );
 };
 

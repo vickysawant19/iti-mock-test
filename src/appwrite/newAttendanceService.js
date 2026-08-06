@@ -1186,6 +1186,11 @@ class NewAttendanceService {
           Query.equal("batchId", batchId),
           Query.equal("yearMonth", yearMonth),
           Query.limit(500),
+          Query.select([
+            "userId", "batchId", "yearMonth", "workingDays", "presentDays", "absentDays",
+            "casualLeaves", "sickLeaves", "specialLeaves", "onDutyLeaves", "halfDays", "lateDays",
+            "totalPresent", "attendancePercentage"
+          ]),
         ],
       });
 
@@ -1209,7 +1214,12 @@ class NewAttendanceService {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.limit(5000),
+        Query.limit(1000),
+        Query.select([
+          "userId", "batchId", "yearMonth", "workingDays", "presentDays", "absentDays",
+          "casualLeaves", "sickLeaves", "specialLeaves", "onDutyLeaves", "halfDays", "lateDays",
+          "totalPresent", "attendancePercentage"
+        ]),
       ];
       if (beforeYearMonth) {
         queries.push(Query.lessThan("yearMonth", beforeYearMonth));
