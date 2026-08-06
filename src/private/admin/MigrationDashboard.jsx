@@ -342,6 +342,24 @@ const MigrationDashboard = () => {
     }
   };
 
+  const [isMigratingSessions, setIsMigratingSessions] = useState(false);
+
+  const handleMigrateBatchSessions = async () => {
+    setIsMigratingSessions(true);
+    appendLog("Starting Batch Academic Sessions Migration (Splitting 2-year courses into First & Second Year sessions)...");
+    try {
+      const batchService = (await import("../../appwrite/batchService")).default;
+      const res = await batchService.migrateAllBatchesSessions();
+      appendLog(`Successfully processed ${res.total} batches and updated ${res.updated} batch documents with Academic Sessions.`);
+      toast.success(`Updated ${res.updated} batch documents with Academic Sessions!`);
+    } catch (err) {
+      appendLog(`Error migrating batch sessions: ${err.message}`);
+      toast.error(`Batch session migration failed: ${err.message}`);
+    } finally {
+      setIsMigratingSessions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -353,15 +371,27 @@ const MigrationDashboard = () => {
                 <Database className="w-6 h-6" />
               </div>
               <h1 className="text-2xl font-black tracking-tight text-white">
-                Appwrite Question Migration Engine
+                Appwrite Migration Engine & Tools
               </h1>
             </div>
             <p className="text-slate-400 text-xs pl-12">
-              Normalize text, split multilingual (English | Marathi) questions, and detect duplicates with 100% zero downtime.
+              Normalize questions, split academic batch sessions (1 vs 2 year terms), and audit collection integrity.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleMigrateBatchSessions}
+              disabled={isMigratingSessions}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shadow-md shadow-indigo-600/30 disabled:opacity-50"
+            >
+              {isMigratingSessions ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Layers className="w-4 h-4 text-white" />
+              )}
+              Migrate Batch Sessions
+            </button>
             <button
               onClick={handleVerifySchema}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700"

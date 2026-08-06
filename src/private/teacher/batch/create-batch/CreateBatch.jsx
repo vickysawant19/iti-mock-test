@@ -25,11 +25,14 @@ import IncompleteProfileGuard from "./components/IncompleteProfileGuard";
 import BasicInfoCard from "./components/BasicInfoCard";
 import ScheduleSettingsCard from "./components/ScheduleSettingsCard";
 import AttendanceLocationCard from "./components/AttendanceLocationCard";
+import ScheduleSessionsCard from "./components/ScheduleSessionsCard";
+import { normalizeBatchSessions } from "../util/batchSessionUtil";
 
 const CreateBatch = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isBatchDataLoading, setIsBatchDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sessions, setSessions] = useState([]);
 
   const [showMaps, setShowMaps] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -122,6 +125,7 @@ const CreateBatch = () => {
         return;
       }
       setBatchData(data);
+      setSessions(normalizeBatchSessions(data));
       setValue("BatchName", data.BatchName);
       setValue("start_date", data.start_date?.split("T")[0] || data.start_date);
       setValue("end_date", data.end_date?.split("T")[0] || data.end_date);
@@ -173,16 +177,23 @@ const CreateBatch = () => {
   const handleBatchSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      // Calculate overall start_date and end_date from sessions if available
+      const validSessionStarts = sessions.map((s) => s.startDate).filter(Boolean);
+      const validSessionEnds = sessions.map((s) => s.endDate).filter(Boolean);
+      const earliestStart = validSessionStarts.length > 0 ? validSessionStarts.sort()[0] : data.start_date;
+      const latestEnd = validSessionEnds.length > 0 ? validSessionEnds.sort().reverse()[0] : data.end_date;
+
       const batchPayload = {
         BatchName: data.BatchName,
-        start_date: data.start_date,
-        end_date: data.end_date,
+        start_date: earliestStart,
+        end_date: latestEnd,
         collegeId: data.collegeId,
         tradeId: data.tradeId,
         teacherId: profile.userId,
         teacherName: profile.userName,
         isActive: data.isActive,
         circleRadius: parseInt(data.circleRadius),
+        sessions: JSON.stringify(sessions),
         attendanceTime: JSON.stringify({
           start: data.attendanceTime.start,
           end: data.attendanceTime.end,
@@ -335,6 +346,11 @@ const CreateBatch = () => {
               handleGetLocation={handleGetLocation}
             />
           </div>
+
+          <ScheduleSessionsCard
+            sessions={sessions}
+            setSessions={setSessions}
+          />
 
           {/* Submit Button */}
           <div className="sticky bottom-6 z-20">

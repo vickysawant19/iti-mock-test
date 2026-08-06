@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import { calculateStats } from "@/private/Attendance/CalculateStats";
 import { Query } from "appwrite";
+import { normalizeBatchSessions, formatSessionLabel } from "../../../util/batchSessionUtil";
 
 const ProgressCard = ({
   studentProfiles = [],
@@ -85,7 +86,7 @@ const ProgressCard = ({
     }
   }, [studentProfiles, college, trade, searchParams, selectedStudent]);
 
-  // Process progress data for selected student
+  // Process progress data for selected student based on Academic Sessions
   const processProgressData = useMemo(() => {
     return (student, batch, studentStats) => {
       if (!student || !batch || !studentStats.length) return null;
@@ -106,43 +107,31 @@ const ProgressCard = ({
 
       const quarterlyTests = student.quarterlyTests || new Array(3).fill({});
 
-      const allMonths = getMonthsArray(
-        batch.start_date,
-        batch.end_date,
-        "MMMM yyyy"
-      );
-
-      const completeRecords = {};
-      allMonths.forEach((monthKey) => {
-        completeRecords[monthKey] =
-          { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
-      });
-
-      const monthlyRecordArray = Object.entries(completeRecords);
+      const sessions = normalizeBatchSessions(batch);
       let pages = [];
-      const monthsPerPage = 12;
 
-      for (let i = 0; i < monthlyRecordArray.length; i += monthsPerPage) {
-        pages.push({
-          data: monthlyRecordArray.slice(i, i + monthsPerPage),
-          yearRange: `${format(
-            addMonths(new Date(batch.start_date), i),
-            "MMMM yyyy"
-          )} to ${format(
-            addMonths(
-              new Date(batch.start_date),
-              Math.min(
-                i + 11,
-                differenceInMonths(
-                  new Date(batch.end_date),
-                  new Date(batch.start_date)
-                )
-              )
-            ),
-            "MMMM yyyy"
-          )}`,
+      sessions.forEach((session) => {
+        const sessionMonths = getMonthsArray(
+          session.startDate || batch.start_date,
+          session.endDate || batch.end_date,
+          "MMMM yyyy"
+        );
+
+        const completeRecords = {};
+        sessionMonths.forEach((monthKey) => {
+          completeRecords[monthKey] =
+            { ...marks[monthKey], ...monthlyRecords[monthKey] } || {};
         });
-      }
+
+        const monthlyRecordArray = Object.entries(completeRecords);
+
+        pages.push({
+          sessionId: session.id,
+          sessionName: session.name || session.year,
+          data: monthlyRecordArray,
+          yearRange: formatSessionLabel(session) || `${session.startDate} to ${session.endDate}`,
+        });
+      });
 
       return { ...student, quarterlyTests, pages };
     };

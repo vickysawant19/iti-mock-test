@@ -156,7 +156,7 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
             />
 
             {/* Student Info */}
-            <PrintStudentInfo data={data} yearRange={pageData.yearRange} />
+            <PrintStudentInfo data={data} yearRange={pageData.yearRange} sessionName={pageData.sessionName} />
 
             {/* ─── Attendance Details ─── */}
             <SectionTitle>Attendance Details</SectionTitle>

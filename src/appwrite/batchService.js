@@ -68,8 +68,18 @@ export class BatchService {
       // Sanitize to a plain object before returning so it's safe to store in Redux.
       const plain = JSON.parse(JSON.stringify(data));
 
+      let parsedSessions = [];
+      if (plain.sessions) {
+        try {
+          parsedSessions = typeof plain.sessions === "string" ? JSON.parse(plain.sessions) : plain.sessions;
+        } catch (e) {
+          console.warn("Could not parse sessions JSON:", e);
+        }
+      }
+
       return {
         ...plain,
+        sessions: parsedSessions,
         attendanceTime: plain.attendanceTime
           ? JSON.parse(plain.attendanceTime)
           : {},
@@ -112,6 +122,46 @@ export class BatchService {
     } catch (error) {
       console.error("Appwrite error: getBatchesByIds:", error);
       return [];
+    }
+  }
+
+  async migrateAllBatchesSessions() {
+    try {
+      const { generateSessionsFromDates } = await import("../private/teacher/batch/util/batchSessionUtil");
+      const response = await this.listBatches([Query.limit(200)]);
+      const batches = response.rows || [];
+      let updatedCount = 0;
+
+      for (const batch of batches) {
+        let existingSessions = [];
+        if (batch.sessions) {
+          try {
+            existingSessions = typeof batch.sessions === "string" ? JSON.parse(batch.sessions) : batch.sessions;
+          } catch (e) {
+            existingSessions = [];
+          }
+        }
+
+        // Generate split sessions if missing or default single session
+        if (!Array.isArray(existingSessions) || existingSessions.length <= 1) {
+          const generatedSessions = generateSessionsFromDates(
+            batch.start_date,
+            batch.end_date,
+            batch.teacherId,
+            batch.teacherName
+          );
+
+          await this.updateBatch(batch.$id, {
+            sessions: JSON.stringify(generatedSessions),
+          });
+          updatedCount++;
+        }
+      }
+
+      return { total: batches.length, updated: updatedCount };
+    } catch (error) {
+      console.error("Error migrating batch sessions:", error);
+      throw error;
     }
   }
 }

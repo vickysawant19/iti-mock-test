@@ -1,6 +1,7 @@
 import React from "react";
-import { BookOpen, TrendingUp, Calendar } from "lucide-react";
+import { BookOpen, TrendingUp, Calendar, Clock } from "lucide-react";
 import TabNavigation from "./TabNavigation";
+import { getCurrentSession, formatSessionLabel } from "../../util/batchSessionUtil";
 
 const BatchHeader = ({
   selectedBatchData,
@@ -10,6 +11,9 @@ const BatchHeader = ({
   activeTab,
   setActiveTab,
 }) => {
+  const currentSession = getCurrentSession(selectedBatchData);
+  const sessionLabel = currentSession ? formatSessionLabel(currentSession) : "";
+
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
@@ -30,12 +34,17 @@ const BatchHeader = ({
                     {tradeData.tradeName}
                   </span>
                 )}
-                {selectedBatchData?.Year && (
+                {sessionLabel ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-2.5 py-0.5 rounded-full">
+                    <Clock className="w-3 h-3" />
+                    {sessionLabel}
+                  </span>
+                ) : selectedBatchData?.Year ? (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 px-2.5 py-0.5 rounded-full">
                     <Calendar className="w-3 h-3" />
                     {selectedBatchData.Year}
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

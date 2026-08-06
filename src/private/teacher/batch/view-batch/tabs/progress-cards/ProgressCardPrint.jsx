@@ -19,7 +19,7 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
 
   return (
     <PrintLayout ref={ref} pageSize="a4" orientation="portrait">
-      {data.pages.map(({ data: allRecords, yearRange }, pageIndex) => (
+      {data.pages.map(({ data: allRecords, yearRange, sessionName }, pageIndex) => (
         <div
           key={pageIndex}
           className={`w-full h-full bg-white text-black box-border p-4 ${
@@ -36,7 +36,7 @@ const ProgressCardPrint = forwardRef(function ProgressCardPrint({ data }, ref) {
           />
 
           {/* ─── Student Info ─── */}
-          <PrintStudentInfo data={data} yearRange={yearRange} />
+          <PrintStudentInfo data={data} yearRange={yearRange} sessionName={sessionName} />
 
           {/* ─── Monthly Record Table ─── */}
           <div className="mb-5 flex-1 min-h-0">

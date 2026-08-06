@@ -684,6 +684,15 @@
           "default": 1,
           "min": 1,
           "max": 1000000
+        },
+        {
+          "key": "sessions",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": false
         }
       ],
       "indexes": [

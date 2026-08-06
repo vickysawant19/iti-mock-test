@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import { calculateStats } from "@/private/Attendance/CalculateStats";
 import { Query } from "appwrite";
+import { normalizeBatchSessions, formatSessionLabel } from "../../../util/batchSessionUtil";
 
 const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
   if (!studentProfiles || !studentProfiles.length) {
@@ -42,79 +43,90 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
   });
 
   const processStudentData = useMemo(() => {
-    return (student, leaveRecords, batch) => {
-      if (!student || !leaveRecords || !batch) return null;
+    return (student, batch, attendanceRecords = []) => {
+      if (!student || !batch) return null;
 
       const processAttendanceRecords = () => {
-        let attendanceMap = {};
+        const attendanceMap = {};
 
-        if (leaveRecords?.monthlyAttendance) {
-          Object.entries(leaveRecords.monthlyAttendance).forEach(
-            ([dateStr, data]) => {
-              try {
-                const month = format(new Date(dateStr), "MMM yyyy");
-                attendanceMap[month] = {
-                  possibleDays: data.absentDays + data.presentDays,
-                  presentDays: data.presentDays,
+        if (attendanceRecords && attendanceRecords.length > 0) {
+          attendanceRecords.forEach((rec) => {
+            try {
+              if (!rec || !rec.date) return;
+              const dateObj = new Date(rec.date);
+              const monthKey = format(dateObj, "MMM yyyy");
+
+              if (!attendanceMap[monthKey]) {
+                attendanceMap[monthKey] = {
+                  possibleDays: 0,
+                  presentDays: 0,
                   sickLeave: 0,
                   casualLeave: 0,
                 };
-              } catch (error) {
-                console.error(`Error processing date: ${dateStr}`, error);
               }
+
+              const dType = rec.dayType || "WORKING";
+              if (dType === "WORKING") {
+                attendanceMap[monthKey].possibleDays += 1;
+              }
+
+              const upperStatus = String(rec.attendanceStatus || rec.status || "").toUpperCase();
+              const upperLeave = String(rec.leaveType || "").toUpperCase();
+
+              if (upperStatus === "PRESENT") {
+                attendanceMap[monthKey].presentDays += 1;
+              } else if (upperStatus === "LEAVE" || upperStatus === "ABSENT") {
+                if (upperLeave === "SICK" || upperLeave === "SL" || upperLeave === "MEDICAL") {
+                  attendanceMap[monthKey].sickLeave += 1;
+                } else {
+                  attendanceMap[monthKey].casualLeave += 1;
+                }
+              }
+            } catch (error) {
+              console.error(`Error processing date: ${rec.date}`, error);
             }
-          );
+          });
         }
 
-        const allMonths = getMonthsArray(
-          batch.start_date,
-          batch.end_date,
-          "MMM yyyy"
-        );
-
-        const completeAttendance = allMonths.reduce((acc, month) => {
-          acc[month] = attendanceMap[month] || {
-            possibleDays: "",
-            presentDays: "",
-            sickLeave: "",
-            casualLeave: "",
-            percent: "",
-          };
-          return acc;
-        }, {});
-
-        const monthsPerPage = 12;
+        const sessions = normalizeBatchSessions(batch);
         const pages = [];
 
-        for (let i = 0; i < allMonths.length; i += monthsPerPage) {
-          const pageMonths = allMonths.slice(i, i + monthsPerPage);
-          const pageData = {};
+        sessions.forEach((session) => {
+          const sessionMonths = getMonthsArray(
+            session.startDate || batch.start_date,
+            session.endDate || batch.end_date,
+            "MMM yyyy"
+          );
 
-          pageMonths.forEach((month) => {
-            pageData[month] = completeAttendance[month];
+          const pageData = {};
+          sessionMonths.forEach((month) => {
+            const raw = attendanceMap[month] || {
+              possibleDays: 0,
+              presentDays: 0,
+              sickLeave: 0,
+              casualLeave: 0,
+            };
+            const possible = Number(raw.possibleDays) || 0;
+            const present = Number(raw.presentDays) || 0;
+            const percentVal = possible > 0 ? ((present / possible) * 100).toFixed(1) + "%" : "0%";
+
+            pageData[month] = {
+              possibleDays: raw.possibleDays || "",
+              presentDays: raw.presentDays || "",
+              sickLeave: raw.sickLeave || "",
+              casualLeave: raw.casualLeave || "",
+              percent: percentVal,
+            };
           });
 
           pages.push({
-            months: pageMonths,
+            sessionId: session.id,
+            sessionName: session.name || session.year,
+            months: sessionMonths,
             data: pageData,
-            yearRange: `${format(
-              addMonths(new Date(batch.start_date), i),
-              "MMMM yyyy"
-            )} to ${format(
-              addMonths(
-                new Date(batch.start_date),
-                Math.min(
-                  i + 11,
-                  differenceInMonths(
-                    new Date(batch.end_date),
-                    new Date(batch.start_date)
-                  )
-                )
-              ),
-              "MMMM yyyy"
-            )}`,
+            yearRange: formatSessionLabel(session) || `${session.startDate} to ${session.endDate}`,
           });
-        }
+        });
 
         return { pages };
       };
@@ -180,18 +192,10 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
       try {
         const attendanceRecords = await newAttendanceService.getStudentAttendance(
           selectedStudent.userId,
-          batchData.$id,
-          [Query.select(["date", "status"])]
+          batchData.$id
         );
-        
-        const studentStat = calculateStats({
-          userId: selectedStudent.userId,
-          studentId: selectedStudent.studentId,
-          userName: selectedStudent.userName,
-          data: attendanceRecords,
-        });
 
-        const data = processStudentData(selectedStudent, studentStat, batchData);
+        const data = processStudentData(selectedStudent, batchData, attendanceRecords);
         setLeaveData(data);
       } catch (error) {
         console.error("Error fetching leave stats:", error);

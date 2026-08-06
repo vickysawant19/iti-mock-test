@@ -38,7 +38,11 @@ const valueStyle = {
  * Replaces the old @react-pdf/renderer PdfStudentInfo.
  * Shows a 2-column grid of student details.
  */
-const PrintStudentInfo = ({ data, yearRange }) => {
+const PrintStudentInfo = ({ data, yearRange, sessionName }) => {
+  const displayYear = sessionName
+    ? `${sessionName} (${yearRange})`
+    : yearRange || "-";
+
   return (
     <div
       style={{
@@ -75,8 +79,8 @@ const PrintStudentInfo = ({ data, yearRange }) => {
           <span style={valueStyle}>{data?.registerId || "-"}</span>
         </div>
         <div style={fieldStyle}>
-          <span style={labelStyle}>Year:</span>
-          <span style={valueStyle}>{yearRange || "-"}</span>
+          <span style={labelStyle}>Session / Term:</span>
+          <span style={valueStyle}>{displayYear}</span>
         </div>
         <div style={fieldStyle}>
           <span style={labelStyle}>Permanent Address:</span>
