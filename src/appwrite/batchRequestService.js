@@ -193,12 +193,18 @@ export class BatchRequestService {
     // 1. Mark request as approved
     const updatedRequest = await this.updateRequestStatus(requestId, "approved");
     
-    // 2. Add student to batch and Appwrite Team via teamService
+    // 2. Ensure student is added to batchStudents DB table
+    try {
+      await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
+    } catch (err) {
+      console.warn("[approveRequest] batchStudentService.addStudent error (may already exist):", err);
+    }
+
+    // 3. Sync Appwrite Team membership via teamService
     try {
       await teamService.approveStudent(batchId, studentId, enrollmentDetails);
     } catch (err) {
-      console.warn("teamService.approveStudent failed, falling back to batchStudentService:", err);
-      await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
+      console.warn("[approveRequest] teamService.approveStudent failed:", err);
     }
     
     return updatedRequest;

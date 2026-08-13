@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Query } from "appwrite";
 import { Loader2, Users, Search, Clock, CheckCircle, Trash2, XCircle, RefreshCw, GraduationCap, Building, Briefcase } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
+import { selectUserBatches, initializeActiveBatch } from "@/store/activeBatchSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,8 +15,10 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 
 export default function BrowseBatches() {
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const userBatches = useSelector(selectUserBatches);
   
   const [batches, setBatches] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -105,12 +108,21 @@ export default function BrowseBatches() {
     setIsRequesting(batchId);
     try {
       const newReq = await batchRequestService.sendRequest(batchId, user.$id);
-      toast.success("Request sent successfully!");
-      setRequests(prev => {
-        const filtered = prev.filter(r => r.batchId !== batchId);
-        return [...filtered, newReq];
-      });
+      
+      if (newReq?.alreadyJoined) {
+        toast.info("You have already joined this batch!");
+        if (profile) {
+          dispatch(initializeActiveBatch(profile));
+        }
+      } else {
+        toast.success("Request sent successfully!");
+        setRequests(prev => {
+          const filtered = prev.filter(r => r.batchId !== batchId);
+          return [...filtered, newReq];
+        });
+      }
     } catch (e) {
+      console.error("Failed to send request:", e);
       toast.error("Failed to send request.");
     } finally {
       setIsRequesting(null);
@@ -351,7 +363,8 @@ export default function BrowseBatches() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {batches.map((batch) => {
               const req = requests.find(r => r.batchId === batch.$id);
-              const status = req ? req.status : null;
+              const isJoinedInStore = userBatches?.some(b => b.$id === batch.$id);
+              const status = isJoinedInStore ? "approved" : (req ? req.status : null);
 
               return (
                 <div key={batch.$id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-2xl flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-default group">

@@ -80,7 +80,7 @@ function App() {
           dispatch(initializeActiveBatch(freshProfile));
         }
       } else {
-        // Not logged in
+        console.log("[App.jsx] No logged-in user session found.");
         localStorage.removeItem("last_active_user");
         dispatch(addUser({ isLoading: false }));
         dispatch(addProfile({ isLoading: false }));

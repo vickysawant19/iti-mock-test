@@ -6,37 +6,72 @@ import batchStudentService from '@/appwrite/batchStudentService';
 
 export const initializeActiveBatch = createAsyncThunk(
   'activeBatch/initialize',
-  async (userProfile, { rejectWithValue }) => {
-    if (!userProfile?.$id) return rejectWithValue("No profile");
+  async (userProfile, { getState, rejectWithValue }) => {
+    if (!userProfile?.$id && !userProfile?.userId) {
+      return rejectWithValue("No profile");
+    }
 
     try {
-      const isTeacher = userProfile.role?.includes("Teacher");
-      const userId = userProfile.userId || userProfile.$id;
+      const state = getState();
+      const isTeacher = userProfile.role?.includes("Teacher") || state.user?.data?.labels?.includes("Teacher");
+      const targetUserId = userProfile.userId || state.user?.data?.$id || userProfile.$id;
+
       let userBatches = [];
       let activeBatchId = null;
 
       // 1. Fetch relevant batches depending on user role
       if (isTeacher) {
         const response = await batchService.listBatches([
-          Query.equal("teacherId", userId),
+          Query.equal("teacherId", targetUserId),
           Query.orderDesc("$createdAt")
         ]);
-        userBatches = response.documents || [];
+        userBatches = response.documents || response.rows || [];
       } else {
-        // Student logic: fetch actual enrollments as the reliable source of truth
-        const studentBatches = await batchStudentService.getStudentBatches(userId);
-        
-        if (studentBatches.length > 0) {
-          const batchIds = studentBatches.map(sb => sb.batchId?.$id || sb.batchId);
-          const uniqueBatchIds = [...new Set(batchIds)];
-          
-          userBatches = await batchService.getBatchesByIds(uniqueBatchIds);
-          
-          // Optionally grab requests to map `isCurrentBatch` and `_requestId`
-          const requests = await batchRequestService.getStudentRequests(userId);
-          const approvedRequests = requests.filter(req => req.status === "approved");
+        // Fetch student enrollments from batchStudents collection
+        let studentBatches = [];
+        try {
+          studentBatches = await batchStudentService.getStudentBatches(targetUserId);
+        } catch (err) {
+          console.warn("Error fetching studentBatches:", err);
+        }
 
-          userBatches = userBatches.map(batch => {
+        // Fetch student requests from batchRequests collection
+        let requests = [];
+        try {
+          requests = await batchRequestService.getStudentRequests(targetUserId);
+        } catch (err) {
+          console.warn("Error fetching studentRequests:", err);
+        }
+
+        const approvedRequests = (requests || []).filter(req => req.status === "approved");
+
+        // Extract batch IDs safely from studentBatches
+        const enrolledBatchIds = (studentBatches || [])
+          .map(sb => {
+            if (!sb) return null;
+            if (typeof sb.batchId === "object" && sb.batchId?.$id) return sb.batchId.$id;
+            if (typeof sb.batchId === "string") return sb.batchId;
+            return null;
+          })
+          .filter(Boolean);
+
+        // Extract batch IDs safely from approved requests
+        const approvedReqBatchIds = approvedRequests
+          .map(req => {
+            if (!req) return null;
+            if (typeof req.batchId === "object" && req.batchId?.$id) return req.batchId.$id;
+            if (typeof req.batchId === "string") return req.batchId;
+            return null;
+          })
+          .filter(Boolean);
+
+        // Combine all unique valid batch IDs
+        const uniqueBatchIds = [...new Set([...enrolledBatchIds, ...approvedReqBatchIds])];
+
+        if (uniqueBatchIds.length > 0) {
+          const fetchedBatches = await batchService.getBatchesByIds(uniqueBatchIds);
+
+          userBatches = (fetchedBatches || []).map(batch => {
             const relatedReq = approvedRequests.find(req => req.batchId === batch.$id);
             return {
               ...batch,
@@ -49,7 +84,7 @@ export const initializeActiveBatch = createAsyncThunk(
 
       // 2. Resolve Active Batch ID
       if (userBatches.length > 0) {
-        const localCacheId = localStorage.getItem(`activeBatch_${userId}`);
+        const localCacheId = localStorage.getItem(`activeBatch_${targetUserId}`);
         const dbActiveBatch = userBatches.find(b => b.isCurrentBatch);
 
         // Preference: Database flag -> LocalStorage -> First available
@@ -62,7 +97,7 @@ export const initializeActiveBatch = createAsyncThunk(
         }
 
         // Keep local cache synced
-        localStorage.setItem(`activeBatch_${userId}`, activeBatchId);
+        localStorage.setItem(`activeBatch_${targetUserId}`, activeBatchId);
       }
 
       // 3. Fetch detailed active batch data
@@ -78,7 +113,7 @@ export const initializeActiveBatch = createAsyncThunk(
         isTeacher
       };
     } catch (e) {
-      console.error("Initialize Active Batch Error:", e);
+      console.error("[activeBatchSlice] Initialize Active Batch Error:", e);
       return rejectWithValue(e.message);
     }
   }
