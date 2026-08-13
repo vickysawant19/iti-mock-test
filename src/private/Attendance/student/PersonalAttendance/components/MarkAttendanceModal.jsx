@@ -7,6 +7,7 @@ const MarkAttendanceModal = ({
   isOpen, 
   onClose, 
   batchData, 
+  enrollmentDate,
   onMarkAttendance,
   selectedDate,
   selectedAttendance,
@@ -20,6 +21,20 @@ const MarkAttendanceModal = ({
   const [isMarking, setIsMarking] = useState(false);
   const [markedStatus, setMarkedStatus] = useState(null);
 
+  const enrollDateStr = useMemo(() => {
+    if (!enrollmentDate) return null;
+    if (typeof enrollmentDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(enrollmentDate)) {
+      return enrollmentDate;
+    }
+    try {
+      return format(new Date(enrollmentDate), "yyyy-MM-dd");
+    } catch {
+      return null;
+    }
+  }, [enrollmentDate]);
+
+  const targetDate = selectedDate || format(new Date(), "yyyy-MM-dd");
+  const isBeforeEnrollment = enrollDateStr ? targetDate < enrollDateStr : false;
 
   const distance = useMemo(() => {
     if (!deviceLocation || !batchData?.location) return Infinity;
@@ -32,12 +47,12 @@ const MarkAttendanceModal = ({
   }, [deviceLocation, batchData?.location, calculateDistance]);
 
   const maxRadius = batchData?.circleRadius || 1000;
-  const isMarkingAllowed = distance !== Infinity && distance <= maxRadius;
+  const isMarkingAllowed = !isBeforeEnrollment && distance !== Infinity && distance <= maxRadius;
   const distPercent = Math.min((distance / maxRadius) * 100, 100);
 
-  const targetDate = selectedDate || format(new Date(), "yyyy-MM-dd");
   const isToday = targetDate === format(new Date(), "yyyy-MM-dd");
   const currentStatus = String(selectedAttendance?.status || "").toLowerCase();
+
   const todayStatus = String(todayAttendance?.status || "").toLowerCase();
 
   // Use todayAttendance for today, selectedAttendance otherwise
@@ -112,8 +127,15 @@ const MarkAttendanceModal = ({
 
           {!showSuccess ? (
             <div className="mt-5 space-y-4">
+              {isBeforeEnrollment && (
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-2xl text-xs font-bold text-center">
+                  ⚠️ Attendance marking is disabled before your enrollment date ({enrollDateStr}).
+                </div>
+              )}
+
               {/* Location Block */}
               <div className="flex items-center gap-4 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/30">
+
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0">
                   <MapPin size={24} />
                 </div>

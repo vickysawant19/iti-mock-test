@@ -4,18 +4,14 @@ import { selectProfile } from "@/store/profileSlice";
 import { format } from "date-fns";
 import { useStudentAttendance } from "./hooks/useStudentAttendance";
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
-import AttendanceTable from "./components/AttendanceTable";
 import AttendanceCalendar from "./components/AttendanceCalendar";
 import { RightPanelStats } from "./components/AttendanceStatsSummary";
-import { Loader2, Calendar as CalendarIcon, Table as TableIcon, MapPin, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import useLocationManager from "@/hooks/useLocationManager";
-import { avatarFallback } from "@/utils/avatarFallback";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 const StudentAttendancePage = () => {
   const profile = useSelector(selectProfile);
-  const [viewMode, setViewMode] = useState("table"); // 'table' | 'calendar'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
@@ -24,10 +20,8 @@ const StudentAttendancePage = () => {
     isLoadingOverallStats,
     batchData,
     tradeData,
-    studentAttendance,
     holidays,
     workingDays,
-    finalAttendanceRecords,
     attendanceByDate,
     rawAttendanceByDate,
     overallStats,
@@ -38,7 +32,9 @@ const StudentAttendancePage = () => {
     handleMonthChange,
     markAttendance,
     lastUpdatedDate,
+    enrollmentDate,
   } = useStudentAttendance(profile);
+
 
   // Single GPS tracker for this page — shared with the modal via props
   const { deviceLocation, locationText, loading: locLoading, error: locError, calculateDistance } = useLocationManager(true);
@@ -49,7 +45,6 @@ const StudentAttendancePage = () => {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayAttendance = workingDays?.get(todayStr);
   const modalAttendance = workingDays?.get(modalDate);
-  const tableRecords = finalAttendanceRecords || studentAttendance?.attendanceRecords || [];
   // Allow calendar double-click on today as long as marking is enabled — the modal enforces location
   const canOpenTodayMarkModal = Boolean(batchData?.canMarkAttendance);
   // Full location check used by the modal button itself (passed as prop)
@@ -121,25 +116,6 @@ const StudentAttendancePage = () => {
         </div>
 
 
-        {/* View Tabs */}
-        <div className="flex bg-white dark:bg-slate-900 rounded-[14px] p-1 border border-slate-200 dark:border-slate-800 mb-4 gap-1">
-          <button
-            onClick={() => setViewMode("table")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-              viewMode === "table" ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <TableIcon size={14} /> Table View
-          </button>
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-              viewMode === "calendar" ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-md shadow-blue-600/20" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <CalendarIcon size={14} /> Calendar View
-          </button>
-        </div>
 
 
         {/* Main Grid Split */}
@@ -154,9 +130,8 @@ const StudentAttendancePage = () => {
               </div>
               <div className="p-0">
                 {isLoadingAttendance ? (
-                  // Calendar skeleton — mirrors full real calendar structure top-to-bottom
+                  // Calendar skeleton
                   <div className="p-3 animate-pulse">
-                    {/* Month/year picker row skeleton */}
                     <div className="flex items-center justify-between gap-2 mb-3 px-1">
                       <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800" />
                       <div className="flex gap-2 flex-1 justify-center">
@@ -165,7 +140,6 @@ const StudentAttendancePage = () => {
                       </div>
                       <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800" />
                     </div>
-                    {/* Day-of-week header */}
                     <div className="grid grid-cols-7 mb-1">
                       {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
                         <div key={d} className="flex justify-center py-1.5">
@@ -173,7 +147,6 @@ const StudentAttendancePage = () => {
                         </div>
                       ))}
                     </div>
-                    {/* 5 rows × 7 tiles — height matches real tile height: 72px */}
                     {Array.from({ length: 5 }).map((_, row) => (
                       <div key={row} className="grid grid-cols-7">
                         {Array.from({ length: 7 }).map((_, col) => (
@@ -185,7 +158,6 @@ const StudentAttendancePage = () => {
                         ))}
                       </div>
                     ))}
-                    {/* Legend row — matches real calendar: mt-4, colored dots + labels */}
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       {[
                         { color: "bg-emerald-500", label: "Present" },
@@ -199,15 +171,13 @@ const StudentAttendancePage = () => {
                         </span>
                       ))}
                     </div>
-                    {/* "Click a date…" hint placeholder — matches real calendar: mt-3, text-xs */}
                     <div className="mt-3 h-3 w-56 rounded bg-slate-100 dark:bg-slate-800" />
                   </div>
-                ) : viewMode === "table" ? (
-                  <AttendanceTable attendanceRecords={tableRecords} holidays={holidays} />
                 ) : (
                   <AttendanceCalendar
                     profile={profile}
                     batchData={batchData}
+                    enrollmentDate={enrollmentDate}
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
                     handleMonthChange={handleMonthChange}
@@ -250,6 +220,7 @@ const StudentAttendancePage = () => {
          isOpen={isModalOpen}
          onClose={() => setIsModalOpen(false)}
          batchData={batchData}
+         enrollmentDate={enrollmentDate}
          onMarkAttendance={markAttendance}
          selectedDate={modalDate}
          selectedAttendance={modalAttendance}
@@ -260,6 +231,7 @@ const StudentAttendancePage = () => {
          locError={locError}
          calculateDistance={calculateDistance}
       />
+
     </div>
   );
 };

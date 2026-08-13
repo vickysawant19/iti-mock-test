@@ -1,5 +1,5 @@
 import React from "react";
-import { LoaderCircle, Edit3 } from "lucide-react";
+import { LoaderCircle, Edit3, UserCircle2 } from "lucide-react";
 import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
 
 const AttendanceTableBody = ({
@@ -17,6 +17,7 @@ const AttendanceTableBody = ({
   columnVisibility = { previous: true, daily: true, summary: true },
   compactView = false,
   onOpenStudentAttendanceModal,
+  onOpenStudentProfile,
 }) => {
   const cell = compactView ? "py-1 px-1 text-[11px]" : "py-1.5 px-2 text-xs";
   const stickyCell = compactView ? "py-1.5 px-2 text-xs" : "py-2 px-3 text-xs sm:text-sm";
@@ -46,7 +47,25 @@ const AttendanceTableBody = ({
         let currentMonthSpecialLeaves = 0;
         let currentMonthOnDutyLeaves = 0;
 
+        // For the enrollment month, count working days only from the student's enrollment date.
+        // This ensures a student enrolled mid-month doesn't have days before enrollment counted.
+        const enrollDay = (() => {
+          if (!student.enrollmentDate) return 1;
+          try {
+            const ed = new Date(student.enrollmentDate);
+            const sy = selectedMonth.getFullYear();
+            const sm = selectedMonth.getMonth();
+            if (ed.getFullYear() === sy && ed.getMonth() === sm) {
+              return ed.getDate();
+            }
+          } catch { /* ignore */ }
+          return 1;
+        })();
+
         monthDates.forEach((date) => {
+          // Skip days before this student's enrollment date (in their enrollment month)
+          if (date < enrollDay) return;
+
           const fullDate = formatDate(
             new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), date),
             "yyyy-MM-dd"
@@ -185,39 +204,67 @@ const AttendanceTableBody = ({
             <td className={`${stickyCell} ${nameColWidth} border border-slate-200 dark:border-slate-800 sticky left-0 z-20 ${stickyBgClass} font-semibold text-slate-900 dark:text-white`}>
               <div className="flex items-center gap-1.5 min-w-0">
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="font-bold text-xs truncate leading-snug text-slate-900 dark:text-white">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onOpenStudentProfile && !student.isTeacher) {
+                        onOpenStudentProfile(student);
+                      }
+                    }}
+                    className={`font-bold text-xs truncate leading-snug text-left transition-colors ${
+                      !student.isTeacher && onOpenStudentProfile
+                        ? "text-slate-900 hover:text-indigo-600 dark:text-white dark:hover:text-indigo-400 cursor-pointer group/name"
+                        : "text-slate-900 dark:text-white cursor-default"
+                    }`}
+                    title={!student.isTeacher ? "Click to view student profile details" : ""}
+                  >
                     {!student.isTeacher && (
-                      <span className="text-slate-500 dark:text-slate-400 font-normal mr-1">
-                        {studentIndex++}.
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-bold mr-1.5 shrink-0">
+                        {student.rollNo || student.studentId || student.rollNumber || studentIndex++}.
                       </span>
                     )}
-                    {student.userName || student.name || "Student"}
-                  </span>
-                  {!compactView && (
-                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-mono truncate">
-                      Roll: {student.studentId || student.rollNumber || "NA"}
+                    <span className="group-hover/name:underline underline-offset-2">
+                      {student.userName || student.name || "Student"}
                     </span>
-                  )}
+                  </button>
                 </div>
+
+
                 {studentUpdating && !loadingAttendance && (
                   <LoaderCircle className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                 )}
               </div>
             </td>
 
-            {/* ── ACTION BUTTON (STICKY LEFT) ── */}
+            {/* ── ACTION BUTTONS (STICKY LEFT) ── */}
             <td className={`${stickyCell} ${actionColWidth} ${actionStickyPos} border border-slate-200 dark:border-slate-800 sticky z-20 ${stickyBgClass} text-center shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)] px-0.5`}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenStudentAttendanceModal(student);
-                }}
-                className="p-1 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center mx-auto shadow-xs transition-all"
-                title="Edit Student Monthly Attendance"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenStudentAttendanceModal(student);
+                  }}
+                  className="p-1 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center shadow-xs transition-all"
+                  title="Edit Student Monthly Attendance"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                </button>
+                {!student.isTeacher && onOpenStudentProfile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenStudentProfile(student);
+                    }}
+                    className="p-1 rounded-md bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white flex items-center justify-center shadow-xs transition-all"
+                    title="View Student Profile"
+                  >
+                    <UserCircle2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </td>
 
             {/* ── DAILY ATTENDANCE CELLS ── */}
@@ -231,6 +278,24 @@ const AttendanceTableBody = ({
                 const isHoliday = holidays.has(fullDate);
                 const holidayData = holidays.get(fullDate);
                 const cellUpdating = updatingAttendance.get(`${student.userId}-${fullDate}`);
+
+                // Check if date is before student's enrollment date
+                const enrollDateStr = !student.isTeacher && student.enrollmentDate
+                  ? String(student.enrollmentDate).substring(0, 10)
+                  : null;
+                const isBeforeEnrollment = enrollDateStr ? fullDate < enrollDateStr : false;
+
+                if (isBeforeEnrollment) {
+                  return (
+                    <td
+                      key={date}
+                      className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative bg-slate-100/70 dark:bg-slate-900/70 text-slate-400 dark:text-slate-500 font-extrabold select-none`}
+                      title={`Before enrollment date (${enrollDateStr})`}
+                    >
+                      X
+                    </td>
+                  );
+                }
 
                 if (isHoliday) {
                   if (student.isTeacher) {
@@ -259,31 +324,15 @@ const AttendanceTableBody = ({
                     );
                   }
 
-                  const firstStudentIdx = students.findIndex((s) => !s.isTeacher);
-                  if (idx === firstStudentIdx) {
-                    const studentCount = students.filter((s) => !s.isTeacher).length;
-                    return (
-                      <td
-                        key={date}
-                        rowSpan={studentCount}
-                        className="py-2 px-1 border border-slate-300 dark:border-slate-700 text-center relative bg-rose-100/90 dark:bg-rose-950/70"
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-1">
-                          <div
-                            className="whitespace-nowrap text-xs font-black text-rose-800 dark:text-rose-200 uppercase tracking-wider"
-                            style={{
-                              writingMode: "vertical-rl",
-                              textOrientation: "mixed",
-                              transform: "rotate(180deg)",
-                            }}
-                          >
-                            {holidayData?.holidayText || "HOLIDAY"}
-                          </div>
-                        </div>
-                      </td>
-                    );
-                  }
-                  return null;
+                  return (
+                    <td
+                      key={date}
+                      className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative bg-rose-100/80 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px] select-none`}
+                      title={holidayData?.holidayText || "HOLIDAY"}
+                    >
+                      H
+                    </td>
+                  );
                 }
 
                 return (
@@ -301,6 +350,7 @@ const AttendanceTableBody = ({
                   </td>
                 );
               })}
+
 
             {/* ── MONTHLY SUMMARY STATS ── */}
             {columnVisibility.summary && (

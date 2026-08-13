@@ -39,6 +39,8 @@ import userProfileService from "@/appwrite/userProfileService";
 import EditEnrollmentTab from "./EditEnrollmentTab";
 import { Query } from "appwrite";
 import authService from "@/services/auth.service";
+import { appwriteService } from "@/services/appwriteClient";
+import conf from "@/config/config";
 
 // ─── Pre-Approval Modal ───────────────────────────────────────────────────────
 function ApprovalReviewModal({
@@ -500,11 +502,124 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
     fetchList();
   }, [selectedBatch]);
 
+  // ── Realtime: keep the list live when other tabs/users make changes ──
+  useEffect(() => {
+    if (!selectedBatch) return;
+
+    let sub1 = null;
+    let sub2 = null;
+
+    const setup = async () => {
+      try {
+        const realtime = appwriteService.getRealtime();
+        const { Channel } = await import("appwrite");
+
+        // Watch batchRequests for the selected batch (pending/reject/approve changes)
+        const reqChannel = Channel.tablesdb(conf.databaseId)
+          .table(conf.batchRequestsCollectionId)
+          .row();
+
+        sub1 = await realtime.subscribe(
+          reqChannel,
+          (response) => {
+            const { events, payload } = response;
+            if (payload?.batchId !== selectedBatch) return;
+
+            const isDelete = events.some((e) => e.includes(".delete"));
+
+            if (isDelete) {
+              setStudents((prev) =>
+                prev ? prev.filter((s) => s.requestId !== payload.$id) : prev,
+              );
+              return;
+            }
+
+            // For create/update we only update the matching student's status
+            setStudents((prev) => {
+              if (!prev) return prev;
+              const idx = prev.findIndex((s) => s.userId === payload.studentId);
+              if (idx === -1) {
+                // New request from an unknown student — trigger a soft refresh
+                fetchList();
+                return prev;
+              }
+              const next = [...prev];
+              next[idx] = {
+                ...next[idx],
+                status: payload.status,
+                requestId: payload.$id,
+              };
+              return next;
+            });
+          },
+          [Query.equal("batchId", [selectedBatch])],
+        );
+
+        // Watch batchStudents for this batch (enrollment approvals)
+        const bsChannel = Channel.tablesdb(conf.databaseId)
+          .table(conf.batchStudentsCollectionId)
+          .row();
+
+        sub2 = await realtime.subscribe(
+          bsChannel,
+          (response) => {
+            const { events, payload } = response;
+            const payloadBatchId = payload?.batchId?.$id || payload?.batchId;
+            if (payloadBatchId !== selectedBatch) return;
+
+            const isDelete = events.some((e) => e.includes(".delete"));
+            if (isDelete) {
+              setStudents((prev) =>
+                prev
+                  ? prev.map((s) =>
+                      s.userId === payload.studentId
+                        ? { ...s, status: "rejected", enrollmentDate: null, enrollmentStatus: null }
+                        : s,
+                    )
+                  : prev,
+              );
+              return;
+            }
+
+            // Create/update: sync enrollment data
+            setStudents((prev) => {
+              if (!prev) return prev;
+              const idx = prev.findIndex((s) => s.userId === payload.studentId);
+              if (idx === -1) return prev;
+              const next = [...prev];
+              next[idx] = {
+                ...next[idx],
+                status: "approved",
+                enrollmentDate: payload.enrollmentDate || null,
+                enrollmentStatus: payload.status || null,
+              };
+              return next;
+            });
+          },
+          [Query.equal("batchId", [selectedBatch])],
+        );
+      } catch (err) {
+        console.warn("[ManageStudentsList] Realtime subscription failed:", err.message);
+        // Graceful degradation — the list still works, just not live
+      }
+    };
+
+    setup();
+
+    return () => {
+      if (sub1?.unsubscribe) sub1.unsubscribe();
+      if (sub2?.unsubscribe) sub2.unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBatch]);
+
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchList();
     setIsRefreshing(false);
   };
+
 
   // ── Open the approval review modal ──
   const openApprovalModal = async (student) => {
@@ -534,13 +649,14 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
 
     setIsApproving(true);
     try {
+      const enrollmentDateISO = new Date(enrollmentDate).toISOString();
       // Approve + write enrollment details into batchStudents in one call
       await batchRequestService.approveRequest(
         student.requestId,
         selectedBatch,
         student.userId,
         {
-          enrollmentDate: new Date(enrollmentDate).toISOString(),
+          enrollmentDate: enrollmentDateISO,
           status,
           approvedBy: user?.$id || null,
           remarks: remarks || null,
@@ -551,7 +667,20 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
 
       toast.success(`${student.userName} approved successfully!`);
       setApprovalModal(null);
-      await fetchList();
+
+      // ── Optimistic update: no full refetch ──
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.userId === student.userId
+            ? {
+                ...s,
+                status: "approved",
+                enrollmentDate: enrollmentDateISO,
+                enrollmentStatus: status,
+              }
+            : s,
+        ),
+      );
     } catch (err) {
       console.error("Approval error:", err);
       toast.error("Failed to approve student. Please try again.");
@@ -669,27 +798,52 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
     setProcessingId(student.userId);
     try {
       if (action === "request") {
-        await batchRequestService.sendRequest(
+        const result = await batchRequestService.sendRequest(
           selectedBatch,
           student.userId,
           "teacher",
         );
         toast.success("Request sent on behalf of student.");
+        // Optimistic update
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.userId === student.userId
+              ? { ...s, status: "pending", requestId: result?.$id ?? s.requestId }
+              : s,
+          ),
+        );
       } else if (action === "reject") {
         await batchRequestService.rejectRequest(student.requestId);
         toast.success("Request rejected.");
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.userId === student.userId ? { ...s, status: "rejected" } : s,
+          ),
+        );
       } else if (action === "re-request") {
         await batchRequestService.updateRequestStatus(
           student.requestId,
           "pending",
         );
         toast.success("Request sent again.");
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.userId === student.userId ? { ...s, status: "pending" } : s,
+          ),
+        );
       } else if (action === "direct-assign") {
         await batchRequestService.assignStudentDirectly(
           student.userId,
           selectedBatch,
         );
         toast.success("Student assigned directly.");
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.userId === student.userId
+              ? { ...s, status: "approved", enrollmentStatus: "active" }
+              : s,
+          ),
+        );
       } else if (action === "revoke") {
         await batchRequestService.revokeStudent(
           selectedBatch,
@@ -697,11 +851,19 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           student.requestId,
         );
         toast.info("Student approval revoked.");
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.userId === student.userId
+              ? { ...s, status: "rejected", enrollmentDate: null, enrollmentStatus: null }
+              : s,
+          ),
+        );
       } else if (action === "delete") {
         await batchRequestService.deleteRequest(student.requestId);
         toast.success("Rejected request deleted successfully.");
+        // Remove the student row entirely (they have no active record)
+        setStudents((prev) => prev.filter((s) => s.userId !== student.userId));
       }
-      await fetchList();
     } catch (err) {
       console.error(err);
       toast.error(`Failed to perform action: ${action}`);

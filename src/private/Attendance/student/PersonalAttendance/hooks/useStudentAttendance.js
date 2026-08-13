@@ -16,6 +16,7 @@ import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import { selectActiveBatchId, selectActiveBatchData } from "@/store/activeBatchSlice";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
+import batchStudentService from "@/appwrite/batchStudentService";
 
 const STATUS_ALIASES = {
   p: "present",
@@ -192,6 +193,39 @@ export const useStudentAttendance = (profile) => {
   const [lastUpdatedDate, setLastUpdatedDate] = useState(null);
   const [overallStats, setOverallStats] = useState(null);
 
+  // ── Per-student enrollment date from batchStudents record ──────────────
+  // This is the authoritative lower bound for working days, stats, and
+  // attendance blocking. It lives in the batchStudents table, NOT on the
+  // profile, because a student can have different enrollment dates per batch.
+  const [enrollmentDate, setEnrollmentDate] = useState(null);
+  const [isLoadingEnrollment, setIsLoadingEnrollment] = useState(false);
+
+  useEffect(() => {
+    if (!resolvedBatchId || !profile?.userId) return;
+    let cancelled = false;
+    setIsLoadingEnrollment(true);
+    batchStudentService
+      .getStudentRecord(resolvedBatchId, profile.userId)
+      .then((record) => {
+        if (cancelled) return;
+        // enrollmentDate is stored as ISO string in batchStudents
+        const raw = record?.enrollmentDate ?? record?.joinedAt ?? null;
+        setEnrollmentDate(raw ? normalizeDate(raw) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setEnrollmentDate(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingEnrollment(false);
+      });
+    return () => { cancelled = true; };
+  }, [resolvedBatchId, profile?.userId]);
+
+  // Effective start date: student's enrollment date (or batch start as fallback)
+  const effectiveStartDate = useMemo(
+    () => enrollmentDate ?? normalizeDate(batchData?.start_date) ?? null,
+    [enrollmentDate, batchData?.start_date],
+  );
 
   const getMonthRange = useCallback((monthLabel) => {
     const parsedDate = parse(monthLabel, "MMMM yyyy", new Date());
@@ -203,14 +237,18 @@ export const useStudentAttendance = (profile) => {
     setIsLoadingAttendance(true);
     try {
       const { start, end } = getMonthRange(currentMonth);
-      const batchStart = batchData?.start_date
-        ? startOfDay(new Date(batchData.start_date))
-        : start;
+
+      // Use enrollment date as the lower bound, not batch start_date
+      const effectiveStart = effectiveStartDate
+        ? startOfDay(new Date(effectiveStartDate))
+        : (batchData?.start_date ? startOfDay(new Date(batchData.start_date)) : start);
+
       const batchEnd = batchData?.end_date
         ? endOfDay(new Date(batchData.end_date))
         : endOfDay(end);
+
       const rangeStart = new Date(
-        Math.max(start.getTime(), batchStart.getTime()),
+        Math.max(start.getTime(), effectiveStart.getTime()),
       );
       const rangeEnd = new Date(
         Math.min(
@@ -251,7 +289,7 @@ export const useStudentAttendance = (profile) => {
     } finally {
       setIsLoadingAttendance(false);
     }
-  }, [profile, currentMonth, getMonthRange, batchData, resolvedBatchId]);
+  }, [profile, currentMonth, getMonthRange, batchData, resolvedBatchId, effectiveStartDate]);
 
   useEffect(() => {
     fetchMonthlyAttendance();
@@ -261,17 +299,20 @@ export const useStudentAttendance = (profile) => {
     if (!profile?.userId || !resolvedBatchId) return;
     setIsLoadingOverallStats(true);
     try {
-      // Historical Overall = From batch start up to end of previous month.
+      // Historical Overall = From student's enrollment date up to end of previous month.
       // Using currentMonth (not selectedDate) so clicking individual dates within
       // the same month does NOT re-trigger this fetch.
-      const batchStart = batchData?.start_date ? batchData.start_date : null;
+
+      // Use enrollment date as the per-student lower bound
+      const effectiveStart = effectiveStartDate ?? (batchData?.start_date || null);
+
       const currentMonthDate = parse(currentMonth, "MMMM yyyy", new Date());
       const prevMonthEnd = format(endOfMonth(subMonths(currentMonthDate, 1)), "yyyy-MM-dd");
 
       const stats = await newAttendanceService.getStudentAttendanceStats(
         profile.userId,
         resolvedBatchId,
-        batchStart,
+        effectiveStart,   // ← uses enrollment date, not batch start
         prevMonthEnd
       );
       setOverallStats({
@@ -287,7 +328,7 @@ export const useStudentAttendance = (profile) => {
     } finally {
       setIsLoadingOverallStats(false);
     }
-  }, [profile, resolvedBatchId, batchData?.start_date, currentMonth]);
+  }, [profile, resolvedBatchId, effectiveStartDate, currentMonth]);
 
   useEffect(() => {
     fetchOverallStats();
@@ -303,15 +344,17 @@ export const useStudentAttendance = (profile) => {
   }, [normalized.invalid]);
 
   const workingDaysList = useMemo(() => {
-    if (!batchData?.start_date) return [];
+    // Use student's enrollment date as lower bound (not batch start_date)
+    if (!effectiveStartDate) return [];
+
     const { start: monthStart, end: monthEnd } = getMonthRange(currentMonth);
-    const batchStart = startOfDay(new Date(batchData.start_date));
+    const enrollStart = startOfDay(new Date(effectiveStartDate));
     const batchEnd = batchData?.end_date
       ? endOfDay(new Date(batchData.end_date))
       : monthEnd;
 
     const rangeStart = new Date(
-      Math.max(monthStart.getTime(), batchStart.getTime()),
+      Math.max(monthStart.getTime(), enrollStart.getTime()),
     );
     const rangeEnd = new Date(
       Math.min(monthEnd.getTime(), batchEnd.getTime()),
@@ -322,7 +365,7 @@ export const useStudentAttendance = (profile) => {
       endDate: rangeEnd,
       holidaysMap: holidays,
     });
-  }, [batchData, currentMonth, getMonthRange, holidays]);
+  }, [effectiveStartDate, batchData, currentMonth, getMonthRange, holidays]);
 
   const finalAttendanceMap = useMemo(
     () =>
@@ -383,13 +426,16 @@ export const useStudentAttendance = (profile) => {
         toast.warn("Cannot mark attendance on a holiday.");
         return null;
       }
+
+      // Block attendance before student's own enrollment date (not just batch start)
       if (
-        batchData?.start_date &&
-        normalizedDate < normalizeDate(batchData.start_date)
+        effectiveStartDate &&
+        normalizedDate < effectiveStartDate
       ) {
-        toast.warn("Date is before batch start.");
+        toast.warn("Cannot mark attendance before your enrollment date.");
         return null;
       }
+
       if (
         batchData?.end_date &&
         normalizedDate > normalizeDate(batchData.end_date)
@@ -469,7 +515,7 @@ export const useStudentAttendance = (profile) => {
   };
 
   return {
-    isLoadingAttendance: isLoadingAttendance || isResolvingBatch,
+    isLoadingAttendance: isLoadingAttendance || isResolvingBatch || isLoadingEnrollment,
     isLoadingOverallStats,
     batchData,
     tradeData,
@@ -501,5 +547,7 @@ export const useStudentAttendance = (profile) => {
     markAttendance,
     lastUpdatedDate,
     invalidRecords,
+    enrollmentDate,
   };
 };
+

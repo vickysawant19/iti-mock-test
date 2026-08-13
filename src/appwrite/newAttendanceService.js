@@ -1090,22 +1090,46 @@ class NewAttendanceService {
    * Recalculate and upsert monthly pre-aggregated attendance stats for a single (userId, batchId, yearMonth).
    * Document ID in monthlyAttendanceStats: `${userId}_${batchId}_${yearMonth}`
    */
-  async syncMonthlyAttendanceStats(userId, batchId, dateStr) {
+  async syncMonthlyAttendanceStats(userId, batchId, dateStr, enrollmentDate = null) {
     if (!userId || !batchId || !dateStr) return null;
     const yearMonth = String(dateStr).substring(0, 7); // "YYYY-MM"
     const docId = `${userId}_${batchId}_${yearMonth}`;
 
     try {
+      let enrollDate = enrollmentDate;
+      if (!enrollDate) {
+        try {
+          const bsRes = await this.database.listRows({
+            databaseId: conf.databaseId,
+            tableId: conf.batchStudentsCollectionId,
+            queries: [
+              Query.equal("batchId", batchId),
+              Query.equal("studentId", userId),
+              Query.limit(1),
+            ],
+          });
+          enrollDate = bsRes.rows?.[0]?.enrollmentDate || bsRes.rows?.[0]?.joinedAt || null;
+        } catch { /* ignore */ }
+      }
+
+      const enrollStr = enrollDate ? String(enrollDate).substring(0, 10) : null;
+
+      const queries = [
+        Query.equal("userId", userId),
+        Query.equal("batchId", batchId),
+        Query.startsWith("date", yearMonth),
+        Query.limit(35),
+      ];
+
+      if (enrollStr && enrollStr.substring(0, 7) === yearMonth) {
+        queries.push(Query.greaterThanEqual("date", enrollStr));
+      }
+
       // 1. Fetch daily rows for this user + batch in target month
       const monthRecords = await this.database.listRows({
         databaseId: conf.databaseId,
         tableId: conf.newAttendanceCollectionId,
-        queries: [
-          Query.equal("userId", userId),
-          Query.equal("batchId", batchId),
-          Query.startsWith("date", yearMonth),
-          Query.limit(35),
-        ],
+        queries,
       });
 
       let presentDays = 0;
@@ -1171,6 +1195,116 @@ class NewAttendanceService {
       return null;
     }
   }
+
+  /**
+   * Silent background verification & auto-correction feature.
+   * Compares pre-aggregated `monthlyAttendanceStats` documents against actual daily attendance records
+   * for all students in a batch for a target month (`yearMonth`).
+   * Automatically auto-corrects any discrepancies in `monthlyAttendanceStats` silently in the background.
+   */
+  async verifyBatchMonthlyStats(batchId, yearMonth, studentsList = []) {
+    if (!batchId || !yearMonth) return { total: 0, verifiedCount: 0, correctedCount: 0 };
+    try {
+      let students = studentsList;
+      if (!students || students.length === 0) {
+        const bsRes = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.batchStudentsCollectionId,
+          queries: [Query.equal("batchId", batchId), Query.limit(500)],
+        });
+        students = (bsRes.rows || []).map((row) => ({
+          userId: row.studentId,
+          enrollmentDate: row.enrollmentDate || row.joinedAt,
+        }));
+      }
+
+      const existingStatsMap = await this.getBatchMonthlyStats(batchId, yearMonth);
+
+      let correctedCount = 0;
+      let verifiedCount = 0;
+      const correctedDetails = [];
+
+      for (const student of students) {
+        if (!student?.userId || student.isTeacher) continue;
+
+        const uid = student.userId;
+        const enrollDate = student.enrollmentDate;
+        const enrollStr = enrollDate ? String(enrollDate).substring(0, 10) : null;
+
+        const queries = [
+          Query.equal("userId", uid),
+          Query.equal("batchId", batchId),
+          Query.startsWith("date", yearMonth),
+          Query.limit(35),
+        ];
+
+        if (enrollStr && enrollStr.substring(0, 7) === yearMonth) {
+          queries.push(Query.greaterThanEqual("date", enrollStr));
+        }
+
+        const monthRecords = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.newAttendanceCollectionId,
+          queries,
+        });
+
+        let presentDays = 0;
+        let absentDays = 0;
+        let casualLeaves = 0;
+        let sickLeaves = 0;
+        let specialLeaves = 0;
+        let onDutyLeaves = 0;
+        let halfDays = 0;
+        let lateDays = 0;
+
+        (monthRecords.rows || []).forEach((row) => {
+          const s = String(row.status || row.attendanceStatus || "").toLowerCase();
+          if (s === "present" || s === "p") presentDays++;
+          else if (s === "absent" || s === "a") absentDays++;
+          else if (s === "casual" || s === "cl") casualLeaves++;
+          else if (s === "sick" || s === "sl") sickLeaves++;
+          else if (s === "special" || s === "spl") specialLeaves++;
+          else if (s === "on_duty" || s === "od") onDutyLeaves++;
+          else if (s === "half_day" || s === "hd") halfDays++;
+          else if (s === "late" || s === "l") lateDays++;
+        });
+
+        const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+        const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+        const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+        const storedDoc = existingStatsMap.get(uid);
+
+        const isMismatch =
+          !storedDoc ||
+          storedDoc.workingDays !== workingDays ||
+          storedDoc.presentDays !== presentDays ||
+          storedDoc.absentDays !== absentDays ||
+          storedDoc.totalPresent !== totalPresent ||
+          storedDoc.attendancePercentage !== attendancePercentage;
+
+        if (isMismatch) {
+          await this.syncMonthlyAttendanceStats(uid, batchId, `${yearMonth}-01`, enrollDate);
+          correctedCount++;
+          correctedDetails.push({ userId: uid, workingDays, totalPresent, percentage: attendancePercentage });
+        } else {
+          verifiedCount++;
+        }
+      }
+
+      if (correctedCount > 0) {
+        console.log(
+          `[Silent Stats Verifier] Batch ${batchId} (${yearMonth}): Verified ${verifiedCount} students, auto-corrected ${correctedCount} monthly stats docs.`
+        );
+      }
+
+      return { total: students.length, verifiedCount, correctedCount, correctedDetails };
+    } catch (error) {
+      console.error("[Silent Stats Verifier] Error during verification:", error);
+      return { total: 0, verifiedCount: 0, correctedCount: 0 };
+    }
+  }
+
 
   /**
    * Get pre-aggregated monthly stats for all students in a batch in 1 single fast query.

@@ -26,6 +26,7 @@ import {
 } from "date-fns";
 import DailyBatchAttendanceModal from "./components/DailyBatchAttendanceModal";
 import StudentMonthlyAttendanceModal from "./components/StudentMonthlyAttendanceModal";
+import StudentManagementModal from "@/private/teacher/batch/view-batch/tabs/profiles/components/StudentManagementModal";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
@@ -93,6 +94,18 @@ const AttendanceRegister = () => {
   const [selectedDate,         setSelectedDate]         = useState(null);
   const [selectedStudent,      setSelectedStudent]      = useState(null);
   const [updatingAttendance,   setUpdatingAttendance]   = useState(new Map());
+
+  // ── Student Profile Modal State ──────────────────────────────────────────
+  const [viewProfileUserId,    setViewProfileUserId]    = useState(null);
+  const [profileTab,           setProfileTab]           = useState("profile");
+  const [selectedProfileStudent, setSelectedProfileStudent] = useState(null);
+
+  const handleOpenStudentProfile = useCallback((student) => {
+    if (!student || student.isTeacher) return;
+    setSelectedProfileStudent(student);
+    setViewProfileUserId(student.userId);
+    setProfileTab("profile");
+  }, []);
 
   // ── Realtime sync ────────────────────────────────────────────────────────
   useAttendanceRealtime(selectedBatch, selectedMonth, setNewAttendance);
@@ -232,17 +245,25 @@ const AttendanceRegister = () => {
               const rollNo =
                 bs?.rollNumber ||
                 bs?.registerId ||
-                "";
+                p?.rollNumber ||
+                p?.registerId ||
+                p?.rollNo ||
+                "N/A";
 
               return {
                 userId: uid,
                 userName: p?.userName || p?.name || "Student",
-                studentId: rollNo, // exact rollNumber attribute from batchStudents table
-                profileImage: p?.profileImage || "",
+                studentId: rollNo,
                 rollNo: rollNo,
+                rollNumber: bs?.rollNumber || p?.rollNumber || rollNo,
+                registerId: bs?.registerId || p?.registerId || null,
+                profileImage: p?.profileImage || "",
+                // Per-student enrollment date: used to compute working days for the enrollment month
+                enrollmentDate: bs?.enrollmentDate || bs?.joinedAt || null,
               };
             })
             .filter(Boolean);
+
         })(),
       ]);
 
@@ -340,7 +361,12 @@ const AttendanceRegister = () => {
           if (signal?.aborted) return;
           setNewAttendance(result.documents);
           fetchCacheRef.current.attendance = currentKey;
+
+          // Silent background verification & auto-correction of monthly stats for active month
+          const currentYearMonth = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
+          newAttendanceService.verifyBatchMonthlyStats(selectedBatch, currentYearMonth, students).catch(() => {});
         }
+
 
         // ── Stats (previous months) ─────────────────────────────────────
         if (needsStats) {
@@ -725,6 +751,7 @@ const AttendanceRegister = () => {
           batchStartDate={rawBatchStartDate}
           batchEndDate={rawBatchEndDate}
           onOpenStudentAttendanceModal={handleOpenStudentModal}
+          onOpenStudentProfile={handleOpenStudentProfile}
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
         />
@@ -762,6 +789,16 @@ const AttendanceRegister = () => {
           handleAddHoliday={handleAddHoliday}
           handleRemoveHoliday={handleRemoveHoliday}
         />
+
+        <StudentManagementModal
+          viewProfileUserId={viewProfileUserId}
+          setViewProfileUserId={setViewProfileUserId}
+          activeProfileTab={profileTab}
+          setActiveProfileTab={setProfileTab}
+          selectedStudent={selectedProfileStudent}
+          effectiveBatchId={selectedBatch}
+        />
+
       </div>
     </div>
   );

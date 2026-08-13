@@ -25,6 +25,7 @@ const AttendanceTable = ({
   batchStartDate,
   batchEndDate,
   onOpenStudentAttendanceModal,
+  onOpenStudentProfile,
   columnVisibility,
   setColumnVisibility,
 }) => {
@@ -200,7 +201,9 @@ const AttendanceTable = ({
                 columnVisibility={columnVisibility}
                 compactView={compactView}
                 onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
+                onOpenStudentProfile={onOpenStudentProfile}
               />
+
               <AttendanceTableFooter
                 students={students}
                 monthDates={monthDates}

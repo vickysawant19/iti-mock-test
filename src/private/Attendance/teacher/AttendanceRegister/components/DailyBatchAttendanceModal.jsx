@@ -104,6 +104,16 @@ export const DailyBatchAttendanceModal = ({
     });
   };
 
+  const isBlockedByEnrollment = (student, targetDate) => {
+    if (!student || student.isTeacher || !student.enrollmentDate || !targetDate) return false;
+    try {
+      const enrollStr = String(student.enrollmentDate).substring(0, 10);
+      return targetDate < enrollStr;
+    } catch {
+      return false;
+    }
+  };
+
   const handleMainSave = async () => {
     setIsLoading(true);
     try {
@@ -127,7 +137,15 @@ export const DailyBatchAttendanceModal = ({
         await handleAddHoliday(date, holidayReason);
         setIsMarkingHoliday(false);
       } else {
-        await onSave(attendanceStatuses);
+        // Filter out students blocked by enrollment date before saving
+        const validStatuses = {};
+        Object.entries(attendanceStatuses).forEach(([uid, st]) => {
+          const s = students.find((stud) => stud.userId === uid);
+          if (s && !isBlockedByEnrollment(s, date)) {
+            validStatuses[uid] = st;
+          }
+        });
+        await onSave(validStatuses);
         onClose();
       }
     } catch (error) {
@@ -168,22 +186,38 @@ export const DailyBatchAttendanceModal = ({
   const actualStudents = students.filter((s) => !s.isTeacher);
 
   const presentCount = Object.keys(attendanceStatuses).filter(
-    (userId) =>
-      attendanceStatuses[userId] === "present" &&
-      !students.find((s) => s.userId === userId)?.isTeacher
+    (userId) => {
+      const s = students.find((stud) => stud.userId === userId);
+      return (
+        attendanceStatuses[userId] === "present" &&
+        !s?.isTeacher &&
+        !isBlockedByEnrollment(s, date)
+      );
+    }
   ).length;
 
   const absentCount = Object.keys(attendanceStatuses).filter(
-    (userId) =>
-      attendanceStatuses[userId] === "absent" &&
-      !students.find((s) => s.userId === userId)?.isTeacher
+    (userId) => {
+      const s = students.find((stud) => stud.userId === userId);
+      return (
+        attendanceStatuses[userId] === "absent" &&
+        !s?.isTeacher &&
+        !isBlockedByEnrollment(s, date)
+      );
+    }
   ).length;
 
   const leaveCount = Object.keys(attendanceStatuses).filter(
-    (userId) =>
-      ["casual", "sick", "special", "on_duty", "leave", "cl", "sl", "spl", "od"].includes(
-        attendanceStatuses[userId]
-      ) && !students.find((s) => s.userId === userId)?.isTeacher
+    (userId) => {
+      const s = students.find((stud) => stud.userId === userId);
+      return (
+        ["casual", "sick", "special", "on_duty", "leave", "cl", "sl", "spl", "od"].includes(
+          attendanceStatuses[userId]
+        ) &&
+        !s?.isTeacher &&
+        !isBlockedByEnrollment(s, date)
+      );
+    }
   ).length;
 
   const filteredStudents = students.filter((student) => {
@@ -199,20 +233,25 @@ export const DailyBatchAttendanceModal = ({
   const studentsList = filteredStudents.filter((s) => !s.isTeacher);
 
   const markAllPresent = () => {
-    const newStatuses = {};
+    const newStatuses = { ...attendanceStatuses };
     students.forEach((student) => {
-      newStatuses[student.userId] = "present";
+      if (!isBlockedByEnrollment(student, date)) {
+        newStatuses[student.userId] = "present";
+      }
     });
     setAttendanceStatuses(newStatuses);
   };
 
   const markAllAbsent = () => {
-    const newStatuses = {};
+    const newStatuses = { ...attendanceStatuses };
     students.forEach((student) => {
-      newStatuses[student.userId] = "absent";
+      if (!isBlockedByEnrollment(student, date)) {
+        newStatuses[student.userId] = "absent";
+      }
     });
     setAttendanceStatuses(newStatuses);
   };
+
 
   const showHolidayInput = isMarkingHoliday && !isExistingHoliday;
   const showAttendanceList = !isExistingHoliday && !isMarkingHoliday;
@@ -220,6 +259,7 @@ export const DailyBatchAttendanceModal = ({
 
   const renderStudentRow = (student) => {
     const currentStatus = attendanceStatuses[student.userId] || "absent";
+    const isBlocked = isBlockedByEnrollment(student, date);
     const quota = studentQuotas.get(student.userId) || {
       clRemaining: 12,
       slDaysRemaining: 15,
@@ -234,7 +274,7 @@ export const DailyBatchAttendanceModal = ({
       <div
         key={student.userId}
         className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 hover:shadow-md transition-all ${
-          student.isTeacher ? "border-l-4 border-l-purple-500" : ""
+          student.isTeacher ? "border-l-4 border-l-purple-500" : isBlocked ? "opacity-60 bg-slate-50 dark:bg-slate-900/60" : ""
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -264,18 +304,32 @@ export const DailyBatchAttendanceModal = ({
                     Teacher
                   </span>
                 )}
+                {isBlocked && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                    Not Enrolled Yet
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                 ID: {student.studentId || "N/A"}
               </p>
 
               {/* Leave Quotas Badge Row */}
-              <StudentLeaveQuotaBadges quota={quota} className="mt-1" />
+              {!isBlocked && <StudentLeaveQuotaBadges quota={quota} className="mt-1" />}
             </div>
           </div>
 
           {/* Right: Status Action Buttons */}
           <div className="flex flex-wrap items-center gap-1.5 sm:self-center">
+            {isBlocked ? (
+              <span
+                className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 flex items-center gap-1 select-none"
+                title={`Enrolled on ${String(student.enrollmentDate).substring(0, 10)}`}
+              >
+                <span className="font-extrabold text-slate-400">X</span> Not Enrolled Yet
+              </span>
+            ) : (
+              <>
             {/* Present */}
             <button
               type="button"
@@ -367,11 +421,14 @@ export const DailyBatchAttendanceModal = ({
             >
               OD
             </button>
+            </>
+            )}
           </div>
         </div>
       </div>
     );
   };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 animate-fadeIn dark:bg-opacity-80">

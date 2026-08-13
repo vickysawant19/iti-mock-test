@@ -13,12 +13,25 @@ const AttendanceCalendar = ({
   holidays,
   profile,
   batchData,
+  enrollmentDate,
   lastUpdatedDate,
   openMarkModal,
   canOpenTodayMarkModal = false,
   rawAttendanceByDate,
 }) => {
   const [selectedLabel, setSelectedLabel] = useState("");
+
+  const enrollDateStr = useMemo(() => {
+    if (!enrollmentDate) return null;
+    if (typeof enrollmentDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(enrollmentDate)) {
+      return enrollmentDate;
+    }
+    try {
+      return format(new Date(enrollmentDate), "yyyy-MM-dd");
+    } catch {
+      return null;
+    }
+  }, [enrollmentDate]);
 
   // Derive the active view date (what month is shown in the picker)
   const activeDate = selectedDate instanceof Date && !isNaN(selectedDate) ? selectedDate : new Date();
@@ -33,8 +46,11 @@ const AttendanceCalendar = ({
   // Derive min year AND min month from batch/enrollment start date
   const { minYear, minMonth: batchMinMonth } = useMemo(() => {
     const candidates = [];
-    if (batchData?.start_date) candidates.push(new Date(batchData.start_date));
-    if (profile?.enrolledAt) candidates.push(new Date(profile.enrolledAt));
+    if (enrollDateStr) candidates.push(new Date(enrollDateStr));
+    else {
+      if (batchData?.start_date) candidates.push(new Date(batchData.start_date));
+      if (profile?.enrolledAt) candidates.push(new Date(profile.enrolledAt));
+    }
     if (!candidates.length) {
       const fallback = new Date();
       fallback.setFullYear(fallback.getFullYear() - 3);
@@ -42,7 +58,8 @@ const AttendanceCalendar = ({
     }
     const earliest = new Date(Math.min(...candidates.map((d) => d.getTime())));
     return { minYear: earliest.getFullYear(), minMonth: earliest.getMonth() };
-  }, [batchData?.start_date, profile?.enrolledAt]);
+  }, [enrollDateStr, batchData?.start_date, profile?.enrolledAt]);
+
 
   const maxYear = new Date().getFullYear();
   const maxMonth = getMonth(new Date()); // current month (0-indexed)
@@ -107,11 +124,14 @@ const AttendanceCalendar = ({
 
   const minAllowedDate = useMemo(() => {
     const candidates = [];
-    if (batchData?.start_date) candidates.push(new Date(batchData.start_date));
-    if (profile?.enrolledAt) candidates.push(new Date(profile.enrolledAt));
+    if (enrollDateStr) candidates.push(new Date(enrollDateStr));
+    else {
+      if (batchData?.start_date) candidates.push(new Date(batchData.start_date));
+      if (profile?.enrolledAt) candidates.push(new Date(profile.enrolledAt));
+    }
     if (!candidates.length) return undefined;
     return new Date(Math.min(...candidates.map((d) => d.getTime())));
-  }, [batchData?.start_date, profile?.enrolledAt]);
+  }, [enrollDateStr, batchData?.start_date, profile?.enrolledAt]);
 
   const tileClassName = ({ date, view }) => {
     if (view !== "month") return "";
@@ -119,6 +139,10 @@ const AttendanceCalendar = ({
     const formattedDate = format(date, "yyyy-MM-dd");
     const todayDate = format(new Date(), "yyyy-MM-dd");
     
+    if (enrollDateStr && formattedDate < enrollDateStr) {
+      classes += "attendance-calendar-disabled opacity-40 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed ";
+    }
+
     if (formattedDate === todayDate) {
       classes += "attendance-calendar-today ";
     }
@@ -153,6 +177,15 @@ const AttendanceCalendar = ({
   const tileContent = ({ date, view }) => {
     if (view !== "month") return null;
     const dateKey = format(date, "yyyy-MM-dd");
+
+    if (enrollDateStr && dateKey < enrollDateStr) {
+      return (
+        <span className="mt-1 block text-[9px] font-extrabold tracking-wide text-slate-400 dark:text-slate-500">
+          X Pre-Enroll
+        </span>
+      );
+    }
+
     // Check rawAttendanceByDate first — covers Sundays / 2nd+4th Saturdays
     const record =
       rawAttendanceByDate?.get(dateKey) ||
@@ -239,18 +272,20 @@ const AttendanceCalendar = ({
               id="calendar-month-select"
               value={activeMonth}
               onChange={(e) => {
-                const newDate = setMonth(new Date(activeDate), Number(e.target.value));
-                const clamped = newDate > new Date() ? new Date() : newDate;
-                handleMonthChange(clamped);
-                setSelectedDate(clamped);
+                const month = Number(e.target.value);
+                const newDate = setMonth(new Date(activeDate), month);
+                handleMonthChange(newDate);
+                setSelectedDate(newDate);
               }}
-              className="text-[13px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-0 rounded-xl pl-3 pr-7 py-1.5 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all appearance-none"
+              className="appearance-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs px-3 py-1.5 pr-6 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               {availableMonths.map(({ label, index }) => (
-                <option key={label} value={index}>{label}</option>
+                <option key={index} value={index}>
+                  {label}
+                </option>
               ))}
             </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
 
           {/* Year select with caret */}
@@ -259,20 +294,22 @@ const AttendanceCalendar = ({
               id="calendar-year-select"
               value={activeYear}
               onChange={(e) => handleYearChange(Number(e.target.value))}
-              className="text-[13px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-0 rounded-xl pl-3 pr-7 py-1.5 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all appearance-none"
+              className="appearance-none bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-xs px-3 py-1.5 pr-6 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
-              {yearOptions.map((y) => (
-                <option key={y} value={y}>{y}</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))}
             </select>
-            <ChevronDown size={12} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
 
         {/* Next month button */}
         <button
           onClick={() => navigateMonth(1)}
-          disabled={activeMonth === maxMonth && activeYear === maxYear}
+          disabled={activeYear === maxYear && activeMonth >= maxMonth}
           className="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all active:scale-90 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
           title="Next month"
           type="button"
@@ -286,9 +323,12 @@ const AttendanceCalendar = ({
         onChange={(date) => {
           setSelectedDate(date);
           const dateKey = format(date, "yyyy-MM-dd");
-          const status = normalizeStatus(
-            attendanceByDate?.get(dateKey)?.status || workingDays?.get(dateKey)?.status
-          );
+          const record =
+            rawAttendanceByDate?.get(dateKey) ||
+            attendanceByDate?.get(dateKey) ||
+            workingDays?.get(dateKey);
+          const hasRealRecord = record && !record.autoGenerated;
+          const status = hasRealRecord ? normalizeStatus(record.attendanceStatus || record.status) : "";
           if (status) {
             setSelectedLabel(`Attendance: ${status}`);
             return;
@@ -301,6 +341,9 @@ const AttendanceCalendar = ({
         }}
         onClickDay={(date, event) => {
           const dateKey = format(date, "yyyy-MM-dd");
+          if (enrollDateStr && dateKey < enrollDateStr) {
+            return;
+          }
           const todayKey = format(new Date(), "yyyy-MM-dd");
           const isHoliday = holidays?.has(dateKey);
           const isPastDate = dateKey < todayKey;

@@ -168,16 +168,39 @@ export const updateMonthlyAttendanceStatsHelper = async (
   const docId = `${userId}_${batchId}_${yearMonth}`;
 
   try {
+    // Fetch student's enrollment date if available to filter records
+    const BATCH_STUDENTS_COL = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
+    const bsRes = await databases.listDocuments(
+      DB_ID,
+      BATCH_STUDENTS_COL,
+      [
+        Query.equal('batchId', batchId),
+        Query.equal('studentId', userId),
+        Query.limit(1),
+      ]
+    ).catch(() => ({ documents: [] }));
+
+    const enrollDate = bsRes.documents?.[0]?.enrollmentDate
+      ? String(bsRes.documents[0].enrollmentDate).substring(0, 10)
+      : null;
+
+    const queries = [
+      Query.equal('userId', userId),
+      Query.equal('batchId', batchId),
+      Query.startsWith('date', yearMonth),
+      Query.limit(35),
+    ];
+
+    if (enrollDate) {
+      queries.push(Query.greaterThanEqual('date', enrollDate));
+    }
+
     const monthDocs = await databases.listDocuments(
       DB_ID,
       NEW_ATTENDANCE_COL,
-      [
-        Query.equal('userId', userId),
-        Query.equal('batchId', batchId),
-        Query.startsWith('date', yearMonth),
-        Query.limit(35),
-      ]
+      queries
     );
+
 
     let presentDays = 0, absentDays = 0, casualLeaves = 0;
     let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;

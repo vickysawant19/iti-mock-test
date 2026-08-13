@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Users, UserPlus, FileText } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
+import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import batchService from "@/appwrite/batchService";
 import { Query } from "appwrite";
 
@@ -12,6 +13,8 @@ import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 const AddStudents = () => {
   const user = useSelector(selectUser);
   const teacherId = user?.$id;
+  // Read the globally active batch from Redux so we pre-select it on mount
+  const activeBatchId = useSelector(selectActiveBatchId);
 
   const [activeTab, setActiveTab] = useState("manage"); // 'manage' or 'add'
   const [teacherBatches, setTeacherBatches] = useState([]);
@@ -31,7 +34,12 @@ const AddStudents = () => {
         const batches = res.documents || [];
         setTeacherBatches(batches);
         if (batches.length > 0 && !selectedBatch) {
-          setSelectedBatch(batches[0].$id);
+          // Prefer the Redux active batch; fall back to the first in the list
+          const preferred =
+            activeBatchId && batches.some((b) => b.$id === activeBatchId)
+              ? activeBatchId
+              : batches[0].$id;
+          setSelectedBatch(preferred);
         }
       } catch (err) {
         console.error("AddStudents: error fetching batches:", err);

@@ -149,15 +149,21 @@ export const StudentMonthlyAttendanceModal = ({
     };
   };
 
+  const studentEnrollDateStr = !student?.isTeacher && student?.enrollmentDate
+    ? String(student.enrollmentDate).substring(0, 10)
+    : null;
+
   const selectedDateObj = parseISO(selectedDateKey);
   const selectedStatus = attendanceMap.get(selectedDateKey);
   const isSelectedHoliday = holidays.has(selectedDateKey);
   const isSelectedFuture = isAfter(selectedDateObj, new Date());
   const isSelectedBeforeBatch = batchStartDate && isBefore(selectedDateObj, new Date(batchStartDate));
   const isSelectedAfterBatch = batchEndDate && isAfter(selectedDateObj, new Date(batchEndDate));
-  const canEditSelected = (!isSelectedHoliday || student.isTeacher) && !isSelectedFuture && !isSelectedBeforeBatch && !isSelectedAfterBatch;
+  const isSelectedBeforeEnrollment = studentEnrollDateStr ? selectedDateKey < studentEnrollDateStr : false;
+  const canEditSelected = (!isSelectedHoliday || student.isTeacher) && !isSelectedFuture && !isSelectedBeforeBatch && !isSelectedAfterBatch && !isSelectedBeforeEnrollment;
   const isSelectedUpdating = updatingAttendance.get(`${student.userId}-${selectedDateKey}`);
   const selectedBadgeInfo = getStatusBadge(selectedStatus);
+
 
   const handleApplyStatus = (newStatus) => {
     if (!canEditSelected || isSelectedUpdating) return;
@@ -370,6 +376,8 @@ export const StudentMonthlyAttendanceModal = ({
                     ? `Exempted: ${holidays.get(selectedDateKey)?.holidayText || "Holiday"}`
                     : isSelectedFuture
                     ? "Future date — Attendance marking disabled."
+                    : isSelectedBeforeEnrollment
+                    ? `Date is before student's enrollment date (${studentEnrollDateStr}).`
                     : "Date outside batch operational period."}
                 </p>
               )}
@@ -409,7 +417,8 @@ export const StudentMonthlyAttendanceModal = ({
 
                   const isBeforeBatch = batchStartDate && isBefore(day, new Date(batchStartDate));
                   const isAfterBatch = batchEndDate && isAfter(day, new Date(batchEndDate));
-                  const canEdit = (!isHoliday || student.isTeacher) && !isFuture && !isBeforeBatch && !isAfterBatch;
+                  const isBeforeEnrollment = studentEnrollDateStr ? dateKey < studentEnrollDateStr : false;
+                  const canEdit = (!isHoliday || student.isTeacher) && !isFuture && !isBeforeBatch && !isAfterBatch && !isBeforeEnrollment;
 
                   const isUpdating = updatingAttendance.get(`${student.userId}-${dateKey}`);
                   const badgeInfo = getStatusBadge(status);
@@ -425,14 +434,18 @@ export const StudentMonthlyAttendanceModal = ({
                       className={`h-[60px] rounded-md border text-left p-1.5 transition disabled:cursor-not-allowed disabled:opacity-60 flex flex-col justify-between relative ${
                         isSelected ? "ring-2 ring-indigo-500 border-indigo-500 shadow-md scale-[1.02] z-10" : ""
                       } ${
-                        isHoliday && !student.isTeacher
+                        isBeforeEnrollment
+                          ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
+                          : isHoliday && !student.isTeacher
                           ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300"
                           : isBeforeBatch || isAfterBatch
                           ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
                           : badgeInfo.cls
                       }`}
                       title={
-                        isHoliday && !student.isTeacher
+                        isBeforeEnrollment
+                          ? `Date is before student's enrollment date (${studentEnrollDateStr})`
+                          : isHoliday && !student.isTeacher
                           ? holidays.get(dateKey)?.holidayText || "Holiday"
                           : isBeforeBatch
                           ? "Date is before batch start"
@@ -442,14 +455,16 @@ export const StudentMonthlyAttendanceModal = ({
                       }
                     >
                       <div className="flex justify-between items-start">
-                        <p className={`text-xs font-bold ${isAfterBatch ? "line-through opacity-50" : ""}`}>
+                        <p className={`text-xs font-bold ${isAfterBatch || isBeforeEnrollment ? "line-through opacity-50" : ""}`}>
                           {format(day, "d")}
                         </p>
                         {isUpdating && <LoaderCircle className="h-3 w-3 animate-spin text-indigo-500" />}
                       </div>
 
                       <p className="text-[10px] uppercase tracking-wide font-black truncate">
-                        {isHoliday && !student.isTeacher
+                        {isBeforeEnrollment
+                          ? "X"
+                          : isHoliday && !student.isTeacher
                           ? "Holiday"
                           : isBeforeBatch
                           ? "Pre-Batch"
@@ -464,6 +479,7 @@ export const StudentMonthlyAttendanceModal = ({
                 })}
               </div>
             </div>
+
           </div>
 
           {/* RIGHT SIDE PANEL COLUMN: Stats & Quotas Sidebar */}

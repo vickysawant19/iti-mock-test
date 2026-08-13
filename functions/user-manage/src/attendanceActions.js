@@ -112,6 +112,21 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       const teamPermissions = await getBatchTeamPermissions(tablesDB, DB_ID, batchId, teamId);
 
+      // Fetch batchStudents for enrollment date validation
+      const BATCH_STUDENTS_COL_ID = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
+      const batchStudentsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: BATCH_STUDENTS_COL_ID,
+        queries: [Query.equal('batchId', batchId), Query.limit(500)],
+      }).catch(() => ({ rows: [] }));
+
+      const enrollmentMap = new Map();
+      (batchStudentsRes.rows || []).forEach((row) => {
+        if (row.studentId && row.enrollmentDate) {
+          enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+        }
+      });
+
       // 1. Fetch existing attendance docs for that batch and date
       const existingDocsRes = await databases.listDocuments(
         DB_ID,
@@ -132,6 +147,13 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       const statsToUpdate = [];
 
       attendanceData.forEach((record) => {
+        // Skip marking attendance if date is prior to student's enrollment date
+        const studentEnrollDate = enrollmentMap.get(record.userId);
+        if (studentEnrollDate && date < studentEnrollDate) {
+          log(`Skipping attendance for user ${record.userId} on ${date}: date is before enrollment date ${studentEnrollDate}`);
+          return;
+        }
+
         const existing = existingRecordsMap.get(record.userId);
         const dayType = record.dayType || (record.isHoliday ? 'HOLIDAY' : 'WORKING');
         const attendanceStatus = record.attendanceStatus || (record.status ? record.status.toUpperCase() : 'PRESENT');
@@ -142,6 +164,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         const remarks = record.remarks || null;
         const status = record.status || attendanceStatus.toLowerCase();
         const isHoliday = record.isHoliday !== undefined ? record.isHoliday : (dayType === 'HOLIDAY');
+
 
         if (existing) {
           const needsUpdate =
@@ -257,7 +280,39 @@ export const handleAttendanceAction = async (action, req, res, client, databases
     }
     case 'createMultipleAttendance': {
       const { attendanceRecords } = req.bodyJson;
-      const recordsToInsert = attendanceRecords.map((r) => ({
+      if (!attendanceRecords || !Array.isArray(attendanceRecords) || attendanceRecords.length === 0) {
+        return { success: [], created: 0, total: 0 };
+      }
+
+      const batchId = attendanceRecords[0]?.batchId;
+      const BATCH_STUDENTS_COL_ID = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
+      const batchStudentsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: BATCH_STUDENTS_COL_ID,
+        queries: [Query.equal('batchId', batchId), Query.limit(500)],
+      }).catch(() => ({ rows: [] }));
+
+      const enrollmentMap = new Map();
+      (batchStudentsRes.rows || []).forEach((row) => {
+        if (row.studentId && row.enrollmentDate) {
+          enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+        }
+      });
+
+      const validRecords = attendanceRecords.filter((r) => {
+        const studentEnrollDate = enrollmentMap.get(r.userId);
+        if (studentEnrollDate && r.date < studentEnrollDate) {
+          log(`Skipping createMultipleAttendance for user ${r.userId} on ${r.date}: date is before enrollment date ${studentEnrollDate}`);
+          return false;
+        }
+        return true;
+      });
+
+      if (validRecords.length === 0) {
+        return { success: [], created: 0, total: attendanceRecords.length };
+      }
+
+      const recordsToInsert = validRecords.map((r) => ({
         $id: ID.unique(),
         userId: r.userId,
         batchId: r.batchId,
@@ -267,6 +322,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         remarks: r.remarks || null,
         markedAt: new Date().toISOString(),
       }));
+
 
       const createdRes = await tablesDB.createRows(
         DB_ID,

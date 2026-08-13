@@ -1,12 +1,62 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
+import { newAttendanceService } from "./newAttendanceService";
 
 export class BatchStudentService {
   constructor() {
     this.client = appwriteService.getClient();
     this.database = appwriteService.getTablesDB();
   }
+
+  /**
+   * Sanitizes (deletes) any attendance records that exist prior to a student's enrollmentDate,
+   * and resyncs monthly stats for affected months.
+   */
+  async sanitizePreEnrollmentAttendance(batchId, studentId, enrollmentDate) {
+    if (!batchId || !studentId || !enrollmentDate) return 0;
+    try {
+      const enrollStr =
+        typeof enrollmentDate === "string"
+          ? enrollmentDate.substring(0, 10)
+          : new Date(enrollmentDate).toISOString().substring(0, 10);
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(enrollStr)) return 0;
+
+      // Query strictly records prior to enrollment date (date < enrollStr) using Query.lessThan
+      const orphanedRes = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries: [
+          Query.equal("batchId", batchId),
+          Query.equal("userId", studentId),
+          Query.lessThan("date", enrollStr),
+          Query.limit(500),
+        ],
+      });
+
+      const toDelete = orphanedRes.rows || [];
+      if (toDelete.length === 0) return 0;
+
+      const idsToDelete = toDelete.map((doc) => doc.$id);
+      const deletedIds = await newAttendanceService.deleteMultipleAttendance(idsToDelete);
+
+      // Resync monthly stats for affected months
+      const uniqueMonths = [...new Set(toDelete.map((doc) => doc.date.substring(0, 7)))];
+      for (const ym of uniqueMonths) {
+        await newAttendanceService.syncMonthlyAttendanceStats(studentId, batchId, `${ym}-01`);
+      }
+
+      console.log(
+        `[batchStudentService] Sanitized ${deletedIds.length} pre-enrollment attendance records (date < ${enrollStr}) for student ${studentId} in batch ${batchId}`
+      );
+      return deletedIds.length;
+    } catch (error) {
+      console.error("Error sanitizing pre-enrollment attendance:", error);
+      return 0;
+    }
+  }
+
 
   /**
    * Add an approved student to a batch.
@@ -70,6 +120,10 @@ export class BatchStudentService {
     if (!batchId || !studentId) throw new Error("batchId and studentId are required");
 
     try {
+      if (fields.enrollmentDate) {
+        await this.sanitizePreEnrollmentAttendance(batchId, studentId, fields.enrollmentDate);
+      }
+
       const existing = await this.database.listRows({
         databaseId: conf.databaseId,
         tableId: conf.batchStudentsCollectionId,
@@ -93,6 +147,7 @@ export class BatchStudentService {
       throw new Error(`Error: ${error.message}`);
     }
   }
+
 
   /**
    * Get a single student's record within a batch.
