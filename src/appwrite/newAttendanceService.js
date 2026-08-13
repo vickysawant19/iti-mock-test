@@ -1197,13 +1197,12 @@ class NewAttendanceService {
   }
 
   /**
-   * Silent background verification & auto-correction feature.
-   * Compares pre-aggregated `monthlyAttendanceStats` documents against actual daily attendance records
+   * Verification feature: Checks pre-aggregated `monthlyAttendanceStats` documents against actual daily attendance records
    * for all students in a batch for a target month (`yearMonth`).
-   * Automatically auto-corrects any discrepancies in `monthlyAttendanceStats` silently in the background.
+   * Read-only detection method. Returns detailed mismatches list without mutating database.
    */
   async verifyBatchMonthlyStats(batchId, yearMonth, studentsList = []) {
-    if (!batchId || !yearMonth) return { total: 0, verifiedCount: 0, correctedCount: 0 };
+    if (!batchId || !yearMonth) return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
     try {
       let students = studentsList;
       if (!students || students.length === 0) {
@@ -1215,14 +1214,13 @@ class NewAttendanceService {
         students = (bsRes.rows || []).map((row) => ({
           userId: row.studentId,
           enrollmentDate: row.enrollmentDate || row.joinedAt,
+          userName: row.userName || row.name,
+          rollNumber: row.rollNumber || row.registerId,
         }));
       }
 
       const existingStatsMap = await this.getBatchMonthlyStats(batchId, yearMonth);
-
-      let correctedCount = 0;
-      let verifiedCount = 0;
-      const correctedDetails = [];
+      const mismatches = [];
 
       for (const student of students) {
         if (!student?.userId || student.isTeacher) continue;
@@ -1275,35 +1273,65 @@ class NewAttendanceService {
 
         const storedDoc = existingStatsMap.get(uid);
 
+        const storedWorking = storedDoc?.workingDays || 0;
+        const storedPresent = storedDoc?.presentDays || 0;
+        const storedPercentage = storedDoc?.attendancePercentage || 0;
+
         const isMismatch =
           !storedDoc ||
-          storedDoc.workingDays !== workingDays ||
-          storedDoc.presentDays !== presentDays ||
+          storedWorking !== workingDays ||
+          storedPresent !== presentDays ||
           storedDoc.absentDays !== absentDays ||
           storedDoc.totalPresent !== totalPresent ||
-          storedDoc.attendancePercentage !== attendancePercentage;
+          storedPercentage !== attendancePercentage;
 
         if (isMismatch) {
-          await this.syncMonthlyAttendanceStats(uid, batchId, `${yearMonth}-01`, enrollDate);
-          correctedCount++;
-          correctedDetails.push({ userId: uid, workingDays, totalPresent, percentage: attendancePercentage });
-        } else {
-          verifiedCount++;
+          mismatches.push({
+            userId: uid,
+            userName: student.userName || student.name || `Student (${uid.substring(0, 6)})`,
+            rollNumber: student.rollNumber || student.studentId || "-",
+            enrollmentDate: enrollStr,
+            stored: {
+              workingDays: storedWorking,
+              presentDays: storedPresent,
+              totalPresent: storedDoc?.totalPresent || 0,
+              percentage: storedPercentage,
+            },
+            actual: {
+              workingDays,
+              presentDays,
+              absentDays,
+              totalPresent,
+              percentage: attendancePercentage,
+            },
+          });
         }
       }
 
-      if (correctedCount > 0) {
-        console.log(
-          `[Silent Stats Verifier] Batch ${batchId} (${yearMonth}): Verified ${verifiedCount} students, auto-corrected ${correctedCount} monthly stats docs.`
-        );
-      }
-
-      return { total: students.length, verifiedCount, correctedCount, correctedDetails };
+      return {
+        hasDiscrepancies: mismatches.length > 0,
+        mismatches,
+        totalChecked: students.filter((s) => s?.userId && !s.isTeacher).length,
+      };
     } catch (error) {
-      console.error("[Silent Stats Verifier] Error during verification:", error);
-      return { total: 0, verifiedCount: 0, correctedCount: 0 };
+      console.error("[Stats Verifier] Error during verification check:", error);
+      return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
     }
   }
+
+  /**
+   * Fixes (recalculates & upserts) monthly attendance stats documents for specified mismatches.
+   */
+  async fixBatchMonthlyStats(batchId, yearMonth, mismatches = []) {
+    if (!batchId || !yearMonth || !mismatches.length) return 0;
+    let fixedCount = 0;
+    for (const m of mismatches) {
+      const res = await this.syncMonthlyAttendanceStats(m.userId, batchId, `${yearMonth}-01`, m.enrollmentDate);
+      if (res) fixedCount++;
+    }
+    return fixedCount;
+  }
+
 
 
   /**

@@ -27,6 +27,8 @@ import {
 import DailyBatchAttendanceModal from "./components/DailyBatchAttendanceModal";
 import StudentMonthlyAttendanceModal from "./components/StudentMonthlyAttendanceModal";
 import StudentManagementModal from "@/private/teacher/batch/view-batch/tabs/profiles/components/StudentManagementModal";
+import StatsDiscrepancyModal from "./components/StatsDiscrepancyModal";
+import { AlertTriangle } from "lucide-react";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
@@ -34,6 +36,7 @@ import Legent from "./components/Legent";
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";
 import { DEFAULT_VISIBILITY } from "./components/ColumnGroupConfig";
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -99,6 +102,11 @@ const AttendanceRegister = () => {
   const [viewProfileUserId,    setViewProfileUserId]    = useState(null);
   const [profileTab,           setProfileTab]           = useState("profile");
   const [selectedProfileStudent, setSelectedProfileStudent] = useState(null);
+
+  // ── Stats Discrepancy Modal State ────────────────────────────────────────
+  const [discrepancyData, setDiscrepancyData] = useState({ hasDiscrepancies: false, mismatches: [] });
+  const [isFixModalOpen,  setIsFixModalOpen]  = useState(false);
+
 
   const handleOpenStudentProfile = useCallback((student) => {
     if (!student || student.isTeacher) return;
@@ -362,10 +370,19 @@ const AttendanceRegister = () => {
           setNewAttendance(result.documents);
           fetchCacheRef.current.attendance = currentKey;
 
-          // Silent background verification & auto-correction of monthly stats for active month
+          // Read-only verification check for monthly stats discrepancies
           const currentYearMonth = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
-          newAttendanceService.verifyBatchMonthlyStats(selectedBatch, currentYearMonth, students).catch(() => {});
+          newAttendanceService
+            .verifyBatchMonthlyStats(selectedBatch, currentYearMonth, students)
+            .then((res) => {
+              if (!signal?.aborted && res) {
+                setDiscrepancyData(res);
+              }
+            })
+            .catch(() => {});
         }
+
+
 
 
         // ── Stats (previous months) ─────────────────────────────────────
@@ -734,6 +751,24 @@ const AttendanceRegister = () => {
           batchEndDate={batchEndDate}
         />
 
+        {/* Monthly Stats Discrepancy Banner */}
+        {discrepancyData.hasDiscrepancies && (
+          <div className="mx-4 mt-3 flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 rounded-2xl shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                Found {discrepancyData.mismatches.length} student monthly stats discrepancy record(s) for this month.
+              </span>
+            </div>
+            <button
+              onClick={() => setIsFixModalOpen(true)}
+              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              Review & Fix Stats
+            </button>
+          </div>
+        )}
+
         <AttendanceTable
           students={students}
           selectedMonth={selectedMonth}
@@ -798,6 +833,22 @@ const AttendanceRegister = () => {
           selectedStudent={selectedProfileStudent}
           effectiveBatchId={selectedBatch}
         />
+
+        <StatsDiscrepancyModal
+          isOpen={isFixModalOpen}
+          onClose={() => setIsFixModalOpen(false)}
+          batchId={selectedBatch}
+          yearMonth={`${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`}
+          mismatches={discrepancyData.mismatches}
+          onFixed={async () => {
+            setDiscrepancyData({ hasDiscrepancies: false, mismatches: [] });
+            fetchCacheRef.current.stats = null;
+            if (abortControllerRef.current) {
+              await fetchAttendanceAndStats(abortControllerRef.current.signal);
+            }
+          }}
+        />
+
 
       </div>
     </div>
