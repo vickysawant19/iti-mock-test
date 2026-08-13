@@ -106,6 +106,29 @@ const AttendanceRegister = () => {
   // ── Stats Discrepancy Modal State ────────────────────────────────────────
   const [discrepancyData, setDiscrepancyData] = useState({ hasDiscrepancies: false, mismatches: [] });
   const [isFixModalOpen,  setIsFixModalOpen]  = useState(false);
+  const [isVerifyingStats, setIsVerifyingStats] = useState(false);
+
+  const handleManualVerifyStats = useCallback(async () => {
+    if (!selectedBatch || !students?.length) return;
+    setIsVerifyingStats(true);
+    try {
+      const yearMonthStr = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
+      const res = await newAttendanceService.verifyBatchMonthlyStats(selectedBatch, yearMonthStr, students);
+      if (!res?.hasDiscrepancies) {
+        setDiscrepancyData({ hasDiscrepancies: false, mismatches: [] });
+        toast.success("✅ All monthly attendance stats are verified and match daily records!");
+      } else {
+        setDiscrepancyData(res);
+        setIsFixModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error verifying stats:", error);
+      toast.error("Failed to verify monthly stats.");
+    } finally {
+      setIsVerifyingStats(false);
+    }
+  }, [selectedBatch, selectedMonth, students]);
+
 
 
   const handleOpenStudentProfile = useCallback((student) => {
@@ -369,18 +392,8 @@ const AttendanceRegister = () => {
           if (signal?.aborted) return;
           setNewAttendance(result.documents);
           fetchCacheRef.current.attendance = currentKey;
-
-          // Read-only verification check for monthly stats discrepancies
-          const currentYearMonth = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
-          newAttendanceService
-            .verifyBatchMonthlyStats(selectedBatch, currentYearMonth, students)
-            .then((res) => {
-              if (!signal?.aborted && res) {
-                setDiscrepancyData(res);
-              }
-            })
-            .catch(() => {});
         }
+
 
 
 
@@ -749,7 +762,10 @@ const AttendanceRegister = () => {
           handleRemoveHoliday={handleRemoveHoliday}
           batchStartDate={batchStartDate}
           batchEndDate={batchEndDate}
+          onVerifyStats={handleManualVerifyStats}
+          isVerifyingStats={isVerifyingStats}
         />
+
 
         {/* Monthly Stats Discrepancy Banner */}
         {discrepancyData.hasDiscrepancies && (

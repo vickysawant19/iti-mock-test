@@ -1199,11 +1199,35 @@ class NewAttendanceService {
   /**
    * Verification feature: Checks pre-aggregated `monthlyAttendanceStats` documents against actual daily attendance records
    * for all students in a batch for a target month (`yearMonth`).
-   * Read-only detection method. Returns detailed mismatches list without mutating database.
+   * Read-only detection method using 1 single batch query (0 per-student N+1 queries).
    */
   async verifyBatchMonthlyStats(batchId, yearMonth, studentsList = []) {
     if (!batchId || !yearMonth) return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
     try {
+      // 1. Fetch stored pre-aggregated monthly stats for batch (1 query)
+      const existingStatsMap = await this.getBatchMonthlyStats(batchId, yearMonth);
+
+      // 2. Fetch ALL daily attendance records for this batch in target month (1 batch query)
+      const batchRecordsRes = await this.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.newAttendanceCollectionId,
+        queries: [
+          Query.equal("batchId", batchId),
+          Query.startsWith("date", yearMonth),
+          Query.limit(5000),
+        ],
+      });
+
+      // Group records in memory by userId
+      const userRecordsMap = new Map();
+      (batchRecordsRes.rows || []).forEach((row) => {
+        if (!userRecordsMap.has(row.userId)) {
+          userRecordsMap.set(row.userId, []);
+        }
+        userRecordsMap.get(row.userId).push(row);
+      });
+
+      // 3. Fetch students list if not provided
       let students = studentsList;
       if (!students || students.length === 0) {
         const bsRes = await this.database.listRows({
@@ -1219,9 +1243,9 @@ class NewAttendanceService {
         }));
       }
 
-      const existingStatsMap = await this.getBatchMonthlyStats(batchId, yearMonth);
       const mismatches = [];
 
+      // 4. In-memory comparison per student
       for (const student of students) {
         if (!student?.userId || student.isTeacher) continue;
 
@@ -1229,22 +1253,12 @@ class NewAttendanceService {
         const enrollDate = student.enrollmentDate;
         const enrollStr = enrollDate ? String(enrollDate).substring(0, 10) : null;
 
-        const queries = [
-          Query.equal("userId", uid),
-          Query.equal("batchId", batchId),
-          Query.startsWith("date", yearMonth),
-          Query.limit(35),
-        ];
+        const allUserRecords = userRecordsMap.get(uid) || [];
 
-        if (enrollStr && enrollStr.substring(0, 7) === yearMonth) {
-          queries.push(Query.greaterThanEqual("date", enrollStr));
-        }
-
-        const monthRecords = await this.database.listRows({
-          databaseId: conf.databaseId,
-          tableId: conf.newAttendanceCollectionId,
-          queries,
-        });
+        // Filter out pre-enrollment dates if enrolled during target month
+        const validMonthRecords = (enrollStr && enrollStr.substring(0, 7) === yearMonth)
+          ? allUserRecords.filter((doc) => doc.date >= enrollStr)
+          : allUserRecords;
 
         let presentDays = 0;
         let absentDays = 0;
@@ -1255,7 +1269,7 @@ class NewAttendanceService {
         let halfDays = 0;
         let lateDays = 0;
 
-        (monthRecords.rows || []).forEach((row) => {
+        validMonthRecords.forEach((row) => {
           const s = String(row.status || row.attendanceStatus || "").toLowerCase();
           if (s === "present" || s === "p") presentDays++;
           else if (s === "absent" || s === "a") absentDays++;
@@ -1318,6 +1332,7 @@ class NewAttendanceService {
       return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
     }
   }
+
 
   /**
    * Fixes (recalculates & upserts) monthly attendance stats documents for specified mismatches.

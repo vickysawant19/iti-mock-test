@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ClipboardList, Loader2, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ClipboardList, Loader2, ChevronLeft, ChevronRight, ChevronDown, ShieldCheck } from "lucide-react";
 import { format, getMonth, getYear, setMonth, setYear } from "date-fns";
 
 const MONTH_NAMES = [
@@ -18,7 +18,10 @@ const AttendanceHeader = ({
   loading,
   batchStartDate,
   batchEndDate,
+  onVerifyStats,
+  isVerifyingStats = false,
 }) => {
+
   const loadingAttendance = loading.attendance;
   const loadingStats     = loading.stats;
   const loadingBatch     = loading.batch;
@@ -200,7 +203,31 @@ const AttendanceHeader = ({
             >
               <ChevronRight className="h-4 w-4" />
             </button>
+
+            {/* Verify Stats Button */}
+            {typeof onVerifyStats === "function" && (
+              <button
+                type="button"
+                onClick={onVerifyStats}
+                disabled={isLoading || isVerifyingStats || !selectedBatch}
+                className="ml-2 px-3 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-lg transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                title="Audit and verify monthly attendance statistics against daily register logs"
+              >
+                {isVerifyingStats ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Auditing...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Verify Stats
+                  </>
+                )}
+              </button>
+            )}
           </div>
+
 
         </div>
       </div>
