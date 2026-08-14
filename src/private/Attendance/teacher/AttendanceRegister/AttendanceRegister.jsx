@@ -546,7 +546,7 @@ const AttendanceRegister = () => {
         // Invalidate stats cache so summary stats & previous month stats refresh
         fetchCacheRef.current.stats = null;
         setStudentStatsMap(new Map());
-        fetchAttendanceAndStats(new AbortController().signal);
+        await fetchAttendanceAndStats(new AbortController().signal);
 
         handleCloseModal();
       } catch (error) {
