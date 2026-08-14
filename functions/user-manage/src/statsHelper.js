@@ -154,97 +154,140 @@ export const bulkUpdateBatchStats = async (
   }
 };
 
+export const bulkUpdateMonthlyAttendanceStats = async (
+  tablesDB,
+  databases,
+  batchId,
+  yearMonth,
+  affectedUserIds = null
+) => {
+  if (!batchId || !yearMonth) return;
+  const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
+  const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
+  const NEW_ATTENDANCE_COL = 'newAttendance';
+  const BATCH_STUDENTS_COL = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
+
+  try {
+    const userFilterSet = affectedUserIds && affectedUserIds.length > 0 ? new Set(affectedUserIds) : null;
+
+    // 1. Fetch enrollment dates for batch
+    const bsRes = await tablesDB.listRows({
+      databaseId: DB_ID,
+      tableId: BATCH_STUDENTS_COL,
+      queries: [Query.equal('batchId', batchId), Query.limit(500)],
+    }).catch(() => ({ rows: [] }));
+
+    const enrollmentMap = new Map();
+    (bsRes.rows || []).forEach((row) => {
+      if (row.studentId && row.enrollmentDate) {
+        enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+      }
+    });
+
+    // 2. Fetch daily attendance records for this batch and month
+    const attendanceRes = await tablesDB.listRows({
+      databaseId: DB_ID,
+      tableId: NEW_ATTENDANCE_COL,
+      queries: [
+        Query.equal('batchId', batchId),
+        Query.startsWith('date', yearMonth),
+        Query.limit(5000),
+      ],
+    }).catch(() => ({ rows: [] }));
+
+    // 3. Group by userId
+    const userRecordsMap = new Map();
+
+    (attendanceRes.rows || []).forEach((doc) => {
+      if (!doc.userId) return;
+      if (userFilterSet && !userFilterSet.has(doc.userId)) return;
+
+      const enrollStr = enrollmentMap.get(doc.userId);
+      if (enrollStr && doc.date < enrollStr) return;
+
+      if (!userRecordsMap.has(doc.userId)) {
+        userRecordsMap.set(doc.userId, []);
+      }
+      userRecordsMap.get(doc.userId).push(doc);
+    });
+
+    if (userFilterSet) {
+      userFilterSet.forEach((uid) => {
+        if (!userRecordsMap.has(uid)) {
+          userRecordsMap.set(uid, []);
+        }
+      });
+    }
+
+    // 4. Build monthly stats objects
+    const statsObjects = [];
+    userRecordsMap.forEach((rows, userId) => {
+      let presentDays = 0, absentDays = 0, casualLeaves = 0;
+      let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
+
+      rows.forEach((r) => {
+        const s = String(r.status || r.attendanceStatus || '').toLowerCase();
+        if (s === 'present' || s === 'p') presentDays++;
+        else if (s === 'absent' || s === 'a') absentDays++;
+        else if (s === 'casual' || s === 'cl') casualLeaves++;
+        else if (s === 'sick' || s === 'sl') sickLeaves++;
+        else if (s === 'special' || s === 'spl') specialLeaves++;
+        else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
+        else if (s === 'half_day' || s === 'hd') halfDays++;
+        else if (s === 'late' || s === 'l') lateDays++;
+      });
+
+      const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+      const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
+      const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+      statsObjects.push({
+        $id: `${userId}_${batchId}_${yearMonth}`,
+        userId,
+        batchId,
+        yearMonth,
+        workingDays,
+        presentDays,
+        absentDays,
+        casualLeaves,
+        sickLeaves,
+        specialLeaves,
+        onDutyLeaves,
+        halfDays,
+        lateDays,
+        totalPresent,
+        attendancePercentage,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    if (statsObjects.length === 0) return;
+
+    // 5. Atomic Bulk Upsert using tablesDB.upsertRows
+    if (tablesDB && typeof tablesDB.upsertRows === 'function') {
+      await tablesDB.upsertRows(DB_ID, MONTHLY_STATS_COL, statsObjects);
+    } else if (databases) {
+      for (const item of statsObjects) {
+        try {
+          await databases.updateDocument(DB_ID, MONTHLY_STATS_COL, item.$id, item);
+        } catch (e) {
+          await databases.createDocument(DB_ID, MONTHLY_STATS_COL, item.$id, item);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed in bulkUpdateMonthlyAttendanceStats:', err);
+  }
+};
+
 export const updateMonthlyAttendanceStatsHelper = async (
   databases,
   userId,
   batchId,
-  date
+  date,
+  tablesDB = null
 ) => {
   if (!userId || !batchId || !date) return;
-  const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
-  const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
-  const NEW_ATTENDANCE_COL = 'newAttendance';
   const yearMonth = String(date).substring(0, 7);
-  const docId = `${userId}_${batchId}_${yearMonth}`;
-
-  try {
-    // Fetch student's enrollment date if available to filter records
-    const BATCH_STUDENTS_COL = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
-    const bsRes = await databases.listDocuments(
-      DB_ID,
-      BATCH_STUDENTS_COL,
-      [
-        Query.equal('batchId', batchId),
-        Query.equal('studentId', userId),
-        Query.limit(1),
-      ]
-    ).catch(() => ({ documents: [] }));
-
-    const enrollDate = bsRes.documents?.[0]?.enrollmentDate
-      ? String(bsRes.documents[0].enrollmentDate).substring(0, 10)
-      : null;
-
-    const queries = [
-      Query.equal('userId', userId),
-      Query.equal('batchId', batchId),
-      Query.startsWith('date', yearMonth),
-      Query.limit(35),
-    ];
-
-    if (enrollDate) {
-      queries.push(Query.greaterThanEqual('date', enrollDate));
-    }
-
-    const monthDocs = await databases.listDocuments(
-      DB_ID,
-      NEW_ATTENDANCE_COL,
-      queries
-    );
-
-
-    let presentDays = 0, absentDays = 0, casualLeaves = 0;
-    let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
-
-    (monthDocs.documents || []).forEach((row) => {
-      const s = String(row.status || row.attendanceStatus || '').toLowerCase();
-      if (s === 'present' || s === 'p') presentDays++;
-      else if (s === 'absent' || s === 'a') absentDays++;
-      else if (s === 'casual' || s === 'cl') casualLeaves++;
-      else if (s === 'sick' || s === 'sl') sickLeaves++;
-      else if (s === 'special' || s === 'spl') specialLeaves++;
-      else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
-      else if (s === 'half_day' || s === 'hd') halfDays++;
-      else if (s === 'late' || s === 'l') lateDays++;
-    });
-
-    const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
-    const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
-    const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
-
-    const payload = {
-      userId,
-      batchId,
-      yearMonth,
-      workingDays,
-      presentDays,
-      absentDays,
-      casualLeaves,
-      sickLeaves,
-      specialLeaves,
-      onDutyLeaves,
-      halfDays,
-      lateDays,
-      totalPresent,
-      attendancePercentage,
-      updatedAt: new Date().toISOString(),
-    };
-
-    try {
-      await databases.updateDocument(DB_ID, MONTHLY_STATS_COL, docId, payload);
-    } catch (e) {
-      await databases.createDocument(DB_ID, MONTHLY_STATS_COL, docId, payload);
-    }
-  } catch (err) {
-    console.error('Failed updating monthlyAttendanceStats in user-manage function:', err);
-  }
+  await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, [userId]);
 };

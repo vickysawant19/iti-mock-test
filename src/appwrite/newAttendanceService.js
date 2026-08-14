@@ -299,6 +299,9 @@ class NewAttendanceService {
         throw new Error(resData.error || "Failed to create attendance");
       }
 
+      if (userId && batchId && formattedDate) {
+        this.syncMonthlyAttendanceStats(userId, batchId, formattedDate).catch(() => {});
+      }
       return resData.data;
     } catch (error) {
       throw error;
@@ -323,6 +326,13 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to create multiple attendance");
+      }
+
+      if (Array.isArray(attendanceRecords) && attendanceRecords.length > 0) {
+        const uniqueUserIds = new Set(attendanceRecords.map((r) => r.userId).filter(Boolean));
+        uniqueUserIds.forEach((uid) => {
+          this.syncMonthlyAttendanceStats(uid, attendanceRecords[0].batchId, attendanceRecords[0].date).catch(() => {});
+        });
       }
 
       return resData.data;
@@ -367,6 +377,10 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to update attendance");
+      }
+
+      if (resData.data?.userId && resData.data?.batchId && resData.data?.date) {
+        this.syncMonthlyAttendanceStats(resData.data.userId, resData.data.batchId, resData.data.date).catch(() => {});
       }
 
       return resData.data;
@@ -443,6 +457,14 @@ class NewAttendanceService {
       if (!resData.success) {
         throw new Error(resData.error || "Failed to delete multiple attendance");
       }
+
+      try {
+        recordsToQuery.forEach((r) => {
+          if (r.userId && r.batchId && r.date) {
+            this.syncMonthlyAttendanceStats(r.userId, r.batchId, r.date).catch(() => {});
+          }
+        });
+      } catch (e) {}
 
       return resData.data.deletedIds;
     } catch (error) {
@@ -769,6 +791,17 @@ class NewAttendanceService {
       const resData = JSON.parse(response.responseBody);
       if (!resData.success) {
         throw new Error(resData.error || "Failed to mark batch attendance");
+      }
+
+      // Client fallback sync for modified students only
+      try {
+        const successRows = resData.data?.success || [];
+        const affectedUserIds = new Set(successRows.map((r) => r.userId).filter(Boolean));
+        affectedUserIds.forEach((uid) => {
+          this.syncMonthlyAttendanceStats(uid, batchId, formattedDate).catch(() => {});
+        });
+      } catch (err) {
+        console.error("Client fallback stats sync error in markBatchAttendance:", err);
       }
 
       return resData.data;

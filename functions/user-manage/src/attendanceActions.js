@@ -1,7 +1,7 @@
 import { ID, Query } from 'node-appwrite';
 import migrateAttendanceFunc from './migrateAttendance.js';
 import migrateMonthlyStatsFunc from './migrateMonthlyStats.js';
-import { updateBatchStatsHelper, bulkUpdateBatchStats, updateMonthlyAttendanceStatsHelper } from './statsHelper.js';
+import { updateBatchStatsHelper, bulkUpdateBatchStats, updateMonthlyAttendanceStatsHelper, bulkUpdateMonthlyAttendanceStats } from './statsHelper.js';
 import PermissionPolicy from './policies/permissionPolicy.js';
 
 const getBatchTeamPermissions = async (tablesDB, DB_ID, batchId, fallbackTeamId = null) => {
@@ -259,10 +259,10 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // Update stats
       try {
         await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
-        for (const s of statsToUpdate) {
-          if (s.userId) {
-            await updateMonthlyAttendanceStatsHelper(databases, s.userId, batchId, date);
-          }
+        const affectedUserIds = statsToUpdate.map((s) => s.userId).filter(Boolean);
+        if (affectedUserIds.length > 0) {
+          const yearMonth = String(date).substring(0, 7);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, affectedUserIds);
         }
       } catch (err) {
         log(`Failed bulk stats update: ${err.message}`);
@@ -343,11 +343,9 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             recordsToInsert[0].date,
             recordsToInsert
           );
-          for (const r of recordsToInsert) {
-            if (r.userId && r.batchId && r.date) {
-              await updateMonthlyAttendanceStatsHelper(databases, r.userId, r.batchId, r.date);
-            }
-          }
+          const affectedUserIds = [...new Set(recordsToInsert.map((r) => r.userId).filter(Boolean))];
+          const yearMonth = String(recordsToInsert[0].date).substring(0, 7);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, recordsToInsert[0].batchId, yearMonth, affectedUserIds);
         } catch (err) {
           log(`Failed bulk stats update: ${err.message}`);
         }
@@ -363,9 +361,16 @@ export const handleAttendanceAction = async (action, req, res, client, databases
     }
     case 'deleteMultipleAttendance': {
       const { documentIds } = req.bodyJson;
-      if (!documentIds || !Array.isArray(documentIds)) {
-        throw new Error('Missing documentIds for deleteMultipleAttendance');
+      if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+        return { deletedIds: [] };
       }
+
+      // Fetch records before deleting to get userId, batchId, date
+      const existingDocs = await databases.listDocuments(
+        DB_ID,
+        NEW_ATTENDANCE_COL_ID,
+        [Query.equal('$id', documentIds), Query.limit(500)]
+      ).then((res) => res.documents || []).catch(() => []);
 
       const chunkedQueries = [
         Query.equal('$id', documentIds)
@@ -376,6 +381,28 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         NEW_ATTENDANCE_COL_ID,
         chunkedQueries
       );
+
+      // Update monthly stats for affected userIds
+      try {
+        const groupMap = new Map();
+        existingDocs.forEach((doc) => {
+          if (doc.userId && doc.batchId && doc.date) {
+            const ym = String(doc.date).substring(0, 7);
+            const key = `${doc.batchId}_${ym}`;
+            if (!groupMap.has(key)) {
+              groupMap.set(key, { batchId: doc.batchId, yearMonth: ym, userIds: new Set() });
+            }
+            groupMap.get(key).userIds.add(doc.userId);
+          }
+        });
+
+        for (const grp of groupMap.values()) {
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, grp.batchId, grp.yearMonth, Array.from(grp.userIds));
+        }
+      } catch (err) {
+        log(`Failed stats update on deleteMultipleAttendance: ${err.message}`);
+      }
+
       return { deletedIds: documentIds };
     }
     case 'createAttendance': {
@@ -430,7 +457,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // Update stats
       try {
         await updateBatchStatsHelper(databases, userId, batchId, { dayType, attendanceStatus, status: finalStatus, isHoliday }, date);
-        await updateMonthlyAttendanceStatsHelper(databases, userId, batchId, date);
+        await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, String(date).substring(0, 7), [userId]);
       } catch (err) {
         log(`Failed stats update: ${err.message}`);
       }
@@ -457,7 +484,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       if (existingRecord) {
         try {
-          await updateMonthlyAttendanceStatsHelper(databases, existingRecord.userId, existingRecord.batchId, existingRecord.date);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId]);
         } catch (err) {
           log(`Failed to update monthlyAttendanceStats on updateAttendance: ${err.message}`);
         }
@@ -519,7 +546,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       if (existingRecord) {
         try {
-          await updateMonthlyAttendanceStatsHelper(databases, existingRecord.userId, existingRecord.batchId, existingRecord.date);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId]);
         } catch (err) {
           log(`Failed to update monthlyAttendanceStats on deleteAttendance: ${err.message}`);
         }

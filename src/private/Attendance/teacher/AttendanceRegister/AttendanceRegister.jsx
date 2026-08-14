@@ -488,6 +488,7 @@ const AttendanceRegister = () => {
           ...(prev || []).filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
         ]);
+        fetchCacheRef.current.stats = null;
       } catch (error) {
         console.error("Error updating attendance:", error);
         toast.error("Failed to update attendance");
@@ -542,13 +543,18 @@ const AttendanceRegister = () => {
           ];
         });
 
+        // Invalidate stats cache so summary stats & previous month stats refresh
+        fetchCacheRef.current.stats = null;
+        setStudentStatsMap(new Map());
+        fetchAttendanceAndStats(new AbortController().signal);
+
         handleCloseModal();
       } catch (error) {
         console.error("Error saving attendance:", error);
         toast.error("Failed to save attendance");
       }
     },
-    [batches, selectedBatch, selectedDate],
+    [batches, selectedBatch, selectedDate, fetchAttendanceAndStats],
   );
 
   // ─────────────────────────────────────────────────────────────────────────
