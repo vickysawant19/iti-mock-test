@@ -170,6 +170,12 @@ export const bulkUpdateMonthlyAttendanceStats = async (
   try {
     const userFilterSet = affectedUserIds && affectedUserIds.length > 0 ? new Set(affectedUserIds) : null;
 
+    const getEnrollmentDateStr = (raw) => {
+      if (!raw) return null;
+      const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+      return m ? m[1] : null;
+    };
+
     // 1. Fetch enrollment dates for batch
     const bsRes = await tablesDB.listRows({
       databaseId: DB_ID,
@@ -179,8 +185,9 @@ export const bulkUpdateMonthlyAttendanceStats = async (
 
     const enrollmentMap = new Map();
     (bsRes.rows || []).forEach((row) => {
-      if (row.studentId && row.enrollmentDate) {
-        enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+      const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
+      if (row.studentId && ed) {
+        enrollmentMap.set(row.studentId, ed);
       }
     });
 

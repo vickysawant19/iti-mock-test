@@ -120,10 +120,17 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         queries: [Query.equal('batchId', batchId), Query.limit(500)],
       }).catch(() => ({ rows: [] }));
 
+      const getEnrollmentDateStr = (raw) => {
+        if (!raw) return null;
+        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      };
+
       const enrollmentMap = new Map();
       (batchStudentsRes.rows || []).forEach((row) => {
-        if (row.studentId && row.enrollmentDate) {
-          enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+        const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
+        if (row.studentId && ed) {
+          enrollmentMap.set(row.studentId, ed);
         }
       });
 
@@ -292,10 +299,17 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         queries: [Query.equal('batchId', batchId), Query.limit(500)],
       }).catch(() => ({ rows: [] }));
 
+      const getEnrollmentDateStr = (raw) => {
+        if (!raw) return null;
+        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      };
+
       const enrollmentMap = new Map();
       (batchStudentsRes.rows || []).forEach((row) => {
-        if (row.studentId && row.enrollmentDate) {
-          enrollmentMap.set(row.studentId, String(row.enrollmentDate).substring(0, 10));
+        const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
+        if (row.studentId && ed) {
+          enrollmentMap.set(row.studentId, ed);
         }
       });
 

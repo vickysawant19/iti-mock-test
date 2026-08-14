@@ -1145,7 +1145,13 @@ class NewAttendanceService {
         } catch { /* ignore */ }
       }
 
-      const enrollStr = enrollDate ? String(enrollDate).substring(0, 10) : null;
+      const getEnrollmentDateStr = (raw) => {
+        if (!raw) return null;
+        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      };
+
+      const enrollStr = getEnrollmentDateStr(enrollDate);
 
       const queries = [
         Query.equal("userId", userId),
@@ -1284,7 +1290,12 @@ class NewAttendanceService {
 
         const uid = student.userId;
         const enrollDate = student.enrollmentDate;
-        const enrollStr = enrollDate ? String(enrollDate).substring(0, 10) : null;
+        const getEnrollmentDateStr = (raw) => {
+          if (!raw) return null;
+          const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+          return m ? m[1] : null;
+        };
+        const enrollStr = getEnrollmentDateStr(enrollDate);
 
         const allUserRecords = userRecordsMap.get(uid) || [];
 
