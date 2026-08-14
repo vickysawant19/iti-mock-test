@@ -567,12 +567,17 @@ const AttendanceRegister = () => {
       updateLoading("holiday", true);
       try {
         const holiday = holidays.get(date);
-        await holidayService.removeHoliday(holiday.$id);
+        await holidayService.removeHoliday(holiday.$id, selectedBatch, date);
         setHolidays((prev) => {
           const next = new Map(prev);
           next.delete(date);
           return next;
         });
+
+        fetchCacheRef.current.stats = null;
+        setStudentStatsMap(new Map());
+        await fetchAttendanceAndStats(new AbortController().signal);
+
         toast.success("Holiday removed successfully");
       } catch (error) {
         console.error("Error removing holiday:", error);
@@ -581,52 +586,39 @@ const AttendanceRegister = () => {
         updateLoading("holiday", false);
       }
     },
-    [holidays, updateLoading],
+    [holidays, selectedBatch, fetchAttendanceAndStats, updateLoading],
   );
 
   const handleAddHoliday = useCallback(
     async (date, holidayText) => {
       updateLoading("holiday", true);
       try {
-        // Delete any attendance records on that date first
-        const attendanceToDelete = (newAttendance || []).filter(
-          (att) => att.date === date,
-        );
-        const idsToDelete = attendanceToDelete.map((att) => att.$id);
-
-        if (idsToDelete.length > 0) {
-          const deletedIds =
-            await newAttendanceService.deleteMultipleAttendance(idsToDelete);
-
-          if (deletedIds.length !== idsToDelete.length) {
-            throw new Error("Partial deletion occurred. Cannot safely add holiday.");
-          }
-
-          setNewAttendance((prev) =>
-            (prev || []).filter((att) => !deletedIds.includes(att.$id)),
-          );
-        }
-
         const holidayRes = await holidayService.addHoliday({
           date,
           batchId: selectedBatch,
           holidayText,
         });
 
+        // Filter out local attendance records for this date since backend cleared them
+        setNewAttendance((prev) =>
+          (prev || []).filter((att) => att.date !== date),
+        );
+
         setHolidays((prev) => new Map(prev).set(date, holidayRes));
+
+        fetchCacheRef.current.stats = null;
+        setStudentStatsMap(new Map());
+        await fetchAttendanceAndStats(new AbortController().signal);
+
         toast.success("Holiday added and attendance cleared successfully");
       } catch (error) {
         console.error("Add Holiday Error:", error);
-        toast.error(
-          error.message.includes("Partial deletion")
-            ? "Could not clear existing attendance. Holiday not added."
-            : "Error adding holiday",
-        );
+        toast.error("Error adding holiday");
       } finally {
         updateLoading("holiday", false);
       }
     },
-    [newAttendance, selectedBatch, updateLoading],
+    [selectedBatch, fetchAttendanceAndStats, updateLoading],
   );
 
   const handleFetchSingleStudentStats = useCallback(

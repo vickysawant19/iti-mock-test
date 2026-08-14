@@ -159,7 +159,8 @@ export const bulkUpdateMonthlyAttendanceStats = async (
   databases,
   batchId,
   yearMonth,
-  affectedUserIds = null
+  affectedUserIds = null,
+  latestRecords = null
 ) => {
   if (!batchId || !yearMonth) return;
   const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
@@ -176,7 +177,7 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       return m ? m[1] : null;
     };
 
-    // 1. Fetch enrollment dates for batch
+    // 1. Fetch enrollment dates and all batch students
     const bsRes = await tablesDB.listRows({
       databaseId: DB_ID,
       tableId: BATCH_STUDENTS_COL,
@@ -184,12 +185,31 @@ export const bulkUpdateMonthlyAttendanceStats = async (
     }).catch(() => ({ rows: [] }));
 
     const enrollmentMap = new Map();
+    const batchStudentUserIds = new Set();
     (bsRes.rows || []).forEach((row) => {
+      const studentId = row.studentId || row.userId || row.student_id;
       const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
-      if (row.studentId && ed) {
-        enrollmentMap.set(row.studentId, ed);
+      if (studentId) {
+        batchStudentUserIds.add(studentId);
+        if (ed) enrollmentMap.set(studentId, ed);
       }
     });
+
+    // 1b. Fetch active batch holidays for yearMonth from holidayDays collection
+    const HOLIDAY_DAYS_COL = process.env.HOLIDAY_DAYS_COLLECTION_ID || 'holidayDays';
+    const holidaysRes = await tablesDB.listRows({
+      databaseId: DB_ID,
+      tableId: HOLIDAY_DAYS_COL,
+      queries: [
+        Query.equal('batchId', batchId),
+        Query.startsWith('date', yearMonth),
+        Query.limit(100),
+      ],
+    }).catch(() => ({ rows: [] }));
+
+    const activeHolidayDates = new Set(
+      (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
+    );
 
     // 2. Fetch daily attendance records for this batch and month
     const attendanceRes = await tablesDB.listRows({
@@ -205,26 +225,28 @@ export const bulkUpdateMonthlyAttendanceStats = async (
     // 3. Group by userId
     const userRecordsMap = new Map();
 
+    // Ensure all batch students have an entry in userRecordsMap
+    batchStudentUserIds.forEach((uid) => {
+      if (!userFilterSet || userFilterSet.has(uid)) {
+        userRecordsMap.set(uid, []);
+      }
+    });
+
     (attendanceRes.rows || []).forEach((doc) => {
       if (!doc.userId) return;
       if (userFilterSet && !userFilterSet.has(doc.userId)) return;
 
       const enrollStr = enrollmentMap.get(doc.userId);
-      if (enrollStr && doc.date < enrollStr) return;
+      if (enrollStr && doc.date < enrollStr) {
+        console.log(`[statsHelper-SKIP] userId=${doc.userId}, doc.date=${doc.date} < enrollStr=${enrollStr}`);
+        return;
+      }
 
       if (!userRecordsMap.has(doc.userId)) {
         userRecordsMap.set(doc.userId, []);
       }
       userRecordsMap.get(doc.userId).push({ ...doc });
     });
-
-    if (userFilterSet) {
-      userFilterSet.forEach((uid) => {
-        if (!userRecordsMap.has(uid)) {
-          userRecordsMap.set(uid, []);
-        }
-      });
-    }
 
     // Merge latest in-memory records (in case listRows didn't return newly inserted/upserted rows yet)
     if (Array.isArray(latestRecords) && latestRecords.length > 0) {
@@ -264,8 +286,8 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
 
       rows.forEach((r) => {
-        const dt = String(r.dayType || (r.isHoliday ? 'HOLIDAY' : 'WORKING')).toUpperCase();
-        if (dt === 'HOLIDAY') return;
+        const dateStr = String(r.date).substring(0, 10);
+        if (activeHolidayDates.has(dateStr)) return;
 
         const s = String(r.status || r.attendanceStatus || '').toLowerCase();
         if (s === 'present' || s === 'p') presentDays++;
@@ -281,6 +303,8 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
       const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
       const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+      console.log(`[statsHelper-RESULT] userId=${userId}, workingDays=${workingDays}, presentDays=${presentDays}, rowsCount=${rows.length}`);
 
       statsObjects.push({
         $id: `${userId}_${batchId}_${yearMonth}`,

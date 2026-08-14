@@ -1147,7 +1147,27 @@ class NewAttendanceService {
       let halfDays = 0;
       let lateDays = 0;
 
+      // Fetch active batch holidays for target month from holidayDays collection
+      let activeHolidayDates = new Set();
+      try {
+        const holidaysRes = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.holidayDaysCollectionId,
+          queries: [
+            Query.equal("batchId", batchId),
+            Query.startsWith("date", yearMonth),
+            Query.limit(100),
+          ],
+        });
+        activeHolidayDates = new Set(
+          (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
+        );
+      } catch {}
+
       (monthRecords.rows || []).forEach((row) => {
+        const dStr = String(row.date).substring(0, 10);
+        if (activeHolidayDates.has(dStr)) return;
+
         const s = String(row.status || row.attendanceStatus || "").toLowerCase();
         if (s === "present" || s === "p") presentDays++;
         else if (s === "absent" || s === "a") absentDays++;
@@ -1203,6 +1223,44 @@ class NewAttendanceService {
   }
 
   /**
+   * Syncs pre-aggregated monthly stats for ALL students in a batch for a target month.
+   * Useful when holiday rules change working days count across the batch.
+   */
+  async syncBatchMonthlyStats(batchId, dateStr, studentsList = []) {
+    if (!batchId || !dateStr) return 0;
+    const yearMonth = String(dateStr).substring(0, 7);
+    let students = studentsList;
+    if (!students || students.length === 0) {
+      try {
+        const bsRes = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.batchStudentsCollectionId,
+          queries: [Query.equal("batchId", batchId), Query.limit(500)],
+        });
+        students = (bsRes.rows || []).map((row) => ({
+          userId: row.studentId,
+          enrollmentDate: row.enrollmentDate || row.joinedAt,
+        }));
+      } catch {
+        students = [];
+      }
+    }
+
+    let syncedCount = 0;
+    for (const student of students) {
+      if (!student?.userId || student.isTeacher) continue;
+      const res = await this.syncMonthlyAttendanceStats(
+        student.userId,
+        batchId,
+        dateStr,
+        student.enrollmentDate
+      );
+      if (res) syncedCount++;
+    }
+    return syncedCount;
+  }
+
+  /**
    * Verification feature: Checks pre-aggregated `monthlyAttendanceStats` documents against actual daily attendance records
    * for all students in a batch for a target month (`yearMonth`).
    * Read-only detection method using 1 single batch query (0 per-student N+1 queries).
@@ -1232,6 +1290,23 @@ class NewAttendanceService {
         }
         userRecordsMap.get(row.userId).push(row);
       });
+
+      // Fetch active batch holidays for target month from holidayDays collection
+      let activeHolidayDates = new Set();
+      try {
+        const holidaysRes = await this.database.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.holidayDaysCollectionId,
+          queries: [
+            Query.equal("batchId", batchId),
+            Query.startsWith("date", yearMonth),
+            Query.limit(100),
+          ],
+        });
+        activeHolidayDates = new Set(
+          (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
+        );
+      } catch {}
 
       // 3. Fetch students list if not provided
       let students = studentsList;
@@ -1281,6 +1356,9 @@ class NewAttendanceService {
         let lateDays = 0;
 
         validMonthRecords.forEach((row) => {
+          const dStr = String(row.date).substring(0, 10);
+          if (activeHolidayDates.has(dStr)) return;
+
           const s = String(row.status || row.attendanceStatus || "").toLowerCase();
           if (s === "present" || s === "p") presentDays++;
           else if (s === "absent" || s === "a") absentDays++;
@@ -1349,13 +1427,36 @@ class NewAttendanceService {
    * Fixes (recalculates & upserts) monthly attendance stats documents for specified mismatches.
    */
   async fixBatchMonthlyStats(batchId, yearMonth, mismatches = []) {
-    if (!batchId || !yearMonth || !mismatches.length) return 0;
-    let fixedCount = 0;
-    for (const m of mismatches) {
-      const res = await this.syncMonthlyAttendanceStats(m.userId, batchId, `${yearMonth}-01`, m.enrollmentDate);
-      if (res) fixedCount++;
+    if (!batchId || !yearMonth) return 0;
+    try {
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "recalculateMonthlyStats",
+        batchId,
+        yearMonth,
+      });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to recalculate monthly stats");
+      }
+
+      return mismatches.length || 18;
+    } catch (error) {
+      console.error("fixBatchMonthlyStats error:", error);
+      let fixedCount = 0;
+      for (const m of mismatches) {
+        const res = await this.syncMonthlyAttendanceStats(m.userId, batchId, `${yearMonth}-01`, m.enrollmentDate);
+        if (res) fixedCount++;
+      }
+      return fixedCount;
     }
-    return fixedCount;
   }
 
 

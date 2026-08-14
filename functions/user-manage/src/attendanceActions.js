@@ -263,14 +263,11 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         results.success.push(...updatedDocs);
       }
 
-      // Update stats
+      // Update stats for all students in the batch
       try {
         await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
-        const affectedUserIds = statsToUpdate.map((s) => s.userId).filter(Boolean);
-        if (affectedUserIds.length > 0) {
-          const yearMonth = String(date).substring(0, 7);
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, affectedUserIds, statsToUpdate);
-        }
+        const yearMonth = String(date).substring(0, 7);
+        await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null, statsToUpdate);
       } catch (err) {
         log(`Failed bulk stats update: ${err.message}`);
       }
@@ -595,6 +592,84 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         }
       }
       return { deletedId: documentId };
+    }
+    case 'addHoliday': {
+      const { batchId, date, holidayText } = req.bodyJson;
+      if (!batchId || !date) {
+        throw new Error('Missing batchId or date for addHoliday');
+      }
+
+      const HOLIDAY_DAYS_COL_ID = process.env.HOLIDAY_DAYS_COLLECTION_ID || 'holidayDays';
+      const formattedDate = String(date).substring(0, 10);
+
+      // 1. Create holiday document
+      const holidayDoc = await tablesDB.createRow(
+        DB_ID,
+        HOLIDAY_DAYS_COL_ID,
+        ID.unique(),
+        {
+          batchId,
+          date: formattedDate,
+          holidayText: holidayText || 'Holiday',
+        }
+      );
+
+      // 2. Clear any existing daily attendance records for this batch and date
+      try {
+        await tablesDB.deleteRows(
+          DB_ID,
+          NEW_ATTENDANCE_COL_ID,
+          [Query.equal('batchId', batchId), Query.equal('date', formattedDate)]
+        );
+      } catch (err) {
+        log(`Could not clear daily attendance for added holiday date: ${err.message}`);
+      }
+
+      // 3. Recalculate monthly stats for all students in the batch
+      try {
+        const yearMonth = formattedDate.substring(0, 7);
+        await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null);
+      } catch (err) {
+        log(`Failed bulk stats update on addHoliday: ${err.message}`);
+      }
+
+      return holidayDoc;
+    }
+    case 'removeHoliday': {
+      const { holidayId, batchId, date } = req.bodyJson;
+      if (!holidayId) {
+        throw new Error('Missing holidayId for removeHoliday');
+      }
+
+      const HOLIDAY_DAYS_COL_ID = process.env.HOLIDAY_DAYS_COLLECTION_ID || 'holidayDays';
+
+      // 1. Delete holiday document
+      await tablesDB.deleteRows(
+        DB_ID,
+        HOLIDAY_DAYS_COL_ID,
+        [Query.equal('$id', holidayId)]
+      );
+
+      // 2. Recalculate monthly stats for all students in the batch
+      if (batchId && date) {
+        try {
+          const yearMonth = String(date).substring(0, 7);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null);
+        } catch (err) {
+          log(`Failed bulk stats update on removeHoliday: ${err.message}`);
+        }
+      }
+
+      return { success: true, holidayId };
+    }
+    case 'recalculateMonthlyStats': {
+      const { batchId, yearMonth } = req.bodyJson;
+      if (!batchId || !yearMonth) {
+        throw new Error('Missing batchId or yearMonth for recalculateMonthlyStats');
+      }
+
+      await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null);
+      return { success: true, batchId, yearMonth };
     }
     default:
       return null;

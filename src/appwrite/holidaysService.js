@@ -66,14 +66,30 @@ class HolidayService {
     }
   }
 
-  async removeHoliday(holidayId) {
+  async removeHoliday(holidayId, batchId = null, date = null) {
     try {
-      await this.database.deleteRow({
-        databaseId: conf.databaseId,
-        tableId: conf.holidayDaysCollectionId,
-        rowId: holidayId
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "removeHoliday",
+        holidayId,
+        batchId,
+        date,
       });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to remove holiday");
+      }
+
+      return resData.data;
     } catch (error) {
+      console.error("removeHoliday error:", error);
       throw new Error(error.message);
     }
   }
@@ -81,34 +97,28 @@ class HolidayService {
   async addHoliday(holidayData) {
     try {
       const { dayType, ...cleanData } = holidayData || {};
-      const data = await this.database.createRow({
-        databaseId: conf.databaseId,
-        tableId: conf.holidayDaysCollectionId,
-        rowId: ID.unique(),
-        data: cleanData,
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "addHoliday",
+        batchId: cleanData.batchId,
+        date: cleanData.date,
+        holidayText: cleanData.holidayText,
       });
 
-      // Cleanly clear any existing attendance records for this batch and date
-      if (cleanData.batchId && cleanData.date) {
-        try {
-          const { newAttendanceService } = await import("@/appwrite/newAttendanceService");
-          const formattedDate = String(cleanData.date).substring(0, 10);
-          const existingRes = await newAttendanceService.getBatchAttendanceByDate(
-            cleanData.batchId,
-            formattedDate,
-            []
-          );
-          const idsToDelete = (existingRes?.documents || []).map((d) => d.$id).filter(Boolean);
-          if (idsToDelete.length > 0) {
-            await newAttendanceService.deleteMultipleAttendance(idsToDelete);
-          }
-        } catch (cleanupError) {
-          console.error("[holidaysService] Could not clear attendance for added holiday date:", cleanupError);
-        }
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to add holiday");
       }
 
-      return data;
+      return resData.data;
     } catch (error) {
+      console.error("addHoliday error:", error);
       throw new Error(error.message);
     }
   }
