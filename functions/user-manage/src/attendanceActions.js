@@ -262,7 +262,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         const affectedUserIds = statsToUpdate.map((s) => s.userId).filter(Boolean);
         if (affectedUserIds.length > 0) {
           const yearMonth = String(date).substring(0, 7);
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, affectedUserIds);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, affectedUserIds, statsToUpdate);
         }
       } catch (err) {
         log(`Failed bulk stats update: ${err.message}`);
@@ -345,7 +345,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           );
           const affectedUserIds = [...new Set(recordsToInsert.map((r) => r.userId).filter(Boolean))];
           const yearMonth = String(recordsToInsert[0].date).substring(0, 7);
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, recordsToInsert[0].batchId, yearMonth, affectedUserIds);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, recordsToInsert[0].batchId, yearMonth, affectedUserIds, recordsToInsert);
         } catch (err) {
           log(`Failed bulk stats update: ${err.message}`);
         }

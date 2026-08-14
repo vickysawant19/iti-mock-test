@@ -208,7 +208,7 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       if (!userRecordsMap.has(doc.userId)) {
         userRecordsMap.set(doc.userId, []);
       }
-      userRecordsMap.get(doc.userId).push(doc);
+      userRecordsMap.get(doc.userId).push({ ...doc });
     });
 
     if (userFilterSet) {
@@ -219,6 +219,37 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       });
     }
 
+    // Merge latest in-memory records (in case listRows didn't return newly inserted/upserted rows yet)
+    if (Array.isArray(latestRecords) && latestRecords.length > 0) {
+      latestRecords.forEach((rec) => {
+        if (!rec.userId || !rec.date || !rec.date.startsWith(yearMonth)) return;
+        if (userFilterSet && !userFilterSet.has(rec.userId)) return;
+
+        const enrollStr = enrollmentMap.get(rec.userId);
+        if (enrollStr && rec.date < enrollStr) return;
+
+        const userRows = userRecordsMap.get(rec.userId) || [];
+        const existingIdx = userRows.findIndex((r) => r.date === rec.date);
+
+        const mergedRecord = {
+          userId: rec.userId,
+          batchId: rec.batchId || batchId,
+          date: rec.date,
+          status: rec.status || (rec.attendanceStatus ? rec.attendanceStatus.toLowerCase() : 'present'),
+          attendanceStatus: rec.attendanceStatus || (rec.status ? rec.status.toUpperCase() : 'PRESENT'),
+          dayType: rec.dayType || (rec.isHoliday ? 'HOLIDAY' : 'WORKING'),
+          leaveType: rec.leaveType || null,
+        };
+
+        if (existingIdx >= 0) {
+          userRows[existingIdx] = { ...userRows[existingIdx], ...mergedRecord };
+        } else {
+          userRows.push(mergedRecord);
+        }
+        userRecordsMap.set(rec.userId, userRows);
+      });
+    }
+
     // 4. Build monthly stats objects
     const statsObjects = [];
     userRecordsMap.forEach((rows, userId) => {
@@ -226,6 +257,9 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       let sickLeaves = 0, specialLeaves = 0, onDutyLeaves = 0, halfDays = 0, lateDays = 0;
 
       rows.forEach((r) => {
+        const dt = String(r.dayType || (r.isHoliday ? 'HOLIDAY' : 'WORKING')).toUpperCase();
+        if (dt === 'HOLIDAY') return;
+
         const s = String(r.status || r.attendanceStatus || '').toLowerCase();
         if (s === 'present' || s === 'p') presentDays++;
         else if (s === 'absent' || s === 'a') absentDays++;
