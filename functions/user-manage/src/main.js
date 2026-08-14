@@ -104,7 +104,7 @@ export default async ({ req, res, log, error }) => {
 
     // If not user or batch action, check if it belongs to attendance/statistics
     if (response === null) {
-      response = await handleAttendanceAction(action, req, res, client, databases, tablesDB, log, error);
+      response = await handleAttendanceAction(action, req, res, client, databases, tablesDB, trace, error);
     }
 
     if (response === null) {

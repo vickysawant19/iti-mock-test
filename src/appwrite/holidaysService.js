@@ -82,7 +82,12 @@ class HolidayService {
         false
       );
 
-      const resData = JSON.parse(response.responseBody);
+      const resData = JSON.parse(response.responseBody || "{}");
+      if (Array.isArray(resData.logs) && resData.logs.length > 0) {
+        console.group("🔥 [SERVER DEBUG LOGS - removeHoliday]");
+        resData.logs.forEach((l) => console.log(l));
+        console.groupEnd();
+      }
       if (!resData.success) {
         throw new Error(resData.error || "Failed to remove holiday");
       }
@@ -111,7 +116,12 @@ class HolidayService {
         false
       );
 
-      const resData = JSON.parse(response.responseBody);
+      const resData = JSON.parse(response.responseBody || "{}");
+      if (Array.isArray(resData.logs) && resData.logs.length > 0) {
+        console.group("🔥 [SERVER DEBUG LOGS - addHoliday]");
+        resData.logs.forEach((l) => console.log(l));
+        console.groupEnd();
+      }
       if (!resData.success) {
         throw new Error(resData.error || "Failed to add holiday");
       }

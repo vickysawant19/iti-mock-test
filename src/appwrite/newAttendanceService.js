@@ -766,7 +766,20 @@ class NewAttendanceService {
         false
       );
 
-      const resData = JSON.parse(response.responseBody);
+      let resData = {};
+      try {
+        resData = JSON.parse(response.responseBody || "{}");
+      } catch (parseErr) {
+        console.error("markBatchAttendance execution raw response:", response);
+        throw new Error(`Cloud execution failed with status: ${response.status || "unknown"}`);
+      }
+
+      if (Array.isArray(resData.logs) && resData.logs.length > 0) {
+        console.group("🔥 [SERVER DEBUG LOGS - markBatchAttendance]");
+        resData.logs.forEach((l) => console.log(l));
+        console.groupEnd();
+      }
+
       if (!resData.success) {
         throw new Error(resData.error || "Failed to mark batch attendance");
       }
@@ -1265,160 +1278,35 @@ class NewAttendanceService {
    * for all students in a batch for a target month (`yearMonth`).
    * Read-only detection method using 1 single batch query (0 per-student N+1 queries).
    */
-  async verifyBatchMonthlyStats(batchId, yearMonth, studentsList = []) {
+  async verifyBatchMonthlyStats(batchId, yearMonth) {
     if (!batchId || !yearMonth) return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
     try {
-      // 1. Fetch stored pre-aggregated monthly stats for batch (1 query)
-      const existingStatsMap = await this.getBatchMonthlyStats(batchId, yearMonth);
-
-      // 2. Fetch ALL daily attendance records for this batch in target month (1 batch query)
-      const batchRecordsRes = await this.database.listRows({
-        databaseId: conf.databaseId,
-        tableId: conf.newAttendanceCollectionId,
-        queries: [
-          Query.equal("batchId", batchId),
-          Query.startsWith("date", yearMonth),
-          Query.limit(5000),
-        ],
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "verifyBatchMonthlyStats",
+        batchId,
+        yearMonth,
       });
 
-      // Group records in memory by userId
-      const userRecordsMap = new Map();
-      (batchRecordsRes.rows || []).forEach((row) => {
-        if (!userRecordsMap.has(row.userId)) {
-          userRecordsMap.set(row.userId, []);
-        }
-        userRecordsMap.get(row.userId).push(row);
-      });
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
 
-      // Fetch active batch holidays for target month from holidayDays collection
-      let activeHolidayDates = new Set();
-      try {
-        const holidaysRes = await this.database.listRows({
-          databaseId: conf.databaseId,
-          tableId: conf.holidayDaysCollectionId,
-          queries: [
-            Query.equal("batchId", batchId),
-            Query.startsWith("date", yearMonth),
-            Query.limit(100),
-          ],
-        });
-        activeHolidayDates = new Set(
-          (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
-        );
-      } catch {}
-
-      // 3. Fetch students list if not provided
-      let students = studentsList;
-      if (!students || students.length === 0) {
-        const bsRes = await this.database.listRows({
-          databaseId: conf.databaseId,
-          tableId: conf.batchStudentsCollectionId,
-          queries: [Query.equal("batchId", batchId), Query.limit(500)],
-        });
-        students = (bsRes.rows || []).map((row) => ({
-          userId: row.studentId,
-          enrollmentDate: row.enrollmentDate || row.joinedAt,
-          userName: row.userName || row.name,
-          rollNumber: row.rollNumber || row.registerId,
-        }));
+      const resData = JSON.parse(response.responseBody);
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to verify monthly stats");
       }
 
-      const mismatches = [];
-
-      // 4. In-memory comparison per student
-      for (const student of students) {
-        if (!student?.userId || student.isTeacher) continue;
-
-        const uid = student.userId;
-        const enrollDate = student.enrollmentDate;
-        const getEnrollmentDateStr = (raw) => {
-          if (!raw) return null;
-          const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
-          return m ? m[1] : null;
-        };
-        const enrollStr = getEnrollmentDateStr(enrollDate);
-
-        const allUserRecords = userRecordsMap.get(uid) || [];
-
-        // Filter out pre-enrollment dates if enrolled during target month
-        const validMonthRecords = (enrollStr && enrollStr.substring(0, 7) === yearMonth)
-          ? allUserRecords.filter((doc) => doc.date >= enrollStr)
-          : allUserRecords;
-
-        let presentDays = 0;
-        let absentDays = 0;
-        let casualLeaves = 0;
-        let sickLeaves = 0;
-        let specialLeaves = 0;
-        let onDutyLeaves = 0;
-        let halfDays = 0;
-        let lateDays = 0;
-
-        validMonthRecords.forEach((row) => {
-          const dStr = String(row.date).substring(0, 10);
-          if (activeHolidayDates.has(dStr)) return;
-
-          const s = String(row.status || row.attendanceStatus || "").toLowerCase();
-          if (s === "present" || s === "p") presentDays++;
-          else if (s === "absent" || s === "a") absentDays++;
-          else if (s === "casual" || s === "cl") casualLeaves++;
-          else if (s === "sick" || s === "sl") sickLeaves++;
-          else if (s === "special" || s === "spl") specialLeaves++;
-          else if (s === "on_duty" || s === "od") onDutyLeaves++;
-          else if (s === "half_day" || s === "hd") halfDays++;
-          else if (s === "late" || s === "l") lateDays++;
-        });
-
-        const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
-        const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
-        const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
-
-        const storedDoc = existingStatsMap.get(uid);
-
-        const storedWorking = storedDoc?.workingDays || 0;
-        const storedPresent = storedDoc?.presentDays || 0;
-        const storedPercentage = storedDoc?.attendancePercentage || 0;
-
-        const isMismatch =
-          !storedDoc ||
-          storedWorking !== workingDays ||
-          storedPresent !== presentDays ||
-          storedDoc.absentDays !== absentDays ||
-          storedDoc.totalPresent !== totalPresent ||
-          storedPercentage !== attendancePercentage;
-
-        if (isMismatch) {
-          mismatches.push({
-            userId: uid,
-            userName: student.userName || student.name || `Student (${uid.substring(0, 6)})`,
-            rollNumber: student.rollNumber || student.studentId || "-",
-            enrollmentDate: enrollStr,
-            stored: {
-              workingDays: storedWorking,
-              presentDays: storedPresent,
-              totalPresent: storedDoc?.totalPresent || 0,
-              percentage: storedPercentage,
-            },
-            actual: {
-              workingDays,
-              presentDays,
-              absentDays,
-              totalPresent,
-              percentage: attendancePercentage,
-            },
-          });
-        }
-      }
-
-      return {
-        hasDiscrepancies: mismatches.length > 0,
-        mismatches,
-        totalChecked: students.filter((s) => s?.userId && !s.isTeacher).length,
-      };
+      return resData.data;
     } catch (error) {
       console.error("[Stats Verifier] Error during verification check:", error);
-      return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
+      return {
+        hasDiscrepancies: false,
+        mismatches: [],
+        totalChecked: 0,
+      };
     }
   }
 

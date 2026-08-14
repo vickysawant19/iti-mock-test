@@ -567,7 +567,8 @@ const AttendanceRegister = () => {
       updateLoading("holiday", true);
       try {
         const holiday = holidays.get(date);
-        await holidayService.removeHoliday(holiday.$id, selectedBatch, date);
+        const hId = holiday?.$id || holiday?.id || null;
+        await holidayService.removeHoliday(hId, selectedBatch, date);
         setHolidays((prev) => {
           const next = new Map(prev);
           next.delete(date);
