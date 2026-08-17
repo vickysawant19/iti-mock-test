@@ -23,10 +23,14 @@ const AttendanceTableBody = ({
   const cell = compactView ? "py-1 px-1 text-[11px]" : "py-1.5 px-2 text-xs";
   const stickyCell = compactView ? "py-1.5 px-2 text-xs" : "py-2 px-3 text-xs sm:text-sm";
 
-  // Standardized Column Widths & Sticky Positions (Matches AttendanceTableHead)
-  const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
-  const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
-  const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
+  // Standardized Column Widths & Sticky Positions (Pixel exact for dynamic compact shrink)
+  const nameWidth = compactView ? 180 : 260;
+
+  const nameColStyle = {
+    width: `${nameWidth}px`,
+    minWidth: `${nameWidth}px`,
+    maxWidth: `${nameWidth}px`,
+  };
 
   const nonTeacherStudents = students.filter((s) => !s.isTeacher);
   const firstNonTeacherIdx = students.findIndex((s) => !s.isTeacher);
@@ -204,7 +208,7 @@ const AttendanceTableBody = ({
             )}
 
             {/* ── STUDENT NAME (STICKY LEFT 0) ── High Contrast Visible Text */}
-            <td className={`${stickyCell} ${nameColWidth} border border-slate-200 dark:border-slate-800 sticky left-0 z-20 ${stickyBgClass} font-semibold text-slate-900 dark:text-white`}>
+            <td style={nameColStyle} className={`${stickyCell} border border-slate-200 dark:border-slate-800 sticky left-0 z-20 ${stickyBgClass} font-semibold text-slate-900 dark:text-white box-border`}>
               <div className="flex items-center gap-1.5 min-w-0">
                 <div className="flex flex-col flex-1 min-w-0">
                   <button
@@ -240,35 +244,6 @@ const AttendanceTableBody = ({
               </div>
             </td>
 
-            {/* ── ACTION BUTTONS (STICKY LEFT) ── */}
-            <td className={`${stickyCell} ${actionColWidth} ${actionStickyPos} border border-slate-200 dark:border-slate-800 sticky z-20 ${stickyBgClass} text-center shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)] px-0.5`}>
-              <div className="flex items-center justify-center gap-1">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenStudentAttendanceModal(student);
-                  }}
-                  className="p-1 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center shadow-xs transition-all"
-                  title="Edit Student Monthly Attendance"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                </button>
-                {!student.isTeacher && onOpenStudentProfile && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenStudentProfile(student);
-                    }}
-                    className="p-1 rounded-md bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white flex items-center justify-center shadow-xs transition-all"
-                    title="View Student Profile"
-                  >
-                    <UserCircle2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </td>
 
             {/* ── DAILY ATTENDANCE CELLS ── */}
             {columnVisibility.daily &&

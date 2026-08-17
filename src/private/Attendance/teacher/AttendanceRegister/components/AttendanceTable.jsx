@@ -61,7 +61,7 @@ const AttendanceTable = ({
 
   const monthDates = allDays.filter((d) => d >= firstValidDay && d <= lastValidDay);
 
-  const [compactView, setCompactView] = useState(true);
+  const [compactView, setCompactView] = useState(false);
 
   const toggleGroup = (group) =>
     setColumnVisibility((prev) => ({ ...prev, [group]: !prev[group] }));
@@ -141,13 +141,13 @@ const AttendanceTable = ({
         </button>
       </div>
 
-      {/* ── Table Wrapper ── */}
+      {/* ── Table Wrapper — single scroll container for BOTH axes so sticky freeze works ── */}
       <div
-        className={`relative overflow-x-auto shadow-lg border border-slate-300 dark:border-slate-800 ${
+        className={`attendance-scroll relative overflow-auto shadow-lg border border-slate-300 dark:border-slate-800 max-h-[80vh] ${
           isTableDataLoading ? "min-h-screen" : ""
         }`}
       >
-        {/* Loading Overlay - only shows when loading table data */}
+        {/* Loading Overlay */}
         {isTableDataLoading && (
           <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg h-screen min-h-80">
             <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-900 px-8 py-6 rounded-xl shadow-2xl border-2 border-indigo-200 dark:border-indigo-800">
@@ -164,10 +164,9 @@ const AttendanceTable = ({
           </div>
         )}
 
-        {/* Table Container */}
         {students && students.length > 0 && (
           <div
-            className={`max-h-[80vh] overflow-y-auto transition-opacity duration-300 ${
+            className={`transition-opacity duration-300 ${
               isTableDataLoading
                 ? "opacity-30 pointer-events-none"
                 : "opacity-100"
@@ -205,7 +204,6 @@ const AttendanceTable = ({
                 onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
                 onOpenStudentProfile={onOpenStudentProfile}
               />
-
               <AttendanceTableFooter
                 students={students}
                 monthDates={monthDates}

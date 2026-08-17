@@ -32,7 +32,7 @@ import { AlertTriangle } from "lucide-react";
 import { newAttendanceService } from "@/appwrite/newAttendanceService";
 import holidayService from "@/appwrite/holidaysService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
-import Legent from "./components/Legent";
+
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";
 import { DEFAULT_VISIBILITY } from "./components/ColumnGroupConfig";
@@ -828,8 +828,6 @@ const AttendanceRegister = () => {
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
         />
-
-        <Legent />
 
         <StudentMonthlyAttendanceModal
           isOpen={!!selectedStudent}

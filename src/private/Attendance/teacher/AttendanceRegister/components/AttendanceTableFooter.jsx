@@ -13,10 +13,14 @@ const AttendanceTableFooter = ({
   const prevColSpan = columnVisibility.previous ? 7 : 0;
   const summaryColSpan = columnVisibility.summary ? 7 : 0;
 
-  // Standardized Column Widths & Sticky Positions (Matches Head and Body)
-  const nameColWidth = compactView ? "w-36 min-w-36" : "w-48 sm:w-56 min-w-48 sm:min-w-56";
-  const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
-  const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
+  // Standardized Column Widths & Sticky Positions (Pixel exact for dynamic compact shrink)
+  const nameWidth = compactView ? 180 : 260;
+
+  const nameColStyle = {
+    width: `${nameWidth}px`,
+    minWidth: `${nameWidth}px`,
+    maxWidth: `${nameWidth}px`,
+  };
 
   const footerRows = [
     {
@@ -57,12 +61,10 @@ const AttendanceTableFooter = ({
           )}
 
           {/* Sticky Student Name Cell */}
-          <td className={`${nameColWidth} sticky left-0 py-1.5 px-3 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 z-20`}>
+          <td style={nameColStyle} className="sticky left-0 py-1.5 px-3 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 z-20 box-border truncate">
             {label}
           </td>
 
-          {/* Sticky Action Cell */}
-          <td className={`${actionColWidth} ${actionStickyPos} sticky py-1.5 px-2 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 z-20 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.1)]`} />
 
           {/* Daily Columns */}
           {columnVisibility.daily &&
