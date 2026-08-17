@@ -1,4 +1,5 @@
 import { Query } from 'node-appwrite';
+import { generateShortStatId } from './statsHelper.js';
 
 const BATCH_SIZE = 50;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -14,6 +15,26 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
   const limit = 1000;
 
   log('Starting bulk migration of monthly attendance stats...');
+
+  // 0. Clean up any old invalid documents in monthlyAttendanceStats collection
+  try {
+    const existingOldDocs = await databases.listDocuments(
+      databaseId,
+      monthlyStatsCollection,
+      [Query.limit(500)]
+    ).catch(() => ({ documents: [] }));
+
+    if (existingOldDocs.documents?.length > 0) {
+      log(`Clearing ${existingOldDocs.documents.length} existing monthly stats records...`);
+      await Promise.all(
+        existingOldDocs.documents.map((d) =>
+          databases.deleteDocument(databaseId, monthlyStatsCollection, d.$id).catch(() => null)
+        )
+      );
+    }
+  } catch (e) {
+    log(`Note on clearing existing monthly stats: ${e.message}`);
+  }
 
   // 1. Fetch all raw daily attendance records
   while (hasMore) {
@@ -40,7 +61,7 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
   allAttendanceDocs.forEach((doc) => {
     if (!doc.userId || !doc.batchId || !doc.date) return;
     const yearMonth = String(doc.date).substring(0, 7); // "YYYY-MM"
-    const docId = `${doc.userId}_${doc.batchId}_${yearMonth}`;
+    const docId = generateShortStatId(doc.userId, doc.batchId, yearMonth);
 
     if (!statsGroupMap.has(docId)) {
       statsGroupMap.set(docId, {
@@ -108,21 +129,30 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
 
     try {
       if (tablesDB && typeof tablesDB.upsertRows === 'function') {
-        await tablesDB.upsertRows(databaseId, monthlyStatsCollection, chunk);
+        await tablesDB.upsertRows({
+          databaseId,
+          tableId: monthlyStatsCollection,
+          rows: chunk,
+        });
         upsertedCount += chunk.length;
       } else {
-        for (const doc of chunk) {
+        throw new Error('Native upsertRows not available');
+      }
+    } catch (e) {
+      log(`upsertRows chunk failed (${e.message}); using fallback upsert for ${chunk.length} items...`);
+      for (const doc of chunk) {
+        try {
+          await databases.updateDocument(databaseId, monthlyStatsCollection, doc.$id, doc);
+          upsertedCount++;
+        } catch (err) {
           try {
-            await databases.updateDocument(databaseId, monthlyStatsCollection, doc.$id, doc);
-            upsertedCount++;
-          } catch (e) {
             await databases.createDocument(databaseId, monthlyStatsCollection, doc.$id, doc);
             upsertedCount++;
+          } catch (createErr) {
+            error(`Failed creating stat document ${doc.$id}: ${createErr.message}`);
           }
         }
       }
-    } catch (e) {
-      error(`Failed to bulk upsert monthly stats chunk: ${e.message}`);
     }
 
     log(`Processed ${Math.min(i + BATCH_SIZE, aggregatedStats.length)} / ${aggregatedStats.length} monthly stats...`);

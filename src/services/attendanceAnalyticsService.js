@@ -199,6 +199,23 @@ class AttendanceAnalyticsService {
    * Computes comprehensive statistics for a dataset of attendance records and optional calendar range.
    */
   computeStats({ records = [], holidayList = [], startDate = null, endDate = null }) {
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      return {
+        totalDays: 0,
+        workingDays: 0,
+        recordedWorkingDays: 0,
+        presentDays: 0,
+        absentDays: 0,
+        lateDays: 0,
+        halfDays: 0,
+        holidayDays: 0,
+        leaveDays: 0,
+        leaveBreakdown: { CASUAL: 0, SICK: 0, ON_DUTY: 0, SPECIAL: 0 },
+        attendancePercentage: 0,
+        monthlyAttendance: {},
+      };
+    }
+
     const normalizedRecords = (records || []).map((r) => this.normalizeRecord(r)).filter(Boolean);
 
     let workingDays = 0;

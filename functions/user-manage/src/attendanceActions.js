@@ -1,7 +1,7 @@
 import { ID, Query } from 'node-appwrite';
 import migrateAttendanceFunc from './migrateAttendance.js';
 import migrateMonthlyStatsFunc from './migrateMonthlyStats.js';
-import { updateBatchStatsHelper, bulkUpdateBatchStats, updateMonthlyAttendanceStatsHelper, bulkUpdateMonthlyAttendanceStats, verifyBatchMonthlyStatsHelper, bulkUpsertDocuments } from './statsHelper.js';
+import { updateBatchStatsHelper, bulkUpdateBatchStats, updateMonthlyAttendanceStatsHelper, bulkUpdateMonthlyAttendanceStats, verifyBatchMonthlyStatsHelper, bulkUpsertDocuments, decrementMonthlyStatsForAttendanceRecords, updateIncrementalMonthlyAttendanceStats } from './statsHelper.js';
 import PermissionPolicy from './policies/permissionPolicy.js';
 
 const getBatchTeamPermissions = async (tablesDB, DB_ID, batchId, fallbackTeamId = null) => {
@@ -135,18 +135,18 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       });
 
       // 1. Fetch existing attendance docs for that batch and date
-      const existingDocsRes = await databases.listDocuments(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        [
+      const existingDocsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        queries: [
           Query.equal('batchId', batchId),
           Query.equal('date', date),
           Query.limit(500),
-        ]
-      );
+        ],
+      }).catch(() => ({ rows: [] }));
 
       const existingRecordsMap = new Map(
-        existingDocsRes.documents.map((doc) => [doc.userId, doc])
+        (existingDocsRes.rows || existingDocsRes.documents || []).map((doc) => [doc.userId, doc])
       );
 
       const newRecords = [];
@@ -238,24 +238,31 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       const allRecordsToSave = [...newRecords, ...existingToUpdate];
 
       if (allRecordsToSave.length > 0) {
-        const savedDocs = await bulkUpsertDocuments(
-          databases,
-          DB_ID,
-          NEW_ATTENDANCE_COL_ID,
-          allRecordsToSave
-        );
+        const savedDocs = await tablesDB.upsertRows({
+          databaseId: DB_ID,
+          tableId: NEW_ATTENDANCE_COL_ID,
+          rows: allRecordsToSave,
+        });
         results.created = newRecords.length;
         results.updated = existingToUpdate.length;
-        results.success.push(...savedDocs);
+        results.success.push(...(Array.isArray(savedDocs) ? savedDocs : savedDocs.rows || allRecordsToSave));
       }
 
-      // Update stats for all students in the batch
-      try {
-        await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
-        const yearMonth = String(date).substring(0, 7);
-        await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null, statsToUpdate, log);
-      } catch (err) {
-        log(`Failed bulk stats update: ${err.message}`);
+      // Update stats fast & incrementally for all marked students
+      if (statsToUpdate.length > 0) {
+        try {
+          await updateIncrementalMonthlyAttendanceStats(
+            tablesDB,
+            DB_ID,
+            batchId,
+            date,
+            statsToUpdate,
+            existingRecordsMap
+          );
+          await bulkUpdateBatchStats(databases, tablesDB, batchId, date, statsToUpdate);
+        } catch (err) {
+          log(`Failed bulk stats update: ${err.message}`);
+        }
       }
 
       return {
@@ -321,18 +328,25 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       }));
 
 
-      const createdRes = await tablesDB.createRows(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        recordsToInsert
-      );
+      const createdRes = await tablesDB.createRows({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rows: recordsToInsert,
+      });
       const createdDocs = Array.isArray(createdRes)
         ? createdRes
         : createdRes.rows || recordsToInsert;
 
-      // update stats in bulk
+      // Update stats fast & incrementally for all marked students
       if (recordsToInsert.length > 0) {
         try {
+          await updateIncrementalMonthlyAttendanceStats(
+            tablesDB,
+            DB_ID,
+            recordsToInsert[0].batchId,
+            recordsToInsert[0].date,
+            recordsToInsert
+          );
           await bulkUpdateBatchStats(
             databases,
             tablesDB,
@@ -340,9 +354,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             recordsToInsert[0].date,
             recordsToInsert
           );
-          const affectedUserIds = [...new Set(recordsToInsert.map((r) => r.userId).filter(Boolean))];
-          const yearMonth = String(recordsToInsert[0].date).substring(0, 7);
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, recordsToInsert[0].batchId, yearMonth, affectedUserIds, recordsToInsert);
         } catch (err) {
           log(`Failed bulk stats update: ${err.message}`);
         }
@@ -373,13 +384,13 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         Query.equal('$id', documentIds)
       ];
 
-      await tablesDB.deleteRows(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        chunkedQueries
-      );
+      await tablesDB.deleteRows({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        queries: chunkedQueries,
+      });
 
-      // Update monthly stats for affected userIds
+      // Fast incremental monthly stats update for deleted attendance records
       try {
         const groupMap = new Map();
         existingDocs.forEach((doc) => {
@@ -387,14 +398,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             const ym = String(doc.date).substring(0, 7);
             const key = `${doc.batchId}_${ym}`;
             if (!groupMap.has(key)) {
-              groupMap.set(key, { batchId: doc.batchId, yearMonth: ym, userIds: new Set() });
+              groupMap.set(key, { batchId: doc.batchId, yearMonth: ym, records: [] });
             }
-            groupMap.get(key).userIds.add(doc.userId);
+            groupMap.get(key).records.push(doc);
           }
         });
 
         for (const grp of groupMap.values()) {
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, grp.batchId, grp.yearMonth, Array.from(grp.userIds));
+          await decrementMonthlyStatsForAttendanceRecords(tablesDB, DB_ID, grp.batchId, grp.yearMonth, grp.records);
         }
       } catch (err) {
         log(`Failed stats update on deleteMultipleAttendance: ${err.message}`);
@@ -620,30 +631,35 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw err;
       }
 
-      // 2. Clear any existing daily attendance records for this batch and date
+      // 2. Fetch any existing daily attendance records for this batch and date
       try {
-        const existingDocs = await databases.listDocuments(
-          DB_ID,
-          NEW_ATTENDANCE_COL_ID,
-          [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)]
-        );
-        if (existingDocs.documents?.length > 0) {
-          await Promise.all(
-            existingDocs.documents.map((d) =>
-              databases.deleteDocument(DB_ID, NEW_ATTENDANCE_COL_ID, d.$id).catch(() => null)
-            )
-          );
+        const existingDocsRes = await tablesDB.listRows({
+          databaseId: DB_ID,
+          tableId: NEW_ATTENDANCE_COL_ID,
+          queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)],
+        });
+
+        const docsList = existingDocsRes.rows || existingDocsRes.documents || [];
+        if (docsList.length > 0) {
+          // Decrement monthly stats for students who had attendance marked on this now-holiday date
+          const yearMonth = formattedDate.substring(0, 7);
+          await decrementMonthlyStatsForAttendanceRecords(
+            tablesDB,
+            DB_ID,
+            batchId,
+            yearMonth,
+            docsList
+          ).catch((e) => log(`Failed to decrement monthly stats on addHoliday: ${e.message}`));
+
+          // Delete daily attendance records in 1 native bulk call
+          await tablesDB.deleteRows({
+            databaseId: DB_ID,
+            tableId: NEW_ATTENDANCE_COL_ID,
+            queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate)],
+          }).catch(() => null);
         }
       } catch (err) {
         log(`Could not clear daily attendance for added holiday date: ${err.message}`);
-      }
-
-      // 3. Recalculate monthly stats for all students in the batch
-      try {
-        const yearMonth = formattedDate.substring(0, 7);
-        await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null, null, log);
-      } catch (err) {
-        log(`Failed bulk stats update on addHoliday: ${err.message}`);
       }
 
       return holidayDoc;
@@ -657,7 +673,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       const HOLIDAY_DAYS_COL_ID = process.env.HOLIDAY_DAYS_COLLECTION_ID || 'holidayDays';
       const formattedDate = date ? String(date).substring(0, 10) : null;
 
-      // 1. Delete holiday document(s)
+      // Delete holiday document(s) - fast execution without heavy recalculations
       try {
         if (holidayId) {
           await databases.deleteDocument(DB_ID, HOLIDAY_DAYS_COL_ID, holidayId).catch(() => null);
@@ -678,16 +694,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         }
       } catch (err) {
         log(`Could not delete holiday document: ${err.message}`);
-      }
-
-      // 2. Recalculate monthly stats for all students in the batch
-      if (batchId && formattedDate) {
-        try {
-          const yearMonth = formattedDate.substring(0, 7);
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null, null, log);
-        } catch (err) {
-          log(`Failed bulk stats update on removeHoliday: ${err.message}`);
-        }
       }
 
       return { success: true, holidayId, batchId, date: formattedDate };

@@ -8,6 +8,7 @@ const AttendanceTableBody = ({
   selectedMonth,
   holidays,
   attendanceMap,
+  currentMonthlyStatsMap,
   calculatePreviousMonthsData,
   formatDate,
   updatingAttendance,
@@ -27,7 +28,9 @@ const AttendanceTableBody = ({
   const actionColWidth = "w-10 min-w-10 sm:w-11 sm:min-w-11";
   const actionStickyPos = compactView ? "left-36" : "left-48 sm:left-56";
 
-  let studentIndex = 1;
+  const nonTeacherStudents = students.filter((s) => !s.isTeacher);
+  const firstNonTeacherIdx = students.findIndex((s) => !s.isTeacher);
+  const nonTeacherCount = nonTeacherStudents.length;
 
   return (
     <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
@@ -324,13 +327,28 @@ const AttendanceTableBody = ({
                     );
                   }
 
+                  if (firstNonTeacherIdx !== -1 && idx !== firstNonTeacherIdx) {
+                    return null;
+                  }
+
+                  const holidayName = holidayData?.holidayText || "HOLIDAY";
+                  const spanRows = nonTeacherCount > 0 ? nonTeacherCount : 1;
+
                   return (
                     <td
                       key={date}
-                      className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative bg-rose-100/80 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px] select-none`}
-                      title={holidayData?.holidayText || "HOLIDAY"}
+                      rowSpan={spanRows}
+                      className="border border-rose-300 dark:border-rose-900/80 text-center align-middle bg-rose-100/90 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 font-bold select-none p-1 relative hover:bg-rose-200/90 dark:hover:bg-rose-900/90 transition-colors shadow-inner"
+                      title={`Holiday: ${holidayName}`}
                     >
-                      H
+                      <div className="flex items-center justify-center h-full w-full py-4 min-h-[140px]">
+                        <span
+                          className="inline-block transform rotate-180 whitespace-nowrap tracking-widest font-black text-xs sm:text-sm uppercase text-rose-800 dark:text-rose-200 select-none drop-shadow-xs"
+                          style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+                        >
+                          {holidayName}
+                        </span>
+                      </div>
                     </td>
                   );
                 }
@@ -352,42 +370,66 @@ const AttendanceTableBody = ({
               })}
 
 
-            {/* ── MONTHLY SUMMARY STATS ── */}
-            {columnVisibility.summary && (
-              <>
-                <td title="Work Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
-                  {currentMonthWorkingDays}
-                </td>
-                <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
-                  {rawPresentDays}
-                </td>
-                <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
-                  {currentMonthAbsentDays}
-                </td>
-                <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
-                  {currentMonthCasualLeaves}
-                </td>
-                <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
-                  {currentMonthSickLeaves}
-                </td>
-                <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
-                  {currentMonthSpecialLeaves}
-                </td>
-                <td title="This Month Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-black text-[10px] px-0.5`}>
-                  <span
-                    className={
-                      Number(currentMonthPercentage) >= 75
-                        ? "text-emerald-700 dark:text-emerald-400"
-                        : Number(currentMonthPercentage) >= 50
-                        ? "text-amber-700 dark:text-amber-400"
-                        : "text-rose-700 dark:text-rose-400"
-                    }
-                  >
-                    {currentMonthPercentage}%
-                  </span>
-                </td>
-              </>
-            )}
+            {/* ── MONTHLY SUMMARY STATS (Pre-aggregated monthlyAttendanceStats Collection Row) ── */}
+            {columnVisibility.summary && (() => {
+              const preStat = currentMonthlyStatsMap?.get(student.userId);
+              const markedWorkingDays = rawPresentDays + currentMonthAbsentDays + currentMonthCasualLeaves + currentMonthSickLeaves + currentMonthSpecialLeaves + currentMonthOnDutyLeaves;
+
+              const displayWorkingDays = preStat?.workingDays !== undefined ? preStat.workingDays : currentMonthWorkingDays;
+              const displayRawPresent = preStat?.presentDays !== undefined ? preStat.presentDays : rawPresentDays;
+              const displayAbsentDays = preStat?.absentDays !== undefined ? preStat.absentDays : currentMonthAbsentDays;
+              const displayCasualLeaves = preStat?.casualLeaves !== undefined ? preStat.casualLeaves : currentMonthCasualLeaves;
+              const displaySickLeaves = preStat?.sickLeaves !== undefined ? preStat.sickLeaves : currentMonthSickLeaves;
+              const displaySpecialLeaves = preStat?.specialLeaves !== undefined ? preStat.specialLeaves : currentMonthSpecialLeaves;
+              const displayPercentage = preStat?.attendancePercentage !== undefined ? preStat.attendancePercentage : currentMonthPercentage;
+
+              // Only log discrepancy if preStat workingDays differs from BOTH marked working days AND total month working days, or if present/absent days differ
+              const isWorkMismatch = preStat && preStat.workingDays !== markedWorkingDays && preStat.workingDays !== currentMonthWorkingDays;
+              const isPresMismatch = preStat && preStat.presentDays !== rawPresentDays;
+              const isAbsMismatch = preStat && preStat.absentDays !== currentMonthAbsentDays;
+
+              if (preStat && (isWorkMismatch || isPresMismatch || isAbsMismatch)) {
+                console.warn(
+                  `🔥 [MonthlyStats Discrepancy Log] Student "${student.userName || student.name}" (${student.userId}): DB Stats [work=${preStat.workingDays}, pres=${preStat.presentDays}, abs=${preStat.absentDays}] != Daily Records [markedWork=${markedWorkingDays}, totalCalWork=${currentMonthWorkingDays}, pres=${rawPresentDays}, abs=${currentMonthAbsentDays}]`
+                );
+              }
+
+              return (
+                <>
+                  <td title={`Work Days marked so far: ${displayWorkingDays} (Total Calendar Work Days: ${currentMonthWorkingDays})`} className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
+                    {displayWorkingDays}
+                  </td>
+                  <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
+                    {displayRawPresent}
+                  </td>
+                  <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
+                    {displayAbsentDays}
+                  </td>
+                  <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
+                    {displayCasualLeaves}
+                  </td>
+                  <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
+                    {displaySickLeaves}
+                  </td>
+                  <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
+                    {displaySpecialLeaves}
+                  </td>
+                  <td title="This Month Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-black text-[10px] px-0.5`}>
+                    <span
+                      className={
+                        Number(displayPercentage) >= 75
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : Number(displayPercentage) >= 50
+                          ? "text-amber-700 dark:text-amber-400"
+                          : "text-rose-700 dark:text-rose-400"
+                      }
+                    >
+                      {displayPercentage}%
+                    </span>
+                  </td>
+                </>
+              );
+            })()}
           </tr>
         );
       })}

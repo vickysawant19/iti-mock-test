@@ -90,6 +90,7 @@ const AttendanceRegister = () => {
   const [holidays,         setHolidays]         = useState(new Map());
   const [newAttendance,    setNewAttendance]    = useState([]);
   const [studentStatsMap,  setStudentStatsMap]  = useState(new Map());
+  const [currentMonthlyStatsMap, setCurrentMonthlyStatsMap] = useState(new Map());
   const [loading,          setLoading]          = useState(INITIAL_LOADING);
 
   // ── Modal state ──────────────────────────────────────────────────────────
@@ -380,17 +381,22 @@ const AttendanceRegister = () => {
 
         const studentIds = students.map((s) => s.userId);
 
-        // ── Attendance ──────────────────────────────────────────────────
+        // ── Attendance & Current Month Pre-aggregated Stats ──────────────
         if (needsAttendance) {
-          const result = await newAttendanceService.getMonthlyAttendance(
-            studentIds,
-            selectedBatch,
-            selectedMonth.getFullYear(),
-            selectedMonth.getMonth() + 1,
-          );
+          const yearMonthStr = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
+          const [result, currentStats] = await Promise.all([
+            newAttendanceService.getMonthlyAttendance(
+              studentIds,
+              selectedBatch,
+              selectedMonth.getFullYear(),
+              selectedMonth.getMonth() + 1,
+            ),
+            newAttendanceService.getBatchMonthlyStats(selectedBatch, yearMonthStr),
+          ]);
 
           if (signal?.aborted) return;
           setNewAttendance(result.documents);
+          setCurrentMonthlyStatsMap(currentStats || new Map());
           fetchCacheRef.current.attendance = currentKey;
         }
 
@@ -400,28 +406,44 @@ const AttendanceRegister = () => {
 
         // ── Stats (previous months) ─────────────────────────────────────
         if (needsStats) {
-          const batchStart = batch.start_date;
-          const endDate    = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
-          const yearMonthStr = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
+          const rawStart = batch.start_date ? toLocalDate(batch.start_date) : null;
+          const batchStartYear = rawStart ? rawStart.getFullYear() : null;
+          const batchStartMonth = rawStart ? rawStart.getMonth() : null;
 
-          let statsMap = await newAttendanceService.getBatchCumulativeMonthlyStats(
-            selectedBatch,
-            yearMonthStr
-          );
+          const selYear = selectedMonth.getFullYear();
+          const selMonth = selectedMonth.getMonth();
 
-          if (!statsMap || statsMap.size === 0) {
-            statsMap = await newAttendanceService.getBatchCumulativeStudentStats(
-              studentIds,
+          // If selectedMonth is on or before the month the batch started, previous stats do not exist (all 0s)
+          const isBeforeOrEqualBatchStartMonth =
+            batchStartYear !== null &&
+            (selYear < batchStartYear || (selYear === batchStartYear && selMonth <= batchStartMonth));
+
+          if (isBeforeOrEqualBatchStartMonth) {
+            setStudentStatsMap(new Map());
+            fetchCacheRef.current.stats = currentKey;
+          } else {
+            const yearMonthStr = `${selYear}-${String(selMonth + 1).padStart(2, "0")}`;
+
+            let statsMap = await newAttendanceService.getBatchCumulativeMonthlyStats(
               selectedBatch,
-              batchStart,
-              endDate
+              yearMonthStr
             );
+
+            if (!statsMap || statsMap.size === 0) {
+              const endDate = endOfMonth(subMonths(selectedMonth, 1)).toISOString();
+              statsMap = await newAttendanceService.getBatchCumulativeStudentStats(
+                studentIds,
+                selectedBatch,
+                batch.start_date,
+                endDate
+              );
+            }
+
+            if (signal?.aborted) return;
+
+            setStudentStatsMap(statsMap || new Map());
+            fetchCacheRef.current.stats = currentKey;
           }
-
-          if (signal?.aborted) return;
-
-          setStudentStatsMap(statsMap);
-          fetchCacheRef.current.stats = currentKey;
         }
       } catch (error) {
         if (!signal?.aborted) {
@@ -789,6 +811,7 @@ const AttendanceRegister = () => {
           selectedMonth={selectedMonth}
           holidays={holidays}
           attendanceMap={newAttendanceMap}
+          currentMonthlyStatsMap={currentMonthlyStatsMap}
           calculatePreviousMonthsData={studentStatsMap}
           formatDate={format}
           getDaysInMonth={getDaysInMonth}

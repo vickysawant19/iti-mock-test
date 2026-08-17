@@ -1,28 +1,47 @@
 import { ID, Query } from 'node-appwrite';
+import { createHash } from 'crypto';
+
+export const generateShortStatId = (userId, batchId, suffix = '') => {
+  const raw = suffix ? `${userId}_${batchId}_${suffix}` : `${userId}_${batchId}`;
+  return createHash('md5').update(raw).digest('hex'); // 32 chars (Appwrite max limit is 36 chars)
+};
 
 export const bulkUpsertDocuments = async (databases, DB_ID, collectionId, documents) => {
   if (!documents || documents.length === 0) return [];
-  const results = [];
-  const CHUNK_SIZE = 10;
-  for (let i = 0; i < documents.length; i += CHUNK_SIZE) {
-    const chunk = documents.slice(i, i + CHUNK_SIZE);
-    const promises = chunk.map(async (doc) => {
-      const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...data } = doc;
-      const targetId = $id || ID.unique();
-      try {
-        return await databases.updateDocument(DB_ID, collectionId, targetId, data);
-      } catch (err) {
-        try {
-          return await databases.createDocument(DB_ID, collectionId, targetId, data);
-        } catch (createErr) {
-          return await databases.updateDocument(DB_ID, collectionId, targetId, data).catch(() => null);
-        }
+
+  const targetIds = documents.map((d) => d.$id).filter(Boolean);
+  const existingIds = new Set();
+
+  if (targetIds.length > 0) {
+    try {
+      for (let i = 0; i < targetIds.length; i += 50) {
+        const chunkIds = targetIds.slice(i, i + 50);
+        const existingDocs = await databases.listDocuments(DB_ID, collectionId, [
+          Query.equal('$id', chunkIds),
+          Query.limit(50),
+        ]);
+        (existingDocs.documents || []).forEach((doc) => existingIds.add(doc.$id));
       }
-    });
-    const chunkResults = await Promise.all(promises);
-    results.push(...chunkResults.filter(Boolean));
+    } catch (e) {
+      // Fallback if list query fails
+    }
   }
-  return results;
+
+  const promises = documents.map(async (doc) => {
+    const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...data } = doc;
+    const targetId = $id || ID.unique();
+
+    if (existingIds.has(targetId)) {
+      return await databases.updateDocument(DB_ID, collectionId, targetId, data).catch(() => null);
+    } else {
+      return await databases.createDocument(DB_ID, collectionId, targetId, data).catch(async () => {
+        return await databases.updateDocument(DB_ID, collectionId, targetId, data).catch(() => null);
+      });
+    }
+  });
+
+  const results = await Promise.all(promises);
+  return results.filter(Boolean);
 };
 
 export const updateBatchStatsHelper = async (
@@ -108,15 +127,15 @@ export const bulkUpdateBatchStats = async (
   const STATS_COLLECTION_ID = 'userBatchStats';
   const monthKey = date.substring(0, 7); // YYYY-MM
 
-  // Fetch all existing stats for this batch
-  const existingDocs = await databases.listDocuments(
-    DB_ID,
-    STATS_COLLECTION_ID,
-    [Query.equal('batchId', batchId), Query.limit(500)]
-  );
+  // Fetch all existing stats for this batch in 1 bulk query
+  const existingDocsRes = await tablesDB.listRows({
+    databaseId: DB_ID,
+    tableId: STATS_COLLECTION_ID,
+    queries: [Query.equal('batchId', batchId), Query.limit(500)],
+  }).catch(() => ({ rows: [] }));
 
   const existingStatsMap = new Map(
-    existingDocs.documents.map((doc) => [doc.userId, doc])
+    (existingDocsRes.rows || existingDocsRes.documents || []).map((doc) => [doc.userId, doc])
   );
 
   const statsToCreate = [];
@@ -158,7 +177,7 @@ export const bulkUpdateBatchStats = async (
       monthlyData[monthKey] = isPresent;
 
       statsToCreate.push({
-        $id: `${record.userId}_${batchId}`,
+        $id: generateShortStatId(record.userId, batchId),
         userId: record.userId,
         batchId: batchId,
         totalWorkingDays: 0,
@@ -173,7 +192,25 @@ export const bulkUpdateBatchStats = async (
 
   const allStatsToSave = [...statsToCreate, ...statsToUpdate];
   if (allStatsToSave.length > 0) {
-    await bulkUpsertDocuments(databases, DB_ID, STATS_COLLECTION_ID, allStatsToSave);
+    try {
+      await tablesDB.upsertRows({
+        databaseId: DB_ID,
+        tableId: STATS_COLLECTION_ID,
+        rows: allStatsToSave,
+      });
+    } catch (err) {
+      await Promise.all(
+        allStatsToSave.map(async (row) => {
+          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
+          const rowId = $id || generateShortStatId(row.userId, batchId);
+          try {
+            await tablesDB.updateRow({ databaseId: DB_ID, tableId: STATS_COLLECTION_ID, rowId, data: cleanData });
+          } catch (e) {
+            await tablesDB.createRow({ databaseId: DB_ID, tableId: STATS_COLLECTION_ID, rowId, data: cleanData }).catch(() => null);
+          }
+        })
+      );
+    }
   }
 };
 
@@ -357,7 +394,7 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       logger(`[bulkUpdateMonthlyAttendanceStats-RESULT] userId=${userId}, workingDays=${workingDays}, presentDays=${presentDays}, rowsCount=${rows.length}`);
 
       statsObjects.push({
-        $id: `${userId}_${batchId}_${yearMonth}`,
+        $id: generateShortStatId(userId, batchId, yearMonth),
         userId,
         batchId,
         yearMonth,
@@ -583,5 +620,212 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
   } catch (err) {
     console.error('Failed in verifyBatchMonthlyStatsHelper:', err);
     return { hasDiscrepancies: false, mismatches: [], totalChecked: 0 };
+  }
+};
+
+export const decrementMonthlyStatsForAttendanceRecords = async (tablesDB, DB_ID, batchId, yearMonth, records) => {
+  if (!records || records.length === 0) return;
+  const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
+
+  // Fetch existing monthly stats for this batch and month in 1 single bulk query
+  const existingStatsRes = await tablesDB.listRows({
+    databaseId: DB_ID,
+    tableId: MONTHLY_STATS_COL,
+    queries: [
+      Query.equal('batchId', batchId),
+      Query.equal('yearMonth', yearMonth),
+      Query.limit(500),
+    ],
+  }).catch(() => ({ rows: [] }));
+
+  const existingStatsMap = new Map(
+    (existingStatsRes.rows || existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
+  );
+
+  const modifiedStatsMap = new Map();
+
+  records.forEach((r) => {
+    const userId = r.userId;
+    if (!userId) return;
+
+    const doc = modifiedStatsMap.get(userId) || existingStatsMap.get(userId);
+    if (!doc) return; // Nothing to decrement if student has no monthly stats record
+
+    const s = String(r.status || r.attendanceStatus || '').toLowerCase();
+
+    let workingDays = Math.max(0, (doc.workingDays || 0) - 1);
+    let presentDays = doc.presentDays || 0;
+    let absentDays = doc.absentDays || 0;
+    let casualLeaves = doc.casualLeaves || 0;
+    let sickLeaves = doc.sickLeaves || 0;
+    let specialLeaves = doc.specialLeaves || 0;
+    let onDutyLeaves = doc.onDutyLeaves || 0;
+    let halfDays = doc.halfDays || 0;
+    let lateDays = doc.lateDays || 0;
+
+    if (s === 'present' || s === 'p') presentDays = Math.max(0, presentDays - 1);
+    else if (s === 'absent' || s === 'a') absentDays = Math.max(0, absentDays - 1);
+    else if (s === 'casual' || s === 'cl') casualLeaves = Math.max(0, casualLeaves - 1);
+    else if (s === 'sick' || s === 'sl') sickLeaves = Math.max(0, sickLeaves - 1);
+    else if (s === 'special' || s === 'spl') specialLeaves = Math.max(0, specialLeaves - 1);
+    else if (s === 'on_duty' || s === 'od') onDutyLeaves = Math.max(0, onDutyLeaves - 1);
+    else if (s === 'half_day' || s === 'hd') halfDays = Math.max(0, halfDays - 1);
+    else if (s === 'late' || s === 'l') lateDays = Math.max(0, lateDays - 1);
+
+    const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
+    const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+    doc.workingDays = workingDays;
+    doc.presentDays = presentDays;
+    doc.absentDays = absentDays;
+    doc.casualLeaves = casualLeaves;
+    doc.sickLeaves = sickLeaves;
+    doc.specialLeaves = specialLeaves;
+    doc.onDutyLeaves = onDutyLeaves;
+    doc.halfDays = halfDays;
+    doc.lateDays = lateDays;
+    doc.totalPresent = totalPresent;
+    doc.attendancePercentage = attendancePercentage;
+    doc.updatedAt = new Date().toISOString();
+
+    modifiedStatsMap.set(userId, doc);
+  });
+
+  const statsToUpsert = Array.from(modifiedStatsMap.values());
+  if (statsToUpsert.length > 0) {
+    try {
+      await tablesDB.upsertRows({
+        databaseId: DB_ID,
+        tableId: MONTHLY_STATS_COL,
+        rows: statsToUpsert,
+      });
+    } catch (err) {
+      await Promise.all(
+        statsToUpsert.map(async (row) => {
+          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
+          const rowId = $id || generateShortStatId(row.userId, batchId, yearMonth);
+          try {
+            await tablesDB.updateRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData });
+          } catch (e) {
+            await tablesDB.createRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData }).catch(() => null);
+          }
+        })
+      );
+    }
+  }
+};
+
+export const updateIncrementalMonthlyAttendanceStats = async (
+  tablesDB,
+  DB_ID,
+  batchId,
+  date,
+  recordsToUpdate,
+  existingRecordsMap = new Map()
+) => {
+  if (!recordsToUpdate || recordsToUpdate.length === 0) return;
+
+  const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
+  const yearMonth = String(date).substring(0, 7);
+
+  // Fetch existing monthly stats documents for this batch and month in a single query
+  const existingStatsRes = await tablesDB.listRows({
+    databaseId: DB_ID,
+    tableId: MONTHLY_STATS_COL,
+    queries: [
+      Query.equal('batchId', batchId),
+      Query.equal('yearMonth', yearMonth),
+      Query.limit(500),
+    ],
+  }).catch(() => ({ rows: [] }));
+
+  const existingStatsMap = new Map(
+    (existingStatsRes.rows || existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
+  );
+
+  const modifiedStatsMap = new Map();
+
+  const applyStatusChange = (statDoc, statusStr, delta) => {
+    const s = String(statusStr || '').toLowerCase();
+    if (s === 'present' || s === 'p') statDoc.presentDays = Math.max(0, (statDoc.presentDays || 0) + delta);
+    else if (s === 'absent' || s === 'a') statDoc.absentDays = Math.max(0, (statDoc.absentDays || 0) + delta);
+    else if (s === 'casual' || s === 'cl') statDoc.casualLeaves = Math.max(0, (statDoc.casualLeaves || 0) + delta);
+    else if (s === 'sick' || s === 'sl') statDoc.sickLeaves = Math.max(0, (statDoc.sickLeaves || 0) + delta);
+    else if (s === 'special' || s === 'spl') statDoc.specialLeaves = Math.max(0, (statDoc.specialLeaves || 0) + delta);
+    else if (s === 'on_duty' || s === 'od') statDoc.onDutyLeaves = Math.max(0, (statDoc.onDutyLeaves || 0) + delta);
+    else if (s === 'half_day' || s === 'hd') statDoc.halfDays = Math.max(0, (statDoc.halfDays || 0) + delta);
+    else if (s === 'late' || s === 'l') statDoc.lateDays = Math.max(0, (statDoc.lateDays || 0) + delta);
+  };
+
+  recordsToUpdate.forEach((r) => {
+    const userId = r.userId;
+    if (!userId) return;
+
+    const newStatus = String(r.status || r.attendanceStatus || '').toLowerCase();
+    const existingRec = existingRecordsMap.get(userId);
+    const prevStatus = existingRec ? String(existingRec.status || existingRec.attendanceStatus || '').toLowerCase() : null;
+
+    if (prevStatus && prevStatus === newStatus) {
+      return;
+    }
+
+    const statDoc = modifiedStatsMap.get(userId) || existingStatsMap.get(userId) || {
+      $id: generateShortStatId(userId, batchId, yearMonth),
+      userId,
+      batchId,
+      yearMonth,
+      workingDays: 0,
+      presentDays: 0,
+      absentDays: 0,
+      casualLeaves: 0,
+      sickLeaves: 0,
+      specialLeaves: 0,
+      onDutyLeaves: 0,
+      halfDays: 0,
+      lateDays: 0,
+      totalPresent: 0,
+      attendancePercentage: 0,
+    };
+
+    if (prevStatus) {
+      applyStatusChange(statDoc, prevStatus, -1);
+    } else {
+      statDoc.workingDays = (statDoc.workingDays || 0) + 1;
+    }
+
+    applyStatusChange(statDoc, newStatus, 1);
+
+    const totalPresent = (statDoc.presentDays || 0) + (statDoc.casualLeaves || 0) + (statDoc.sickLeaves || 0) + (statDoc.specialLeaves || 0) + (statDoc.onDutyLeaves || 0);
+    const workingDays = statDoc.workingDays || 0;
+    const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
+
+    statDoc.totalPresent = totalPresent;
+    statDoc.attendancePercentage = attendancePercentage;
+    statDoc.updatedAt = new Date().toISOString();
+
+    modifiedStatsMap.set(userId, statDoc);
+  });
+
+  const statsToUpsert = Array.from(modifiedStatsMap.values());
+  if (statsToUpsert.length > 0) {
+    try {
+      await tablesDB.upsertRows({
+        databaseId: DB_ID,
+        tableId: MONTHLY_STATS_COL,
+        rows: statsToUpsert,
+      });
+    } catch (err) {
+      await Promise.all(
+        statsToUpsert.map(async (row) => {
+          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
+          const rowId = $id || generateShortStatId(row.userId, batchId, yearMonth);
+          try {
+            await tablesDB.updateRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData });
+          } catch (e) {
+            await tablesDB.createRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData }).catch(() => null);
+          }
+        })
+      );
+    }
   }
 };

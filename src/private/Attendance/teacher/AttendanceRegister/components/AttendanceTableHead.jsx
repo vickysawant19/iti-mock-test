@@ -181,13 +181,15 @@ const AttendanceTableHead = ({
             const day = formatDate(currentDate, "EEE");
             const fullDate = formatDate(currentDate, "yyyy-MM-dd");
             const isHoliday = holidays.has(fullDate);
+            const holidayInfo = holidays.get(fullDate);
             const isSunday = currentDate.getDay() === 0;
+            const holidayLabel = holidayInfo?.holidayText || (isSunday ? "Sunday" : "Holiday");
 
             return (
               <th
                 key={date}
                 scope="col"
-                title={`${day}, ${formatDate(currentDate, "dd MMM yyyy")}${isHoliday ? " · Holiday" : ""}`}
+                title={`${day}, ${formatDate(currentDate, "dd MMM yyyy")}${isHoliday || isSunday ? ` · ${holidayLabel}` : ""}`}
                 className={`${cell} border ${
                   isHoliday || isSunday
                     ? "bg-rose-600 border-rose-500 dark:bg-rose-950 dark:border-rose-800"

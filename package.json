@@ -48,7 +48,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.473.0",
     "moment": "^2.30.1",
-    "node-appwrite": "^23.0.0",
+    "node-appwrite": "^28.0.0",
     "nodeenv": "^3.0.75",
     "object-sizeof": "^2.6.5",
     "radix-ui": "^1.4.3",

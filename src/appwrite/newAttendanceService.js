@@ -643,6 +643,30 @@ class NewAttendanceService {
   // Optimized Batch Student Stats: Fetches batch attendance in parallel chunks of 25 students & computes per-student stats in memory
   async getBatchCumulativeStudentStats(studentIds, batchId, startDate = null, endDate = null) {
     if (!batchId || !studentIds?.length) return new Map();
+
+    // If startDate > endDate (e.g. batch started in April and requesting stats before April), return zeroes
+    if (startDate && endDate) {
+      const sDate = new Date(startDate);
+      const eDate = new Date(endDate);
+      if (sDate > eDate) {
+        const resultMap = new Map();
+        (studentIds || []).forEach((id) => {
+          resultMap.set(id, {
+            total: 0,
+            presentDays: 0,
+            absentDays: 0,
+            lateDays: 0,
+            workingDays: 0,
+            holidayDays: 0,
+            leaveDays: 0,
+            leaveBreakdown: { CASUAL: 0, SICK: 0, SPECIAL: 0, ON_DUTY: 0 },
+            percentage: 0,
+          });
+        });
+        return resultMap;
+      }
+    }
+
     try {
       const studentChunks = this.chunkArray(studentIds, 25);
 

@@ -11,6 +11,7 @@ const AttendanceTable = ({
   selectedMonth,
   holidays,
   attendanceMap,
+  currentMonthlyStatsMap,
   calculatePreviousMonthsData,
   formatDate,
   getDaysInMonth,
@@ -191,6 +192,7 @@ const AttendanceTable = ({
                 selectedMonth={selectedMonth}
                 holidays={holidays}
                 attendanceMap={attendanceMap}
+                currentMonthlyStatsMap={currentMonthlyStatsMap}
                 calculatePreviousMonthsData={calculatePreviousMonthsData}
                 formatDate={formatDate}
                 onAttendanceStatusChange={onAttendanceStatusChange}
