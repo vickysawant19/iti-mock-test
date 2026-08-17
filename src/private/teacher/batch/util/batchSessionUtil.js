@@ -172,5 +172,10 @@ export function formatSessionLabel(session) {
   const startYear = session.startDate ? session.startDate.substring(0, 4) : "";
   const endYear = session.endDate ? session.endDate.substring(0, 4) : "";
   const range = startYear && endYear ? ` (${startYear}–${endYear})` : "";
-  return `${session.name || session.year}${range}`;
+
+  // Strip any existing parenthesised year range already in the name
+  // e.g. "First Year (2026 - 2027)" → "First Year"
+  const rawName = (session.name || session.year || "").replace(/\s*\(\d{4}\s*[-–]\s*\d{4}\)\s*$/, "").trim();
+
+  return `${rawName}${range}`;
 }

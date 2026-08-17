@@ -488,6 +488,10 @@ const AttendanceRegister = () => {
             setNewAttendance((prev) =>
               (prev || []).filter((att) => att.$id !== existingRecord.$id),
             );
+            // Refresh monthly summary after clear
+            fetchCacheRef.current.attendance = null;
+            fetchCacheRef.current.stats = null;
+            await fetchAttendanceAndStats(new AbortController().signal);
             toast.success("Attendance cleared successfully");
           }
           return;
@@ -510,7 +514,10 @@ const AttendanceRegister = () => {
           ...(prev || []).filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
         ]);
+        // Refresh monthly summary after update
+        fetchCacheRef.current.attendance = null;
         fetchCacheRef.current.stats = null;
+        await fetchAttendanceAndStats(new AbortController().signal);
       } catch (error) {
         console.error("Error updating attendance:", error);
         toast.error("Failed to update attendance");
@@ -522,7 +529,7 @@ const AttendanceRegister = () => {
         });
       }
     },
-    [newAttendance, selectedBatch, batches, selectedMonth],
+    [newAttendance, selectedBatch, batches, selectedMonth, fetchAttendanceAndStats],
   );
 
   // ─────────────────────────────────────────────────────────────────────────

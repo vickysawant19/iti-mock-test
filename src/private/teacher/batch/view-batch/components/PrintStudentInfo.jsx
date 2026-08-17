@@ -31,6 +31,7 @@ const valueStyle = {
   fontSize: "14px",
   minWidth: "100px",
   color: "#000",
+  textTransform: "uppercase",
 };
 
 /**
@@ -39,9 +40,7 @@ const valueStyle = {
  * Shows a 2-column grid of student details.
  */
 const PrintStudentInfo = ({ data, yearRange, sessionName }) => {
-  const displayYear = sessionName
-    ? `${sessionName} (${yearRange})`
-    : yearRange || "-";
+  const displayYear = yearRange || sessionName || "-";
 
   return (
     <div
