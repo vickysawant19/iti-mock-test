@@ -66,21 +66,36 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
               }
 
               const dType = rec.dayType || "WORKING";
-              if (dType === "WORKING") {
-                attendanceMap[monthKey].possibleDays += 1;
-              }
+
+              // Only process WORKING day records for attendance stats
+              if (dType !== "WORKING") return;
+
+              attendanceMap[monthKey].possibleDays += 1;
 
               const upperStatus = String(rec.attendanceStatus || rec.status || "").toUpperCase();
               const upperLeave = String(rec.leaveType || "").toUpperCase();
+              const lowerLeave = String(rec.leaveType || "").toLowerCase().replace(/[_\s]/g, "");
 
               if (upperStatus === "PRESENT") {
                 attendanceMap[monthKey].presentDays += 1;
-              } else if (upperStatus === "LEAVE" || upperStatus === "ABSENT") {
-                if (upperLeave === "SICK" || upperLeave === "SL" || upperLeave === "MEDICAL") {
+              } else if (upperStatus === "LEAVE") {
+                // Leaves count as effective attendance (ITI standard)
+                attendanceMap[monthKey].presentDays += 1;
+                if (["sick", "sl", "medical", "sickleave"].some((t) => lowerLeave.includes(t))) {
                   attendanceMap[monthKey].sickLeave += 1;
                 } else {
                   attendanceMap[monthKey].casualLeave += 1;
                 }
+              } else if (upperStatus === "ABSENT") {
+                // Absent days: check if it's a leave-typed absent (some systems mark absent+leaveType)
+                if (upperLeave && (["sick", "sl", "medical", "sickleave"].some((t) => lowerLeave.includes(t)))) {
+                  attendanceMap[monthKey].presentDays += 1;
+                  attendanceMap[monthKey].sickLeave += 1;
+                } else if (upperLeave) {
+                  attendanceMap[monthKey].presentDays += 1;
+                  attendanceMap[monthKey].casualLeave += 1;
+                }
+                // pure absent: not counted in presentDays
               }
             } catch (error) {
               console.error(`Error processing date: ${rec.date}`, error);
@@ -108,7 +123,8 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
             };
             const possible = Number(raw.possibleDays) || 0;
             const present = Number(raw.presentDays) || 0;
-            const percentVal = possible > 0 ? ((present / possible) * 100).toFixed(1) + "%" : "0%";
+            const rawPct = possible > 0 ? (present / possible) * 100 : 0;
+            const percentVal = possible > 0 ? `${Math.min(100, rawPct).toFixed(1)}%` : "0%";
 
             pageData[month] = {
               possibleDays: raw.possibleDays || "",
@@ -128,10 +144,61 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
           });
         });
 
-        return { pages };
+        const CL_TYPES = ["casual", "cl", "leave", "general"];
+        const SL_TYPES = ["sick", "sl", "medical", "sickleave", "sick_leave"];
+
+        // Collect raw CL and SL records sorted by date
+        const rawCL = [];
+        const rawSL = [];
+
+        attendanceRecords.forEach((rec) => {
+          try {
+            if (!rec || !rec.date) return;
+            const upperStatus = String(rec.attendanceStatus || rec.status || "").toUpperCase();
+            const upperLeave = String(rec.leaveType || "").toLowerCase().replace(/[_\s]/g, "");
+            if (upperStatus !== "LEAVE" && upperStatus !== "ABSENT") return;
+            if (SL_TYPES.some((t) => upperLeave.includes(t))) {
+              rawSL.push(new Date(rec.date));
+            } else {
+              // default to CL for any leave not identified as SL
+              rawCL.push({ date: new Date(rec.date), reason: rec.leaveType || "Casual Leave" });
+            }
+          } catch {}
+        });
+
+        // Sort both arrays by date ascending
+        rawCL.sort((a, b) => a.date - b.date);
+        rawSL.sort((a, b) => a - b);
+
+        // Merge consecutive SL dates into spells
+        const slSpells = [];
+        rawSL.forEach((d) => {
+          if (!slSpells.length) { slSpells.push([d]); return; }
+          const lastSpell = slSpells[slSpells.length - 1];
+          const lastDate = lastSpell[lastSpell.length - 1];
+          const diffMs = d - lastDate;
+          const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          if (diffDays <= 1) { lastSpell.push(d); } // consecutive or same
+          else { slSpells.push([d]); }
+        });
+
+        const fmtDate = (d) => format(d, "dd/MM/yy");
+
+        const clRecords = rawCL.map(({ date, reason }) => ({
+          date: fmtDate(date),
+          reason,
+        }));
+
+        const slRecords = slSpells.map((spell) => ({
+          from: fmtDate(spell[0]),
+          to: fmtDate(spell[spell.length - 1]),
+          days: spell.length,
+        }));
+
+        return { pages, clRecords, slRecords };
       };
 
-      const { pages } = processAttendanceRecords();
+      const { pages, clRecords, slRecords } = processAttendanceRecords();
 
       const collegeInfo = college ? { collageName: college.collageName } : {};
       const tradeInfo = trade ? { tradeName: trade.name || trade.tradeName } : {};
@@ -141,6 +208,8 @@ const TraineeLeaveRecord = ({ studentProfiles = [], batchData }) => {
         ...collegeInfo,
         ...tradeInfo,
         pages,
+        clRecords,
+        slRecords,
         stipend: "Yes",
         casualLeaveRecords: [],
         medicalLeaveRecords: [],

@@ -48,7 +48,7 @@ const tdLabelStyle = {
 const calculatePercentage = (attendanceData) => {
   if (!attendanceData || !attendanceData.possibleDays) return "-";
   const pct = (attendanceData.presentDays / attendanceData.possibleDays) * 100;
-  return isNaN(pct) ? "-" : `${Math.round(pct)}%`;
+  return isNaN(pct) ? "-" : `${Math.min(100, Math.round(pct))}%`;
 };
 
 /* ─── Section Header Component ─── */
@@ -232,51 +232,75 @@ const TraineeLeaveRecordPrint = forwardRef(function TraineeLeaveRecordPrint(
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <tr
-                    key={i}
-                    style={{
-                      height: "26px",
-                      background: i % 2 === 0 ? "#f8fafd" : "#ffffff",
-                    }}
-                  >
-                    <td style={tdStyle}>{12 - i}</td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}>{6 - i}</td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                    <td style={tdStyle}></td>
-                  </tr>
-                ))}
+                {(() => {
+                  // CL table: 12 slots numbered 12 down to 1, split into two columns of 6
+                  const CL_TOTAL = 12;
+                  const CL_PER_COL = 6;
+                  const clData = data.clRecords || [];
+                  // left column: Sr 12..7, right column: Sr 6..1
+                  return Array.from({ length: CL_PER_COL }).map((_, rowIdx) => {
+                    const leftSr  = CL_TOTAL - rowIdx;           // 12,11,10,9,8,7
+                    const rightSr = CL_PER_COL - rowIdx;         // 6,5,4,3,2,1
+                    const leftEntry  = clData.find((_, i) => i === (CL_TOTAL - leftSr));   // clData[0..5]
+                    const rightEntry = clData.find((_, i) => i === (CL_PER_COL - rightSr)); // clData[6..11] → re-index
+                    // simpler: left = clData at position (rowIdx), right = clData at position (CL_PER_COL + rowIdx)
+                    const lEntry = clData[rowIdx] || null;
+                    const rEntry = clData[CL_PER_COL + rowIdx] || null;
+                    return (
+                      <tr key={rowIdx} style={{ height: "24px", background: rowIdx % 2 === 0 ? "#f8fafd" : "#ffffff" }}>
+                        {/* Left half */}
+                        <td style={{ ...tdStyle, fontWeight: "700", color: ACCENT }}>{leftSr}</td>
+                        <td style={{ ...tdStyle, textAlign: "left", paddingLeft: "6px" }}>{lEntry?.date || ""}</td>
+                        <td style={{ ...tdStyle, textAlign: "left", paddingLeft: "6px", fontSize: "9.5px" }}>{lEntry?.reason || ""}</td>
+                        <td style={tdStyle}></td>
+                        <td style={tdStyle}></td>
+                        {/* Right half */}
+                        <td style={{ ...tdStyle, fontWeight: "700", color: ACCENT }}>{rightSr}</td>
+                        <td style={{ ...tdStyle, textAlign: "left", paddingLeft: "6px" }}>{rEntry?.date || ""}</td>
+                        <td style={{ ...tdStyle, textAlign: "left", paddingLeft: "6px", fontSize: "9.5px" }}>{rEntry?.reason || ""}</td>
+                        <td style={tdStyle}></td>
+                        <td style={tdStyle}></td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </StyledTable>
 
-            {/* ─── Medical Leave Record ─── */}
+            {/* ─── Medical (Sick) Leave Record ─── */}
             <SectionTitle>Medical Leave Record</SectionTitle>
             <StyledTable style={{ marginBottom: "4px" }}>
               <thead>
                 <tr>
-                  {["Date", "From To", "Days", "Reason", "Order",
-                    "Trai.", "Inst.", "G.I."].map((h, i) => (
+                  {["Sr.", "From", "To", "Days", "Reason / Diagnosis",
+                    "Order", "Trai.", "Inst.", "G.I."].map((h, i) => (
                     <th key={i} style={thStyle}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <tr
-                    key={i}
-                    style={{ background: i % 2 === 0 ? "#f8fafd" : "#ffffff" }}
-                  >
-                    {Array.from({ length: 8 }).map((__, j) => (
-                      <td key={j} style={{ ...tdStyle, height: "26px" }}></td>
-                    ))}
-                  </tr>
-                ))}
+                {(() => {
+                  const SL_ROWS = 4;
+                  const slData = data.slRecords || [];
+                  return Array.from({ length: Math.max(SL_ROWS, slData.length) }).map((_, i) => {
+                    const spell = slData[i] || null;
+                    return (
+                      <tr key={i} style={{ background: i % 2 === 0 ? "#f8fafd" : "#ffffff" }}>
+                        <td style={{ ...tdStyle, height: "26px", fontWeight: "700", color: ACCENT }}>{i + 1}</td>
+                        <td style={{ ...tdStyle, height: "26px" }}>{spell?.from || ""}</td>
+                        <td style={{ ...tdStyle, height: "26px" }}>{spell?.to || ""}</td>
+                        <td style={{ ...tdStyle, height: "26px", fontWeight: spell ? "700" : "400" }}>
+                          {spell ? `${spell.days}d` : ""}
+                        </td>
+                        <td style={{ ...tdStyle, height: "26px", textAlign: "left", paddingLeft: "6px" }}></td>
+                        <td style={{ ...tdStyle, height: "26px" }}></td>
+                        <td style={{ ...tdStyle, height: "26px" }}></td>
+                        <td style={{ ...tdStyle, height: "26px" }}></td>
+                        <td style={{ ...tdStyle, height: "26px" }}></td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </StyledTable>
 
