@@ -2,12 +2,13 @@ import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
 import { format } from "date-fns";
-import { Search, Users2 } from "lucide-react";
+import { Search, Users2, FileSpreadsheet } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 
 import LiveCommandPanel from "./components/LiveCommandPanel";
 import StudentCardItem from "./components/StudentCardItem";
 import StudentManagementModal from "./components/StudentManagementModal";
+import ExportStudentsModal from "./components/ExportStudentsModal";
 
 const ViewProfiles = ({ students = [], batchId, batchData }) => {
   const profile = useSelector(selectProfile);
@@ -25,6 +26,9 @@ const ViewProfiles = ({ students = [], batchId, batchData }) => {
   // Profile Detail Modal State
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
   const [activeProfileTab, setActiveProfileTab] = useState("profile");
+
+  // Export Modal State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Filter valid student list (exclude teachers & logged-in user if needed)
   const actualStudents = useMemo(() => {
@@ -147,7 +151,7 @@ const ViewProfiles = ({ students = [], batchId, batchData }) => {
 
         {/* ── RIGHT SIDE — STUDENT CARDS GRID ── */}
         <div className="flex-1 min-w-0 space-y-4 w-full">
-          {/* Top Header with Prominent Search Bar */}
+          {/* Top Header with Prominent Search Bar & Export Action */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pb-1">
             <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
               Student Profiles Roster
@@ -156,16 +160,29 @@ const ViewProfiles = ({ students = [], batchId, batchData }) => {
               </span>
             </h2>
 
-            {/* Search Bar at Top */}
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search name, Roll No, Reg ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-800 dark:text-white shadow-sm"
-              />
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Bar at Top */}
+              <div className="relative flex-1 sm:w-80">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search name, Roll No, Reg ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-800 dark:text-white shadow-sm"
+                />
+              </div>
+
+              {/* Export Excel Button */}
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                className="flex items-center gap-2 px-3.5 py-2 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/80 dark:border-emerald-800/80 rounded-xl transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
+                title="Export student roster to Excel spreadsheet with custom columns"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Export Excel</span>
+              </button>
             </div>
           </div>
 
@@ -199,6 +216,16 @@ const ViewProfiles = ({ students = [], batchId, batchData }) => {
         setActiveProfileTab={setActiveProfileTab}
         selectedStudent={selectedStudent}
         effectiveBatchId={effectiveBatchId}
+      />
+
+      {/* ── EXPORT STUDENT DETAILS TO EXCEL MODAL ── */}
+      <ExportStudentsModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        allStudents={studentRoster}
+        filteredStudents={filteredRoster}
+        batchData={batchData}
+        isFiltered={searchTerm.trim() !== "" || presenceFilter !== "all"}
       />
     </div>
   );

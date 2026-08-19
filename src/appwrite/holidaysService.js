@@ -135,15 +135,10 @@ class HolidayService {
 
   async updateHoliday(holidayId, holidayData) {
     try {
-      const { dayType, ...cleanData } = holidayData || {};
-      const data = await this.database.updateRow({
-        databaseId: conf.databaseId,
-        tableId: conf.holidayDaysCollectionId,
-        rowId: holidayId,
-        data: cleanData,
-      });
-      return data;
+      // Delegate to addHoliday server function which handles upsert for date & batch
+      return await this.addHoliday(holidayData);
     } catch (error) {
+      console.error("updateHoliday error:", error);
       throw new Error(error.message);
     }
   }

@@ -4,7 +4,7 @@ import { Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import batchRequestService from "@/appwrite/batchRequestService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import teamService from "@/appwrite/teamService";
 import userProfileService from "@/appwrite/userProfileService";
 
 /**
@@ -78,8 +78,8 @@ export function useBatchRequests() {
   const acceptRequest = useCallback(async (requestId, batchId, studentId) => {
     // 1. Update request status
     await batchRequestService.updateRequestStatus(requestId, "approved");
-    // 2. Add student to batchStudents
-    await batchStudentService.addStudent(batchId, studentId);
+    // 2. Add student to batch via teamService (routes to user-manage function)
+    await teamService.approveStudent(batchId, studentId);
     // 3. Update student's activeBatchId in their profile (non-critical)
     try {
       const profiles = await userProfileService.getBatchUserProfile([

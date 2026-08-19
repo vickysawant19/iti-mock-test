@@ -2,6 +2,7 @@ import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
 import batchStudentService from "./batchStudentService";
+import teamService from "./teamService";
 
 export class StudentBatchAccessService {
   constructor() {
@@ -64,7 +65,7 @@ export class StudentBatchAccessService {
         if (req.status === "approved") {
           // AUTO-HEALING: Request is approved but they are missing from batchStudents
           console.warn("Auto-healing active status for student:", studentId, "in batch:", batchId);
-          await batchStudentService.addStudent(batchId, studentId);
+          await teamService.approveStudent(batchId, studentId);
           return "ACTIVE";
         }
       }

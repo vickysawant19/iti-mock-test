@@ -193,18 +193,12 @@ export class BatchRequestService {
     // 1. Mark request as approved
     const updatedRequest = await this.updateRequestStatus(requestId, "approved");
     
-    // 2. Ensure student is added to batchStudents DB table
-    try {
-      await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
-    } catch (err) {
-      console.warn("[approveRequest] batchStudentService.addStudent error (may already exist):", err);
-    }
-
-    // 3. Sync Appwrite Team membership via teamService
+    // 2. Delegate approval (batchStudents row + Appwrite Team membership + memberCount) to teamService Cloud Function
     try {
       await teamService.approveStudent(batchId, studentId, enrollmentDetails);
     } catch (err) {
-      console.warn("[approveRequest] teamService.approveStudent failed:", err);
+      console.warn("[approveRequest] teamService.approveStudent error, falling back to batchStudentService:", err);
+      await batchStudentService.addStudent(batchId, studentId, enrollmentDetails);
     }
     
     return updatedRequest;
@@ -251,8 +245,13 @@ export class BatchRequestService {
       });
     }
 
-    // 2. Add to batch
-    await batchStudentService.addStudent(batchId, studentId);
+    // 2. Add to batch via teamService Cloud Function
+    try {
+      await teamService.approveStudent(batchId, studentId);
+    } catch (err) {
+      console.warn("[assignStudentDirectly] teamService.approveStudent failed, falling back to batchStudentService:", err);
+      await batchStudentService.addStudent(batchId, studentId);
+    }
     return request;
   }
 

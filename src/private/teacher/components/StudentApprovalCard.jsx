@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
 import userProfileService from "@/appwrite/userProfileService";
 import batchRequestService from "@/appwrite/batchRequestService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import teamService from "@/appwrite/teamService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 
@@ -78,9 +78,7 @@ export default function StudentApprovalCard({
     setIsApproving(true);
     try {
       await batchRequestService.updateRequestStatus(student.requestId, "approved");
-      await batchStudentService.addStudent(selectedBatchContext, student.userId);
-      
-      // Backward compatibility update removed as per new architecture
+      await teamService.approveStudent(selectedBatchContext, student.userId);
 
       toast.success(`${student.userName || "Student"} approved!`);
       onApproved?.(student.requestId);
@@ -95,8 +93,6 @@ export default function StudentApprovalCard({
     setIsRejecting(true);
     try {
       await batchRequestService.updateRequestStatus(student.requestId, "rejected");
-      
-      // Backward compatibility update removed as per new architecture
 
       toast.info(`${student.userName || "Student"} request rejected.`);
       onRejected?.(student.requestId);
@@ -110,9 +106,8 @@ export default function StudentApprovalCard({
   const handleReApprove = async () => {
     setIsReApproving(true);
     try {
-       await batchRequestService.updateRequestStatus(student.requestId, "approved");
-       await batchStudentService.addStudent(selectedBatchContext, student.userId);
-       // Backward compatibility update removed
+      await batchRequestService.updateRequestStatus(student.requestId, "approved");
+      await teamService.approveStudent(selectedBatchContext, student.userId);
 
       toast.success(`${student.userName || "Student"} re-approved!`);
       onReApproved?.(student.requestId);

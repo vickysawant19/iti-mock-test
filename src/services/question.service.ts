@@ -1,6 +1,7 @@
 import { Query } from "./appwriteClient";
 import conf from "../config/config";
 import { DatabaseService } from "./database.service";
+import questionFunctionService from "./questionFunction.service";
 
 export interface QuestionData {
   $id?: string;
@@ -235,7 +236,7 @@ class QuestionService extends DatabaseService {
   }
 
   async deleteQuestion(id: string) {
-    return await this.deleteRow(id);
+    return await questionFunctionService.deleteQuestion(id);
   }
 }
 

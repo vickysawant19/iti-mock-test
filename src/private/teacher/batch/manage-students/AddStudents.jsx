@@ -134,7 +134,7 @@ const AddStudents = () => {
           {activeTab === "manage" ? (
             <ManageStudentsList selectedBatch={selectedBatch} batchData={selectedBatchData} />
           ) : (
-             <AddStudentForm defaultBatchId={selectedBatch} />
+             <AddStudentForm defaultBatchId={selectedBatch} teacherBatches={teacherBatches} />
           )}
         </div>
 
