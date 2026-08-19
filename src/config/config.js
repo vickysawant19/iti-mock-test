@@ -27,8 +27,6 @@ const conf = {
   mockTestFunctionId: import.meta.env.VITE_MOCKTEST_FUNCTION_ID || "",
   studentAttendanceCollectionId:
     import.meta.env.VITE_ATTAINDANCE_COLLECTION_ID || "",
-  faceAttendanceCollectionId:
-    import.meta.env.VITE_FACE_ATTENDANCE_COLLECTION_ID || "",
   newAttendanceCollectionId:
     import.meta.env.VITE_NEW_ATTENDANCE_COLLECTION_ID || "",
   holidayDaysCollectionId:
