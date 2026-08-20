@@ -159,6 +159,7 @@ const StudentManagementModal = ({
             <EmbeddedProfileForm
               explicitUserId={viewProfileUserId}
               defaultBatchId={effectiveBatchId}
+              initialData={selectedStudent}
               onSuccess={() => {
                 setViewProfileUserId(null);
               }}

@@ -14,6 +14,8 @@ import {
   GraduationCap,
   BookOpen,
   UserCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { appwriteService } from "@/services/appwriteClient";
 import batchService from "@/appwrite/batchService";
@@ -30,12 +32,14 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
   // State for tracking search/create mode and data
   const [mode, setMode] = useState("search"); // 'search' or 'create'
   const [selectedUserIdForEdit, setSelectedUserIdForEdit] = useState(null);
+  const [selectedUserInitialData, setSelectedUserInitialData] = useState(null);
   const [batchesData, setBatchesData] = useState([]);
   const [selectedBatchForAdd, setSelectedBatchForAdd] = useState(defaultBatchId || "");
   const [userSearchResult, setUserSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false); // New loading state for user creation
   const [isSendingRequest, setIsSendingRequest] = useState(null); // Track which user ID is being sent a request
+  const [showPassword, setShowPassword] = useState(false);
 
   // Batch name mapping dictionary { [batchId]: batchName }
   const [batchMap, setBatchMap] = useState({});
@@ -260,6 +264,7 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
   const onCreateUser = async (data) => {
     setIsCreatingUser(true);
     setSelectedUserIdForEdit(null);
+    setSelectedUserInitialData(null);
 
     try {
       const func = appwriteService.getFunctions();
@@ -276,7 +281,16 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
       const response = JSON.parse(responseBody);
 
       if (response.success) {
-        setUserSearchResult([response.data]);
+        const newUserObj = {
+          $id: response.data.$id,
+          userId: response.data.$id,
+          userName: data.name || response.data.name || "",
+          name: data.name || response.data.name || "",
+          email: data.email || response.data.email || "",
+          phone: data.phone || response.data.phone || "",
+        };
+        setUserSearchResult([newUserObj]);
+        setSelectedUserInitialData(newUserObj);
         setSelectedUserIdForEdit(response.data.$id);
         toast.success("User account created successfully! Please complete profile.");
       } else {
@@ -294,12 +308,14 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
   const handleModeSwitch = (newMode) => {
     setMode(newMode);
     setSelectedUserIdForEdit(null);
+    setSelectedUserInitialData(null);
     setUserSearchResult(null);
     resetCreateForm();
   };
 
   const handleProfileComplete = () => {
     setSelectedUserIdForEdit(null);
+    setSelectedUserInitialData(null);
     setUserSearchResult(null);
     setMode("search");
   };
@@ -583,7 +599,10 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
 
                               {(result.noProfile || (isAlreadyEnrolled && !result.isProfileComplete)) && (
                                 <button
-                                  onClick={() => setSelectedUserIdForEdit(uId)}
+                                  onClick={() => {
+                                    setSelectedUserInitialData(result);
+                                    setSelectedUserIdForEdit(uId);
+                                  }}
                                   disabled={isSendingRequest === uId}
                                   className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 transition duration-200 flex items-center justify-center font-bold text-xs disabled:opacity-50 cursor-pointer"
                                 >
@@ -715,19 +734,34 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
                 <label className="block text-gray-600 mb-1 dark:text-gray-300">
                   Password <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  placeholder="Enter password"
-                  disabled={isCreatingUser}
-                  className="block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  {...registerCreate("password", {
-                    required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters",
-                    },
-                  })}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    disabled={isCreatingUser}
+                    className="block w-full border border-gray-300 rounded-md shadow-xs focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    {...registerCreate("password", {
+                      required: "Password is required",
+                      minLength: {
+                        value: 8,
+                        message: "Password must be at least 8 characters",
+                      },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none p-1 cursor-pointer"
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 {createErrors.password && (
                   <p className="mt-1 text-red-500 text-sm flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
@@ -780,8 +814,12 @@ const AddStudentForm = ({ defaultBatchId, teacherBatches = [] }) => {
           <EmbeddedProfileForm 
             explicitUserId={selectedUserIdForEdit}
             defaultBatchId={selectedBatchForAdd}
+            initialData={selectedUserInitialData}
             onSuccess={handleProfileComplete}
-            onCancel={() => setSelectedUserIdForEdit(null)}
+            onCancel={() => {
+              setSelectedUserIdForEdit(null);
+              setSelectedUserInitialData(null);
+            }}
           />
         </div>
       )}

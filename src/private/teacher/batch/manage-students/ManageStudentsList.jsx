@@ -1446,6 +1446,7 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                   <EmbeddedProfileForm
                     explicitUserId={viewProfileUserId}
                     defaultBatchId={selectedBatch}
+                    initialData={students.find((s) => s.userId === viewProfileUserId || s.$id === viewProfileUserId)}
                     onSuccess={(updatedProfile) => {
                       setViewProfileUserId(null);
                       setStudents((prev) =>

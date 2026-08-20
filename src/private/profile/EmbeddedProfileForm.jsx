@@ -13,7 +13,7 @@ import AcademicAndBatchSection from "./AcademicAndBatchSection";
 import PersonalDetailsSection from "./PersonalDetailsSection";
 import Loader from "@/components/components/Loader";
 
-const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatchId }) => {
+const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatchId, initialData }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [othersProfile, setOthersProfile] = useState(null);
@@ -42,6 +42,13 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
 
   const isTeacher = user.labels.includes("Teacher");
   const isStudent = !isTeacher;
+
+  // Helper to format phone for numeric input field
+  const cleanPhone = (val) => {
+    if (!val) return "";
+    const str = String(val).replace(/^\+91/, "").replace(/\D/g, "");
+    return str.length > 10 ? str.slice(-10) : str;
+  };
 
   // Define which fields students can edit
   const studentEditableFields = [
@@ -81,21 +88,36 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
         }
 
         if (profileData) {
-          // Format dates for the form
+          // Format dates and prefill missing fields from initialData if available
           const formattedData = {
             ...profileData,
             DOB: profileData.DOB ? profileData.DOB.split("T")[0] : "",
             enrolledAt: profileData.enrolledAt
               ? profileData.enrolledAt.split("T")[0]
               : "",
+            userName: profileData.userName || initialData?.userName || initialData?.name || "",
+            email: profileData.email || initialData?.email || "",
+            phone: cleanPhone(profileData.phone || initialData?.phone),
           };
           methods.reset(formattedData);
-        } else if (!isUserProfile) {
+        } else if (isUserProfile) {
+          // Creating/completing a profile for another user (or profile document doesn't exist yet)
           methods.reset({
-            userId: user.$id,
-            userName: user.name,
-            email: user.email,
-            phone: user.phone,
+            userId: targetUserId,
+            userName: initialData?.userName || initialData?.name || "",
+            email: initialData?.email || "",
+            phone: cleanPhone(initialData?.phone),
+            isActive: true,
+            ...initialData,
+          });
+        } else {
+          // Creating new profile for logged-in user
+          methods.reset({
+            userId: user?.$id,
+            userName: user?.name || initialData?.userName || "",
+            email: user?.email || initialData?.email || "",
+            phone: cleanPhone(user?.phone || initialData?.phone),
+            isActive: true,
           });
         }
       } catch (err) {
@@ -111,7 +133,7 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
     } else {
         setIsLoading(false);
     }
-  }, [methods.reset, targetUserId, existingProfile, isUserProfile, user.$id, defaultBatchId]);
+  }, [methods.reset, targetUserId, existingProfile, isUserProfile, user?.$id, defaultBatchId, initialData]);
 
   const handleProfileSubmit = async (data) => {
     try {
@@ -120,6 +142,10 @@ const EmbeddedProfileForm = ({ explicitUserId, onSuccess, onCancel, defaultBatch
 
       if (isUserProfile && othersProfile) {
         // Updating another user's existing profile
+        if (isTeacher) {
+          data.isProfileComplete = true;
+          data.onboardingStep = 4;
+        }
         updatedProfile = await userProfileService.updateUserProfile(
           othersProfile.$id,
           data
