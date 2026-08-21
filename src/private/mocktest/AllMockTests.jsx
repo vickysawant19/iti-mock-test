@@ -1,14 +1,17 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useSelector } from "react-redux";
-import mockTestService from "@/services/mocktest.service";
-import MockTestCard from "./components/MockTestCard";
 import { Query } from "appwrite";
-import Pagination from "./components/Pagination";
+import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import { Loader2, FileText, AlertCircle, ClipboardList, ArrowUpDown } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import mockTestService from "@/services/mocktest.service";
 import { selectUser } from "@/store/userSlice";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+import MockTestCard from "./components/MockTestCard";
+import MockTestFilterToolbar from "./components/MockTestFilterToolbar";
+import MockTestEmptyState from "./components/MockTestEmptyState";
+import Pagination from "./components/Pagination";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,6 +33,10 @@ const AllMockTests = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [isDeleting, setIsDeleting] = useState({});
   const [sortBy, setSortBy] = useState("updatedAt_desc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const user = useSelector(selectUser);
 
   const fetchMockTests = useCallback(async () => {
@@ -37,7 +44,7 @@ const AllMockTests = () => {
     setError(null);
     try {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-      const cacheKey = `${sortBy}_${currentPage}`;
+      const cacheKey = `${sortBy}_${statusFilter}_${typeFilter}_${currentPage}`;
 
       if (cachedMockTests.current.has(cacheKey)) {
         const cachedData = cachedMockTests.current.get(cacheKey);
@@ -50,35 +57,52 @@ const AllMockTests = () => {
 
       const sortQuery = SORT_OPTIONS.find((o) => o.value === sortBy)?.query() ?? Query.orderDesc("$updatedAt");
 
+      const queryFilters = [
+        Query.limit(ITEMS_PER_PAGE),
+        Query.offset(startIndex),
+        sortQuery,
+      ];
+
+      if (statusFilter === "submitted") {
+        queryFilters.push(Query.equal("submitted", true));
+      } else if (statusFilter === "pending") {
+        queryFilters.push(Query.equal("submitted", false));
+      }
+
+      if (typeFilter === "original") {
+        queryFilters.push(Query.equal("isOriginal", true));
+      } else if (typeFilter === "attempt") {
+        queryFilters.push(Query.equal("isOriginal", false));
+      }
+
+      queryFilters.push(
+        Query.select([
+          "endTime",
+          "isOriginal",
+          "isProtected",
+          "paperId",
+          "quesCount",
+          "score",
+          "startTime",
+          "submitted",
+          "totalMinutes",
+          "tradeId",
+          "tradeName",
+          "userId",
+          "userName",
+          "year",
+          "$createdAt",
+          "$id",
+          "title",
+          "visibility",
+          "negativeMarking",
+          "difficultyLevel",
+        ])
+      );
+
       const response = await mockTestService.getQuestionPaperByUserId(
         user.$id,
-        [
-          Query.limit(ITEMS_PER_PAGE),
-          Query.offset(startIndex),
-          sortQuery,
-          Query.select([
-            "endTime",
-            "isOriginal",
-            "isProtected",
-            "paperId",
-            "quesCount",
-            "score",
-            "startTime",
-            "submitted",
-            "totalMinutes",
-            "tradeId",
-            "tradeName",
-            "userId",
-            "userName",
-            "year",
-            "$createdAt",
-            "$id",
-            "title",
-            "visibility",
-            "negativeMarking",
-            "difficultyLevel",
-          ]),
-        ],
+        queryFilters
       );
 
       if (response) {
@@ -98,13 +122,33 @@ const AllMockTests = () => {
     } finally {
       setLoading(false);
     }
-  }, [user.$id, currentPage, sortBy]);
+  }, [user.$id, currentPage, sortBy, statusFilter, typeFilter]);
 
-  // Reset page + clear cache when sort changes
   const handleSortChange = (value) => {
     cachedMockTests.current.clear();
     setCurrentPage(1);
     setSortBy(value);
+  };
+
+  const handleStatusFilterChange = (value) => {
+    cachedMockTests.current.clear();
+    setCurrentPage(1);
+    setStatusFilter(value);
+  };
+
+  const handleTypeFilterChange = (value) => {
+    cachedMockTests.current.clear();
+    setCurrentPage(1);
+    setTypeFilter(value);
+  };
+
+  const handleResetFilters = () => {
+    cachedMockTests.current.clear();
+    setCurrentPage(1);
+    setSortBy("updatedAt_desc");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setSearchQuery("");
   };
 
   useEffect(() => {
@@ -118,7 +162,7 @@ const AllMockTests = () => {
 
   const handleDelete = async (paperId) => {
     const confirmation = window.confirm(
-      "Are you sure you want to delete this paper?",
+      "Are you sure you want to delete this paper?"
     );
     if (!confirmation) return;
 
@@ -126,15 +170,7 @@ const AllMockTests = () => {
     try {
       await mockTestService.deleteQuestionPaper(paperId);
       setMockTests((prev) => prev.filter((test) => test.$id !== paperId));
-      if (cachedMockTests.current.has(currentPage)) {
-        const cachedData = cachedMockTests.current.get(currentPage);
-        cachedMockTests.current.set(currentPage, {
-          ...cachedData,
-          documents: cachedData.documents.filter(
-            (test) => test.$id !== paperId,
-          ),
-        });
-      }
+      cachedMockTests.current.clear();
       toast.success("Deleted!");
     } catch (error) {
       console.error("Error deleting paper:", error);
@@ -145,119 +181,113 @@ const AllMockTests = () => {
     }
   };
 
+  const displayedMockTests = useMemo(() => {
+    if (!searchQuery.trim()) return mockTests;
+    const q = searchQuery.toLowerCase().trim();
+    return mockTests.filter(
+      (t) =>
+        t.title?.toLowerCase().includes(q) ||
+        t.tradeName?.toLowerCase().includes(q) ||
+        t.paperId?.toLowerCase().includes(q)
+    );
+  }, [mockTests, searchQuery]);
+
+  const isFiltered = statusFilter !== "all" || typeFilter !== "all" || searchQuery.trim() !== "";
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 px-2 sm:px-6 py-6 flex flex-col">
       <div className="w-full">
-        {/* ── Header & Controls ── */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 px-1">
-          <div>
-            <h1 className="text-[1.5rem] font-extrabold tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
-              Mock Tests 
-              {!loading && (
-                <span className="text-[0.9rem] font-bold text-indigo-600 bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-400 px-3 py-0.5 rounded-full">
-                  {totalCount}
-                </span>
-              )}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <label className="text-[0.85rem] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
-            <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="border-0 shadow-none h-7 px-1 w-[140px] font-semibold text-[0.875rem] text-slate-900 dark:text-white focus:ring-0 focus:ring-offset-0 bg-transparent">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="font-medium text-sm">{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {/* ── Header & Filter Toolbar ── */}
+        <MockTestFilterToolbar
+          totalCount={totalCount}
+          loading={loading}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          handleStatusFilterChange={handleStatusFilterChange}
+          typeFilter={typeFilter}
+          handleTypeFilterChange={handleTypeFilterChange}
+          sortBy={sortBy}
+          handleSortChange={handleSortChange}
+          handleResetFilters={handleResetFilters}
+          isFiltered={isFiltered}
+          sortOptions={SORT_OPTIONS}
+        />
 
         <div className="space-y-5">
-        {/* Error */}
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="w-4 h-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="w-4 h-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        {/* Loading */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-28 gap-4">
-            <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Loading mock tests…
-            </p>
-          </div>
-        ) : mockTests.length === 0 ? (
-          /* Empty state */
-          <div className="flex flex-col items-center justify-center py-28 gap-5 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <FileText className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                No mock tests yet
-              </p>
-              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                Generate a mock test to see it appear here.
+          {/* Loading Spinner */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-28 gap-4">
+              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Loading mock tests…
               </p>
             </div>
-          </div>
-        ) : (
-          <>
-            {/* Top pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Page{" "}
-                  <span className="font-semibold text-gray-700 dark:text-gray-200">
-                    {currentPage}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold text-gray-700 dark:text-gray-200">
-                    {totalPages}
-                  </span>
-                </p>
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </div>
-            )}
+          ) : displayedMockTests.length === 0 ? (
+            /* Empty State */
+            <MockTestEmptyState
+              isFiltered={isFiltered}
+              handleResetFilters={handleResetFilters}
+            />
+          ) : (
+            <>
+              {/* Top Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Page{" "}
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {currentPage}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {totalPages}
+                    </span>
+                  </p>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
 
-            {/* Cards grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full">
-              {mockTests.map((test) => (
-                <MockTestCard
-                  key={test.$id}
-                  test={test}
-                  user={user}
-                  fetchMockTests={fetchMockTests}
-                  handleDelete={handleDelete}
-                  isDeleting={isDeleting}
-                  setMockTests={setMockTests}
-                />
-              ))}
-            </div>
-
-            {/* Bottom pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center pt-2">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+              {/* Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 w-full">
+                {displayedMockTests.map((test) => (
+                  <MockTestCard
+                    key={test.$id}
+                    test={test}
+                    user={user}
+                    fetchMockTests={fetchMockTests}
+                    handleDelete={handleDelete}
+                    isDeleting={isDeleting}
+                    setMockTests={setMockTests}
+                  />
+                ))}
               </div>
-            )}
-          </>
-        )}
+
+              {/* Bottom Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center pt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

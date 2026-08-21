@@ -474,6 +474,8 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           status = req.status; // pending, rejected, or approved
         }
 
+        const isMissingFromBatchStudents = Boolean(req && req.status === "approved" && !isActive);
+
         return {
           userId: id,
           profileId: profile.$id,
@@ -483,6 +485,8 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
           profileImage: profile.profileImage || null,
           status,
           requestId,
+          isActiveInBatchStudents: isActive,
+          isMissingFromBatchStudents,
           enrollmentDate: activeRecord ? activeRecord.enrollmentDate : null,
           enrollmentStatus: activeRecord ? activeRecord.status : null,
           lastseen: profile.lastseen || null,
@@ -1072,6 +1076,13 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                           {student.status}
                         </span>
 
+                        {student.isMissingFromBatchStudents && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 w-fit">
+                            <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+                            Missing batchStudents entry
+                          </span>
+                        )}
+
                         {student.status === "approved" &&
                           student.enrollmentStatus && (
                             <div className="flex flex-col gap-0.5 text-[10px]">
@@ -1096,6 +1107,16 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
+                        {student.isMissingFromBatchStudents && (
+                          <button
+                            disabled={processingId === student.userId}
+                            onClick={() => openApprovalModal(student)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                            title="Add student to batchStudents collection"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" /> Sync to batchStudents
+                          </button>
+                        )}
                         {student.status === "unrequested" && (
                           <>
                             <button
@@ -1278,6 +1299,16 @@ export default function ManageStudentsList({ selectedBatch, batchData }) {
 
                 {/* Actions row */}
                 <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
+                  {student.isMissingFromBatchStudents && (
+                    <button
+                      disabled={processingId === student.userId}
+                      onClick={() => openApprovalModal(student)}
+                      className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 text-xs font-bold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer w-full"
+                      title="Add student to batchStudents collection"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Sync to batchStudents
+                    </button>
+                  )}
                   {student.status === "unrequested" && (
                     <>
                       <button

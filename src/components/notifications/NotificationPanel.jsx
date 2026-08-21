@@ -4,6 +4,9 @@ import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Tro
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import notificationService from "@/services/notification.service";
+import { Functions } from "appwrite";
+import { appwriteService } from "@/services/appwriteClient";
+import conf from "@/config/config";
 
 function NotifItem({ notif, onClose, user }) {
   const navigate = useNavigate();
@@ -24,6 +27,30 @@ function NotifItem({ notif, onClose, user }) {
       }
       onClose();
       if (isMockTest) {
+        try {
+          const data = {
+            action: "createNewMockTest",
+            userId: user.$id,
+            userName: user.userName || user.name || "Student",
+            paperId: notif.paperId,
+            databaseId: conf.databaseId,
+            questionPapersCollectionId: conf.questionPapersCollectionId,
+          };
+          const functions = new Functions(appwriteService.getClient());
+          const res = await functions.createExecution(
+            conf.mockTestFunctionId,
+            JSON.stringify(data)
+          );
+          if (res.responseBody) {
+            const parsed = JSON.parse(res.responseBody);
+            if (parsed.paperId) {
+              navigate(`/start-mock-test/${parsed.paperId}`);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Auto-instantiate student mock test error:", err);
+        }
         navigate(`/attain-test?paperid=${notif.paperId}`);
       } else if (isChallenge) {
         navigate("/arena?tab=missions&sub=challenges");

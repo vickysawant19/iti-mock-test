@@ -43,6 +43,22 @@ class NotificationService {
     });
   }
 
+  async reNotifyBatch(notificationId, newMessage) {
+    try {
+      const payload = { readBy: [] };
+      if (newMessage) payload.message = newMessage;
+      return await databases.updateDocument(
+        this.databaseId,
+        this.collectionId,
+        notificationId,
+        payload
+      );
+    } catch (error) {
+      console.error("Error re-notifying batch", error);
+      throw error;
+    }
+  }
+
   async updateNotification(notificationId, payload) {
     try {
       return await databases.updateDocument(

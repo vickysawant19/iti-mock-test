@@ -6,6 +6,7 @@ import { selectUserBatches, selectActiveBatchLoading, selectActiveBatch } from "
 import { Query, Channel } from "appwrite";
 import { toast } from "react-toastify";
 import batchRequestService from "@/appwrite/batchRequestService";
+import batchStudentService from "@/appwrite/batchStudentService";
 import notificationService from "@/services/notification.service";
 import { realtime } from "@/services/appwriteClient";
 import conf from "@/config/config";
@@ -99,9 +100,27 @@ export function useNotifications() {
             createdAt: r.updatedAt,
           }));
 
-        // Get student's mock test notifications based on their approved batches
+        // Get student's mock test notifications based on their enrolled batches (batchStudents + approved requests)
+        let directBatchIds = [];
+        try {
+          const directBatches = await batchStudentService.getStudentBatches(user.$id);
+          directBatchIds = (directBatches || []).map(sb => {
+            if (!sb) return null;
+            if (typeof sb.batchId === "object" && sb.batchId?.$id) return sb.batchId.$id;
+            if (typeof sb.batchId === "string") return sb.batchId;
+            return null;
+          }).filter(Boolean);
+        } catch (err) {
+          console.warn("Failed to fetch direct student batches for notifications:", err);
+        }
+
+        const approvedReqBatches = reqs
+          .filter(r => r.status === "approved")
+          .map(r => typeof r.batchId === "object" ? r.batchId?.$id : r.batchId)
+          .filter(Boolean);
+
+        const approvedBatches = [...new Set([...directBatchIds, ...approvedReqBatches])];
         let mockTestNotifs = [];
-        const approvedBatches = reqs.filter(r => r.status === "approved").map(r => r.batchId);
         
         setStudentBatches(prev => {
           const isSame = prev.length === approvedBatches.length && prev.every(b => approvedBatches.includes(b));

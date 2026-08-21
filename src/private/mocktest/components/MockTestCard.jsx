@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
-import { selectUserBatches } from "@/store/activeBatchSlice";
+import { selectUserBatches, selectActiveBatch } from "@/store/activeBatchSlice";
 
 const MockTestCard = ({
   setMockTests,
@@ -48,6 +48,7 @@ const MockTestCard = ({
   const [copied, setCopied] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
   const userBatches = useSelector(selectUserBatches);
+  const activeBatch = useSelector(selectActiveBatch);
 
   const handleCopyId = async () => {
     try {
@@ -101,41 +102,51 @@ const MockTestCard = ({
   };
 
   const handleNotifyBatch = async () => {
-    if (!userBatches || userBatches.length === 0) {
-      toast.error("No active batches found to notify.");
+    if (!activeBatch || !activeBatch.$id) {
+      toast.error("Please select an active batch first to send notifications.");
       return;
     }
     setIsNotifying(true);
     try {
-      const batchIds = userBatches.map((b) => b.$id);
       const existingNotifs =
-        await notificationService.getNotificationsByBatch(batchIds);
+        await notificationService.getNotificationsByBatch([activeBatch.$id]);
 
-      let notifiedCount = 0;
-      for (const batch of userBatches) {
-        const alreadyExists = existingNotifs.some(
-          (n) => n.batchId === batch.$id && n.paperId === test.paperId,
+      const existingNotif = existingNotifs.find(
+        (n) => n.batchId === activeBatch.$id && n.paperId === test.paperId,
+      );
+
+      const notifMessage = `New Mock Test: ${test.title ? `${test.title} (${test.tradeName})` : test.tradeName} — ID: ${test.paperId}`;
+
+      if (existingNotif) {
+        const confirmReNotify = window.confirm(
+          `Batch "${activeBatch.BatchName || "Active Batch"}" was already notified. Send re-notification reminder to all students in this batch?`
         );
 
-        if (!alreadyExists) {
-          await notificationService.createNotification({
-            message: `New Mock Test: ${test.title ? `${test.title} (${test.tradeName})` : test.tradeName} — ID: ${test.paperId}`,
-            type: "mock_test_assigned",
-            batchId: batch.$id,
-            teacherId: user.$id,
-            paperId: test.paperId,
-          });
-          notifiedCount++;
+        if (confirmReNotify) {
+          await notificationService.reNotifyBatch(
+            existingNotif.$id,
+            `[REMINDER] ${notifMessage}`
+          );
+          toast.success(
+            `Re-notified batch "${activeBatch.BatchName || "Active Batch"}" successfully!`
+          );
         }
-      }
-
-      if (notifiedCount > 0) {
-        toast.success(`Notified ${notifiedCount} batch(es)!`);
       } else {
-        toast.info("Batches were already notified for this test.");
+        await notificationService.createNotification({
+          message: notifMessage,
+          type: "mock_test_assigned",
+          batchId: activeBatch.$id,
+          teacherId: user.$id,
+          paperId: test.paperId,
+          teamId: activeBatch.teamId || null,
+        });
+        toast.success(
+          `Notified active batch "${activeBatch.BatchName || "Active Batch"}" successfully!`
+        );
       }
     } catch (error) {
-      toast.error("Failed to notify batches.");
+      console.error("Notify batch error:", error);
+      toast.error("Failed to notify active batch.");
     } finally {
       setIsNotifying(false);
     }
@@ -241,28 +252,45 @@ const MockTestCard = ({
       </div>
 
       {/* ── Bottom: Actions ── */}
-      <div className="flex justify-between items-center gap-2 mt-auto pt-1">
-        {/* Main Button */}
-        {isSubmitted ? (
-          <Link to={`/show-mock-test/${test.$id}`} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 bg-white text-indigo-600 border-indigo-600 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-indigo-500 dark:text-indigo-400">
-            <Eye className="w-4 h-4 stroke-[2.5]" /> View Result
-          </Link>
-        ) : (
-          <Link to={`/start-mock-test/${test.$id}`} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-transparent bg-indigo-600 text-white shadow-[0_2px_4px_rgba(79,70,229,0.2)] hover:bg-indigo-700 hover:scale-[1.02]">
-            <PlayCircle className="w-4 h-4 stroke-[2.5] fill-current" /> Start
-          </Link>
-        )}
+      <div className="flex flex-col gap-2 mt-auto pt-1">
+        <div className="flex items-center gap-2">
+          {/* Main Action Button */}
+          {isSubmitted ? (
+            <Link
+              to={`/show-mock-test/${test.$id}`}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 bg-white text-indigo-600 border-indigo-600 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-indigo-500 dark:text-indigo-400"
+            >
+              <Eye className="w-4 h-4 stroke-[2.5]" /> View Result
+            </Link>
+          ) : (
+            <Link
+              to={`/start-mock-test/${test.$id}`}
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-transparent bg-indigo-600 text-white shadow-[0_2px_4px_rgba(79,70,229,0.2)] hover:bg-indigo-700 hover:scale-[1.02]"
+            >
+              <PlayCircle className="w-4 h-4 stroke-[2.5] fill-current" /> Start
+            </Link>
+          )}
 
-        {/* Secondary Icons */}
-        <div className="flex gap-1 shrink-0">
-          <Link to={`/mock-test-result/${test.paperId}`} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400" title="Live Scores (Other Students)">
-            <ClipboardList className="w-[18px] h-[18px] stroke-[2.5]" />
+          {/* Large Live Scores Button */}
+          <Link
+            to={`/mock-test-result/${test.paperId}`}
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-slate-200 bg-slate-50 text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-indigo-400 dark:hover:border-indigo-500/50 hover:scale-[1.02]"
+            title="Live Scores (Other Students)"
+          >
+            <ClipboardList className="w-4 h-4 stroke-[2.5] text-indigo-600 dark:text-indigo-400" /> Live Scores
           </Link>
-          
+        </div>
+
+        {/* Secondary Icons Toolbar */}
+        <div className="flex justify-end items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400" title="Share Paper">
-                <Share2 className="w-[18px] h-[18px] stroke-[2.5]" />
+              <button
+                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 text-xs font-semibold gap-1 px-2.5"
+                title="Share Paper"
+              >
+                <Share2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Share</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 z-50">
@@ -290,11 +318,30 @@ const MockTestCard = ({
 
           {test.isOriginal && (
             <>
-              <button onClick={handleNotifyBatch} disabled={isNotifying} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 disabled:opacity-50" title="Notify Students">
-                {isNotifying ? <Loader2 className="w-[18px] h-[18px] stroke-[2.5] animate-spin" /> : <BellRing className="w-[18px] h-[18px] stroke-[2.5]" />}
+              <button
+                onClick={handleNotifyBatch}
+                disabled={isNotifying}
+                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 disabled:opacity-50 text-xs font-semibold gap-1 px-2.5"
+                title="Notify Active Batch Students"
+              >
+                {isNotifying ? (
+                  <Loader2 className="w-3.5 h-3.5 stroke-[2.5] animate-spin" />
+                ) : (
+                  <BellRing className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
+                <span>Notify</span>
               </button>
-              <button onClick={() => handleDelete(test.$id)} disabled={!!isDeleting[test.$id]} className="bg-slate-50 border border-slate-200 p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 hover:-translate-y-[1px] transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-50" title="Delete Paper">
-                {isDeleting[test.$id] ? <Loader2 className="w-[18px] h-[18px] stroke-[2.5] animate-spin" /> : <Trash2 className="w-[18px] h-[18px] stroke-[2.5]" />}
+              <button
+                onClick={() => handleDelete(test.$id)}
+                disabled={!!isDeleting[test.$id]}
+                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-50 text-xs font-semibold gap-1 px-2"
+                title="Delete Paper"
+              >
+                {isDeleting[test.$id] ? (
+                  <Loader2 className="w-3.5 h-3.5 stroke-[2.5] animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                )}
               </button>
             </>
           )}
