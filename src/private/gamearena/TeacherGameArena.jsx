@@ -268,6 +268,9 @@ const TeacherGameArena = ({
         const modsListIds = modsPart.split(",").map(id => id.trim()).filter(Boolean);
         const matchedMods = modulesList.filter(m => modsListIds.includes(m.moduleId));
         selectedNames = matchedMods.map(m => m.moduleName).join(", ");
+        if (selectedNames.length > 128) {
+          selectedNames = selectedNames.slice(0, 125) + "...";
+        }
       }
 
       const payload = {

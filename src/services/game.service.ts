@@ -779,6 +779,11 @@ export class GameService extends DatabaseService {
     settings: Omit<BatchGameSettings, "$id" | "$createdAt" | "$updatedAt">
   ): Promise<BatchGameSettings> {
     const cacheKey = `game_settings_${batchId}`;
+    const payload = { ...settings };
+    if (payload.selectedModuleName && payload.selectedModuleName.length > 128) {
+      payload.selectedModuleName = payload.selectedModuleName.slice(0, 125) + "...";
+    }
+
     try {
       const { databases } = await import("./appwriteClient");
       
@@ -802,7 +807,7 @@ export class GameService extends DatabaseService {
           conf.databaseId,
           "batch_game_settings",
           existingId,
-          settings
+          payload
         );
         result = updated as unknown as BatchGameSettings;
       } else {
@@ -810,7 +815,7 @@ export class GameService extends DatabaseService {
           conf.databaseId,
           "batch_game_settings",
           ID.unique(),
-          settings
+          payload
         );
         result = created as unknown as BatchGameSettings;
       }
