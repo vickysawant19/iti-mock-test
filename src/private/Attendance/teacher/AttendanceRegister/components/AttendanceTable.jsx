@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Loader2, LayoutList, LayoutGrid } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import AttendanceTableHead from "./AttendanceTableHead";
 import AttendanceTableBody from "./AttendanceTableBody";
 import AttendanceTableFooter from "./AttendanceTableFooter";
 import EmptyState from "./EmptyState";
-import { DEFAULT_VISIBILITY, COLUMN_GROUP_LABELS } from "./ColumnGroupConfig";
 
 const AttendanceTable = ({
   students,
@@ -29,7 +28,18 @@ const AttendanceTable = ({
   onOpenStudentProfile,
   columnVisibility,
   setColumnVisibility,
+  compactView: compactViewProp,
+  setCompactView: setCompactViewProp,
 }) => {
+  const [internalCompactView, setInternalCompactView] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  const compactView = compactViewProp !== undefined ? compactViewProp : internalCompactView;
+  const setCompactView = setCompactViewProp || setInternalCompactView;
   const daysInMonth = getDaysInMonth(selectedMonth);
   const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -61,7 +71,19 @@ const AttendanceTable = ({
 
   const monthDates = allDays.filter((d) => d >= firstValidDay && d <= lastValidDay);
 
-  const [compactView, setCompactView] = useState(false);
+  // Dynamic Student Name Column Resizing
+  const [customNameWidth, setCustomNameWidth] = useState(null);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const defaultNameWidth = compactView ? (isMobile ? 120 : 140) : (isMobile ? 140 : 180);
+  const nameWidth = customNameWidth !== null ? customNameWidth : defaultNameWidth;
+
+  const handleResizeNameWidth = (newW) => {
+    setCustomNameWidth(Math.max(90, Math.min(450, newW)));
+  };
+
+  const handleResetNameWidth = () => {
+    setCustomNameWidth(null);
+  };
 
   const toggleGroup = (group) =>
     setColumnVisibility((prev) => ({ ...prev, [group]: !prev[group] }));
@@ -102,44 +124,6 @@ const AttendanceTable = ({
 
   return (
     <div className={isTableDataLoading ? "min-h-screen" : ""}>
-      {/* ── Ribbon Toolbar ── */}
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 shadow-sm">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mr-1">
-          Show:
-        </span>
-        {Object.entries(COLUMN_GROUP_LABELS).map(([group, label]) => (
-          <button
-            key={group}
-            onClick={() => toggleGroup(group)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 ${
-              columnVisibility[group]
-                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                : "bg-white dark:bg-slate-800 text-slate-650 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <div className="w-px h-5 bg-slate-350 dark:bg-slate-700 mx-1 ml-4 " />
-        <button
-          onClick={() => setCompactView((v) => !v)}
-          className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 flex items-center gap-2 ${
-            compactView
-              ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-              : "bg-white dark:bg-slate-800 text-slate-650 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-amber-400"
-          }`}
-        >
-          {compactView ? (
-            <>
-              <LayoutList className="h-3.5 w-3.5" /> Compact
-            </>
-          ) : (
-            <>
-              <LayoutGrid className="h-3.5 w-3.5" /> Compact
-            </>
-          )}
-        </button>
-      </div>
 
       {/* ── Table Wrapper — single scroll container for BOTH axes so sticky freeze works ── */}
       <div
@@ -184,6 +168,9 @@ const AttendanceTable = ({
                 handleRemoveHoliday={handleRemoveHoliday}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
+                nameWidthProp={nameWidth}
+                onResizeNameWidth={handleResizeNameWidth}
+                onResetNameWidth={handleResetNameWidth}
               />
               <AttendanceTableBody
                 students={students}
@@ -201,6 +188,7 @@ const AttendanceTable = ({
                 loadingStats={loadingStats}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
+                nameWidthProp={nameWidth}
                 onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
                 onOpenStudentProfile={onOpenStudentProfile}
               />
@@ -213,6 +201,7 @@ const AttendanceTable = ({
                 formatDate={formatDate}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
+                nameWidthProp={nameWidth}
               />
             </table>
           </div>

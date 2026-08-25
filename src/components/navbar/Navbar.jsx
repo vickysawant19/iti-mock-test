@@ -248,14 +248,16 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {userBatches.map((b) => {
-                  if (!b?.$id) return null;
-                  return (
-                    <SelectItem key={b.$id} value={b.$id}>
-                      {b.BatchName || "Unknown Batch"}
-                    </SelectItem>
-                  );
-                })}
+                {userBatches
+                  .filter((b) => b && (b.isActive === true || b.isActive === undefined || b.$id === activeBatchId))
+                  .map((b) => {
+                    if (!b?.$id) return null;
+                    return (
+                      <SelectItem key={b.$id} value={b.$id}>
+                        {b.BatchName || "Unknown Batch"}
+                      </SelectItem>
+                    );
+                  })}
               </SelectContent>
             </Select>
           </div>
@@ -271,11 +273,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {userBatches.map((b) => (
-                  <SelectItem key={b.$id} value={b.$id}>
-                    {b.BatchName || b.$id}
-                  </SelectItem>
-                ))}
+                {userBatches
+                  .filter((b) => b && (b.isActive === true || b.isActive === undefined || b.$id === activeBatchId))
+                  .map((b) => (
+                    <SelectItem key={b.$id} value={b.$id}>
+                      {b.BatchName || b.$id}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -566,12 +570,12 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           </Sheet>
 
           {/* Logo and App Title */}
-          <NavLink to="/" className="flex items-center gap-3 ml-1 md:ml-0 group transition-all duration-200 hover:opacity-90">
-            <img src={logo} alt="ITI" className="h-[52px] w-[52px] object-contain transform group-hover:scale-105 transition-transform duration-200" />
+          <NavLink to="/" className="flex items-center gap-2 sm:gap-3 ml-0.5 md:ml-0 group transition-all duration-200 hover:opacity-90 min-w-0">
+            <img src={logo} alt="ITI" className="h-[42px] w-[42px] sm:h-[52px] sm:w-[52px] object-contain transform group-hover:scale-105 transition-transform duration-200 shrink-0" />
             {isLoading ? (
-              <Skeleton className="h-5 w-32 hidden sm:block rounded-md" />
+              <Skeleton className="h-5 w-24 sm:w-32 rounded-md" />
             ) : (
-              <span className="font-extrabold text-[15px] hidden sm:block bg-gradient-to-br from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent tracking-tight">
+              <span className="font-extrabold text-xs sm:text-[15px] max-w-[120px] xs:max-w-[180px] sm:max-w-none truncate bg-gradient-to-br from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent tracking-tight">
                 {currentHeading || "ITI Dashboard"}
               </span>
             )}

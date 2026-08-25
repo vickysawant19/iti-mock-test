@@ -11,7 +11,10 @@ import {
   XCircle,
   Edit,
   Plus,
+  PlusCircle,
   ChevronDown,
+  Sparkles,
+  Layers
 } from "lucide-react";
 
 import { useListCollegesQuery } from "@/store/api/collegeApi";
@@ -21,11 +24,11 @@ import { selectUser } from "@/store/userSlice";
 import batchService from "@/appwrite/batchService";
 
 import Loader from "@/components/components/Loader";
-import IncompleteProfileGuard from "./components/IncompleteProfileGuard";
-import BasicInfoCard from "./components/BasicInfoCard";
-import ScheduleSettingsCard from "./components/ScheduleSettingsCard";
-import AttendanceLocationCard from "./components/AttendanceLocationCard";
-import ScheduleSessionsCard from "./components/ScheduleSessionsCard";
+import IncompleteProfileGuard from "../components/IncompleteProfileGuard";
+import BasicInfoCard from "../components/BasicInfoCard";
+import ScheduleSettingsCard from "../components/ScheduleSettingsCard";
+import AttendanceLocationCard from "../components/AttendanceLocationCard";
+import ScheduleSessionsCard from "../components/ScheduleSessionsCard";
 import { normalizeBatchSessions } from "../util/batchSessionUtil";
 
 const CreateBatch = () => {
@@ -258,68 +261,57 @@ const CreateBatch = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20">
-      {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 text-slate-900 dark:text-slate-100">
+      {/* Redesigned Glassmorphic Header Card */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-3xl p-4 sm:p-5 text-white shadow-xl border border-blue-400/30 dark:border-indigo-500/20 mb-3 mx-2 sm:mx-4 mt-2">
+        {/* Ambient background glow orbs */}
+        <div className="absolute top-[-70px] right-[-50px] w-[220px] h-[220px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[-60px] left-[-30px] w-[180px] h-[180px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 dark:bg-indigo-500/30 backdrop-blur-md border border-white/30 dark:border-indigo-400/30 flex items-center justify-center shadow-md shrink-0">
+              <PlusCircle className="h-6 w-6 text-white dark:text-indigo-200" />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                {selectedBatchId ? (
-                  <>
-                    <Edit className="text-blue-600" size={24} />
-                    Edit Batch
-                  </>
-                ) : (
-                  <>
-                    <Plus className="text-blue-600" size={24} />
-                    Create New Batch
-                  </>
-                )}
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white dark:bg-indigo-500/20 dark:text-indigo-300 border border-white/30 dark:border-indigo-500/30">
+                  <Sparkles className="w-3 h-3 text-amber-300 dark:text-indigo-400" />
+                  BATCH CREATION ENGINE
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black leading-tight text-white tracking-tight">
+                Create New Batch
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Manage your batch details, schedule, and attendance settings
+              <p className="text-xs text-blue-100/90 dark:text-indigo-200/80 font-medium">
+                Configure academic schedule, attendance rules & geofence radius
               </p>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Users className="h-4 w-4 text-gray-400" />
-                </div>
-                <select
-                  id="batch-select"
-                  onChange={handleBatchSelect}
-                  value={selectedBatchId}
-                  className="block w-full pl-10 pr-10 py-2 text-sm border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:text-white transition-colors appearance-none"
-                >
-                  <option value="">Select Batch to Edit</option>
-                  {allBatches?.map((item) => (
-                    <option key={item.$id} value={item.$id}>
-                      {item.BatchName}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                </div>
-              </div>
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+            <button
+              type="button"
+              onClick={() => navigate("/manage-batch/edit")}
+              className="px-3.5 py-2 text-xs font-black bg-amber-400 hover:bg-amber-300 active:scale-95 text-amber-950 rounded-xl transition-all flex items-center gap-1.5 shadow-md cursor-pointer border border-amber-300"
+            >
+              <Edit className="w-4 h-4 text-amber-950" />
+              <span>Edit Existing Batch</span>
+            </button>
 
-              {selectedBatchId && (
-                <button
-                  onClick={handleDeselectBatch}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
-                  title="Cancel Edit"
-                >
-                  <XCircle size={20} />
-                </button>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/manage-batch/view")}
+              className="px-3.5 py-2 text-xs font-extrabold bg-white/20 hover:bg-white/30 active:scale-95 text-white rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-white/25 backdrop-blur-md"
+            >
+              <Layers className="w-4 h-4 text-white" />
+              <span>View All Batches</span>
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-3">
         <form onSubmit={handleSubmit(handleBatchSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BasicInfoCard

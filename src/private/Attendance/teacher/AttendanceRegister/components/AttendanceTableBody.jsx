@@ -17,14 +17,17 @@ const AttendanceTableBody = ({
   loadingStats = false,
   columnVisibility = { previous: true, daily: true, summary: true },
   compactView = false,
+  nameWidthProp,
   onOpenStudentAttendanceModal,
   onOpenStudentProfile,
 }) => {
   const cell = compactView ? "py-1 px-1 text-[11px]" : "py-1.5 px-2 text-xs";
-  const stickyCell = compactView ? "py-1.5 px-2 text-xs" : "py-2 px-3 text-xs sm:text-sm";
+  const stickyCell = compactView ? "py-1.5 px-1.5 text-xs" : "py-1.5 px-2 text-xs sm:text-sm";
 
-  // Standardized Column Widths & Sticky Positions (Pixel exact for dynamic compact shrink)
-  const nameWidth = compactView ? 180 : 260;
+  // Standardized Column Widths & Sticky Positions (Optimized for mobile readability)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const defaultNameWidth = compactView ? (isMobile ? 120 : 140) : (isMobile ? 140 : 180);
+  const nameWidth = nameWidthProp !== undefined ? nameWidthProp : defaultNameWidth;
 
   const nameColStyle = {
     width: `${nameWidth}px`,

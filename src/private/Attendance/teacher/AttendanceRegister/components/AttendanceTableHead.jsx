@@ -10,18 +10,71 @@ const AttendanceTableHead = ({
   loadingAttendance,
   columnVisibility = { previous: true, daily: true, summary: true },
   compactView = false,
+  nameWidthProp,
+  onResizeNameWidth,
+  onResetNameWidth,
 }) => {
   // Padding & Sizing helpers
   const cell = compactView ? "py-1 px-1 text-[11px]" : "py-2 px-2 text-xs";
-  const stickyCell = compactView ? "py-1.5 px-2 text-xs" : "py-2.5 px-3 sm:px-4 text-xs sm:text-sm";
+  const stickyCell = compactView ? "py-1.5 px-1.5 text-xs" : "py-2 px-2 sm:px-3 text-xs sm:text-sm";
 
-  // Standardized Column Widths & Sticky Positions (Pixel exact for dynamic compact shrink)
-  const nameWidth = compactView ? 180 : 260;
+  // Standardized Column Widths & Sticky Positions (Optimized for mobile readability)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const defaultNameWidth = compactView ? (isMobile ? 120 : 140) : (isMobile ? 140 : 180);
+  const nameWidth = nameWidthProp !== undefined ? nameWidthProp : defaultNameWidth;
 
   const nameColStyle = {
     width: `${nameWidth}px`,
     minWidth: `${nameWidth}px`,
     maxWidth: `${nameWidth}px`,
+  };
+
+  // Drag resizer handlers for mouse and touch devices
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = nameWidth;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newW = Math.max(90, Math.min(450, startW + deltaX));
+      if (onResizeNameWidth) {
+        onResizeNameWidth(newW);
+      }
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const handleTouchStart = (e) => {
+    e.stopPropagation();
+    if (!e.touches || e.touches.length === 0) return;
+    const startX = e.touches[0].clientX;
+    const startW = nameWidth;
+
+    const onTouchMove = (moveEvent) => {
+      if (!moveEvent.touches || moveEvent.touches.length === 0) return;
+      const deltaX = moveEvent.touches[0].clientX - startX;
+      const newW = Math.max(90, Math.min(450, startW + deltaX));
+      if (onResizeNameWidth) {
+        onResizeNameWidth(newW);
+      }
+    };
+
+    const onTouchEnd = () => {
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+
+    window.addEventListener("touchmove", onTouchMove);
+    window.addEventListener("touchend", onTouchEnd);
   };
 
   // Sticky top cascade offsets
@@ -156,14 +209,27 @@ const AttendanceTableHead = ({
           </>
         )}
 
-        {/* Student Name Header (Sticky Left 0) */}
+        {/* Student Name Header (Sticky Left 0) with Column Resizer Tool */}
         <th
           rowSpan={2}
           scope="col"
           style={nameColStyle}
-          className={`${stickyCell} sticky left-0 z-50 border border-indigo-600 dark:border-slate-700 bg-indigo-700 dark:bg-slate-900 font-bold text-left text-xs sm:text-sm box-border`}
+          className={`${stickyCell} sticky left-0 z-50 border border-indigo-600 dark:border-slate-700 bg-indigo-700 dark:bg-slate-900 font-bold text-left text-xs sm:text-sm box-border group/colheader overflow-visible select-none`}
         >
-          Student Name
+          <div className="flex items-center justify-between gap-1 pr-2">
+            <span className="truncate">Student Name</span>
+          </div>
+
+          {/* Resizer Edge Drag Tool Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-3.5 cursor-col-resize flex items-center justify-center group/resizer hover:bg-amber-400/60 active:bg-amber-500 z-50 select-none touch-none"
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onDoubleClick={onResetNameWidth}
+            title="Drag left/right to resize Student Name column width (Double click to reset)"
+          >
+            <div className="w-1 h-5 rounded-full bg-white/40 group-hover/resizer:bg-white group-hover/resizer:scale-125 transition-all shadow-xs" />
+          </div>
         </th>
 
 

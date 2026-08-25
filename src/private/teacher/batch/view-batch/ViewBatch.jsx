@@ -29,8 +29,11 @@ import JobEvaluation from "./tabs/job-evaluation/JobEvaluation";
 import ProgressCard from "./tabs/progress-cards/ProgressCards";
 import TraineeLeaveRecord from "./tabs/leave-records/LeaveRecord";
 import Assignment from "./tabs/assignments/Assignment";
+import SelectedBatchDetailsCard from "../components/SelectedBatchDetailsCard";
+import { Info } from "lucide-react";
 
 const TABS = [
+  { id: "details", label: "Batch Details", icon: Info },
   { id: "profiles", label: "Student Profiles", icon: Users },
   { id: "attendance", label: "Attendance Records", icon: ClipboardList },
   { id: "progress-card", label: "Progress Card", icon: TrendingUp },
@@ -179,6 +182,14 @@ const ViewBatch = () => {
   // Lazy Tab Content Renderer
   const renderContent = () => {
     switch (activeTab) {
+      case "details":
+        return (
+          <SelectedBatchDetailsCard
+            batchData={data.selectedBatchData}
+            tradeData={tradeData}
+            studentCount={data.students?.length}
+          />
+        );
       case "profiles":
         return (
           <ViewProfiles

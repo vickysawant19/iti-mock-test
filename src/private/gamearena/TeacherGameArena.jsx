@@ -267,9 +267,9 @@ const TeacherGameArena = ({
         const modsPart = selectedModuleId.includes("|") ? selectedModuleId.split("|")[0] : selectedModuleId;
         const modsListIds = modsPart.split(",").map(id => id.trim()).filter(Boolean);
         const matchedMods = modulesList.filter(m => modsListIds.includes(m.moduleId));
-        selectedNames = matchedMods.map(m => m.moduleName).join(", ");
-        if (selectedNames.length > 128) {
-          selectedNames = selectedNames.slice(0, 125) + "...";
+        selectedNames = matchedMods.map(m => `${m.moduleId} — ${m.moduleName}`).join(" | ");
+        if (selectedNames.length > 4096) {
+          selectedNames = selectedNames.slice(0, 4093) + "...";
         }
       }
 

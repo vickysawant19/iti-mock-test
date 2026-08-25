@@ -83,6 +83,12 @@ const AttendanceRegister = () => {
 
   // ── Core state ───────────────────────────────────────────────────────────
   const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
+  const [compactView, setCompactView] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
   const [batches,          setBatches]          = useState(new Map());
   const [selectedBatch,    setSelectedBatch]    = useState("");
   const [students,         setStudents]         = useState(null);
@@ -724,11 +730,7 @@ const AttendanceRegister = () => {
   // 1. Fetch batches once on mount
   useEffect(() => {
     if (profile?.userId) fetchBatches();
-    // FIX: no cleanup that resets batchFetchedRef — that caused StrictMode
-    //      double-fetch. Error path already resets the flag if needed.
   }, [profile?.userId, fetchBatches]);
-
-  // 2. Clamp selectedMonth when batch (and its start date) changes
   useEffect(() => {
     if (!batchStartDate) return;
     setSelectedMonth((prev) => {
@@ -792,6 +794,10 @@ const AttendanceRegister = () => {
           batchEndDate={batchEndDate}
           onVerifyStats={handleManualVerifyStats}
           isVerifyingStats={isVerifyingStats}
+          columnVisibility={columnVisibility}
+          setColumnVisibility={setColumnVisibility}
+          compactView={compactView}
+          setCompactView={setCompactView}
         />
 
 
@@ -834,6 +840,8 @@ const AttendanceRegister = () => {
           onOpenStudentProfile={handleOpenStudentProfile}
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
+          compactView={compactView}
+          setCompactView={setCompactView}
         />
 
         <StudentMonthlyAttendanceModal

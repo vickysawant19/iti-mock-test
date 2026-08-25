@@ -85,15 +85,18 @@ export const initializeActiveBatch = createAsyncThunk(
       // 2. Resolve Active Batch ID
       if (userBatches.length > 0) {
         const localCacheId = localStorage.getItem(`activeBatch_${targetUserId}`);
-        const dbActiveBatch = userBatches.find(b => b.isCurrentBatch);
+        const activeOnlyBatches = userBatches.filter(b => b.isActive !== false);
+        const candidateBatches = activeOnlyBatches.length > 0 ? activeOnlyBatches : userBatches;
 
-        // Preference: Database flag -> LocalStorage -> First available
+        const dbActiveBatch = candidateBatches.find(b => b.isCurrentBatch);
+
+        // Preference: Database flag -> LocalStorage -> First available active batch
         if (dbActiveBatch) {
           activeBatchId = dbActiveBatch.$id;
-        } else if (localCacheId && userBatches.some(b => b.$id === localCacheId)) {
+        } else if (localCacheId && candidateBatches.some(b => b.$id === localCacheId)) {
           activeBatchId = localCacheId;
         } else {
-          activeBatchId = userBatches[0].$id;
+          activeBatchId = candidateBatches[0].$id;
         }
 
         // Keep local cache synced

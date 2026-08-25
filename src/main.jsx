@@ -38,6 +38,7 @@ import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
 import ForgetPass from "./Auth/ForgetPass.jsx";
 import CreateBatch from "./private/teacher/batch/create-batch/CreateBatch.jsx";
+import EditBatch from "./private/teacher/batch/edit-batch/EditBatch.jsx";
 import ViewBatch from "./private/teacher/batch/view-batch/ViewBatch.jsx";
 import Profile from "./private/profile/Profile.jsx";
 import ProfileView from "./private/profile/ProfileView.jsx";
@@ -145,9 +146,8 @@ const router = (
             <Route path="students" element={<AddStudents />} />
             <Route path="view" element={<ViewBatch />} />
             <Route path="view/:userId" element={<ProfileView />} />
-            <Route path="edit/:userId" element={<ProfileForm />} />
-            <Route path="edit/:batchId" element={<div>Edit</div>} />
-            <Route path="delete/:batchId" element={<div>Delete</div>} />
+            <Route path="edit" element={<EditBatch />} />
+            <Route path="edit/:batchId" element={<EditBatch />} />
           </Route>
           {/* Batch-required routes — students blocked if not enrolled */}
           <Route element={<ProtectedStudentBatchRoute />}>

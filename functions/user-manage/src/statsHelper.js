@@ -577,6 +577,13 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
       const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
 
       const storedDoc = storedStatsMap.get(uid);
+
+      // If no stored summary exists AND no daily attendance records exist for this month (0 working days),
+      // it means attendance hasn't been taken for this month yet. This is normal, not a mismatch.
+      if (!storedDoc && workingDays === 0) {
+        return;
+      }
+
       const storedWorking = storedDoc?.workingDays || 0;
       const storedPresent = storedDoc?.presentDays || 0;
       const storedPercentage = storedDoc?.attendancePercentage || 0;
@@ -585,8 +592,8 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
         !storedDoc ||
         storedWorking !== workingDays ||
         storedPresent !== presentDays ||
-        storedDoc.absentDays !== absentDays ||
-        storedDoc.totalPresent !== totalPresent ||
+        (storedDoc?.absentDays || 0) !== absentDays ||
+        (storedDoc?.totalPresent || 0) !== totalPresent ||
         storedPercentage !== attendancePercentage;
 
       if (isMismatch) {

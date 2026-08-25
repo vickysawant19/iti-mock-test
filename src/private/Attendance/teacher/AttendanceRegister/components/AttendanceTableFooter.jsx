@@ -9,12 +9,15 @@ const AttendanceTableFooter = ({
   formatDate,
   columnVisibility = { previous: true, daily: true, summary: true },
   compactView = false,
+  nameWidthProp,
 }) => {
   const prevColSpan = columnVisibility.previous ? 7 : 0;
   const summaryColSpan = columnVisibility.summary ? 7 : 0;
 
-  // Standardized Column Widths & Sticky Positions (Pixel exact for dynamic compact shrink)
-  const nameWidth = compactView ? 180 : 260;
+  // Standardized Column Widths & Sticky Positions (Optimized for mobile readability)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const defaultNameWidth = compactView ? (isMobile ? 120 : 140) : (isMobile ? 140 : 180);
+  const nameWidth = nameWidthProp !== undefined ? nameWidthProp : defaultNameWidth;
 
   const nameColStyle = {
     width: `${nameWidth}px`,

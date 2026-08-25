@@ -61,9 +61,16 @@ export const menuConfig = [
     requiresAuth: true,
     children: [
       {
-        label: "Create / Update Batch",
+        label: "Create New Batch",
         path: "/manage-batch/create",
         icon: MdGroupAdd,
+        requiresAuth: true,
+      },
+      {
+        label: "Edit Batch Settings",
+        path: "/manage-batch/edit",
+        icon: FaList,
+        hideIfNoBatch: true,
         requiresAuth: true,
       },
       {
@@ -204,9 +211,10 @@ export const pathToHeading = {
   "/": "Home",
   "/arena": "Game Arena",
   "/profile": "Profile",
-  "/manage-batch/create": "Create / Update Batch",
+  "/manage-batch/create": "Create New Batch",
+  "/manage-batch/edit": "Edit Batch Settings",
   "/manage-batch/students": "Manage Batch Students",
-  "/manage-batch/view": "View Batch Records",
+  "/manage-batch/view": "Batch Records & Details",
   "/create-question": "Create Question",
   "/manage-questions": "Manage Questions",
   "/manage-colleges": "Manage Colleges",

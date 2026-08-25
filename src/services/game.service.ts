@@ -780,8 +780,8 @@ export class GameService extends DatabaseService {
   ): Promise<BatchGameSettings> {
     const cacheKey = `game_settings_${batchId}`;
     const payload = { ...settings };
-    if (payload.selectedModuleName && payload.selectedModuleName.length > 128) {
-      payload.selectedModuleName = payload.selectedModuleName.slice(0, 125) + "...";
+    if (payload.selectedModuleName && payload.selectedModuleName.length > 4096) {
+      payload.selectedModuleName = payload.selectedModuleName.slice(0, 4093) + "...";
     }
 
     try {
