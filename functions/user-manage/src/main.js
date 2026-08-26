@@ -13,7 +13,12 @@ export default async ({ req, res, log, error }) => {
 
   try {
     const event = req.headers['x-appwrite-event'];
-    trace(`Triggered by event: ${event}`);
+    if (event) {
+      trace(`Triggered by event: ${event}`);
+    } else {
+      const actionName = req.bodyJson?.action || 'unknown';
+      trace(`Triggered by HTTP request: action="${actionName}"`);
+    }
 
     // Validate Appwrite API key header and environment variables
     validateAppwriteKey(req.headers['x-appwrite-key']);

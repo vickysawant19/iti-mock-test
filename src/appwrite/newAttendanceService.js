@@ -1,7 +1,6 @@
 import { Query } from "appwrite";
 import conf from "../config/config";
 import { appwriteClientService as appwriteService } from "../services/appwriteClient";
-import userStatsService from "./userStats";
 import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
 import { attendanceTrackingService } from "@/services/attendanceTrackingService";
 

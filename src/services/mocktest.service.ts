@@ -2,7 +2,6 @@ import { Query, functions } from "./appwriteClient";
 import conf from "../config/config";
 import { DatabaseService } from "./database.service";
 import { questionService } from "./question.service";
-import userStatsService from "../appwrite/userStats";
 import PermissionBuilder from "../utils/permissionBuilder";
 
 export interface MockTestPaper {
@@ -194,26 +193,6 @@ class MockTestService extends DatabaseService {
       submitted: true,
       endTime: data.endTime
     });
-
-    try {
-      const payload = JSON.stringify({
-        action: "updateBatchStatsFromTest",
-        userId: paper.userId,
-        batchId: paper.batchId,
-        score: score,
-        quesCount: paper.quesCount
-      });
-      functions.createExecution(conf.userManageFunctionId, payload, false);
-
-      // Trigger full client-side stats recalculation/update to keep everything in sync
-      if (paper.batchId) {
-        userStatsService.recalculateStudentsStats([paper.userId], paper.batchId).catch((err: any) => {
-          console.error("Failed to trigger recalculateStudentsStats after test submit:", err);
-        });
-      }
-    } catch (err) {
-      console.error("Failed to trigger updateBatchStatsFromTest", err);
-    }
 
     return result;
   }

@@ -6,42 +6,181 @@ export const generateShortStatId = (userId, batchId, suffix = '') => {
   return createHash('md5').update(raw).digest('hex'); // 32 chars (Appwrite max limit is 36 chars)
 };
 
-export const bulkUpsertDocuments = async (databases, DB_ID, collectionId, documents) => {
-  if (!documents || documents.length === 0) return [];
+export const cleanDocumentData = (doc) => {
+  if (!doc || typeof doc !== 'object') return {};
+  const {
+    $id,
+    $permissions,
+    $collectionId,
+    $databaseId,
+    $createdAt,
+    $updatedAt,
+    $sequence,
+    ...clean
+  } = doc;
+  return clean;
+};
 
-  const targetIds = documents.map((d) => d.$id).filter(Boolean);
+export const bulkUpsertDocuments = async (tablesDB, databases, DB_ID, collectionId, documents, log = console.log) => {
+  if (!documents || documents.length === 0) return [];
+  const t0 = Date.now();
+  const logger = typeof log === 'function' ? log : console.log;
+
+  // Build clean sanitized payload (pure data + $id + $permissions)
+  const sanitizedDocs = documents.map((doc) => {
+    const clean = cleanDocumentData(doc);
+    const row = { ...clean };
+    if (doc.$id) row.$id = doc.$id;
+    if (Array.isArray(doc.$permissions) && doc.$permissions.length > 0) {
+      row.$permissions = doc.$permissions;
+    }
+    return row;
+  });
+
+  // 1. Try native bulk databases.upsertDocuments first (single request for up to 100 docs)
+  if (databases && typeof databases.upsertDocuments === 'function') {
+    try {
+      const savedDocs = [];
+      for (let i = 0; i < sanitizedDocs.length; i += 100) {
+        const chunk = sanitizedDocs.slice(i, i + 100);
+        const res = await databases.upsertDocuments({
+          databaseId: DB_ID,
+          collectionId,
+          documents: chunk,
+        });
+        if (res && res.documents) {
+          savedDocs.push(...res.documents);
+        } else if (Array.isArray(res)) {
+          savedDocs.push(...res);
+        } else {
+          savedDocs.push(...chunk);
+        }
+      }
+      logger(`[bulkUpsert:${collectionId}] Native databases.upsertDocuments saved ${savedDocs.length} items in ${Date.now() - t0}ms`);
+      return savedDocs;
+    } catch (bulkErr) {
+      logger(`[bulkUpsert:${collectionId}] databases.upsertDocuments notice: ${bulkErr.message}, running optimized parallel writes...`);
+    }
+  }
+
+  // 2. High-speed parallel fallback: determine existing docs with 1 list query
+  const targetIds = sanitizedDocs.map((d) => d.$id).filter(Boolean);
   const existingIds = new Set();
 
-  if (targetIds.length > 0) {
+  if (targetIds.length > 0 && databases) {
     try {
-      for (let i = 0; i < targetIds.length; i += 50) {
-        const chunkIds = targetIds.slice(i, i + 50);
+      for (let i = 0; i < targetIds.length; i += 100) {
+        const chunkIds = targetIds.slice(i, i + 100);
         const existingDocs = await databases.listDocuments(DB_ID, collectionId, [
           Query.equal('$id', chunkIds),
-          Query.limit(50),
+          Query.limit(100),
         ]);
         (existingDocs.documents || []).forEach((doc) => existingIds.add(doc.$id));
       }
     } catch (e) {
-      // Fallback if list query fails
+      logger(`[bulkUpsert:${collectionId}] list query warning: ${e.message}`);
     }
   }
 
-  const promises = documents.map(async (doc) => {
-    const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...data } = doc;
+  const toCreate = [];
+  const toUpdate = [];
+
+  sanitizedDocs.forEach((doc) => {
+    const { $id, $permissions, ...data } = doc;
     const targetId = $id || ID.unique();
+    const permissions = Array.isArray($permissions) && $permissions.length > 0 ? $permissions : undefined;
 
     if (existingIds.has(targetId)) {
-      return await databases.updateDocument(DB_ID, collectionId, targetId, data).catch(() => null);
+      toUpdate.push({ targetId, data, permissions });
     } else {
-      return await databases.createDocument(DB_ID, collectionId, targetId, data).catch(async () => {
-        return await databases.updateDocument(DB_ID, collectionId, targetId, data).catch(() => null);
-      });
+      toCreate.push({ targetId, data, permissions });
     }
   });
 
-  const results = await Promise.all(promises);
-  return results.filter(Boolean);
+  logger(`[bulkUpsert:${collectionId}] ${sanitizedDocs.length} items (${toCreate.length} create, ${toUpdate.length} update), idCheck took ${Date.now() - t0}ms`);
+
+  const CONCURRENCY = 20;
+  const savedResults = [];
+
+  const runConcurrentBatch = async (items, isCreate) => {
+    for (let i = 0; i < items.length; i += CONCURRENCY) {
+      const chunk = items.slice(i, i + CONCURRENCY);
+      const chunkPromises = chunk.map(async ({ targetId, data, permissions }) => {
+        try {
+          if (isCreate) {
+            return await databases.createDocument(DB_ID, collectionId, targetId, data, permissions);
+          } else {
+            return await databases.updateDocument(DB_ID, collectionId, targetId, data, permissions);
+          }
+        } catch (err) {
+          logger(`[bulkUpsert:${collectionId}] Item write failed (${err.message}), attempting recovery...`);
+          try {
+            if (isCreate) {
+              return await databases.updateDocument(DB_ID, collectionId, targetId, data, permissions);
+            } else {
+              return await databases.createDocument(DB_ID, collectionId, targetId, data, permissions);
+            }
+          } catch (retryErr) {
+            logger(`[bulkUpsert:${collectionId}] Recovery failed on doc ${targetId}: ${retryErr.message}`);
+            return null;
+          }
+        }
+      });
+
+      const chunkResults = await Promise.all(chunkPromises);
+      savedResults.push(...chunkResults.filter(Boolean));
+    }
+  };
+
+  await Promise.all([
+    runConcurrentBatch(toCreate, true),
+    runConcurrentBatch(toUpdate, false)
+  ]);
+
+  logger(`[bulkUpsert:${collectionId}] Done: ${savedResults.length}/${sanitizedDocs.length} saved in ${Date.now() - t0}ms`);
+  return savedResults;
+};
+
+export const deleteTableRows = async (tablesDB, databases, DB_ID, collectionId, queries, rowIds = [], log = console.log) => {
+  const logger = typeof log === 'function' ? log : console.log;
+  const t0 = Date.now();
+
+  // 1. Try native atomic databases.deleteDocuments if queries provided
+  if (databases && typeof databases.deleteDocuments === 'function' && Array.isArray(queries) && queries.length > 0) {
+    try {
+      await databases.deleteDocuments({
+        databaseId: DB_ID,
+        collectionId,
+        queries,
+      });
+      logger(`[deleteTableRows:${collectionId}] Native databases.deleteDocuments finished in ${Date.now() - t0}ms`);
+      return;
+    } catch (bulkErr) {
+      logger(`[deleteTableRows:${collectionId}] databases.deleteDocuments notice: ${bulkErr.message}, deleting by IDs...`);
+    }
+  }
+
+  // 2. Parallel ID deletion fallback
+  let targetIds = Array.isArray(rowIds) ? [...rowIds] : [];
+  if (targetIds.length === 0 && Array.isArray(queries) && queries.length > 0 && databases) {
+    try {
+      const res = await databases.listDocuments(DB_ID, collectionId, [...queries, Query.limit(5000)]);
+      targetIds = (res.documents || []).map((d) => d.$id);
+    } catch (e) {
+      logger(`[deleteTableRows:${collectionId}] Query error: ${e.message}`);
+    }
+  }
+
+  if (targetIds.length === 0) return;
+
+  logger(`[deleteTableRows:${collectionId}] Deleting ${targetIds.length} docs in parallel...`);
+  const CONCURRENCY = 25;
+  for (let i = 0; i < targetIds.length; i += CONCURRENCY) {
+    const chunk = targetIds.slice(i, i + CONCURRENCY);
+    await Promise.all(chunk.map((id) => databases.deleteDocument(DB_ID, collectionId, id).catch(() => null)));
+  }
+
+  logger(`[deleteTableRows:${collectionId}] Deleted ${targetIds.length} rows in ${Date.now() - t0}ms`);
 };
 
 export const updateBatchStatsHelper = async (
@@ -60,11 +199,11 @@ export const updateBatchStatsHelper = async (
     DB_ID,
     STATS_COLLECTION_ID,
     [Query.equal('userId', userId), Query.equal('batchId', batchId)]
-  );
+  ).catch(() => ({ total: 0, documents: [] }));
 
   const getIsPresent = (recordOrStatus, dayTypeParam, isHolidayParam) => {
     let dayType = dayTypeParam;
-    let status = typeof recordOrStatus === 'string' ? recordOrStatus : recordOrStatus?.attendanceStatus || recordOrStatus?.status;
+    let st = typeof recordOrStatus === 'string' ? recordOrStatus : recordOrStatus?.attendanceStatus || recordOrStatus?.status;
     let isHoliday = isHolidayParam;
 
     if (typeof recordOrStatus === 'object' && recordOrStatus !== null) {
@@ -76,7 +215,7 @@ export const updateBatchStatsHelper = async (
 
     if (dayType !== 'WORKING') return 0;
 
-    const normalizedStatus = String(status || '').trim().toUpperCase();
+    const normalizedStatus = String(st || '').trim().toUpperCase();
     return normalizedStatus === 'PRESENT' ? 1 : 0;
   };
 
@@ -115,102 +254,84 @@ export const updateBatchStatsHelper = async (
 };
 
 export const bulkUpdateBatchStats = async (
-  databases,
   tablesDB,
+  databases,
   batchId,
   date,
-  statsDataList
+  statsDataList,
+  log = console.log
 ) => {
   if (!statsDataList || statsDataList.length === 0) return;
+  const logger = typeof log === 'function' ? log : console.log;
+  const t0 = Date.now();
 
   const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
   const STATS_COLLECTION_ID = 'userBatchStats';
   const monthKey = date.substring(0, 7); // YYYY-MM
 
-  // Fetch all existing stats for this batch in 1 bulk query
-  const existingDocsRes = await tablesDB.listRows({
-    databaseId: DB_ID,
-    tableId: STATS_COLLECTION_ID,
-    queries: [Query.equal('batchId', batchId), Query.limit(500)],
-  }).catch(() => ({ rows: [] }));
+  try {
+    // Fetch all existing stats for this batch in 1 bulk query
+    const existingDocsRes = await databases.listDocuments(
+      DB_ID,
+      STATS_COLLECTION_ID,
+      [Query.equal('batchId', batchId), Query.limit(500)]
+    ).catch(() => ({ documents: [] }));
 
-  const existingStatsMap = new Map(
-    (existingDocsRes.rows || existingDocsRes.documents || []).map((doc) => [doc.userId, doc])
-  );
+    const existingStatsMap = new Map(
+      (existingDocsRes.documents || []).map((doc) => [doc.userId, doc])
+    );
 
-  const statsToCreate = [];
-  const statsToUpdate = [];
+    const getIsPresent = (record) => {
+      const dayType = record.dayType || (record.isHoliday ? 'HOLIDAY' : 'WORKING');
+      if (dayType !== 'WORKING') return 0;
+      const status = String(record.attendanceStatus || record.status || '').trim().toUpperCase();
+      return status === 'PRESENT' ? 1 : 0;
+    };
 
-  const getIsPresent = (record) => {
-    const dayType = record.dayType || (record.isHoliday ? 'HOLIDAY' : 'WORKING');
-    if (dayType !== 'WORKING') return 0;
-    const status = String(record.attendanceStatus || record.status || '').trim().toUpperCase();
-    return status === 'PRESENT' ? 1 : 0;
-  };
+    const tasks = statsDataList.map((record) => {
+      const isPresent = getIsPresent(record);
+      const existing = existingStatsMap.get(record.userId);
 
-  statsDataList.forEach((record) => {
-    let isPresent = getIsPresent(record);
-    const existing = existingStatsMap.get(record.userId);
+      if (existing) {
+        let monthlyData = {};
+        try {
+          monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
+        } catch (e) { }
 
-    if (existing) {
-      let monthlyData = {};
-      try {
-        monthlyData = JSON.parse(existing.monthlyAttendance || '{}');
-      } catch (e) { }
+        if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+        monthlyData[monthKey] += isPresent;
 
-      if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
-      monthlyData[monthKey] += isPresent;
+        return databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
+          presentDays: Math.max(0, (existing.presentDays || 0) + isPresent),
+          monthlyAttendance: JSON.stringify(monthlyData),
+        }).catch((err) => {
+          logger(`[userBatchStats] Update error on ${existing.$id}: ${err.message}`);
+          return null;
+        });
+      } else {
+        let monthlyData = {};
+        monthlyData[monthKey] = isPresent;
 
-      statsToUpdate.push({
-        $id: existing.$id,
-        userId: existing.userId,
-        batchId: existing.batchId,
-        totalWorkingDays: existing.totalWorkingDays,
-        presentDays: existing.presentDays + isPresent,
-        monthlyAttendance: JSON.stringify(monthlyData),
-        testsSubmitted: existing.testsSubmitted,
-        cumulativeScore: existing.cumulativeScore,
-        latestScore: existing.latestScore,
-      });
-    } else {
-      let monthlyData = {};
-      monthlyData[monthKey] = isPresent;
+        return databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
+          userId: record.userId,
+          batchId: batchId,
+          totalWorkingDays: 0,
+          presentDays: isPresent,
+          monthlyAttendance: JSON.stringify(monthlyData),
+          testsSubmitted: 0,
+          cumulativeScore: 0,
+          latestScore: 0,
+        }).catch((err) => {
+          logger(`[userBatchStats] Create error for ${record.userId}: ${err.message}`);
+          return null;
+        });
+      }
+    });
 
-      statsToCreate.push({
-        $id: generateShortStatId(record.userId, batchId),
-        userId: record.userId,
-        batchId: batchId,
-        totalWorkingDays: 0,
-        presentDays: isPresent,
-        monthlyAttendance: JSON.stringify(monthlyData),
-        testsSubmitted: 0,
-        cumulativeScore: 0,
-        latestScore: 0,
-      });
-    }
-  });
-
-  const allStatsToSave = [...statsToCreate, ...statsToUpdate];
-  if (allStatsToSave.length > 0) {
-    try {
-      await tablesDB.upsertRows({
-        databaseId: DB_ID,
-        tableId: STATS_COLLECTION_ID,
-        rows: allStatsToSave,
-      });
-    } catch (err) {
-      await Promise.all(
-        allStatsToSave.map(async (row) => {
-          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
-          const rowId = $id || generateShortStatId(row.userId, batchId);
-          try {
-            await tablesDB.updateRow({ databaseId: DB_ID, tableId: STATS_COLLECTION_ID, rowId, data: cleanData });
-          } catch (e) {
-            await tablesDB.createRow({ databaseId: DB_ID, tableId: STATS_COLLECTION_ID, rowId, data: cleanData }).catch(() => null);
-          }
-        })
-      );
-    }
+    await Promise.all(tasks);
+    logger(`[bulkUpdateBatchStats] Done for ${tasks.length} students in ${Date.now() - t0}ms`);
+  } catch (err) {
+    logger(`[bulkUpdateBatchStats] Non-blocking warning: ${err.message}`);
   }
 };
 
@@ -224,6 +345,7 @@ export const bulkUpdateMonthlyAttendanceStats = async (
   log = console.log
 ) => {
   if (!batchId || !yearMonth) return;
+  const t0 = Date.now();
   const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
   const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
   const NEW_ATTENDANCE_COL = 'newAttendance';
@@ -259,15 +381,15 @@ export const bulkUpdateMonthlyAttendanceStats = async (
     };
 
     // 1. Fetch enrollment dates and all batch students
-    const bsRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: BATCH_STUDENTS_COL,
-      queries: [Query.equal('batchId', batchId), Query.limit(500)],
-    }).catch(() => ({ rows: [] }));
+    const bsRes = await databases.listDocuments(
+      DB_ID,
+      BATCH_STUDENTS_COL,
+      [Query.equal('batchId', batchId), Query.limit(500)]
+    ).catch(() => ({ documents: [] }));
 
     const enrollmentMap = new Map();
     const batchStudentUserIds = new Set();
-    (bsRes.rows || []).forEach((row) => {
+    (bsRes.documents || []).forEach((row) => {
       const studentId = row.studentId || row.userId || row.student_id;
       const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
       if (studentId) {
@@ -276,37 +398,32 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       }
     });
 
-    logger(`[bulkUpdateMonthlyAttendanceStats] Batch students count: ${batchStudentUserIds.size}`);
-
     // 1b. Fetch active batch holidays for yearMonth from holidayDays collection
     const HOLIDAY_DAYS_COL = process.env.HOLIDAY_DAYS_COLLECTION_ID || 'holidayDays';
-    const holidaysRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: HOLIDAY_DAYS_COL,
-      queries: [
+    const holidaysRes = await databases.listDocuments(
+      DB_ID,
+      HOLIDAY_DAYS_COL,
+      [
         Query.equal('batchId', batchId),
         Query.startsWith('date', yearMonth),
         Query.limit(100),
-      ],
-    }).catch(() => ({ rows: [] }));
+      ]
+    ).catch(() => ({ documents: [] }));
 
     const activeHolidayDates = new Set(
-      (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
+      (holidaysRes.documents || []).map((h) => String(h.date).substring(0, 10))
     );
-    logger(`[bulkUpdateMonthlyAttendanceStats] Active holidays count: ${activeHolidayDates.size}`);
 
     // 2. Fetch daily attendance records for this batch and month
-    const attendanceRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: NEW_ATTENDANCE_COL,
-      queries: [
+    const attendanceRes = await databases.listDocuments(
+      DB_ID,
+      NEW_ATTENDANCE_COL,
+      [
         Query.equal('batchId', batchId),
         Query.startsWith('date', yearMonth),
         Query.limit(5000),
-      ],
-    }).catch(() => ({ rows: [] }));
-
-    logger(`[bulkUpdateMonthlyAttendanceStats] Fetched daily attendance rows count: ${attendanceRes.rows?.length || 0}`);
+      ]
+    ).catch(() => ({ documents: [] }));
 
     // 3. Group by userId
     const userRecordsMap = new Map();
@@ -318,15 +435,12 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       }
     });
 
-    (attendanceRes.rows || []).forEach((doc) => {
+    (attendanceRes.documents || []).forEach((doc) => {
       if (!doc.userId) return;
       if (userFilterSet && !userFilterSet.has(doc.userId)) return;
 
       const enrollStr = enrollmentMap.get(doc.userId);
-      if (enrollStr && doc.date < enrollStr) {
-        logger(`[bulkUpdateMonthlyAttendanceStats-SKIP] userId=${doc.userId}, doc.date=${doc.date} < enrollStr=${enrollStr}`);
-        return;
-      }
+      if (enrollStr && doc.date < enrollStr) return;
 
       if (!userRecordsMap.has(doc.userId)) {
         userRecordsMap.set(doc.userId, []);
@@ -334,9 +448,8 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       userRecordsMap.get(doc.userId).push({ ...doc });
     });
 
-    // Merge latest in-memory records (in case listRows didn't return newly inserted/upserted rows yet)
+    // Merge latest in-memory records
     if (Array.isArray(latestRecords) && latestRecords.length > 0) {
-      logger(`[bulkUpdateMonthlyAttendanceStats] Merging ${latestRecords.length} latest in-memory records...`);
       latestRecords.forEach((rec) => {
         if (!rec.userId || !rec.date || !rec.date.startsWith(yearMonth)) return;
         if (userFilterSet && !userFilterSet.has(rec.userId)) return;
@@ -391,8 +504,6 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       const workingDays = presentDays + absentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves + halfDays + lateDays;
       const attendancePercentage = workingDays > 0 ? parseFloat(((totalPresent / workingDays) * 100).toFixed(1)) : 0;
 
-      logger(`[bulkUpdateMonthlyAttendanceStats-RESULT] userId=${userId}, workingDays=${workingDays}, presentDays=${presentDays}, rowsCount=${rows.length}`);
-
       statsObjects.push({
         $id: generateShortStatId(userId, batchId, yearMonth),
         userId,
@@ -413,31 +524,27 @@ export const bulkUpdateMonthlyAttendanceStats = async (
       });
     });
 
-    if (statsObjects.length === 0) {
-      logger(`[bulkUpdateMonthlyAttendanceStats] END: No statsObjects built.`);
-      return;
-    }
-
-    logger(`[bulkUpdateMonthlyAttendanceStats] Writing ${statsObjects.length} statsObjects via bulkUpsertDocuments...`);
+    if (statsObjects.length === 0) return;
 
     // 5. Bulk Upsert
-    const res = await bulkUpsertDocuments(databases, DB_ID, MONTHLY_STATS_COL, statsObjects);
-    logger(`[bulkUpdateMonthlyAttendanceStats] bulkUpsertDocuments finished successfully. Response count: ${res.length}`);
+    await bulkUpsertDocuments(tablesDB, databases, DB_ID, MONTHLY_STATS_COL, statsObjects, logger);
+    logger(`[bulkUpdateMonthlyAttendanceStats] Finished in ${Date.now() - t0}ms`);
   } catch (err) {
     logger(`[bulkUpdateMonthlyAttendanceStats-ERROR] ${err.message}`);
   }
 };
 
 export const updateMonthlyAttendanceStatsHelper = async (
+  tablesDB,
   databases,
   userId,
   batchId,
   date,
-  tablesDB = null
+  log = console.log
 ) => {
   if (!userId || !batchId || !date) return;
   const yearMonth = String(date).substring(0, 7);
-  await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, [userId]);
+  await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, [userId], null, log);
 };
 
 export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId, yearMonth) => {
@@ -473,14 +580,14 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
 
   try {
     // 1. Fetch batch students
-    const bsRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: BATCH_STUDENTS_COL,
-      queries: [Query.equal('batchId', batchId), Query.limit(500)],
-    }).catch(() => ({ rows: [] }));
+    const bsRes = await databases.listDocuments(
+      DB_ID,
+      BATCH_STUDENTS_COL,
+      [Query.equal('batchId', batchId), Query.limit(500)]
+    ).catch(() => ({ documents: [] }));
 
     const studentMap = new Map();
-    (bsRes.rows || []).forEach((row) => {
+    (bsRes.documents || []).forEach((row) => {
       const studentId = row.studentId || row.userId || row.student_id;
       if (studentId) {
         studentMap.set(studentId, {
@@ -493,49 +600,49 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
     });
 
     // 2. Fetch stored monthlyAttendanceStats
-    const storedStatsRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: MONTHLY_STATS_COL,
-      queries: [
+    const storedStatsRes = await databases.listDocuments(
+      DB_ID,
+      MONTHLY_STATS_COL,
+      [
         Query.equal('batchId', batchId),
         Query.equal('yearMonth', yearMonth),
         Query.limit(500),
-      ],
-    }).catch(() => ({ rows: [] }));
+      ]
+    ).catch(() => ({ documents: [] }));
 
     const storedStatsMap = new Map();
-    (storedStatsRes.rows || []).forEach((doc) => {
+    (storedStatsRes.documents || []).forEach((doc) => {
       storedStatsMap.set(doc.userId, doc);
     });
 
     // 3. Fetch active holidays for yearMonth
-    const holidaysRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: HOLIDAY_DAYS_COL,
-      queries: [
+    const holidaysRes = await databases.listDocuments(
+      DB_ID,
+      HOLIDAY_DAYS_COL,
+      [
         Query.equal('batchId', batchId),
         Query.startsWith('date', yearMonth),
         Query.limit(100),
-      ],
-    }).catch(() => ({ rows: [] }));
+      ]
+    ).catch(() => ({ documents: [] }));
 
     const activeHolidayDates = new Set(
-      (holidaysRes.rows || []).map((h) => String(h.date).substring(0, 10))
+      (holidaysRes.documents || []).map((h) => String(h.date).substring(0, 10))
     );
 
     // 4. Fetch daily attendance records
-    const attendanceRes = await tablesDB.listRows({
-      databaseId: DB_ID,
-      tableId: NEW_ATTENDANCE_COL,
-      queries: [
+    const attendanceRes = await databases.listDocuments(
+      DB_ID,
+      NEW_ATTENDANCE_COL,
+      [
         Query.equal('batchId', batchId),
         Query.startsWith('date', yearMonth),
         Query.limit(5000),
-      ],
-    }).catch(() => ({ rows: [] }));
+      ]
+    ).catch(() => ({ documents: [] }));
 
     const userRecordsMap = new Map();
-    (attendanceRes.rows || []).forEach((doc) => {
+    (attendanceRes.documents || []).forEach((doc) => {
       if (!doc.userId) return;
       if (!userRecordsMap.has(doc.userId)) {
         userRecordsMap.set(doc.userId, []);
@@ -545,7 +652,7 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
 
     const mismatches = [];
 
-    // 5. Compare per student
+    // 5. Compare each student's expected stats with stored stats
     studentMap.forEach((student, uid) => {
       const enrollStr = student.enrollmentDate;
       const allUserRecords = userRecordsMap.get(uid) || [];
@@ -578,8 +685,6 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
 
       const storedDoc = storedStatsMap.get(uid);
 
-      // If no stored summary exists AND no daily attendance records exist for this month (0 working days),
-      // it means attendance hasn't been taken for this month yet. This is normal, not a mismatch.
       if (!storedDoc && workingDays === 0) {
         return;
       }
@@ -630,23 +735,25 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databases, batchId
   }
 };
 
-export const decrementMonthlyStatsForAttendanceRecords = async (tablesDB, DB_ID, batchId, yearMonth, records) => {
+export const decrementMonthlyStatsForAttendanceRecords = async (tablesDB, databases, DB_ID, batchId, yearMonth, records, log = console.log) => {
   if (!records || records.length === 0) return;
+  const logger = typeof log === 'function' ? log : console.log;
+  const t0 = Date.now();
   const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
 
   // Fetch existing monthly stats for this batch and month in 1 single bulk query
-  const existingStatsRes = await tablesDB.listRows({
-    databaseId: DB_ID,
-    tableId: MONTHLY_STATS_COL,
-    queries: [
+  const existingStatsRes = await databases.listDocuments(
+    DB_ID,
+    MONTHLY_STATS_COL,
+    [
       Query.equal('batchId', batchId),
       Query.equal('yearMonth', yearMonth),
       Query.limit(500),
-    ],
-  }).catch(() => ({ rows: [] }));
+    ]
+  ).catch(() => ({ documents: [] }));
 
   const existingStatsMap = new Map(
-    (existingStatsRes.rows || existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
+    (existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
   );
 
   const modifiedStatsMap = new Map();
@@ -656,7 +763,7 @@ export const decrementMonthlyStatsForAttendanceRecords = async (tablesDB, DB_ID,
     if (!userId) return;
 
     const doc = modifiedStatsMap.get(userId) || existingStatsMap.get(userId);
-    if (!doc) return; // Nothing to decrement if student has no monthly stats record
+    if (!doc) return; 
 
     const s = String(r.status || r.attendanceStatus || '').toLowerCase();
 
@@ -700,54 +807,41 @@ export const decrementMonthlyStatsForAttendanceRecords = async (tablesDB, DB_ID,
 
   const statsToUpsert = Array.from(modifiedStatsMap.values());
   if (statsToUpsert.length > 0) {
-    try {
-      await tablesDB.upsertRows({
-        databaseId: DB_ID,
-        tableId: MONTHLY_STATS_COL,
-        rows: statsToUpsert,
-      });
-    } catch (err) {
-      await Promise.all(
-        statsToUpsert.map(async (row) => {
-          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
-          const rowId = $id || generateShortStatId(row.userId, batchId, yearMonth);
-          try {
-            await tablesDB.updateRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData });
-          } catch (e) {
-            await tablesDB.createRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData }).catch(() => null);
-          }
-        })
-      );
-    }
+    await bulkUpsertDocuments(tablesDB, databases, DB_ID, MONTHLY_STATS_COL, statsToUpsert, logger);
   }
+  logger(`[decrementMonthlyStats] Done in ${Date.now() - t0}ms`);
 };
 
 export const updateIncrementalMonthlyAttendanceStats = async (
   tablesDB,
+  databases,
   DB_ID,
   batchId,
   date,
   recordsToUpdate,
-  existingRecordsMap = new Map()
+  existingRecordsMap = new Map(),
+  log = console.log
 ) => {
   if (!recordsToUpdate || recordsToUpdate.length === 0) return;
+  const logger = typeof log === 'function' ? log : console.log;
+  const t0 = Date.now();
 
   const MONTHLY_STATS_COL = 'monthlyAttendanceStats';
   const yearMonth = String(date).substring(0, 7);
 
   // Fetch existing monthly stats documents for this batch and month in a single query
-  const existingStatsRes = await tablesDB.listRows({
-    databaseId: DB_ID,
-    tableId: MONTHLY_STATS_COL,
-    queries: [
+  const existingStatsRes = await databases.listDocuments(
+    DB_ID,
+    MONTHLY_STATS_COL,
+    [
       Query.equal('batchId', batchId),
       Query.equal('yearMonth', yearMonth),
       Query.limit(500),
-    ],
-  }).catch(() => ({ rows: [] }));
+    ]
+  ).catch(() => ({ documents: [] }));
 
   const existingStatsMap = new Map(
-    (existingStatsRes.rows || existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
+    (existingStatsRes.documents || []).map((doc) => [doc.userId, { ...doc }])
   );
 
   const modifiedStatsMap = new Map();
@@ -815,24 +909,7 @@ export const updateIncrementalMonthlyAttendanceStats = async (
 
   const statsToUpsert = Array.from(modifiedStatsMap.values());
   if (statsToUpsert.length > 0) {
-    try {
-      await tablesDB.upsertRows({
-        databaseId: DB_ID,
-        tableId: MONTHLY_STATS_COL,
-        rows: statsToUpsert,
-      });
-    } catch (err) {
-      await Promise.all(
-        statsToUpsert.map(async (row) => {
-          const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanData } = row;
-          const rowId = $id || generateShortStatId(row.userId, batchId, yearMonth);
-          try {
-            await tablesDB.updateRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData });
-          } catch (e) {
-            await tablesDB.createRow({ databaseId: DB_ID, tableId: MONTHLY_STATS_COL, rowId, data: cleanData }).catch(() => null);
-          }
-        })
-      );
-    }
+    await bulkUpsertDocuments(tablesDB, databases, DB_ID, MONTHLY_STATS_COL, statsToUpsert, logger);
   }
+  logger(`[updateIncrementalMonthlyAttendanceStats] Done in ${Date.now() - t0}ms`);
 };
