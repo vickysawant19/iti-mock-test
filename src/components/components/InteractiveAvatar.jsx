@@ -248,15 +248,15 @@ const InteractiveAvatar = forwardRef(({
         </DialogTrigger>
       
       <DialogContent
-        showCloseButton={editable}
+        showCloseButton={false}
         className={
           editable
             ? "border-0 overflow-hidden p-0 flex items-center justify-center sm:max-w-md w-full max-w-[90%] sm:w-full bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl shadow-2xl rounded-[2rem]"
-            : "border border-white/10 bg-slate-950/95 backdrop-blur-2xl shadow-2xl p-6 rounded-[2.5rem] flex flex-col items-center gap-4 max-w-[280px] w-full"
+            : "fixed inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-0 !p-0 !m-0 bg-black/95 backdrop-blur-2xl flex flex-col justify-between z-50 overflow-hidden shadow-none"
         }
       >
-        <DialogTitle className="sr-only">Profile Picture</DialogTitle>
-        <DialogDescription className="sr-only">View profile picture</DialogDescription>
+        <DialogTitle className="sr-only">{userName ? `${userName}'s Avatar` : "Profile Picture"}</DialogTitle>
+        <DialogDescription className="sr-only">Full screen avatar preview</DialogDescription>
 
         {editable ? (
           <div className="relative flex flex-col items-center w-full px-6 py-10">
@@ -363,36 +363,63 @@ const InteractiveAvatar = forwardRef(({
             </div>
           </div>
         ) : (
-          /* Premium Round Card for Non-Editable Mode */
-          <div className="flex flex-col items-center gap-4 w-full">
-            {/* The Avatar image container */}
-            <div className="relative rounded-[2rem] overflow-hidden w-36 h-36 border-2 border-pink-500/40 shadow-xl shadow-pink-500/10 flex items-center justify-center bg-slate-900">
-              {fixedSrc ? (
+          /* Full-Screen Immersive Lightbox Preview */
+          <div 
+            className="relative flex flex-col justify-between items-center w-full h-full select-none"
+            onClick={() => handleOpenChange(false)}
+          >
+            {/* Top Close Action */}
+            <div className="w-full px-5 py-4 sm:px-8 sm:py-5 flex items-center justify-end z-20">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="rounded-full w-10 h-10 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 shadow-lg transition-transform hover:scale-105"
+                onClick={() => handleOpenChange(false)}
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Whole Screen Centered Image Viewport */}
+            <div 
+              className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
+              onClick={() => handleOpenChange(false)}
+            >
+              {fixedSrc && !imageError ? (
                 <img
                   src={fixedSrc}
-                  alt="Student Avatar"
-                  className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-300"
+                  alt={userName || "Avatar Preview"}
+                  className="max-w-[92vw] max-h-[70vh] sm:max-h-[76vh] w-auto h-auto object-contain rounded-2xl shadow-2xl drop-shadow-[0_20px_60px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()} // Prevent clicking image itself from closing
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center text-slate-500 w-full h-full bg-slate-900">
-                  <span className="font-black uppercase tracking-wider text-5xl">{fallbackText}</span>
+                <div 
+                  className="w-48 h-48 sm:w-64 sm:h-64 rounded-3xl bg-slate-900/90 border border-white/10 flex flex-col items-center justify-center shadow-2xl text-slate-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ImageIcon className="w-16 h-16 opacity-30 mb-3 text-slate-500" />
+                  <span className="font-black uppercase tracking-widest text-4xl sm:text-5xl text-white/50">{fallbackText}</span>
                 </div>
               )}
             </div>
 
-            {/* Student Name */}
-            <div className="space-y-1.5 text-center">
-              <h3 className="text-sm font-black text-white tracking-wider uppercase">
+            {/* Student Name & Status Badge (Positioned as previously) */}
+            <div 
+              className="flex flex-col items-center gap-1.5 text-center z-20 pb-6 pt-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-sm sm:text-base font-black text-white tracking-wider uppercase drop-shadow-md">
                 {userName || "Live Member"}
               </h3>
               {userId && isOnline ? (
-                <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 backdrop-blur-md shadow-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live Member
                 </div>
               ) : (
                 localLastSeen && (
-                  <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-500/15 border border-slate-500/30 text-slate-400">
+                  <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-slate-800/80 border border-slate-700/60 text-slate-400 backdrop-blur-md shadow-md">
                     Last active {formatDistanceToNow(new Date(localLastSeen), { addSuffix: true })}
                   </div>
                 )
