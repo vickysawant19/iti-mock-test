@@ -1573,219 +1573,6 @@
             "indexes": []
         },
         {
-            "$id": "668fa985001e955e54f5",
-            "$permissions": [
-                "create(\"any\")",
-                "read(\"any\")",
-                "update(\"any\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "userStats",
-            "enabled": true,
-            "rowSecurity": true,
-            "columns": [
-                {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 30,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "userName",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "questions",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "tests",
-                    "type": "string",
-                    "required": false,
-                    "array": true,
-                    "size": 1000,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "tradeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "collegeId",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 30,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "day_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "day_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "day_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "week_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "week_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "week_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "month_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "month_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "month_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "year_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "year_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "year_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "allTime_questionsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "allTime_testsCount",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                },
-                {
-                    "key": "allTime_maxScore",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": null,
-                    "min": -9223372036854775808,
-                    "max": 9223372036854775807
-                }
-            ],
-            "indexes": []
-        },
-        {
             "$id": "newAttendance",
             "$permissions": [
                 "create(\"users\")",
@@ -2379,108 +2166,6 @@
             ]
         },
         {
-            "$id": "userBatchStats",
-            "$permissions": [
-                "read(\"any\")",
-                "create(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
-            ],
-            "databaseId": "itimocktest",
-            "name": "userBatchStats",
-            "enabled": true,
-            "rowSecurity": true,
-            "columns": [
-                {
-                    "key": "userId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "batchId",
-                    "type": "string",
-                    "required": true,
-                    "array": false,
-                    "size": 50,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "monthlyAttendance",
-                    "type": "string",
-                    "required": false,
-                    "array": false,
-                    "size": 5000,
-                    "default": null,
-                    "encrypt": false
-                },
-                {
-                    "key": "totalWorkingDays",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": 0,
-                    "max": 10000
-                },
-                {
-                    "key": "presentDays",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": 0,
-                    "max": 10000
-                },
-                {
-                    "key": "testsSubmitted",
-                    "type": "integer",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": 0,
-                    "max": 10000
-                },
-                {
-                    "key": "cumulativeScore",
-                    "type": "double",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": 0,
-                    "max": 1000000
-                },
-                {
-                    "key": "latestScore",
-                    "type": "double",
-                    "required": false,
-                    "array": false,
-                    "default": 0,
-                    "min": 0,
-                    "max": 100
-                }
-            ],
-            "indexes": [
-                {
-                    "key": "idx_batch_user",
-                    "type": "key",
-                    "status": "available",
-                    "columns": [
-                        "batchId",
-                        "userId"
-                    ],
-                    "orders": [
-                        "ASC",
-                        "ASC"
-                    ]
-                }
-            ]
-        },
-        {
             "$id": "notifications",
             "$permissions": [
                 "read(\"users\")",
@@ -3012,7 +2697,7 @@
                     "type": "string",
                     "required": false,
                     "array": false,
-                    "size": 128,
+                    "size": 1000,
                     "default": null,
                     "encrypt": false
                 },
@@ -3527,16 +3212,16 @@
         {
             "$id": "69e38dc50923c09243f4",
             "$createdAt": "2026-07-24T05:38:22.591+00:00",
-            "$updatedAt": "2026-07-24T05:38:25.799+00:00",
-            "name": "69CBE490-69CBE4EC-2026-OJT---GANESH-ELECTRICAL-BANDA--1ZV3",
+            "$updatedAt": "2026-08-25T13:42:06.788+00:00",
+            "name": "69CBE490-69CBE4EC-2026-OJT---GANESH-ELECTRICAL-BANDA--XP3N",
             "total": 8,
             "prefs": {}
         },
         {
             "$id": "69e38f861310bbdefda3",
             "$createdAt": "2026-07-24T05:38:26.502+00:00",
-            "$updatedAt": "2026-07-24T05:38:28.786+00:00",
-            "name": "69CBE490-69CBE4EC-2026-OJT---BHAVESHWARI-ELECTRICAL--X2RN",
+            "$updatedAt": "2026-08-25T13:42:20.388+00:00",
+            "name": "69CBE490-69CBE4EC-2026-OJT---BHAVESHWARI-ELECTRICAL--DLX0",
             "total": 4,
             "prefs": {}
         },
