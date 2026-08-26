@@ -311,8 +311,6 @@ const AttendanceRegister = () => {
       holidaysData.forEach((h) => holidayMap.set(h.date, h));
       setHolidays(holidayMap);
 
-      console.log("[AttendanceRegister] Raw batchStudents & profiles joined:", studentsData);
-
       const sortedStudentsData = [...studentsData].sort((a, b) => {
         const rollA = String(a.studentId || a.rollNo || "").trim();
         const rollB = String(b.studentId || b.rollNo || "").trim();
@@ -323,11 +321,6 @@ const AttendanceRegister = () => {
         if (!rollB) return -1;
         return rollA.localeCompare(rollB, undefined, { numeric: true, sensitivity: "base" });
       });
-
-      console.log(
-        "[AttendanceRegister] Sorted students by rollNumber:",
-        sortedStudentsData.map((s) => ({ name: s.userName, rollNumber: s.studentId })),
-      );
 
       let finalStudents = sortedStudentsData;
       if (profile?.userId) {

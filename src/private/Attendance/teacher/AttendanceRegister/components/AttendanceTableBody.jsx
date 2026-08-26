@@ -361,17 +361,6 @@ const AttendanceTableBody = ({
               const displaySpecialLeaves = preStat?.specialLeaves !== undefined ? preStat.specialLeaves : currentMonthSpecialLeaves;
               const displayPercentage = preStat?.attendancePercentage !== undefined ? preStat.attendancePercentage : currentMonthPercentage;
 
-              // Only log discrepancy if preStat workingDays differs from BOTH marked working days AND total month working days, or if present/absent days differ
-              const isWorkMismatch = preStat && preStat.workingDays !== markedWorkingDays && preStat.workingDays !== currentMonthWorkingDays;
-              const isPresMismatch = preStat && preStat.presentDays !== rawPresentDays;
-              const isAbsMismatch = preStat && preStat.absentDays !== currentMonthAbsentDays;
-
-              if (preStat && (isWorkMismatch || isPresMismatch || isAbsMismatch)) {
-                console.warn(
-                  `🔥 [MonthlyStats Discrepancy Log] Student "${student.userName || student.name}" (${student.userId}): DB Stats [work=${preStat.workingDays}, pres=${preStat.presentDays}, abs=${preStat.absentDays}] != Daily Records [markedWork=${markedWorkingDays}, totalCalWork=${currentMonthWorkingDays}, pres=${rawPresentDays}, abs=${currentMonthAbsentDays}]`
-                );
-              }
-
               return (
                 <>
                   <td title={`Work Days marked so far: ${displayWorkingDays} (Total Calendar Work Days: ${currentMonthWorkingDays})`} className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-blue-50/40 dark:bg-blue-950/20 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
