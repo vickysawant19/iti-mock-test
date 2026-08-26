@@ -32,11 +32,13 @@ export const DailyBatchAttendanceModal = ({
   holidays,
   handleAddHoliday,
   handleRemoveHoliday,
+  handleClearDayAttendance,
   initialMode = "attendance",
 }) => {
   const [attendanceStatuses, setAttendanceStatuses] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const isFuture = date > todayStr;
@@ -45,6 +47,11 @@ export const DailyBatchAttendanceModal = ({
     holidays instanceof Map || holidays instanceof Set
       ? holidays.has(date)
       : !!holidays[date];
+
+  const hasExistingRecords = useMemo(() => {
+    if (!Array.isArray(existingAttendance) || !date) return false;
+    return existingAttendance.some((att) => att.date === date);
+  }, [existingAttendance, date]);
 
   const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
   const [holidayReason, setHolidayReason] = useState("");
@@ -68,6 +75,7 @@ export const DailyBatchAttendanceModal = ({
   // Reset state when modal opens or date changes
   useEffect(() => {
     if (isOpen) {
+      setShowClearConfirm(false);
       const statuses = {};
       students.forEach((student) => {
         const record = existingAttendance.filter(
@@ -161,6 +169,20 @@ export const DailyBatchAttendanceModal = ({
       await handleRemoveHoliday(date);
     } catch (error) {
       console.error("Error removing holiday:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClearAttendanceInternal = async () => {
+    if (!handleClearDayAttendance) return;
+    setIsLoading(true);
+    try {
+      await handleClearDayAttendance(date);
+      setShowClearConfirm(false);
+      onClose();
+    } catch (error) {
+      console.error("Error clearing daily attendance:", error);
     } finally {
       setIsLoading(false);
     }
@@ -540,27 +562,72 @@ export const DailyBatchAttendanceModal = ({
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={markAllPresent}
-                  className="flex-1 px-2 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-md text-xs font-semibold hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 transition-colors"
+                  className="flex-1 min-w-[120px] px-2 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-md text-xs font-semibold hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 transition-colors"
                 >
                   Mark All Present
                 </button>
                 <button
                   onClick={markAllAbsent}
-                  className="flex-1 px-2 py-1.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded-md text-xs font-semibold hover:bg-rose-200 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 transition-colors"
+                  className="flex-1 min-w-[120px] px-2 py-1.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded-md text-xs font-semibold hover:bg-rose-200 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 transition-colors"
                 >
                   Mark All Absent
                 </button>
                 <button
                   onClick={handleHolidayToggle}
-                  className="flex-1 px-2 py-1.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-800 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 min-w-[120px] px-2 py-1.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-800 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Palmtree className="w-3.5 h-3.5" />
                   Mark Holiday
                 </button>
+                {hasExistingRecords && (
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(true)}
+                    className="flex-1 min-w-[120px] px-2 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    title="Clear all attendance records for this date"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    Clear Records
+                  </button>
+                )}
               </div>
+
+              {showClearConfirm && (
+                <div className="mt-2.5 p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                    <p className="text-xs text-rose-900 dark:text-rose-200 font-medium">
+                      Are you sure you want to clear all attendance records for {formatDate(date)}?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setShowClearConfirm(false)}
+                      disabled={isLoading}
+                      className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearAttendanceInternal}
+                      disabled={isLoading}
+                      className="px-2.5 py-1 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors flex items-center gap-1"
+                    >
+                      {isLoading ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                      Yes, Clear
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}

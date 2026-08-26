@@ -79,6 +79,7 @@ export default function DailyDiary() {
     handleSaveAttendance,
     handleAddHoliday,
     handleRemoveHoliday,
+    handleClearDayAttendance,
     handleSetTeacherAttendance,
   } = useDailyDiaryActions({
     onRefreshData: fetchData,
@@ -173,6 +174,7 @@ export default function DailyDiary() {
                 holidays={holidays}
                 handleAddHoliday={handleAddHoliday}
                 handleRemoveHoliday={(d) => handleRemoveHoliday(d, holidays)}
+                handleClearDayAttendance={handleClearDayAttendance}
                 initialMode={modalMode}
               />
 

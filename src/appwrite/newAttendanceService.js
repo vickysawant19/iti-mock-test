@@ -451,6 +451,43 @@ class NewAttendanceService {
     }
   }
 
+  // Clear all attendance records for a batch on a specific date via cloud function
+  async clearDayAttendance(batchId, date) {
+    try {
+      if (!batchId || !date) {
+        throw new Error("Missing batchId or date to clear day attendance");
+      }
+      const formattedDate = this.formatDate(date);
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "clearDayAttendance",
+        batchId,
+        date: formattedDate,
+      });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody || "{}");
+      if (Array.isArray(resData.logs) && resData.logs.length > 0) {
+        console.group("🔥 [SERVER DEBUG LOGS - clearDayAttendance]");
+        resData.logs.forEach((l) => console.log(l));
+        console.groupEnd();
+      }
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to clear day attendance");
+      }
+
+      return resData.data;
+    } catch (error) {
+      console.error("clearDayAttendance error:", error);
+      throw error;
+    }
+  }
+
   // Get attendance statistics for a student (Fast pre-aggregated query from monthlyAttendanceStats)
   async getStudentAttendanceStats(
     userId,

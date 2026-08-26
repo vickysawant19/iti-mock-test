@@ -5,6 +5,7 @@ const AttendanceTableHead = ({
   monthDates,
   selectedMonth,
   holidays,
+  attendanceMap,
   formatDate,
   onMarkAttendance,
   loadingAttendance,
@@ -347,6 +348,13 @@ const AttendanceTableHead = ({
             const isSunday = currentDate.getDay() === 0;
             const todayStr = formatDate(new Date(), "yyyy-MM-dd");
             const isFuture = fullDate > todayStr;
+            const hasRecords = (() => {
+              if (!attendanceMap || attendanceMap.size === 0) return false;
+              for (const inner of attendanceMap.values()) {
+                if (inner && inner.has(fullDate) && inner.get(fullDate)) return true;
+              }
+              return false;
+            })();
 
             return (
               <th
@@ -361,10 +369,20 @@ const AttendanceTableHead = ({
                 <button
                   disabled={loadingAttendance}
                   onClick={() => onMarkAttendance(fullDate)}
-                  title={isFuture ? "Mark Holiday (Attendance blocked)" : "Mark Attendance / Holiday"}
-                  className="w-full px-1 py-0.5 text-[10px] sm:text-xs font-bold bg-white dark:bg-slate-800 text-sky-800 dark:text-sky-300 rounded hover:bg-sky-100 dark:hover:bg-slate-700 transition-all duration-200 border border-sky-300 dark:border-slate-600 shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={
+                    isFuture
+                      ? "Mark Holiday (Attendance blocked)"
+                      : hasRecords
+                      ? "Edit / Clear Attendance or Holiday"
+                      : "Mark Attendance / Holiday"
+                  }
+                  className={`w-full px-1 py-0.5 text-[10px] sm:text-xs font-bold rounded transition-all duration-200 border shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed ${
+                    hasRecords
+                      ? "bg-sky-50 dark:bg-slate-800 text-sky-900 dark:text-sky-200 border-sky-400 dark:border-sky-600 hover:bg-sky-100 dark:hover:bg-slate-700"
+                      : "bg-white dark:bg-slate-800 text-sky-800 dark:text-sky-300 rounded hover:bg-sky-100 dark:hover:bg-slate-700 border-sky-300 dark:border-slate-600"
+                  }`}
                 >
-                  Mark
+                  {hasRecords ? "Edit" : "Mark"}
                 </button>
               </th>
             );

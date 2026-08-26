@@ -664,6 +664,48 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       return holidayDoc;
     }
+    case 'clearDayAttendance': {
+      const { batchId, date } = req.bodyJson;
+      if (!batchId || !date) {
+        throw new Error('Missing batchId or date for clearDayAttendance');
+      }
+
+      const formattedDate = String(date).substring(0, 10);
+
+      try {
+        const existingDocsRes = await tablesDB.listRows({
+          databaseId: DB_ID,
+          tableId: NEW_ATTENDANCE_COL_ID,
+          queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)],
+        });
+
+        const docsList = existingDocsRes.rows || existingDocsRes.documents || [];
+        if (docsList.length > 0) {
+          // Decrement monthly stats for students who had attendance marked on this date
+          const yearMonth = formattedDate.substring(0, 7);
+          await decrementMonthlyStatsForAttendanceRecords(
+            tablesDB,
+            DB_ID,
+            batchId,
+            yearMonth,
+            docsList
+          ).catch((e) => log(`Failed to decrement monthly stats on clearDayAttendance: ${e.message}`));
+
+          // Delete daily attendance records in 1 native bulk call
+          await tablesDB.deleteRows({
+            databaseId: DB_ID,
+            tableId: NEW_ATTENDANCE_COL_ID,
+            queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate)],
+          }).catch(() => null);
+        }
+
+        log(`Successfully cleared ${docsList.length} daily attendance records for batch ${batchId} on ${formattedDate}`);
+        return { success: true, batchId, date: formattedDate, clearedCount: docsList.length };
+      } catch (err) {
+        log(`Error in clearDayAttendance: ${err.message}`);
+        throw err;
+      }
+    }
     case 'removeHoliday': {
       const { holidayId, batchId, date } = req.bodyJson;
       if (!holidayId && (!batchId || !date)) {

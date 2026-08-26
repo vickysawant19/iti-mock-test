@@ -657,6 +657,34 @@ const AttendanceRegister = () => {
     [selectedBatch, fetchAttendanceAndStats, updateLoading],
   );
 
+  const handleClearDayAttendance = useCallback(
+    async (date) => {
+      if (!selectedBatch || !date) return;
+      updateLoading("attendance", true);
+      try {
+        await newAttendanceService.clearDayAttendance(selectedBatch, date);
+
+        // Filter out local attendance records for this date since backend cleared them
+        setNewAttendance((prev) =>
+          (prev || []).filter((att) => att.date !== date),
+        );
+
+        fetchCacheRef.current.attendance = null;
+        fetchCacheRef.current.stats = null;
+        setStudentStatsMap(new Map());
+        await fetchAttendanceAndStats(new AbortController().signal);
+
+        toast.success(`Attendance cleared successfully for ${date}`);
+      } catch (error) {
+        console.error("Error clearing day attendance:", error);
+        toast.error("Failed to clear attendance records");
+      } finally {
+        updateLoading("attendance", false);
+      }
+    },
+    [selectedBatch, fetchAttendanceAndStats, updateLoading],
+  );
+
   const handleFetchSingleStudentStats = useCallback(
     async (userId) => {
       if (!selectedBatch || !batches.has(selectedBatch)) return;
@@ -842,6 +870,7 @@ const AttendanceRegister = () => {
           setColumnVisibility={setColumnVisibility}
           compactView={compactView}
           setCompactView={setCompactView}
+          handleClearDayAttendance={handleClearDayAttendance}
         />
 
         <StudentMonthlyAttendanceModal
@@ -874,6 +903,7 @@ const AttendanceRegister = () => {
           holidays={holidays}
           handleAddHoliday={handleAddHoliday}
           handleRemoveHoliday={handleRemoveHoliday}
+          handleClearDayAttendance={handleClearDayAttendance}
         />
 
         <StudentManagementModal

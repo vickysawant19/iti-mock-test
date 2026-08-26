@@ -22,6 +22,7 @@ const AttendanceTable = ({
   selectedBatch,
   handleAddHoliday,
   handleRemoveHoliday,
+  handleClearDayAttendance,
   batchStartDate,
   batchEndDate,
   onOpenStudentAttendanceModal,
@@ -164,8 +165,10 @@ const AttendanceTable = ({
                 onMarkAttendance={onMarkAttendance}
                 loadingAttendance={loadingAttendance}
                 holidays={holidays}
+                attendanceMap={attendanceMap}
                 handleAddHoliday={handleAddHoliday}
                 handleRemoveHoliday={handleRemoveHoliday}
+                handleClearDayAttendance={handleClearDayAttendance}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
                 nameWidthProp={nameWidth}

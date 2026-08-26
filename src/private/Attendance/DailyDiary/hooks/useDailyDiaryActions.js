@@ -214,6 +214,21 @@ export function useDailyDiaryActions({
     [onRefreshData]
   );
 
+  const handleClearDayAttendance = useCallback(
+    async (dateStr) => {
+      if (!activeBatchId || !dateStr) return;
+      try {
+        await newAttendanceService.clearDayAttendance(activeBatchId, dateStr);
+        toast.success("Attendance cleared successfully for this date");
+        if (onRefreshData) onRefreshData(false);
+      } catch (error) {
+        console.error("Error clearing day attendance:", error);
+        toast.error("Failed to clear day attendance");
+      }
+    },
+    [activeBatchId, onRefreshData]
+  );
+
   const [actionLoadingDates, setActionLoadingDates] = useState({});
 
   const handleSetTeacherAttendance = useCallback(
@@ -299,6 +314,7 @@ export function useDailyDiaryActions({
     handleSaveAttendance,
     handleAddHoliday,
     handleRemoveHoliday,
+    handleClearDayAttendance,
     handleSetTeacherAttendance,
     handleDeleteTeacherAttendance,
   };
