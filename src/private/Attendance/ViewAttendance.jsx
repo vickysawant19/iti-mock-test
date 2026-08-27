@@ -166,7 +166,7 @@ const ViewAttendance = ({ students = [], batchData }) => {
         <div className="w-full xl:w-[320px] xl:shrink-0 flex flex-col gap-4 xl:sticky xl:top-20">
           
           {/* Header Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-4 sm:p-5 text-white shadow-lg shadow-blue-900/15">
+          <div className="relative overflow-hidden rounded-none m-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-4 sm:p-5 text-white shadow-xs border-b border-blue-400/30">
             <div className="relative z-10 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[10px] font-bold uppercase tracking-wider">

@@ -14,7 +14,7 @@ export const DiaryPageHeader = React.memo(({
   gradient = "from-blue-600 via-indigo-600 to-purple-700",
 }) => {
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-r ${gradient} dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-3xl p-5 sm:p-6 mb-4 text-white shadow-xl border border-blue-400/30 dark:border-indigo-500/20`}>
+    <div className={`relative overflow-hidden bg-gradient-to-r ${gradient} dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-none p-5 sm:p-6 m-0 text-white shadow-xs border-b border-blue-400/30 dark:border-indigo-500/20`}>
       {/* Ambient background glow orbs */}
       <div className="absolute top-[-90px] right-[-60px] w-[300px] h-[300px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-80px] left-[-40px] w-[240px] h-[240px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-3xl pointer-events-none" />

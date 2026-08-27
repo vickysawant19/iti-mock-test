@@ -141,7 +141,7 @@ export default function DailyDiary() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="w-full px-2 sm:px-4 py-2">
+      <div className="w-full p-0 m-0">
         {/* Modular Header */}
         <DiaryPageHeader
           profile={profile}

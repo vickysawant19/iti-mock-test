@@ -26,7 +26,7 @@ export default function DiaryHeader({
   };
 
   return (
-    <Card className="rounded-2xl shadow-xs border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md relative z-20 mb-4 transition-all">
+    <Card className="rounded-none shadow-xs border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md relative z-20 m-0 transition-all">
       <CardContent className="p-3.5 sm:p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Month Selector Group */}
