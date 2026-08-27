@@ -174,6 +174,20 @@ const AttendanceRegister = () => {
     return map;
   }, [newAttendance]);
 
+  // ── Derived: raw attendance documents map (userId → dateStr → rawRecord) ──
+  const rawAttendanceMap = useMemo(() => {
+    const map = new Map();
+    (newAttendance || []).forEach((att) => {
+      let inner = map.get(att.userId);
+      if (!inner) {
+        inner = new Map();
+        map.set(att.userId, inner);
+      }
+      inner.set(att.date, att);
+    });
+    return map;
+  }, [newAttendance]);
+
   // ── Derived: stable batch dates ──────────────────────────────────────────
   const { batchStartDate, rawBatchStartDate, batchEndDate, rawBatchEndDate } = useMemo(() => {
     const data = batches.get(selectedBatch);
@@ -845,6 +859,7 @@ const AttendanceRegister = () => {
           selectedMonth={selectedMonth}
           holidays={holidays}
           attendanceMap={newAttendanceMap}
+          rawAttendanceMap={rawAttendanceMap}
           currentMonthlyStatsMap={currentMonthlyStatsMap}
           calculatePreviousMonthsData={studentStatsMap}
           formatDate={format}

@@ -1,6 +1,7 @@
 import React from "react";
 import { format } from "date-fns";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
+import { formatAttendanceTime } from "@/services/attendanceTrackingService";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -71,7 +72,7 @@ const AttendanceCard = ({ record, isHoliday, holidayText }) => {
         </div>
       )}
       <div className="text-xs text-slate-400 dark:text-slate-500 flex items-center justify-between">
-        <span>Marked At: {record.$updatedAt ? format(new Date(record.$updatedAt), "hh:mm a") : "-"}</span>
+        <span>Marked At: {formatAttendanceTime(record, "hh:mm a")}</span>
       </div>
     </div>
   );

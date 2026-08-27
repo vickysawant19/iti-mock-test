@@ -1,6 +1,7 @@
 import React from "react";
-import { LoaderCircle, Edit3, UserCircle2 } from "lucide-react";
+import { LoaderCircle, Edit3, UserCircle2, Clock } from "lucide-react";
 import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
+import { formatAttendanceTime } from "@/services/attendanceTrackingService";
 
 const AttendanceTableBody = ({
   students,
@@ -8,6 +9,7 @@ const AttendanceTableBody = ({
   selectedMonth,
   holidays,
   attendanceMap,
+  rawAttendanceMap,
   currentMonthlyStatsMap,
   calculatePreviousMonthsData,
   formatDate,
@@ -331,10 +333,40 @@ const AttendanceTableBody = ({
                   );
                 }
 
+                const rawRecord = rawAttendanceMap?.get(student.userId)?.get(fullDate);
+                const markedAtStr = rawRecord ? formatAttendanceTime(rawRecord, "hh:mm a") : null;
+                const dateTitleFmt = formatDate(
+                  new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), date),
+                  "dd MMM yyyy (EEE)"
+                );
+
+                const getStatusInfo = (st) => {
+                  const s = String(st || "").toLowerCase();
+                  if (["present", "p"].includes(s)) return { label: "Present", colorCls: "text-emerald-400 bg-emerald-950/80 border-emerald-800" };
+                  if (["absent", "a"].includes(s)) return { label: "Absent", colorCls: "text-rose-400 bg-rose-950/80 border-rose-800" };
+                  if (["casual", "cl"].includes(s)) return { label: "Casual Leave", colorCls: "text-amber-400 bg-amber-950/80 border-amber-800" };
+                  if (["sick", "sl"].includes(s)) return { label: "Sick Leave", colorCls: "text-sky-400 bg-sky-950/80 border-sky-800" };
+                  if (["special", "spl"].includes(s)) return { label: "Special Leave", colorCls: "text-purple-400 bg-purple-950/80 border-purple-800" };
+                  if (["on_duty", "od"].includes(s)) return { label: "On Duty", colorCls: "text-teal-400 bg-teal-950/80 border-teal-800" };
+                  if (["half_day", "hd"].includes(s)) return { label: "Half Day", colorCls: "text-yellow-400 bg-yellow-950/80 border-yellow-800" };
+                  if (["late", "l"].includes(s)) return { label: "Late", colorCls: "text-indigo-400 bg-indigo-950/80 border-indigo-800" };
+                  return { label: "Not Marked", colorCls: "text-slate-400 bg-slate-800/80 border-slate-700" };
+                };
+
+                const stInfo = getStatusInfo(status);
+                const nativeTooltip = rawRecord
+                  ? `Student: ${student.userName || student.name || 'Student'}\nDate: ${dateTitleFmt}\nStatus: ${stInfo.label}\nMarked At: ${markedAtStr || 'N/A'}${rawRecord.remarks ? `\nRemarks: ${rawRecord.remarks}` : ''}${rawRecord.source ? `\nSource: ${rawRecord.source}` : ''}`
+                  : `Student: ${student.userName || student.name || 'Student'}\nDate: ${dateTitleFmt}\nStatus: ${stInfo.label}`;
+
+                const isTopRow = idx < 2;
+                const tooltipPos = isTopRow ? "top-full mt-1.5" : "bottom-full mb-1.5";
+                const arrowPos = isTopRow ? "bottom-full border-b-slate-900 dark:border-b-slate-950" : "top-full border-t-slate-900 dark:border-t-slate-950";
+
                 return (
                   <td
                     key={date}
-                    className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative`}
+                    title={nativeTooltip}
+                    className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative group cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-slate-800/60`}
                   >
                     {cellUpdating && (
                       <div className="absolute inset-0 flex items-center justify-center bg-indigo-100/80 dark:bg-indigo-900/60 z-10">
@@ -343,6 +375,52 @@ const AttendanceTableBody = ({
                     )}
 
                     <AttendanceStatusBadge status={status} variant="plain" />
+
+                    {/* Hover Tooltip Card */}
+                    <div
+                      className={`absolute left-1/2 -translate-x-1/2 ${tooltipPos} hidden group-hover:flex flex-col gap-1 z-40 w-48 p-2.5 bg-slate-900/95 dark:bg-slate-950/95 text-white text-[11px] font-medium rounded-xl shadow-2xl border border-slate-700/60 backdrop-blur-md pointer-events-none transition-all duration-150 animate-in fade-in zoom-in-95`}
+                    >
+                      <div className="flex items-center justify-between gap-1 pb-1 border-b border-slate-800">
+                        <span className="font-bold text-slate-300 text-[10px]">{dateTitleFmt}</span>
+                        <span className={`font-black px-1.5 py-0.5 rounded border text-[9px] uppercase tracking-wider ${stInfo.colorCls}`}>
+                          {stInfo.label}
+                        </span>
+                      </div>
+
+                      {rawRecord ? (
+                        <>
+                          <div className="flex items-center justify-between text-slate-300 pt-0.5">
+                            <span className="text-slate-400 flex items-center gap-1 text-[10px]">
+                              <Clock className="w-3 h-3 text-emerald-400 shrink-0" />
+                              Marked At:
+                            </span>
+                            <span className="font-bold text-emerald-400 text-[11px]">
+                              {markedAtStr || "—"}
+                            </span>
+                          </div>
+
+                          {rawRecord.remarks && (
+                            <div className="text-slate-200 text-[10px] bg-slate-800/80 p-1.5 rounded border border-slate-700/50 mt-0.5 text-left">
+                              <span className="text-slate-400 font-semibold block text-[9px]">Remarks:</span>
+                              <p className="line-clamp-2">{rawRecord.remarks}</p>
+                            </div>
+                          )}
+
+                          {rawRecord.source && (
+                            <div className="flex items-center justify-between text-[9px] text-slate-400 pt-0.5">
+                              <span>Source:</span>
+                              <span className="font-mono text-slate-300 uppercase font-semibold">{rawRecord.source}</span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-slate-400 italic text-[10px] py-0.5">
+                          Not marked
+                        </div>
+                      )}
+
+                      <div className={`absolute left-1/2 -translate-x-1/2 border-4 border-transparent ${arrowPos}`} />
+                    </div>
                   </td>
                 );
               })}

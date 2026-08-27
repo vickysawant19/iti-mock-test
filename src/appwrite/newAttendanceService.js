@@ -350,6 +350,10 @@ class NewAttendanceService {
         updates.status = String(updates.attendanceStatus).toLowerCase();
       }
 
+      if (!updates.markedAt) {
+        updates.markedAt = new Date().toISOString();
+      }
+
       const functions = appwriteService.getFunctions();
       const payload = JSON.stringify({
         action: "updateAttendance",

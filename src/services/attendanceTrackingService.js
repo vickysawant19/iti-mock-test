@@ -38,6 +38,68 @@ export const LEAVE_QUOTAS = Object.freeze({
   SL_MAX_SPELLS: 2,
 });
 
+export const formatAttendanceTime = (recordOrDateStr, formatStr = "hh:mm a") => {
+  if (!recordOrDateStr) return "—";
+
+  let raw = recordOrDateStr;
+  if (typeof recordOrDateStr === "object" && recordOrDateStr !== null) {
+    const markedAt = recordOrDateStr.markedAt || recordOrDateStr.marked_at;
+    const updatedAt = recordOrDateStr.$updatedAt;
+    const createdAt = recordOrDateStr.$createdAt;
+
+    // Pick the most recent timestamp between markedAt and $updatedAt
+    let candidate = markedAt;
+    if (updatedAt) {
+      const updatedTs = new Date(updatedAt).getTime();
+      const markedTs = markedAt ? new Date(markedAt).getTime() : 0;
+      if (!Number.isNaN(updatedTs) && (Number.isNaN(markedTs) || updatedTs > markedTs + 5000)) {
+        candidate = updatedAt;
+      }
+    }
+
+    if (!candidate) return "—";
+
+    // If the candidate timestamp is within 60 seconds of initial $createdAt,
+    // it is an automated batch creation/migration timestamp (e.g. 8:05 AM), not a real student marking event.
+    if (createdAt) {
+      const candidateTs = new Date(candidate).getTime();
+      const createdTs = new Date(createdAt).getTime();
+      if (!Number.isNaN(candidateTs) && !Number.isNaN(createdTs)) {
+        if (Math.abs(candidateTs - createdTs) < 60000) {
+          return "—";
+        }
+      }
+    }
+
+    raw = candidate;
+  }
+
+  if (!raw) return "—";
+
+  try {
+    let dateObj;
+    if (raw instanceof Date) {
+      dateObj = raw;
+    } else if (typeof raw === "number") {
+      dateObj = new Date(raw);
+    } else if (typeof raw === "string") {
+      let str = raw.trim();
+      // If ISO format string is missing timezone offset designator (e.g. "2026-08-27T05:30:00" or "2026-08-27 05:30:00")
+      // append 'Z' so JS interprets it as UTC timestamp instead of local time
+      if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(str)) {
+        str = str.replace(" ", "T") + "Z";
+      }
+      dateObj = new Date(str);
+    }
+
+    if (!dateObj || Number.isNaN(dateObj.getTime())) return "—";
+
+    return format(dateObj, formatStr);
+  } catch (e) {
+    return "—";
+  }
+};
+
 class AttendanceTrackingService {
   /**
    * Maps any raw status string (e.g. "casual", "cl", "sick", "sl", "present", "p")
@@ -102,7 +164,7 @@ class AttendanceTrackingService {
       leaveType,
       status: record.status || attendanceStatus.toLowerCase(),
       remarks: record.remarks || null,
-      markedAt: record.markedAt || record.$createdAt || null,
+      markedAt: record.markedAt || record.$updatedAt || record.$createdAt || null,
     };
   }
 

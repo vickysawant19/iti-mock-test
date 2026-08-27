@@ -24,7 +24,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import { attendanceTrackingService, formatAttendanceTime } from "@/services/attendanceTrackingService";
 import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -58,8 +58,20 @@ export const StudentMonthlyAttendanceModal = ({
 
   const monthDays = useMemo(
     () => eachDayOfInterval({ start: monthStart, end: monthEnd }),
-    [monthStart, monthEnd],
+    [monthStart, monthEnd]
   );
+
+  const studentRawAttendanceMap = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(existingAttendance) && student?.userId) {
+      existingAttendance.forEach((att) => {
+        if (att.userId === student.userId && att.date) {
+          map.set(att.date, att);
+        }
+      });
+    }
+    return map;
+  }, [existingAttendance, student?.userId]);
 
   const leadingBlankDays = getDay(monthStart);
 
@@ -424,6 +436,9 @@ export const StudentMonthlyAttendanceModal = ({
                   const badgeInfo = getStatusBadge(status);
                   const isSelected = selectedDateKey === dateKey;
 
+                  const rawRec = studentRawAttendanceMap.get(dateKey);
+                  const markedAtTime = rawRec ? formatAttendanceTime(rawRec, "hh:mm a") : null;
+
                   return (
                     <button
                       key={dateKey}
@@ -451,7 +466,7 @@ export const StudentMonthlyAttendanceModal = ({
                           ? "Date is before batch start"
                           : isAfterBatch
                           ? "Date is after batch end"
-                          : `${badgeInfo.label} - Click to select date`
+                          : `${badgeInfo.label}${markedAtTime ? ` • Marked at ${markedAtTime}` : ''} - Click to select date`
                       }
                     >
                       <div className="flex justify-between items-start">

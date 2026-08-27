@@ -1,5 +1,6 @@
 import React from "react";
 import { format } from "date-fns";
+import { formatAttendanceTime } from "@/services/attendanceTrackingService";
 
 const getStatusClasses = (status) => {
   switch (status) {
@@ -212,9 +213,7 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
                 <td
                   className={`px-4 py-2.5 font-mono text-[12px] text-slate-500 truncate border-t ${borderColor}`}
                 >
-                  {record.$updatedAt
-                    ? format(new Date(record.$updatedAt), "h:mm a")
-                    : "—"}
+                  {formatAttendanceTime(record, "h:mm a")}
                 </td>
                 <td className={`px-4 py-2.5 border-t ${borderColor}`}>
                   <span

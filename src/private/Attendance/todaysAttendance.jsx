@@ -41,6 +41,7 @@ import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import holidayService from "@/appwrite/holidaysService";
 import batchStudentService from "@/appwrite/batchStudentService";
 import { format } from "date-fns";
+import { formatAttendanceTime } from "@/services/attendanceTrackingService";
 import { useNavigate } from "react-router-dom";
 import { avatarFallback } from "@/utils/avatarFallback";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
@@ -203,13 +204,21 @@ const AttendanceTracker = () => {
     setMarking(true);
     try {
       if (existingAttendance) {
-        await newAttendanceService.updateAttendanceStatus(
+        const res = await newAttendanceService.updateAttendanceStatus(
           existingAttendance.$id,
           "present"
         );
+        setExistingAttendance((prev) => ({
+          ...(prev || {}),
+          ...(res || {}),
+          status: "present",
+          attendanceStatus: "PRESENT",
+          markedAt: res?.markedAt || new Date().toISOString(),
+        }));
         setAttendanceMarked(true);
       } else {
-        await newAttendanceService.createAttendance({
+        const nowIso = new Date().toISOString();
+        const res = await newAttendanceService.createAttendance({
           userId: profile.userId,
           batchId: resolvedBatchId,
           tradeId: batchData?.tradeId || null,
@@ -219,6 +228,12 @@ const AttendanceTracker = () => {
           source: "MANUAL",
           status: "present",
           remarks: "",
+          markedAt: nowIso,
+        });
+        setExistingAttendance(res || {
+          markedAt: nowIso,
+          status: "present",
+          attendanceStatus: "PRESENT",
         });
         setAttendanceMarked(true);
       }
@@ -460,7 +475,7 @@ const AttendanceTracker = () => {
                          <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50/60 text-emerald-700 px-4 py-3 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100/50 dark:border-emerald-900/50 backdrop-blur-sm">
                             <Clock className="w-5 h-5" />
                             <span className="font-semibold">
-                              Marked at {existingAttendance?.$createdAt ? format(new Date(existingAttendance.$createdAt), "hh:mm a") : format(new Date(), "hh:mm a")}
+                              Marked at {formatAttendanceTime(existingAttendance || new Date(), "hh:mm a")}
                             </span>
                          </div>
                       </div>

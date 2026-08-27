@@ -10,6 +10,7 @@ const AttendanceTable = ({
   selectedMonth,
   holidays,
   attendanceMap,
+  rawAttendanceMap,
   currentMonthlyStatsMap,
   calculatePreviousMonthsData,
   formatDate,
@@ -181,6 +182,7 @@ const AttendanceTable = ({
                 selectedMonth={selectedMonth}
                 holidays={holidays}
                 attendanceMap={attendanceMap}
+                rawAttendanceMap={rawAttendanceMap}
                 currentMonthlyStatsMap={currentMonthlyStatsMap}
                 calculatePreviousMonthsData={calculatePreviousMonthsData}
                 formatDate={formatDate}

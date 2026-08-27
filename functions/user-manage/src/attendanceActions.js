@@ -196,7 +196,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
               batchId: existing.batchId,
               tradeId: existing.tradeId || null,
               date: existing.date,
-              markedAt: existing.markedAt,
+              markedAt: new Date().toISOString(),
               status,
               dayType,
               attendanceStatus,
@@ -462,6 +462,8 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           revision: 1,
           syncStatus: 'SYNCED',
           holidayId: holidayId || null,
+          remarks: remarks || null,
+          markedAt: req.bodyJson.markedAt || new Date().toISOString(),
         }
       );
 
@@ -486,11 +488,16 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         documentId
       ).catch(() => null);
 
+      const updatePayload = {
+        ...updates,
+        markedAt: updates.markedAt || new Date().toISOString(),
+      };
+
       const result = await databases.updateDocument(
         DB_ID,
         NEW_ATTENDANCE_COL_ID,
         documentId,
-        updates
+        updatePayload
       );
 
       if (existingRecord) {
