@@ -43,35 +43,14 @@ export const formatAttendanceTime = (recordOrDateStr, formatStr = "hh:mm a") => 
 
   let raw = recordOrDateStr;
   if (typeof recordOrDateStr === "object" && recordOrDateStr !== null) {
-    const markedAt = recordOrDateStr.markedAt || recordOrDateStr.marked_at;
-    const updatedAt = recordOrDateStr.$updatedAt;
-    const createdAt = recordOrDateStr.$createdAt;
-
-    // Pick the most recent timestamp between markedAt and $updatedAt
-    let candidate = markedAt;
-    if (updatedAt) {
-      const updatedTs = new Date(updatedAt).getTime();
-      const markedTs = markedAt ? new Date(markedAt).getTime() : 0;
-      if (!Number.isNaN(updatedTs) && (Number.isNaN(markedTs) || updatedTs > markedTs + 5000)) {
-        candidate = updatedAt;
-      }
-    }
-
-    if (!candidate) return "—";
-
-    // If the candidate timestamp is within 60 seconds of initial $createdAt,
-    // it is an automated batch creation/migration timestamp (e.g. 8:05 AM), not a real student marking event.
-    if (createdAt) {
-      const candidateTs = new Date(candidate).getTime();
-      const createdTs = new Date(createdAt).getTime();
-      if (!Number.isNaN(candidateTs) && !Number.isNaN(createdTs)) {
-        if (Math.abs(candidateTs - createdTs) < 60000) {
-          return "—";
-        }
-      }
-    }
-
-    raw = candidate;
+    // 1. Primary: markedAt / marked_at timestamp
+    // 2. Secondary fallback: $updatedAt timestamp (for updated or legacy records)
+    // 3. Tertiary fallback: $createdAt timestamp (for initial creation records)
+    raw =
+      recordOrDateStr.markedAt ||
+      recordOrDateStr.marked_at ||
+      recordOrDateStr.$updatedAt ||
+      recordOrDateStr.$createdAt;
   }
 
   if (!raw) return "—";

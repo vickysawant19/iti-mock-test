@@ -54,11 +54,11 @@ const StudentAttendancePage = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#f0f4ff] dark:bg-slate-950 px-3 py-4 md:px-5 md:py-6 xl:px-8 pb-20 font-sans">
-      <div className="w-full max-w-[1700px] mx-auto animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#f0f4ff] dark:bg-slate-950 p-0 m-0 pb-20 font-sans">
+      <div className="w-full max-w-full mx-auto animate-in fade-in duration-500">
         
         {/* Header with full Light & Dark mode support */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-3xl p-5 sm:p-6 mb-5 text-white shadow-xl border border-blue-400/30 dark:border-indigo-500/20">
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-none p-5 sm:p-6 m-0 border-b border-blue-400/30 dark:border-indigo-500/20 text-white shadow-xs">
           {/* Ambient background glow orbs */}
           <div className="absolute top-[-90px] right-[-60px] w-[300px] h-[300px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-80px] left-[-40px] w-[240px] h-[240px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-3xl pointer-events-none" />
