@@ -120,7 +120,7 @@ function App() {
           <ToastContainer />
         </div>
 
-        <Analytics mode="production" />
+        {import.meta.env.PROD && <Analytics />}
       </div>
     </ThemeProvider>
   );

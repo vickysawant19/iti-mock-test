@@ -44,7 +44,7 @@ export const DailyBatchAttendanceModal = ({
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("name_asc");
+  const [sortBy, setSortBy] = useState("id_asc");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -89,7 +89,7 @@ export const DailyBatchAttendanceModal = ({
       setSearchQuery("");
       setFilter("all");
       setRoleFilter("all");
-      setSortBy("name_asc");
+      setSortBy("id_asc");
       const statuses = {};
       safeStudents.forEach((student) => {
         if (!student) return;
@@ -332,14 +332,16 @@ export const DailyBatchAttendanceModal = ({
         return true;
       })
       .sort((a, b) => {
+        if (sortBy === "id_asc") {
+          const idA = String(a.studentId || a.rollNo || "");
+          const idB = String(b.studentId || b.rollNo || "");
+          return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: "base" });
+        }
         if (sortBy === "name_asc") {
           return (a.userName || "").localeCompare(b.userName || "");
         }
         if (sortBy === "name_desc") {
           return (b.userName || "").localeCompare(a.userName || "");
-        }
-        if (sortBy === "id_asc") {
-          return (a.studentId || "").localeCompare(b.studentId || "");
         }
         if (sortBy === "status") {
           const stA = attendanceStatuses[a.userId] || "absent";
@@ -684,21 +686,21 @@ export const DailyBatchAttendanceModal = ({
                     onChange={(e) => setSortBy(e.target.value)}
                     className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
                   >
+                    <option value="id_asc">Student ID (Default)</option>
                     <option value="name_asc">Name (A → Z)</option>
                     <option value="name_desc">Name (Z → A)</option>
-                    <option value="id_asc">Student ID</option>
                     <option value="status">Status</option>
                   </select>
 
                   {/* Reset Filters button if any active */}
-                  {(filter !== "all" || searchQuery || roleFilter !== "all" || sortBy !== "name_asc") && (
+                  {(filter !== "all" || searchQuery || roleFilter !== "all" || sortBy !== "id_asc") && (
                     <button
                       type="button"
                       onClick={() => {
                         setFilter("all");
                         setSearchQuery("");
                         setRoleFilter("all");
-                        setSortBy("name_asc");
+                        setSortBy("id_asc");
                       }}
                       className="px-2 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center gap-1 shrink-0"
                       title="Reset all filters"

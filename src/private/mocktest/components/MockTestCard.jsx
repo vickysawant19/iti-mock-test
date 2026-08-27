@@ -171,147 +171,148 @@ const MockTestCard = ({
   const isSubmitted = test.submitted;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-gray-700 flex flex-col gap-3.5 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-indigo-300 dark:hover:border-indigo-500">
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-4.5 shadow-xs border border-slate-200/90 dark:border-slate-800 flex flex-col gap-3 transition-all duration-200 hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500/50 group">
       
       {/* ── Header (ID & Badges) ── */}
       <div className="flex justify-between items-start gap-2">
         <span 
           onClick={handleCopyId}
-          className="text-[0.75rem] font-mono font-bold text-indigo-800 bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 px-2.5 py-1 rounded-md tracking-wider break-all cursor-pointer hover:bg-indigo-200 transition-colors flex items-center gap-1.5"
+          className="text-[11px] font-mono font-black text-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 dark:text-indigo-300 px-2 py-0.5 rounded-lg border border-indigo-200/80 dark:border-indigo-800/60 tracking-wider break-all cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors flex items-center gap-1.5"
           title="Click to copy Paper ID"
         >
-          {test.paperId}
-          {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-indigo-400/80 hover:text-indigo-600" />}
+          <span>{test.paperId}</span>
+          {copied ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3 text-indigo-400 dark:text-indigo-400" />}
         </span>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {test.isOriginal && (
-            <span className="text-[0.65rem] font-extrabold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded tracking-wider dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-400">
+            <span className="text-[10px] font-extrabold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md tracking-wider dark:bg-amber-950/50 dark:border-amber-800/80 dark:text-amber-300">
               Original
             </span>
           )}
           <span 
-            className="flex items-center justify-center text-slate-300 dark:text-slate-500 cursor-pointer" 
+            className="flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded cursor-pointer transition-colors" 
             title={test.isProtected ? 'Protected' : 'Unprotected'}
             onClick={test.isOriginal ? onToggleProtection : undefined}
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : test.isProtected ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4 text-emerald-500" />}
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : test.isProtected ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />}
           </span>
         </div>
       </div>
 
       {/* ── Body (Title & Meta Info) ── */}
-      <div className="flex flex-col gap-2">
-        <h3 className="text-[1.1rem] font-bold leading-snug text-slate-900 dark:text-white line-clamp-2">
-          {test.title || test.tradeName || "No Title"}
+      <div className="flex flex-col gap-1.5">
+        <h3 className="text-sm sm:text-[0.95rem] font-bold leading-snug text-slate-900 dark:text-slate-100 line-clamp-2">
+          {test.title || test.tradeName || "Mock Test Paper"}
         </h3>
-        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-1.5">
+        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center flex-wrap gap-1.5">
           <span>{test.tradeName}</span>
           {test.year && (
             <>
               <span className="text-slate-300 dark:text-slate-600 leading-none">•</span>
-              <span>{test.year} Year</span>
+              <span>Year {test.year}</span>
             </>
           )}
         </div>
         
-        <div className="flex flex-wrap gap-2 mt-1">
-          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Date Created">
-            <Calendar className="w-3 h-3 stroke-[2.5]" />
+        {/* Meta details strip */}
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          <span className="text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-700/80 dark:text-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1" title="Date Created">
+            <Calendar className="w-3 h-3 text-slate-400" />
             {format(new Date(test.$createdAt), "dd MMM yy, hh:mm a")}
           </span>
-          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Questions">
-            <FileText className="w-3 h-3 stroke-[2.5]" />
+          <span className="text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-700/80 dark:text-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1" title="Questions">
+            <FileText className="w-3 h-3 text-slate-400" />
             {test.quesCount ?? "50"} Qs
           </span>
-          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5" title="Duration">
-            <Clock className="w-3 h-3 stroke-[2.5]" />
-            {test.totalMinutes ?? "—"} min
+          <span className="text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-700/80 dark:text-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1" title="Duration">
+            <Clock className="w-3 h-3 text-slate-400" />
+            {test.totalMinutes ?? "—"}m
           </span>
-          <span className="text-[0.75rem] font-semibold text-slate-500 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 px-2 py-1 rounded-md flex items-center gap-1.5 capitalize" title="Difficulty">
-            <BarChart className="w-3 h-3 stroke-[2.5]" />
+          <span className="text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-700/80 dark:text-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1 capitalize" title="Difficulty">
+            <BarChart className="w-3 h-3 text-slate-400" />
             {test.difficultyLevel ?? "mixed"}
           </span>
         </div>
       </div>
 
       {/* ── Status & Score Row ── */}
-      <div className="flex justify-between items-center py-3 border-y border-dashed border-slate-200 dark:border-slate-700 mt-1">
-        <span className={`text-[0.7rem] font-extrabold uppercase px-3 py-1 rounded-full tracking-wider ${isSubmitted ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+      <div className="flex justify-between items-center py-2.5 border-y border-slate-100 dark:border-slate-800/80 mt-auto">
+        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider border ${isSubmitted ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-300'}`}>
           {isSubmitted ? 'Submitted' : 'Pending'}
         </span>
         <div className="text-right">
           {isSubmitted ? (
-            <>
-              <span className="text-[1.4rem] font-black leading-none text-slate-900 dark:text-white">{test.score ?? 0}</span>
-              <span className="text-[0.8rem] font-bold text-slate-400 dark:text-slate-500"> / {test.quesCount ? test.quesCount : "-"}</span>
-            </>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-lg font-black text-slate-900 dark:text-slate-100 leading-none">{test.score ?? 0}</span>
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500"> / {test.quesCount ? test.quesCount : "-"}</span>
+            </div>
           ) : (
-            <span className="text-[1.25rem] font-black text-slate-400 dark:text-slate-600 leading-none">—</span>
+            <span className="text-sm font-bold text-slate-400 dark:text-slate-600 leading-none">Not Taken</span>
           )}
         </div>
       </div>
 
       {/* ── Bottom: Actions ── */}
-      <div className="flex flex-col gap-2 mt-auto pt-1">
+      <div className="flex flex-col gap-2 pt-0.5">
         <div className="flex items-center gap-2">
           {/* Main Action Button */}
           {isSubmitted ? (
             <Link
               to={`/show-mock-test/${test.$id}`}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 bg-white text-indigo-600 border-indigo-600 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-indigo-500 dark:text-indigo-400"
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-xs font-bold py-1.5 px-2 rounded-lg transition-all border bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 shadow-2xs"
             >
-              <Eye className="w-4 h-4 stroke-[2.5]" /> View Result
+              <Eye className="w-3.5 h-3.5" /> View Result
             </Link>
           ) : (
             <Link
               to={`/start-mock-test/${test.$id}`}
-              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-transparent bg-indigo-600 text-white shadow-[0_2px_4px_rgba(79,70,229,0.2)] hover:bg-indigo-700 hover:scale-[1.02]"
+              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-xs font-black py-1.5 px-2 rounded-lg transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-2xs active:scale-98"
             >
-              <PlayCircle className="w-4 h-4 stroke-[2.5] fill-current" /> Start
+              <PlayCircle className="w-3.5 h-3.5 fill-current" /> Start Exam
             </Link>
           )}
 
-          {/* Large Live Scores Button */}
+          {/* Live Scores Button */}
           <Link
             to={`/mock-test-result/${test.paperId}`}
-            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[0.85rem] font-bold py-2 px-2 rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis border-2 border-slate-200 bg-slate-50 text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-indigo-400 dark:hover:border-indigo-500/50 hover:scale-[1.02]"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-xs font-bold py-1.5 px-2 rounded-lg transition-all border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs"
             title="Live Scores (Other Students)"
           >
-            <ClipboardList className="w-4 h-4 stroke-[2.5] text-indigo-600 dark:text-indigo-400" /> Live Scores
+            <ClipboardList className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Live Scores
           </Link>
         </div>
 
         {/* Secondary Icons Toolbar */}
-        <div className="flex justify-end items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="flex justify-end items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 text-xs font-semibold gap-1 px-2.5"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 dark:hover:bg-slate-700 dark:hover:text-indigo-400 transition-all flex items-center justify-center text-xs font-bold gap-1 px-2 cursor-pointer"
                 title="Share Paper"
               >
-                <Share2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                <Share2 className="w-3 h-3" />
                 <span>Share</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 z-50">
+            <DropdownMenuContent align="end" className="w-44 z-50">
               {navigator.share && (
                 <DropdownMenuItem
                   onClick={() => handleShare(test.paperId)}
-                  className="cursor-pointer font-medium"
+                  className="cursor-pointer text-xs font-semibold"
                 >
-                  <Share2 className="w-4 h-4 mr-2 text-slate-500" /> Share via App
+                  <Share2 className="w-3.5 h-3.5 mr-2 text-slate-500" /> Share via App
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
                 onClick={() => handleCopyMessage(test.paperId)}
-                className="cursor-pointer font-medium"
+                className="cursor-pointer text-xs font-semibold"
               >
                 {copiedMessage ? (
-                  <Check className="w-4 h-4 mr-2 text-green-500" />
+                  <Check className="w-3.5 h-3.5 mr-2 text-emerald-600" />
                 ) : (
-                  <Copy className="w-4 h-4 mr-2 text-slate-500" />
+                  <Copy className="w-3.5 h-3.5 mr-2 text-slate-500" />
                 )}
-                Copy Message
+                Copy Details
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -321,26 +322,26 @@ const MockTestCard = ({
               <button
                 onClick={handleNotifyBatch}
                 disabled={isNotifying}
-                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-indigo-400 disabled:opacity-50 text-xs font-semibold gap-1 px-2.5"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 dark:hover:bg-slate-700 dark:hover:text-indigo-400 disabled:opacity-50 text-xs font-bold gap-1 px-2 transition-all flex items-center justify-center cursor-pointer"
                 title="Notify Active Batch Students"
               >
                 {isNotifying ? (
-                  <Loader2 className="w-3.5 h-3.5 stroke-[2.5] animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <BellRing className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <BellRing className="w-3 h-3" />
                 )}
                 <span>Notify</span>
               </button>
               <button
                 onClick={() => handleDelete(test.$id)}
                 disabled={!!isDeleting[test.$id]}
-                className="bg-slate-50 border border-slate-200 p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 transition-all flex items-center justify-center dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-50 text-xs font-semibold gap-1 px-2"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 dark:hover:bg-slate-700 dark:hover:text-rose-400 disabled:opacity-50 text-xs font-bold gap-1 px-2 transition-all flex items-center justify-center cursor-pointer"
                 title="Delete Paper"
               >
                 {isDeleting[test.$id] ? (
-                  <Loader2 className="w-3.5 h-3.5 stroke-[2.5] animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <Trash2 className="w-3 h-3" />
                 )}
               </button>
             </>

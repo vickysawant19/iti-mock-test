@@ -45,12 +45,14 @@ export default function CreateMockTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-8 pt-20">
-      <div className="max-w-5xl mx-auto space-y-8">
-        <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
-            <Header isSubmitting={isLoading} />
-            
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-0 m-0 flex flex-col">
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-col flex-1">
+          {/* Edge-to-Edge Gradient Header */}
+          <Header isSubmitting={isLoading} />
+
+          {/* Form Container */}
+          <div className="max-w-5xl w-full mx-auto px-3 sm:px-6 py-6 space-y-6 flex-1">
             <ModeSelector />
 
             <ConfigurationSection 
@@ -59,10 +61,9 @@ export default function CreateMockTestPage() {
               modules={modules} 
               fetchModules={fetchModules} 
             />
-
-          </form>
-        </FormProvider>
-      </div>
+          </div>
+        </form>
+      </FormProvider>
     </div>
   );
 }

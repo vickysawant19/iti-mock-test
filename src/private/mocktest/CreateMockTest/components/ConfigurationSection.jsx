@@ -108,29 +108,35 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
   return (
     <div className="space-y-6">
       {/* Test Details Card */}
-      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm">
-        <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800/80 mb-6">
-          <div className="p-2 bg-pink-500/10 rounded-xl text-pink-600 dark:text-pink-400">
+      <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-xs">
+        <div className="flex items-center gap-2.5 pb-3.5 border-b border-slate-100 dark:border-slate-800/80 mb-5">
+          <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl text-indigo-600 dark:text-indigo-400">
             <Settings2 className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-white">Mock Test Details</h3>
-            <p className="text-[11px] text-slate-400 font-medium">Configure basic parameters and scoping rules for this paper</p>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100">
+              2. Test Details & Parameters
+            </h3>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+              Configure basic parameters, trade scoping, and test title
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {/* Title */}
-          <div className="space-y-2 lg:col-span-2">
+          <div className="space-y-1.5 lg:col-span-2">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider block">Test Title</Label>
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                Test Title
+              </Label>
               {isTitleManuallyEdited && (
                 <button
                   type="button"
                   onClick={() => setIsTitleManuallyEdited(false)}
-                  className="text-[10px] text-pink-500 font-extrabold uppercase tracking-wider hover:underline cursor-pointer"
+                  className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider hover:underline cursor-pointer"
                 >
-                  Reset to Auto-Generated Title
+                  Reset to Auto-Generated
                 </button>
               )}
             </div>
@@ -140,23 +146,23 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
                   setIsTitleManuallyEdited(true);
                 }
               })}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white placeholder-slate-455 dark:placeholder-slate-500 font-medium transition-all"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-slate-900 dark:text-white placeholder-slate-400 font-semibold transition-all"
               placeholder="e.g. Weekly Assessment - Fitter 1st Year"
             />
             {errors.title && <p className="text-red-500 text-xs mt-1 font-bold">{errors.title.message}</p>}
           </div>
 
           {/* Difficulty */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
-              <BarChart className="w-3.5 h-3.5 text-purple-500" /> Difficulty Level
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
+              <BarChart className="w-3.5 h-3.5 text-indigo-500" /> Difficulty Level
             </Label>
             <Controller
               name="difficultyLevel"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="w-full text-xs h-10 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl backdrop-blur-sm focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium">
+                  <SelectTrigger className="w-full text-xs h-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold">
                     <SelectValue placeholder="Select difficulty" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700">
@@ -171,16 +177,16 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
           </div>
 
           {/* Trade */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
-              <School className="w-3.5 h-3.5 text-pink-500" /> Trade
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
+              <School className="w-3.5 h-3.5 text-blue-500" /> Trade
             </Label>
             <Controller
               name="tradeId"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className={`w-full text-xs h-10 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl backdrop-blur-sm focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium ${errors.tradeId ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`w-full text-xs h-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.tradeId ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Select Trade" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700">
@@ -195,8 +201,8 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
           </div>
 
           {/* Year */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
               <Calendar className="w-3.5 h-3.5 text-amber-500" /> Training Year
             </Label>
             <Controller
@@ -204,7 +210,7 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value} disabled={!tradeId}>
-                  <SelectTrigger className={`w-full text-xs h-10 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl backdrop-blur-sm focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium ${errors.year ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`w-full text-xs h-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.year ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700">
@@ -219,8 +225,8 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
 
           {/* Subject (Conditional) */}
           {showSubjectSelection && (
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
                 <List className="w-3.5 h-3.5 text-emerald-500" /> Subject
               </Label>
               <Controller
@@ -228,7 +234,7 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className={`w-full text-xs h-10 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl backdrop-blur-sm focus:ring-pink-500/30 text-slate-800 dark:text-white font-medium ${errors.subjectId ? 'border-red-500' : ''}`}>
+                    <SelectTrigger className={`w-full text-xs h-10 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.subjectId ? 'border-red-500' : ''}`}>
                       <SelectValue placeholder="Select Subject" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700">
@@ -244,9 +250,9 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
           )}
 
           {/* Autocomplete verified tags */}
-          <div className="space-y-2 lg:col-span-3 pt-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
-              <Tag className="w-3.5 h-3.5 text-blue-500" /> Tag Scopes (Select Verified Tags Only)
+          <div className="space-y-1.5 lg:col-span-3 pt-1">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
+              <Tag className="w-3.5 h-3.5 text-indigo-500" /> Tag Scopes (Select Verified Tags Only)
             </Label>
             <Controller
               name="tags"
@@ -265,17 +271,21 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
 
       {/* Modules (Conditional) */}
       {showModuleSelection && modules.length > 0 && (
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm animate-float-in">
-           <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/80">
-            <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
+        <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-xs animate-float-in">
+          <div className="flex items-center gap-2.5 mb-5 pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl text-indigo-600 dark:text-indigo-400">
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-slate-800 dark:text-white">Choose Test Modules</h3>
-              <p className="text-[11px] text-slate-400 font-medium">Select specific trade modules to populate test questions from</p>
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100">
+                Choose Test Modules
+              </h3>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                Select specific trade modules to populate test questions from
+              </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto p-1 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-1 custom-scrollbar">
             <Controller
               name="selectedModules"
               control={control}
@@ -284,11 +294,11 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
                   {modules.map(module => {
                     const isChecked = field.value?.includes(module.$id);
                     return (
-                      <div key={module.$id} className="flex items-center space-x-3 p-3 bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
+                      <div key={module.$id} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
                         <input
                           type="checkbox"
                           id={`mod-${module.$id}`}
-                          className="w-4 h-4 text-pink-500 bg-white/50 border-slate-300 dark:border-slate-700 focus:ring-pink-500/20 rounded cursor-pointer"
+                          className="w-4 h-4 text-indigo-600 bg-white border-slate-300 dark:border-slate-700 focus:ring-indigo-500/30 rounded cursor-pointer"
                           checked={isChecked}
                           onChange={(e) => {
                             const newValue = e.target.checked 
@@ -297,7 +307,7 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
                             field.onChange(newValue);
                           }}
                         />
-                        <Label htmlFor={`mod-${module.$id}`} className="text-xs font-semibold text-slate-750 dark:text-slate-200 cursor-pointer select-none">
+                        <Label htmlFor={`mod-${module.$id}`} className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer select-none">
                           {module.moduleId} - {module.moduleName}
                         </Label>
                       </div>
@@ -312,72 +322,80 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
       )}
 
       {/* Evaluation & Timing Card */}
-      <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm">
-        <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/80">
-          <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-450">
+      <div className="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-6 shadow-xs">
+        <div className="flex items-center gap-2.5 mb-5 pb-3.5 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl text-emerald-600 dark:text-emerald-400">
             <Target className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-white">Evaluation Rules</h3>
-            <p className="text-[11px] text-slate-400 font-medium">Fine-tune mock test marking rules, question weights, and limits</p>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100">
+              3. Evaluation & Marking Rules
+            </h3>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+              Fine-tune questions count, duration, pass marks, and publishing options
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
-              <Hash className="w-3.5 h-3.5 text-blue-500" /> Questions Count
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
+              <Hash className="w-3.5 h-3.5 text-indigo-500" /> Questions Count
             </Label>
             <input
               type="number"
               {...register("quesCount", { valueAsNumber: true })}
-              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium ${errors.quesCount ? 'border-red-500' : ''}`}
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.quesCount ? 'border-red-500' : ''}`}
             />
             {errors.quesCount && <p className="text-red-500 text-xs mt-1 font-bold">{errors.quesCount.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 block">
-              <Clock className="w-3.5 h-3.5 text-orange-500" /> Duration (Mins)
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 block">
+              <Clock className="w-3.5 h-3.5 text-amber-500" /> Duration (Mins)
             </Label>
             <input
               type="number"
               {...register("totalMinutes", { valueAsNumber: true })}
-              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium ${errors.totalMinutes ? 'border-red-500' : ''}`}
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.totalMinutes ? 'border-red-500' : ''}`}
             />
             {errors.totalMinutes && <p className="text-red-500 text-xs mt-1 font-bold">{errors.totalMinutes.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider block">Total Marks</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              Total Marks
+            </Label>
             <input
               type="number"
               {...register("totalMarks", { valueAsNumber: true })}
-              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium ${errors.totalMarks ? 'border-red-500' : ''}`}
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.totalMarks ? 'border-red-500' : ''}`}
             />
             {errors.totalMarks && <p className="text-red-500 text-xs mt-1 font-bold">{errors.totalMarks.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider block">Passing Marks</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+              Passing Marks
+            </Label>
             <input
               type="number"
               {...register("passingMarks", { valueAsNumber: true })}
-              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30 text-slate-850 dark:text-white font-medium ${errors.passingMarks ? 'border-red-500' : ''}`}
+              className={`w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 text-slate-900 dark:text-white font-semibold ${errors.passingMarks ? 'border-red-500' : ''}`}
             />
             {errors.passingMarks && <p className="text-red-500 text-xs mt-1 font-bold">{errors.passingMarks.message}</p>}
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Toggles */}
-          <div className="flex items-center justify-between p-5 border rounded-2xl border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 backdrop-blur-sm">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Negative Marking */}
+          <div className="flex items-center justify-between p-4 border rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
             <div className="space-y-0.5">
-              <Label className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-red-500" />
+              <Label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-rose-500" />
                 Negative Marking
               </Label>
-              <p className="text-[11px] text-slate-400 font-medium">Deduct marks for incorrect answers</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Deduct marks for incorrect answers</p>
             </div>
             <Controller
               name="negativeMarking"
@@ -388,13 +406,14 @@ export function ConfigurationSection({ tradesList, subjects, modules, fetchModul
             />
           </div>
 
-          <div className="flex items-center justify-between p-5 border rounded-2xl border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 backdrop-blur-sm">
+          {/* Visibility */}
+          <div className="flex items-center justify-between p-4 border rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
             <div className="space-y-0.5">
-              <Label className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-green-500" />
+              <Label className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-emerald-500" />
                 Publish Instantly
               </Label>
-              <p className="text-[11px] text-slate-400 font-medium">Make test available immediately to students</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Make paper available immediately to students</p>
             </div>
             <Controller
               name="visibility"

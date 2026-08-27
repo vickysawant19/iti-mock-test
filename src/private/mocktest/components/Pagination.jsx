@@ -44,13 +44,13 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex justify-center items-center gap-2 mb-6 flex-wrap">
+    <div className="flex justify-center items-center gap-1 sm:gap-1.5 py-2 flex-wrap">
       {/* Previous page button */}
       {currentPage > 1 && (
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
+          className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-lg border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200"
           onClick={() => onPageChange(currentPage - 1)}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -62,7 +62,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         page === "..." ? (
           <span
             key={`ellipsis-${index}`}
-            className="px-4 py-2 text-gray-500 dark:text-gray-400"
+            className="px-2 py-1 text-xs text-slate-400 dark:text-slate-500"
           >
             ...
           </span>
@@ -70,10 +70,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <Button
             key={page}
             variant={currentPage === page ? "default" : "outline"}
-            className={`h-10 w-10 ${
+            className={`h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-lg text-xs font-bold ${
               currentPage === page
-                ? "bg-blue-950 dark:bg-blue-800 text-white"
-                : "dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
+                ? "bg-indigo-600 dark:bg-indigo-600 text-white shadow-2xs"
+                : "border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200"
             }`}
             onClick={() => onPageChange(page)}
           >
@@ -87,7 +87,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
+          className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-lg border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200"
           onClick={() => onPageChange(currentPage + 1)}
         >
           <ChevronRight className="h-4 w-4" />

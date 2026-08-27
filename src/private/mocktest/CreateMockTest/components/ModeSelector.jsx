@@ -7,14 +7,16 @@ export function ModeSelector() {
   const currentMode = watch("mode");
 
   const modes = [
-    { id: "subject", label: "Subject Based", icon: Book, desc: "Select a single subject" },
-    { id: "module",  label: "Module Based",  icon: Layers, desc: "Select specific modules" },
+    { id: "subject", label: "Subject Based Exam", icon: Book, desc: "Generate questions across an entire subject syllabus" },
+    { id: "module",  label: "Module Based Exam",  icon: Layers, desc: "Pick specific learning modules or topics" },
   ];
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Creation Mode</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-2.5">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+        1. Select Exam Mode
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {modes.map((mode) => {
           const Icon = mode.icon;
           const isActive = currentMode === mode.id;
@@ -25,21 +27,21 @@ export function ModeSelector() {
               onClick={() => setValue("mode", mode.id)}
               className={`
                 cursor-pointer rounded-xl border p-4 transition-all duration-200 
-                flex flex-col items-center text-center gap-2
+                flex items-center gap-3.5 shadow-xs
                 ${isActive 
-                  ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400 ring-2 ring-blue-600/20" 
-                  : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  ? "border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 dark:border-indigo-500 ring-2 ring-indigo-500/20" 
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-800"
                 }
               `}
             >
-              <div className={`p-2 rounded-full ${isActive ? "bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
+              <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? "bg-indigo-600 text-white shadow-2xs" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                 <Icon className="h-5 w-5" />
               </div>
-              <div>
-                <p className={`font-medium ${isActive ? "text-blue-700 dark:text-blue-300" : "text-gray-900 dark:text-gray-100"}`}>
+              <div className="min-w-0">
+                <p className={`text-xs font-black ${isActive ? "text-indigo-900 dark:text-indigo-200" : "text-slate-900 dark:text-slate-100"}`}>
                   {mode.label}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
                   {mode.desc}
                 </p>
               </div>
@@ -50,3 +52,5 @@ export function ModeSelector() {
     </div>
   );
 }
+
+export default ModeSelector;
