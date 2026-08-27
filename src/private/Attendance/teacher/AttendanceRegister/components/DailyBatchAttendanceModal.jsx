@@ -9,7 +9,11 @@ import {
   Palmtree,
   Trash2,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Search,
+  RotateCcw,
+  SlidersHorizontal,
+  ArrowUpDown
 } from "lucide-react";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
@@ -38,6 +42,9 @@ export const DailyBatchAttendanceModal = ({
   const [attendanceStatuses, setAttendanceStatuses] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name_asc");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -56,13 +63,16 @@ export const DailyBatchAttendanceModal = ({
   const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
   const [holidayReason, setHolidayReason] = useState("");
 
+  const safeStudents = useMemo(() => (Array.isArray(students) ? students : []), [students]);
+
   // Calculate annual leave quota per student
   const studentQuotas = useMemo(() => {
     const map = new Map();
-    if (!students || !existingAttendance) return map;
+    if (!safeStudents.length || !existingAttendance) return map;
     const targetYear = date ? new Date(date).getFullYear() : new Date().getFullYear();
 
-    students.forEach((student) => {
+    safeStudents.forEach((student) => {
+      if (!student) return;
       const userRecords = (existingAttendance || []).filter(
         (r) => r.userId === student.userId
       );
@@ -70,15 +80,20 @@ export const DailyBatchAttendanceModal = ({
       map.set(student.userId, quota);
     });
     return map;
-  }, [students, existingAttendance, date]);
+  }, [safeStudents, existingAttendance, date]);
 
   // Reset state when modal opens or date changes
   useEffect(() => {
     if (isOpen) {
       setShowClearConfirm(false);
+      setSearchQuery("");
+      setFilter("all");
+      setRoleFilter("all");
+      setSortBy("name_asc");
       const statuses = {};
-      students.forEach((student) => {
-        const record = existingAttendance.filter(
+      safeStudents.forEach((student) => {
+        if (!student) return;
+        const record = (existingAttendance || []).filter(
           (att) => att.userId === student.userId
         );
         const dayRecord = record?.find((rec) => rec.date === date);
@@ -100,9 +115,7 @@ export const DailyBatchAttendanceModal = ({
       }
       setHolidayReason("");
     }
-  }, [isOpen, students, date, existingAttendance, initialMode, isFuture, isExistingHoliday]);
-
-  if (!isOpen) return null;
+  }, [isOpen, safeStudents, date, existingAttendance, initialMode, isFuture, isExistingHoliday]);
 
   const handleStatusChange = (userId, targetStatus) => {
     setAttendanceStatuses((prev) => {
@@ -205,11 +218,12 @@ export const DailyBatchAttendanceModal = ({
     });
   };
 
-  const actualStudents = students.filter((s) => !s.isTeacher);
+  const actualStudents = safeStudents.filter((s) => !s?.isTeacher);
+  const teachersCount = safeStudents.filter((s) => s?.isTeacher).length;
 
   const presentCount = Object.keys(attendanceStatuses).filter(
     (userId) => {
-      const s = students.find((stud) => stud.userId === userId);
+      const s = safeStudents.find((stud) => stud?.userId === userId);
       return (
         attendanceStatuses[userId] === "present" &&
         !s?.isTeacher &&
@@ -220,7 +234,7 @@ export const DailyBatchAttendanceModal = ({
 
   const absentCount = Object.keys(attendanceStatuses).filter(
     (userId) => {
-      const s = students.find((stud) => stud.userId === userId);
+      const s = safeStudents.find((stud) => stud?.userId === userId);
       return (
         attendanceStatuses[userId] === "absent" &&
         !s?.isTeacher &&
@@ -231,7 +245,7 @@ export const DailyBatchAttendanceModal = ({
 
   const leaveCount = Object.keys(attendanceStatuses).filter(
     (userId) => {
-      const s = students.find((stud) => stud.userId === userId);
+      const s = safeStudents.find((stud) => stud?.userId === userId);
       return (
         ["casual", "sick", "special", "on_duty", "leave", "cl", "sl", "spl", "od"].includes(
           attendanceStatuses[userId]
@@ -242,22 +256,107 @@ export const DailyBatchAttendanceModal = ({
     }
   ).length;
 
-  const filteredStudents = students.filter((student) => {
-    const status = attendanceStatuses[student.userId];
-    if (filter === "present") return status === "present";
-    if (filter === "absent") return status === "absent";
-    if (filter === "leave")
-      return ["casual", "sick", "special", "on_duty", "leave", "cl", "sl", "spl", "od"].includes(status);
-    return true;
-  });
+  const clCount = Object.keys(attendanceStatuses).filter((userId) => {
+    const s = safeStudents.find((stud) => stud?.userId === userId);
+    return (
+      (attendanceStatuses[userId] === "casual" || attendanceStatuses[userId] === "cl") &&
+      !s?.isTeacher &&
+      !isBlockedByEnrollment(s, date)
+    );
+  }).length;
 
-  const teachersList = filteredStudents.filter((s) => s.isTeacher);
-  const studentsList = filteredStudents.filter((s) => !s.isTeacher);
+  const slCount = Object.keys(attendanceStatuses).filter((userId) => {
+    const s = safeStudents.find((stud) => stud?.userId === userId);
+    return (
+      (attendanceStatuses[userId] === "sick" || attendanceStatuses[userId] === "sl") &&
+      !s?.isTeacher &&
+      !isBlockedByEnrollment(s, date)
+    );
+  }).length;
+
+  const splCount = Object.keys(attendanceStatuses).filter((userId) => {
+    const s = safeStudents.find((stud) => stud?.userId === userId);
+    return (
+      (attendanceStatuses[userId] === "special" || attendanceStatuses[userId] === "spl") &&
+      !s?.isTeacher &&
+      !isBlockedByEnrollment(s, date)
+    );
+  }).length;
+
+  const odCount = Object.keys(attendanceStatuses).filter((userId) => {
+    const s = safeStudents.find((stud) => stud?.userId === userId);
+    return (
+      (attendanceStatuses[userId] === "on_duty" || attendanceStatuses[userId] === "od") &&
+      !s?.isTeacher &&
+      !isBlockedByEnrollment(s, date)
+    );
+  }).length;
+
+  const notEnrolledCount = actualStudents.filter((s) => isBlockedByEnrollment(s, date)).length;
+
+  const filteredStudents = useMemo(() => {
+    return safeStudents
+      .filter((student) => {
+        if (!student) return false;
+        const isBlocked = isBlockedByEnrollment(student, date);
+        const status = attendanceStatuses[student.userId] || "absent";
+        const isTeacher = !!student.isTeacher;
+
+        // Role filter
+        if (roleFilter === "students" && isTeacher) return false;
+        if (roleFilter === "teachers" && !isTeacher) return false;
+
+        // Search query
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const name = (student.userName || student.name || "").toLowerCase();
+          const id = (student.studentId || student.rollNo || "").toLowerCase();
+          if (!name.includes(q) && !id.includes(q)) return false;
+        }
+
+        // Status filter
+        if (filter === "present") return status === "present" && !isBlocked;
+        if (filter === "absent") return status === "absent" && !isBlocked;
+        if (filter === "leave") {
+          return (
+            ["casual", "sick", "special", "on_duty", "leave", "cl", "sl", "spl", "od"].includes(status) &&
+            !isBlocked
+          );
+        }
+        if (filter === "casual") return (status === "casual" || status === "cl") && !isBlocked;
+        if (filter === "sick") return (status === "sick" || status === "sl") && !isBlocked;
+        if (filter === "special") return (status === "special" || status === "spl") && !isBlocked;
+        if (filter === "on_duty") return (status === "on_duty" || status === "od") && !isBlocked;
+        if (filter === "not_enrolled") return isBlocked;
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "name_asc") {
+          return (a.userName || "").localeCompare(b.userName || "");
+        }
+        if (sortBy === "name_desc") {
+          return (b.userName || "").localeCompare(a.userName || "");
+        }
+        if (sortBy === "id_asc") {
+          return (a.studentId || "").localeCompare(b.studentId || "");
+        }
+        if (sortBy === "status") {
+          const stA = attendanceStatuses[a.userId] || "absent";
+          const stB = attendanceStatuses[b.userId] || "absent";
+          return stA.localeCompare(stB);
+        }
+        return 0;
+      });
+  }, [safeStudents, attendanceStatuses, filter, roleFilter, searchQuery, sortBy, date]);
+
+  const teachersList = filteredStudents.filter((s) => s?.isTeacher);
+  const studentsList = filteredStudents.filter((s) => !s?.isTeacher);
 
   const markAllPresent = () => {
     const newStatuses = { ...attendanceStatuses };
-    students.forEach((student) => {
-      if (!isBlockedByEnrollment(student, date)) {
+    safeStudents.forEach((student) => {
+      if (student && !isBlockedByEnrollment(student, date)) {
         newStatuses[student.userId] = "present";
       }
     });
@@ -266,8 +365,8 @@ export const DailyBatchAttendanceModal = ({
 
   const markAllAbsent = () => {
     const newStatuses = { ...attendanceStatuses };
-    students.forEach((student) => {
-      if (!isBlockedByEnrollment(student, date)) {
+    safeStudents.forEach((student) => {
+      if (student && !isBlockedByEnrollment(student, date)) {
         newStatuses[student.userId] = "absent";
       }
     });
@@ -451,6 +550,7 @@ export const DailyBatchAttendanceModal = ({
     );
   };
 
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 animate-fadeIn dark:bg-opacity-80">
@@ -537,32 +637,203 @@ export const DailyBatchAttendanceModal = ({
               </div>
             </div>
 
-            {/* Filters & Actions */}
-            <div className="px-4 py-2 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
-              <div className="flex flex-wrap gap-2 mb-2">
-                {["all", "present", "absent", "leave"].map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
-                      filter === f
-                        ? "bg-indigo-600 text-white dark:bg-indigo-700"
-                        : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                    }`}
+            {/* Enhanced Filters & Search Toolbar */}
+            <div className="px-4 py-3 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800/90 space-y-2.5">
+              
+              {/* Row 1: Live Search + Role Selector + Sort Dropdown */}
+              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
+                {/* Search input */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by student name or ID..."
+                    className="w-full pl-8.5 pr-8 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Role Switcher & Sort Selector */}
+                <div className="flex items-center gap-2">
+                  {/* Role Selector */}
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
                   >
-                    {f}{" "}
-                    {f === "all"
-                      ? `(${actualStudents.length})`
-                      : f === "present"
-                      ? `(${presentCount})`
-                      : f === "absent"
-                      ? `(${absentCount})`
-                      : `(${leaveCount})`}
-                  </button>
-                ))}
+                    <option value="all">All Members ({students.length})</option>
+                    <option value="students">Students ({actualStudents.length})</option>
+                    {teachersCount > 0 && (
+                      <option value="teachers">Instructors ({teachersCount})</option>
+                    )}
+                  </select>
+
+                  {/* Sort Selector */}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+                  >
+                    <option value="name_asc">Name (A → Z)</option>
+                    <option value="name_desc">Name (Z → A)</option>
+                    <option value="id_asc">Student ID</option>
+                    <option value="status">Status</option>
+                  </select>
+
+                  {/* Reset Filters button if any active */}
+                  {(filter !== "all" || searchQuery || roleFilter !== "all" || sortBy !== "name_asc") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilter("all");
+                        setSearchQuery("");
+                        setRoleFilter("all");
+                        setSortBy("name_asc");
+                      }}
+                      className="px-2 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center gap-1 shrink-0"
+                      title="Reset all filters"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Row 2: Status Filter Pills Carousel */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                {/* All */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "all"
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                      : "bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  All ({actualStudents.length})
+                </button>
+
+                {/* Present */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("present")}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "present"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-white text-emerald-700 hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                  }`}
+                >
+                  Present ({presentCount})
+                </button>
+
+                {/* Absent */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("absent")}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "absent"
+                      ? "bg-rose-600 text-white shadow-xs"
+                      : "bg-white text-rose-700 hover:bg-rose-50 dark:bg-slate-900 dark:text-rose-400 border border-rose-200 dark:border-rose-900"
+                  }`}
+                >
+                  Absent ({absentCount})
+                </button>
+
+                {/* All Leaves */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("leave")}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "leave"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-white text-amber-700 hover:bg-amber-50 dark:bg-slate-900 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
+                  }`}
+                >
+                  All Leaves ({leaveCount})
+                </button>
+
+                {/* CL */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("casual")}
+                  className={`px-2 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "casual"
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "bg-white text-amber-600 hover:bg-amber-50 dark:bg-slate-900 dark:text-amber-400 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  CL ({clCount})
+                </button>
+
+                {/* SL */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("sick")}
+                  className={`px-2 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "sick"
+                      ? "bg-sky-600 text-white shadow-xs"
+                      : "bg-white text-sky-600 hover:bg-sky-50 dark:bg-slate-900 dark:text-sky-400 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  SL ({slCount})
+                </button>
+
+                {/* SPL */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("special")}
+                  className={`px-2 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "special"
+                      ? "bg-purple-600 text-white shadow-xs"
+                      : "bg-white text-purple-600 hover:bg-purple-50 dark:bg-slate-900 dark:text-purple-400 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  SPL ({splCount})
+                </button>
+
+                {/* OD */}
+                <button
+                  type="button"
+                  onClick={() => setFilter("on_duty")}
+                  className={`px-2 py-1 rounded-md font-bold transition-all shrink-0 ${
+                    filter === "on_duty"
+                      ? "bg-teal-600 text-white shadow-xs"
+                      : "bg-white text-teal-600 hover:bg-teal-50 dark:bg-slate-900 dark:text-teal-400 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  OD ({odCount})
+                </button>
+
+                {/* Not Enrolled */}
+                {notEnrolledCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilter("not_enrolled")}
+                    className={`px-2 py-1 rounded-md font-bold transition-all shrink-0 ${
+                      filter === "not_enrolled"
+                        ? "bg-slate-600 text-white shadow-xs"
+                        : "bg-white text-slate-500 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    Not Enrolled ({notEnrolledCount})
+                  </button>
+                )}
+              </div>
+
+              {/* Row 3: Quick Batch Marking Actions */}
+              <div className="flex flex-wrap gap-2 pt-0.5">
                 <button
                   onClick={markAllPresent}
                   className="flex-1 min-w-[120px] px-2 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-md text-xs font-semibold hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 transition-colors"
@@ -765,8 +1036,29 @@ export const DailyBatchAttendanceModal = ({
               )}
 
               {filteredStudents.length === 0 && (
-                <div className="text-center py-10 text-gray-500 dark:text-gray-400 text-sm">
-                  No students found with this filter.
+                <div className="text-center py-10 px-4 flex flex-col items-center justify-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    No members match your filter criteria.
+                  </p>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    Try adjusting your search query or selecting a different status filter.
+                  </p>
+                  {(filter !== "all" || searchQuery || roleFilter !== "all") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilter("all");
+                        setSearchQuery("");
+                        setRoleFilter("all");
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
+                    >
+                      Reset All Filters
+                    </button>
+                  )}
                 </div>
               )}
             </div>

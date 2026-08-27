@@ -252,7 +252,7 @@ const InteractiveAvatar = forwardRef(({
         className={
           editable
             ? "border-0 overflow-hidden p-0 flex items-center justify-center sm:max-w-md w-full max-w-[90%] sm:w-full bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl shadow-2xl rounded-[2rem]"
-            : "fixed inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-0 !p-0 !m-0 bg-black/95 backdrop-blur-2xl flex flex-col justify-between z-50 overflow-hidden shadow-none"
+            : "fixed inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-screen !max-w-none !max-h-none !rounded-none !border-0 !p-0 !m-0 bg-slate-950/40 dark:bg-black/40 backdrop-blur-2xl flex flex-col justify-between z-50 overflow-hidden shadow-none"
         }
       >
         <DialogTitle className="sr-only">{userName ? `${userName}'s Avatar` : "Profile Picture"}</DialogTitle>
@@ -368,12 +368,25 @@ const InteractiveAvatar = forwardRef(({
             className="relative flex flex-col justify-between items-center w-full h-full select-none"
             onClick={() => handleOpenChange(false)}
           >
+            {/* Ambient Blurred Avatar Reflection Backdrop */}
+            {fixedSrc && !imageError && (
+              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <img
+                  src={fixedSrc}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-full h-full object-cover blur-3xl opacity-25 dark:opacity-35 scale-125"
+                />
+                <div className="absolute inset-0 bg-slate-900/30 dark:bg-black/40 backdrop-blur-xl" />
+              </div>
+            )}
+
             {/* Top Close Action */}
             <div className="w-full px-5 py-4 sm:px-8 sm:py-5 flex items-center justify-end z-20">
               <Button
                 size="icon"
                 variant="ghost"
-                className="rounded-full w-10 h-10 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 shadow-lg transition-transform hover:scale-105"
+                className="rounded-full w-10 h-10 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/20 shadow-lg transition-transform hover:scale-105"
                 onClick={() => handleOpenChange(false)}
                 title="Close"
               >
