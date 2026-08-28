@@ -1,4 +1,4 @@
-import { ClipboardList, Group, Search } from "lucide-react";
+import { ClipboardList, Group, Search, Building2, Briefcase } from "lucide-react";
 import {
   FaBook,
   FaBookReader,
@@ -13,17 +13,13 @@ import {
   FaList,
   FaQuestionCircle,
   FaRegCalendarCheck,
-  FaTasks,
-  FaUserCircle,
   FaUserPlus,
   FaUserSecret,
 } from "react-icons/fa";
 import { 
   MdAddCard, 
   MdGroupAdd, 
-  MdOutlineGroupAdd 
 } from "react-icons/md";
-import { Building2, Briefcase } from "lucide-react";
 
 export const menuConfig = [
   {
@@ -166,8 +162,8 @@ export const menuConfig = [
     requiresBatch: true,
     children: [
       {
-        label: "Mark Attendance",
-        path: "/attendance/marktoday",
+        label: "Mark My Attendance",
+        path: "/attendance/mark-my-attendance",
         icon: FaRegCalendarCheck,
         roles: ["teacher", "student"],
         requiresAuth: true,
@@ -226,7 +222,8 @@ export const pathToHeading = {
   "/daily-diary": "Daily Diary",
   "/student-attendance": "My Attendance",
   "/attendance/register": "Attendance Register",
-  "/attendance/marktoday": "Mark Attendance",
+  "/attendance/mark-my-attendance": "Mark My Attendance",
+  "/attendance/marktoday": "Mark My Attendance",
   "/attendance/college-attendance": "College Attendance",
   "/browse-batches": "Browse Batches",
   "/about": "About",

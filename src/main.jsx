@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { Buffer } from "buffer";
 window.Buffer = Buffer;
@@ -161,7 +160,8 @@ const router = (
             </Route>
             <Route path="attendance">
               <Route path="register" element={<AttendanceRegister />} />
-              <Route path="marktoday" element={<AttendanceTracker />} />
+              <Route path="mark-my-attendance" element={<AttendanceTracker />} />
+              <Route path="marktoday" element={<Navigate to="/attendance/mark-my-attendance" replace />} />
               <Route
                 path="college-attendance"
                 element={<CollegeAttendance />}
