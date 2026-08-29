@@ -229,55 +229,6 @@ await tablesDB.deleteRow({
 });
 ```
 
-#### Bulk Operations (Server-Side SDK `node-appwrite`)
-
-Bulk operations are atomic (all-or-nothing) operations performed via Server SDKs to reduce API roundtrips:
-
-- **Limits**: Free Plan (100 rows/request), Pro Plan (1,000 rows/request).
-- **Events**: Fires Webhook / Realtime events per row manipulated.
-- **Relationships**: Bulk operations are not supported on tables with relationship columns.
-
-```typescript
-import { Client, TablesDB, ID, Query } from 'node-appwrite';
-
-const tablesDB = new TablesDB(client);
-
-// 1. Bulk Create Rows (createRows)
-const createdRows = await tablesDB.createRows({
-    databaseId: '[DATABASE_ID]',
-    tableId: '[TABLE_ID]',
-    rows: [
-        { $id: ID.unique(), name: 'Row 1', status: 'active' },
-        { $id: ID.unique(), name: 'Row 2', status: 'active' }
-    ]
-});
-
-// 2. Bulk Upsert Rows (upsertRows) - Inserts or updates existing rowId
-const upsertedRows = await tablesDB.upsertRows({
-    databaseId: '[DATABASE_ID]',
-    tableId: '[TABLE_ID]',
-    rows: [
-        { $id: ID.unique(), name: 'New Row' },
-        { $id: 'existing-row-id', name: 'Updated Row Name' }
-    ]
-});
-
-// 3. Bulk Update Rows by Query (updateRows)
-const updatedRows = await tablesDB.updateRows({
-    databaseId: '[DATABASE_ID]',
-    tableId: '[TABLE_ID]',
-    data: { status: 'archived' },
-    queries: [Query.equal('status', 'draft')]
-});
-
-// 4. Bulk Delete Rows by Query (deleteRows)
-await tablesDB.deleteRows({
-    databaseId: '[DATABASE_ID]',
-    tableId: '[TABLE_ID]',
-    queries: [Query.equal('status', 'archived')]
-});
-```
-
 #### String Column Types
 
 > **Note:** The legacy `string` type is deprecated. Use explicit column types for all new columns.
@@ -707,7 +658,7 @@ try {
 
 ## Permissions & Roles (Critical)
 
-Appwrite uses permission strings to control access to resources. Each permission pairs an action (`read`, `update`, `delete`, `create`, or `write` which grants create + update + delete) with a role target. By default, **no user has access** unless permissions are explicitly set at the document/file level or inherited from the collection/bucket settings. Permissions are arrays of strings built with the `Permission` and `Role` helpers.
+Appwrite uses permission strings to control access to resources. Each permission pairs an action (`read`, `update`, `delete`, `create`, or `write` which grants create + update + delete) with a role target. By default, **no user has access** unless permissions are explicitly set at the row/file level or inherited from the table/bucket settings. Permissions are arrays of strings built with the `Permission` and `Role` helpers.
 
 ```typescript
 import { Permission, Role } from 'appwrite';
@@ -746,7 +697,7 @@ const file = await storage.createFile({
 });
 ```
 
-> **When to set permissions:** Set document/file-level permissions when you need per-resource access control. If all documents in a collection share the same rules, configure permissions at the collection/bucket level and leave document permissions empty.
+> **When to set permissions:** Set row/file-level permissions when you need per-resource access control. If all rows in a table share the same rules, configure permissions at the table/bucket level and leave row permissions empty.
 
 > **Common mistakes:**
 > - **Forgetting permissions** — the resource becomes inaccessible to all users (including the creator)

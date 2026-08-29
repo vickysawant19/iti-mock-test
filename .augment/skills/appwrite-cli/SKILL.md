@@ -1,587 +1,220 @@
 ---
 name: appwrite-cli
-description: Appwrite CLI skill. Use when managing Appwrite projects from the command line. Covers installation, login, project initialization, deploying functions/sites/tables/buckets/teams/topics, managing resources, non-interactive CI/CD mode, and generating type-safe SDKs.
+description: How to use the Appwrite CLI well. Covers when to use appwrite.config.json vs `appwrite client`, pull/push vs one-shot service calls, type-safe SDK and model generation, query flags, CI auth, Cloud regional endpoints, function/site variables, and traps that `--help` will not mention. Does not catalog commands — run `appwrite <command> --help` for flags. Use whenever running `appwrite`, deploying or pulling functions/sites/tables, generating application code from a table schema, initializing or linking a project, scripting Appwrite, or when the user mentions the Appwrite CLI, appwrite.config.json, `appwrite generate`, `appwrite types`, or `appwrite client`.
 ---
 
 
 # Appwrite CLI
 
-## Installation
+`appwrite <command> --help` already lists flags. Read it instead of guessing.
+
+## Config vs `client`
+
+A **real project** (repo, schema, functions, deploys, CI) lives in `appwrite.config.json`. Init once. Pull and push after that. Do not `appwrite client --project-id` on every command — the config already names the project.
+
+A **one-off** (inspect a user, patch one row, poke a remote you will not return to) uses `appwrite client`. Do not scaffold a project for a single API call.
 
 ```bash
-# npm
-npm install -g appwrite-cli
-
-# macOS (Homebrew native binary)
-brew install appwrite
-
-# macOS / Linux (script)
-curl -sL https://appwrite.io/cli/install.sh | bash
-
-# Windows (Scoop)
-scoop install https://raw.githubusercontent.com/appwrite/sdk-for-cli/master/scoop/appwrite.config.json
-```
-
-Verify installation:
-
-```bash
-appwrite -v
-```
-
-## Login & Initialization
-
-```bash
-# Login to your account
+# Good — project
 appwrite login
+appwrite list-projects --json
+appwrite init project --project-id <ID>
+appwrite pull table
+# edit appwrite.config.json, then:
+appwrite push table --force
 
-# Login to a self-hosted instance
-appwrite login --endpoint "https://your-instance.com/v1"
+# Bad — project treated as a pile of API calls
+appwrite tablesdb create-table --database-id main --table-id songs ...
+appwrite tablesdb create-varchar-column --database-id main --table-id songs ...
+# the next clone has no record of this
 
-# Initialize a project (creates appwrite.config.json)
-appwrite init project
+# Good — one-off (already logged in)
+appwrite client --project-id <ID>
+appwrite users get --user-id <ID> --json
 
-# Verify by fetching project info
-appwrite projects get --project-id "<PROJECT_ID>"
+# Bad — one-off that litters a repo
+cd ~/some-unrelated-app && appwrite init project
 ```
 
-## Configuration
+No session? `appwrite client --endpoint https://<REGION>.cloud.appwrite.io/v1 --key "$APPWRITE_API_KEY" --project-id <ID>`.
+
+`appwrite client --project-id` writes `appwrite.config.json` in this directory (or updates one found walking up). That is how you link a folder quickly. Do not run it at the root of an unrelated repo. `APPWRITE_PROJECT_ID` / `APPWRITE_ENDPOINT` override the file without touching it — use those when you are already inside a project and need a one-shot against something else.
+
+## Auth is not the project
+
+| Layer | Lives in | Set with |
+|---|---|---|
+| Who you are (session or API key) | global CLI prefs | `appwrite login` or `appwrite client --key` |
+| Which project | `appwrite.config.json` | `init project`, `pull`, or `client --project-id` |
+
+`init project` talks to the **console**. It needs a login session. An API key cannot list organizations.
 
 ```bash
-# Authenticate with Appwrite
-appwrite login
+# Good — CI against a checked-in config
+appwrite client --key "$APPWRITE_API_KEY"
+appwrite push function --force
+
+# Bad — CI that bakes the key into the repo
+appwrite client --key 'standard_....'
+# and commits appwrite.config.json with secrets inside
 ```
 
-> For the full list of CLI commands, see [CLI Commands](https://appwrite.io/docs/tooling/command-line/commands).
-> For headless / CI/CD usage, see [Non-Interactive Mode](https://appwrite.io/docs/tooling/command-line/non-interactive).
+Env beats the config: `APPWRITE_PROJECT_ID`, `APPWRITE_ENDPOINT`, `APPWRITE_ORGANIZATION_ID`. Check in the config (no secrets). Put keys in the environment.
 
-## appwrite.config.json
+`--force` skips prompts. Agents and CI have no TTY, so a push that needs confirmation fails without it (`Pass --force instead`). Ask the user, then pass `--force`. Do not use it to skip a change table whose local column is empty.
 
-All resources are configured in a single `appwrite.config.json` file at the project root:
+`appwrite login --switch` rotates saved accounts. `appwrite client --debug` prints the effective endpoint/project with credentials masked. `appwrite client --reset` signs out of everything.
 
-```json
-{
-    "projectId": "<PROJECT_ID>",
-    "endpoint": "https://<REGION>.cloud.appwrite.io/v1",
-    "functions": [],
-    "sites": [],
-    "tablesDB": [],
-    "tables": [],
-    "buckets": [],
-    "teams": [],
-    "topics": []
-}
-```
+## Cloud endpoints
 
-## Deploying Functions
+`appwrite whoami` showing `https://cloud.appwrite.io/v1` is the **account** login host. Leave it. Project API calls use the region host (`https://fra.cloud.appwrite.io/v1`, and so on). `init project` and `client --project-id` pin that region into the config. Self-hosted: one endpoint for both.
 
 ```bash
-# Create a new function
-appwrite init functions
+# Good — project work uses the config's regional endpoint
+cat appwrite.config.json   # "endpoint": "https://fra.cloud.appwrite.io/v1"
 
-# Pull existing functions from Console
-appwrite pull functions
-
-# Deploy functions
-appwrite push functions
+# Bad — "fixing" whoami
+appwrite client --endpoint https://fra.cloud.appwrite.io/v1
+# now login/session calls go to a region host they do not belong on
 ```
 
-### Function configuration in appwrite.config.json
+## Schema vs rows
 
-```json
-{
-    "functions": [
-        {
-            "$id": "<FUNCTION_ID>",
-            "name": "userAuth",
-            "enabled": true,
-            "live": true,
-            "logging": true,
-            "runtime": "node-18.0",
-            "deployment": "<DEPLOYMENT_ID>",
-            "vars": [],
-            "events": [],
-            "schedule": "",
-            "timeout": 15,
-            "entrypoint": "userAuth.js",
-            "commands": "npm install",
-            "version": "v3",
-            "path": "functions/userAuth"
-        }
-    ]
-}
+| Pull / push (config) | Service commands (not in the config) |
+|---|---|
+| settings, functions, sites, tables and columns, buckets, teams, webhooks, topics | rows, users, files, executions, messages |
+
+If it should survive a fresh clone, it belongs in the config. Edit the file, then push. Creating the same resources with `tablesdb create-*` or `functions create` bypasses the file the next `pull` / `push` expects.
+
+`databases` is deprecated. Use `tablesdb` and `push table`.
+
+If the change table shows remote values against empty local, the config is missing those fields. Pull that resource, then push. Do not `--force` through it, and do not pull everything as a ritual — `pull settings` is slow.
+
+```text
+   id            │ key             │ remote │ local
+  ───────────────┼─────────────────┼────────┼───────
+   Service       │ account         │ true   │
+   Auth method   │ email-password  │ true   │
 ```
-
-### Function commands
-
-| Command | Description |
-|---------|-------------|
-| `appwrite functions list` | List all functions |
-| `appwrite functions create` | Create a new function |
-| `appwrite functions get --function-id <ID>` | Get a function by ID |
-| `appwrite functions update --function-id <ID>` | Update a function |
-| `appwrite functions delete --function-id <ID>` | Delete a function |
-| `appwrite functions list-runtimes` | List all active runtimes |
-| `appwrite functions list-deployments --function-id <ID>` | List deployments |
-| `appwrite functions create-deployment --function-id <ID>` | Upload a new deployment |
-| `appwrite functions update-deployment --function-id <ID> --deployment-id <ID>` | Set active deployment |
-| `appwrite functions delete-deployment --function-id <ID> --deployment-id <ID>` | Delete a deployment |
-| `appwrite functions download-deployment --function-id <ID> --deployment-id <ID>` | Download deployment |
-| `appwrite functions create-execution --function-id <ID>` | Trigger execution |
-| `appwrite functions list-executions --function-id <ID>` | List execution logs |
-| `appwrite functions get-execution --function-id <ID> --execution-id <ID>` | Get execution log |
-| `appwrite functions list-variables --function-id <ID>` | List variables |
-| `appwrite functions create-variable --function-id <ID> --key <KEY> --value <VALUE>` | Create variable |
-| `appwrite functions update-variable --function-id <ID> --variable-id <ID> --key <KEY> --value <VALUE>` | Update variable |
-| `appwrite functions delete-variable --function-id <ID> --variable-id <ID>` | Delete variable |
-
-### Trigger a function with body
 
 ```bash
-appwrite functions create-execution \
-    --function-id <FUNCTION_ID> \
-    --body '{"key": "value"}'
+# Good — local column was empty, so sync first, then push
+appwrite pull settings
+appwrite push settings --force
+
+# Bad — empty local, forced through
+appwrite push settings --force
 ```
 
-### Local development
+`push all --all --force` pushes every resource. Scope it (`push function --function-id api`) unless you mean that.
+
+`unique()` is fine for a one-shot row or user. Resources you will push need a **stable** `$id` in the config so the next pull matches.
+
+## Type-safe application code
+
+When writing application code against TablesDB, inspect `appwrite.config.json` before inventing interfaces, database IDs, table IDs, or column names. The generators read the local config; they do not inspect the remote schema. A stale config produces stale code.
+
+If the remote schema is the source of truth, update the config first with `appwrite pull table`. Do not pull over local, unpushed schema edits. If the local config is ahead, generate from it as-is.
+
+For TypeScript, prefer `appwrite generate`. It emits a complete TablesDB wrapper: database and table choices, create/update payloads, returned rows, query fields, and query values are checked by TypeScript. This is stronger than generated model interfaces alone.
 
 ```bash
-appwrite run functions
-```
-
-## Deploying Sites
-
-```bash
-# Create a new site
-appwrite init sites
-
-# Pull existing sites from Console
-appwrite pull sites
-
-# Deploy sites
-appwrite push sites
-```
-
-### Site configuration in appwrite.config.json
-
-```json
-{
-    "sites": [
-        {
-            "$id": "<SITE_ID>",
-            "name": "Documentation template",
-            "enabled": true,
-            "logging": true,
-            "framework": "astro",
-            "timeout": 30,
-            "installCommand": "npm install",
-            "buildCommand": "npm run build",
-            "outputDirectory": "./dist",
-            "specification": "s-1vcpu-512mb",
-            "buildRuntime": "node-22",
-            "adapter": "ssr",
-            "fallbackFile": "",
-            "path": "sites/documentation-template"
-        }
-    ]
-}
-```
-
-### Site commands
-
-| Command | Description |
-|---------|-------------|
-| `appwrite sites list` | List all sites |
-| `appwrite sites create` | Create a new site |
-| `appwrite sites get --site-id <ID>` | Get a site by ID |
-| `appwrite sites update --site-id <ID>` | Update a site |
-| `appwrite sites delete --site-id <ID>` | Delete a site |
-| `appwrite sites list-frameworks` | List available frameworks |
-| `appwrite sites list-specifications` | List allowed specs |
-| `appwrite sites list-templates` | List available templates |
-| `appwrite sites get-template --template-id <ID>` | Get template details |
-| `appwrite sites list-deployments --site-id <ID>` | List deployments |
-| `appwrite sites create-deployment --site-id <ID>` | Create deployment |
-| `appwrite sites get-deployment --site-id <ID> --deployment-id <ID>` | Get deployment |
-| `appwrite sites delete-deployment --site-id <ID> --deployment-id <ID>` | Delete deployment |
-| `appwrite sites update-site-deployment --site-id <ID> --deployment-id <ID>` | Set active deployment |
-| `appwrite sites update-deployment-status --site-id <ID> --deployment-id <ID>` | Cancel ongoing build |
-| `appwrite sites list-variables --site-id <ID>` | List variables |
-| `appwrite sites create-variable --site-id <ID> --key <KEY> --value <VALUE>` | Create variable |
-| `appwrite sites update-variable --site-id <ID> --variable-id <ID> --key <KEY> --value <VALUE>` | Update variable |
-| `appwrite sites delete-variable --site-id <ID> --variable-id <ID>` | Delete variable |
-| `appwrite sites list-logs --site-id <ID>` | List request logs |
-| `appwrite sites get-log --site-id <ID> --log-id <ID>` | Get a log |
-| `appwrite sites delete-log --site-id <ID> --log-id <ID>` | Delete a log |
-
-## Managing Tables (Databases)
-
-```bash
-# Create a new table
-appwrite init tables
-
-# Pull existing tables from Console
-appwrite pull tables
-
-# Deploy tables
-appwrite push tables
-```
-
-### Table configuration in appwrite.config.json
-
-```json
-{
-    "tablesDB": [
-        {
-            "$id": "<DATABASE_ID>",
-            "name": "songs",
-            "enabled": true
-        }
-    ],
-    "tables": [
-        {
-            "$id": "<TABLE_ID>",
-            "$permissions": ["create(\"any\")", "read(\"any\")"],
-            "databaseId": "<DATABASE_ID>",
-            "name": "music",
-            "enabled": true,
-            "rowSecurity": false,
-            "columns": [
-                {
-                    "key": "title",
-                    "type": "varchar",
-                    "required": true,
-                    "size": 255
-                }
-            ],
-            "indexes": []
-        }
-    ]
-}
-```
-
-### Database commands (TablesDB)
-
-| Command | Description |
-|---------|-------------|
-| `appwrite tables-db list-tables --database-id <ID>` | List tables |
-| `appwrite tables-db create-table --database-id <ID>` | Create table |
-| `appwrite tables-db get-table --database-id <ID> --table-id <ID>` | Get table |
-| `appwrite tables-db update-table --database-id <ID> --table-id <ID>` | Update table |
-| `appwrite tables-db delete-table --database-id <ID> --table-id <ID>` | Delete table |
-| `appwrite tables-db list-columns --database-id <ID> --table-id <ID>` | List columns |
-| `appwrite tables-db get-column --database-id <ID> --table-id <ID> --key <KEY>` | Get column |
-| `appwrite tables-db delete-column --database-id <ID> --table-id <ID> --key <KEY>` | Delete column |
-| `appwrite tables-db list-column-indexes --database-id <ID> --table-id <ID>` | List indexes |
-| `appwrite tables-db create-column-index --database-id <ID> --table-id <ID>` | Create index |
-| `appwrite tables-db delete-column-index --database-id <ID> --table-id <ID> --key <KEY>` | Delete index |
-
-### Column type commands
-
-> **Note:** The legacy `string` type is deprecated. Use explicit string column types instead.
-
-| Command | Description |
-|---------|-------------|
-| `create-varchar-column` | Varchar column — inline storage, fully indexable (max 16,383 chars, size ≤ 768 for full index) |
-| `create-text-column` | Text column — off-page storage, prefix index only (max 16,383 chars) |
-| `create-mediumtext-column` | Mediumtext column — off-page storage (max ~4M chars) |
-| `create-longtext-column` | Longtext column — off-page storage (max ~1B chars) |
-| `create-boolean-column` | Boolean column |
-| `create-integer-column` | Integer column (optional min/max) |
-| `create-float-column` | Float column (optional min/max) |
-| `create-email-column` | Email column |
-| `create-url-column` | URL column |
-| `create-ip-column` | IP address column |
-| `create-datetime-column` | Datetime column (ISO 8601) |
-| `create-enum-column` | Enum column (whitelist of accepted values) |
-| `create-relationship-column` | Relationship column |
-
-All column commands use `appwrite tables-db <command> --database-id <ID> --table-id <ID>`.
-
-### Row operations
-
-```bash
-# Create a row
-appwrite tables-db create-row \
-    --database-id "<DATABASE_ID>" --table-id "<TABLE_ID>" \
-    --row-id 'unique()' --data '{ "title": "Hello World" }' \
-    --permissions 'read("any")' 'write("team:abc")'
-
-# List rows (JSON output)
-appwrite tables-db list-rows \
-    --database-id "<DATABASE_ID>" --table-id "<TABLE_ID>" --json
-
-# Get a row
-appwrite tables-db get-row \
-    --database-id "<DATABASE_ID>" --table-id "<TABLE_ID>" --row-id "<ROW_ID>"
-```
-
-### Server-Side Bulk Operations & Transactions
-
-Bulk operations (`createRows`, `updateRows`, `upsertRows`, `deleteRows`) allow manipulating multiple rows in a single API call from Server SDKs (Node.js, Deno, Python, etc.) or Appwrite Cloud Functions:
-
-- **Atomic Behavior**: All-or-nothing (if 1 row fails, the entire bulk request rolls back).
-- **Limits**: Free (100 rows/request), Pro (1,000 rows/request).
-- **Custom Timestamps**: `$createdAt` and `$updatedAt` ISO date-time strings can be specified in each row payload.
-- **Transactions**: All bulk methods accept optional `transactionId` for atomic multi-step workflow staging.
-
-```javascript
-// Example Server SDK (Node.js) Bulk Operations
-const tablesDB = new sdk.TablesDB(client);
-
-// Create rows
-await tablesDB.createRows({
-  databaseId: '<DATABASE_ID>',
-  tableId: '<TABLE_ID>',
-  rows: [
-    { $id: sdk.ID.unique(), name: 'Row 1' },
-    { $id: sdk.ID.unique(), name: 'Row 2' }
-  ]
-});
-
-// Upsert rows (Insert new or update existing row ID)
-await tablesDB.upsertRows({
-  databaseId: '<DATABASE_ID>',
-  tableId: '<TABLE_ID>',
-  rows: [
-    { $id: sdk.ID.unique(), name: 'New Row' },
-    { $id: 'existing-id-123', name: 'Updated Row' }
-  ]
-});
-
-// Update rows by query
-await tablesDB.updateRows({
-  databaseId: '<DATABASE_ID>',
-  tableId: '<TABLE_ID>',
-  data: { status: 'published' },
-  queries: [sdk.Query.equal('status', 'draft')]
-});
-
-// Delete rows by query
-await tablesDB.deleteRows({
-  databaseId: '<DATABASE_ID>',
-  tableId: '<TABLE_ID>',
-  queries: [sdk.Query.equal('status', 'archived')]
-});
-```
-
-## Managing Buckets (Storage)
-
-```bash
-# Create a new bucket
-appwrite init buckets
-
-# Pull existing buckets from Console
-appwrite pull buckets
-
-# Deploy buckets
-appwrite push buckets
-```
-
-### Storage commands
-
-| Command | Description |
-|---------|-------------|
-| `appwrite storage list-buckets` | List all buckets |
-| `appwrite storage create-bucket` | Create a bucket |
-| `appwrite storage get-bucket --bucket-id <ID>` | Get a bucket |
-| `appwrite storage update-bucket --bucket-id <ID>` | Update a bucket |
-| `appwrite storage delete-bucket --bucket-id <ID>` | Delete a bucket |
-| `appwrite storage list-files --bucket-id <ID>` | List files |
-| `appwrite storage create-file --bucket-id <ID>` | Upload a file |
-| `appwrite storage get-file --bucket-id <ID> --file-id <ID>` | Get file metadata |
-| `appwrite storage delete-file --bucket-id <ID> --file-id <ID>` | Delete a file |
-| `appwrite storage get-file-download --bucket-id <ID> --file-id <ID>` | Download a file |
-| `appwrite storage get-file-preview --bucket-id <ID> --file-id <ID>` | Get image preview |
-| `appwrite storage get-file-view --bucket-id <ID> --file-id <ID>` | View file in browser |
-
-## Managing Teams
-
-```bash
-# Create a new team
-appwrite init teams
-
-# Pull existing teams from Console
-appwrite pull teams
-
-# Deploy teams
-appwrite push teams
-```
-
-### Team commands
-
-| Command | Description |
-|---------|-------------|
-| `appwrite teams list` | List all teams |
-| `appwrite teams create` | Create a team |
-| `appwrite teams get --team-id <ID>` | Get a team |
-| `appwrite teams update-name --team-id <ID>` | Update team name |
-| `appwrite teams delete --team-id <ID>` | Delete a team |
-| `appwrite teams list-memberships --team-id <ID>` | List members |
-| `appwrite teams create-membership --team-id <ID>` | Invite a member |
-| `appwrite teams update-membership --team-id <ID> --membership-id <ID>` | Update member roles |
-| `appwrite teams delete-membership --team-id <ID> --membership-id <ID>` | Remove a member |
-| `appwrite teams get-prefs --team-id <ID>` | Get team preferences |
-| `appwrite teams update-prefs --team-id <ID>` | Update team preferences |
-
-## Managing Topics (Messaging)
-
-```bash
-# Create a new topic
-appwrite init topics
-
-# Pull existing topics from Console
-appwrite pull topics
-
-# Deploy topics
-appwrite push topics
-```
-
-### Messaging commands
-
-| Command | Description |
-|---------|-------------|
-| `appwrite messaging list-messages` | List all messages |
-| `appwrite messaging create-email` | Create email message |
-| `appwrite messaging create-push` | Create push notification |
-| `appwrite messaging create-sms` | Create SMS message |
-| `appwrite messaging get-message --message-id <ID>` | Get a message |
-| `appwrite messaging delete --message-id <ID>` | Delete a message |
-| `appwrite messaging list-topics` | List all topics |
-| `appwrite messaging create-topic` | Create a topic |
-| `appwrite messaging get-topic --topic-id <ID>` | Get a topic |
-| `appwrite messaging update-topic --topic-id <ID>` | Update a topic |
-| `appwrite messaging delete-topic --topic-id <ID>` | Delete a topic |
-| `appwrite messaging list-subscribers --topic-id <ID>` | List subscribers |
-| `appwrite messaging create-subscriber --topic-id <ID>` | Add subscriber |
-| `appwrite messaging delete-subscriber --topic-id <ID> --subscriber-id <ID>` | Remove subscriber |
-
-## User Management
-
-```bash
-# Create a user
-appwrite users create --user-id "unique()" \
-    --email hello@appwrite.io
-
-# List users
-appwrite users list
-
-# Get a user
-appwrite users get --user-id "<USER_ID>"
-
-# Delete a user
-appwrite users delete --user-id "<USER_ID>"
-```
-
-## Generate Type-Safe SDK
-
-```bash
-# Auto-detect language and generate
 appwrite generate
-
-# Specify output directory
-appwrite generate --output ./src/generated
-
-# Specify language
-appwrite generate --language typescript
 ```
 
-Generated files:
-
-| File | Description |
-|------|-------------|
-| `types.ts` | Type definitions from your database schema |
-| `databases.ts` | Typed database helpers for querying and mutating rows |
-| `constants.ts` | Configuration constants (endpoint, project ID) |
-| `index.ts` | Entry point that exports all helpers |
-
-Usage:
+Use the generated API instead of dropping back to raw string IDs and handwritten payload types:
 
 ```typescript
-import { databases } from "./generated/appwrite";
+import { databases, type Songs } from "./generated/appwrite/index.js";
 
-const customers = databases.use("main").use("customers");
+// Database lookup uses its ID; table lookup uses its name from the config.
+const songs = databases.use("main").use("Songs");
 
-// Create
-const customer = await customers.create({
-    name: "Walter O' Brian",
-    email: "walter@example.com"
+const page = await songs.list({
+  queries: (query) => [
+    query.equal("published", true),
+    query.orderDesc("createdAt"),
+    query.limit(20),
+  ],
 });
 
-// List with typed queries
-const results = await customers.list({
-    queries: (q) => [
-        q.equal("name", "Walter O' Brian"),
-        q.orderDesc("$createdAt"),
-        q.limit(10)
-    ]
-});
-
-// Update
-await customers.update("customer-id-123", {
-    email: "walter@scorpion.com"
-});
-
-// Delete
-await customers.delete("customer-id-123");
-
-// Bulk create
-await customers.createMany([
-    { name: "Walter O' Brian", email: "walter@example.com" },
-    { name: "Paige Dineen", email: "paige@example.com" }
-]);
+const first: Songs | undefined = page.rows[0];
 ```
 
-## Non-Interactive / CI/CD Mode
+Do not guess the literals in that example: read the generated types or the config. In particular, `.use()` for a table takes its `name`, which may differ from its `$id`. Let compilation expose a misspelled table, column, or wrong query value. Run the project's type checker after generation.
 
-For headless automation, see the [Non-Interactive Mode docs](https://appwrite.io/docs/tooling/command-line/non-interactive).
+`generate` currently provides the full wrapper for TypeScript. It detects client versus server output from the installed Appwrite package. Server output reads `APPWRITE_API_KEY`; never put that key in generated constants or commit it. Override language, import source, module extension, or client/server mode only when detection is wrong—read `appwrite generate --help` for those flags.
 
-### Deploy non-interactively
+For another supported language, or when the project deliberately uses the regular SDK directly, use `appwrite types <output-directory>`. It supports TypeScript (`ts`), JavaScript (`js`), PHP (`php`), Kotlin (`kotlin`), Swift (`swift`), Java (`java`), Dart (`dart`), and C# (`cs`). Pass these short values to `--language`; names such as `typescript` and `csharp` are not the command's accepted values. Generated files type row data, but they do **not** type-check raw database/table IDs or `Query` calls:
+
+For TypeScript, pass a `.ts` destination when the result will be imported as a module. Passing a directory instead creates `appwrite.d.ts` inside it.
 
 ```bash
-# Push everything
-appwrite push all --all --force
-
-# Push specific resources
-appwrite push functions --all --force
-appwrite push functions --function-id <FUNCTION_ID> --force
-appwrite push sites --all --force
-appwrite push tables --all --force
-appwrite push teams --all --force
-appwrite push buckets --all --force
-appwrite push topics --all --force
+appwrite types ./src/appwrite-types.ts --language ts
 ```
 
-## Global Command Options
+```typescript
+import { Client, TablesDB } from "appwrite";
+import type { Songs } from "./appwrite-types.js";
 
-| Option | Description |
-|--------|-------------|
-| `-v, --version` | Output version number |
-| `-V, --verbose` | Show complete error log |
-| `-j, --json` | Output in JSON format |
-| `-f, --force` | Confirm all warnings |
-| `-a, --all` | Select all resources |
-| `--id [id...]` | Pass a list of IDs |
-| `--report` | Generate GitHub error report link |
-| `--console` | Get direct link to Console |
-| `--open` | Open Console link in browser |
-| `-h, --help` | Display help |
+// Read these values from appwrite.config.json and expose them through the
+// application's existing configuration mechanism.
+const client = new Client()
+  .setEndpoint("https://<REGION>.cloud.appwrite.io/v1")
+  .setProject("<PROJECT_ID>");
+const tablesDB = new TablesDB(client);
 
-## Examples
+const page = await tablesDB.listRows<Songs>({
+  databaseId: "main", // still an unchecked string
+  tableId: "songs",  // still an unchecked string
+});
+```
+
+Do not describe `types --strict` as “full type safety.” It only converts field names to the target language's naming conventions. Use `generate` when a fully typed TypeScript table API is the goal.
+
+Generated code is derived output. Do not patch it to fix a schema or naming problem; fix `appwrite.config.json` or the generator inputs and regenerate. After every table or column change, rerun the same generation command the repository uses and run its formatter/type checker. Preserve the repository's existing output path and check-in convention.
+
+## Functions and sites
+
+Variables live in `<path>/.env`, not in `appwrite.config.json`. `--with-variables` **replaces** the remote set from that file. Omit it unless you intend to sync secrets.
 
 ```bash
-# List users with JSON output
-appwrite users list --json
+# Good — ship code, leave remote vars alone
+appwrite push function --function-id api --activate --force
 
-# Get verbose error output
-appwrite users list --verbose
+# Bad — remote vars you did not list locally are gone
+appwrite push function --function-id api --with-variables --force
 
-# View a row in the Console
-appwrite tables-db get-row \
-    --database-id "<DATABASE_ID>" \
-    --table-id "<TABLE_ID>" \
-    --row-id "<ROW_ID>" \
-    --console --open
-
-# Generate error report
-appwrite login --report
+# Good — deploy without switching live traffic
+appwrite push function --function-id api --activate=false --force
 ```
+
+`--async` returns before the build finishes. Local: `appwrite run function`.
+
+## Queries and output
+
+Prefer `--filter`, `--sort-asc` / `--sort-desc`, `--limit`, `--select`, `--cursor-after`. `--where` is deprecated. `--queries` only for Query JSON the flags cannot express.
+
+```bash
+# Good
+appwrite users list \
+  --filter 'emailVerification=true' \
+  --sort-desc '$createdAt' \
+  --limit 20 \
+  --json
+
+# Bad
+appwrite users list --queries '[{"method":"equal","attribute":"emailVerification","values":[true]}]'
+```
+
+`--filter` parses `true` / `false` / `null`, numbers, and JSON arrays. Repeat the flag to AND. List pages cap at 100; prefer `--cursor-after <lastId>` over a large `--offset`.
+
+`--json` for scripts (empty fields dropped). `--raw` for the unfiltered payload. Secrets stay redacted unless `--show-secrets`.
+
+## The config file itself
+
+The CLI walks **up** from cwd looking for `appwrite.config.json` (or the legacy `appwrite.json`). `push` from `functions/api/` still hits the project root. A stray config in a parent directory will capture you.
+
+Split large projects with `includes` — each value is a relative `.json` array. A resource cannot be both inline and included. Function and site `path` values resolve relative to the include file, not the repo root.
+
+Do not invent the file from memory. `init project` or `pull` writes a valid one. Then edit.
