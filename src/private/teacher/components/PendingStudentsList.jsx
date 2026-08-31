@@ -57,14 +57,14 @@ export default function PendingStudentsList({ status = "pending", selectedBatch 
       
       const uniqueStudentIds = [...new Set(requests.map(r => r.studentId))];
       
-      const profilesRes = await userProfileService.database.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [Query.equal("userId", uniqueStudentIds), Query.limit(100)]
-      );
+      const profilesRes = await userProfileService.database.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        queries: [Query.equal("userId", uniqueStudentIds), Query.limit(100)]
+      });
       
       const profileMap = {};
-      profilesRes.documents.forEach(p => {
+      (profilesRes.rows || profilesRes.documents || []).forEach(p => {
         profileMap[p.userId] = p;
       });
       

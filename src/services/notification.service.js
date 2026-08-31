@@ -1,5 +1,5 @@
 import { ID, Query } from "appwrite";
-import { databases } from "@/services/appwriteClient";
+import { tablesDb } from "@/services/appwriteClient";
 import conf from "@/config/config";
 import PermissionBuilder from "@/utils/permissionBuilder";
 
@@ -13,11 +13,11 @@ class NotificationService {
     try {
       const permissions = teamId ? PermissionBuilder.message(teamId) : undefined;
 
-      return await databases.createDocument(
-        this.databaseId,
-        this.collectionId,
-        ID.unique(),
-        {
+      return await tablesDb.createRow({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        rowId: ID.unique(),
+        data: {
           message,
           type,
           batchId,
@@ -26,7 +26,7 @@ class NotificationService {
           readBy: []
         },
         permissions
-      );
+      });
     } catch (error) {
       console.error("Error creating notification", error);
       throw error;
@@ -47,12 +47,12 @@ class NotificationService {
     try {
       const payload = { readBy: [] };
       if (newMessage) payload.message = newMessage;
-      return await databases.updateDocument(
-        this.databaseId,
-        this.collectionId,
-        notificationId,
-        payload
-      );
+      return await tablesDb.updateRow({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        rowId: notificationId,
+        data: payload
+      });
     } catch (error) {
       console.error("Error re-notifying batch", error);
       throw error;
@@ -61,12 +61,12 @@ class NotificationService {
 
   async updateNotification(notificationId, payload) {
     try {
-      return await databases.updateDocument(
-        this.databaseId,
-        this.collectionId,
-        notificationId,
-        payload
-      );
+      return await tablesDb.updateRow({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        rowId: notificationId,
+        data: payload
+      });
     } catch (error) {
       console.error("Error updating notification", error);
       throw error;
@@ -76,16 +76,16 @@ class NotificationService {
   async getNotificationsByBatch(batchIds) {
     if (!batchIds || batchIds.length === 0) return [];
     try {
-      const response = await databases.listDocuments(
-        this.databaseId,
-        this.collectionId,
-        [
+      const response = await tablesDb.listRows({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        queries: [
           Query.equal("batchId", batchIds),
           Query.orderDesc("$createdAt"),
           Query.limit(50)
         ]
-      );
-      return response.documents;
+      });
+      return response.rows || response.documents || [];
     } catch (error) {
       console.error("Error getting notifications", error);
       throw error;
@@ -95,21 +95,21 @@ class NotificationService {
   async markAsRead(notificationId, studentId) {
     try {
       // First get current readBy array
-      const notification = await databases.getDocument(
-        this.databaseId,
-        this.collectionId,
-        notificationId
-      );
+      const notification = await tablesDb.getRow({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        rowId: notificationId
+      });
 
       const readBy = notification.readBy || [];
       if (!readBy.includes(studentId)) {
         readBy.push(studentId);
-        return await databases.updateDocument(
-          this.databaseId,
-          this.collectionId,
-          notificationId,
-          { readBy }
-        );
+        return await tablesDb.updateRow({
+          databaseId: this.databaseId,
+          tableId: this.collectionId,
+          rowId: notificationId,
+          data: { readBy }
+        });
       }
       return notification;
     } catch (error) {

@@ -34,7 +34,7 @@ import userProfileService from "@/appwrite/userProfileService";
  * @returns {Promise<{fixed: number, scanned: number, errors: string[], changes: Array}>}
  */
 export async function runApprovalDataFix() {
-  const db = appwriteService.getDatabases();
+  const db = appwriteService.getTablesDB();
   const report = {
     scanned: 0,
     fixed: 0,
@@ -49,13 +49,13 @@ export async function runApprovalDataFix() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await db.listDocuments(
-        conf.databaseId,
-        conf.userProfilesCollectionId,
-        [Query.limit(limit), Query.offset(offset)]
-      );
+      const res = await db.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.userProfilesCollectionId,
+        queries: [Query.limit(limit), Query.offset(offset)],
+      });
 
-      const docs = res.documents;
+      const docs = res.rows || res.documents || [];
       report.scanned += docs.length;
 
       for (const doc of docs) {

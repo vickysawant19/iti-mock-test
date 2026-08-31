@@ -302,14 +302,14 @@ export class GameService extends DatabaseService {
         console.warn("[GameService] Failed to read from localStorage", err);
       }
 
-      const { databases } = await import("./appwriteClient");
+      const { tablesDb } = await import("./appwriteClient");
 
       if (total === null) {
-        const countRes = await databases.listDocuments(
-          conf.databaseId,
-          conf.quesCollectionId,
-          [...baseQueries, Query.limit(1), Query.select(["$id"])]
-        );
+        const countRes = await tablesDb.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.quesCollectionId,
+          queries: [...baseQueries, Query.limit(1), Query.select(["$id"])],
+        });
         total = countRes.total;
         
         try {
@@ -339,11 +339,11 @@ export class GameService extends DatabaseService {
         }
 
         if (backupTotal === null) {
-          const backupRes = await databases.listDocuments(
-            conf.databaseId,
-            conf.quesCollectionId,
-            [Query.equal("tradeId", tradeId), Query.limit(1), Query.select(["$id"])]
-          );
+          const backupRes = await tablesDb.listRows({
+            databaseId: conf.databaseId,
+            tableId: conf.quesCollectionId,
+            queries: [Query.equal("tradeId", tradeId), Query.limit(1), Query.select(["$id"])],
+          });
           backupTotal = backupRes.total;
           
           try {
@@ -359,23 +359,23 @@ export class GameService extends DatabaseService {
         if (backupTotal === 0) return null;
         
         const randomOffset = Math.floor(Math.random() * backupTotal);
-        const finalRes = await databases.listDocuments(
-          conf.databaseId,
-          conf.quesCollectionId,
-          [Query.equal("tradeId", tradeId), Query.limit(1), Query.offset(randomOffset)]
-        );
-        return finalRes.documents[0] || null;
+        const finalRes = await tablesDb.listRows({
+          databaseId: conf.databaseId,
+          tableId: conf.quesCollectionId,
+          queries: [Query.equal("tradeId", tradeId), Query.limit(1), Query.offset(randomOffset)],
+        });
+        return (finalRes.rows || (finalRes as any).documents)?.[0] || null;
       }
 
       // Step 2: Generate random offset & get question
       const randomOffset = Math.floor(Math.random() * total);
-      const finalRes = await databases.listDocuments(
-        conf.databaseId,
-        conf.quesCollectionId,
-        [...baseQueries, Query.limit(1), Query.offset(randomOffset)]
-      );
+      const finalRes = await tablesDb.listRows({
+        databaseId: conf.databaseId,
+        tableId: conf.quesCollectionId,
+        queries: [...baseQueries, Query.limit(1), Query.offset(randomOffset)],
+      });
 
-      return finalRes.documents[0] || null;
+      return (finalRes.rows || (finalRes as any).documents)?.[0] || null;
     } catch (error) {
       console.error("[GameService] getRandomQuestion failed:", error);
       return null;
@@ -634,7 +634,7 @@ export class GameService extends DatabaseService {
 
     if (stats.$id) {
       try {
-        const { databases } = await import("./appwriteClient");
+        const { tablesDb } = await import("./appwriteClient");
         const updatePayload: any = {
           xp: stats.xp,
           coins: stats.coins,
@@ -645,12 +645,12 @@ export class GameService extends DatabaseService {
         if (usedExtraSpin) {
           updatePayload.unlockedCosmetics = stats.unlockedCosmetics;
         }
-        const updated = await databases.updateDocument(
-          conf.databaseId,
-          conf.gameStatsCollectionId,
-          stats.$id,
-          updatePayload
-        );
+        const updated = await tablesDb.updateRow({
+          databaseId: conf.databaseId,
+          tableId: conf.gameStatsCollectionId,
+          rowId: stats.$id,
+          data: updatePayload,
+        });
         return updated as unknown as StudentGameStats;
       } catch (err: any) {
         console.warn(
@@ -750,14 +750,14 @@ export class GameService extends DatabaseService {
     }
 
     try {
-      const { databases } = await import("./appwriteClient");
-      const response = await databases.listDocuments(
-        conf.databaseId,
-        "batch_game_settings",
-        [Query.equal("batchId", batchId), Query.limit(1)]
-      );
+      const { tablesDb } = await import("./appwriteClient");
+      const response = await tablesDb.listRows({
+        databaseId: conf.databaseId,
+        tableId: "batch_game_settings",
+        queries: [Query.equal("batchId", batchId), Query.limit(1)],
+      });
       if (response.total > 0) {
-        const settings = response.documents[0] as unknown as BatchGameSettings;
+        const settings = (response.rows || (response as any).documents)[0] as unknown as BatchGameSettings;
         if (typeof window !== "undefined") {
           localStorage.setItem(cacheKey, JSON.stringify(settings));
         }
@@ -785,17 +785,17 @@ export class GameService extends DatabaseService {
     }
 
     try {
-      const { databases } = await import("./appwriteClient");
+      const { tablesDb } = await import("./appwriteClient");
       
       let existingId = "";
       try {
-        const response = await databases.listDocuments(
-          conf.databaseId,
-          "batch_game_settings",
-          [Query.equal("batchId", batchId), Query.limit(1)]
-        );
+        const response = await tablesDb.listRows({
+          databaseId: conf.databaseId,
+          tableId: "batch_game_settings",
+          queries: [Query.equal("batchId", batchId), Query.limit(1)],
+        });
         if (response.total > 0) {
-          existingId = response.documents[0].$id;
+          existingId = (response.rows || (response as any).documents)[0].$id;
         }
       } catch (err) {
         console.warn("[GameService] Failed to check existing settings:", err);
@@ -803,20 +803,20 @@ export class GameService extends DatabaseService {
 
       let result: BatchGameSettings;
       if (existingId) {
-        const updated = await databases.updateDocument(
-          conf.databaseId,
-          "batch_game_settings",
-          existingId,
-          payload
-        );
+        const updated = await tablesDb.updateRow({
+          databaseId: conf.databaseId,
+          tableId: "batch_game_settings",
+          rowId: existingId,
+          data: payload,
+        });
         result = updated as unknown as BatchGameSettings;
       } else {
-        const created = await databases.createDocument(
-          conf.databaseId,
-          "batch_game_settings",
-          ID.unique(),
-          payload
-        );
+        const created = await tablesDb.createRow({
+          databaseId: conf.databaseId,
+          tableId: "batch_game_settings",
+          rowId: ID.unique(),
+          data: payload,
+        });
         result = created as unknown as BatchGameSettings;
       }
 

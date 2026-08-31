@@ -24,7 +24,8 @@ export class DailyDiaryService {
         tableId: this.collectionId,
         queries: queries
       });
-      return res.rows.map((doc) => doc.date);
+      const rows = res.rows || res.documents || [];
+      return rows.map((doc) => doc.date);
     } catch (error) {
       console.error(
         `Appwrite error fetching dates for practical ${practicalNumber}:`,
@@ -34,7 +35,7 @@ export class DailyDiaryService {
     }
   }
 
-  async createDocument(data, teamId = null) {
+  async createRow(data, teamId = null) {
     try {
       const activeTeamId = teamId || data.teamId;
       const permissions = activeTeamId ? PermissionBuilder.diary(activeTeamId) : undefined;
@@ -54,12 +55,12 @@ export class DailyDiaryService {
     }
   }
 
-  async updateDocument(documentId, updatedData) {
+  async updateRow(rowId, updatedData) {
     try {
       return await this.database.updateRow({
         databaseId: conf.databaseId,
         tableId: this.collectionId,
-        rowId: documentId,
+        rowId: rowId,
         data: updatedData
       });
     } catch (error) {
@@ -68,12 +69,12 @@ export class DailyDiaryService {
     }
   }
 
-  async deleteDocument(documentId) {
+  async deleteRow(rowId) {
     try {
       return await this.database.deleteRow({
         databaseId: conf.databaseId,
         tableId: this.collectionId,
-        rowId: documentId
+        rowId: rowId
       });
     } catch (error) {
       console.error("Appwrite error: deleting daily diary entry:", error);
@@ -81,16 +82,41 @@ export class DailyDiaryService {
     }
   }
 
+  // Modern entry aliases
+  async createEntry(data, teamId = null) {
+    return await this.createRow(data, teamId);
+  }
+
+  async updateEntry(rowId, updatedData) {
+    return await this.updateRow(rowId, updatedData);
+  }
+
+  async deleteEntry(rowId) {
+    return await this.deleteRow(rowId);
+  }
+
+  // Legacy method aliases for backward compatibility
+  async createDocument(data, teamId = null) {
+    return await this.createRow(data, teamId);
+  }
+
+  async updateDocument(documentId, updatedData) {
+    return await this.updateRow(documentId, updatedData);
+  }
+
+  async deleteDocument(documentId) {
+    return await this.deleteRow(documentId);
+  }
+
   async getBatchInstructorDiary(batchId, instructorId, startDate, endDate) {
     try {
       const queries = [
         Query.equal("batchId", batchId),
-        Query.limit(100), // Reverted back to 100 default
+        Query.limit(100),
       ];
 
       if (instructorId) {
-        // Query.equal("instructorId", instructorId) is optional depending on if we want ALL or just for this instructor
-        // We might just show all entries for the batch, but filter on client, or filter here.
+        // Query.equal("instructorId", instructorId) is optional
       }
 
       if (startDate && endDate) {
@@ -104,7 +130,7 @@ export class DailyDiaryService {
         queries: queries
       });
 
-      return res.rows;
+      return res.rows || res.documents || [];
     } catch (error) {
       console.error("Appwrite error: fetching daily diary:", error);
       return [];

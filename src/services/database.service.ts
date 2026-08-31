@@ -62,7 +62,11 @@ export class DatabaseService {
       }
 
       const response = await this.withRateLimitRetry(`listRows(${this.tableId})`, () =>
-        tablesDb.listRows(this.databaseId, this.tableId, activeQueries)
+        tablesDb.listRows({
+          databaseId: this.databaseId,
+          tableId: this.tableId,
+          queries: activeQueries
+        })
       );
 
       const rows = (response as any).rows || (response as any).documents || [];
@@ -88,10 +92,15 @@ export class DatabaseService {
     try {
       const queries = selectFields && selectFields.length > 0 
         ? [Query.select(selectFields)] 
-        : [];
+        : undefined;
 
       return await this.withRateLimitRetry(`getRow(${this.tableId}/${rowId})`, () =>
-        tablesDb.getRow(this.databaseId, this.tableId, rowId, queries)
+        tablesDb.getRow({
+          databaseId: this.databaseId,
+          tableId: this.tableId,
+          rowId: rowId,
+          queries: queries
+        })
       ) as T;
     } catch (error: any) {
       console.error(`Error in getRow (${this.tableId}/${rowId}):`, error);
@@ -109,13 +118,13 @@ export class DatabaseService {
   ): Promise<T> {
     try {
       return await this.withRateLimitRetry(`createRow(${this.tableId})`, () =>
-        tablesDb.createRow(
-          this.databaseId,
-          this.tableId,
-          customId || ID.unique(),
-          data,
-          permissions
-        )
+        tablesDb.createRow({
+          databaseId: this.databaseId,
+          tableId: this.tableId,
+          rowId: customId || ID.unique(),
+          data: data,
+          permissions: permissions
+        })
       ) as T;
     } catch (error: any) {
       console.error(`Error creating row in ${this.tableId}:`, error);
@@ -133,13 +142,13 @@ export class DatabaseService {
   ): Promise<T> {
     try {
       return await this.withRateLimitRetry(`updateRow(${this.tableId}/${rowId})`, () =>
-        tablesDb.updateRow(
-          this.databaseId,
-          this.tableId,
-          rowId,
-          data,
-          permissions
-        )
+        tablesDb.updateRow({
+          databaseId: this.databaseId,
+          tableId: this.tableId,
+          rowId: rowId,
+          data: data,
+          permissions: permissions
+        })
       ) as T;
     } catch (error: any) {
       console.error(`Error updating row (${this.tableId}/${rowId}):`, error);
@@ -153,7 +162,11 @@ export class DatabaseService {
   async deleteRow(rowId: string): Promise<boolean> {
     try {
       await this.withRateLimitRetry(`deleteRow(${this.tableId}/${rowId})`, () =>
-        tablesDb.deleteRow(this.databaseId, this.tableId, rowId)
+        tablesDb.deleteRow({
+          databaseId: this.databaseId,
+          tableId: this.tableId,
+          rowId: rowId
+        })
       );
       return true;
     } catch (error: any) {

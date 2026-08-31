@@ -69,7 +69,7 @@ export const DiaryTableRow = React.memo(({
     }
     setIsDeletingDiary(true);
     try {
-      await dailyDiaryService.deleteDocument(entry.$id);
+      await dailyDiaryService.deleteEntry(entry.$id);
       toast.success("Daily diary record deleted successfully");
       if (onUpdateEntry) {
         onUpdateEntry(dateKey, {
@@ -214,7 +214,7 @@ export const DiaryTableRow = React.memo(({
           : [];
 
       if (entry && entry.$id) {
-        const updatedDoc = await dailyDiaryService.updateDocument(entry.$id, {
+        const updatedDoc = await dailyDiaryService.updateEntry(entry.$id, {
           theoryWork: formData.theoryWork,
           practicalWork: formData.practicalWork,
           practicalNumbers: parsedPractical,
@@ -233,7 +233,7 @@ export const DiaryTableRow = React.memo(({
         }
 
         const dateISO = new Date(dateKey).toISOString();
-        const newDoc = await dailyDiaryService.createDocument({
+        const newDoc = await dailyDiaryService.createEntry({
           date: dateISO,
           theoryWork: formData.theoryWork,
           practicalWork: formData.practicalWork,
