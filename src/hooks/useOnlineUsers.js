@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Channel } from "appwrite";
-import { presenceService as presences, realtime } from "@/services/core/appwriteClient";
+import { presences, realtime } from "@/services/core/appwriteClient";
 
 // Global singleton state for online users to prevent duplicate network calls and WebSocket subscriptions
 let globalOnlineUsers = new Map();

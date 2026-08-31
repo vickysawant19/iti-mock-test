@@ -5,14 +5,12 @@ import { Permission, Role } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId, selectActiveBatch } from "@/store/activeBatchSlice";
-import { presenceClient } from "@/services/core/appwriteClient";
+import { presences } from "@/services/core/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
 const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
 const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
-
-const getPresenceResources = () => ({ presenceClient });
 
 /**
  * usePresence — manages the current user's live presence and tracks online/offline status of all users.
@@ -115,35 +113,20 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
     ).toISOString();
 
-    const { presenceClient } = getPresenceResources();
-
-    // CRITICAL: The client SDK's `presences.upsert` does not serialize `userId` in the HTTP payload.
-    // However, the Appwrite backend requires `userId` when using API key authentication.
-    // To resolve this, we bypass the SDK method and invoke `presenceClient.call` directly,
-    // explicitly providing the `userId` in the payload body.
-    const apiPath = `/presences/${encodeURIComponent(String(userId))}`;
-    const uri = new URL(presenceClient.config.endpoint + apiPath);
-    const apiHeaders = {
-      "X-Appwrite-Project": presenceClient.config.project,
-      "content-type": "application/json",
-      "accept": "application/json",
-    };
-    const payload = {
-      userId,
-      status,
-      expiresAt,
-      metadata: metadataRef.current,
-      permissions: [
-        // All users can read (see) this presence record
-        Permission.read(Role.users()),
-        // Only the owner can update or delete their own presence record
-        Permission.update(Role.user(userId)),
-        Permission.delete(Role.user(userId)),
-      ],
-    };
-
     try {
-      await presenceClient.call("put", uri, apiHeaders, payload);
+      await presences.upsert({
+        presenceId: String(userId),
+        status,
+        expiresAt,
+        metadata: metadataRef.current,
+        permissions: [
+          // All users can read (see) this presence record
+          Permission.read(Role.users()),
+          // Only the owner can update or delete their own presence record
+          Permission.update(Role.user(userId)),
+          Permission.delete(Role.user(userId)),
+        ],
+      });
     } catch (err) {
       const code = err?.code;
       if (code === 401 || code === 403 || code === 404) {
@@ -154,9 +137,9 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
         );
       } else {
         console.error("[usePresence] upsert failed:", {
-          code: err.code,
-          type: err.type,
-          message: err.message,
+          code: err?.code,
+          type: err?.type,
+          message: err?.message,
         });
       }
       setError(err);
@@ -166,20 +149,8 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   // ── Core Delete ───────────────────────────────────────────────────────────
   const deleteSelfPresence = useCallback(async (userIdToDelete) => {
     if (!userIdToDelete || disabledRef.current) return;
-    const { presenceClient } = getPresenceResources();
-    const apiPath = `/presences/${encodeURIComponent(String(userIdToDelete))}`;
-    const uri = new URL(presenceClient.config.endpoint + apiPath);
-    const apiHeaders = {
-      "X-Appwrite-Project": presenceClient.config.project,
-      "content-type": "application/json",
-      "accept": "application/json",
-    };
-    const payload = {
-      userId: userIdToDelete,
-    };
-
     try {
-      await presenceClient.call("delete", uri, apiHeaders, payload);
+      await presences.delete({ presenceId: String(userIdToDelete) });
     } catch (err) {
       // Ignore: session or presence record might already be gone on logout
     }

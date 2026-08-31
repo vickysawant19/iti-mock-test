@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+.env.local
+.env.*.local
+scratch/
+*.key
+key.txt
+scripts/files/key.txt

@@ -7,7 +7,7 @@ const BATCHES_COLLECTION_ID = process.env.VITE_BATCH_COLLECTION_ID || "66936df00
 const DAILY_DIARY_COLLECTION_ID = "dailyDiary";
 // Retrieve the API key from environment, or use hardcoded one from mcp session if it's missing in .env
 // You can also pass it when running: APPWRITE_API_KEY="..." node migrateDiary.js
-const API_KEY = process.env.APPWRITE_API_KEY || "standard_4bf0d5d7794a9461c152b76a3ca18b4ddaeea3f245ee36d482cbb057acd5dc459d162f76151402db724d35b10de165d04cc857a1e1fe2fb8978f3946421aa29b0efaf26ae79f4b55a43002da47d186e7d35d107800f16bf1c77632480a1547917186c5fdb756e18e08edd060c7f6157bce1adb11b81cb78de559042a548c5125";
+const API_KEY = process.env.APPWRITE_API_KEY || process.env.VITE_APPWRITE_API_KEY || "";
 const ENDPOINT = process.env.VITE_APPWRITE_URL || "https://cloud.appwrite.io/v1";
 
 const client = new Client()
