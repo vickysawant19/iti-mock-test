@@ -1,7 +1,7 @@
 import React from "react";
 import { Clock, Award, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import itimitraLogo from "@/assets/itimitra-logo.png";
+import itimitraLogo from "@/assets/itimitra-logo.webp";
 
 const MockTestGreet = ({ mockTest, handleStartExam, onShowInstructions }) => {
   const [accepted, setAccepted] = React.useState(false);

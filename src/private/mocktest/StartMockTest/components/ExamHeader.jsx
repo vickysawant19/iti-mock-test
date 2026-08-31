@@ -1,6 +1,6 @@
 import React from "react";
 import { Info, RotateCw } from "lucide-react";
-import itimitraLogo from "@/assets/itimitra-logo.png";
+import itimitraLogo from "@/assets/itimitra-logo.webp";
 
 /**
  * Government-exam-style fixed top header.

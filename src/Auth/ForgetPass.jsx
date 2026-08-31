@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import authService from "@/services/auth/auth.service";
-import authImg from "@/assets/auth-illustration.png";
+import authImg from "@/assets/auth-illustration.webp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

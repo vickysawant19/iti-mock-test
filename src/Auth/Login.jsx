@@ -7,7 +7,7 @@ import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { addUser, selectUser } from "@/store/userSlice";
-import authImg from "@/assets/auth-illustration.png";
+import authImg from "@/assets/auth-illustration.webp";
 import authService from "@/services/auth/auth.service";
 import userProfileService from "@/services/auth/userProfileService";
 import { addProfile, selectProfile } from "@/store/profileSlice";

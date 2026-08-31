@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import authService from "@/services/auth/auth.service";
 import { selectUser } from "@/store/userSlice";
-import authImg from "@/assets/auth-illustration.png";
+import authImg from "@/assets/auth-illustration.webp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

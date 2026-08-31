@@ -39,7 +39,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
 import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react";
-import logo from "@/assets/itimitra-logo.png"
+import logo from "@/assets/itimitra-logo.webp";
 
 // Import services and store actions
 import authService from "@/services/auth/auth.service";

@@ -6,11 +6,52 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            return "vendor";
+            if (
+              id.includes("react-dom") ||
+              id.includes("react-router-dom") ||
+              id.includes("@reduxjs") ||
+              id.includes("react-redux") ||
+              id.includes("react/")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("@google/genai")) {
+              return "vendor-genai";
+            }
+            if (id.includes("leaflet")) {
+              return "vendor-maps";
+            }
+            if (id.includes("quill") || id.includes("react-quill")) {
+              return "vendor-editor";
+            }
+            if (
+              id.includes("react-dropzone") ||
+              id.includes("react-hook-form") ||
+              id.includes("cmdk")
+            ) {
+              return "vendor-forms";
+            }
+            if (id.includes("moment") || id.includes("date-fns")) {
+              return "vendor-dates";
+            }
+            if (id.includes("recharts") || id.includes("d3") || id.includes("victory")) {
+              return "vendor-charts";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            if (id.includes("@radix-ui") || id.includes("lucide-react") || id.includes("react-icons")) {
+              return "vendor-ui";
+            }
+            if (id.includes("appwrite")) {
+              return "vendor-appwrite";
+            }
+            return "vendor-misc";
           }
         },
       },

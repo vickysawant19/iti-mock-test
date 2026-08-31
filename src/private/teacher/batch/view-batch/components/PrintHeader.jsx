@@ -1,6 +1,6 @@
 import React from "react";
-import devtLogo from "@/assets/dvet-logo.png";
-import bodhChinha from "@/assets/bodh-chinha.png";
+import devtLogo from "@/assets/dvet-logo.webp";
+import bodhChinha from "@/assets/bodh-chinha.webp";
 
 /**
  * PrintHeader (HTML version)
