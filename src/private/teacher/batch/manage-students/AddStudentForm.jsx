@@ -17,13 +17,13 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { appwriteService } from "@/services/appwriteClient";
-import batchService from "@/appwrite/batchService";
+import { appwriteService } from "@/services/core/appwriteClient";
+import batchService from "@/services/batch/batchService";
 import { Query } from "appwrite";
-import studentSearchService from "@/appwrite/studentSearchService";
-import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import studentSearchService from "@/services/auth/studentSearchService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
+import batchStudentService from "@/services/batch/batchStudentService";
 import { toast } from "react-toastify";
 import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
 import conf from "@/config/config";

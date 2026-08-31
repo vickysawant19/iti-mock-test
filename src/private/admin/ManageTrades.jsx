@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { useTrades } from "./hooks/useTrades";
-import tradeservice from "../../appwrite/tradedetails";
+import tradeservice from "@/services/batch/tradedetails";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

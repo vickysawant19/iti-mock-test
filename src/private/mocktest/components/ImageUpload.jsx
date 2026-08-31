@@ -3,7 +3,7 @@ import { IKContext, IKUpload, IKImage } from "imagekitio-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LoaderCircle, XCircle, Upload, X } from "lucide-react";
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 
 const ImageUploader = ({ folderName = "img", images, setImages }) => {

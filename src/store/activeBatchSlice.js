@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { Query } from 'appwrite';
-import batchRequestService from '@/appwrite/batchRequestService';
-import batchService from '@/appwrite/batchService';
-import batchStudentService from '@/appwrite/batchStudentService';
+import batchRequestService from '@/services/batch/batchRequestService';
+import batchService from '@/services/batch/batchService';
+import batchStudentService from '@/services/batch/batchStudentService';
 
 export const initializeActiveBatch = createAsyncThunk(
   'activeBatch/initialize',

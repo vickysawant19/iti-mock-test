@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { Functions } from "appwrite";
 import { KeyRound, FileText, ArrowLeft, Plus } from "lucide-react";
 
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 import { selectUser } from "@/store/userSlice";
 

@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Trophy, Megaphone, AlertCircle } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
-import notificationService from "@/services/notification.service";
+import notificationService from "@/services/notification/notification.service";
 import { Functions } from "appwrite";
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 
 function NotifItem({ notif, onClose, user }) {

@@ -6,13 +6,13 @@ import { UserCircle, GraduationCap, MapPin, Phone, Building, Briefcase, Calendar
 import { Link, useParams } from "react-router-dom";
 import { AiOutlineEdit } from "react-icons/ai";
 
-import batchService from "@/appwrite/batchService";
-import userProfileService from "@/appwrite/userProfileService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import batchService from "@/services/batch/batchService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchStudentService from "@/services/batch/batchStudentService";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { Query } from "appwrite";
-import { fixProfileImage } from "@/services/appwriteClient";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 
 const ProfileView = ({ profileProps }) => {
   const [batches, setBatches] = useState([]);

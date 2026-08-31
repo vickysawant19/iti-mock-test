@@ -32,15 +32,15 @@ import { Badge } from "@/components/ui/badge";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import useLocationManager from "@/hooks/useLocationManager";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
-import holidayService from "@/appwrite/holidaysService";
+import holidayService from "@/services/attendance/holidaysService";
 import { format } from "date-fns";
-import { formatAttendanceTime } from "@/services/attendanceTrackingService";
+import { formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 

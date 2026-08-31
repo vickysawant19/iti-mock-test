@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 import { Query } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice"
-import subjectService from "@/appwrite/subjectService";
-import mockTestService from "@/services/mocktest.service";
+import subjectService from "@/services/academic/subjectService";
+import mockTestService from "@/services/academic/mocktest.service";
 import AssesmentList from "./AssesmentList";
 import { useSearchParams } from "react-router-dom";
 import { ClipboardList, Loader2 } from "lucide-react";
-import batchStudentService from "@/appwrite/batchStudentService";
+import batchStudentService from "@/services/batch/batchStudentService";
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 

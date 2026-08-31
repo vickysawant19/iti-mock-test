@@ -12,7 +12,7 @@ import {
 import { format } from "date-fns";
 import {  Link, useNavigate } from "react-router-dom";
 import ViewPaper from "./ViewPaper";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import { toast } from "react-toastify";
 
 const RenderModule = ({ module, papersData, redirect }) => {

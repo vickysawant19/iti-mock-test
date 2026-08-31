@@ -5,7 +5,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { Query } from "appwrite";
 import { Save } from "lucide-react";
 
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 

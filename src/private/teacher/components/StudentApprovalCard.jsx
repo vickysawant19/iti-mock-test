@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
-import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
-import teamService from "@/appwrite/teamService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
+import teamService from "@/services/auth/teamService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 

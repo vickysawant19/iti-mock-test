@@ -10,12 +10,12 @@ import { Settings2 } from "lucide-react";
 import JobEvaluationPrintDynamic from "./JobEvaluationPrintDynamic";
 import { jobEvaluationDataAdapter } from "./jobEvaluationDataAdapter";
 import { useGetCollegeQuery } from "@/store/api/collegeApi";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 import useScrollToItem from "@/hooks/useScrollToItem";
 import Loader from "@/components/components/Loader";
-import subjectService from "@/appwrite/subjectService";
-import dailyDiaryService from "@/appwrite/dailyDiaryService";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import subjectService from "@/services/academic/subjectService";
+import dailyDiaryService from "@/services/attendance/dailyDiaryService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 
 const JobEvaluation = ({ studentProfiles = [], batchData }) => {
   if (!studentProfiles || !studentProfiles.length) {

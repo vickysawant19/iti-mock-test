@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Copy, CalendarDays, Loader2, Save } from "lucide-react";
-import batchStudentService from "@/appwrite/batchStudentService";
+import batchStudentService from "@/services/batch/batchStudentService";
 
 export default function EditEnrollmentTab({ batchId, studentId }) {
   const [isLoading, setIsLoading] = useState(true);

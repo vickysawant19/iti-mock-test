@@ -3,7 +3,7 @@
  * Ensures all new required attributes and indexes exist on the Question collection.
  */
 
-import { databases, tablesDb } from "../services/appwriteClient";
+import { databases, tablesDb } from "@/services/core/appwriteClient";
 import conf from "../config/config";
 
 export interface SchemaAttributeDef {

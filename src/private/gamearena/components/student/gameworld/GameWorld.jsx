@@ -24,10 +24,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { fixProfileImage } from "@/services/appwriteClient";
-import { BADGES } from "@/services/reward.service";
+import { fixProfileImage } from "@/services/core/appwriteClient";
+import { BADGES } from "@/services/gamification/reward.service";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
-import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/gamification/cosmetics.service";
 
 // Modular sub-components and helpers
 import { getCurvedPath, BASE_COORDINATES, getLeague } from "./helpers";

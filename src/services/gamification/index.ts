@@ -1,0 +1,14 @@
+export * from "./game.service";
+export { default as gameService } from "./game.service";
+export * from "./challenge.service";
+export { default as challengeService } from "./challenge.service";
+export * from "./dailyMissions.service";
+export { default as dailyMissionsService } from "./dailyMissions.service";
+export * from "./cosmetics.service";
+export { default as cosmeticsService } from "./cosmetics.service";
+export * from "./powerups.service";
+export { default as powerupsService } from "./powerups.service";
+export * from "./reward.service";
+export { default as rewardService } from "./reward.service";
+export * from "./leaderboard.service";
+export { default as leaderboardService } from "./leaderboard.service";

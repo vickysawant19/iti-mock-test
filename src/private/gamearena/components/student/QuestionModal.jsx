@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Award, XCircle, CheckCircle, ArrowRight, Sparkles, X, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { gameService } from "@/services/game.service";
+import { gameService } from "@/services/gamification/game.service";
 
 // Tracks whether we're on a narrow viewport so the sheet can slide up from the
 // bottom on mobile, but fade/scale in as a centered card on larger screens.

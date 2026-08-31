@@ -5,7 +5,7 @@ import { Query } from "appwrite";
 import { Loader2, AlertCircle, FileText, Plus, Hash } from "lucide-react";
 import { toast } from "react-toastify";
 
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import { selectUser } from "@/store/userSlice";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 

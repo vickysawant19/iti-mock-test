@@ -1,6 +1,6 @@
-import mockTestService from "@/services/mocktest.service";
-import moduleServices from "@/appwrite/moduleServices";
-import subjectService from "@/appwrite/subjectService";
+import mockTestService from "@/services/academic/mocktest.service";
+import moduleServices from "@/services/academic/moduleServices";
+import subjectService from "@/services/academic/subjectService";
 import { Query } from "appwrite";
 import React, { useEffect, useState, useMemo } from "react";
 import AssignmentHeader from "./components/AssignmentHeader";

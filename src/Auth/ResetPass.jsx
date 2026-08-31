@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Loader2, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import authService from "@/services/auth.service";
+import authService from "@/services/auth/auth.service";
 import authImg from "@/assets/auth-illustration.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

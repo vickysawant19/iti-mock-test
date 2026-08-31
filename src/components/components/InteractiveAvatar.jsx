@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { Upload, Trash2, Loader2, Image as ImageIcon, Camera, RefreshCw, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import profileImageService from "@/appwrite/profileImageService";
+import profileImageService from "@/services/auth/profileImageService";
 import OnlineIndicator from "./OnlineIndicator";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
-import { fixProfileImage } from "@/services/appwriteClient";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 
 function getShortRelativeTime(lastseen) {
   if (!lastseen) return "";

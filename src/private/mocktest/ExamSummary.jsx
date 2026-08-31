@@ -15,7 +15,7 @@ import { FiCheckCircle, FiXCircle, FiClock, FiList, FiEye, FiHome, FiArrowRight,
 import { HiSparkles } from "react-icons/hi2";
 import { RiTimeLine } from "react-icons/ri";
 
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import Loader from "@/components/components/Loader";
 
 // ─── Animated counter hook ────────────────────────────────────────────────────

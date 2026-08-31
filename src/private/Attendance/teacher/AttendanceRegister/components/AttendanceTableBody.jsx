@@ -1,7 +1,7 @@
 import React from "react";
 import { LoaderCircle, Clock } from "lucide-react";
 import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
-import { formatAttendanceTime } from "@/services/attendanceTrackingService";
+import { formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 import { useAttendanceMatrix } from "../hooks/useAttendanceMatrix";
 
 const AttendanceTableBody = ({

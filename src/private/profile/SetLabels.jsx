@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser, selectUser } from "@/store/userSlice";
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import { toast } from "react-toastify";
 import conf from "@/config/config";
 

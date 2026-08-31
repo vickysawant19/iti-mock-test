@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
-import subjectService from "@/appwrite/subjectService";
+import subjectService from "@/services/academic/subjectService";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check, Loader2, Upload, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import questionFunctionService from "@/services/questionFunction.service";
+import questionFunctionService from "@/services/academic/questionFunction.service";
 import migrationService from "@/services/migration/migrationService";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 
 const AddBulkQuestions = () => {
   const [tradeData, setTradeData] = useState({

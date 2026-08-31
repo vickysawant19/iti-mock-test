@@ -25,7 +25,7 @@ import { toast } from "react-toastify";
 import { format, formatDistanceToNow } from "date-fns";
 import { selectUser } from "@/store/userSlice";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
-import batchRequestService from "@/appwrite/batchRequestService";
+import batchRequestService from "@/services/batch/batchRequestService";
 import {
   Dialog,
   DialogContent,
@@ -34,12 +34,12 @@ import {
 } from "@/components/ui/dialog";
 import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import batchStudentService from "@/appwrite/batchStudentService";
-import userProfileService from "@/appwrite/userProfileService";
+import batchStudentService from "@/services/batch/batchStudentService";
+import userProfileService from "@/services/auth/userProfileService";
 import EditEnrollmentTab from "./EditEnrollmentTab";
 import { Query } from "appwrite";
-import authService from "@/services/auth.service";
-import { appwriteService } from "@/services/appwriteClient";
+import authService from "@/services/auth/auth.service";
+import { appwriteService } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 
 // ─── Pre-Approval Modal ───────────────────────────────────────────────────────

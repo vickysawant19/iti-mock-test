@@ -20,12 +20,12 @@ import {
   Loader2
 } from "lucide-react";
 
-import questionService from "@/services/question.service";
-import questionFunctionService from "@/services/questionFunction.service";
+import questionService from "@/services/academic/question.service";
+import questionFunctionService from "@/services/academic/questionFunction.service";
 import migrationService from "@/services/migration/migrationService";
 import { useListTradesQuery } from "@/store/api/tradeApi";
-import subjectService from "@/appwrite/subjectService";
-import moduleServices from "@/appwrite/moduleServices";
+import subjectService from "@/services/academic/subjectService";
+import moduleServices from "@/services/academic/moduleServices";
 
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { Query } from "appwrite";

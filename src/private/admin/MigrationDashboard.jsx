@@ -26,8 +26,8 @@ import {
   generateDuplicateReport,
   exportDuplicateReportCSV,
 } from "../../services/migration/duplicateReporter";
-import { Query } from "../../services/appwriteClient";
-import questionService from "../../services/question.service";
+import { Query } from "@/services/core/appwriteClient";
+import questionService from "@/services/academic/question.service";
 
 const MigrationDashboard = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -348,7 +348,7 @@ const MigrationDashboard = () => {
     setIsMigratingSessions(true);
     appendLog("Starting Batch Academic Sessions Migration (Splitting 2-year courses into First & Second Year sessions)...");
     try {
-      const batchService = (await import("../../appwrite/batchService")).default;
+      const batchService = (await import("@/services/batch/batchService")).default;
       const res = await batchService.migrateAllBatchesSessions();
       appendLog(`Successfully processed ${res.total} batches and updated ${res.updated} batch documents with Academic Sessions.`);
       toast.success(`Updated ${res.updated} batch documents with Academic Sessions!`);

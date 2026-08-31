@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 import Loader from "@/components/components/Loader";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { selectUser } from "@/store/userSlice";
 

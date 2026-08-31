@@ -20,11 +20,11 @@ import {
 } from "lucide-react";
 
 import { useListTradesQuery } from "@/store/api/tradeApi";
-import subjectService from "@/appwrite/subjectService";
-import questionService from "@/services/question.service";
-import questionFunctionService from "@/services/questionFunction.service";
+import subjectService from "@/services/academic/subjectService";
+import questionService from "@/services/academic/question.service";
+import questionFunctionService from "@/services/academic/questionFunction.service";
 import migrationService from "@/services/migration/migrationService";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 import { selectUser } from "@/store/userSlice";
 import { selectQuestions } from "@/store/questionSlice";
 

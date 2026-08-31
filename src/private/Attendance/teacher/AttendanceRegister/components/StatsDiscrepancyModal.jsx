@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCw, X, ShieldAlert } from "lucide-react";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import { toast } from "react-toastify";
 
 const StatsDiscrepancyModal = ({

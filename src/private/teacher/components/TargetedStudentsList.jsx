@@ -5,9 +5,9 @@ import { selectUser } from "@/store/userSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "react-toastify";
-import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
+import batchStudentService from "@/services/batch/batchStudentService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 

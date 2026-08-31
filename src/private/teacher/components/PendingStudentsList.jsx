@@ -5,9 +5,9 @@ import { selectUser } from "@/store/userSlice";
 import { Button } from "@/components/ui/button";
 import { Query } from "appwrite";
 import conf from "@/config/config";
-import batchService from "@/appwrite/batchService";
-import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
+import batchService from "@/services/batch/batchService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
 import StudentApprovalCard from "./StudentApprovalCard";
 
 export default function PendingStudentsList({ status = "pending", selectedBatch }) {

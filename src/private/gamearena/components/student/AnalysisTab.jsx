@@ -12,7 +12,7 @@ import {
   Zap,
   Award,
 } from "lucide-react";
-import { BADGES } from "@/services/reward.service";
+import { BADGES } from "@/services/gamification/reward.service";
 
 const AccuracyGraph = ({ series = [] }) => {
   if (!series || series.length === 0) {

@@ -20,7 +20,7 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
-import batchService from "@/appwrite/batchService";
+import batchService from "@/services/batch/batchService";
 
 import Loader from "@/components/components/Loader";
 import IncompleteProfileGuard from "../components/IncompleteProfileGuard";

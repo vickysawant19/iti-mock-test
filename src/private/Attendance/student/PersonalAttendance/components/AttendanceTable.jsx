@@ -1,6 +1,6 @@
 import React from "react";
 import { format } from "date-fns";
-import { formatAttendanceTime } from "@/services/attendanceTrackingService";
+import { formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 
 const getStatusClasses = (status) => {
   switch (status) {

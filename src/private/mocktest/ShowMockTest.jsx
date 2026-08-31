@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import { Query } from "appwrite";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -89,7 +89,7 @@ const ShowMockTest = () => {
           }
 
           const qIds = userPaper.questions.map(q => q.$id);
-          const { questionService } = await import("@/services/question.service");
+          const { questionService } = await import("@/services/academic/question.service");
           const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
           const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
 
@@ -110,7 +110,7 @@ const ShowMockTest = () => {
           const needsHydration = userPaper.questions.some(q => q.question === undefined);
           if (needsHydration) {
              const qIds = userPaper.questions.map(q => q.$id);
-             const { questionService } = await import("@/services/question.service");
+             const { questionService } = await import("@/services/academic/question.service");
              const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
              const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
              

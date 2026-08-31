@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, ChevronRight, Coins, Target, Flame, Zap } from "lucide-react";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/gamification/cosmetics.service";
 
 export default function LeaderboardTab({
   gamifiedLeaderboard = [],

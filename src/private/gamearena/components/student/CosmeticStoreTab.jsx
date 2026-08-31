@@ -14,7 +14,7 @@ import {
   Tv
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/gamification/cosmetics.service";
 
 const CosmeticStoreTab = ({ stats, purchaseCosmetic, equipCosmetic, hideHeader = false }) => {
   const [activeCategory, setActiveCategory] = useState("avatar");

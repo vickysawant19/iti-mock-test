@@ -20,9 +20,9 @@ import ImageUploader from "./image-upload/ImageUpload";
 import { IKImage } from "imagekitio-react";
 import { FaMagic } from "react-icons/fa";
 import PaperGeneratedNotification from "./module-assignment/PaperGeneratedNotification";
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import { generatePaperId } from "./util";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 import conf from "@/config/config";
 
 const AddModules = ({

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { realtime, Channel } from "@/services/appwriteClient";
+import { realtime, Channel } from "@/services/core/appwriteClient";
 
 /**
  * useBatchRealtime — reusable hook for subscribing to Appwrite Realtime events

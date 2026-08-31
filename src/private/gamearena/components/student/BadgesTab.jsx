@@ -8,7 +8,7 @@ import {
   Zap,
   Trophy,
 } from "lucide-react";
-import { BADGES } from "@/services/reward.service";
+import { BADGES } from "@/services/gamification/reward.service";
 
 const getBadgeIcon = (iconName) => {
   switch (iconName) {

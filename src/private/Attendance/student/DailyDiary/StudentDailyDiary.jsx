@@ -4,10 +4,10 @@ import { useSearchParams } from "react-router-dom";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, parse } from "date-fns";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import batchStudentService from "@/appwrite/batchStudentService";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import holidayService from "@/appwrite/holidaysService";
-import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import batchStudentService from "@/services/batch/batchStudentService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import holidayService from "@/services/attendance/holidaysService";
+import dailyDiaryService from "@/services/attendance/dailyDiaryService";
 
 import { Card, CardContent } from "@/components/ui/card";
 import Loader from "@/components/components/Loader";

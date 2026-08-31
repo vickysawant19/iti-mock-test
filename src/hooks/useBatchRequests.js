@@ -3,9 +3,9 @@ import { useSelector } from "react-redux";
 import { Query } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import batchRequestService from "@/appwrite/batchRequestService";
-import teamService from "@/appwrite/teamService";
-import userProfileService from "@/appwrite/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
+import teamService from "@/services/auth/teamService";
+import userProfileService from "@/services/auth/userProfileService";
 
 /**
  * Provides all batch request operations for both teachers and students.

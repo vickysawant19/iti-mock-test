@@ -6,13 +6,13 @@ import React, {
   useRef,
 } from "react";
 import { useSelector } from "react-redux";
-import batchService from "@/appwrite/batchService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import batchService from "@/services/batch/batchService";
+import batchStudentService from "@/services/batch/batchStudentService";
 import { Query } from "appwrite";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 import AttendanceHeader from "./components/AttendanceHeader";
 import AttendanceTable from "./components/AttendanceTable";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -29,9 +29,9 @@ import StudentMonthlyAttendanceModal from "./components/StudentMonthlyAttendance
 import StudentManagementModal from "@/private/teacher/batch/view-batch/tabs/profiles/components/StudentManagementModal";
 import StatsDiscrepancyModal from "./components/StatsDiscrepancyModal";
 import { AlertTriangle } from "lucide-react";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import holidayService from "@/appwrite/holidaysService";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import holidayService from "@/services/attendance/holidaysService";
+import { attendanceTrackingService } from "@/services/attendance/attendanceTrackingService";
 
 import { useAttendanceRealtime } from "./hooks/useAttendanceRealtime";
 import { toast } from "react-toastify";

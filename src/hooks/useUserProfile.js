@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
 import { addProfile, selectProfile } from "@/store/profileSlice";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 
 /**

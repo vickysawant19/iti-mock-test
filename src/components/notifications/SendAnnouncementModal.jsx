@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectActiveBatch } from "@/store/activeBatchSlice";
 import { selectProfile } from "@/store/profileSlice";
-import notificationService from "@/services/notification.service";
+import notificationService from "@/services/notification/notification.service";
 
 import {
   Dialog,

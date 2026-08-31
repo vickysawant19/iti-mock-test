@@ -8,7 +8,7 @@ import { getMonthsArray } from "../../../util/util";
 import { addMonths, differenceInMonths, format } from "date-fns";
 import LoadingState from "../../components/LoadingState";
 import { useSearchParams } from "react-router-dom";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import { calculateStats } from "@/private/Attendance/CalculateStats";
 import { Query } from "appwrite";
 import { normalizeBatchSessions, formatSessionLabel } from "../../../util/batchSessionUtil";

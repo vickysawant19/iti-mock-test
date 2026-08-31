@@ -7,7 +7,7 @@ import {
   Bookmark,
   Delete,
 } from "lucide-react";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 
 const ShowTopic = ({
   setShow,

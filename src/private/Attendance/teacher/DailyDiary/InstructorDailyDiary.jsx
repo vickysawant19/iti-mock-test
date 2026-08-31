@@ -8,14 +8,14 @@ import { useReactToPrint } from "react-to-print";
 
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import { highlightAbsentRow } from "../../DailyDiary/diaryAbsentHighlight";
 import { Query } from "appwrite";
 
-import holidayService from "@/appwrite/holidaysService";
-import dailyDiaryService from "@/appwrite/dailyDiaryService";
-import collegeService from "@/appwrite/collageService";
-import tradeservice from "@/appwrite/tradedetails";
+import holidayService from "@/services/attendance/holidaysService";
+import dailyDiaryService from "@/services/attendance/dailyDiaryService";
+import collegeService from "@/services/batch/collageService";
+import tradeservice from "@/services/batch/tradedetails";
 import Loader from "@/components/components/Loader";
 import DiaryHeader from "./DiaryHeader";
 import DiaryTable from "./DiaryTable";

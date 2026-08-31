@@ -12,11 +12,11 @@ import {
 } from "date-fns";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import holidayService from "@/appwrite/holidaysService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import holidayService from "@/services/attendance/holidaysService";
 import { selectActiveBatchId, selectActiveBatchData } from "@/store/activeBatchSlice";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
-import batchStudentService from "@/appwrite/batchStudentService";
+import batchStudentService from "@/services/batch/batchStudentService";
 
 const STATUS_ALIASES = {
   p: "present",

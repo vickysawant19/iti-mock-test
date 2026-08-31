@@ -24,8 +24,8 @@
 
 import { Query } from "appwrite";
 import conf from "@/config/config";
-import { appwriteService } from "@/services/appwriteClient";
-import userProfileService from "@/appwrite/userProfileService";
+import { appwriteService } from "@/services/core/appwriteClient";
+import userProfileService from "@/services/auth/userProfileService";
 
 /**
  * Scans all user profile documents and patches those with inconsistent

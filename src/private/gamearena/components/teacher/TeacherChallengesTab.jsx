@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { PlusCircle, CheckCircle, Loader2, ChevronDown, Share2, Check, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CHALLENGE_TEMPLATES, challengeService } from "@/services/challenge.service";
+import { CHALLENGE_TEMPLATES, challengeService } from "@/services/gamification/challenge.service";
 import { motion, AnimatePresence } from "framer-motion";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import notificationService from "@/services/notification.service";
+import notificationService from "@/services/notification/notification.service";
 
 function ChallengeRow({ challenge, studentRows }) {
   const [isExpanded, setIsExpanded] = useState(false);

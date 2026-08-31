@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import tradeservice from "../../appwrite/tradedetails";
+import { tradeService as tradeservice, tradeService } from "@/services";
 
 export const tradeApi = createApi({
   reducerPath: "tradeApi",

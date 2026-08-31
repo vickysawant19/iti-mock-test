@@ -17,11 +17,11 @@ import { Query } from "appwrite";
 
 import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import holidayService from "@/appwrite/holidaysService";
-import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import holidayService from "@/services/attendance/holidaysService";
+import dailyDiaryService from "@/services/attendance/dailyDiaryService";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import { attendanceTrackingService } from "@/services/attendance/attendanceTrackingService";
 
 /**
  * @param {Object} options

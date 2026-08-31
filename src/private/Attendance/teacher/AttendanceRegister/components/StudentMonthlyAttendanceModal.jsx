@@ -24,7 +24,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { attendanceTrackingService, formatAttendanceTime } from "@/services/attendanceTrackingService";
+import { attendanceTrackingService, formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

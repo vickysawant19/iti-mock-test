@@ -5,11 +5,11 @@ import { Query } from "appwrite";
 
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import batchStudentService from "@/appwrite/batchStudentService";
-import userProfileService from "@/appwrite/userProfileService";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import holidayService from "@/appwrite/holidaysService";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import batchStudentService from "@/services/batch/batchStudentService";
+import userProfileService from "@/services/auth/userProfileService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import holidayService from "@/services/attendance/holidaysService";
+import { attendanceTrackingService } from "@/services/attendance/attendanceTrackingService";
 
 export function useDailyDiaryActions({
   onRefreshData,

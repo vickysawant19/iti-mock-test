@@ -9,7 +9,7 @@ import {
   ClipboardList,
   Library,
 } from "lucide-react";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 import { toast } from "react-toastify";
 
 const AddTopics = ({

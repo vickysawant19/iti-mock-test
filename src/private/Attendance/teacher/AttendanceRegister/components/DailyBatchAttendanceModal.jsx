@@ -16,8 +16,8 @@ import {
   ArrowUpDown
 } from "lucide-react";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import { attendanceAnalyticsService } from "@/services/attendance/attendanceAnalyticsService";
+import { attendanceTrackingService } from "@/services/attendance/attendanceTrackingService";
 import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 /**

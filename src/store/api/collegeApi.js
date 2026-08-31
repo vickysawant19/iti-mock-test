@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import collegeService from "../../appwrite/collageService";
+import { collegeService } from "@/services";
 
 export const collegeApi = createApi({
   reducerPath: "collegeApi",

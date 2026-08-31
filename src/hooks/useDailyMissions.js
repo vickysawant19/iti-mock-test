@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { dailyMissionsService } from "@/services/dailyMissions.service";
+import { dailyMissionsService } from "@/services/gamification/dailyMissions.service";
 
 /**
  * useDailyMissions

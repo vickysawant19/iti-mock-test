@@ -6,17 +6,17 @@ import { Clock, Building, BookOpen, Users, RefreshCw, LogOut, ArrowRight, Shield
 import { selectProfile, addProfile, removeProfile } from "@/store/profileSlice";
 import { selectUser, removeUser } from "@/store/userSlice";
 import { selectActiveBatchId, clearActiveBatch } from "@/store/activeBatchSlice";
-import authService from "@/services/auth.service";
-import userProfileService from "@/appwrite/userProfileService";
-import batchRequestService from "@/appwrite/batchRequestService";
-import studentBatchAccessService from "@/appwrite/studentBatchAccess";
+import authService from "@/services/auth/auth.service";
+import userProfileService from "@/services/auth/userProfileService";
+import batchRequestService from "@/services/batch/batchRequestService";
+import studentBatchAccessService from "@/services/batch/studentBatchAccess";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
-import batchService from "@/appwrite/batchService";
+import batchService from "@/services/batch/batchService";
 
 export default function BatchEnrollmentStatus() {
   const profile = useSelector(selectProfile);

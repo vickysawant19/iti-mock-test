@@ -1,5 +1,5 @@
 import React from "react";
-import { attendanceTrackingService } from "@/services/attendanceTrackingService";
+import { attendanceTrackingService } from "@/services/attendance/attendanceTrackingService";
 
 /**
  * Reusable Global Attendance Status Badge Component

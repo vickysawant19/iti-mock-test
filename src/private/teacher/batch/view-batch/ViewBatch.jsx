@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import { useGetTradeQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
-import userProfileService from "@/appwrite/userProfileService";
-import batchService from "@/appwrite/batchService";
-import batchStudentService from "@/appwrite/batchStudentService";
+import userProfileService from "@/services/auth/userProfileService";
+import batchService from "@/services/batch/batchService";
+import batchStudentService from "@/services/batch/batchStudentService";
 
 import BatchHeader from "./components/BatchHeader";
 import LoadingState from "./components/LoadingState";

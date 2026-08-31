@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import EmbeddedProfileForm from "@/private/profile/EmbeddedProfileForm";
 import EditEnrollmentTab from "../../../../manage-students/EditEnrollmentTab";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 
 const StudentManagementModal = ({
   viewProfileUserId,

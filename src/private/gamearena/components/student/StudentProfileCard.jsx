@@ -9,8 +9,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { COSMETIC_ITEMS } from "@/services/cosmetics.service";
-import { fixProfileImage } from "@/services/appwriteClient";
+import { COSMETIC_ITEMS } from "@/services/gamification/cosmetics.service";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 
 const LevelShield = ({ level }) => (
   <div className="relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 select-none">

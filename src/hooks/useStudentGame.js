@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { gameService } from "@/services/game.service";
-import { cosmeticsService } from "@/services/cosmetics.service";
-import { leaderboardService } from "@/services/leaderboard.service";
-import { challengeService } from "@/services/challenge.service";
-import { rewardService } from "@/services/reward.service";
-import { powerUpsService } from "@/services/powerups.service";
+import { gameService } from "@/services/gamification/game.service";
+import { cosmeticsService } from "@/services/gamification/cosmetics.service";
+import { leaderboardService } from "@/services/gamification/leaderboard.service";
+import { challengeService } from "@/services/gamification/challenge.service";
+import { rewardService } from "@/services/gamification/reward.service";
+import { powerUpsService } from "@/services/gamification/powerups.service";
 import conf from "@/config/config";
 
 /**
@@ -204,7 +204,7 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
 
     const setupRealtime = async () => {
       try {
-        const { appwriteService } = await import("@/services/appwriteClient");
+        const { appwriteService } = await import("@/services/core/appwriteClient");
         const realtime = appwriteService.getRealtime();
         const { Channel } = await import("appwrite");
         const channel = Channel.tablesdb(conf.databaseId)
@@ -251,7 +251,7 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
 
     const setupSettingsRealtime = async () => {
       try {
-        const { appwriteService } = await import("@/services/appwriteClient");
+        const { appwriteService } = await import("@/services/core/appwriteClient");
         const realtime = appwriteService.getRealtime();
         const { Channel } = await import("appwrite");
         const channel = Channel.tablesdb(conf.databaseId)
@@ -299,7 +299,7 @@ export function useStudentGame(studentId, batchId, tradeId, activeTab) {
 
     const setupChallengesRealtime = async () => {
       try {
-        const { appwriteService } = await import("@/services/appwriteClient");
+        const { appwriteService } = await import("@/services/core/appwriteClient");
         const realtime = appwriteService.getRealtime();
         const { Channel } = await import("appwrite");
         const channel = Channel.tablesdb(conf.databaseId)

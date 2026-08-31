@@ -44,16 +44,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import mockTestService from "@/services/mocktest.service";
-import userProfileService from "@/appwrite/userProfileService";
-import profileImageService from "@/appwrite/profileImageService";
+import mockTestService from "@/services/academic/mocktest.service";
+import userProfileService from "@/services/auth/userProfileService";
+import profileImageService from "@/services/auth/profileImageService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { Query, Channel } from "appwrite";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
 import Loader from "@/components/components/Loader";
-import { realtime } from "@/services/appwriteClient";
+import { realtime } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 import {
   Select,

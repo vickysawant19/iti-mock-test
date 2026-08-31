@@ -3,7 +3,7 @@
  * Audits documents to verify zero data loss, valid hashes, option count parity, and search fields.
  */
 
-import { tablesDb, Query } from "../appwriteClient";
+import { tablesDb, Query } from "../core/appwriteClient";
 import conf from "../../config/config";
 
 export interface IntegrityIssue {

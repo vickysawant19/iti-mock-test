@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 import { Query } from "appwrite";
 import { format } from "date-fns";
 import {

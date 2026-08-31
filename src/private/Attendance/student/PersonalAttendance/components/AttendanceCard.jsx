@@ -1,7 +1,7 @@
 import React from "react";
 import { format } from "date-fns";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
-import { formatAttendanceTime } from "@/services/attendanceTrackingService";
+import { formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 
 const getStatusColor = (status) => {
   switch (status) {

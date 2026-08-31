@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Search, Loader2 } from "lucide-react";
-import { questionService } from "@/services/question.service";
+import { questionService } from "@/services/academic/question.service";
 
 export default function VerifiedTagInput({
   value = [],

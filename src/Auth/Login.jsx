@@ -8,8 +8,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { addUser, selectUser } from "@/store/userSlice";
 import authImg from "@/assets/auth-illustration.png";
-import authService from "@/services/auth.service";
-import userProfileService from "@/appwrite/userProfileService";
+import authService from "@/services/auth/auth.service";
+import userProfileService from "@/services/auth/userProfileService";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import { initializeActiveBatch } from "@/store/activeBatchSlice";
 import { checkProfileCompletion } from "@/utils/profileCompletion";

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Query } from "appwrite";
 import { differenceInSeconds } from "date-fns";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 
 /**
  * Fetches, hydrates, and manages the mock test state for the exam session.
@@ -45,7 +45,7 @@ export function useMockTest(paperId) {
 
       if (needsHydration) {
         const qIds = userTest.questions.map(q => q.$id);
-        const { questionService } = await import("@/services/question.service");
+        const { questionService } = await import("@/services/academic/question.service");
         const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
         const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
 

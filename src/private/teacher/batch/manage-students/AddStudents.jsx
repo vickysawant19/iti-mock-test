@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Users, UserPlus, FileText } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import batchService from "@/appwrite/batchService";
+import batchService from "@/services/batch/batchService";
 import { Query } from "appwrite";
 
 import ManageStudentsList from "./ManageStudentsList";

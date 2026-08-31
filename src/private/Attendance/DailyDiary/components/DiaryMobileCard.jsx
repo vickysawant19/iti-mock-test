@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
-import dailyDiaryService from "@/appwrite/dailyDiaryService";
+import dailyDiaryService from "@/services/attendance/dailyDiaryService";
 import { toast } from "react-toastify";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

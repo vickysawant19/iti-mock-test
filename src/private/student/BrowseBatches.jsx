@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "react-toastify";
-import batchService from "@/appwrite/batchService";
-import batchRequestService from "@/appwrite/batchRequestService";
+import batchService from "@/services/batch/batchService";
+import batchRequestService from "@/services/batch/batchRequestService";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { User, Phone, Mail, MapPin, Calendar } from "lucide-react";
 import CustomInput from "@/components/components/CustomInput";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { useDispatch, useSelector } from "react-redux";
 import { addProfile } from "@/store/profileSlice";

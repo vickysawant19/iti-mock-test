@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 
 const SAVE_DEBOUNCE_MS = import.meta.env.DEV ? 800 : 5000;
 

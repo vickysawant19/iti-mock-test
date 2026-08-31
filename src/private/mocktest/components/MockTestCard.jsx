@@ -24,8 +24,8 @@ import {
   BarChart,
   AlertTriangle,
 } from "lucide-react";
-import mockTestService from "@/services/mocktest.service";
-import notificationService from "@/services/notification.service";
+import mockTestService from "@/services/academic/mocktest.service";
+import notificationService from "@/services/notification/notification.service";
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -12,7 +12,7 @@ import {
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { useSelector } from "react-redux";
 import { selectProfile } from "@/store/profileSlice";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import { getMonthsArray } from "@/private/teacher/batch/util/util";
 
 // Minimalist Compact StatCard Component

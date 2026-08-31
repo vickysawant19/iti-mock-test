@@ -1,5 +1,5 @@
 import { useState } from "react";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 
 import geminiServiceV2 from "@/geminiAi/geminiServiceV2";
 

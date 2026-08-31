@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 
 import StepBasicInfo from "./StepBasicInfo";

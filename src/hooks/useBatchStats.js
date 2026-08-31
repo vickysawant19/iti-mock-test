@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Query } from "appwrite";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfDay, endOfDay, subMonths } from "date-fns";
-import batchStudentService from "@/appwrite/batchStudentService";
-import userProfileService from "@/appwrite/userProfileService";
-import { newAttendanceService } from "@/appwrite/newAttendanceService";
-import mockTestService from "@/services/mocktest.service";
-import holidayService from "@/appwrite/holidaysService";
+import batchStudentService from "@/services/batch/batchStudentService";
+import userProfileService from "@/services/auth/userProfileService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import mockTestService from "@/services/academic/mocktest.service";
+import holidayService from "@/services/attendance/holidaysService";
 import conf from "@/config/config";
 
 const isSecondOrFourthSaturday = (d) => {

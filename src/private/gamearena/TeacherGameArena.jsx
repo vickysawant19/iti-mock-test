@@ -27,7 +27,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { fixProfileImage } from "@/services/appwriteClient";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
 import BatchOverviewCard from "./components/teacher/BatchOverviewCard";
 import TeacherAttendanceTab from "./components/teacher/TeacherAttendanceTab";
@@ -39,10 +39,10 @@ import TeacherSettingsTab from "./components/teacher/TeacherSettingsTab";
 import TeacherBottomNav from "./components/teacher/TeacherBottomNav";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { challengeService, CHALLENGE_TEMPLATES } from "@/services/challenge.service";
-import { gameService } from "@/services/game.service";
-import { leaderboardService } from "@/services/leaderboard.service";
-import { BADGES } from "@/services/reward.service";
+import { challengeService, CHALLENGE_TEMPLATES } from "@/services/gamification/challenge.service";
+import { gameService } from "@/services/gamification/game.service";
+import { leaderboardService } from "@/services/gamification/leaderboard.service";
+import { BADGES } from "@/services/gamification/reward.service";
 import { ID } from "appwrite";
 import conf from "@/config/config";
 
@@ -166,7 +166,7 @@ const TeacherGameArena = ({
 
     const setupRealtime = async () => {
       try {
-        const { appwriteService } = await import("@/services/appwriteClient");
+        const { appwriteService } = await import("@/services/core/appwriteClient");
         const realtime = appwriteService.getRealtime();
         const { Channel } = await import("appwrite");
         const channel = Channel.tablesdb(conf.databaseId)
@@ -347,7 +347,7 @@ const TeacherGameArena = ({
         }
         
         // Add achievement directly
-        const { rewardService } = await import("@/services/reward.service");
+        const { rewardService } = await import("@/services/gamification/reward.service");
         await rewardService.createRow({
           studentId: selectedStudent,
           achievementId: selectedBadge,

@@ -24,8 +24,8 @@ import ShowTopic from "./ShowTopic";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { Query } from "appwrite";
-import subjectService from "@/appwrite/subjectService";
-import moduleServices from "@/appwrite/moduleServices";
+import subjectService from "@/services/academic/subjectService";
+import moduleServices from "@/services/academic/moduleServices";
 import useModuleTestGenerator from "./module-assignment/ModuleTestGenerator";
 import useScrollToItem from "@/hooks/useScrollToItem";
 

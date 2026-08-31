@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import batchService from "../../appwrite/batchService";
+import { batchService } from "@/services";
 
 export const batchApi = createApi({
   reducerPath: "batchApi",

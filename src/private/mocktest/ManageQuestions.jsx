@@ -22,10 +22,10 @@ import {
 } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 
-import questionService from "@/services/question.service";
-import questionFunctionService from "@/services/questionFunction.service";
-import subjectService from "@/appwrite/subjectService";
-import moduleServices from "@/appwrite/moduleServices";
+import questionService from "@/services/academic/question.service";
+import questionFunctionService from "@/services/academic/questionFunction.service";
+import subjectService from "@/services/academic/subjectService";
+import moduleServices from "@/services/academic/moduleServices";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";

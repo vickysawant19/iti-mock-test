@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { IKImage } from "imagekitio-react";
 import { toast } from "react-toastify";
-import moduleServices from "@/appwrite/moduleServices";
+import moduleServices from "@/services/academic/moduleServices";
 
 const ShowModules = ({ newModules, setNewModules, moduleId, setShow }) => {
   const [module, setModule] = useState(

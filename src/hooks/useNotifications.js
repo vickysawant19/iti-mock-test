@@ -5,12 +5,12 @@ import { selectProfile } from "@/store/profileSlice";
 import { selectUserBatches, selectActiveBatchLoading, selectActiveBatch } from "@/store/activeBatchSlice";
 import { Query, Channel } from "appwrite";
 import { toast } from "react-toastify";
-import batchRequestService from "@/appwrite/batchRequestService";
-import batchStudentService from "@/appwrite/batchStudentService";
-import notificationService from "@/services/notification.service";
-import { realtime } from "@/services/appwriteClient";
+import batchRequestService from "@/services/batch/batchRequestService";
+import batchStudentService from "@/services/batch/batchStudentService";
+import notificationService from "@/services/notification/notification.service";
+import { realtime } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
-import mockTestService from "@/services/mocktest.service";
+import mockTestService from "@/services/academic/mocktest.service";
 
 
 /**

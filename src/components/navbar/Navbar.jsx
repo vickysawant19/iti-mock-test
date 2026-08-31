@@ -42,7 +42,7 @@ import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react"
 import logo from "@/assets/itimitra-logo.png"
 
 // Import services and store actions
-import authService from "@/services/auth.service";
+import authService from "@/services/auth/auth.service";
 import {
   removeUser,
   selectUser,
@@ -50,13 +50,13 @@ import {
 } from "@/store/userSlice";
 import { removeProfile, selectProfile, addProfile } from "@/store/profileSlice";
 import { setActiveBatch, clearActiveBatch } from "@/store/activeBatchSlice";
-import userProfileService from "@/appwrite/userProfileService";
+import userProfileService from "@/services/auth/userProfileService";
 
 import { menuConfig, pathToHeading } from "./navMenu";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 import OnlineIndicator from "@/components/components/OnlineIndicator";
-import { fixProfileImage } from "@/services/appwriteClient";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);

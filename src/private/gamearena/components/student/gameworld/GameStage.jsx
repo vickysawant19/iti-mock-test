@@ -3,7 +3,7 @@ import { motion, useTransform } from "framer-motion";
 import { Play, Lock, Award, Trophy, Compass } from "lucide-react";
 import LevelShield from "./LevelShield";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
-import { COSMETIC_ITEMS, cosmeticsService } from "@/services/cosmetics.service";
+import { COSMETIC_ITEMS, cosmeticsService } from "@/services/gamification/cosmetics.service";
 
 function GameStage({
   node,

@@ -5,7 +5,7 @@ import { Permission, Role } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId, selectActiveBatch } from "@/store/activeBatchSlice";
-import { presenceClient } from "@/services/appwriteClient";
+import { presenceClient } from "@/services/core/appwriteClient";
 
 const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
 const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat

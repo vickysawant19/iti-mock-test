@@ -3,7 +3,7 @@
  * Handles batching, dry-runs, checkpoints, rollbacks, progress callbacks, retries, and rate-limiting.
  */
 
-import { tablesDb, Query } from "../appwriteClient";
+import { tablesDb, Query } from "../core/appwriteClient";
 import conf from "../../config/config";
 import { normalizeText } from "../../utils/textNormalization";
 import { splitLanguage, splitOptions } from "../../utils/languageSplitter";

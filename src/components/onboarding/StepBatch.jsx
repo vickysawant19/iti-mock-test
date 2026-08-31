@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import batchService from "@/appwrite/batchService";
+import batchService from "@/services/batch/batchService";
 
 export default function StepBatch({ initialData, onNext, isSaving, onSkip }) {
   const [batchesData, setBatchesData] = useState([]);

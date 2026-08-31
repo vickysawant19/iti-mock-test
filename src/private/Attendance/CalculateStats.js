@@ -1,4 +1,4 @@
-import { attendanceAnalyticsService } from "@/services/attendanceAnalyticsService";
+import { attendanceAnalyticsService } from "@/services/attendance/attendanceAnalyticsService";
 
 export const calculateStats = ({
   userId,

@@ -1,4 +1,4 @@
-import { fixProfileImage } from "@/services/appwriteClient";
+import { fixProfileImage } from "@/services/core/appwriteClient";
 
 export function fixProfileImageUrl(url) {
   return fixProfileImage(url);

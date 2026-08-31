@@ -5,12 +5,12 @@ import { Functions } from "appwrite";
 import { useNavigate } from "react-router-dom";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import { appwriteService } from "@/services/appwriteClient";
+import { appwriteService } from "@/services/core/appwriteClient";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { useListCollegesQuery } from "@/store/api/collegeApi";
 import conf from "@/config/config";
-import subjectService from "@/appwrite/subjectService";
-import moduleServices from "@/appwrite/moduleServices";
+import subjectService from "@/services/academic/subjectService";
+import moduleServices from "@/services/academic/moduleServices";
 
 export function useCreateMockTest() {
   const [isLoading, setIsLoading] = useState(false);

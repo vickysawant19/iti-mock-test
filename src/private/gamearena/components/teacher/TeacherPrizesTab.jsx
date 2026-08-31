@@ -1,7 +1,7 @@
 import React from "react";
 import { Award, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BADGES } from "@/services/reward.service";
+import { BADGES } from "@/services/gamification/reward.service";
 
 export default function TeacherPrizesTab({
   loadingGame,
