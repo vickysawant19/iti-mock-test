@@ -4,34 +4,37 @@ const BATCH_SIZE = 50;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export default async function migrateAttendance(database, log, error) {
+export default async function migrateAttendance(tablesDB, log, error) {
   const userAttendanceCollection = '6693f8300003b08374b2';
   const newAttendanceCollection = 'newAttendance';
   const databaseId = 'itimocktest';
+  const logger = typeof log === 'function' ? log : console.log;
+  const errLog = typeof error === 'function' ? error : console.error;
 
   let allUserAttendanceDocs = [];
   let hasMore = true;
   let offset = 0;
   const limit = 100;
 
-  log('Starting to fetch user attendance documents...');
+  logger('Starting to fetch user attendance documents...');
 
   while (hasMore) {
-    const response = await database.listDocuments(
+    const response = await tablesDB.listRows({
       databaseId,
-      userAttendanceCollection,
-      [Query.limit(limit), Query.offset(offset)]
-    );
+      tableId: userAttendanceCollection,
+      queries: [Query.limit(limit), Query.offset(offset)]
+    });
 
-    if (response.documents.length > 0) {
-      allUserAttendanceDocs = allUserAttendanceDocs.concat(response.documents);
+    const rows = response.rows || response.documents || [];
+    if (rows.length > 0) {
+      allUserAttendanceDocs = allUserAttendanceDocs.concat(rows);
       offset += limit;
     } else {
       hasMore = false;
     }
   }
 
-  log(`Fetched ${allUserAttendanceDocs.length} user attendance documents.`);
+  logger(`Fetched ${allUserAttendanceDocs.length} user attendance documents.`);
 
   const newAttendanceDocs = [];
   for (const doc of allUserAttendanceDocs) {
@@ -53,35 +56,44 @@ export default async function migrateAttendance(database, log, error) {
             newAttendanceDocs.push(newDoc);
           }
         } catch (e) {
-          error(`Failed to parse record: ${recordStr} for user ${doc.userId} - ${e.message}`);
+          errLog(`Failed to parse record: ${recordStr} for user ${doc.userId} - ${e.message}`);
         }
       }
     }
   }
 
-  log(`Created ${newAttendanceDocs.length} new attendance documents to be saved.`);
+  logger(`Created ${newAttendanceDocs.length} new attendance documents to be saved.`);
 
   let migratedCount = 0;
   for (let i = 0; i < newAttendanceDocs.length; i += BATCH_SIZE) {
     const batch = newAttendanceDocs.slice(i, i + BATCH_SIZE);
     
     const documentsToCreate = batch.map(doc => ({
-        '$id': ID.unique(),
+        $id: ID.unique(),
         ...doc
     }));
 
     try {
-        await database.createDocuments(
+        if (typeof tablesDB.upsertRows === 'function') {
+          await tablesDB.upsertRows({
             databaseId,
-            newAttendanceCollection,
-            documentsToCreate
-        );
+            tableId: newAttendanceCollection,
+            rows: documentsToCreate
+          });
+        } else {
+          await Promise.all(
+            documentsToCreate.map(d => tablesDB.createRow({
+              databaseId,
+              tableId: newAttendanceCollection,
+              rowId: d.$id,
+              data: d
+            }))
+          );
+        }
         migratedCount += batch.length;
-        log(`Successfully processed batch of ${batch.length} documents.`);
+        logger(`Successfully processed batch of ${batch.length} documents.`);
     } catch (e) {
-        error(`Failed to migrate batch using createDocuments: ${e.message}`);
-        // If bulk creation fails, you might want to handle it, 
-        // for now, we'll stop the process.
+        errLog(`Failed to migrate batch: ${e.message}`);
         throw e;
     }
     

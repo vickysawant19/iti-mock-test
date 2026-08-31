@@ -1,4 +1,4 @@
-import { Client, Databases, ID } from 'node-appwrite';
+import { Client, TablesDB, ID } from 'node-appwrite';
 import createNewMockTest from "./createNewMockTest.js";
 import generateMockTest from "./generateMockTest.js";
 import generateMockTestNew from "./generateMockTestNew.js";
@@ -64,7 +64,8 @@ export default async ({ req, res, log, error }) => {
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(req.headers['x-appwrite-key'] ?? '');
 
-  const database = new Databases(client);
+  const tablesDB = new TablesDB(client);
+  const database = tablesDB;
 
   
   let result = {};

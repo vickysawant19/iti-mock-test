@@ -12,12 +12,12 @@ const bulkaddQuestions = async ({
 
     const results = [];
     for (const q of questions) {
-      const res = await database.createDocument(
+      const res = await database.createRow({
         databaseId,
-        collectionId,
-        ID.unique(),
-        q
-      );
+        tableId: collectionId,
+        rowId: ID.unique(),
+        data: q
+      });
       results.push(res.$id);
     }
     return { success: true, count: results.length, ids: results };

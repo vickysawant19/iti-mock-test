@@ -1,14 +1,8 @@
 // functions/user-manage/src/migrateHolidays.js
 
-import { Client, Databases, ID, Query } from 'node-appwrite';
+import { Client, TablesDB, ID, Query } from 'node-appwrite';
 import dotenv from 'dotenv';
 dotenv.config();
-
-// This script migrates data from batchesTable to holidayDays collection.
-// Make sure to set up your environment variables before running this script.
-// APPWRITE_ENDPOINT
-// APPWRITE_PROJECT_ID
-// APPWRITE_API_KEY
 
 function formatDate(dateString) {
   if (!dateString) return null;
@@ -33,7 +27,7 @@ async function migrateHolidays() {
     .setProject(process.env.APPWRITE_PROJECT_ID)
     .setKey(process.env.APPWRITE_API_KEY);
 
-  const database = new Databases(client);
+  const tablesDB = new TablesDB(client);
 
   const DB_ID = 'itimocktest';
   const BATCHES_COLLECTION_ID = '66936df000108d8e2364';
@@ -48,13 +42,19 @@ async function migrateHolidays() {
     let offset = 0;
     let response;
     do {
-      response = await database.listDocuments(DB_ID, BATCHES_COLLECTION_ID, [
-        Query.limit(100),
-        Query.offset(offset),
-      ]);
-      batchDocs.push(...response.documents);
-      offset += response.documents.length;
-    } while (response.documents.length > 0);
+      response = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: BATCHES_COLLECTION_ID,
+        queries: [
+          Query.limit(100),
+          Query.offset(offset),
+        ]
+      });
+      const rows = response.rows || response.documents || [];
+      batchDocs.push(...rows);
+      offset += rows.length;
+      if (rows.length < 100) break;
+    } while (true);
     console.log(`Found ${batchDocs.length} batch documents.`);
 
     // 2. Fetch existing holiday days to check for duplicates
@@ -62,14 +62,16 @@ async function migrateHolidays() {
     let existingHolidays = [];
     offset = 0;
     do {
-      response = await database.listDocuments(
-        DB_ID,
-        HOLIDAY_DAYS_COLLECTION_ID,
-        [Query.limit(100), Query.offset(offset)]
-      );
-      existingHolidays.push(...response.documents);
-      offset += response.documents.length;
-    } while (response.documents.length > 0);
+      response = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: HOLIDAY_DAYS_COLLECTION_ID,
+        queries: [Query.limit(100), Query.offset(offset)]
+      });
+      const rows = response.rows || response.documents || [];
+      existingHolidays.push(...rows);
+      offset += rows.length;
+      if (rows.length < 100) break;
+    } while (true);
 
     // Create a Set for fast duplicate checking (batchId-date combination)
     const existingRecordsSet = new Set(
@@ -154,12 +156,22 @@ async function migrateHolidays() {
       );
 
       try {
-        // Use createDocuments for bulk operation (atomic)
-        await database.createDocuments(
-          DB_ID,
-          HOLIDAY_DAYS_COLLECTION_ID,
-          chunk
-        );
+        if (typeof tablesDB.upsertRows === 'function') {
+          await tablesDB.upsertRows({
+            databaseId: DB_ID,
+            tableId: HOLIDAY_DAYS_COLLECTION_ID,
+            rows: chunk
+          });
+        } else {
+          await Promise.all(
+            chunk.map((doc) => tablesDB.createRow({
+              databaseId: DB_ID,
+              tableId: HOLIDAY_DAYS_COLLECTION_ID,
+              rowId: doc.$id,
+              data: doc
+            }))
+          );
+        }
         createdCount += chunk.length;
         console.log(
           `✓ Batch ${batchNumber} completed successfully. Total created: ${createdCount}`
@@ -168,7 +180,6 @@ async function migrateHolidays() {
         failedCount += chunk.length;
         console.error(`✗ Batch ${batchNumber} failed:`, e.message);
 
-        // If bulk operation fails, try individual inserts for this batch
         console.log(
           `Attempting individual inserts for batch ${batchNumber}...`
         );
@@ -177,18 +188,17 @@ async function migrateHolidays() {
 
         for (const doc of chunk) {
           try {
-            await database.createDocument(
-              DB_ID,
-              HOLIDAY_DAYS_COLLECTION_ID,
-              doc.$id,
-              doc
-            );
+            await tablesDB.createRow({
+              databaseId: DB_ID,
+              tableId: HOLIDAY_DAYS_COLLECTION_ID,
+              rowId: doc.$id,
+              data: doc
+            });
             individualSuccess++;
             createdCount++;
           } catch (individualError) {
             individualFailed++;
             if (individualError.code !== 409) {
-              // Ignore duplicate errors
               console.error(
                 `Failed to create document for batch ${doc.batchId} on ${doc.date}:`,
                 individualError.message
@@ -197,13 +207,12 @@ async function migrateHolidays() {
           }
         }
 
-        failedCount -= individualSuccess; // Adjust failed count
+        failedCount -= individualSuccess;
         console.log(
           `Individual inserts: ${individualSuccess} succeeded, ${individualFailed} failed`
         );
       }
 
-      // Small delay between batches to avoid rate limits
       if (i + batchSize < newHolidayDocs.length) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }

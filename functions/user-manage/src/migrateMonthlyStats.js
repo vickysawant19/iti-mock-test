@@ -4,7 +4,11 @@ import { generateShortStatId } from './statsHelper.js';
 const BATCH_SIZE = 50;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export default async function migrateMonthlyStats(databases, tablesDB, log, error) {
+export default async function migrateMonthlyStats(tablesDB, maybeTablesDB, log, error) {
+  const tables = tablesDB || maybeTablesDB;
+  const logger = typeof log === 'function' ? log : console.log;
+  const errLog = typeof error === 'function' ? error : console.error;
+
   const databaseId = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
   const newAttendanceCollection = 'newAttendance';
   const monthlyStatsCollection = 'monthlyAttendanceStats';
@@ -14,46 +18,52 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
   let offset = 0;
   const limit = 1000;
 
-  log('Starting bulk migration of monthly attendance stats...');
+  logger('Starting bulk migration of monthly attendance stats...');
 
   // 0. Clean up any old invalid documents in monthlyAttendanceStats collection
   try {
-    const existingOldDocs = await databases.listDocuments(
+    const existingOldDocs = await tables.listRows({
       databaseId,
-      monthlyStatsCollection,
-      [Query.limit(500)]
-    ).catch(() => ({ documents: [] }));
+      tableId: monthlyStatsCollection,
+      queries: [Query.limit(500)]
+    }).catch(() => ({ rows: [], documents: [] }));
 
-    if (existingOldDocs.documents?.length > 0) {
-      log(`Clearing ${existingOldDocs.documents.length} existing monthly stats records...`);
+    const rows = existingOldDocs.rows || existingOldDocs.documents || [];
+    if (rows.length > 0) {
+      logger(`Clearing ${rows.length} existing monthly stats records...`);
       await Promise.all(
-        existingOldDocs.documents.map((d) =>
-          databases.deleteDocument(databaseId, monthlyStatsCollection, d.$id).catch(() => null)
+        rows.map((d) =>
+          tables.deleteRow({
+            databaseId,
+            tableId: monthlyStatsCollection,
+            rowId: d.$id
+          }).catch(() => null)
         )
       );
     }
   } catch (e) {
-    log(`Note on clearing existing monthly stats: ${e.message}`);
+    logger(`Note on clearing existing monthly stats: ${e.message}`);
   }
 
   // 1. Fetch all raw daily attendance records
   while (hasMore) {
-    const response = await databases.listDocuments(
+    const response = await tables.listRows({
       databaseId,
-      newAttendanceCollection,
-      [Query.limit(limit), Query.offset(offset)]
-    );
+      tableId: newAttendanceCollection,
+      queries: [Query.limit(limit), Query.offset(offset)]
+    });
 
-    if (response.documents.length > 0) {
-      allAttendanceDocs = allAttendanceDocs.concat(response.documents);
+    const rows = response.rows || response.documents || [];
+    if (rows.length > 0) {
+      allAttendanceDocs = allAttendanceDocs.concat(rows);
       offset += limit;
-      log(`Fetched ${allAttendanceDocs.length} total attendance records so far...`);
+      logger(`Fetched ${allAttendanceDocs.length} total attendance records so far...`);
     } else {
       hasMore = false;
     }
   }
 
-  log(`Completed fetching ${allAttendanceDocs.length} attendance records. Grouping by userId, batchId, and month...`);
+  logger(`Completed fetching ${allAttendanceDocs.length} attendance records. Grouping by userId, batchId, and month...`);
 
   // 2. Group records by key `${userId}_${batchId}_${yearMonth}`
   const statsGroupMap = new Map();
@@ -75,7 +85,7 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
     statsGroupMap.get(docId).rows.push(doc);
   });
 
-  log(`Grouped records into ${statsGroupMap.size} unique monthly user-batch summaries.`);
+  logger(`Grouped records into ${statsGroupMap.size} unique monthly user-batch summaries.`);
 
   // 3. Compute aggregated payload for each group
   const aggregatedStats = [];
@@ -121,15 +131,15 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
   }
 
   // 4. Atomic Bulk Upsert into monthlyAttendanceStats collection using Server SDK tablesDB.upsertRows
-  log(`Saving ${aggregatedStats.length} monthly attendance stats documents using atomic bulk upsertRows...`);
+  logger(`Saving ${aggregatedStats.length} monthly attendance stats documents using atomic bulk upsertRows...`);
   let upsertedCount = 0;
 
   for (let i = 0; i < aggregatedStats.length; i += BATCH_SIZE) {
     const chunk = aggregatedStats.slice(i, i + BATCH_SIZE);
 
     try {
-      if (tablesDB && typeof tablesDB.upsertRows === 'function') {
-        await tablesDB.upsertRows({
+      if (tables && typeof tables.upsertRows === 'function') {
+        await tables.upsertRows({
           databaseId,
           tableId: monthlyStatsCollection,
           rows: chunk,
@@ -139,28 +149,43 @@ export default async function migrateMonthlyStats(databases, tablesDB, log, erro
         throw new Error('Native upsertRows not available');
       }
     } catch (e) {
-      log(`upsertRows chunk failed (${e.message}); using fallback upsert for ${chunk.length} items...`);
+      logger(`upsertRows chunk failed (${e.message}); using fallback upsert for ${chunk.length} items...`);
       for (const doc of chunk) {
         try {
-          await databases.updateDocument(databaseId, monthlyStatsCollection, doc.$id, doc);
+          await tables.updateRow({
+            databaseId,
+            tableId: monthlyStatsCollection,
+            rowId: doc.$id,
+            data: doc
+          });
           upsertedCount++;
         } catch (err) {
           try {
-            await databases.createDocument(databaseId, monthlyStatsCollection, doc.$id, doc);
+            await tables.createRow({
+              databaseId,
+              tableId: monthlyStatsCollection,
+              rowId: doc.$id,
+              data: doc
+            });
             upsertedCount++;
           } catch (createErr) {
-            error(`Failed creating stat document ${doc.$id}: ${createErr.message}`);
+            errLog(`Failed creating stat document ${doc.$id}: ${createErr.message}`);
           }
         }
       }
     }
 
-    log(`Processed ${Math.min(i + BATCH_SIZE, aggregatedStats.length)} / ${aggregatedStats.length} monthly stats...`);
+    logger(`Processed ${Math.min(i + BATCH_SIZE, aggregatedStats.length)} / ${aggregatedStats.length} monthly stats...`);
     if (i + BATCH_SIZE < aggregatedStats.length) {
       await sleep(200);
     }
   }
 
-  log(`Successfully bulk migrated ${upsertedCount} monthly attendance stats records.`);
-  return { success: true, count: upsertedCount, totalGroups: statsGroupMap.size };
+  logger(`Successfully completed monthly stats migration. Saved/updated ${upsertedCount} documents.`);
+  return {
+    success: true,
+    totalRecordsProcessed: allAttendanceDocs.length,
+    monthlySummariesGenerated: aggregatedStats.length,
+    upsertedCount,
+  };
 }

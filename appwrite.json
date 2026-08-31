@@ -94,7 +94,7 @@
         {
             "$id": "67a88715003234e3617a",
             "name": "Mock-Test-Service",
-            "runtime": "node-18.0",
+            "runtime": "node-22",
             "path": "functions/mock-test-service",
             "entrypoint": "src/main.js",
             "execute": [
@@ -110,12 +110,18 @@
                 "users.read",
                 "databases.read",
                 "databases.write",
+                "tables.read",
+                "tables.write",
+                "columns.read",
+                "columns.write",
+                "indexes.read",
+                "indexes.write",
+                "rows.read",
+                "rows.write",
                 "collections.read",
                 "collections.write",
                 "attributes.read",
                 "attributes.write",
-                "indexes.read",
-                "indexes.write",
                 "documents.read",
                 "documents.write"
             ],
@@ -126,7 +132,7 @@
         {
             "$id": "67d3fa29000adc329a4a",
             "name": "imageUpload",
-            "runtime": "node-18.0",
+            "runtime": "node-22",
             "path": "functions/imageupload",
             "entrypoint": "src/main.js",
             "execute": [

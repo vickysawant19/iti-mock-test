@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { Client, Databases, ID, Query } from 'node-appwrite';
+import { Client, TablesDB, ID, Query } from 'node-appwrite';
 import fuzz from 'fuzzball';
 
 config();
@@ -17,7 +17,7 @@ client
 
 console.log("API setup complete");
 
-const databases = new Databases(client);
+const tablesDB = new TablesDB(client);
 const DATABASE_ID = 'itimocktest'; 
 const COLLECTION_ID = '667932c5000ff8e2d769'; 
 const QUESTION_ATTR = 'question'; // Column for question text
@@ -42,16 +42,17 @@ async function main() {
 
     process.stdout.write('Fetching documents... ');
     while (keepFetching) {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        COLLECTION_ID,
-        [Query.limit(limit), Query.offset(offset)]
-      );
+      const response = await tablesDB.listRows({
+        databaseId: DATABASE_ID,
+        tableId: COLLECTION_ID,
+        queries: [Query.limit(limit), Query.offset(offset)]
+      });
 
-      allDocs = allDocs.concat(response.documents);
+      const rows = response.rows || response.documents || [];
+      allDocs = allDocs.concat(rows);
       offset += limit;
 
-      if (response.documents.length < limit) keepFetching = false;
+      if (rows.length < limit) keepFetching = false;
     }
     console.log(`Done. Found ${allDocs.length} documents.`);
 
@@ -135,7 +136,11 @@ async function main() {
       } else {
         console.log('\n[DELETING] Starting deletion process...');
         for (const id of idsToDelete) {
-          await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id);
+          await tablesDB.deleteRow({
+            databaseId: DATABASE_ID,
+            tableId: COLLECTION_ID,
+            rowId: id
+          });
           console.log(`Deleted ID: ${id}`);
         }
         console.log('Deletion complete.');

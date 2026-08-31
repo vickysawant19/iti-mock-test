@@ -34,15 +34,15 @@ const generateMockTest = async ({
 
     // If specific modules are selected, we need to filter by their logical moduleId strings
     if (selectedModules && selectedModules.length > 0) {
-      const moduleDocs = await database.listDocuments(
+      const moduleDocs = await database.listRows({
         databaseId,
-        newModulesDataCollectionId,
-        [
+        tableId: newModulesDataCollectionId,
+        queries: [
           Query.equal("$id", selectedModules),
           Query.select(["moduleId"])
         ]
-      );
-      const logicalModuleIds = moduleDocs.documents.map(d => d.moduleId);
+      });
+      const logicalModuleIds = (moduleDocs.rows || moduleDocs.documents || []).map(d => d.moduleId);
       if (logicalModuleIds.length > 0) {
         queries.push(Query.equal("moduleId", logicalModuleIds));
       }
@@ -57,15 +57,16 @@ const generateMockTest = async ({
     const batchLimit = 100;
 
     while (hasMore) {
-      const response = await database.listDocuments(
+      const response = await database.listRows({
         databaseId,
-        quesCollectionId,
-        [...queries, Query.limit(batchLimit), Query.offset(offset), Query.select(["$id"])]
-      );
+        tableId: quesCollectionId,
+        queries: [...queries, Query.limit(batchLimit), Query.offset(offset), Query.select(["$id"])]
+      });
 
-      documents = documents.concat(response.documents);
-      offset += response.documents.length;
-      hasMore = offset < response.total && response.documents.length > 0;
+      const rows = response.rows || response.documents || [];
+      documents = documents.concat(rows);
+      offset += rows.length;
+      hasMore = offset < (response.total ?? 0) && rows.length > 0;
     }
 
     return documents;
@@ -118,15 +119,18 @@ const generateMockTest = async ({
     
     const randomQuestionIds = getRandomQuestions(questions, quesCount);
 
-    const selectedQuestions = await database.listDocuments(
+    const selectedQuestions = await database.listRows({
       databaseId,
-      quesCollectionId,
-      [Query.limit(quesCount),
-       Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
-       Query.select(["$id","question","options" ,"userId","userName","correctAnswer","moduleId"])]
-    );
+      tableId: quesCollectionId,
+      queries: [
+        Query.limit(quesCount),
+        Query.equal("$id", randomQuestionIds.map(item => item.$id)), 
+        Query.select(["$id","question","options" ,"userId","userName","correctAnswer","moduleId"])
+      ]
+    });
 
-    const shuffledQuestions = selectedQuestions.documents.sort(() => Math.random - 1)
+    const selectedRows = selectedQuestions.rows || selectedQuestions.documents || [];
+    const shuffledQuestions = selectedRows.sort(() => Math.random() - 0.5);
 
     const questionsWithResponses = shuffledQuestions.map((question) => ({
       $id: question.$id,
@@ -161,12 +165,12 @@ const generateMockTest = async ({
       totalMinutes: parseInt(totalMinutes) || 60,
     };
 
-    const response = await database.createDocument(
+    const response = await database.createRow({
       databaseId,
-      questionPapersCollectionId,
-      "unique()",
-      questionPaper
-    );
+      tableId: questionPapersCollectionId,
+      rowId: "unique()",
+      data: questionPaper
+    });
 
     return { paperId: response.$id };
   } catch (err) {

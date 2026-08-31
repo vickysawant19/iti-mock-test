@@ -27,26 +27,27 @@ const createQuestion = async ({
     }
 
     // Check if duplicate question exists
-    const existing = await database.listDocuments(
+    const existing = await database.listRows({
       databaseId,
-      collectionId,
-      [
+      tableId: collectionId,
+      queries: [
         Query.equal("question", payload.question),
         Query.limit(1),
         Query.select(["$id"])
       ]
-    );
+    });
 
-    if (existing.total > 0) {
+    const rows = existing.rows || existing.documents || [];
+    if ((existing.total ?? rows.length) > 0 && rows.length > 0) {
       throw new Error("The question already exists in the database.");
     }
 
-    const response = await database.createDocument(
+    const response = await database.createRow({
       databaseId,
-      collectionId,
-      ID.unique(),
-      payload
-    );
+      tableId: collectionId,
+      rowId: ID.unique(),
+      data: payload
+    });
 
     return response;
   } catch (err) {
@@ -77,12 +78,12 @@ const updateQuestion = async ({
       throw new Error("Payload is required for updates.");
     }
 
-    const response = await database.updateDocument(
+    const response = await database.updateRow({
       databaseId,
-      collectionId,
-      id,
-      payload
-    );
+      tableId: collectionId,
+      rowId: id,
+      data: payload
+    });
 
     return response;
   } catch (err) {
@@ -109,11 +110,11 @@ const deleteQuestion = async ({
       throw new Error("Question ID is required for deletion.");
     }
 
-    await database.deleteDocument(
+    await database.deleteRow({
       databaseId,
-      collectionId,
-      id
-    );
+      tableId: collectionId,
+      rowId: id
+    });
 
     return { success: true };
   } catch (err) {
@@ -146,12 +147,12 @@ const bulkUpdateQuestions = async ({
       if (!item.id || !item.data) {
         throw new Error("Each update item must contain both id and data fields.");
       }
-      const res = await database.updateDocument(
+      const res = await database.updateRow({
         databaseId,
-        collectionId,
-        item.id,
-        item.data
-      );
+        tableId: collectionId,
+        rowId: item.id,
+        data: item.data
+      });
       results.push(res.$id);
     }
 
@@ -182,11 +183,11 @@ const bulkDeleteQuestions = async ({
     }
 
     for (const id of ids) {
-      await database.deleteDocument(
+      await database.deleteRow({
         databaseId,
-        collectionId,
-        id
-      );
+        tableId: collectionId,
+        rowId: id
+      });
     }
 
     return { success: true, count: ids.length };

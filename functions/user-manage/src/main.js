@@ -1,4 +1,4 @@
-import { Client, Users, Databases, TablesDB, Query } from 'node-appwrite';
+import { Client, Users, TablesDB, Query } from 'node-appwrite';
 import { validateAppwriteKey } from './utils.js';
 import { handleUserAction } from './userActions.js';
 import { handleAttendanceAction } from './attendanceActions.js';
@@ -35,7 +35,7 @@ export default async ({ req, res, log, error }) => {
       .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
       .setKey(req.headers['x-appwrite-key']);
 
-    const databases = new Databases(client);
+    const tablesDB = new TablesDB(client);
 
     // ── Handle Presence Deletion Event ──
     if (event && event.startsWith('presences.') && event.endsWith('.delete')) {
@@ -51,28 +51,29 @@ export default async ({ req, res, log, error }) => {
       const userProfileCollectionId = process.env.USER_PROFILE_COLLECTION_ID || '66937340001047368f32';
 
       // Locate profile row
-      const profileList = await databases.listDocuments(
+      const profileList = await tablesDB.listRows({
         databaseId,
-        userProfileCollectionId,
-        [Query.equal('userId', userId), Query.limit(1)]
-      );
+        tableId: userProfileCollectionId,
+        queries: [Query.equal('userId', userId), Query.limit(1)]
+      });
 
-      if (profileList.total === 0) {
+      const rows = profileList.rows || profileList.documents || [];
+      if ((profileList.total ?? rows.length) === 0 || rows.length === 0) {
         trace(`No profile found for userId: ${userId}. Skipping update.`);
         return res.json({ success: true, message: 'No profile found', logs: debugLogs });
       }
 
-      const profile = profileList.documents[0];
+      const profile = rows[0];
       trace(`Updating lastseen for profile: ${profile.$id}`);
 
-      const updatedProfile = await databases.updateDocument(
+      const updatedProfile = await tablesDB.updateRow({
         databaseId,
-        userProfileCollectionId,
-        profile.$id,
-        {
+        tableId: userProfileCollectionId,
+        rowId: profile.$id,
+        data: {
           lastseen: new Date().toISOString()
         }
-      );
+      });
 
       trace(`Successfully updated lastseen to ${updatedProfile.lastseen}`);
       return res.json({
@@ -96,7 +97,6 @@ export default async ({ req, res, log, error }) => {
     }
 
     const users = new Users(client);
-    const tablesDB = new TablesDB(client);
     let response;
 
     // Check if the action belongs to user management
@@ -109,7 +109,7 @@ export default async ({ req, res, log, error }) => {
 
     // If not user or batch action, check if it belongs to attendance/statistics
     if (response === null) {
-      response = await handleAttendanceAction(action, req, res, client, databases, tablesDB, trace, error);
+      response = await handleAttendanceAction(action, req, res, client, tablesDB, trace, error);
     }
 
     if (response === null) {

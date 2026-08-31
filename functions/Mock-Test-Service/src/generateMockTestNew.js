@@ -84,12 +84,13 @@ const generateMockTestNew = async ({
    */
   const resolveLogicalModuleIds = async (moduleDocIds) => {
     if (!moduleDocIds || moduleDocIds.length === 0) return [];
-    const resp = await database.listDocuments(
+    const resp = await database.listRows({
       databaseId,
-      newModulesDataCollectionId,
-      [Query.equal("$id", moduleDocIds), Query.select(["moduleId"])]
-    );
-    return resp.documents.map((d) => d.moduleId);
+      tableId: newModulesDataCollectionId,
+      queries: [Query.equal("$id", moduleDocIds), Query.select(["moduleId"])]
+    });
+    const rows = resp.rows || resp.documents || [];
+    return rows.map((d) => d.moduleId);
   };
 
   /**
@@ -101,14 +102,15 @@ const generateMockTestNew = async ({
     let   hasMore = true;
 
     while (hasMore) {
-      const resp = await database.listDocuments(
+      const resp = await database.listRows({
         databaseId,
-        quesCollectionId,
-        [...baseQueries, Query.limit(100), Query.offset(offset), Query.select(["$id"])]
-      );
-      resp.documents.forEach((d) => ids.push(d.$id));
-      offset  += resp.documents.length;
-      hasMore  = offset < resp.total && resp.documents.length > 0;
+        tableId: quesCollectionId,
+        queries: [...baseQueries, Query.limit(100), Query.offset(offset), Query.select(["$id"])]
+      });
+      const rows = resp.rows || resp.documents || [];
+      rows.forEach((d) => ids.push(d.$id));
+      offset  += rows.length;
+      hasMore  = offset < (resp.total ?? 0) && rows.length > 0;
     }
 
     return ids;
@@ -229,12 +231,12 @@ const generateMockTestNew = async ({
       isProtected:     true,
     };
 
-    const created = await database.createDocument(
+    const created = await database.createRow({
       databaseId,
-      questionPapersCollectionId,
-      "unique()",
-      paperDoc
-    );
+      tableId: questionPapersCollectionId,
+      rowId: "unique()",
+      data: paperDoc
+    });
 
     return { paperId: created.$id, paperCode: paperId, quesCount: serialized.length };
   } catch (err) {

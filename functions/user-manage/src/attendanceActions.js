@@ -14,12 +14,16 @@ import {
 } from './statsHelper.js';
 import PermissionPolicy from './policies/permissionPolicy.js';
 
-const getBatchTeamPermissions = async (databases, DB_ID, batchId, fallbackTeamId = null) => {
+const getBatchTeamPermissions = async (tablesDB, DB_ID, batchId, fallbackTeamId = null) => {
   let teamId = fallbackTeamId;
   if (!teamId && batchId) {
     try {
       const BATCH_COL_ID = process.env.BATCH_COLLECTION_ID || '66936df000108d8e2364';
-      const batchDoc = await databases.getDocument(DB_ID, BATCH_COL_ID, batchId).catch(() => null);
+      const batchDoc = await tablesDB.getRow({
+        databaseId: DB_ID,
+        tableId: BATCH_COL_ID,
+        rowId: batchId,
+      }).catch(() => null);
       teamId = batchDoc?.teamId;
     } catch (e) {
       // ignore
@@ -28,7 +32,7 @@ const getBatchTeamPermissions = async (databases, DB_ID, batchId, fallbackTeamId
   return teamId ? PermissionPolicy.attendance(teamId) : [];
 };
 
-export const handleAttendanceAction = async (action, req, res, client, databases, tablesDB, log, error) => {
+export const handleAttendanceAction = async (action, req, res, client, tablesDB, log, error) => {
   const DB_ID = process.env.APPWRITE_DATABASE_ID || 'itimocktest';
   const NEW_ATTENDANCE_COL_ID = 'newAttendance';
   const STATS_COLLECTION_ID = 'userBatchStats';
@@ -36,10 +40,10 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
   switch (action) {
     case 'migrateAttendance': {
-      return await migrateAttendanceFunc(databases, logger, error);
+      return await migrateAttendanceFunc(tablesDB, logger, error);
     }
     case 'migrateMonthlyStats': {
-      return await migrateMonthlyStatsFunc(databases, tablesDB, logger, error);
+      return await migrateMonthlyStatsFunc(tablesDB, tablesDB, logger, error);
     }
     case 'updateBatchStatsFromTest': {
       const { userId, batchId, score, quesCount } = req.bodyJson;
@@ -53,32 +57,44 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       }
 
       // Fetch existing stats
-      const existingDocs = await databases.listDocuments(
-        DB_ID,
-        STATS_COLLECTION_ID,
-        [Query.equal('userId', userId), Query.equal('batchId', batchId)]
-      );
+      const existingDocs = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: STATS_COLLECTION_ID,
+        queries: [Query.equal('userId', userId), Query.equal('batchId', batchId)]
+      });
 
-      if (existingDocs.total > 0) {
-        const existing = existingDocs.documents[0];
+      const rows = existingDocs.rows || existingDocs.documents || [];
+
+      if ((existingDocs.total ?? rows.length) > 0 && rows.length > 0) {
+        const existing = rows[0];
         const newTestsSubmitted = (existing.testsSubmitted || 0) + 1;
         const newCumulativeScore = (existing.cumulativeScore || 0) + score;
 
-        await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, existing.$id, {
-          testsSubmitted: newTestsSubmitted,
-          cumulativeScore: newCumulativeScore,
-          latestScore: score,
+        await tablesDB.updateRow({
+          databaseId: DB_ID,
+          tableId: STATS_COLLECTION_ID,
+          rowId: existing.$id,
+          data: {
+            testsSubmitted: newTestsSubmitted,
+            cumulativeScore: newCumulativeScore,
+            latestScore: score,
+          }
         });
       } else {
-        await databases.createDocument(DB_ID, STATS_COLLECTION_ID, ID.unique(), {
-          userId,
-          batchId,
-          totalWorkingDays: 0,
-          presentDays: 0,
-          monthlyAttendance: JSON.stringify({}),
-          testsSubmitted: 1,
-          cumulativeScore: score,
-          latestScore: score,
+        await tablesDB.createRow({
+          databaseId: DB_ID,
+          tableId: STATS_COLLECTION_ID,
+          rowId: ID.unique(),
+          data: {
+            userId,
+            batchId,
+            totalWorkingDays: 0,
+            presentDays: 0,
+            monthlyAttendance: JSON.stringify({}),
+            testsSubmitted: 1,
+            cumulativeScore: score,
+            latestScore: score,
+          }
         });
       }
 
@@ -90,15 +106,21 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw new Error('Missing batchId for updateBatchStatsWorkingDays');
       }
 
-      const statsDocs = await databases.listDocuments(
-        DB_ID,
-        STATS_COLLECTION_ID,
-        [Query.equal('batchId', batchId), Query.limit(500)]
-      );
+      const statsDocs = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: STATS_COLLECTION_ID,
+        queries: [Query.equal('batchId', batchId), Query.limit(500)]
+      });
 
-      const promises = statsDocs.documents.map((doc) =>
-        databases.updateDocument(DB_ID, STATS_COLLECTION_ID, doc.$id, {
-          totalWorkingDays: (doc.totalWorkingDays || 0) + 1,
+      const rows = statsDocs.rows || statsDocs.documents || [];
+      const promises = rows.map((doc) =>
+        tablesDB.updateRow({
+          databaseId: DB_ID,
+          tableId: STATS_COLLECTION_ID,
+          rowId: doc.$id,
+          data: {
+            totalWorkingDays: (doc.totalWorkingDays || 0) + 1,
+          }
         })
       );
 
@@ -114,15 +136,17 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       logger(`[markBatchAttendance] START batch=${batchId}, date=${date}, items=${attendanceData.length}`);
 
-      const teamPermissions = await getBatchTeamPermissions(databases, DB_ID, batchId, teamId);
+      const teamPermissions = await getBatchTeamPermissions(tablesDB, DB_ID, batchId, teamId);
 
       // Fetch batchStudents for enrollment date validation
       const BATCH_STUDENTS_COL_ID = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
-      const batchStudentsRes = await databases.listDocuments(
-        DB_ID,
-        BATCH_STUDENTS_COL_ID,
-        [Query.equal('batchId', batchId), Query.limit(500)]
-      ).catch(() => ({ documents: [] }));
+      const batchStudentsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: BATCH_STUDENTS_COL_ID,
+        queries: [Query.equal('batchId', batchId), Query.limit(500)]
+      }).catch(() => ({ rows: [], documents: [] }));
+
+      const bsRows = batchStudentsRes.rows || batchStudentsRes.documents || [];
 
       const getEnrollmentDateStr = (raw) => {
         if (!raw) return null;
@@ -131,7 +155,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       };
 
       const enrollmentMap = new Map();
-      (batchStudentsRes.documents || []).forEach((row) => {
+      bsRows.forEach((row) => {
         const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
         if (row.studentId && ed) {
           enrollmentMap.set(row.studentId, ed);
@@ -141,18 +165,19 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       logger(`[markBatchAttendance] Permissions & students loaded in ${Date.now() - t0}ms`);
 
       // 1. Fetch existing attendance docs for that batch and date
-      const existingDocsRes = await databases.listDocuments(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        [
+      const existingDocsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        queries: [
           Query.equal('batchId', batchId),
           Query.equal('date', date),
           Query.limit(500),
         ]
-      ).catch(() => ({ documents: [] }));
+      }).catch(() => ({ rows: [], documents: [] }));
 
+      const existingRows = existingDocsRes.rows || existingDocsRes.documents || [];
       const existingRecordsMap = new Map(
-        (existingDocsRes.documents || []).map((doc) => [doc.userId, doc])
+        existingRows.map((doc) => [doc.userId, doc])
       );
 
       logger(`[markBatchAttendance] Existing docs loaded in ${Date.now() - t0}ms (found ${existingRecordsMap.size})`);
@@ -246,7 +271,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         logger(`[markBatchAttendance] Upserting ${allRecordsToSave.length} records (${newRecords.length} new, ${existingToUpdate.length} updates)...`);
         const savedDocs = await bulkUpsertDocuments(
           tablesDB,
-          databases,
           DB_ID,
           NEW_ATTENDANCE_COL_ID,
           allRecordsToSave,
@@ -264,7 +288,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           logger(`[markBatchAttendance] Updating incremental monthly stats for ${statsToUpdate.length} students...`);
           await updateIncrementalMonthlyAttendanceStats(
             tablesDB,
-            databases,
             DB_ID,
             batchId,
             date,
@@ -300,11 +323,13 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       const batchId = attendanceRecords[0]?.batchId;
       const BATCH_STUDENTS_COL_ID = process.env.BATCH_STUDENTS_COLLECTION_ID || 'batchStudents';
-      const batchStudentsRes = await databases.listDocuments(
-        DB_ID,
-        BATCH_STUDENTS_COL_ID,
-        [Query.equal('batchId', batchId), Query.limit(500)]
-      ).catch(() => ({ documents: [] }));
+      const batchStudentsRes = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: BATCH_STUDENTS_COL_ID,
+        queries: [Query.equal('batchId', batchId), Query.limit(500)]
+      }).catch(() => ({ rows: [], documents: [] }));
+
+      const bsRows = batchStudentsRes.rows || batchStudentsRes.documents || [];
 
       const getEnrollmentDateStr = (raw) => {
         if (!raw) return null;
@@ -313,7 +338,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       };
 
       const enrollmentMap = new Map();
-      (batchStudentsRes.documents || []).forEach((row) => {
+      bsRows.forEach((row) => {
         const ed = getEnrollmentDateStr(row.enrollmentDate || row.joinedAt);
         if (row.studentId && ed) {
           enrollmentMap.set(row.studentId, ed);
@@ -346,7 +371,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       const createdDocs = await bulkUpsertDocuments(
         tablesDB,
-        databases,
         DB_ID,
         NEW_ATTENDANCE_COL_ID,
         recordsToInsert,
@@ -358,7 +382,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         try {
           await updateIncrementalMonthlyAttendanceStats(
             tablesDB,
-            databases,
             DB_ID,
             recordsToInsert[0].batchId,
             recordsToInsert[0].date,
@@ -368,7 +391,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           );
           await bulkUpdateBatchStats(
             tablesDB,
-            databases,
             recordsToInsert[0].batchId,
             recordsToInsert[0].date,
             recordsToInsert,
@@ -396,15 +418,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       }
 
       // Fetch records before deleting to get userId, batchId, date
-      const existingDocs = await databases.listDocuments(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        [Query.equal('$id', documentIds), Query.limit(500)]
-      ).then((res) => res.documents || []).catch(() => []);
+      const existingDocs = await tablesDB.listRows({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        queries: [Query.equal('$id', documentIds), Query.limit(500)]
+      }).then((res) => res.rows || res.documents || []).catch(() => []);
 
       await deleteTableRows(
         tablesDB,
-        databases,
         DB_ID,
         NEW_ATTENDANCE_COL_ID,
         [Query.equal('$id', documentIds)],
@@ -427,7 +448,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         });
 
         for (const grp of groupMap.values()) {
-          await decrementMonthlyStatsForAttendanceRecords(tablesDB, databases, DB_ID, grp.batchId, grp.yearMonth, grp.records, logger);
+          await decrementMonthlyStatsForAttendanceRecords(tablesDB, DB_ID, grp.batchId, grp.yearMonth, grp.records, logger);
         }
       } catch (err) {
         logger(`Failed stats update on deleteMultipleAttendance: ${err.message}`);
@@ -445,11 +466,11 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       const finalAttendanceStatus = attendanceStatus || (status ? status.toUpperCase() : 'PRESENT');
       const finalDayType = dayType || 'WORKING';
 
-      const result = await databases.createDocument(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        ID.unique(),
-        {
+      const result = await tablesDB.createRow({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rowId: ID.unique(),
+        data: {
           userId,
           batchId,
           tradeId: tradeId || null,
@@ -465,11 +486,11 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           remarks: remarks || null,
           markedAt: req.bodyJson.markedAt || new Date().toISOString(),
         }
-      );
+      });
 
       // Fast incremental updates to monthlyAttendanceStats
       try {
-        await updateMonthlyAttendanceStatsHelper(tablesDB, databases, userId, batchId, date, logger);
+        await updateMonthlyAttendanceStatsHelper(tablesDB, userId, batchId, date, logger);
       } catch (err) {
         logger(`Failed stats update on createAttendance: ${err.message}`);
       }
@@ -482,27 +503,27 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw new Error('Missing documentId or updates for updateAttendance');
       }
 
-      const existingRecord = await databases.getDocument(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        documentId
-      ).catch(() => null);
+      const existingRecord = await tablesDB.getRow({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rowId: documentId
+      }).catch(() => null);
 
       const updatePayload = {
         ...updates,
         markedAt: updates.markedAt || new Date().toISOString(),
       };
 
-      const result = await databases.updateDocument(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        documentId,
-        updatePayload
-      );
+      const result = await tablesDB.updateRow({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rowId: documentId,
+        data: updatePayload
+      });
 
       if (existingRecord) {
         try {
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId], null, logger);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId], null, logger);
         } catch (err) {
           logger(`Failed to update monthlyAttendanceStats on updateAttendance: ${err.message}`);
         }
@@ -516,21 +537,21 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw new Error('Missing documentId for deleteAttendance');
       }
 
-      const existingRecord = await databases.getDocument(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        documentId
-      ).catch(() => null);
+      const existingRecord = await tablesDB.getRow({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rowId: documentId
+      }).catch(() => null);
 
-      await databases.deleteDocument(
-        DB_ID,
-        NEW_ATTENDANCE_COL_ID,
-        documentId
-      );
+      await tablesDB.deleteRow({
+        databaseId: DB_ID,
+        tableId: NEW_ATTENDANCE_COL_ID,
+        rowId: documentId
+      });
 
       if (existingRecord) {
         try {
-          await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId], null, logger);
+          await bulkUpdateMonthlyAttendanceStats(tablesDB, existingRecord.batchId, String(existingRecord.date).substring(0, 7), [existingRecord.userId], null, logger);
         } catch (err) {
           logger(`Failed to update monthlyAttendanceStats on deleteAttendance: ${err.message}`);
         }
@@ -540,13 +561,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       if (existingRecord && existingRecord.status === 'present') {
         try {
           const monthKey = existingRecord.date.substring(0, 7);
-          const existingDocs = await databases.listDocuments(
-            DB_ID,
-            STATS_COLLECTION_ID,
-            [Query.equal('userId', existingRecord.userId), Query.equal('batchId', existingRecord.batchId)]
-          );
-          if (existingDocs.total > 0) {
-            const statsDoc = existingDocs.documents[0];
+          const existingDocs = await tablesDB.listRows({
+            databaseId: DB_ID,
+            tableId: STATS_COLLECTION_ID,
+            queries: [Query.equal('userId', existingRecord.userId), Query.equal('batchId', existingRecord.batchId)]
+          });
+          const rows = existingDocs.rows || existingDocs.documents || [];
+          if ((existingDocs.total ?? rows.length) > 0 && rows.length > 0) {
+            const statsDoc = rows[0];
             let monthlyData = {};
             try {
               monthlyData = JSON.parse(statsDoc.monthlyAttendance || '{}');
@@ -555,9 +577,14 @@ export const handleAttendanceAction = async (action, req, res, client, databases
             if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
             monthlyData[monthKey] = Math.max(0, monthlyData[monthKey] - 1);
 
-            await databases.updateDocument(DB_ID, STATS_COLLECTION_ID, statsDoc.$id, {
-              presentDays: Math.max(0, statsDoc.presentDays - 1),
-              monthlyAttendance: JSON.stringify(monthlyData),
+            await tablesDB.updateRow({
+              databaseId: DB_ID,
+              tableId: STATS_COLLECTION_ID,
+              rowId: statsDoc.$id,
+              data: {
+                presentDays: Math.max(0, statsDoc.presentDays - 1),
+                monthlyAttendance: JSON.stringify(monthlyData),
+              }
             });
           }
         } catch (err) {
@@ -579,29 +606,30 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // 1. Create or update holiday document
       let holidayDoc;
       try {
-        const existing = await databases.listDocuments(
-          DB_ID,
-          HOLIDAY_DAYS_COL_ID,
-          [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(1)]
-        );
-        if (existing.documents?.length > 0) {
-          holidayDoc = await databases.updateDocument(
-            DB_ID,
-            HOLIDAY_DAYS_COL_ID,
-            existing.documents[0].$id,
-            { holidayText: holidayText || 'Holiday' }
-          );
+        const existing = await tablesDB.listRows({
+          databaseId: DB_ID,
+          tableId: HOLIDAY_DAYS_COL_ID,
+          queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(1)]
+        });
+        const rows = existing.rows || existing.documents || [];
+        if (rows.length > 0) {
+          holidayDoc = await tablesDB.updateRow({
+            databaseId: DB_ID,
+            tableId: HOLIDAY_DAYS_COL_ID,
+            rowId: rows[0].$id,
+            data: { holidayText: holidayText || 'Holiday' }
+          });
         } else {
-          holidayDoc = await databases.createDocument(
-            DB_ID,
-            HOLIDAY_DAYS_COL_ID,
-            ID.unique(),
-            {
+          holidayDoc = await tablesDB.createRow({
+            databaseId: DB_ID,
+            tableId: HOLIDAY_DAYS_COL_ID,
+            rowId: ID.unique(),
+            data: {
               batchId,
               date: formattedDate,
               holidayText: holidayText || 'Holiday',
             }
-          );
+          });
         }
       } catch (err) {
         logger(`Error in addHoliday document write: ${err.message}`);
@@ -610,19 +638,18 @@ export const handleAttendanceAction = async (action, req, res, client, databases
 
       // 2. Fetch any existing daily attendance records for this batch and date
       try {
-        const existingDocsRes = await databases.listDocuments(
-          DB_ID,
-          NEW_ATTENDANCE_COL_ID,
-          [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)]
-        ).catch(() => ({ documents: [] }));
+        const existingDocsRes = await tablesDB.listRows({
+          databaseId: DB_ID,
+          tableId: NEW_ATTENDANCE_COL_ID,
+          queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)]
+        }).catch(() => ({ rows: [], documents: [] }));
 
-        const docsList = existingDocsRes.documents || [];
+        const docsList = existingDocsRes.rows || existingDocsRes.documents || [];
         if (docsList.length > 0) {
           // Decrement monthly stats for students who had attendance marked on this now-holiday date
           const yearMonth = formattedDate.substring(0, 7);
           await decrementMonthlyStatsForAttendanceRecords(
             tablesDB,
-            databases,
             DB_ID,
             batchId,
             yearMonth,
@@ -633,7 +660,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           // Delete daily attendance records via deleteTableRows
           await deleteTableRows(
             tablesDB,
-            databases,
             DB_ID,
             NEW_ATTENDANCE_COL_ID,
             [Query.equal('batchId', batchId), Query.equal('date', formattedDate)],
@@ -658,19 +684,18 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       logger(`[clearDayAttendance] START batch=${batchId}, date=${formattedDate}`);
 
       try {
-        const existingDocsRes = await databases.listDocuments(
-          DB_ID,
-          NEW_ATTENDANCE_COL_ID,
-          [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)]
-        ).catch(() => ({ documents: [] }));
+        const existingDocsRes = await tablesDB.listRows({
+          databaseId: DB_ID,
+          tableId: NEW_ATTENDANCE_COL_ID,
+          queries: [Query.equal('batchId', batchId), Query.equal('date', formattedDate), Query.limit(500)]
+        }).catch(() => ({ rows: [], documents: [] }));
 
-        const docsList = existingDocsRes.documents || [];
+        const docsList = existingDocsRes.rows || existingDocsRes.documents || [];
         if (docsList.length > 0) {
           // Decrement monthly stats for students who had attendance marked on this date
           const yearMonth = formattedDate.substring(0, 7);
           await decrementMonthlyStatsForAttendanceRecords(
             tablesDB,
-            databases,
             DB_ID,
             batchId,
             yearMonth,
@@ -681,7 +706,6 @@ export const handleAttendanceAction = async (action, req, res, client, databases
           // Delete daily attendance records via deleteTableRows
           await deleteTableRows(
             tablesDB,
-            databases,
             DB_ID,
             NEW_ATTENDANCE_COL_ID,
             [Query.equal('batchId', batchId), Query.equal('date', formattedDate)],
@@ -710,12 +734,15 @@ export const handleAttendanceAction = async (action, req, res, client, databases
       // Delete holiday document(s) - fast execution without heavy recalculations
       try {
         if (holidayId) {
-          await databases.deleteDocument(DB_ID, HOLIDAY_DAYS_COL_ID, holidayId).catch(() => null);
+          await tablesDB.deleteRow({
+            databaseId: DB_ID,
+            tableId: HOLIDAY_DAYS_COL_ID,
+            rowId: holidayId
+          }).catch(() => null);
         }
         if (batchId && formattedDate) {
           await deleteTableRows(
             tablesDB,
-            databases,
             DB_ID,
             HOLIDAY_DAYS_COL_ID,
             [Query.equal('batchId', batchId), Query.equal('date', formattedDate)],
@@ -735,7 +762,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw new Error('Missing batchId or yearMonth for recalculateMonthlyStats');
       }
 
-      await bulkUpdateMonthlyAttendanceStats(tablesDB, databases, batchId, yearMonth, null, null, logger);
+      await bulkUpdateMonthlyAttendanceStats(tablesDB, batchId, yearMonth, null, null, logger);
       return { success: true, batchId, yearMonth };
     }
     case 'verifyBatchMonthlyStats': {
@@ -744,7 +771,7 @@ export const handleAttendanceAction = async (action, req, res, client, databases
         throw new Error('Missing batchId or yearMonth for verifyBatchMonthlyStats');
       }
 
-      return await verifyBatchMonthlyStatsHelper(tablesDB, databases, batchId, yearMonth);
+      return await verifyBatchMonthlyStatsHelper(tablesDB, batchId, yearMonth);
     }
     default:
       return null;

@@ -1,9 +1,8 @@
 // functions/user-manage/src/migrateAttendanceScript.js
 
-import { Client, Databases, ID, Query } from 'node-appwrite';
+import { Client, TablesDB, ID, Query } from 'node-appwrite';
 import dotenv from 'dotenv';
 dotenv.config();
-
 
 // This script migrates data from userAttaindance to newAttendance collection.
 // Make sure to set up your environment variables before running this script.
@@ -12,14 +11,12 @@ dotenv.config();
 // APPWRITE_API_KEY
 
 async function migrate() {
-
-    
     const client = new Client()
         .setEndpoint(process.env.APPWRITE_ENDPOINT)
         .setProject(process.env.APPWRITE_PROJECT_ID)
         .setKey(process.env.APPWRITE_API_KEY);
 
-    const database = new Databases(client);
+    const tablesDB = new TablesDB(client);
 
     const DB_ID = 'itimocktest';
     const USER_ATTENDANCE_COLLECTION_ID = '6693f8300003b08374b2';
@@ -35,13 +32,19 @@ async function migrate() {
         let offset = 0;
         let response;
         do {
-            response = await database.listDocuments(DB_ID, USER_ATTENDANCE_COLLECTION_ID, [
-                Query.limit(100), 
-                Query.offset(offset)
-            ]);
-            userAttendanceDocs.push(...response.documents);
-            offset += response.documents.length;
-        } while (response.documents.length > 0);
+            response = await tablesDB.listRows({
+                databaseId: DB_ID,
+                tableId: USER_ATTENDANCE_COLLECTION_ID,
+                queries: [
+                    Query.limit(100), 
+                    Query.offset(offset)
+                ]
+            });
+            const rows = response.rows || response.documents || [];
+            userAttendanceDocs.push(...rows);
+            offset += rows.length;
+            if (rows.length < 100) break;
+        } while (true);
         console.log(`Found ${userAttendanceDocs.length} user attendance documents.`);
 
         // 2. Fetch all user profiles to map userId to tradeId
@@ -49,13 +52,19 @@ async function migrate() {
         let userProfiles = [];
         offset = 0;
         do {
-            response = await database.listDocuments(DB_ID, USER_PROFILE_COLLECTION_ID, [
-                Query.limit(100), 
-                Query.offset(offset)
-            ]);
-            userProfiles.push(...response.documents);
-            offset += response.documents.length;
-        } while (response.documents.length > 0);
+            response = await tablesDB.listRows({
+                databaseId: DB_ID,
+                tableId: USER_PROFILE_COLLECTION_ID,
+                queries: [
+                    Query.limit(100), 
+                    Query.offset(offset)
+                ]
+            });
+            const rows = response.rows || response.documents || [];
+            userProfiles.push(...rows);
+            offset += rows.length;
+            if (rows.length < 100) break;
+        } while (true);
         
         const userIdToTradeId = userProfiles.reduce((map, profile) => {
             map[profile.userId] = profile.tradeId;
@@ -68,13 +77,19 @@ async function migrate() {
         let existingAttendance = [];
         offset = 0;
         do {
-            response = await database.listDocuments(DB_ID, NEW_ATTENDANCE_COLLECTION_ID, [
-                Query.limit(100), 
-                Query.offset(offset)
-            ]);
-            existingAttendance.push(...response.documents);
-            offset += response.documents.length;
-        } while (response.documents.length > 0);
+            response = await tablesDB.listRows({
+                databaseId: DB_ID,
+                tableId: NEW_ATTENDANCE_COLLECTION_ID,
+                queries: [
+                    Query.limit(100), 
+                    Query.offset(offset)
+                ]
+            });
+            const rows = response.rows || response.documents || [];
+            existingAttendance.push(...rows);
+            offset += rows.length;
+            if (rows.length < 100) break;
+        } while (true);
         
         // Create a Set for fast duplicate checking (userId-date combination)
         const existingRecordsSet = new Set(
@@ -154,46 +169,54 @@ async function migrate() {
             console.log(`Processing batch ${batchNumber}/${totalBatches} (${chunk.length} documents)...`);
             
             try {
-                // Use createDocuments for bulk operation (atomic)
-                await database.createDocuments(
-                    DB_ID,
-                    NEW_ATTENDANCE_COLLECTION_ID,
-                    chunk
-                );
+                if (typeof tablesDB.upsertRows === 'function') {
+                    await tablesDB.upsertRows({
+                        databaseId: DB_ID,
+                        tableId: NEW_ATTENDANCE_COLLECTION_ID,
+                        rows: chunk
+                    });
+                } else {
+                    await Promise.all(
+                        chunk.map((doc) => tablesDB.createRow({
+                            databaseId: DB_ID,
+                            tableId: NEW_ATTENDANCE_COLLECTION_ID,
+                            rowId: doc.$id,
+                            data: doc
+                        }))
+                    );
+                }
                 createdCount += chunk.length;
                 console.log(`✓ Batch ${batchNumber} completed successfully. Total created: ${createdCount}`);
             } catch (e) {
                 failedCount += chunk.length;
                 console.error(`✗ Batch ${batchNumber} failed:`, e.message);
                 
-                // If bulk operation fails, try individual inserts for this batch
                 console.log(`Attempting individual inserts for batch ${batchNumber}...`);
                 let individualSuccess = 0;
                 let individualFailed = 0;
                 
                 for (const doc of chunk) {
                     try {
-                        await database.createDocument(
-                            DB_ID,
-                            NEW_ATTENDANCE_COLLECTION_ID,
-                            doc.$id,
-                            doc
-                        );
+                        await tablesDB.createRow({
+                            databaseId: DB_ID,
+                            tableId: NEW_ATTENDANCE_COLLECTION_ID,
+                            rowId: doc.$id,
+                            data: doc
+                        });
                         individualSuccess++;
                         createdCount++;
                     } catch (individualError) {
                         individualFailed++;
-                        if (individualError.code !== 409) { // Ignore duplicate errors
+                        if (individualError.code !== 409) {
                             console.error(`Failed to create document for user ${doc.userId} on ${doc.date}:`, individualError.message);
                         }
                     }
                 }
                 
-                failedCount -= individualSuccess; // Adjust failed count
+                failedCount -= individualSuccess;
                 console.log(`Individual inserts: ${individualSuccess} succeeded, ${individualFailed} failed`);
             }
             
-            // Small delay between batches to avoid rate limits
             if (i + batchSize < newAttendanceDocs.length) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }

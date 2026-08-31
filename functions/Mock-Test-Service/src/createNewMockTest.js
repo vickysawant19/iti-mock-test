@@ -12,22 +12,23 @@ const createNewMockTest = async ({
   const databaseId = passedDatabaseId || process.env.APPWRITE_DATABASE_ID;
   const questionPapersCollectionId = passedQuestionPapersCollectionId || process.env.QUESTIONPAPER_COLLECTION_ID;
   try {
-    const paperResponse = await database.listDocuments(
+    const paperResponse = await database.listRows({
       databaseId,
-      questionPapersCollectionId,
-      [Query.equal("paperId", paperId),Query.or([Query.equal("isOriginal", true), Query.equal("userId", userId)]) ]
-    );
+      tableId: questionPapersCollectionId,
+      queries: [Query.equal("paperId", paperId), Query.or([Query.equal("isOriginal", true), Query.equal("userId", userId)])]
+    });
 
+    const rows = paperResponse.rows || paperResponse.documents || [];
 
     // Check if the paper exists
-    if (paperResponse.total === 0) {
+    if ((paperResponse.total ?? rows.length) === 0 || rows.length === 0) {
       throw new Error(
         "No paper available for the selected ID. Please check the paperId."
       );
     }
 
     // Check for duplicate papers within the fetched papers
-    const duplicate = paperResponse.documents.find(
+    const duplicate = rows.find(
       (doc) => doc.userId === userId
     );
 
@@ -35,7 +36,7 @@ const createNewMockTest = async ({
       return { paperId: duplicate.$id, message: "Paper already Attempted." };
     }
 
-    const paper = paperResponse.documents.find(item => item.isOriginal);
+    const paper = rows.find(item => item.isOriginal);
 
     const { tradeId, tradeName, year, questions, quesCount, totalMinutes, title, negativeMarking, visibility, difficultyLevel } = paper;
 
@@ -75,12 +76,12 @@ const createNewMockTest = async ({
     };
 
     // Create a new document in the new collection
-    const response = await database.createDocument(
+    const response = await database.createRow({
       databaseId,
-      questionPapersCollectionId,
-      "unique()",
-      newPaperData
-    );
+      tableId: questionPapersCollectionId,
+      rowId: "unique()",
+      data: newPaperData
+    });
 
     return { paperId: response.$id };
   } catch (err) {
