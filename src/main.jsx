@@ -1,3 +1,4 @@
+import React, { lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { Buffer } from "buffer";
 window.Buffer = Buffer;
@@ -14,58 +15,67 @@ import { Provider } from "react-redux";
 import { registerSW } from "virtual:pwa-register";
 import { store } from "./store/store.js";
 
-import Login from "./Auth/Login.jsx";
-import Signup from "./Auth/Signup.jsx";
-
+// Core layout guards
 import ProtectedRoute from "./private/ProtectedRoute.jsx";
-
-import QuotaExceeded from "./pages/QuotaExceeded.jsx";
-
-import CreateQuestion from "./private/mocktest/CreateQuestion.jsx";
-import ManageQuestions from "./private/mocktest/ManageQuestions.jsx";
-import EditQuestion from "./private/mocktest/EditQuestion.jsx";
-import CreateMockTestPage from "./private/mocktest/CreateMockTest/index.jsx";
-import AllMockTests from "./private/mocktest/AllMockTests.jsx";
-import StartMockTest from "./private/mocktest/StartMockTest/index.jsx";
-import ShowMockTest from "./private/mocktest/ShowMockTest.jsx";
-import AttainTest from "./private/mocktest/AttainMockTest/index.jsx";
-import MockTestResults from "./private/mocktest/MockTestResults.jsx";
-import ExamSummary from "./private/mocktest/ExamSummary.jsx";
-
-import GameArena from "./pages/GameArena.jsx";
-import Home from "./pages/Home.jsx";
-import About from "./pages/About.jsx";
-import ForgetPass from "./Auth/ForgetPass.jsx";
-import CreateBatch from "./private/teacher/batch/create-batch/CreateBatch.jsx";
-import EditBatch from "./private/teacher/batch/edit-batch/EditBatch.jsx";
-import ViewBatch from "./private/teacher/batch/view-batch/ViewBatch.jsx";
-import Profile from "./private/profile/Profile.jsx";
-import ProfileView from "./private/profile/ProfileView.jsx";
-import ProfileForm from "./private/profile/ProfileForm.jsx";
-import ResetPass from "./Auth/ResetPass.jsx";
-import ChangePassword from "./Auth/changePassword.jsx";
-import OnboardingWizard from "./components/onboarding/OnboardingWizard.jsx";
-import TeacherOnboardingWizard from "./components/onboarding/teacher/TeacherOnboardingWizard.jsx";
-import BatchEnrollmentStatus from "./pages/BatchEnrollmentStatus.jsx";
 import ProtectedTeacherRoutes from "./private/ProtectedTeacherRoutes.jsx";
 import ProtectedStudentBatchRoute from "./private/ProtectedStudentBatchRoute.jsx";
-
 import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
-import Modules from "./private/admin/Modules.jsx";
-import Assessment from "./private/assessment/Assessment.jsx";
-import DailyDiary from "./private/Attendance/DailyDiary/DailyDiary.jsx";
-import AddStudents from "./private/teacher/batch/manage-students/AddStudents.jsx";
 
-import PageNotFound from "./PageNotFound.jsx";
-import AddBulkQuestions from "./private/admin/BulkOperations/AddBulkQuestions.jsx";
-import MigrationDashboard from "./private/admin/MigrationDashboard.jsx";
-import AttendanceRegister from "./private/Attendance/teacher/AttendanceRegister/AttendanceRegister.jsx";
-import AttendanceTracker from "./private/Attendance/todaysAttendance.jsx";
-import CollegeAttendance from "./private/collegeDashboard/CollegeAttendance.jsx";
-import ManageTrades from "./private/admin/ManageTrades.jsx";
-import ManageColleges from "./private/admin/ManageColleges.jsx";
-import BrowseBatches from "./private/student/BrowseBatches.jsx";
-import StudentAttendancePage from "./private/Attendance/student/PersonalAttendance/StudentAttendancePage.jsx";
+// ── Public Pages ──
+const Home = lazy(() => import("./pages/Home.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Login = lazy(() => import("./Auth/Login.jsx"));
+const Signup = lazy(() => import("./Auth/Signup.jsx"));
+const ForgetPass = lazy(() => import("./Auth/ForgetPass.jsx"));
+const ResetPass = lazy(() => import("./Auth/ResetPass.jsx"));
+const ChangePassword = lazy(() => import("./Auth/changePassword.jsx"));
+const QuotaExceeded = lazy(() => import("./pages/QuotaExceeded.jsx"));
+const PageNotFound = lazy(() => import("./PageNotFound.jsx"));
+
+// ── Onboarding & Profile ──
+const OnboardingWizard = lazy(() => import("./components/onboarding/OnboardingWizard.jsx"));
+const TeacherOnboardingWizard = lazy(() => import("./components/onboarding/teacher/TeacherOnboardingWizard.jsx"));
+const BatchEnrollmentStatus = lazy(() => import("./pages/BatchEnrollmentStatus.jsx"));
+const Profile = lazy(() => import("./private/profile/Profile.jsx"));
+const ProfileView = lazy(() => import("./private/profile/ProfileView.jsx"));
+const ProfileForm = lazy(() => import("./private/profile/ProfileForm.jsx"));
+
+// ── Gamification ──
+const GameArena = lazy(() => import("./pages/GameArena.jsx"));
+const BrowseBatches = lazy(() => import("./private/student/BrowseBatches.jsx"));
+
+// ── Mock Test System ──
+const CreateQuestion = lazy(() => import("./private/mocktest/CreateQuestion.jsx"));
+const ManageQuestions = lazy(() => import("./private/mocktest/ManageQuestions.jsx"));
+const EditQuestion = lazy(() => import("./private/mocktest/EditQuestion.jsx"));
+const CreateMockTestPage = lazy(() => import("./private/mocktest/CreateMockTest/index.jsx"));
+const AllMockTests = lazy(() => import("./private/mocktest/AllMockTests.jsx"));
+const StartMockTest = lazy(() => import("./private/mocktest/StartMockTest/index.jsx"));
+const ShowMockTest = lazy(() => import("./private/mocktest/ShowMockTest.jsx"));
+const AttainTest = lazy(() => import("./private/mocktest/AttainMockTest/index.jsx"));
+const MockTestResults = lazy(() => import("./private/mocktest/MockTestResults.jsx"));
+const ExamSummary = lazy(() => import("./private/mocktest/ExamSummary.jsx"));
+
+// ── Teacher & Batch Management ──
+const CreateBatch = lazy(() => import("./private/teacher/batch/create-batch/CreateBatch.jsx"));
+const EditBatch = lazy(() => import("./private/teacher/batch/edit-batch/EditBatch.jsx"));
+const ViewBatch = lazy(() => import("./private/teacher/batch/view-batch/ViewBatch.jsx"));
+const AddStudents = lazy(() => import("./private/teacher/batch/manage-students/AddStudents.jsx"));
+
+// ── Attendance & Academic ──
+const DailyDiary = lazy(() => import("./private/Attendance/DailyDiary/DailyDiary.jsx"));
+const Assessment = lazy(() => import("./private/assessment/Assessment.jsx"));
+const AttendanceRegister = lazy(() => import("./private/Attendance/teacher/AttendanceRegister/AttendanceRegister.jsx"));
+const AttendanceTracker = lazy(() => import("./private/Attendance/todaysAttendance.jsx"));
+const StudentAttendancePage = lazy(() => import("./private/Attendance/student/PersonalAttendance/StudentAttendancePage.jsx"));
+const CollegeAttendance = lazy(() => import("./private/collegeDashboard/CollegeAttendance.jsx"));
+
+// ── Admin Panel ──
+const Modules = lazy(() => import("./private/admin/Modules.jsx"));
+const AddBulkQuestions = lazy(() => import("./private/admin/BulkOperations/AddBulkQuestions.jsx"));
+const MigrationDashboard = lazy(() => import("./private/admin/MigrationDashboard.jsx"));
+const ManageTrades = lazy(() => import("./private/admin/ManageTrades.jsx"));
+const ManageColleges = lazy(() => import("./private/admin/ManageColleges.jsx"));
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
 // and force client-side redirect since the cached SW bypassed Vercel's redirect

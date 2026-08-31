@@ -17,6 +17,8 @@ import { usePresence } from "./hooks/usePresence";
 
 import { ThemeProvider } from "./ThemeProvider";
 
+import PageFallbackLoader from "./components/common/PageFallbackLoader";
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -116,7 +118,9 @@ function App() {
         )}
 
         <div className="mx-auto">
-          <Outlet />
+          <React.Suspense fallback={<PageFallbackLoader />}>
+            <Outlet />
+          </React.Suspense>
           <ToastContainer />
         </div>
 
