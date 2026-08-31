@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import {
@@ -190,7 +189,7 @@ const ExportStudentsModal = ({
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (targetList.length === 0) {
       toast.error("No student records available to export.");
       return;
@@ -202,6 +201,7 @@ const ExportStudentsModal = ({
     }
 
     try {
+      const XLSX = await import("xlsx");
       const batchName = batchData?.BatchName || batchData?.name || "Batch";
       const tradeName = batchData?.tradeName || "N/A";
       const exportDate = format(new Date(), "dd/MM/yyyy HH:mm");

@@ -3,7 +3,6 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, parse } from "date
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import * as XLSX from "xlsx";
 import { useReactToPrint } from "react-to-print";
 
 import { useGetBatchQuery } from "@/store/api/batchApi";
@@ -189,6 +188,7 @@ function InstructorDailyDiary() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
+      const XLSX = await import("xlsx");
       // Prepare data for Excel
       const exportData = monthDays.map((day) => {
         const dateKey = format(day, "yyyy-MM-dd");

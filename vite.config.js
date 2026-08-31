@@ -23,6 +23,9 @@ export default defineConfig({
             if (id.includes("@google/genai")) {
               return "vendor-genai";
             }
+            if (id.includes("xlsx") || id.includes("react-to-print")) {
+              return "vendor-export";
+            }
             if (id.includes("leaflet")) {
               return "vendor-maps";
             }
