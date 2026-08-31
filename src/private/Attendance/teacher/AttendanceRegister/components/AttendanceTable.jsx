@@ -4,6 +4,7 @@ import AttendanceTableHead from "./AttendanceTableHead";
 import AttendanceTableBody from "./AttendanceTableBody";
 import AttendanceTableFooter from "./AttendanceTableFooter";
 import EmptyState from "./EmptyState";
+import { useAttendanceMatrix } from "../hooks/useAttendanceMatrix";
 
 const AttendanceTable = ({
   students,
@@ -72,6 +73,18 @@ const AttendanceTable = ({
   })();
 
   const monthDates = allDays.filter((d) => d >= firstValidDay && d <= lastValidDay);
+
+  // Pre-compute matrix data once for both AttendanceTableBody and AttendanceTableFooter
+  const matrixData = useAttendanceMatrix({
+    students,
+    monthDates,
+    selectedMonth,
+    holidays,
+    attendanceMap,
+    rawAttendanceMap,
+    calculatePreviousMonthsData,
+    formatDate,
+  });
 
   // Dynamic Student Name Column Resizing
   const [customNameWidth, setCustomNameWidth] = useState(null);
@@ -196,6 +209,7 @@ const AttendanceTable = ({
                 nameWidthProp={nameWidth}
                 onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
                 onOpenStudentProfile={onOpenStudentProfile}
+                matrixData={matrixData}
               />
               <AttendanceTableFooter
                 students={students}
@@ -204,6 +218,7 @@ const AttendanceTable = ({
                 holidays={holidays}
                 attendanceMap={attendanceMap}
                 formatDate={formatDate}
+                dailyColumnTotals={matrixData.dailyColumnTotals}
                 columnVisibility={columnVisibility}
                 compactView={compactView}
                 nameWidthProp={nameWidth}

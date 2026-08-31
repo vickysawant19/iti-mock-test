@@ -115,6 +115,10 @@ export const StudentMonthlyAttendanceModal = ({
     return attendanceTrackingService.calculateLeaveQuotas(userRecords, targetYear);
   }, [student, existingAttendance, selectedMonth]);
 
+  const studentEnrollDateStr = !student?.isTeacher && student?.enrollmentDate
+    ? String(student.enrollmentDate).substring(0, 10)
+    : null;
+
   const monthStats = useMemo(() => {
     const today = new Date();
 
@@ -127,6 +131,10 @@ export const StudentMonthlyAttendanceModal = ({
     monthDays.forEach((day) => {
       const key = format(day, "yyyy-MM-dd");
       const isFuture = isAfter(day, today);
+
+      if (studentEnrollDateStr && key < studentEnrollDateStr) {
+        return;
+      }
 
       if (holidays.has(key)) {
         holidaysCount += 1;
@@ -146,7 +154,7 @@ export const StudentMonthlyAttendanceModal = ({
     });
 
     return { workingDays, presentDays, absentDays, holidaysCount, leaveDays };
-  }, [monthDays, holidays, attendanceMap, student?.isTeacher]);
+  }, [monthDays, holidays, attendanceMap, student?.isTeacher, studentEnrollDateStr]);
 
   if (!isOpen || !student) return null;
 
@@ -160,10 +168,6 @@ export const StudentMonthlyAttendanceModal = ({
       cls: config.badgeClass,
     };
   };
-
-  const studentEnrollDateStr = !student?.isTeacher && student?.enrollmentDate
-    ? String(student.enrollmentDate).substring(0, 10)
-    : null;
 
   const selectedDateObj = parseISO(selectedDateKey);
   const selectedStatus = attendanceMap.get(selectedDateKey);

@@ -71,6 +71,13 @@ const Legent = () => {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center justify-center h-6 w-6 rounded bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-black text-slate-500 dark:text-slate-400 text-xs">
+            X
+          </span>
+          <span className="text-slate-800 dark:text-slate-200">Not Enrolled Yet</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
           <span className="text-slate-400 dark:text-slate-500 font-bold text-sm px-1.5">
             -
           </span>
