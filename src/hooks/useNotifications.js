@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import batchRequestService from "@/services/batch/batchRequestService";
 import batchStudentService from "@/services/batch/batchStudentService";
 import notificationService from "@/services/notification/notification.service";
+import pushNotificationService from "@/services/notification/pushNotificationService";
 import { realtime } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 import mockTestService from "@/services/academic/mocktest.service";
@@ -20,7 +21,7 @@ import mockTestService from "@/services/academic/mocktest.service";
  * For students:
  *   - Parallel queries for batch requests & batch notifications
  *   - Local-read caching to prevent write-lock database storms
- *   - Clean, leak-free Realtime WebSocket updates
+ *   - Clean, leak-free Realtime WebSocket updates with native system push alerts
  */
 export function useNotifications() {
   const user = useSelector(selectUser);
@@ -204,50 +205,90 @@ export function useNotifications() {
     let subNotifications = null;
     let subRequests = null;
 
+    const closeSub = (sub) => {
+      if (!sub) return;
+      if (typeof sub === "function") sub();
+      else if (typeof sub.close === "function") sub.close();
+      else if (typeof sub.unsubscribe === "function") sub.unsubscribe();
+    };
+
     const setupRealtime = async () => {
       try {
-        if (isStudent && user?.$id && studentBatchIds.length > 0) {
+        if (isStudent && user?.$id) {
           const notifChannel = Channel.tablesdb(conf.databaseId).table("notifications").row();
-          const sub = await realtime.subscribe(
-            notifChannel,
-            (response) => {
-              if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
-                const doc = response.payload;
+          const sub = await realtime.subscribe(notifChannel, (response) => {
+            if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
+              const doc = response.payload;
+              if (!doc) return;
 
-                if (doc.readBy && doc.readBy.includes(user.$id)) {
-                  setNotifications((prev) => prev.filter((n) => n.id !== doc.$id));
-                  return;
-                }
-
-                if (response.events.some((e) => e.includes(".create"))) {
-                  if (doc.type === "urgent_announcement") {
-                    toast.error(`🚨 URGENT ANNOUNCEMENT: ${doc.message}`, { autoClose: 10000 });
-                  } else if (doc.type === "announcement") {
-                    toast.info(`📣 Announcement: ${doc.message}`, { autoClose: 7000 });
-                  }
-                }
-
-                setNotifications((prev) => {
-                  const filtered = prev.filter((n) => n.id !== doc.$id);
-                  return [
-                    {
-                      id: doc.$id,
-                      type: doc.type,
-                      message: doc.message,
-                      batchId: doc.batchId,
-                      paperId: doc.paperId,
-                      createdAt: doc.$updatedAt || doc.$createdAt,
-                    },
-                    ...filtered,
-                  ];
-                });
+              // If batch-specific, only proceed if student is in this batch
+              if (studentBatchIds.length > 0 && doc.batchId && !studentBatchIds.includes(doc.batchId)) {
+                return;
               }
-            },
-            [Query.equal("batchId", studentBatchIds)]
-          );
+
+              if (doc.readBy && doc.readBy.includes(user.$id)) {
+                setNotifications((prev) => prev.filter((n) => n.id !== doc.$id));
+                return;
+              }
+
+              // On new notification creation, trigger native push notification & in-app toast
+              if (response.events.some((e) => e.includes(".create"))) {
+                const title =
+                  doc.type === "urgent_announcement"
+                    ? "🚨 URGENT ANNOUNCEMENT"
+                    : doc.type === "mock_test_assigned"
+                    ? "📝 New Mock Test Assigned"
+                    : doc.type === "challenge_assigned"
+                    ? "🏆 New Challenge Mission"
+                    : "📣 Batch Announcement";
+
+                const url =
+                  doc.type === "mock_test_assigned" && doc.paperId && doc.paperId !== "N/A"
+                    ? `/attain-test?paperid=${doc.paperId}`
+                    : doc.type === "challenge_assigned"
+                    ? "/arena?tab=missions&sub=challenges"
+                    : "/";
+
+                // Native OS / Browser Push Notification
+                pushNotificationService
+                  .showDirectNotification({
+                    title,
+                    body: doc.message || "You have a new update in ITI Mitra.",
+                    url,
+                  })
+                  .catch((err) => console.warn("Native push dispatch warning:", err));
+
+                // In-App Toast
+                if (doc.type === "urgent_announcement") {
+                  toast.error(`🚨 URGENT: ${doc.message}`, { autoClose: 10000 });
+                } else if (doc.type === "announcement") {
+                  toast.info(`📣 Announcement: ${doc.message}`, { autoClose: 7000 });
+                } else if (doc.type === "mock_test_assigned") {
+                  toast.info(`📝 New Test: ${doc.message}`, { autoClose: 7000 });
+                } else if (doc.type === "challenge_assigned") {
+                  toast.info(`🏆 Challenge: ${doc.message}`, { autoClose: 7000 });
+                }
+              }
+
+              setNotifications((prev) => {
+                const filtered = prev.filter((n) => n.id !== doc.$id);
+                return [
+                  {
+                    id: doc.$id,
+                    type: doc.type,
+                    message: doc.message,
+                    batchId: doc.batchId,
+                    paperId: doc.paperId,
+                    createdAt: doc.$updatedAt || doc.$createdAt,
+                  },
+                  ...filtered,
+                ];
+              });
+            }
+          });
 
           if (isCancelled) {
-            sub?.unsubscribe?.();
+            closeSub(sub);
           } else {
             subNotifications = sub;
           }
@@ -258,73 +299,98 @@ export function useNotifications() {
 
           if (isTeacher && userBatches && userBatches.length > 0) {
             const batchIds = userBatches.map((b) => b.$id);
-            const reqSub = await realtime.subscribe(
-              reqChannel,
-              (response) => {
-                if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
-                  const doc = response.payload;
-                  if (doc.status === "pending") {
-                    setNotifications((prev) => {
-                      if (prev.some((n) => n.requestId === doc.$id)) return prev;
-                      const b = userBatches.find((batch) => batch.$id === doc.batchId);
-                      return [
-                        {
-                          id: doc.$id,
-                          type: "pending_request",
-                          message: `New join request for batch "${b?.BatchName || "Unknown"}"`,
-                          batchId: doc.batchId,
-                          studentId: doc.studentId,
-                          requestId: doc.$id,
-                          createdAt: doc.createdAt || doc.$createdAt,
-                        },
-                        ...prev,
-                      ];
-                    });
-                  } else {
-                    setNotifications((prev) => prev.filter((n) => n.requestId !== doc.$id));
+            const reqSub = await realtime.subscribe(reqChannel, (response) => {
+              if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
+                const doc = response.payload;
+                if (!doc || !batchIds.includes(doc.batchId)) return;
+
+                if (doc.status === "pending") {
+                  const b = userBatches.find((batch) => batch.$id === doc.batchId);
+                  const msg = `New join request for batch "${b?.BatchName || "Unknown"}"`;
+
+                  if (response.events.some((e) => e.includes(".create"))) {
+                    pushNotificationService
+                      .showDirectNotification({
+                        title: "👥 New Student Join Request",
+                        body: msg,
+                        url: "/manage-batch/approvals",
+                      })
+                      .catch(() => {});
+                    toast.info(`👥 ${msg}`, { autoClose: 7000 });
                   }
+
+                  setNotifications((prev) => {
+                    if (prev.some((n) => n.requestId === doc.$id)) return prev;
+                    return [
+                      {
+                        id: doc.$id,
+                        type: "pending_request",
+                        message: msg,
+                        batchId: doc.batchId,
+                        studentId: doc.studentId,
+                        requestId: doc.$id,
+                        createdAt: doc.createdAt || doc.$createdAt,
+                      },
+                      ...prev,
+                    ];
+                  });
+                } else {
+                  setNotifications((prev) => prev.filter((n) => n.requestId !== doc.$id));
                 }
-              },
-              [Query.equal("batchId", batchIds)]
-            );
+              }
+            });
 
             if (isCancelled) {
-              reqSub?.unsubscribe?.();
+              closeSub(reqSub);
             } else {
               subRequests = reqSub;
             }
           } else if (isStudent) {
-            const reqSub = await realtime.subscribe(
-              reqChannel,
-              (response) => {
-                if (response.events.some((e) => e.includes(".update"))) {
-                  const doc = response.payload;
-                  if (doc.status === "approved" || doc.status === "rejected") {
-                    setNotifications((prev) => {
-                      const filtered = prev.filter((n) => n.requestId !== doc.$id);
-                      return [
-                        {
-                          id: doc.$id,
-                          type: doc.status === "approved" ? "request_approved" : "request_rejected",
-                          message:
-                            doc.status === "approved"
-                              ? "Your request to join a batch was approved! 🎉"
-                              : "Your request to join a batch was rejected.",
-                          batchId: doc.batchId,
-                          requestId: doc.$id,
-                          createdAt: doc.updatedAt || doc.$updatedAt,
-                        },
-                        ...filtered,
-                      ];
-                    });
+            const reqSub = await realtime.subscribe(reqChannel, (response) => {
+              if (response.events.some((e) => e.includes(".update"))) {
+                const doc = response.payload;
+                if (!doc || doc.studentId !== user.$id) return;
+
+                if (doc.status === "approved" || doc.status === "rejected") {
+                  const isApproved = doc.status === "approved";
+                  const msg = isApproved
+                    ? "Your request to join a batch was approved! 🎉"
+                    : "Your request to join a batch was rejected.";
+
+                  pushNotificationService
+                    .showDirectNotification({
+                      title: isApproved ? "🎉 Batch Request Approved!" : "Batch Request Update",
+                      body: msg,
+                      url: "/",
+                    })
+                    .catch(() => {});
+
+                  if (isApproved) {
+                    toast.success(msg, { autoClose: 8000 });
+                  } else {
+                    toast.warn(msg, { autoClose: 8000 });
                   }
+
+                  setNotifications((prev) => {
+                    const filtered = prev.filter((n) => n.requestId !== doc.$id);
+                    return [
+                      {
+                        id: doc.$id,
+                        type: isApproved ? "request_approved" : "request_rejected",
+                        message: msg,
+                        batchId: doc.batchId,
+                        requestId: doc.$id,
+                        createdAt: doc.updatedAt || doc.$updatedAt,
+                      },
+                      ...filtered,
+                    ];
+                  });
                 }
-              },
-              [Query.equal("studentId", [user.$id])]
-            );
+              }
+            });
 
             if (isCancelled) {
-              reqSub?.unsubscribe?.();
+              closeSub(reqSub);
             } else {
               subRequests = reqSub;
             }
@@ -339,8 +405,8 @@ export function useNotifications() {
 
     return () => {
       isCancelled = true;
-      if (subNotifications?.unsubscribe) subNotifications.unsubscribe();
-      if (subRequests?.unsubscribe) subRequests.unsubscribe();
+      closeSub(subNotifications);
+      closeSub(subRequests);
     };
   }, [isStudent, isTeacher, user?.$id, studentBatchIds, userBatches]);
 

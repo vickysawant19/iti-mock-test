@@ -1,4 +1,4 @@
-import { ID, Query } from "appwrite";
+import { ID, Query, Permission, Role } from "appwrite";
 import { tablesDb } from "../core/appwriteClient";
 import conf from "../../config/config";
 import PermissionBuilder from "../../utils/permissionBuilder";
@@ -42,7 +42,17 @@ class NotificationService {
 
   async createNotification({ message, type, batchId, teacherId, paperId, teamId }) {
     try {
-      const permissions = teamId ? PermissionBuilder.message(teamId) : undefined;
+      // Provide read & update permissions to authenticated users so students receive Realtime events
+      const permissions = [
+        Permission.read(Role.users()),
+        Permission.update(Role.users()),
+        Permission.delete(Role.users()),
+      ];
+      if (teamId) {
+        permissions.push(Permission.read(Role.team(teamId)));
+        permissions.push(Permission.update(Role.team(teamId, "teacher")));
+        permissions.push(Permission.delete(Role.team(teamId, "teacher")));
+      }
 
       return await tablesDb.createRow({
         databaseId: this.databaseId,
