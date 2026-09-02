@@ -2533,7 +2533,45 @@
                     "encrypt": false
                 }
             ],
-            "indexes": []
+            "indexes": [
+                {
+                    "key": "idx_batch_created",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "batchId",
+                        "$createdAt"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "DESC"
+                    ]
+                },
+                {
+                    "key": "idx_teacherId",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "teacherId"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                },
+                {
+                    "key": "idx_type_created",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "type",
+                        "$createdAt"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "DESC"
+                    ]
+                }
+            ]
         },
         {
             "$id": "batch_challenges",

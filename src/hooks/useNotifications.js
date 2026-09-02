@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
-import { selectProfile } from "@/store/profileSlice";
-import { selectUserBatches, selectActiveBatchLoading, selectActiveBatch } from "@/store/activeBatchSlice";
+import { selectUserBatches, selectActiveBatchLoading } from "@/store/activeBatchSlice";
 import { Query, Channel } from "appwrite";
 import { toast } from "react-toastify";
 import batchRequestService from "@/services/batch/batchRequestService";
@@ -12,80 +11,80 @@ import { realtime } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
 import mockTestService from "@/services/academic/mocktest.service";
 
-
 /**
- * Lightweight notification system.
+ * High-performance notification hook.
  *
  * For teachers:
- *   - Polls for pending batch requests across all their batches
- *   - Returns count + notification items
+ *   - Fast indexed query for pending batch requests across their batches
  *
  * For students:
- *   - Polls for recently accepted/rejected requests
- *   - Returns count + notification items
- *
- * Returns:
- *   - notifCount    : total badge count
- *   - notifications : array of notification objects { id, message, type, batchId }
- *   - isLoading
- *   - refresh()     : manually re-fetch
+ *   - Parallel queries for batch requests & batch notifications
+ *   - Local-read caching to prevent write-lock database storms
+ *   - Clean, leak-free Realtime WebSocket updates
  */
 export function useNotifications() {
   const user = useSelector(selectUser);
-  const profile = useSelector(selectProfile);
+  const userBatches = useSelector(selectUserBatches);
+  const isBatchLoading = useSelector(selectActiveBatchLoading);
 
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [studentBatches, setStudentBatches] = useState([]);
+  const [studentBatchIds, setStudentBatchIds] = useState([]);
 
   const isTeacher = user?.labels?.includes("Teacher");
   const isStudent = user && !isTeacher && !user?.labels?.includes("admin");
-
-  const userBatches = useSelector(selectUserBatches);
-  const isBatchLoading = useSelector(selectActiveBatchLoading);
   const isFetchingRef = useRef(false);
 
-  const userBatchIds = isTeacher && userBatches ? userBatches.map(b => b.$id).sort().join(',') : '';
-  const loadingDependency = isTeacher ? isBatchLoading : false;
+  const userBatchIdsString = useMemo(() => {
+    return userBatches ? userBatches.map((b) => b.$id).sort().join(",") : "";
+  }, [userBatches]);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.$id) return;
-    if (isTeacher && isBatchLoading) return; // Wait until Redux loads the batches
-    if (isFetchingRef.current) return; // Prevent concurrent fetching
-    
+    if (isTeacher && isBatchLoading) return;
+    if (isFetchingRef.current) return;
+
     isFetchingRef.current = true;
     setIsLoading(true);
 
     try {
       if (isTeacher) {
-        // Use batches already loaded by activeBatchSlice instead of duplicating API calls
         const batches = userBatches ?? [];
-
         if (!batches.length) {
           setNotifications([]);
           return;
         }
 
-        // Use the optimized single query to fetch all pending requests
-        const batchIds = batches.map(b => b.$id);
+        const batchIds = batches.map((b) => b.$id);
         const pendingReqs = await batchRequestService.getPendingRequestsForBatches(batchIds);
-        
-        const mappedReqs = pendingReqs.map(r => {
-          const b = batches.find(batch => batch.$id === r.batchId);
+
+        const mappedReqs = (pendingReqs || []).map((r) => {
+          const b = batches.find((batch) => batch.$id === r.batchId);
           return {
             id: r.$id,
             type: "pending_request",
-            message: `New join request for batch "${b?.BatchName || 'Unknown'}"`,
+            message: `New join request for batch "${b?.BatchName || "Unknown"}"`,
             batchId: r.batchId,
             studentId: r.studentId,
             requestId: r.$id,
-            createdAt: r.createdAt,
+            createdAt: r.createdAt || r.$createdAt,
           };
         });
+
         setNotifications(mappedReqs);
       } else if (isStudent) {
-        // Get student's own requests that changed recently
-        const reqs = await batchRequestService.getStudentRequests(user.$id);
+        // Parallel queries: Student requests & batches
+        const [requestsResult, directBatchesResult] = await Promise.allSettled([
+          batchRequestService.getStudentRequests(user.$id),
+          userBatches?.length
+            ? Promise.resolve(userBatches)
+            : batchStudentService.getStudentBatches(user.$id),
+        ]);
+
+        const reqs = requestsResult.status === "fulfilled" ? requestsResult.value || [] : [];
+        const directBatches = directBatchesResult.status === "fulfilled" ? directBatchesResult.value || [] : [];
+
+        // 1. Process batch request status notifications
         const relevantReqs = reqs
           .filter((r) => r.status === "approved" || r.status === "rejected")
           .map((r) => ({
@@ -93,51 +92,49 @@ export function useNotifications() {
             type: r.status === "approved" ? "request_approved" : "request_rejected",
             message:
               r.status === "approved"
-                ? `Your request to join a batch was approved! 🎉`
-                : `Your request to join a batch was rejected.`,
+                ? "Your request to join a batch was approved! 🎉"
+                : "Your request to join a batch was rejected.",
             batchId: r.batchId,
             requestId: r.$id,
-            createdAt: r.updatedAt,
+            createdAt: r.updatedAt || r.$updatedAt || r.createdAt,
           }));
 
-        // Get student's mock test notifications based on their enrolled batches (batchStudents + approved requests)
-        let directBatchIds = [];
-        try {
-          const directBatches = await batchStudentService.getStudentBatches(user.$id);
-          directBatchIds = (directBatches || []).map(sb => {
+        // 2. Resolve enrolled batch IDs
+        const enrolledBatchIds = (directBatches || [])
+          .map((sb) => {
             if (!sb) return null;
+            if (typeof sb === "object" && sb.$id) return sb.$id;
             if (typeof sb.batchId === "object" && sb.batchId?.$id) return sb.batchId.$id;
             if (typeof sb.batchId === "string") return sb.batchId;
             return null;
-          }).filter(Boolean);
-        } catch (err) {
-          console.warn("Failed to fetch direct student batches for notifications:", err);
-        }
-
-        const approvedReqBatches = reqs
-          .filter(r => r.status === "approved")
-          .map(r => typeof r.batchId === "object" ? r.batchId?.$id : r.batchId)
+          })
           .filter(Boolean);
 
-        const approvedBatches = [...new Set([...directBatchIds, ...approvedReqBatches])];
-        let mockTestNotifs = [];
-        
-        setStudentBatches(prev => {
-          const isSame = prev.length === approvedBatches.length && prev.every(b => approvedBatches.includes(b));
-          return isSame ? prev : approvedBatches;
-        });
+        const approvedReqBatches = reqs
+          .filter((r) => r.status === "approved")
+          .map((r) => (typeof r.batchId === "object" ? r.batchId?.$id : r.batchId))
+          .filter(Boolean);
 
+        const approvedBatches = [...new Set([...enrolledBatchIds, ...approvedReqBatches])];
+        setStudentBatchIds(approvedBatches);
+
+        let batchNotifs = [];
         if (approvedBatches.length > 0) {
-          const rawNotifs = await notificationService.getNotificationsByBatch(approvedBatches);
-          
-          // Deduplicate by paperId to prevent multiple notifications for the same mock test
+          const rawNotifs = await notificationService.getNotificationsByBatch(approvedBatches, 30);
+          const localReadIds = notificationService.getLocalReadIds(user.$id);
+
+          // Deduplicate by paperId and filter out read notifications
           const uniqueNotifsMap = new Map();
-          
-          rawNotifs
-            .filter(n => !n.readBy || !n.readBy.includes(user.$id))
-            .forEach(n => {
-              if (!uniqueNotifsMap.has(n.paperId)) {
-                uniqueNotifsMap.set(n.paperId, {
+          (rawNotifs || [])
+            .filter((n) => {
+              if (localReadIds.has(n.$id)) return false;
+              if (n.readBy && n.readBy.includes(user.$id)) return false;
+              return true;
+            })
+            .forEach((n) => {
+              const dedupeKey = n.paperId && n.paperId !== "N/A" ? n.paperId : n.$id;
+              if (!uniqueNotifsMap.has(dedupeKey)) {
+                uniqueNotifsMap.set(dedupeKey, {
                   id: n.$id,
                   type: n.type,
                   message: n.message,
@@ -148,50 +145,45 @@ export function useNotifications() {
               }
             });
 
-          if (uniqueNotifsMap.size > 0) {
+          // Check for already attempted mock test papers
+          const mockTestNotifIds = Array.from(uniqueNotifsMap.values())
+            .filter((n) => n.type === "mock_test_assigned" && n.paperId && n.paperId !== "N/A")
+            .map((n) => n.paperId);
+
+          if (mockTestNotifIds.length > 0) {
             try {
-              // Extract only mock test paperIds to check for attempts
-              const mockTestNotifIds = Array.from(uniqueNotifsMap.values())
-                .filter(n => n.type === "mock_test_assigned")
-                .map(n => n.paperId);
+              const userPapers = await mockTestService.listQuestions([
+                Query.equal("userId", user.$id),
+                Query.equal("paperId", mockTestNotifIds),
+              ]);
 
-              if (mockTestNotifIds.length > 0) {
-                const userPapers = await mockTestService.listQuestions([
-                  Query.equal("userId", user.$id),
-                  Query.equal("paperId", mockTestNotifIds)
-                ]);
-                
-                // Consider a test "attempted" if it has been submitted or at least started
-                const attemptedPaperIds = new Set(
-                  userPapers
-                    .filter((p) => p.submitted || p.startTime)
-                    .map((p) => p.paperId)
-                );
+              const attemptedPaperIds = new Set(
+                (userPapers || [])
+                  .filter((p) => p.submitted || p.startTime)
+                  .map((p) => p.paperId)
+              );
 
-                for (const [paperId, notif] of uniqueNotifsMap.entries()) {
-                  if (notif.type === "mock_test_assigned" && attemptedPaperIds.has(paperId)) {
-                    // Mark as read in DB so it doesn't fetch again next time
-                    notificationService.markAsRead(notif.id, user.$id).catch(console.error);
-                    // Remove from local UI map
-                    uniqueNotifsMap.delete(paperId);
-                  }
+              for (const [key, notif] of uniqueNotifsMap.entries()) {
+                if (notif.type === "mock_test_assigned" && attemptedPaperIds.has(notif.paperId)) {
+                  notificationService.markAsRead(notif.id, user.$id).catch(() => {});
+                  uniqueNotifsMap.delete(key);
                 }
               }
             } catch (err) {
-              console.error("Failed to check attempted papers for notifications", err);
+              console.warn("Non-fatal paper attempt check warning:", err);
             }
           }
-            
-          mockTestNotifs = Array.from(uniqueNotifsMap.values());
+
+          batchNotifs = Array.from(uniqueNotifsMap.values());
         }
 
-        const EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+        const EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days
         const now = Date.now();
 
-        const allStudentNotifs = [...relevantReqs, ...mockTestNotifs]
-          .filter(n => now - new Date(n.createdAt).getTime() < EXPIRY_TIME)
+        const allStudentNotifs = [...relevantReqs, ...batchNotifs]
+          .filter((n) => now - new Date(n.createdAt).getTime() < EXPIRY_TIME)
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          
+
         setNotifications(allStudentNotifs);
       }
     } catch (err) {
@@ -200,35 +192,34 @@ export function useNotifications() {
       setIsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [user?.$id, isTeacher, isStudent, userBatchIds, loadingDependency]);
+  }, [user?.$id, isTeacher, isStudent, userBatches, isBatchLoading]);
 
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  // Realtime subscription setup
   useEffect(() => {
-    let active = true;
-    let subNotifications = null; // SDK v24: { close(): Promise<void> }
-    let subRequests = null;      // SDK v24: { close(): Promise<void> }
+    let isCancelled = false;
+    let subNotifications = null;
+    let subRequests = null;
 
     const setupRealtime = async () => {
       try {
-        if (isStudent && user?.$id && studentBatches.length > 0) {
+        if (isStudent && user?.$id && studentBatchIds.length > 0) {
           const notifChannel = Channel.tablesdb(conf.databaseId).table("notifications").row();
           const sub = await realtime.subscribe(
             notifChannel,
             (response) => {
-              if (response.events.some(e => e.includes('.create') || e.includes('.update'))) {
+              if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
                 const doc = response.payload;
-                
-                // If user has already read it, remove from unread state
+
                 if (doc.readBy && doc.readBy.includes(user.$id)) {
-                  setNotifications(prev => prev.filter(n => n.id !== doc.$id));
+                  setNotifications((prev) => prev.filter((n) => n.id !== doc.$id));
                   return;
                 }
 
-                // Fire real-time toast alert for announcements
-                if (response.events.some(e => e.includes('.create'))) {
+                if (response.events.some((e) => e.includes(".create"))) {
                   if (doc.type === "urgent_announcement") {
                     toast.error(`🚨 URGENT ANNOUNCEMENT: ${doc.message}`, { autoClose: 10000 });
                   } else if (doc.type === "announcement") {
@@ -236,108 +227,122 @@ export function useNotifications() {
                   }
                 }
 
-                // Upsert to the top of the unread list
-                setNotifications(prev => {
-                  const filtered = prev.filter(n => n.id !== doc.$id);
-                  return [{
-                    id: doc.$id,
-                    type: doc.type,
-                    message: doc.message,
-                    batchId: doc.batchId,
-                    paperId: doc.paperId,
-                    createdAt: doc.$updatedAt || doc.$createdAt,
-                  }, ...filtered];
+                setNotifications((prev) => {
+                  const filtered = prev.filter((n) => n.id !== doc.$id);
+                  return [
+                    {
+                      id: doc.$id,
+                      type: doc.type,
+                      message: doc.message,
+                      batchId: doc.batchId,
+                      paperId: doc.paperId,
+                      createdAt: doc.$updatedAt || doc.$createdAt,
+                    },
+                    ...filtered,
+                  ];
                 });
               }
             },
-            [Query.equal("batchId", studentBatches)]
+            [Query.equal("batchId", studentBatchIds)]
           );
-          // SDK v24: store the sub object; close() tears it down
-          subNotifications = sub;
-          if (!active && subNotifications?.unsubscribe) subNotifications.unsubscribe();
+
+          if (isCancelled) {
+            sub?.unsubscribe?.();
+          } else {
+            subNotifications = sub;
+          }
         }
 
-        // BatchRequests realtime
         if (user?.$id) {
           const reqChannel = Channel.tablesdb(conf.databaseId).table("batchRequests").row();
-          let reqSub = null;
 
           if (isTeacher && userBatches && userBatches.length > 0) {
-            const batchIds = userBatches.map(b => b.$id);
-            reqSub = await realtime.subscribe(
+            const batchIds = userBatches.map((b) => b.$id);
+            const reqSub = await realtime.subscribe(
               reqChannel,
               (response) => {
-                if (response.events.some(e => e.includes('.create') || e.includes('.update'))) {
+                if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
                   const doc = response.payload;
-                  if (doc.status === 'pending') {
-                    setNotifications(prev => {
-                      if (prev.some(n => n.requestId === doc.$id)) return prev; // Avoid duplicate
-                      const b = userBatches.find(batch => batch.$id === doc.batchId);
-                      return [{
-                        id: doc.$id,
-                        type: "pending_request",
-                        message: `New join request for batch "${b?.BatchName || 'Unknown'}"`,
-                        batchId: doc.batchId,
-                        studentId: doc.studentId,
-                        requestId: doc.$id,
-                        createdAt: doc.createdAt,
-                      }, ...prev];
+                  if (doc.status === "pending") {
+                    setNotifications((prev) => {
+                      if (prev.some((n) => n.requestId === doc.$id)) return prev;
+                      const b = userBatches.find((batch) => batch.$id === doc.batchId);
+                      return [
+                        {
+                          id: doc.$id,
+                          type: "pending_request",
+                          message: `New join request for batch "${b?.BatchName || "Unknown"}"`,
+                          batchId: doc.batchId,
+                          studentId: doc.studentId,
+                          requestId: doc.$id,
+                          createdAt: doc.createdAt || doc.$createdAt,
+                        },
+                        ...prev,
+                      ];
                     });
                   } else {
-                     // if status changed to approved/rejected, remove it from the list
-                     setNotifications(prev => prev.filter(n => n.requestId !== doc.$id));
+                    setNotifications((prev) => prev.filter((n) => n.requestId !== doc.$id));
                   }
                 }
               },
               [Query.equal("batchId", batchIds)]
             );
+
+            if (isCancelled) {
+              reqSub?.unsubscribe?.();
+            } else {
+              subRequests = reqSub;
+            }
           } else if (isStudent) {
-            reqSub = await realtime.subscribe(
+            const reqSub = await realtime.subscribe(
               reqChannel,
               (response) => {
-                if (response.events.some(e => e.includes('.update'))) {
+                if (response.events.some((e) => e.includes(".update"))) {
                   const doc = response.payload;
-                  if (doc.status === 'approved' || doc.status === 'rejected') {
-                    setNotifications(prev => {
-                      // Remove old one if exists
-                      const filtered = prev.filter(n => n.requestId !== doc.$id);
-                      return [{
-                        id: doc.$id,
-                        type: doc.status === "approved" ? "request_approved" : "request_rejected",
-                        message: doc.status === "approved"
-                          ? `Your request to join a batch was approved! 🎉`
-                          : `Your request to join a batch was rejected.`,
-                        batchId: doc.batchId,
-                        requestId: doc.$id,
-                        createdAt: doc.updatedAt,
-                      }, ...filtered];
+                  if (doc.status === "approved" || doc.status === "rejected") {
+                    setNotifications((prev) => {
+                      const filtered = prev.filter((n) => n.requestId !== doc.$id);
+                      return [
+                        {
+                          id: doc.$id,
+                          type: doc.status === "approved" ? "request_approved" : "request_rejected",
+                          message:
+                            doc.status === "approved"
+                              ? "Your request to join a batch was approved! 🎉"
+                              : "Your request to join a batch was rejected.",
+                          batchId: doc.batchId,
+                          requestId: doc.$id,
+                          createdAt: doc.updatedAt || doc.$updatedAt,
+                        },
+                        ...filtered,
+                      ];
                     });
                   }
                 }
               },
               [Query.equal("studentId", [user.$id])]
             );
+
+            if (isCancelled) {
+              reqSub?.unsubscribe?.();
+            } else {
+              subRequests = reqSub;
+            }
           }
-
-          // SDK v24: store the sub object; close() tears it down
-          subRequests = reqSub;
-          if (!active && subRequests?.unsubscribe) subRequests.unsubscribe();
         }
-
       } catch (e) {
-        console.error("Failed to subscribe to realtime", e);
+        console.warn("Failed to subscribe to realtime notifications", e);
       }
     };
-    
+
     setupRealtime();
 
-    // SDK v26: cleanup via sub.unsubscribe() — not sub() or sub.close()
     return () => {
-      active = false;
+      isCancelled = true;
       if (subNotifications?.unsubscribe) subNotifications.unsubscribe();
       if (subRequests?.unsubscribe) subRequests.unsubscribe();
     };
-  }, [isStudent, isTeacher, user?.$id, studentBatches, userBatches]);
+  }, [isStudent, isTeacher, user?.$id, studentBatchIds, userBatches]);
 
   const notifCount = notifications.length;
 
@@ -348,3 +353,5 @@ export function useNotifications() {
     refresh: fetchNotifications,
   };
 }
+
+export default useNotifications;

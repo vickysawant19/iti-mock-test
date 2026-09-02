@@ -1,12 +1,28 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle2, XCircle, Clock, Users, ArrowRight, X, FileText, Trophy, Megaphone, AlertCircle } from "lucide-react";
+import {
+  Bell,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Users,
+  ArrowRight,
+  X,
+  FileText,
+  Trophy,
+  Megaphone,
+  AlertCircle,
+  Smartphone,
+  Send,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import notificationService from "@/services/notification/notification.service";
+import pushNotificationService from "@/services/notification/pushNotificationService";
 import { Functions } from "appwrite";
 import { appwriteService } from "@/services/core/appwriteClient";
 import conf from "@/config/config";
+import { toast } from "react-toastify";
 
 function NotifItem({ notif, onClose, user }) {
   const navigate = useNavigate();
@@ -127,10 +143,13 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
   const panelRef = useRef(null);
   const user = useSelector(selectUser);
   const isTeacher = user?.labels?.includes("Teacher");
+  const [permission, setPermission] = useState(pushNotificationService.getPermission());
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
-  // Close on outside click
+  // Close on outside click and sync permission state
   useEffect(() => {
     if (!isOpen) return;
+    setPermission(pushNotificationService.getPermission());
     const handleOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         onClose();
@@ -140,13 +159,47 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [isOpen, onClose]);
 
+  const handleEnablePush = async () => {
+    try {
+      const perm = await pushNotificationService.requestPermission();
+      setPermission(perm);
+      if (perm === "granted") {
+        toast.success("Push notifications enabled! 🎉");
+      } else {
+        toast.warn("Notification permission was not granted.");
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to enable notifications");
+    }
+  };
+
+  const handleSendTest = async (delaySeconds = 0) => {
+    setIsSendingTest(true);
+    try {
+      const msg = await pushNotificationService.sendTestNotification({
+        title: "ITI Mitra Practice Alert 🔔",
+        body: delaySeconds > 0
+          ? `[Test Alert] This notification was delivered in background! Tap to open ITI Mitra.`
+          : `[Test Alert] Background push is active and working!`,
+        url: "/arena",
+        delaySeconds,
+      });
+      toast.info(msg);
+      setPermission(pushNotificationService.getPermission());
+    } catch (err) {
+      toast.error(err.message || "Failed to dispatch test notification");
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
       ref={panelRef}
-      className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden"
-      style={{ maxHeight: "480px" }}
+      className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden flex flex-col"
+      style={{ maxHeight: "540px" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
@@ -170,9 +223,9 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
       </div>
 
       {/* Body */}
-      <div className="overflow-y-auto" style={{ maxHeight: "380px" }}>
+      <div className="overflow-y-auto flex-1" style={{ maxHeight: "320px" }}>
         {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             <Bell className="w-10 h-10 text-slate-200 dark:text-slate-700 mb-3" />
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
               All caught up!
@@ -191,6 +244,27 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
           </div>
         )}
       </div>
+
+      {/* Footer: Notification Permission Prompt (shown only if not granted) */}
+      {permission !== "granted" && (
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+              <Smartphone className="w-3.5 h-3.5 text-blue-500" />
+              <span>Instant Device Alerts</span>
+            </span>
+          </div>
+
+          <button
+            onClick={handleEnablePush}
+            className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span>Enable System Notifications</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+

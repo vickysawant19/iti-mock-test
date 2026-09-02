@@ -30,6 +30,10 @@ export default defineConfig({
         navigateFallback: "/index.html",
         // don’t redirect sitemap.xml, robots.txt, or API routes to the SPA
         navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/v1/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        importScripts: ["/custom-sw.js"],
       },
       manifest: {
         id: "/",

@@ -3,10 +3,41 @@ import { tablesDb } from "../core/appwriteClient";
 import conf from "../../config/config";
 import PermissionBuilder from "../../utils/permissionBuilder";
 
+const READ_CACHE_PREFIX = "read_notif_ids_";
+
 class NotificationService {
   constructor() {
     this.databaseId = conf.databaseId;
     this.collectionId = "notifications";
+  }
+
+  /**
+   * Helper to get locally marked read notification IDs for instant UI updates
+   */
+  getLocalReadIds(studentId) {
+    if (!studentId) return new Set();
+    try {
+      const raw = localStorage.getItem(`${READ_CACHE_PREFIX}${studentId}`);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  /**
+   * Helper to record read notification ID locally
+   */
+  setLocalReadId(studentId, notifId) {
+    if (!studentId || !notifId) return;
+    try {
+      const current = this.getLocalReadIds(studentId);
+      current.add(notifId);
+      // Keep at most 200 most recent IDs in local cache to prevent memory bloat
+      const arr = Array.from(current).slice(-200);
+      localStorage.setItem(`${READ_CACHE_PREFIX}${studentId}`, JSON.stringify(arr));
+    } catch {
+      // Ignore localStorage errors
+    }
   }
 
   async createNotification({ message, type, batchId, teacherId, paperId, teamId }) {
@@ -73,7 +104,7 @@ class NotificationService {
     }
   }
 
-  async getNotificationsByBatch(batchIds) {
+  async getNotificationsByBatch(batchIds, limit = 20) {
     if (!batchIds || batchIds.length === 0) return [];
     try {
       const response = await tablesDb.listRows({
@@ -82,17 +113,23 @@ class NotificationService {
         queries: [
           Query.equal("batchId", batchIds),
           Query.orderDesc("$createdAt"),
-          Query.limit(50)
+          Query.limit(limit)
         ]
       });
       return response.rows || response.documents || [];
     } catch (error) {
       console.error("Error getting notifications", error);
-      throw error;
+      return [];
     }
   }
 
   async markAsRead(notificationId, studentId) {
+    if (!notificationId || !studentId) return null;
+    
+    // 1. Immediately record in local cache for instant UI feedback
+    this.setLocalReadId(studentId, notificationId);
+
+    // 2. Persist to DB asynchronously with conflict tolerance
     try {
       const notification = await tablesDb.getRow({
         databaseId: this.databaseId,
@@ -112,8 +149,9 @@ class NotificationService {
       }
       return notification;
     } catch (error) {
-      console.error("Error marking notification as read", error);
-      throw error;
+      // Non-blocking: If conflict or network glitch happens, local cache still maintains read state
+      console.warn("Non-fatal markAsRead warning:", error?.message || error);
+      return null;
     }
   }
 }

@@ -18,6 +18,7 @@ import { usePresence } from "./hooks/usePresence";
 import { ThemeProvider } from "./ThemeProvider";
 
 import PageFallbackLoader from "./components/common/PageFallbackLoader";
+import NotificationModalManager from "./components/notifications/NotificationModalManager";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -109,6 +110,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="app-theme">
       <div className="bg-gray-100 w-full min-h-screen dark:bg-black">
+        <NotificationModalManager />
         {!isQuotaExceededPage && (
           <Navbar
             isNavOpen={isNavOpen}

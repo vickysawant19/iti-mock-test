@@ -76,6 +76,7 @@ const AddBulkQuestions = lazy(() => import("./private/admin/BulkOperations/AddBu
 const MigrationDashboard = lazy(() => import("./private/admin/MigrationDashboard.jsx"));
 const ManageTrades = lazy(() => import("./private/admin/ManageTrades.jsx"));
 const ManageColleges = lazy(() => import("./private/admin/ManageColleges.jsx"));
+const NotificationTester = lazy(() => import("./private/admin/NotificationTester.jsx"));
 
 // Disable PWA on the old domain to prevent it from hijacking redirects
 // and force client-side redirect since the cached SW bypassed Vercel's redirect
@@ -101,13 +102,7 @@ if (window.location.hostname === "itimocktest.vercel.app") {
     forceRedirect();
   }
 } else {
-  const updateSW = registerSW({
-    onNeedRefresh() {
-      if (confirm("New content available. Reload to update?")) {
-        updateSW(true);
-      }
-    },
-  });
+  registerSW({ immediate: true });
 }
 
 const router = (
@@ -184,6 +179,7 @@ const router = (
             <Route path="migration-dashboard" element={<MigrationDashboard />} />
             <Route path="manage-trades" element={<ManageTrades />} />
             <Route path="manage-colleges" element={<ManageColleges />} />
+            <Route path="test-notifications" element={<NotificationTester />} />
           </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />
