@@ -1,4 +1,5 @@
 import React from "react";
+import { APP_VERSION, BUILD_DATE } from "@/config/version";
 
 const Footer = () => {
   return (
@@ -117,10 +118,16 @@ const Footer = () => {
         </div>
       </div>
       <hr className="mt-5 mx-5 border-gray-500 dark:border-gray-700" />
-      <div className="m-5">
-        <p className="text-center text-gray-200 dark:text-gray-400">
+      <div className="m-5 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-7xl mx-auto px-4">
+        <p className="text-center text-gray-200 dark:text-gray-400 text-sm">
           &copy; {new Date().getFullYear()} ITI Mitra. All Rights Reserved.
         </p>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-gray-700/70 text-gray-300 border border-gray-600/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>v{APP_VERSION}</span>
+          <span className="text-gray-500">•</span>
+          <span className="text-[11px] text-gray-400">{BUILD_DATE}</span>
+        </span>
       </div>
     </footer>
   );

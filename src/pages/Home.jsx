@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
 import { motion } from "framer-motion";
+import { APP_VERSION, BUILD_DATE } from "@/config/version";
 import {
   CalendarCheck,
   Book,
@@ -806,9 +807,17 @@ const Home = () => {
           </div>
 
           <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left">
-              &copy; {new Date().getFullYear()} ITI Mitra. All Rights Reserved.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center md:text-left">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                &copy; {new Date().getFullYear()} ITI Mitra. All Rights Reserved.
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>v{APP_VERSION}</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">{BUILD_DATE}</span>
+              </span>
+            </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-1">
               Made with <span className="text-red-500">♥</span> for Education
             </p>
