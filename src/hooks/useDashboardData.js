@@ -25,8 +25,20 @@ export const useDashboardData = () => {
   const userBatches = useSelector(selectUserBatches);
   const isBatchLoading = useSelector(selectActiveBatchLoading);
 
-  const isTeacher = user?.labels?.includes("Teacher");
-  const isAdmin = user?.labels?.includes("admin");
+  const isTeacher =
+    user?.labels?.some((l) => l.toLowerCase() === "teacher") ||
+    (Array.isArray(profile?.role)
+      ? profile.role.some((r) => r.toLowerCase() === "teacher")
+      : typeof profile?.role === "string" && profile.role.toLowerCase() === "teacher") ||
+    false;
+
+  const isAdmin =
+    user?.labels?.some((l) => l.toLowerCase() === "admin") ||
+    (Array.isArray(profile?.role)
+      ? profile.role.some((r) => r.toLowerCase() === "admin")
+      : typeof profile?.role === "string" && profile.role.toLowerCase() === "admin") ||
+    false;
+
   const isStudent = user && !isTeacher && !isAdmin;
 
   // Selected month for the teacher dashboard (default: current month)
@@ -60,6 +72,7 @@ export const useDashboardData = () => {
   const batchContext = useMemo(
     () => ({
       batchId: activeBatchId,
+      teamId: activeBatchData?.teamId || "",
       batchName: activeBatchData?.BatchName || "No Batch",
       tradeId: activeBatchData?.tradeId || "",
       tradeName: tradeData?.tradeName || "",

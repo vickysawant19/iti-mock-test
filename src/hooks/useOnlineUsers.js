@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Channel } from "appwrite";
-import { presenceService, realtime } from "@/services/core/appwriteClient";
+import { presenceService as presences, presenceRealtime as realtime } from "@/services/core/appwriteClient";
 
 // Global singleton state for online users to prevent duplicate network calls and WebSocket subscriptions
 let globalOnlineUsers = new Map();
@@ -9,7 +9,6 @@ let initialFetchPromise = null;
 let activeSubscription = null;
 let isTrackingActive = false;
 let trackingSessionId = 0;
-let notifyScheduled = false;
 const deletedDuringFetch = new Set();
 
 /**
@@ -42,24 +41,14 @@ export function updateLocalUserPresence(userId, status, metadata) {
     },
     $updatedAt: new Date().toISOString(),
   });
-  scheduleBatchedNotification();
+  notifyListeners();
 }
 
 export function removeLocalUserPresence(userId) {
   if (!userId) return;
   globalOnlineUsers.delete(userId);
   deletedDuringFetch.add(userId);
-  scheduleBatchedNotification();
-}
-
-/** Batched notification to collapse multiple rapid socket events into a single render frame */
-function scheduleBatchedNotification() {
-  if (notifyScheduled) return;
-  notifyScheduled = true;
-  requestAnimationFrame(() => {
-    notifyScheduled = false;
-    notifyListeners();
-  });
+  notifyListeners();
 }
 
 async function startPresenceTracking() {
@@ -73,40 +62,23 @@ async function startPresenceTracking() {
 
   initialFetchPromise = (async () => {
     try {
-      const result = await presenceService.list();
+      const result = await presences.list();
       
       // If tracking was deactivated while we were listing, or another session started, immediately discard
       if (!isTrackingActive || mySession !== trackingSessionId) return;
 
       const fetched = result.presences ?? [];
-
-      // Merge snapshot results, giving priority to fresh local metadata and live event updates
+      // Merge snapshot results, giving priority to any live event updates that already arrived
       for (const p of fetched) {
-        if (deletedDuringFetch.has(p.userId)) continue;
-        const existing = globalOnlineUsers.get(p.userId);
-        if (!existing) {
+        if (!globalOnlineUsers.has(p.userId) && !deletedDuringFetch.has(p.userId)) {
           globalOnlineUsers.set(p.userId, p);
-        } else {
-          // If local record has a resolved activeBatchId and server snapshot was stale with empty activeBatchId, preserve local activeBatchId
-          const localBatch = existing.metadata?.activeBatchId || existing.metadata?.batchId;
-          const serverBatch = p.metadata?.activeBatchId || p.metadata?.batchId;
-          if (localBatch && !serverBatch) {
-            globalOnlineUsers.set(p.userId, {
-              ...p,
-              metadata: {
-                ...p.metadata,
-                activeBatchId: localBatch,
-                batchId: localBatch,
-              },
-            });
-          } else {
-            globalOnlineUsers.set(p.userId, p);
-          }
         }
       }
-      scheduleBatchedNotification();
+      notifyListeners();
     } catch (err) {
-      // Ignored: list will populate over realtime subscriptions
+      if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+        console.warn("[useOnlineUsers] list failed:", err?.message);
+      }
     }
   })();
 
@@ -117,14 +89,13 @@ async function startPresenceTracking() {
         if (!presence?.userId) return;
 
         const isDelete = response.events?.some((e) => e.includes(".delete"));
-
         if (isDelete) {
           globalOnlineUsers.delete(presence.userId);
           deletedDuringFetch.add(presence.userId); // remember even after fetch resolves
         } else {
           globalOnlineUsers.set(presence.userId, presence);
         }
-        scheduleBatchedNotification();
+        notifyListeners();
       });
 
       // If tracking was deactivated while we were subscribing, or another session started, immediately unsubscribe to prevent leaks
@@ -138,6 +109,9 @@ async function startPresenceTracking() {
       activeSubscription = sub;
       return sub;
     } catch (err) {
+      if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
+        console.warn("[useOnlineUsers] subscribe failed:", err?.message);
+      }
       return null;
     }
   })();
@@ -257,6 +231,18 @@ export function useBatchPresence(batchContextOrId, studentRows = [], currentUser
     return set;
   }, [studentRows]);
 
+  // Lookup map for fast enrichment of student info (name, avatar, rollNumber, etc.)
+  const studentMap = useMemo(() => {
+    const map = new Map();
+    for (const row of studentRows) {
+      const id = row?.studentId || row?.$id || row?.userId;
+      if (id) {
+        map.set(String(id), row);
+      }
+    }
+    return map;
+  }, [studentRows]);
+
   // Pre-filter and group members in this batch
   const { members, teachers, students, totalCount } = useMemo(() => {
     if (!batchId && enrolledStudentIds.size === 0 && !teamId) {
@@ -273,14 +259,36 @@ export function useBatchPresence(batchContextOrId, studentRows = [], currentUser
       const isEnrolled = enrolledStudentIds.has(String(u.userId));
       const isTeacherOfBatch =
         (batchId && uBatchId === batchId) || (teamId && meta.teamId === teamId);
-      const isSelf = currentUserId && u.userId === currentUserId;
+      const isSelf = currentUserId && (u.userId === currentUserId || String(u.userId) === String(currentUserId));
 
       if (isEnrolled || isTeacherOfBatch || isSelf) {
-        allMembers.push(u);
-        if (meta.role === "Teacher") {
-          teacherList.push(u);
+        const enrolledData = studentMap.get(String(u.userId));
+        const enrichedUser = enrolledData
+          ? {
+              ...u,
+              metadata: {
+                ...meta,
+                userName:
+                  meta.userName && meta.userName !== "User" && meta.userName !== "Student"
+                    ? meta.userName
+                    : enrolledData.userName || enrolledData.name || "Student",
+                profileImage: meta.profileImage || enrolledData.profileImage || null,
+                rollNumber: enrolledData.rollNumber || meta.rollNumber || null,
+                registerId: enrolledData.registerId || meta.registerId || null,
+              },
+            }
+          : u;
+
+        allMembers.push(enrichedUser);
+        const isTeacherRole =
+          meta.role === "Teacher" ||
+          (Array.isArray(meta.role) && meta.role.includes("Teacher")) ||
+          (isSelf && !isEnrolled && isTeacherOfBatch);
+
+        if (isTeacherRole) {
+          teacherList.push(enrichedUser);
         } else {
-          studentList.push(u);
+          studentList.push(enrichedUser);
         }
       }
     }
@@ -291,7 +299,7 @@ export function useBatchPresence(batchContextOrId, studentRows = [], currentUser
       students: studentList,
       totalCount: allMembers.length,
     };
-  }, [onlineUsers, batchId, teamId, enrolledStudentIds, currentUserId]);
+  }, [onlineUsers, batchId, teamId, enrolledStudentIds, studentMap, currentUserId]);
 
   const getActivity = useCallback(
     (userIdOrPath) => {

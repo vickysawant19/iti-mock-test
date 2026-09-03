@@ -47,6 +47,7 @@ import { ID } from "appwrite";
 import conf from "@/config/config";
 
 const TeacherGameArena = ({
+  user,
   profile,
   batchContext,
   batchOverview,
@@ -455,6 +456,7 @@ const TeacherGameArena = ({
           <ClassLobbyCard
             batchContext={batchContext}
             profile={profile}
+            user={user}
             studentRows={studentRows}
           />
         </div>
@@ -645,6 +647,7 @@ const TeacherGameArena = ({
               <ClassLobbyCard
                 batchContext={batchContext}
                 profile={profile}
+                user={user}
                 studentRows={studentRows}
               />
             </div>
@@ -736,9 +739,9 @@ const TeacherGameArena = ({
 };
 
 // ─── Class Lobby Card ───────────────────────────────────────────────────────
-const ClassLobbyCard = ({ batchContext, profile, studentRows = [] }) => {
+const ClassLobbyCard = ({ batchContext, profile, user, studentRows = [] }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const currentUserId = profile?.userId || profile?.$id;
+  const currentUserId = user?.$id || profile?.userId || profile?.$id;
 
   const {
     members,
@@ -781,6 +784,7 @@ const ClassLobbyCard = ({ batchContext, profile, studentRows = [] }) => {
                   fallbackText={m.metadata?.userName?.charAt(0) || "?"}
                   userId={m.userId}
                   showStatus={false}
+                  userName={m.metadata?.userName || "Member"}
                   className="w-5 h-5 rounded-full border border-white dark:border-slate-900 shrink-0"
                 />
               ))}
@@ -836,6 +840,7 @@ const ClassLobbyCard = ({ batchContext, profile, studentRows = [] }) => {
                               userId={m.userId}
                               showStatus
                               statusSize="xs"
+                              userName={m.metadata?.userName || "Instructor"}
                               className="w-7 h-7 shrink-0 rounded-lg ring-2 ring-pink-100 dark:ring-pink-900/30"
                             />
                             <div className="min-w-0 flex-1">
@@ -875,17 +880,25 @@ const ClassLobbyCard = ({ batchContext, profile, studentRows = [] }) => {
                               userId={m.userId}
                               showStatus
                               statusSize="xs"
+                              userName={m.metadata?.userName || "Student"}
                               className="w-7 h-7 shrink-0 rounded-lg"
                             />
                             <div className="min-w-0 flex-1">
-                              <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">
-                                {m.metadata?.userName || "Student"}
-                                {m.userId === currentUserId && (
-                                  <span className="ml-1 text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded">
-                                    You
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">
+                                  {m.metadata?.userName || "Student"}
+                                  {m.userId === currentUserId && (
+                                    <span className="ml-1 text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-400 px-1 py-0.5 rounded">
+                                      You
+                                    </span>
+                                  )}
+                                </p>
+                                {(m.metadata?.rollNumber || m.metadata?.registerId) && (
+                                  <span className="text-[9px] font-medium text-slate-400 dark:text-slate-500 shrink-0">
+                                    {m.metadata?.rollNumber ? `#${m.metadata.rollNumber}` : m.metadata?.registerId}
                                   </span>
                                 )}
-                              </p>
+                              </div>
                               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">
                                 {getActivity(m.metadata?.page)}
                               </p>

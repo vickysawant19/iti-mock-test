@@ -1,23 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Permission, Role } from "appwrite";
+import { presenceClient } from "@/services/core/appwriteClient";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import { selectActiveBatchId, selectActiveBatch } from "@/store/activeBatchSlice";
-import { realtime } from "@/services/core/appwriteClient";
-import { updateLocalUserPresence } from "./useOnlineUsers";
+import { selectActiveBatch, selectActiveBatchId } from "@/store/activeBatchSlice";
 
-const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
-const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
+const HEARTBEAT_INTERVAL_MS = 60_000;
+const AWAY_DELAY_MS = 60_000;
+const IDLE_TIMEOUT_MS = 300_000;
+const PRESENCE_TTL_MINUTES = 3;
 
 /**
- * usePresence — manages the current user's live presence via Appwrite Realtime WebSocket.
- *
- * Tying presence to WebSocket connection:
- * - No API key needed in frontend (uses authenticated client session)
- * - Automatic server-side cleanup on disconnect / tab close
- * - Automatic reconnection recovery by the SDK
+ * usePresence — manages the current user's live presence via Appwrite Presences API.
  *
  * @param {string|undefined} currentUserId  - The logged-in user's $id (falls back to Redux user)
  * @param {string}           currentStatus  - e.g. "online", "away", "typing"
@@ -43,24 +39,9 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const idleTimerRef = useRef(null);
   const lastActivityRef = useRef(0);
   const lastUpsertRef = useRef({ time: 0, payloadJson: "" });
-  const lastBatchIdRef = useRef("");
 
   // Fallback to redux user if currentUserId isn't explicitly passed
   const effectiveUserId = currentUserId || reduxUser?.$id;
-
-  // Resolve batch ID from Redux, Profile, or localStorage cache so presence has activeBatchId immediately
-  const cachedBatchId =
-    effectiveUserId ? localStorage.getItem(`activeBatch_${effectiveUserId}`) : "";
-  const resolvedBatchId =
-    activeBatchId ||
-    profile?.batchId ||
-    profile?.activeBatchId ||
-    cachedBatchId ||
-    "";
-  const resolvedTeamId =
-    activeBatch?.teamId ||
-    profile?.teamId ||
-    "";
 
   // Stable refs for values used inside callbacks to avoid stale closures and unnecessary reruns
   const userIdRef = useRef(effectiveUserId);
@@ -87,16 +68,16 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     userName: profile?.userName || reduxUser?.name || "User",
     profileImage: profile?.profileImage || "",
     role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
-    activeBatchId: resolvedBatchId,
-    batchId: resolvedBatchId,
-    teamId: resolvedTeamId,
+    activeBatchId: activeBatchId || null,
+    batchId: activeBatchId || null,
+    teamId: activeBatch?.teamId || null,
     device: typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
     sessionId: sessionIdRef.current,
     lastSeen: new Date().toISOString(),
     ...metadata,
   };
 
-  // ── Core Upsert via Native Realtime WebSocket ─────────────────────────────
+  // ── Core Upsert ───────────────────────────────────────────────────────────
   const upsertSelfPresence = useCallback(async (statusOverride) => {
     const userId = userIdRef.current;
     if (!userId || disabledRef.current) return;
@@ -114,19 +95,13 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       }
     }
 
-    // Deduplicate rapid identical upserts (bypass dedupe if batch changed)
+    // Deduplicate rapid identical upserts
     const currentPayloadJson = JSON.stringify({
       status,
       metadata: metadataRef.current,
     });
     const now = Date.now();
-    const batchChanged = lastBatchIdRef.current !== metadataRef.current.activeBatchId;
-    if (batchChanged) {
-      lastBatchIdRef.current = metadataRef.current.activeBatchId;
-    }
-
     if (
-      !batchChanged &&
       lastUpsertRef.current.payloadJson === currentPayloadJson &&
       now - lastUpsertRef.current.time < 3000
     ) {
@@ -134,26 +109,72 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     }
     lastUpsertRef.current = { time: now, payloadJson: currentPayloadJson };
 
+    const expiresAt = new Date(
+      Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
+    ).toISOString();
+
+    const apiPath = `/presences/${encodeURIComponent(String(userId))}`;
+    const uri = new URL(presenceClient.config.endpoint + apiPath);
+    const apiHeaders = {
+      "X-Appwrite-Project": presenceClient.config.project,
+      "content-type": "application/json",
+      "accept": "application/json",
+    };
+    const payload = {
+      userId,
+      status,
+      expiresAt,
+      metadata: metadataRef.current,
+      permissions: [
+        Permission.read(Role.users()),
+        Permission.read(Role.any()),
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
+      ],
+    };
+
     try {
-      await realtime.upsertPresence({
-        presenceId: String(userId),
-        status,
-        metadata: metadataRef.current,
-        permissions: [Permission.read(Role.users())],
-      });
-      // Synchronize immediately with local roster so current user appears in own lobby instantly
-      updateLocalUserPresence(userId, status, metadataRef.current);
-      setError(null);
+      await presenceClient.call("put", uri, apiHeaders, payload);
     } catch (err) {
       const code = err?.code;
       if (code === 401 || code === 403 || code === 404) {
         disabledRef.current = true;
+        console.info(
+          `[usePresence] Presences service is unavailable (code ${code}: ${err?.message}). Presence tracking gracefully disabled.`
+        );
+      } else {
+        console.error("[usePresence] upsert failed:", {
+          code: err.code,
+          type: err.type,
+          message: err.message,
+        });
       }
       setError(err);
     }
   }, []);
 
-  // ── Main Effect: Presence registration, focus/blur, idle timers ──────────
+  // ── Core Delete ───────────────────────────────────────────────────────────
+  const deleteSelfPresence = useCallback(async (userIdToDelete) => {
+    if (!userIdToDelete || disabledRef.current) return;
+    const apiPath = `/presences/${encodeURIComponent(String(userIdToDelete))}`;
+    const uri = new URL(presenceClient.config.endpoint + apiPath);
+    const apiHeaders = {
+      "X-Appwrite-Project": presenceClient.config.project,
+      "content-type": "application/json",
+      "accept": "application/json",
+    };
+    const payload = {
+      userId: userIdToDelete,
+    };
+
+    try {
+      await presenceClient.call("delete", uri, apiHeaders, payload);
+    } catch (err) {
+      // Ignore: session or presence record might already be gone on logout
+    }
+  }, []);
+
+  // ── Main Effect: Presence registration, heartbeat, focus/blur, idle timers ──
   useEffect(() => {
     if (!effectiveUserId) {
       setIsLoading(false);
@@ -163,8 +184,10 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     isMountedRef.current = true;
     disabledRef.current = false; // Reset on user sign-in
 
-    // Initial register self
-    upsertSelfPresence();
+    // Heartbeat: push expiresAt forward periodically
+    const heartbeatId = setInterval(() => {
+      upsertSelfPresence();
+    }, HEARTBEAT_INTERVAL_MS);
 
     // Inactivity Idle Tracking
     const resetIdleTimer = () => {
@@ -198,15 +221,15 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     activityEvents.forEach((ev) => window.addEventListener(ev, handleUserActivity));
     resetIdleTimer();
 
-    // Focus/Blur and Visibility states with transition grace period
+    // Focus/Blur states with transition grace period
     const onFocus = () => {
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
       const wasFocused = isFocusedRef.current;
       isFocusedRef.current = true;
 
-      // Re-trigger upsert immediately if returning from a blurred/hidden "away" status
+      // Re-trigger upsert immediately if returning from a blurred "away" status
       if (!wasFocused) {
-        upsertSelfPresence("online");
+        upsertSelfPresence();
       }
     };
 
@@ -220,32 +243,33 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       }, AWAY_DELAY_MS);
     };
 
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        onFocus();
-      } else {
-        onBlur();
-      }
+    const handleBeforeUnload = () => {
+      deleteSelfPresence(effectiveUserId);
     };
 
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     setIsLoading(false);
 
     // Cleanup
     return () => {
       isMountedRef.current = false;
 
+      clearInterval(heartbeatId);
+      
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
+
+      // Cleanup presence when user signs out or hook is unmounted
+      deleteSelfPresence(effectiveUserId);
     };
-  }, [effectiveUserId, upsertSelfPresence]);
+  }, [effectiveUserId, upsertSelfPresence, deleteSelfPresence]);
 
   // ── Effect: Trigger update on status or metadata change ───────────────────
   useEffect(() => {
@@ -256,8 +280,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     effectiveUserId,
     currentStatus,
     location.pathname,
-    resolvedBatchId,
-    resolvedTeamId,
+    activeBatchId,
     profile?.userName,
     profile?.profileImage,
     profile?.role?.[0],

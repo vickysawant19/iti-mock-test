@@ -24,6 +24,7 @@ const GameArena = () => {
     return (
       <main id="main-content" className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <TeacherGameArena
+          user={data.user}
           profile={data.profile}
           batchContext={data.batchContext}
           batchOverview={data.batchOverview}

@@ -27,6 +27,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact 
                   userId={m.userId}
                   showStatus={true}
                   statusSize="xs"
+                  userName={m.metadata?.userName || "Member"}
                   className="w-5.5 h-5.5 rounded-full border border-white dark:border-slate-900 ring-0 shrink-0"
                 />
               ))}
@@ -95,6 +96,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact 
                                 userId={m.userId}
                                 showStatus={true}
                                 statusSize="xs"
+                                userName={m.metadata?.userName || "Instructor"}
                                 className="w-6.5 h-6.5 shrink-0 rounded-lg"
                               />
                               <div className="min-w-0 flex-1">
@@ -135,6 +137,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact 
                                 userId={m.userId}
                                 showStatus={true}
                                 statusSize="xs"
+                                userName={m.metadata?.userName || "Student"}
                                 className="w-6.5 h-6.5 shrink-0 rounded-lg"
                               />
                               <div className="min-w-0 flex-1">
@@ -211,6 +214,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact 
                       userId={m.userId}
                       showStatus={true}
                       statusSize="sm"
+                      userName={m.metadata?.userName || "Instructor"}
                       className="w-8 h-8 shrink-0 ring-2 ring-pink-100 dark:ring-pink-900/30 rounded-xl"
                     />
                     <div className="min-w-0 flex-1">
@@ -251,6 +255,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact 
                       userId={m.userId}
                       showStatus={true}
                       statusSize="sm"
+                      userName={m.metadata?.userName || "Student"}
                       className="w-8 h-8 shrink-0 rounded-xl"
                     />
                     <div className="min-w-0 flex-1">
