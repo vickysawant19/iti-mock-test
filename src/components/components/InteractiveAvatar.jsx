@@ -8,7 +8,7 @@ import { Upload, Trash2, Loader2, Image as ImageIcon, Camera, RefreshCw, X } fro
 import { formatDistanceToNow } from "date-fns";
 import profileImageService from "@/services/auth/profileImageService";
 import OnlineIndicator from "./OnlineIndicator";
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useUserStatus } from "@/hooks/useOnlineUsers";
 import { fixProfileImage } from "@/services/core/appwriteClient";
 
 function getShortRelativeTime(lastseen) {
@@ -56,9 +56,8 @@ const InteractiveAvatar = forwardRef(({
       return fixed;
     }
   })();
-  const { getStatus } = useOnlineUsers();
-  const isOnline = userId ? getStatus(userId) === "online" : false;
-  const status = userId ? getStatus(userId) : "offline";
+  const status = useUserStatus(userId);
+  const isOnline = status === "online";
   const isActive = status === "online" || status === "away";
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);

@@ -61,13 +61,20 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     return "Dashboard";
   };
 
+  const userRole =
+    (Array.isArray(profile?.role) && profile.role.some((r) => String(r).toLowerCase() === "teacher")) ||
+    (typeof profile?.role === "string" && profile.role.toLowerCase() === "teacher") ||
+    (Array.isArray(reduxUser?.labels) && reduxUser.labels.some((l) => String(l).toLowerCase() === "teacher"))
+      ? "Teacher"
+      : "Student";
+
   const metadataRef = useRef(metadata);
   metadataRef.current = {
     page: location.pathname || "",
     activity: getActivityType(location.pathname),
     userName: profile?.userName || reduxUser?.name || "User",
     profileImage: profile?.profileImage || "",
-    role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
+    role: userRole,
     activeBatchId: activeBatchId || null,
     batchId: activeBatchId || null,
     teamId: activeBatch?.teamId || null,
@@ -245,6 +252,22 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
 
     const handleBeforeUnload = () => {
       deleteSelfPresence(effectiveUserId);
+      try {
+        const apiPath = `/presences/${encodeURIComponent(String(effectiveUserId))}`;
+        const url = `${presenceClient.config.endpoint}${apiPath}`;
+        fetch(url, {
+          method: "DELETE",
+          keepalive: true,
+          headers: {
+            "X-Appwrite-Project": presenceClient.config.project,
+            "X-Appwrite-Key": presenceClient.headers["X-Appwrite-Key"] || "",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ userId: effectiveUserId }),
+        }).catch(() => {});
+      } catch (e) {
+        // Fallback silently to server-side TTL
+      }
     };
 
     window.addEventListener("focus", onFocus);
@@ -271,11 +294,18 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     };
   }, [effectiveUserId, upsertSelfPresence, deleteSelfPresence]);
 
-  // ── Effect: Trigger update on status or metadata change ───────────────────
+  // ── Effect: Trigger update on status or metadata change (debounced) ───────
   useEffect(() => {
     if (!effectiveUserId) return;
     isIdleRef.current = false; // Reset idle status when manual state changes
-    upsertSelfPresence();
+
+    const timer = setTimeout(() => {
+      upsertSelfPresence();
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [
     effectiveUserId,
     currentStatus,
@@ -283,7 +313,7 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     activeBatchId,
     profile?.userName,
     profile?.profileImage,
-    profile?.role?.[0],
+    userRole,
     upsertSelfPresence
   ]);
 

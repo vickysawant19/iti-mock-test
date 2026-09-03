@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useSyncExternalStore } from "react";
 import { Channel } from "appwrite";
 import { presenceService as presences, presenceRealtime as realtime } from "@/services/core/appwriteClient";
 
@@ -10,6 +10,9 @@ let activeSubscription = null;
 let isTrackingActive = false;
 let trackingSessionId = 0;
 const deletedDuringFetch = new Set();
+
+let notifyRafId = null;
+let reconnectTimer = null;
 
 /**
  * Standardized activity text helper
@@ -41,20 +44,59 @@ export function updateLocalUserPresence(userId, status, metadata) {
     },
     $updatedAt: new Date().toISOString(),
   });
-  notifyListeners();
+  scheduleBatchedNotification();
 }
 
 export function removeLocalUserPresence(userId) {
   if (!userId) return;
   globalOnlineUsers.delete(userId);
   deletedDuringFetch.add(userId);
-  notifyListeners();
+  scheduleBatchedNotification();
+}
+
+/** Batched notification to collapse multiple rapid socket events into a single render frame */
+function scheduleBatchedNotification() {
+  if (notifyRafId !== null) return;
+  notifyRafId = requestAnimationFrame(() => {
+    notifyRafId = null;
+    notifyListeners();
+  });
+}
+
+function cancelPendingNotification() {
+  if (notifyRafId !== null) {
+    cancelAnimationFrame(notifyRafId);
+    notifyRafId = null;
+  }
+}
+
+function handleNetworkOnline() {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  // Debounce reconnect to prevent flapping on unstable networks
+  reconnectTimer = setTimeout(() => {
+    if (listeners.size > 0 && typeof window !== "undefined" && navigator.onLine) {
+      stopPresenceTracking();
+      startPresenceTracking();
+    }
+  }, 1500);
+}
+
+function handleNetworkOffline() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
 }
 
 async function startPresenceTracking() {
   isTrackingActive = true;
   trackingSessionId += 1;
   const mySession = trackingSessionId;
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", handleNetworkOnline);
+    window.addEventListener("offline", handleNetworkOffline);
+  }
 
   if (initialFetchPromise) return initialFetchPromise;
 
@@ -74,7 +116,7 @@ async function startPresenceTracking() {
           globalOnlineUsers.set(p.userId, p);
         }
       }
-      notifyListeners();
+      scheduleBatchedNotification();
     } catch (err) {
       if (err?.code !== 401 && err?.code !== 403 && err?.code !== 404) {
         console.warn("[useOnlineUsers] list failed:", err?.message);
@@ -95,7 +137,7 @@ async function startPresenceTracking() {
         } else {
           globalOnlineUsers.set(presence.userId, presence);
         }
-        notifyListeners();
+        scheduleBatchedNotification();
       });
 
       // If tracking was deactivated while we were subscribing, or another session started, immediately unsubscribe to prevent leaks
@@ -122,6 +164,17 @@ async function startPresenceTracking() {
 function stopPresenceTracking() {
   isTrackingActive = false;
   trackingSessionId += 1; // invalidates any in-flight subscribe from this point on
+  cancelPendingNotification();
+
+  if (typeof window !== "undefined") {
+    window.removeEventListener("online", handleNetworkOnline);
+    window.removeEventListener("offline", handleNetworkOffline);
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
   if (activeSubscription) {
     if (typeof activeSubscription.unsubscribe === "function") {
       activeSubscription.unsubscribe();
@@ -139,6 +192,40 @@ function notifyListeners() {
 }
 
 /**
+ * Shared external store subscription for React components
+ */
+export function subscribeToPresenceStore(callback) {
+  listeners.add(callback);
+
+  if (listeners.size === 1) {
+    startPresenceTracking();
+  }
+
+  return () => {
+    listeners.delete(callback);
+    if (listeners.size === 0) {
+      stopPresenceTracking();
+    }
+  };
+}
+
+/**
+ * Targeted hook for single user presence status.
+ * Uses React 18 useSyncExternalStore with primitive string snapshot ("online" | "away" | "offline").
+ * This ensures components only re-render if THIS specific user's status changes!
+ *
+ * @param {string|null|undefined} userId
+ * @returns {"online" | "away" | "offline"}
+ */
+export function useUserStatus(userId) {
+  return useSyncExternalStore(
+    subscribeToPresenceStore,
+    () => (userId ? globalOnlineUsers.get(userId)?.status ?? "offline" : "offline"),
+    () => "offline"
+  );
+}
+
+/**
  * Maintains a live Map<userId, presence> of every online/away user.
  * Option to filter online users by teamId or batchId.
  *
@@ -148,20 +235,7 @@ export function useOnlineUsers(filterTeamId = null) {
   const [onlineUsers, setOnlineUsers] = useState(new Map(globalOnlineUsers));
 
   useEffect(() => {
-    listeners.add(setOnlineUsers);
-
-    // If first component using the hook mounts, start the shared tracking
-    if (listeners.size === 1) {
-      startPresenceTracking();
-    }
-
-    return () => {
-      listeners.delete(setOnlineUsers);
-      // If last component using the hook unmounts, stop the shared tracking
-      if (listeners.size === 0) {
-        stopPresenceTracking();
-      }
-    };
+    return subscribeToPresenceStore(setOnlineUsers);
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -280,10 +354,11 @@ export function useBatchPresence(batchContextOrId, studentRows = [], currentUser
           : u;
 
         allMembers.push(enrichedUser);
+        const roleStr = String(meta.role || "").toLowerCase();
         const isTeacherRole =
-          meta.role === "Teacher" ||
-          (Array.isArray(meta.role) && meta.role.includes("Teacher")) ||
-          (isSelf && !isEnrolled && isTeacherOfBatch);
+          roleStr === "teacher" ||
+          roleStr === "instructor" ||
+          (Array.isArray(meta.role) && meta.role.some((r) => String(r).toLowerCase() === "teacher"));
 
         if (isTeacherRole) {
           teacherList.push(enrichedUser);

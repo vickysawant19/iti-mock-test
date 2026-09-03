@@ -109,6 +109,7 @@ export const presenceClient = new Client()
   .setProject(conf.projectId);
 
 presenceClient.headers["X-Appwrite-Key"] =
+  (import.meta.env.VITE_APPWRITE_PRESENCE_KEY as string) ||
   "standard_e623994c0ed2af791525a840dcd8979bc315e0325148247f4a35694ced2a9b55fba7c24016550a565ea718cd2de13846a051abda107fcdb90539ac29ffc136f323392cafa5501965fce7544a5ae319575f60be748d883df9d5161871357e92cb26d0634dbd36345550747c6ea222906c16e57b25ad96a6ca3aae180b8a8c0127";
 
 export const presenceService = new Presences(presenceClient);

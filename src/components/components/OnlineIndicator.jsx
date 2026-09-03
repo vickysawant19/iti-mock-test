@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useUserStatus } from "@/hooks/useOnlineUsers";
 
 /**
  * Renders a small coloured dot indicating a user's online status.
@@ -15,8 +15,7 @@ import { useOnlineUsers } from "@/hooks/useOnlineUsers";
  *   offline → transparent (renders nothing)
  */
 export default function OnlineIndicator({ userId, size = "sm", className = "" }) {
-  const { getStatus } = useOnlineUsers();
-  const status = getStatus(userId);
+  const status = useUserStatus(userId);
 
   if (!userId || status === "offline") return null;
 
