@@ -61,6 +61,7 @@ const CreateBatch = lazy(() => import("./private/teacher/batch/create-batch/Crea
 const EditBatch = lazy(() => import("./private/teacher/batch/edit-batch/EditBatch.jsx"));
 const ViewBatch = lazy(() => import("./private/teacher/batch/view-batch/ViewBatch.jsx"));
 const AddStudents = lazy(() => import("./private/teacher/batch/manage-students/AddStudents.jsx"));
+const TeacherNotificationsPage = lazy(() => import("./private/teacher/notifications/TeacherNotificationsPage.jsx"));
 
 // ── Attendance & Academic ──
 const DailyDiary = lazy(() => import("./private/Attendance/DailyDiary/DailyDiary.jsx"));
@@ -152,7 +153,10 @@ const router = (
             <Route path="view/:userId" element={<ProfileView />} />
             <Route path="edit" element={<EditBatch />} />
             <Route path="edit/:batchId" element={<EditBatch />} />
+            <Route path="notifications" element={<TeacherNotificationsPage />} />
           </Route>
+          <Route path="teacher-notifications" element={<TeacherNotificationsPage />} />
+          <Route path="notifications" element={<TeacherNotificationsPage />} />
           {/* Batch-required routes — students blocked if not enrolled */}
           <Route element={<ProtectedStudentBatchRoute />}>
             <Route

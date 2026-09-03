@@ -214,76 +214,88 @@ export function useNotifications() {
 
     const setupRealtime = async () => {
       try {
-        if (isStudent && user?.$id) {
+        if (user?.$id) {
           const notifChannel = Channel.tablesdb(conf.databaseId).table("notifications").row();
           const sub = await realtime.subscribe(notifChannel, (response) => {
+            // Real-time deletion handler
+            if (response.events.some((e) => e.includes(".delete"))) {
+              const docId = response.payload?.$id;
+              if (docId) {
+                setNotifications((prev) => prev.filter((n) => n.id !== docId));
+              }
+              return;
+            }
+
             if (response.events.some((e) => e.includes(".create") || e.includes(".update"))) {
               const doc = response.payload;
               if (!doc) return;
 
-              // If batch-specific, only proceed if student is in this batch
-              if (studentBatchIds.length > 0 && doc.batchId && !studentBatchIds.includes(doc.batchId)) {
-                return;
-              }
-
-              if (doc.readBy && doc.readBy.includes(user.$id)) {
-                setNotifications((prev) => prev.filter((n) => n.id !== doc.$id));
-                return;
-              }
-
-              // On new notification creation, trigger native push notification & in-app toast
-              if (response.events.some((e) => e.includes(".create"))) {
-                const title =
-                  doc.type === "urgent_announcement"
-                    ? "🚨 URGENT ANNOUNCEMENT"
-                    : doc.type === "mock_test_assigned"
-                    ? "📝 New Mock Test Assigned"
-                    : doc.type === "challenge_assigned"
-                    ? "🏆 New Challenge Mission"
-                    : "📣 Batch Announcement";
-
-                const url =
-                  doc.type === "mock_test_assigned" && doc.paperId && doc.paperId !== "N/A"
-                    ? `/attain-test?paperid=${doc.paperId}`
-                    : doc.type === "challenge_assigned"
-                    ? "/arena?tab=missions&sub=challenges"
-                    : "/";
-
-                // Native OS / Browser Push Notification
-                pushNotificationService
-                  .showDirectNotification({
-                    title,
-                    body: doc.message || "You have a new update in ITI Mitra.",
-                    url,
-                  })
-                  .catch((err) => console.warn("Native push dispatch warning:", err));
-
-                // In-App Toast
-                if (doc.type === "urgent_announcement") {
-                  toast.error(`🚨 URGENT: ${doc.message}`, { autoClose: 10000 });
-                } else if (doc.type === "announcement") {
-                  toast.info(`📣 Announcement: ${doc.message}`, { autoClose: 7000 });
-                } else if (doc.type === "mock_test_assigned") {
-                  toast.info(`📝 New Test: ${doc.message}`, { autoClose: 7000 });
-                } else if (doc.type === "challenge_assigned") {
-                  toast.info(`🏆 Challenge: ${doc.message}`, { autoClose: 7000 });
+              if (isStudent) {
+                // If batch-specific, only proceed if student is in this batch
+                if (studentBatchIds.length > 0 && doc.batchId && !studentBatchIds.includes(doc.batchId)) {
+                  return;
                 }
-              }
 
-              setNotifications((prev) => {
-                const filtered = prev.filter((n) => n.id !== doc.$id);
-                return [
-                  {
-                    id: doc.$id,
-                    type: doc.type,
-                    message: doc.message,
-                    batchId: doc.batchId,
-                    paperId: doc.paperId,
-                    createdAt: doc.$updatedAt || doc.$createdAt,
-                  },
-                  ...filtered,
-                ];
-              });
+                if (doc.readBy && doc.readBy.includes(user.$id)) {
+                  setNotifications((prev) => prev.filter((n) => n.id !== doc.$id));
+                  return;
+                }
+
+                // On new notification creation, trigger native push notification & in-app toast
+                if (response.events.some((e) => e.includes(".create"))) {
+                  const title =
+                    doc.type === "urgent_announcement"
+                      ? "🚨 URGENT ANNOUNCEMENT"
+                      : doc.type === "mock_test_assigned"
+                      ? "📝 New Mock Test Assigned"
+                      : doc.type === "challenge_assigned"
+                      ? "🏆 New Challenge Mission"
+                      : "📣 Batch Announcement";
+
+                  const url =
+                    doc.type === "mock_test_assigned" && doc.paperId && doc.paperId !== "N/A"
+                      ? `/attain-test?paperid=${doc.paperId}`
+                      : doc.type === "challenge_assigned"
+                      ? "/arena?tab=missions&sub=challenges"
+                      : "/";
+
+                  // Native OS / Browser Push Notification
+                  pushNotificationService
+                    .showDirectNotification({
+                      title,
+                      body: doc.message || "You have a new update in ITI Mitra.",
+                      url,
+                    })
+                    .catch((err) => console.warn("Native push dispatch warning:", err));
+
+                  // In-App Toast
+                  if (doc.type === "urgent_announcement") {
+                    toast.error(`🚨 URGENT: ${doc.message}`, { autoClose: 10000 });
+                  } else if (doc.type === "announcement") {
+                    toast.info(`📣 Announcement: ${doc.message}`, { autoClose: 7000 });
+                  } else if (doc.type === "mock_test_assigned") {
+                    toast.info(`📝 New Test: ${doc.message}`, { autoClose: 7000 });
+                  } else if (doc.type === "challenge_assigned") {
+                    toast.info(`🏆 Challenge: ${doc.message}`, { autoClose: 7000 });
+                  }
+                }
+
+                setNotifications((prev) => {
+                  const filtered = prev.filter((n) => n.id !== doc.$id);
+                  return [
+                    {
+                      id: doc.$id,
+                      type: doc.type,
+                      message: doc.message,
+                      batchId: doc.batchId,
+                      paperId: doc.paperId,
+                      readBy: doc.readBy || [],
+                      createdAt: doc.$updatedAt || doc.$createdAt,
+                    },
+                    ...filtered,
+                  ];
+                });
+              }
             }
           });
 

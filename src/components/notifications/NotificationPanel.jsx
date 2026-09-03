@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Smartphone,
   Send,
+  Trash2,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
@@ -33,6 +34,18 @@ function NotifItem({ notif, onClose, user }) {
   const isChallenge = notif.type === "challenge_assigned";
   const isUrgent = notif.type === "urgent_announcement";
   const isAnnouncement = notif.type === "announcement" || isUrgent;
+  const isTeacherUser = user?.labels?.includes("Teacher");
+
+  const handleDeleteBroadcast = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm("Remove this broadcast announcement? It will be deleted immediately for all students.")) return;
+    try {
+      await notificationService.deleteNotification(notif.id);
+      toast.success("Broadcast announcement removed");
+    } catch (err) {
+      toast.error("Failed to remove broadcast");
+    }
+  };
 
   const handleClick = async () => {
     if (isMockTest || isChallenge || isAnnouncement) {
@@ -140,6 +153,7 @@ function NotifItem({ notif, onClose, user }) {
 }
 
 export default function NotificationPanel({ notifications, isOpen, onClose }) {
+  const navigate = useNavigate();
   const panelRef = useRef(null);
   const user = useSelector(selectUser);
   const isTeacher = user?.labels?.includes("Teacher");
@@ -244,6 +258,22 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
           </div>
         )}
       </div>
+
+      {/* Show All Notifications Footer Link for Teachers */}
+      {isTeacher && (
+        <div className="p-2 bg-slate-50/90 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center">
+          <button
+            onClick={() => {
+              onClose();
+              navigate("/teacher-notifications");
+            }}
+            className="w-full py-1.5 px-3 rounded-lg text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>Show all notifications &amp; broadcasts</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Footer: Notification Permission Prompt (shown only if not granted) */}
       {permission !== "granted" && (

@@ -23,6 +23,7 @@ import {
   Calendar,
   GraduationCap,
   Briefcase,
+  Megaphone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import TeacherSettingsTab from "./components/teacher/TeacherSettingsTab";
 import TeacherBottomNav from "./components/teacher/TeacherBottomNav";
 import OnlineBatchMembers from "@/components/components/OnlineBatchMembers";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import SendAnnouncementModal from "@/components/notifications/SendAnnouncementModal";
 import { challengeService, CHALLENGE_TEMPLATES } from "@/services/gamification/challenge.service";
 import { gameService } from "@/services/gamification/game.service";
 import { leaderboardService } from "@/services/gamification/leaderboard.service";
@@ -685,6 +687,20 @@ const TeacherGameArena = ({
                   <PlusCircle className="w-3.5 h-3.5 mr-2 text-purple-500" />
                   Bulk Questions
                 </Button>
+                <SendAnnouncementModal
+                  customBatch={batchContext}
+                  studentRows={studentRows}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs font-bold rounded-xl justify-start bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/60 dark:border-amber-800/40 hover:bg-amber-100/60 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-300 cursor-pointer"
+                    >
+                      <Megaphone className="w-3.5 h-3.5 mr-2 text-amber-500" />
+                      Broadcast & Receipts
+                    </Button>
+                  }
+                />
               </div>
             </div>
 
@@ -908,6 +924,24 @@ const ClassLobbyCard = ({ batchContext, profile, user, studentRows = [] }) => {
                       </div>
                     </div>
                   )}
+
+                  {/* Broadcast & Notices trigger inside Class Lobby Card */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <SendAnnouncementModal
+                      customBatch={batchContext}
+                      studentRows={studentRows}
+                      trigger={
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs font-bold rounded-xl gap-2 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-100/50 cursor-pointer"
+                        >
+                          <Megaphone className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Broadcast Notice & Read Receipts</span>
+                        </Button>
+                      }
+                    />
+                  </div>
                 </>
               )}
             </div>

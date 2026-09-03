@@ -133,6 +133,42 @@ class NotificationService {
     }
   }
 
+  async getBatchAnnouncements(batchId, limit = 50) {
+    if (!batchId) return [];
+    try {
+      const response = await tablesDb.listRows({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        queries: [
+          Query.equal("batchId", batchId),
+          Query.orderDesc("$createdAt"),
+          Query.limit(limit)
+        ]
+      });
+      return (response.rows || response.documents || []).filter(
+        (n) => n.type === "announcement" || n.type === "urgent_announcement"
+      );
+    } catch (error) {
+      console.error("Error getting batch announcements", error);
+      return [];
+    }
+  }
+
+  async deleteNotification(notificationId) {
+    if (!notificationId) return false;
+    try {
+      await tablesDb.deleteRow({
+        databaseId: this.databaseId,
+        tableId: this.collectionId,
+        rowId: notificationId
+      });
+      return true;
+    } catch (error) {
+      console.error("Error deleting notification", error);
+      throw error;
+    }
+  }
+
   async markAsRead(notificationId, studentId) {
     if (!notificationId || !studentId) return null;
     
