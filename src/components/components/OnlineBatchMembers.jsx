@@ -1,35 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { useState } from "react";
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useBatchPresence } from "@/hooks/useOnlineUsers";
 import InteractiveAvatar from "./InteractiveAvatar";
 import { Users, GraduationCap, Briefcase } from "lucide-react";
 
-const getActivityText = (path) => {
-  if (!path) return "Online";
-  if (path === "/arena" || path === "/") return "In Game Arena";
-  if (path === "/profile") return "Viewing Profile";
-  if (path === "/student-attendance" || path === "/attendance") return "Viewing Attendance";
-  if (path.includes("mock-test")) return "Taking Mock Test";
-  if (path.includes("leaderboard")) return "Checking Leaderboard";
-  return "Browsing App";
-};
-
-const OnlineBatchMembers = ({ batchId, currentUserId, compact = false, align = "left" }) => {
-  const { onlineUsers } = useOnlineUsers();
+const OnlineBatchMembers = ({ batchId, currentUserId, studentRows = [], compact = false, align = "left" }) => {
+  const { members, teachers, students, totalCount, getActivity } = useBatchPresence(batchId, studentRows, currentUserId);
   const [isOpen, setIsOpen] = useState(false);
 
   if (!batchId) return null;
-
-  // Filter online users in this batch
-  const members = Array.from(onlineUsers.values()).filter(
-    (u) => u.metadata?.activeBatchId === batchId
-  );
-
-  // Group by role
-  const teachers = members.filter((m) => m.metadata?.role === "Teacher");
-  const students = members.filter((m) => m.metadata?.role === "Student" || m.metadata?.role !== "Teacher");
-
-  const totalCount = members.length;
 
   if (compact) {
     return (
@@ -129,7 +108,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, compact = false, align = "
                                 </p>
                                 <p className="text-[9px] text-pink-600 dark:text-pink-400 font-medium truncate flex items-center gap-0.5">
                                   <Briefcase className="w-2.5 h-2.5" />
-                                  {getActivityText(m.metadata?.page)}
+                                  {getActivity(m.metadata?.page)}
                                 </p>
                               </div>
                             </div>
@@ -169,7 +148,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, compact = false, align = "
                                 </p>
                                 <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate flex items-center gap-0.5">
                                   <GraduationCap className="w-2.5 h-2.5 text-purple-500" />
-                                  {getActivityText(m.metadata?.page)}
+                                  {getActivity(m.metadata?.page)}
                                 </p>
                               </div>
                             </div>
@@ -245,7 +224,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, compact = false, align = "
                       </p>
                       <p className="text-xs text-pink-600 dark:text-pink-400 font-medium flex items-center gap-1 mt-0.5">
                         <Briefcase className="w-3 h-3" />
-                        {getActivityText(m.metadata?.page)}
+                        {getActivity(m.metadata?.page)}
                       </p>
                     </div>
                   </div>
@@ -285,7 +264,7 @@ const OnlineBatchMembers = ({ batchId, currentUserId, compact = false, align = "
                       </p>
                       <p className="text-xs text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                         <GraduationCap className="w-3 h-3 text-purple-500" />
-                        {getActivityText(m.metadata?.page)}
+                        {getActivity(m.metadata?.page)}
                       </p>
                     </div>
                   </div>

@@ -5,15 +5,19 @@ import { Permission, Role } from "appwrite";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId, selectActiveBatch } from "@/store/activeBatchSlice";
-import { presences } from "@/services/core/appwriteClient";
+import { realtime } from "@/services/core/appwriteClient";
+import { updateLocalUserPresence } from "./useOnlineUsers";
 
-const HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
-const PRESENCE_TTL_MINUTES = 2;       // expires 2 minutes after last heartbeat
 const AWAY_DELAY_MS = 60_000;          // Wait 60 seconds before marking user as away on window blur
 const IDLE_TIMEOUT_MS = 300_000;      // 5 minutes of inactivity before marking user as away
 
 /**
- * usePresence — manages the current user's live presence and tracks online/offline status of all users.
+ * usePresence — manages the current user's live presence via Appwrite Realtime WebSocket.
+ *
+ * Tying presence to WebSocket connection:
+ * - No API key needed in frontend (uses authenticated client session)
+ * - Automatic server-side cleanup on disconnect / tab close
+ * - Automatic reconnection recovery by the SDK
  *
  * @param {string|undefined} currentUserId  - The logged-in user's $id (falls back to Redux user)
  * @param {string}           currentStatus  - e.g. "online", "away", "typing"
@@ -39,9 +43,24 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
   const idleTimerRef = useRef(null);
   const lastActivityRef = useRef(0);
   const lastUpsertRef = useRef({ time: 0, payloadJson: "" });
+  const lastBatchIdRef = useRef("");
 
   // Fallback to redux user if currentUserId isn't explicitly passed
   const effectiveUserId = currentUserId || reduxUser?.$id;
+
+  // Resolve batch ID from Redux, Profile, or localStorage cache so presence has activeBatchId immediately
+  const cachedBatchId =
+    effectiveUserId ? localStorage.getItem(`activeBatch_${effectiveUserId}`) : "";
+  const resolvedBatchId =
+    activeBatchId ||
+    profile?.batchId ||
+    profile?.activeBatchId ||
+    cachedBatchId ||
+    "";
+  const resolvedTeamId =
+    activeBatch?.teamId ||
+    profile?.teamId ||
+    "";
 
   // Stable refs for values used inside callbacks to avoid stale closures and unnecessary reruns
   const userIdRef = useRef(effectiveUserId);
@@ -68,16 +87,16 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     userName: profile?.userName || reduxUser?.name || "User",
     profileImage: profile?.profileImage || "",
     role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
-    activeBatchId: activeBatchId || "",
-    batchId: activeBatchId || "",
-    teamId: activeBatch?.teamId || "",
+    activeBatchId: resolvedBatchId,
+    batchId: resolvedBatchId,
+    teamId: resolvedTeamId,
     device: typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
     sessionId: sessionIdRef.current,
     lastSeen: new Date().toISOString(),
     ...metadata,
   };
 
-  // ── Core Upsert ───────────────────────────────────────────────────────────
+  // ── Core Upsert via Native Realtime WebSocket ─────────────────────────────
   const upsertSelfPresence = useCallback(async (statusOverride) => {
     const userId = userIdRef.current;
     if (!userId || disabledRef.current) return;
@@ -95,13 +114,19 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       }
     }
 
-    // Deduplicate rapid identical upserts (such as on route mount and state initialization renders)
+    // Deduplicate rapid identical upserts (bypass dedupe if batch changed)
     const currentPayloadJson = JSON.stringify({
       status,
       metadata: metadataRef.current,
     });
     const now = Date.now();
+    const batchChanged = lastBatchIdRef.current !== metadataRef.current.activeBatchId;
+    if (batchChanged) {
+      lastBatchIdRef.current = metadataRef.current.activeBatchId;
+    }
+
     if (
+      !batchChanged &&
       lastUpsertRef.current.payloadJson === currentPayloadJson &&
       now - lastUpsertRef.current.time < 3000
     ) {
@@ -109,51 +134,26 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     }
     lastUpsertRef.current = { time: now, payloadJson: currentPayloadJson };
 
-    const expiresAt = new Date(
-      Date.now() + PRESENCE_TTL_MINUTES * 60 * 1000
-    ).toISOString();
-
     try {
-      await presences.upsert({
+      await realtime.upsertPresence({
         presenceId: String(userId),
         status,
-        expiresAt,
         metadata: metadataRef.current,
-        permissions: [
-          // All users can read (see) this presence record
-          Permission.read(Role.users()),
-        ],
+        permissions: [Permission.read(Role.users())],
       });
+      // Synchronize immediately with local roster so current user appears in own lobby instantly
+      updateLocalUserPresence(userId, status, metadataRef.current);
+      setError(null);
     } catch (err) {
       const code = err?.code;
-      if (code === 401 || code === 403 || code === 404 || code === 400) {
+      if (code === 401 || code === 403 || code === 404) {
         disabledRef.current = true;
-        console.info(
-          `[usePresence] Presences service is unavailable or returned code ${code} (${err?.message}). ` +
-          "Presence tracking gracefully disabled."
-        );
-      } else {
-        console.error("[usePresence] upsert failed:", {
-          code: err?.code,
-          type: err?.type,
-          message: err?.message,
-        });
       }
       setError(err);
     }
   }, []);
 
-  // ── Core Delete ───────────────────────────────────────────────────────────
-  const deleteSelfPresence = useCallback(async (userIdToDelete) => {
-    if (!userIdToDelete || disabledRef.current) return;
-    try {
-      await presences.delete({ presenceId: String(userIdToDelete) });
-    } catch (err) {
-      // Ignore: session or presence record might already be gone on logout
-    }
-  }, []);
-
-  // ── Main Effect: Presence registration, heartbeat, focus/blur, idle timers ──
+  // ── Main Effect: Presence registration, focus/blur, idle timers ──────────
   useEffect(() => {
     if (!effectiveUserId) {
       setIsLoading(false);
@@ -163,10 +163,8 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     isMountedRef.current = true;
     disabledRef.current = false; // Reset on user sign-in
 
-    // Heartbeat: push expiresAt forward periodically
-    const heartbeatId = setInterval(() => {
-      upsertSelfPresence();
-    }, HEARTBEAT_INTERVAL_MS);
+    // Initial register self
+    upsertSelfPresence();
 
     // Inactivity Idle Tracking
     const resetIdleTimer = () => {
@@ -200,15 +198,15 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     activityEvents.forEach((ev) => window.addEventListener(ev, handleUserActivity));
     resetIdleTimer();
 
-    // Focus/Blur states with transition grace period
+    // Focus/Blur and Visibility states with transition grace period
     const onFocus = () => {
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
       const wasFocused = isFocusedRef.current;
       isFocusedRef.current = true;
 
-      // Re-trigger upsert immediately if returning from a blurred "away" status
+      // Re-trigger upsert immediately if returning from a blurred/hidden "away" status
       if (!wasFocused) {
-        upsertSelfPresence();
+        upsertSelfPresence("online");
       }
     };
 
@@ -218,37 +216,36 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
       // Grace period before marking user as away to prevent instant flip/flop on app switching
       awayTimerRef.current = setTimeout(() => {
         isFocusedRef.current = false;
-        upsertSelfPresence();
+        upsertSelfPresence("away");
       }, AWAY_DELAY_MS);
     };
 
-    const handleBeforeUnload = () => {
-      deleteSelfPresence(effectiveUserId);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        onFocus();
+      } else {
+        onBlur();
+      }
     };
 
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     setIsLoading(false);
 
     // Cleanup
     return () => {
       isMountedRef.current = false;
 
-      clearInterval(heartbeatId);
-      
       if (awayTimerRef.current) clearTimeout(awayTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("blur", onBlur);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       activityEvents.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
-
-      // Cleanup presence when user signs out or hook is unmounted
-      deleteSelfPresence(effectiveUserId);
     };
-  }, [effectiveUserId, upsertSelfPresence, deleteSelfPresence]);
+  }, [effectiveUserId, upsertSelfPresence]);
 
   // ── Effect: Trigger update on status or metadata change ───────────────────
   useEffect(() => {
@@ -259,7 +256,8 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
     effectiveUserId,
     currentStatus,
     location.pathname,
-    activeBatchId,
+    resolvedBatchId,
+    resolvedTeamId,
     profile?.userName,
     profile?.profileImage,
     profile?.role?.[0],

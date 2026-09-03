@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import { useEffect, useState, useCallback } from "react";
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useBatchPresence } from "@/hooks/useOnlineUsers";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Loader2,
@@ -452,7 +452,11 @@ const TeacherGameArena = ({
 
         {/* Class Lobby (Full-width right after the Batch Overview Card) - Mobile/Tablet only */}
         <div className="lg:hidden">
-          <ClassLobbyCard batchContext={batchContext} profile={profile} />
+          <ClassLobbyCard
+            batchContext={batchContext}
+            profile={profile}
+            studentRows={studentRows}
+          />
         </div>
 
         {/* Desktop Split-Grid Layout */}
@@ -638,7 +642,11 @@ const TeacherGameArena = ({
           <div className="lg:col-span-1 space-y-5">
             {/* Class Lobby - Desktop only */}
             <div className="hidden lg:block">
-              <ClassLobbyCard batchContext={batchContext} profile={profile} />
+              <ClassLobbyCard
+                batchContext={batchContext}
+                profile={profile}
+                studentRows={studentRows}
+              />
             </div>
 
             {/* Quick Actions Panel */}
@@ -728,29 +736,17 @@ const TeacherGameArena = ({
 };
 
 // ─── Class Lobby Card ───────────────────────────────────────────────────────
-const ClassLobbyCard = ({ batchContext, profile }) => {
+const ClassLobbyCard = ({ batchContext, profile, studentRows = [] }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { onlineUsers } = useOnlineUsers();
+  const currentUserId = profile?.userId || profile?.$id;
 
-  const batchId = batchContext?.batchId;
-  const currentUserId = profile?.userId;
-
-  const members = Array.from(onlineUsers.values()).filter(
-    (u) => u.metadata?.activeBatchId === batchId
-  );
-  const teachers = members.filter((m) => m.metadata?.role === "Teacher");
-  const students = members.filter((m) => m.metadata?.role !== "Teacher");
-  const totalCount = members.length;
-
-  const getActivity = (path) => {
-    if (!path) return "Online";
-    if (path === "/arena" || path === "/") return "In Game Arena";
-    if (path === "/profile") return "Viewing Profile";
-    if (path.includes("mock-test")) return "Taking Mock Test";
-    if (path.includes("leaderboard")) return "Leaderboard";
-    if (path.includes("attendance")) return "Attendance";
-    return "Browsing App";
-  };
+  const {
+    members,
+    teachers,
+    students,
+    totalCount,
+    getActivity,
+  } = useBatchPresence(batchContext, studentRows, currentUserId);
 
   return (
     <div className="relative z-30 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">

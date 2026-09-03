@@ -103,9 +103,10 @@ export { Query };
 // Export legacy alias for components that import { appwriteService }
 export const appwriteService = appwriteClientService;
 
-// Shared presence service instances using the authenticated client session
+// Shared presence service instances using the authenticated client session (No API key needed)
 export const presenceClient = appwriteClientService.client;
 export const presenceService = appwriteClientService.presences;
+export const presenceRealtime = appwriteClientService.realtime;
 
 // Dynamically fix legacy/cloud appwrite endpoints using config Url host
 export const fixProfileImage = (
