@@ -19,6 +19,26 @@ export default function AttendanceReminderModal({ isOpen, batch, onClose, onSnoo
     year: "numeric",
   });
 
+  const formatAttendanceWindow = (time) => {
+    if (!time) return "09:00 AM - 05:00 PM";
+    let parsed = time;
+    if (typeof time === "string") {
+      try {
+        parsed = JSON.parse(time);
+      } catch {
+        return time;
+      }
+    }
+    if (parsed && typeof parsed === "object") {
+      if (parsed.start && parsed.end) {
+        return `${parsed.start} - ${parsed.end}`;
+      }
+      if (parsed.start) return `From ${parsed.start}`;
+      if (parsed.end) return `Until ${parsed.end}`;
+    }
+    return "09:00 AM - 05:00 PM";
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full max-w-md overflow-hidden bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/50 rounded-2xl shadow-2xl transition-all">
@@ -55,7 +75,7 @@ export default function AttendanceReminderModal({ isOpen, batch, onClose, onSnoo
           <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
             You haven't marked your attendance yet today for{" "}
             <span className="font-semibold text-slate-900 dark:text-slate-100">
-              {batch.BatchName || "your batch"}
+              {batch.BatchName || batch.batchName || batch.name || "your batch"}
             </span>
             . Please mark your presence to maintain your attendance streak!
           </p>
@@ -75,7 +95,7 @@ export default function AttendanceReminderModal({ isOpen, batch, onClose, onSnoo
                 <span>Window:</span>
               </span>
               <span className="font-medium text-slate-800 dark:text-slate-200">
-                {batch.attendanceTime || "09:00 AM - 05:00 PM"}
+                {formatAttendanceWindow(batch.attendanceTime)}
               </span>
             </div>
           </div>

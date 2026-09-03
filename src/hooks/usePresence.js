@@ -63,14 +63,14 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
 
   const metadataRef = useRef(metadata);
   metadataRef.current = {
-    page: location.pathname,
+    page: location.pathname || "",
     activity: getActivityType(location.pathname),
     userName: profile?.userName || reduxUser?.name || "User",
-    profileImage: profile?.profileImage || null,
+    profileImage: profile?.profileImage || "",
     role: profile?.role?.[0] || (reduxUser?.labels?.[0] || "Student"),
-    activeBatchId: activeBatchId || null,
-    batchId: activeBatchId || null,
-    teamId: activeBatch?.teamId || null,
+    activeBatchId: activeBatchId || "",
+    batchId: activeBatchId || "",
+    teamId: activeBatch?.teamId || "",
     device: typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
     sessionId: sessionIdRef.current,
     lastSeen: new Date().toISOString(),
@@ -122,17 +122,14 @@ export function usePresence(currentUserId, currentStatus = "online", metadata = 
         permissions: [
           // All users can read (see) this presence record
           Permission.read(Role.users()),
-          // Only the owner can update or delete their own presence record
-          Permission.update(Role.user(userId)),
-          Permission.delete(Role.user(userId)),
         ],
       });
     } catch (err) {
       const code = err?.code;
-      if (code === 401 || code === 403 || code === 404) {
+      if (code === 401 || code === 403 || code === 404 || code === 400) {
         disabledRef.current = true;
         console.info(
-          `[usePresence] Presences service is unavailable (code ${code}: ${err?.message}). ` +
+          `[usePresence] Presences service is unavailable or returned code ${code} (${err?.message}). ` +
           "Presence tracking gracefully disabled."
         );
       } else {
