@@ -8,19 +8,19 @@ const BasicInfoCard = ({
   isBatchDataLoading,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden h-fit">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center gap-3">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-          <Users className="text-blue-600 dark:text-blue-400" size={20} />
+    <section id="batch-information" className="scroll-mt-24 h-fit overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-500/10">
+          <Users className="text-indigo-600 dark:text-indigo-400" size={18} />
         </div>
-        <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
           Basic Information
         </h2>
       </div>
-      <div className="p-6 space-y-4">
+      <div className="space-y-4 p-5">
         {/* Batch Name */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
             Batch Name <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
@@ -33,7 +33,7 @@ const BasicInfoCard = ({
                 required: "Batch name is required",
               })}
               placeholder="e.g. 2026-2028 Electronics Mechanic Batch A"
-              className="block w-full pl-10 pr-3 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 transition-all"
+              className="block h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm font-medium text-slate-800 transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               disabled={isBatchDataLoading}
             />
           </div>
@@ -41,7 +41,7 @@ const BasicInfoCard = ({
 
         {/* College Selection */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
             College / Institution <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
@@ -52,7 +52,7 @@ const BasicInfoCard = ({
               {...register("collegeId", {
                 required: "College is required",
               })}
-              className="block w-full pl-10 pr-10 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all appearance-none cursor-pointer"
+              className="block h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-10 text-sm font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               disabled={isBatchDataLoading}
             >
               <option value="">Select College</option>
@@ -70,7 +70,7 @@ const BasicInfoCard = ({
 
         {/* Trade Selection */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
             Trade <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
@@ -81,7 +81,7 @@ const BasicInfoCard = ({
               {...register("tradeId", {
                 required: "Trade is required",
               })}
-              className="block w-full pl-10 pr-10 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all appearance-none cursor-pointer"
+              className="block h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-10 text-sm font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
               disabled={isBatchDataLoading}
             >
               <option value="">Select Trade</option>
@@ -97,7 +97,7 @@ const BasicInfoCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

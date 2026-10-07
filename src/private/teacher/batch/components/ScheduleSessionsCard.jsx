@@ -59,15 +59,15 @@ const ScheduleSessionsCard = ({ sessions = [], setSessions }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <section id="academic-sessions" className="scroll-mt-24 space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
             <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Academic Sessions & Terms</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configure multi-year terms, vacation breaks, and session schedules</p>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Academic sessions & terms</h3>
+            <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Set year dates, vacation breaks, and session status.</p>
           </div>
         </div>
         <Button
@@ -86,7 +86,7 @@ const ScheduleSessionsCard = ({ sessions = [], setSessions }) => {
         {activeSessions.map((session, index) => (
           <div
             key={session.id || index}
-            className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-3"
+            className="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const ScheduleSessionsCard = ({ sessions = [], setSessions }) => {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 

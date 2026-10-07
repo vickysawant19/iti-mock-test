@@ -36,7 +36,7 @@ const AttendanceTable = ({
 }) => {
   const [internalCompactView, setInternalCompactView] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth < 768;
+      return window.innerWidth < 1024;
     }
     return false;
   });
@@ -122,7 +122,7 @@ const AttendanceTable = ({
   // Show empty state when no batch is selected
   if (!selectedBatch) {
     return (
-      <div className="p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
         <EmptyState message="Please select a batch to view attendance." />
       </div>
     );
@@ -131,24 +131,22 @@ const AttendanceTable = ({
   // Show empty state when not loading and no students
   if (!loadingStudents && (!students || students.length === 0)) {
     return (
-      <div className="p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-8">
         <EmptyState message="No students found in this batch." />
       </div>
     );
   }
 
   return (
-    <div className={isTableDataLoading ? "min-h-screen" : ""}>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
       {/* ── Table Wrapper — single scroll container for BOTH axes so sticky freeze works ── */}
       <div
-        className={`attendance-scroll relative overflow-auto shadow-lg border border-slate-300 dark:border-slate-800 max-h-[80vh] ${
-          isTableDataLoading ? "min-h-screen" : ""
-        }`}
+        className="attendance-scroll relative min-h-0 min-w-0 flex-1 overflow-auto border border-slate-300 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
       >
         {/* Loading Overlay */}
         {isTableDataLoading && (
-          <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg h-screen min-h-80">
+          <div className="absolute inset-0 z-50 flex min-h-80 items-center justify-center rounded-lg bg-white/70 backdrop-blur-sm dark:bg-slate-950/70">
             <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-900 px-8 py-6 rounded-xl shadow-2xl border-2 border-indigo-200 dark:border-indigo-800">
               <Loader2 className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-400" />
               <div className="text-center">

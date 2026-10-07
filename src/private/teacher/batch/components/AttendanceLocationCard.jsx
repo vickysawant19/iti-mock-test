@@ -14,20 +14,20 @@ const AttendanceLocationCard = ({
   handleGetLocation,
 }) => {
   return (
-    <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center gap-3">
-        <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
-          <MapPin className="text-amber-600 dark:text-amber-400" size={20} />
+    <section id="attendance-location" className="scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-500/10">
+          <MapPin className="text-indigo-600 dark:text-indigo-400" size={18} />
         </div>
-        <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
           Attendance & Location
         </h2>
       </div>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Attendance Time */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <Clock size={16} className="text-slate-400" />
               Daily Attendance Time Window
             </h3>
@@ -58,11 +58,11 @@ const AttendanceLocationCard = ({
           {/* Radius */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <Navigation size={16} className="text-slate-400" />
                 Geofence Radius
               </h3>
-              <span className="text-xs font-black px-2.5 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg">
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold tabular-nums text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                 {watch("circleRadius")}m
               </span>
             </div>
@@ -83,7 +83,7 @@ const AttendanceLocationCard = ({
 
         <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <MapIcon size={16} className="text-slate-400" />
               Location Coordinates
             </h3>
@@ -158,7 +158,7 @@ const AttendanceLocationCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

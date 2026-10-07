@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Query } from "appwrite";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   Users,
   ClipboardList,
@@ -44,7 +44,9 @@ const TABS = [
 ];
 
 const ViewBatch = () => {
+  const { batchId: routeBatchId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryBatchId = searchParams.get("batchid");
   const profile = useSelector(selectProfile);
   const { activeBatchId, userBatches, isLoading: batchesLoading } = useSelector((state) => state.activeBatch);
   const [loadingStates, setLoadingStates] = useState({
@@ -57,20 +59,22 @@ const ViewBatch = () => {
     students: null,
   });
   const [selectedBatch, setSelectedBatch] = useState(
-    searchParams.get("batchid") || activeBatchId || ""
+    routeBatchId || queryBatchId || activeBatchId || ""
   );
 
-  // Sync selectedBatch from global activeBatchId or search params
+  // An explicit batch route takes precedence over the global active batch.
   useEffect(() => {
-    if (activeBatchId) {
+    if (routeBatchId) {
+      setSelectedBatch(routeBatchId);
+    } else if (activeBatchId) {
       setSelectedBatch(activeBatchId);
-    } else if (searchParams.get("batchid")) {
-      setSelectedBatch(searchParams.get("batchid"));
+    } else if (queryBatchId) {
+      setSelectedBatch(queryBatchId);
     }
-  }, [activeBatchId, searchParams.get("batchid")]);
+  }, [routeBatchId, activeBatchId, queryBatchId]);
 
   const [activeTab, setActiveTab] = useState(
-    searchParams.get("active") || "profiles"
+    searchParams.get("active") || "details"
   );
   const fetchedStudentsRef = useRef(false);
 

@@ -325,7 +325,7 @@ export function useNotifications() {
                       .showDirectNotification({
                         title: "👥 New Student Join Request",
                         body: msg,
-                        url: "/manage-batch/approvals",
+                        url: "/batches/students",
                       })
                       .catch(() => {});
                     toast.info(`👥 ${msg}`, { autoClose: 7000 });

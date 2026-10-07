@@ -87,7 +87,7 @@ function NotifItem({ notif, onClose, user }) {
     } else {
       onClose();
       if (isTeacher) {
-        navigate("/manage-batch/approvals");
+        navigate("/batches/students");
       }
     }
   };

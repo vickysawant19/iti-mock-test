@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/ThemeProvider";
@@ -30,15 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Import icons
-import { Menu, User, LogOut, ChevronRight, Sun, Moon, Bell } from "lucide-react";
+import { Menu, User, LogOut, Sun, Moon, Bell, GraduationCap, ChevronDown } from "lucide-react";
 import logo from "@/assets/itimitra-logo.webp";
 
 // Import services and store actions
@@ -58,6 +53,16 @@ import NotificationPanel from "@/components/notifications/NotificationPanel";
 import OnlineIndicator from "@/components/components/OnlineIndicator";
 import { fixProfileImage } from "@/services/core/appwriteClient";
 
+const matchesRoutePattern = (pattern, pathname) => {
+  if (pattern === "/") return pathname === "/";
+
+  const patternParts = pattern.split("/").filter(Boolean);
+  const pathParts = pathname.split("/").filter(Boolean);
+  return patternParts.length <= pathParts.length && patternParts.every((part, index) =>
+    part.startsWith(":") || part === pathParts[index]
+  );
+};
+
 const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const user = useSelector(selectUser);
   const isLoading = useSelector(selectUserLoading);
@@ -68,9 +73,9 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
 
-  const [expandedGroup, setExpandedGroup] = useState("");
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState("");
 
   const { notifications, notifCount } = useNotifications();
 
@@ -85,7 +90,20 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   const isStudentEnrolled = !isStudent || userBatches?.length > 0;
   const hasNoBatches = !userBatches || userBatches.length === 0;
 
-  const currentHeading = pathToHeading[location.pathname] || "";
+  const dynamicBatchRoute = location.pathname.match(/^\/batches\/[^/]+\/(settings|students|records)$/);
+  const dynamicHeading = dynamicBatchRoute
+    ? { settings: "Batch Settings", students: "Manage Enrollment", records: "Batch Records & Activity" }[dynamicBatchRoute[1]]
+    : "";
+  const currentHeading = pathToHeading[location.pathname] || dynamicHeading;
+
+  useEffect(() => {
+    const activeGroup = menuConfig.find((item) =>
+      item.group && item.children?.some((child) =>
+        (child.activePaths || [child.path]).some((path) => matchesRoutePattern(path, location.pathname))
+      )
+    );
+    setExpandedGroup(activeGroup?.group || "");
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     if (isLoading || !user) return;
@@ -110,10 +128,6 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     }
   };
 
-  const toggleGroup = (group) => {
-    setExpandedGroup(expandedGroup === group ? "" : group);
-  };
-
   // Helper to check if the current user has one of the allowed roles
   const hasRole = (roles) => {
     if (!roles) return true;
@@ -134,35 +148,44 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
     dispatch(setActiveBatch({ batchId, userId: user.$id, isTeacher, currentBatches: userBatches }));
   };
 
-  const MenuGroup = ({ title, icon: Icon, children, groupKey }) => (
-    <Collapsible
-      className="w-full my-1"
-      open={expandedGroup === groupKey}
-      onOpenChange={() => toggleGroup(groupKey)}
-    >
-      <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full justify-between font-semibold text-sm hover:bg-primary/5 transition-colors rounded-xl"
-        >
-          <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4" />
-            <span>{title}</span>
+  const MenuGroup = ({ title, icon: Icon, children, isOpen, onToggle }) => (
+    <section className="w-full">
+      <Button
+        type="button"
+        variant="ghost"
+        aria-expanded={isOpen}
+        aria-controls={`nav-group-${title.replace(/[^a-z0-9]/gi, "-").toLowerCase()}`}
+        className={`group h-11 w-full justify-between rounded-xl px-3 text-sm font-semibold transition-colors duration-200 motion-reduce:transition-none ${
+          isOpen
+            ? "bg-primary/10 text-primary dark:bg-primary/15"
+            : "text-slate-700 hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-800/70"
+        }`}
+        onClick={onToggle}
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <Icon className="h-[18px] w-[18px] shrink-0 opacity-75" />
+          <span className="truncate">{title}</span>
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-aria-expanded:rotate-180 motion-reduce:transition-none" />
+      </Button>
+      <div
+        id={`nav-group-${title.replace(/[^a-z0-9]/gi, "-").toLowerCase()}`}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+        className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+          isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className={`ml-5 space-y-1 border-l border-slate-200 py-1 pl-3 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none dark:border-slate-800 ${isOpen ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}>
+            {children}
           </div>
-          <ChevronRight
-            className={`w-4 h-4 transition-transform ${
-              expandedGroup === groupKey ? "rotate-90" : ""
-            }`}
-          />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="ml-6 space-y-0.5 pt-1 border-l-2 border-primary/10 pl-2">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
+        </div>
+      </div>
+    </section>
   );
 
-  const MenuItem = ({ to, icon: Icon, children, onClick }) => {
+  const MenuItem = ({ to, icon: Icon, children, onClick, activePaths }) => {
     const handleMenuClick = (e) => {
       if (isLoading) {
         e.preventDefault();
@@ -174,22 +197,20 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
 
     return (
       <NavLink
-        to={to}
-        className={({ isActive }) =>
-          `flex items-center gap-2.5 px-3 py-2 text-sm rounded-xl transition-all duration-200 ${
-            isActive
-              ? "bg-gradient-to-r from-pink-500/10 to-purple-500/10 text-primary font-semibold shadow-sm"
-              : "hover:bg-muted/60 hover:translate-x-0.5"
-          } ${isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"}`
-        }
-        onClick={(e) => {
-          e.preventDefault();
-          handleMenuClick(e);
-          setTimeout(() => navigate(to), 150);
-        }}
-      >
-        <Icon className="w-4 h-4" />
-        <span>{children}</span>
+          to={to}
+          className={({ isActive }) =>
+            `group flex min-h-10 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-200 motion-reduce:transition-none ${
+              (activePaths
+                ? activePaths.some((path) => matchesRoutePattern(path, location.pathname))
+                : isActive)
+                ? "bg-primary/10 font-semibold text-primary dark:bg-primary/15"
+                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white"
+            } ${isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"}`
+          }
+          onClick={handleMenuClick}
+        >
+          <Icon className="h-4 w-4 shrink-0 opacity-75 group-hover:opacity-100" />
+          <span className="truncate">{children}</span>
       </NavLink>
     );
   };
@@ -291,16 +312,17 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   const renderNavContent = () => (
-    <div className="flex flex-col h-full bg-white/90 dark:bg-slate-950/95 backdrop-blur-2xl">
-      {/* Sidebar Gradient Banner */}
-      <div className="h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
-      </div>
-      <div className="-mt-5 px-4 pb-3">
-        <div className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl px-3 py-2.5 shadow-sm border border-white/40 dark:border-slate-800">
-          <img src={logo} alt="ITI" className="h-[46px] w-[46px] object-contain" />
-          <div>
-            <SheetTitle className="text-sm font-extrabold tracking-tight">{currentHeading || "Navigation"}</SheetTitle>
+    <div className="flex h-full min-h-0 flex-col bg-white dark:bg-slate-950">
+      <div className="border-b border-slate-200/80 px-4 pb-4 pt-5 dark:border-slate-800">
+        <div className="flex items-center gap-3 pr-8">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
+            <img src={logo} alt="" className="h-9 w-9 object-contain" />
+          </div>
+          <div className="min-w-0">
+            <SheetTitle className="truncate text-sm font-bold tracking-tight text-slate-900 dark:text-white">{currentHeading || "Main menu"}</SheetTitle>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <GraduationCap className="h-3.5 w-3.5" /> ITI Mitra
+            </p>
             <SheetDescription className="sr-only">
               Navigation menu for the application
             </SheetDescription>
@@ -308,10 +330,10 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
       </div>
 
-      <div className="px-4 py-3 border-b border-slate-200/30 dark:border-slate-800/50">{renderUserProfile()}</div>
+      <div className="border-b border-slate-200/80 px-4 py-3 dark:border-slate-800">{renderUserProfile()}</div>
 
-      <ScrollArea className="flex-1 px-3 py-3 h-full overflow-y-auto">
-        <div className="space-y-0.5">
+      <ScrollArea className="min-h-0 flex-1 px-3 py-4">
+        <div className="space-y-1">
         {menuConfig.map((configItem, index) => {
           if (configItem.roles && !hasRole(configItem.roles)) return null;
           if (configItem.requiresAuth && !user) return null;
@@ -319,24 +341,31 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           if (configItem.requiresBatch && !isStudentEnrolled) return null;
 
           if (configItem.group) {
+            const visibleChildren = configItem.children.filter((child) =>
+              (!child.requiresAuth || user) &&
+              (!child.roles || hasRole(child.roles)) &&
+              (!child.requiresBatch || isStudentEnrolled) &&
+              (!child.hideIfNoBatch || !hasNoBatches)
+            );
+            if (visibleChildren.length === 0) return null;
+
             return (
               <MenuGroup
                 key={index}
                 title={configItem.group}
-                groupKey={configItem.groupKey}
                 icon={configItem.icon}
+                isOpen={expandedGroup === configItem.group}
+                onToggle={() => setExpandedGroup((current) =>
+                  current === configItem.group ? "" : configItem.group
+                )}
               >
-                {configItem.children.map((child, idx) => {
-                  if (child.requiresAuth && !user) return null;
-                  if (child.roles && !hasRole(child.roles)) return null;
-                  if (child.requiresBatch && !isStudentEnrolled) return null;
-                  if (child.hideIfNoBatch && hasNoBatches) return null;
+                {visibleChildren.map((child, idx) => {
                   let label = child.label;
                   if (child.teacherLabel && child.studentLabel) {
                     label = isTeacher ? child.teacherLabel : child.studentLabel;
                   }
                   return (
-                    <MenuItem key={idx} to={child.path} icon={child.icon}>
+                    <MenuItem key={idx} to={child.path} icon={child.icon} activePaths={child.activePaths}>
                       {label}
                     </MenuItem>
                   );
@@ -352,7 +381,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
                 label = isTeacher ? child.teacherLabel : child.studentLabel;
               }
               return (
-                <MenuItem key={idx} to={child.path} icon={child.icon}>
+                    <MenuItem key={idx} to={child.path} icon={child.icon} activePaths={child.activePaths}>
                   {label}
                 </MenuItem>
               );
@@ -363,11 +392,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
         </div>
       </ScrollArea>
 
-      <div className="border-t border-slate-200/50 dark:border-slate-800 p-4 space-y-2">
+      <div className="space-y-2 border-t border-slate-200/80 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-950/95">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2 rounded-xl hover:bg-primary/5 transition-colors"
+          className="h-10 w-full justify-start gap-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
           onClick={toggleTheme}
         >
           {theme === "dark" ? (
@@ -386,7 +415,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400 rounded-xl transition-colors"
+            className="h-10 w-full justify-start gap-3 rounded-xl text-red-600 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400"
             onClick={() => {
               if (!isLoading) {
                 handleLogout();
@@ -407,11 +436,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
+              className="h-10 w-full justify-start gap-3 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               onClick={() => {
                 if (!isLoading) {
                   setIsNavOpen(false);
-                  setTimeout(() => navigate("/login"), 150);
+                  navigate("/login");
                 }
               }}
               disabled={isLoading}
@@ -422,11 +451,11 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             <Button
               variant="default"
               size="sm"
-              className="w-full justify-start gap-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-semibold shadow-sm transition-all"
+              className="h-10 w-full justify-start gap-3 rounded-xl bg-primary font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               onClick={() => {
                 if (!isLoading) {
                   setIsNavOpen(false);
-                  setTimeout(() => navigate("/signup"), 150);
+                  navigate("/signup");
                 }
               }}
               disabled={isLoading}
@@ -540,13 +569,13 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/50 dark:border-slate-800/80 bg-white/70 dark:bg-slate-950/70 backdrop-blur-2xl shadow-sm transition-all duration-300">
+    <nav aria-label="Primary navigation" className="sticky top-0 z-40 w-full border-b border-slate-200/70 bg-white/90 shadow-sm backdrop-blur-xl transition-colors duration-300 motion-reduce:transition-none dark:border-slate-800/80 dark:bg-slate-950/85">
       <div className="flex h-16 items-center justify-between px-4 md:px-6 relative">
         <div className="flex items-center gap-3 md:gap-5">
           {/* Mobile Menu Trigger */}
           <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" className="mr-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-xl">
+              <Button variant="ghost" size="icon" className="mr-1 rounded-xl transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
                 <Menu className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -562,7 +591,7 @@ const Navbar = ({ isNavOpen, setIsNavOpen }) => {
             {/* Navigation content - same for both mobile and desktop */}
             <SheetContent
               side="left"
-              className="p-0 w-72 border-l border-slate-200/50 dark:border-slate-800 shadow-2xl"
+              className="w-[min(22rem,calc(100vw-1.5rem))] border-l border-slate-200/80 p-0 shadow-2xl dark:border-slate-800 sm:max-w-sm"
               onInteractOutside={() => setIsNavOpen(false)}
             >
               {renderNavContent()}

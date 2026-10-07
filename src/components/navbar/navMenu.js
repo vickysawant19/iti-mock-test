@@ -1,4 +1,4 @@
-import { ClipboardList, Group, Search, Building2, Briefcase } from "lucide-react";
+import { Group, Search, Building2, Briefcase } from "lucide-react";
 import {
   FaBook,
   FaBookReader,
@@ -23,101 +23,25 @@ import {
 
 export const menuConfig = [
   {
-    // Admin-only group
-    group: "Admin",
-    roles: ["admin"],
-    icon: FaUserSecret,
-    groupKey: "admin",
-    requiresAuth: true,
+    group: "Overview",
+    icon: FaHome,
     children: [
-      { label: "Modules", path: "/add-modules", icon: MdAddCard, requiresAuth: true },
-      { label: "Questions", path: "/add-bulk-questions", icon: Group, requiresAuth: true },
-      { label: "Colleges", path: "/manage-colleges", icon: Building2, requiresAuth: true },
-      { label: "Trades", path: "/manage-trades", icon: Briefcase, requiresAuth: true },
-    ],
-  },
-  {
-    // Non-group items available to all logged-in users (or public)
-    items: [
       { label: "Home", path: "/", icon: FaHome },
-      {
-        label: "Game Arena",
-        path: "/arena",
-        icon: FaDashcube,
-        requiresAuth: true,
-      },
+      { label: "Game Arena", path: "/arena", icon: FaDashcube, requiresAuth: true },
+      { label: "About", path: "/about", icon: FaInfoCircle },
     ],
   },
   {
-    // Teacher-only group for batch management
-    group: "Batches",
-    roles: ["teacher"],
-    icon: FaLayerGroup,
-    groupKey: "manageBatch",
-    requiresAuth: true,
-    children: [
-      {
-        label: "Create New Batch",
-        path: "/manage-batch/create",
-        icon: MdGroupAdd,
-        requiresAuth: true,
-      },
-      {
-        label: "Edit Batch Settings",
-        path: "/manage-batch/edit",
-        icon: FaList,
-        hideIfNoBatch: true,
-        requiresAuth: true,
-      },
-      {
-        label: "Manage Students",
-        path: "/manage-batch/students",
-        icon: FaUserPlus,
-        hideIfNoBatch: true,
-        requiresAuth: true,
-      },
-      { 
-        label: "View Batch Records", 
-        path: "/manage-batch/view", 
-        icon: FaList, 
-        hideIfNoBatch: true,
-        requiresAuth: true 
-      },
-    ],
-  },
-  {
-    group: "Batches",
-    roles: ["student"],
-    icon: FaLayerGroup,
-    groupKey: "studentBatches",
-    requiresAuth: true,
-    children: [
-      {
-        label: "Browse Batches",
-        path: "/browse-batches",
-        icon: Search,
-        requiresAuth: true,
-      },
-    ],
-  },
-  {
-    //assessment for students
-    group: "Assessment",
-    icon: ClipboardList,
-    groupKey: "assessment",
-    requiresAuth: true,
-    requiresBatch: true,
-    children: [
-      { label: "My Assessments", path: "/assessment", icon: MdAddCard, requiresAuth: true },
-    ],
-  },
-  {
-    // Mock Tests group – some items only for teachers
-    group: "Mock Tests",
+    group: "Learning & Tests",
     icon: FaBook,
-    groupKey: "mockTests",
-    requiresAuth: true,
     children: [
+      {
+        label: "My Assessments",
+        path: "/assessment",
+        icon: MdAddCard,
+        requiresAuth: true,
+        requiresBatch: true,
+      },
       {
         label: "Create Question",
         path: "/create-question",
@@ -139,27 +63,63 @@ export const menuConfig = [
         roles: ["teacher", "student"],
         requiresAuth: true,
       },
-      { 
-        label: "Take Mock Exam", 
-        path: "/attain-test", 
-        icon: FaKey, 
-        requiresAuth: true 
+      {
+        label: "Take Mock Exam",
+        path: "/attain-test",
+        icon: FaKey,
+        requiresAuth: true,
       },
-      { 
-        label: "My Mock Exams", 
-        path: "/all-mock-tests", 
-        icon: FaFileAlt, 
-        requiresAuth: true 
+      {
+        label: "My Mock Exams",
+        path: "/all-mock-tests",
+        icon: FaFileAlt,
+        requiresAuth: true,
       },
     ],
   },
   {
-    // Attendance group – with alternate labels based on role.
+    group: "Batches",
+    icon: FaLayerGroup,
+    children: [
+      {
+        label: "Batch Setup",
+        path: "/batches/create",
+        activePaths: [
+          "/batches/create", "/batches/settings", "/batches/:batchId/settings",
+          "/manage-batch/create", "/manage-batch/edit", "/manage-batch/edit/:batchId",
+        ],
+        icon: MdGroupAdd,
+        roles: ["teacher"],
+        requiresAuth: true,
+      },
+      {
+        label: "Manage Enrollment",
+        path: "/batches/students",
+        activePaths: ["/batches/students", "/batches/:batchId/students", "/manage-batch/students"],
+        icon: FaUserPlus,
+        roles: ["teacher"],
+        requiresAuth: true,
+      },
+      {
+        label: "Batch Records & Activity",
+        path: "/batches/records",
+        activePaths: ["/batches/records", "/batches/:batchId/records", "/manage-batch/view"],
+        icon: FaList,
+        roles: ["teacher"],
+        requiresAuth: true,
+      },
+      {
+        label: "Browse Batches",
+        path: "/browse-batches",
+        icon: Search,
+        roles: ["student"],
+        requiresAuth: true,
+      },
+    ],
+  },
+  {
     group: "Attendance",
     icon: FaCalendarCheck,
-    groupKey: "attendance",
-    requiresAuth: true,
-    requiresBatch: true,
     children: [
       {
         label: "Mark My Attendance",
@@ -167,6 +127,7 @@ export const menuConfig = [
         icon: FaRegCalendarCheck,
         roles: ["teacher", "student"],
         requiresAuth: true,
+        requiresBatch: true,
       },
       {
         label: "Attendance Register",
@@ -174,6 +135,7 @@ export const menuConfig = [
         icon: FaCalendarAlt,
         roles: ["teacher"],
         requiresAuth: true,
+        requiresBatch: true,
       },
       {
         label: "My Attendance",
@@ -181,25 +143,30 @@ export const menuConfig = [
         icon: FaCalendarCheck,
         roles: ["student"],
         requiresAuth: true,
+        requiresBatch: true,
       },
-      { 
-        label: "Daily Diary", 
-        path: "/daily-diary", 
-        icon: FaBookReader, 
-        requiresAuth: true 
-      },
+      { label: "Daily Diary", path: "/daily-diary", icon: FaBookReader, requiresAuth: true, requiresBatch: true },
       {
         label: "College Attendance",
         path: "/attendance/college-attendance",
         icon: FaCalendarCheck,
         roles: ["admin", "teacher"],
         requiresAuth: true,
+        requiresBatch: true,
       },
     ],
   },
   {
-    // Public items (or available for all users)
-    items: [{ label: "About", path: "/about", icon: FaInfoCircle }],
+    group: "Administration",
+    icon: FaUserSecret,
+    roles: ["admin"],
+    requiresAuth: true,
+    children: [
+      { label: "Modules", path: "/add-modules", icon: MdAddCard, requiresAuth: true },
+      { label: "Questions", path: "/add-bulk-questions", icon: Group, requiresAuth: true },
+      { label: "Colleges", path: "/manage-colleges", icon: Building2, requiresAuth: true },
+      { label: "Trades", path: "/manage-trades", icon: Briefcase, requiresAuth: true },
+    ],
   },
 ];
 
@@ -207,10 +174,16 @@ export const pathToHeading = {
   "/": "Home",
   "/arena": "Game Arena",
   "/profile": "Profile",
-  "/manage-batch/create": "Create New Batch",
-  "/manage-batch/edit": "Edit Batch Settings",
-  "/manage-batch/students": "Manage Batch Students",
-  "/manage-batch/view": "Batch Records & Details",
+  "/batches": "Batch Setup",
+  "/batches/create": "Create Batch",
+  "/batches/settings": "Batch Settings",
+  "/batches/students": "Manage Enrollment",
+  "/batches/records": "Batch Records & Activity",
+  "/manage-batch": "Batch Setup",
+  "/manage-batch/create": "Create Batch",
+  "/manage-batch/edit": "Batch Settings",
+  "/manage-batch/students": "Manage Enrollment",
+  "/manage-batch/view": "Batch Records & Activity",
   "/create-question": "Create Question",
   "/manage-questions": "Manage Questions",
   "/manage-colleges": "Manage Colleges",

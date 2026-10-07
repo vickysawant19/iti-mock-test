@@ -91,7 +91,7 @@ const AttendanceHeader = ({
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-none p-2.5 sm:p-3 text-white shadow-xs border-b border-blue-400/30 dark:border-indigo-500/20 m-0">
+    <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-2.5 text-white shadow-xs border-b border-blue-400/30 dark:border-indigo-500/20 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 sm:p-3">
       {/* Ambient background glow orbs */}
       <div className="absolute top-[-70px] right-[-50px] w-[200px] h-[200px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-2xl pointer-events-none" />
       <div className="absolute bottom-[-60px] left-[-30px] w-[160px] h-[160px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-2xl pointer-events-none" />

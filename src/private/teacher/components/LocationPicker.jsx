@@ -69,7 +69,7 @@ const LocationPicker = ({
           const { lat, lng } = e.latlng;
           const newLocation = { lat, lon: lng };
           setLocation(newLocation);
-          setValue?.("location", newLocation);
+          setValue?.("location", newLocation, { shouldDirty: true, shouldTouch: true });
         }
       },
     });

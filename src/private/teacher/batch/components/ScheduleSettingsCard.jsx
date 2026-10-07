@@ -7,19 +7,19 @@ const ScheduleSettingsCard = ({
   isBatchDataLoading,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden h-fit">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center gap-3">
-        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-          <Calendar className="text-purple-600 dark:text-purple-400" size={20} />
+    <section id="batch-schedule" className="scroll-mt-24 h-fit overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div className="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-500/10">
+          <Calendar className="text-indigo-600 dark:text-indigo-400" size={18} />
         </div>
-        <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
           Schedule & Settings
         </h2>
       </div>
-      <div className="p-6 space-y-4">
+      <div className="space-y-4 p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
               Start Date <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -31,14 +31,14 @@ const ScheduleSettingsCard = ({
                 {...register("start_date", {
                   required: "Start date is required",
                 })}
-                className="block w-full pl-10 pr-3 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all"
+                className="block h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm font-medium text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 disabled={isBatchDataLoading}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
               End Date <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -50,7 +50,7 @@ const ScheduleSettingsCard = ({
                 {...register("end_date", {
                   required: "End date is required",
                 })}
-                className="block w-full pl-10 pr-3 py-2 text-xs sm:text-sm font-bold border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all"
+                className="block h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm font-medium text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 disabled={isBatchDataLoading}
               />
             </div>
@@ -58,8 +58,8 @@ const ScheduleSettingsCard = ({
         </div>
 
         <div className="pt-2 space-y-3">
-          <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Batch Active Status
             </span>
             <div className="relative inline-flex items-center cursor-pointer">
@@ -73,9 +73,9 @@ const ScheduleSettingsCard = ({
             </div>
           </label>
 
-          <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
             <div>
-              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Allow Attendance Marking
               </span>
               <p className="text-[11px] text-slate-400 mt-0.5">Students can mark today's attendance</p>
@@ -97,7 +97,7 @@ const ScheduleSettingsCard = ({
               : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
           }`}>
             <div>
-              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Allow Previous Attendance
               </span>
               <p className="text-[11px] text-slate-400 mt-0.5">Students can mark past days (batch start → yesterday)</p>
@@ -114,7 +114,7 @@ const ScheduleSettingsCard = ({
           </label>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

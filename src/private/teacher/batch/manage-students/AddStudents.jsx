@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Users, UserPlus, FileText } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Users, UserPlus, FileText, ClipboardList } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import batchService from "@/services/batch/batchService";
@@ -11,6 +12,8 @@ import AddStudentForm from "./AddStudentForm";
 import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 
 const AddStudents = () => {
+  const { batchId: routeBatchId } = useParams();
+  const navigate = useNavigate();
   const user = useSelector(selectUser);
   const teacherId = user?.$id;
   // Read the globally active batch from Redux so we pre-select it on mount
@@ -33,10 +36,12 @@ const AddStudents = () => {
         ]);
         const batches = res.documents || [];
         setTeacherBatches(batches);
-        if (batches.length > 0 && !selectedBatch) {
-          // Prefer the Redux active batch; fall back to the first in the list
+        if (batches.length > 0 && (!selectedBatch || routeBatchId)) {
+          // Prefer an explicitly routed batch, then the active batch, then the first batch.
           const preferred =
-            activeBatchId && batches.some((b) => b.$id === activeBatchId)
+            routeBatchId && batches.some((b) => b.$id === routeBatchId)
+              ? routeBatchId
+              : activeBatchId && batches.some((b) => b.$id === activeBatchId)
               ? activeBatchId
               : batches[0].$id;
           setSelectedBatch(preferred);
@@ -48,7 +53,14 @@ const AddStudents = () => {
       }
     };
     fetchBatches();
-  }, [teacherId]);
+  }, [teacherId, activeBatchId, routeBatchId]);
+
+  const handleBatchChange = (batchId) => {
+    setSelectedBatch(batchId);
+    if (routeBatchId && batchId) {
+      navigate(`/batches/${batchId}/students`, { replace: true });
+    }
+  };
 
   if (!isLoading && teacherBatches.length === 0) {
     return (
@@ -63,30 +75,30 @@ const AddStudents = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header and Batch Selector */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/80 transition-all">
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-xl shadow-md shadow-blue-500/20 dark:shadow-none">
-              <Users className="w-6 h-6" />
+            <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+              <Users className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent dark:from-white dark:to-slate-300">
-                Student Management
+              <h1 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white sm:text-xl">
+                Manage batch enrollment
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Manage your batch enrollments and approve student requests
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-3 pt-4 md:pt-0 border-t border-slate-100 dark:border-slate-800 md:border-none">
-            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-              Active Batch:
-            </span>
-            <div className="relative">
+          <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end sm:border-0 sm:pt-0">
+            <label htmlFor="enrollment-batch-select" className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Selected batch
+              <span className="relative">
               <select
+                id="enrollment-batch-select"
                 value={selectedBatch}
-                onChange={(e) => setSelectedBatch(e.target.value)}
-                className="appearance-none bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 block w-48 p-2.5 pr-8 transition-all shadow-inner"
+                onChange={(e) => handleBatchChange(e.target.value)}
+                className="h-10 w-48 appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-sm font-medium text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
                 {teacherBatches.map((b) => (
                   <option key={b.$id} value={b.$id}>
@@ -94,23 +106,33 @@ const AddStudents = () => {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
                 <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </div>
-            </div>
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={() => selectedBatch && navigate(`/batches/${selectedBatch}/records`)}
+              disabled={!selectedBatch}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <ClipboardList className="h-4 w-4" />
+              View records
+            </button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/60 border border-slate-200/40 dark:border-slate-800/60 rounded-2xl w-full sm:w-fit gap-1.5 shadow-sm backdrop-blur-sm">
+        <div className="flex w-full gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900 sm:w-fit">
           <button
             onClick={() => setActiveTab("manage")}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 w-full sm:w-auto ${
+            className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-semibold transition-colors sm:w-auto ${
               activeTab === "manage"
-                ? "bg-white text-blue-600 dark:bg-slate-800 dark:text-blue-400 shadow-sm border border-slate-200/20 dark:border-slate-700/50"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40"
+                ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-800 dark:text-indigo-300"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -118,10 +140,10 @@ const AddStudents = () => {
           </button>
           <button
             onClick={() => setActiveTab("add")}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 w-full sm:w-auto ${
+            className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-xs font-semibold transition-colors sm:w-auto ${
               activeTab === "add"
-                ? "bg-white text-blue-600 dark:bg-slate-800 dark:text-blue-400 shadow-sm border border-slate-200/20 dark:border-slate-700/50"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40"
+                ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-800 dark:text-indigo-300"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             }`}
           >
             <UserPlus className="w-4 h-4" />

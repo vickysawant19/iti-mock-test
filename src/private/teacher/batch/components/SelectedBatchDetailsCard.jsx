@@ -14,8 +14,6 @@ import {
   ShieldCheck,
   ClipboardList,
   ChevronRight,
-  Sparkles,
-  ExternalLink,
   Layers
 } from "lucide-react";
 import { getCurrentSession, formatSessionLabel } from "../util/batchSessionUtil";
@@ -70,65 +68,61 @@ const SelectedBatchDetailsCard = ({
     if (onEditClick) {
       onEditClick(batchData.$id);
     } else {
-      navigate(`/manage-batch/edit/${batchData.$id}`);
+      navigate(`/batches/${batchData.$id}/settings`);
     }
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden ${className}`}>
+    <div className={`overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 ${className}`}>
       
       {/* ───────────────────────────────────────────────────────────────────────── */}
       {/* Header Banner Card */}
       {/* ───────────────────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 p-6 sm:p-8 text-white">
-        {/* Background glow orbs */}
-        <div className="absolute top-[-80px] right-[-50px] w-[260px] h-[260px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-60px] left-[-30px] w-[200px] h-[200px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
+      <div className="border-b border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-xs ${
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                 batchData.isActive !== false
-                  ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40 backdrop-blur-md"
-                  : "bg-rose-400/20 text-rose-200 border border-rose-400/40 backdrop-blur-md"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
               }`}>
-                <span className={`w-2 h-2 rounded-full ${batchData.isActive !== false ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${batchData.isActive !== false ? "bg-emerald-500" : "bg-rose-500"}`} />
                 {batchData.isActive !== false ? "Active Batch" : "Inactive / Archived"}
               </span>
 
               {sessionLabel && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/20 text-white border border-white/30 backdrop-blur-md">
-                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">
+                  <Clock className="h-3.5 w-3.5" />
                   {sessionLabel}
                 </span>
               )}
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+            <h2 className="text-xl font-semibold leading-tight tracking-tight text-slate-950 dark:text-white sm:text-2xl">
               {batchData.BatchName || "Batch Details"}
             </h2>
 
-            <p className="text-xs sm:text-sm text-blue-100/90 font-medium flex items-center gap-2 flex-wrap">
-              <span>Teacher: <strong className="text-white">{batchData.teacherName || "Instructor"}</strong></span>
-              {batchData.$id && <span className="opacity-40">•</span>}
-              {batchData.$id && <span className="font-mono text-xs opacity-75">ID: {batchData.$id}</span>}
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+              <span>Teacher: <strong className="font-medium text-slate-800 dark:text-slate-200">{batchData.teacherName || "Instructor"}</strong></span>
+              {batchData.$id && <span className="text-slate-300 dark:text-slate-600">•</span>}
+              {batchData.$id && <span className="font-mono text-xs">ID: {batchData.$id}</span>}
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <button
               onClick={handleEdit}
-              className="px-4 py-2.5 bg-white hover:bg-blue-50 active:scale-95 text-indigo-700 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer border border-white"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 dark:border-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
             >
-              <Edit className="w-4 h-4 text-indigo-600" />
+              <Edit className="h-4 w-4" />
               Edit Batch
             </button>
 
             <button
-              onClick={() => navigate("/manage-batch/students")}
-              className="px-4 py-2.5 bg-white/20 hover:bg-white/30 active:scale-95 text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer border border-white/25 backdrop-blur-md"
+              onClick={() => navigate(`/batches/${batchData.$id}/students`)}
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               <Users className="w-4 h-4" />
               Students ({studentCount})
@@ -136,10 +130,10 @@ const SelectedBatchDetailsCard = ({
 
             <button
               onClick={() => navigate("/attendance/register")}
-              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-amber-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer border border-amber-300"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              <ClipboardList className="w-4 h-4 text-amber-950" />
-              Register
+              <ClipboardList className="h-4 w-4" />
+              Attendance
             </button>
           </div>
         </div>
@@ -148,11 +142,11 @@ const SelectedBatchDetailsCard = ({
       {/* ───────────────────────────────────────────────────────────────────────── */}
       {/* Quick Metrics Cards */}
       {/* ───────────────────────────────────────────────────────────────────────── */}
-      <div className="p-6 sm:p-8 space-y-8">
+      <div className="space-y-6 p-5 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Trade Info */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
             <div className="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
               <Award className="w-5 h-5" />
             </div>
@@ -170,7 +164,7 @@ const SelectedBatchDetailsCard = ({
           </div>
 
           {/* College / Institution */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
             <div className="p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
               <Building2 className="w-5 h-5" />
             </div>
@@ -186,7 +180,7 @@ const SelectedBatchDetailsCard = ({
           </div>
 
           {/* Academic Timeline */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
             <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
@@ -199,7 +193,7 @@ const SelectedBatchDetailsCard = ({
           </div>
 
           {/* Enrolled Roster */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
             <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl shrink-0">
               <Users className="w-5 h-5" />
             </div>

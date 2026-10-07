@@ -401,7 +401,7 @@ const TeacherGameArena = ({
               Set up a batch to start managing students and track their progress.
             </p>
             <Button
-              onClick={() => navigate("/manage-batch/create")}
+              onClick={() => navigate("/batches/create")}
               className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-md shadow-pink-500/20 transition-all hover:-translate-y-0.5"
             >
               Create Batch →
@@ -663,7 +663,7 @@ const TeacherGameArena = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/manage-batch/students")}
+                  onClick={() => navigate("/batches/students")}
                   className="w-full text-xs font-bold rounded-xl justify-start bg-white/40 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <Users className="w-3.5 h-3.5 mr-2 text-pink-500" />
@@ -672,7 +672,7 @@ const TeacherGameArena = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/manage-batch/create")}
+                  onClick={() => navigate("/batches/create")}
                   className="w-full text-xs font-bold rounded-xl justify-start bg-white/40 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <PlusCircle className="w-3.5 h-3.5 mr-2 text-fuchsia-500" />

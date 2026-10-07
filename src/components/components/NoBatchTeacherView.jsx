@@ -66,7 +66,7 @@ const NoBatchTeacherView = ({ isTeacher = true }) => {
 
           <div className="pt-2">
             <Button
-              onClick={() => navigate(isTeacher ? "/manage-batch/create" : "/browse-batches")}
+              onClick={() => navigate(isTeacher ? "/batches/create" : "/browse-batches")}
               size="lg"
               className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:via-purple-500 hover:to-indigo-500 text-white rounded-2xl px-10 h-14 text-lg shadow-xl shadow-pink-500/25 font-bold transition-all hover:-translate-y-1 hover:shadow-pink-500/40 active:scale-95 group relative overflow-hidden"
             >

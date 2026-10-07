@@ -85,7 +85,7 @@ const AttendanceRegister = () => {
   const [columnVisibility, setColumnVisibility] = useState(DEFAULT_VISIBILITY);
   const [compactView, setCompactView] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth < 768;
+      return window.innerWidth < 1024;
     }
     return false;
   });
@@ -800,7 +800,7 @@ const AttendanceRegister = () => {
     const isTeacher =
       user?.labels?.includes("Teacher") || user?.labels?.includes("admin");
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-24 overflow-hidden flex items-center justify-center">
+      <div className="flex h-[calc(100dvh-4.5rem)] min-h-0 items-center justify-center overflow-hidden bg-slate-50 p-4 dark:bg-slate-950 md:p-6">
         <NoBatchTeacherView isTeacher={isTeacher} />
       </div>
     );
@@ -810,8 +810,8 @@ const AttendanceRegister = () => {
   // Render
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <div className="max-w-full mx-auto">
+      <div className="flex h-[calc(100dvh-4.5rem)] min-h-0 min-w-0 flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-full flex-col">
         <AttendanceHeader
           selectedBatch={selectedBatch}
           setSelectedBatch={setSelectedBatch}
@@ -838,7 +838,7 @@ const AttendanceRegister = () => {
 
         {/* Monthly Stats Discrepancy Banner */}
         {discrepancyData.hasDiscrepancies && (
-          <div className="mx-4 mt-3 flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 rounded-2xl shadow-xs animate-in fade-in">
+          <div className="mx-4 mt-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-3 shadow-xs animate-in fade-in dark:border-amber-700/60 dark:bg-amber-950/40">
             <div className="flex items-center gap-2.5 text-xs font-bold text-amber-900 dark:text-amber-200">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>

@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { ClipLoader } from "react-spinners";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Query } from "appwrite";
 import {
-  Edit,
   CheckCircle,
-  Users,
   ChevronDown,
-  ArrowLeft,
   Eye,
   Settings,
-  Sparkles
+  Info,
+  CalendarDays,
+  MapPin,
+  Layers,
+  CircleHelp,
 } from "lucide-react";
 
 import { useListCollegesQuery } from "@/store/api/collegeApi";
@@ -24,15 +25,14 @@ import batchService from "@/services/batch/batchService";
 
 import Loader from "@/components/components/Loader";
 import IncompleteProfileGuard from "../components/IncompleteProfileGuard";
-import BasicInfoCard from "../components/BasicInfoCard";
-import ScheduleSettingsCard from "../components/ScheduleSettingsCard";
-import AttendanceLocationCard from "../components/AttendanceLocationCard";
-import ScheduleSessionsCard from "../components/ScheduleSessionsCard";
+import BatchFormFields from "../components/BatchFormFields";
+import BatchWorkspaceHeader from "../components/BatchWorkspaceHeader";
 import SelectedBatchDetailsCard from "../components/SelectedBatchDetailsCard";
 import { normalizeBatchSessions } from "../util/batchSessionUtil";
 
 const EditBatch = () => {
   const { batchId: urlBatchId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +41,7 @@ const EditBatch = () => {
   const [activeViewMode, setActiveViewMode] = useState("form"); // "form" | "details"
 
   const [sessions, setSessions] = useState([]);
+  const [savedSessions, setSavedSessions] = useState([]);
   const [showMaps, setShowMaps] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
@@ -60,12 +61,53 @@ const EditBatch = () => {
     setValue,
     reset,
     watch,
+    formState: { isDirty },
   } = useForm();
 
   const selectedCollegeId = watch("collegeId");
   const canMarkAttendance = watch("canMarkAttendance");
+  const hasSessionChanges = useMemo(
+    () => JSON.stringify(sessions) !== JSON.stringify(savedSessions),
+    [sessions, savedSessions]
+  );
+  const hasChanges = isDirty || hasSessionChanges;
   const selectedCollege = collegesData.find((c) => c.$id === selectedCollegeId);
   const tradeIds = selectedCollege?.tradeIds || [];
+
+  useEffect(() => {
+    if (!hasChanges) return undefined;
+
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
+
+  useEffect(() => {
+    if (!hasChanges) return undefined;
+
+    const handleLinkNavigation = (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (!(event.target instanceof Element)) return;
+
+      const link = event.target.closest("a[href]");
+      if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
+
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin !== window.location.origin || destination.pathname === location.pathname) return;
+
+      if (!window.confirm("You have unsaved batch changes. Leave this page and discard them?")) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", handleLinkNavigation, true);
+    return () => document.removeEventListener("click", handleLinkNavigation, true);
+  }, [hasChanges, location.pathname]);
 
   useEffect(() => {
     if (!canMarkAttendance) {
@@ -92,7 +134,7 @@ const EditBatch = () => {
         setValue("location", {
           lat: position.coords.latitude,
           lon: position.coords.longitude,
-        });
+        }, { shouldDirty: true, shouldTouch: true });
         setLocationLoading(false);
         toast.success("Location captured successfully");
       },
@@ -131,22 +173,25 @@ const EditBatch = () => {
         return;
       }
       setBatchData(data);
-      setSessions(normalizeBatchSessions(data));
-      setValue("BatchName", data.BatchName);
-      setValue("start_date", data.start_date?.split("T")[0] || data.start_date);
-      setValue("end_date", data.end_date?.split("T")[0] || data.end_date);
-      setValue("collegeId", data.collegeId?.$id || data.collegeId);
-      setValue("tradeId", data.tradeId?.$id || data.tradeId);
-      setValue("isActive", data.isActive ?? false);
-
-      setValue("canMarkAttendance", data.canMarkAttendance ?? true);
-      setValue("attendanceTime", {
+      const normalizedSessions = normalizeBatchSessions(data);
+      setSessions(normalizedSessions);
+      setSavedSessions(normalizedSessions);
+      reset({
+        BatchName: data.BatchName,
+        start_date: data.start_date?.split("T")[0] || data.start_date,
+        end_date: data.end_date?.split("T")[0] || data.end_date,
+        collegeId: data.collegeId?.$id || data.collegeId,
+        tradeId: data.tradeId?.$id || data.tradeId,
+        isActive: data.isActive ?? false,
+        canMarkAttendance: data.canMarkAttendance ?? true,
+        attendanceTime: {
         start: data.attendanceTime?.start || "",
         end: data.attendanceTime?.end || "",
+        },
+        location: data.location || { lat: "", lon: "" },
+        canMarkPrevious: data.canMarkPrevious ?? false,
+        circleRadius: data.circleRadius || 1000,
       });
-      setValue("location", data.location || { lat: "", lon: "" });
-      setValue("canMarkPrevious", data.canMarkPrevious ?? false);
-      setValue("circleRadius", data.circleRadius || 1000);
     } catch (error) {
       console.error("Error fetching batch data:", error);
       toast.error("Failed to load batch data");
@@ -176,6 +221,14 @@ const EditBatch = () => {
       setSelectedBatchId(urlBatchId);
     }
   }, [urlBatchId]);
+
+  const handleSelectedBatchChange = (batchId) => {
+    if (hasChanges && !window.confirm("You have unsaved batch changes. Switch batches and discard them?")) return;
+    setSelectedBatchId(batchId);
+    if (urlBatchId && batchId) {
+      navigate(`/batches/${batchId}/settings`, { replace: true });
+    }
+  };
 
   useEffect(() => {
     if (selectedBatchId && user?.labels?.includes("Teacher")) {
@@ -218,6 +271,8 @@ const EditBatch = () => {
         prev.map((item) => (item.$id === updatedBatch.$id ? updatedBatch : item))
       );
       setBatchData(updatedBatch);
+      reset(formData);
+      setSavedSessions(sessions);
       toast.success("Batch updated successfully!");
     } catch (error) {
       console.error("Error updating batch:", error);
@@ -238,99 +293,63 @@ const EditBatch = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 text-slate-900 dark:text-slate-100">
-      {/* Redesigned Glassmorphic Header Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 dark:from-slate-950 dark:via-indigo-950/90 dark:to-slate-950 rounded-3xl p-4 sm:p-5 text-white shadow-xl border border-blue-400/30 dark:border-indigo-500/20 mb-3 mx-2 sm:mx-4 mt-2">
-        {/* Ambient background glow orbs */}
-        <div className="absolute top-[-70px] right-[-50px] w-[220px] h-[220px] rounded-full bg-white/10 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-60px] left-[-30px] w-[180px] h-[180px] rounded-full bg-white/10 dark:bg-purple-500/15 blur-3xl pointer-events-none" />
+      <BatchWorkspaceHeader
+        title="Edit a batch"
+        description="Choose a batch to update its schedule, attendance, or location."
+        toolbar={(
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <label htmlFor="edit-batch-select" className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 sm:w-[min(100%,24rem)]">
+              <span>Selected batch</span>
+              <span className="relative block">
+                <select
+                  id="edit-batch-select"
+                  onChange={(e) => handleSelectedBatchChange(e.target.value)}
+                  value={selectedBatchId}
+                  className="h-10 w-full appearance-none truncate rounded-lg border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-800 outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="">Select a batch to edit</option>
+                  {allBatches?.map((item) => (
+                    <option key={item.$id} value={item.$id}>
+                      {item.BatchName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </span>
+            </label>
 
-        <div className="relative z-10 flex flex-col gap-3">
-          {/* Top Row: Back Button + Title + Mode Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/manage-batch/view")}
-                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 dark:bg-slate-800 dark:hover:bg-slate-700 text-white transition-all cursor-pointer shadow-xs border border-white/20"
-                title="Back to Batches"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-
-              <div className="w-10 h-10 rounded-2xl bg-white/20 dark:bg-indigo-500/30 backdrop-blur-md border border-white/30 dark:border-indigo-400/30 flex items-center justify-center shadow-md shrink-0">
-                <Edit className="h-5 w-5 text-white dark:text-indigo-200" />
-              </div>
-
-              <div>
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white dark:bg-indigo-500/20 dark:text-indigo-300 border border-white/30 dark:border-indigo-500/30">
-                    <Sparkles className="w-3 h-3 text-amber-300 dark:text-indigo-400" />
-                    BATCH CONFIGURATION
-                  </span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-black leading-tight text-white tracking-tight">
-                  Edit Batch Settings
-                </h1>
-              </div>
-            </div>
-
-            {/* Mode Switcher Tabs */}
-            <div className="flex items-center bg-black/20 dark:bg-slate-900/70 p-1 rounded-xl border border-white/20 dark:border-slate-800 self-start sm:self-auto shrink-0">
+            <div role="group" aria-label="Batch mode" className="inline-flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-950 sm:w-auto">
               <button
                 type="button"
                 onClick={() => setActiveViewMode("form")}
-                className={`px-3 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeViewMode === "form"
-                    ? "bg-white text-indigo-700 dark:bg-indigo-500 dark:text-white shadow-xs"
-                    : "text-white/80 hover:bg-white/10"
-                }`}
+                aria-pressed={activeViewMode === "form"}
+                className={`inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors sm:flex-none ${activeViewMode === "form" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"}`}
               >
-                <Settings className="w-3.5 h-3.5" /> Edit Form
+                <Settings className="h-3.5 w-3.5" />
+                Edit mode
               </button>
-
               <button
                 type="button"
-                onClick={() => setActiveViewMode("details")}
-                className={`px-3 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeViewMode === "details"
-                    ? "bg-amber-400 text-amber-950 shadow-xs"
-                    : "text-white/80 hover:bg-white/10"
-                }`}
+                onClick={() => {
+                  if (hasChanges && !window.confirm("You have unsaved batch changes. Switch to view mode and discard them?")) return;
+                  if (hasChanges) {
+                    reset();
+                    setSessions(savedSessions);
+                  }
+                  setActiveViewMode("details");
+                }}
+                aria-pressed={activeViewMode === "details"}
+                className={`inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors sm:flex-none ${activeViewMode === "details" ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white" : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"}`}
               >
-                <Eye className="w-3.5 h-3.5" /> Details Card
+                <Eye className="h-3.5 w-3.5" />
+                View mode
               </button>
             </div>
-
           </div>
+        )}
+      />
 
-          {/* Bottom Row: Batch Selector Bar */}
-          <div className="pt-2 border-t border-white/20 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-xs font-bold text-white/80 uppercase tracking-wider text-[11px]">
-              Active Selection:
-            </span>
-
-            <div className="relative w-full sm:w-80">
-              <select
-                id="edit-batch-select"
-                onChange={(e) => setSelectedBatchId(e.target.value)}
-                value={selectedBatchId}
-                className="w-full px-3 py-1.5 text-xs font-bold bg-white/20 dark:bg-slate-900/80 backdrop-blur-md text-white border border-white/30 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-300 transition-all appearance-none pr-8 cursor-pointer truncate"
-              >
-                <option value="" className="text-slate-900 dark:text-slate-100">Select Batch to Edit</option>
-                {allBatches?.map((item) => (
-                  <option key={item.$id} value={item.$id} className="text-slate-900 dark:text-slate-100">
-                    {item.BatchName}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/80" />
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-3">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
         {activeViewMode === "details" ? (
           <SelectedBatchDetailsCard
             batchData={batchData}
@@ -339,43 +358,72 @@ const EditBatch = () => {
             onEditClick={() => setActiveViewMode("form")}
           />
         ) : (
-          <form onSubmit={handleSubmit(handleBatchSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <BasicInfoCard
-                register={register}
-                collegesData={collegesData}
-                tradesData={tradesData}
-                isBatchDataLoading={isBatchDataLoading}
-              />
+          <form onSubmit={handleSubmit(handleBatchSubmit)}>
+            <nav aria-label="Edit batch sections" className="mb-4 flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
+              {[
+                ["batch-information", "Details"],
+                ["batch-schedule", "Schedule"],
+                ["attendance-location", "Attendance"],
+                ["academic-sessions", "Sessions"],
+              ].map(([sectionId, label]) => (
+                <a key={sectionId} href={`#${sectionId}`} className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                  {label}
+                </a>
+              ))}
+            </nav>
 
-              <ScheduleSettingsCard
-                register={register}
-                canMarkAttendance={canMarkAttendance}
-                isBatchDataLoading={isBatchDataLoading}
-              />
+            <div className="grid items-start gap-5 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6">
+              <aside className="hidden lg:block">
+                <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                  <p className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">On this page</p>
+                  <nav aria-label="Edit batch sections" className="space-y-1">
+                    {[
+                      ["batch-information", "Batch information", Info],
+                      ["batch-schedule", "Schedule & status", CalendarDays],
+                      ["attendance-location", "Attendance & location", MapPin],
+                      ["academic-sessions", "Academic sessions", Layers],
+                    ].map(([sectionId, label, Icon]) => (
+                      <a key={sectionId} href={`#${sectionId}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+                        <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span>{label}</span>
+                      </a>
+                    ))}
+                  </nav>
+                  <div className="mt-4 border-t border-slate-100 px-3 pt-3 dark:border-slate-800">
+                    <p className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400"><CircleHelp className="h-3.5 w-3.5" /> Changes save when you choose Save changes.</p>
+                  </div>
+                </div>
+              </aside>
 
-              <AttendanceLocationCard
-                register={register}
-                watch={watch}
-                setValue={setValue}
-                batchData={batchData}
-                showMaps={showMaps}
-                setShowMaps={setShowMaps}
-                locationLoading={locationLoading}
-                handleGetLocation={handleGetLocation}
-              />
+              <div className="min-w-0">
+                <BatchFormFields
+                  register={register}
+                  collegesData={collegesData}
+                  tradesData={tradesData}
+                  canMarkAttendance={canMarkAttendance}
+                  isBatchDataLoading={isBatchDataLoading}
+                  watch={watch}
+                  setValue={setValue}
+                  batchData={batchData}
+                  showMaps={showMaps}
+                  setShowMaps={setShowMaps}
+                  locationLoading={locationLoading}
+                  handleGetLocation={handleGetLocation}
+                  sessions={sessions}
+                  setSessions={setSessions}
+                />
+              </div>
             </div>
 
-            <ScheduleSessionsCard
-              sessions={sessions}
-              setSessions={setSessions}
-            />
-
-            {/* Submit Button */}
-            <div className="sticky bottom-6 z-20">
+            {/* Keep save action visible only while there are unsaved changes. */}
+            {hasChanges && <div className="sticky bottom-4 z-20 mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-900/10 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:bottom-6 sm:px-4">
+              <div className="hidden min-w-0 sm:block">
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Unsaved changes</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Save your updates to apply them to this batch.</p>
+              </div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 dark:bg-blue-600 text-white py-4 px-6 rounded-2xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all duration-200 flex items-center justify-center font-bold text-base disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                className="ml-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-indigo-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-slate-900 sm:w-auto"
                 disabled={isSubmitting || isBatchDataLoading || !selectedBatchId}
               >
                 {isSubmitting ? (
@@ -385,12 +433,12 @@ const EditBatch = () => {
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={20} className="mr-2" />
-                    Update Batch Settings
+                    <CheckCircle size={16} className="mr-2" />
+                    Save changes
                   </>
                 )}
               </button>
-            </div>
+            </div>}
           </form>
         )}
       </div>

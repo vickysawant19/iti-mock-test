@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Plus,
   ArrowLeft,
+  ArrowRight,
   X,
   Loader2,
   Sparkles,
@@ -754,7 +755,7 @@ export default function TeacherNotificationsPage() {
                     </span>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/manage-batch/approvals")}
+                      onClick={() => navigate("/batches/students")}
                       className="text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer shadow-xs"
                     >
                       <span>Review Request</span>

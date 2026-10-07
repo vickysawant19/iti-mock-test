@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { Buffer } from "buffer";
 window.Buffer = Buffer;
@@ -146,13 +146,25 @@ const router = (
             path="mock-test-result/:paperId"
             element={<MockTestResults />}
           />
-          <Route path="manage-batch" element={<ProtectedTeacherRoutes />}>
+          <Route path="batches" element={<ProtectedTeacherRoutes />}>
+            <Route index element={<Navigate to="create" replace />} />
             <Route path="create" element={<CreateBatch />} />
+            <Route path="settings" element={<EditBatch />} />
+            <Route path=":batchId/settings" element={<EditBatch />} />
+            <Route path="students" element={<AddStudents />} />
+            <Route path=":batchId/students" element={<AddStudents />} />
+            <Route path="records" element={<ViewBatch />} />
+            <Route path=":batchId/records" element={<ViewBatch />} />
+          </Route>
+          {/* Keep legacy batch URLs available for saved links and notifications. */}
+          <Route path="manage-batch" element={<ProtectedTeacherRoutes />}>
+            <Route index element={<Navigate to="/batches/create" replace />} />
+            <Route path="create" element={<CreateBatch />} />
+            <Route path="edit" element={<EditBatch />} />
+            <Route path="edit/:batchId" element={<EditBatch />} />
             <Route path="students" element={<AddStudents />} />
             <Route path="view" element={<ViewBatch />} />
             <Route path="view/:userId" element={<ProfileView />} />
-            <Route path="edit" element={<EditBatch />} />
-            <Route path="edit/:batchId" element={<EditBatch />} />
             <Route path="notifications" element={<TeacherNotificationsPage />} />
           </Route>
           <Route path="teacher-notifications" element={<TeacherNotificationsPage />} />
