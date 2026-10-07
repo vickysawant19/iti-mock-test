@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Users, UserPlus, FileText, ClipboardList } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
@@ -14,6 +14,7 @@ import NoBatchTeacherView from "@/components/components/NoBatchTeacherView";
 const AddStudents = () => {
   const { batchId: routeBatchId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector(selectUser);
   const teacherId = user?.$id;
   // Read the globally active batch from Redux so we pre-select it on mount
@@ -23,8 +24,23 @@ const AddStudents = () => {
   const [teacherBatches, setTeacherBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreationNextSteps, setShowCreationNextSteps] = useState(false);
 
   const selectedBatchData = teacherBatches.find((b) => b.$id === selectedBatch) || null;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("teacher_managed_enrollment", "true");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!location.state?.batchCreated) return;
+    setShowCreationNextSteps(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   // Load teacher batches
   useEffect(() => {
@@ -124,6 +140,42 @@ const AddStudents = () => {
             </button>
           </div>
         </div>
+
+        {showCreationNextSteps && (
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/70 dark:bg-emerald-950/30 sm:flex sm:items-center sm:justify-between sm:gap-5" aria-live="polite">
+            <div>
+              <h2 className="font-semibold text-emerald-950 dark:text-emerald-100">Your batch is ready</h2>
+              <p className="mt-1 text-sm text-emerald-800/80 dark:text-emerald-200/80">
+                Next, add students or review join requests. You can open this batch’s records or update its settings at any time.
+              </p>
+            </div>
+            <div className="mt-3 flex shrink-0 flex-wrap gap-2 sm:mt-0">
+              <button
+                type="button"
+                disabled={!selectedBatch}
+                onClick={() => setActiveTab("add")}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg bg-emerald-700 px-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Add students
+              </button>
+              <button
+                type="button"
+                disabled={!selectedBatch}
+                onClick={() => navigate(`/batches/${selectedBatch}/records`)}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg border border-emerald-300 bg-white px-3 text-sm font-semibold text-emerald-900 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950"
+              >
+                View records
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreationNextSteps(false)}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg px-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
+              >
+                Dismiss
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Navigation Tabs */}
         <div className="flex w-full gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900 sm:w-fit">

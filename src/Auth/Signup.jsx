@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useForm, Controller } from "react-hook-form";
@@ -7,7 +7,11 @@ import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
 import authService from "@/services/auth/auth.service";
-import { selectUser } from "@/store/userSlice";
+import userProfileService from "@/services/auth/userProfileService";
+import { addUser, selectUser } from "@/store/userSlice";
+import { addProfile } from "@/store/profileSlice";
+import { initializeActiveBatch } from "@/store/activeBatchSlice";
+import { checkProfileCompletion } from "@/utils/profileCompletion";
 import authImg from "@/assets/auth-illustration.webp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,15 +40,18 @@ const Signup = () => {
 
   const user = useSelector(selectUser);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const signupFlowHandledRef = useRef(false);
 
   useEffect(() => {
-    if (user) {
-      navigate("/arena");
+    if (user && !signupFlowHandledRef.current) {
+      navigate("/arena", { replace: true });
     }
   }, [navigate, user]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    let accountCreated = false;
     try {
       // Transform labels string to array as expected by backend
       const formattedData = {
@@ -60,11 +67,72 @@ const Signup = () => {
         throw Error(result.error);
       }
       if (result.success) {
-        toast.success("Account created successfully! Please login.");
-        navigate("/login");
+        accountCreated = true;
+
+        let loggedInUser;
+        try {
+          // Appwrite permits email/password sessions immediately after account creation.
+          loggedInUser = await authService.login({
+            email: formattedData.email,
+            password: formattedData.password,
+          });
+        } catch (error) {
+          toast.info("Your account is ready. Sign in to continue setting up your profile.");
+          navigate("/login", {
+            replace: true,
+            state: { signupComplete: true },
+          });
+          return;
+        }
+
+        if (!loggedInUser?.$id) {
+          throw new Error("Your account was created, but we could not start your session.");
+        }
+
+        // Prevent the generic already-signed-in redirect from racing role setup routing.
+        signupFlowHandledRef.current = true;
+        dispatch(addUser({ data: loggedInUser, isLoading: false }));
+
+        const isTeacher = loggedInUser.labels?.includes("Teacher") ?? formattedData.labels.includes("Teacher");
+        const isAdmin = loggedInUser.labels?.includes("admin");
+        let profile = null;
+        try {
+          profile = await userProfileService.getUserProfile(loggedInUser.$id);
+        } catch (error) {
+          console.warn("Could not load the new account profile; continuing to setup.", error);
+        }
+
+        if (profile) {
+          dispatch(addProfile({ data: profile, isLoading: false, isInitialized: true }));
+          const batchResult = await dispatch(initializeActiveBatch(profile));
+          const batches = initializeActiveBatch.fulfilled.match(batchResult)
+            ? batchResult.payload.userBatches || []
+            : [];
+          const profileComplete = profile.isProfileComplete ?? checkProfileCompletion(profile).isComplete;
+
+          if (!profileComplete && !isAdmin) {
+            toast.success("Account created. Let’s finish setting up your profile.");
+            navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", { replace: true });
+          } else {
+            toast.success("Account created. You’re signed in.");
+            const destination = !isAdmin && batches.length === 0
+              ? isTeacher ? "/batches/create" : "/browse-batches"
+              : "/arena";
+            navigate(destination, { replace: true });
+          }
+        } else {
+          dispatch(addProfile({ isLoading: false, isInitialized: true }));
+          toast.success("Account created. Let’s finish setting up your profile.");
+          navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", { replace: true });
+        }
       }
     } catch (error) {
-      toast.error(`Signup failed: ${error.message}`);
+      if (accountCreated) {
+        toast.error("Your account was created, but setup could not continue. Please sign in to resume.");
+        navigate("/login", { replace: true, state: { signupComplete: true } });
+      } else {
+        toast.error(`Signup failed: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Query } from "appwrite";
 import { Loader2, Users, Search, Clock, CheckCircle, Trash2, XCircle, RefreshCw, GraduationCap, Building, Briefcase } from "lucide-react";
 import { selectUser } from "@/store/userSlice";
 import { selectProfile } from "@/store/profileSlice";
-import { selectUserBatches, initializeActiveBatch } from "@/store/activeBatchSlice";
+import {
+  selectUserBatches,
+  initializeActiveBatch,
+  upsertStudentRequest,
+  removeStudentRequest,
+} from "@/store/activeBatchSlice";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "react-toastify";
 import batchService from "@/services/batch/batchService";
@@ -16,6 +22,7 @@ import { useListTradesQuery } from "@/store/api/tradeApi";
 
 export default function BrowseBatches() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
   const userBatches = useSelector(selectUserBatches);
@@ -24,6 +31,7 @@ export default function BrowseBatches() {
   const [requests, setRequests] = useState([]);
   const [requestBatchMap, setRequestBatchMap] = useState({});
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [isRefreshingRequests, setIsRefreshingRequests] = useState(false);
   const [isLoadingBatches, setIsLoadingBatches] = useState(false);
   const [isRequesting, setIsRequesting] = useState(null);
   const [isDeletingRequest, setIsDeletingRequest] = useState(null);
@@ -44,37 +52,54 @@ export default function BrowseBatches() {
   );
   const tradeData = tradesResponse?.documents || [];
 
+  // Mark student checklist step "Find a batch" as visited
+  useEffect(() => {
+    try {
+      localStorage.setItem("student_found_batch", "true");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Reset trade selection if college changes
   useEffect(() => {
     setSelectedTradeId("");
     setBatches([]);
   }, [selectedCollegeId]);
 
-  // Initial load: Fetch the user's current requests & joined batches
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user?.$id) return;
-      setIsLoadingRequests(true);
-      try {
-        const requestsRes = await batchRequestService.getStudentRequests(user.$id);
-        setRequests(requestsRes || []);
+  const fetchRequests = useCallback(async ({ quiet = false } = {}) => {
+    if (!user?.$id) return;
+    if (quiet) setIsRefreshingRequests(true);
+    else setIsLoadingRequests(true);
+    try {
+      const requestsRes = await batchRequestService.getStudentRequests(user.$id);
+      const studentRequests = requestsRes || [];
+      setRequests(studentRequests);
+      studentRequests.forEach((request) => dispatch(upsertStudentRequest(request)));
 
-        // Fetch batch details for each request in bulk
-        const batchIds = [...new Set((requestsRes || []).map(r => r.batchId).filter(Boolean))];
-        if (batchIds.length > 0) {
-          const batchDocs = await batchService.getBatchesByIds(batchIds);
-          const map = {};
-          batchDocs.forEach(b => { map[b.$id] = b; });
-          setRequestBatchMap(map);
-        }
-      } catch (error) {
-        console.error("Error fetching requests", error);
-      } finally {
-        setIsLoadingRequests(false);
-      }
-    };
+      const batchIds = [...new Set(studentRequests.map((request) => request.batchId).filter(Boolean))];
+      const batchDocs = batchIds.length ? await batchService.getBatchesByIds(batchIds) : [];
+      setRequestBatchMap(Object.fromEntries(batchDocs.map((batch) => [batch.$id, batch])));
+    } catch (error) {
+      console.error("Error fetching requests", error);
+      if (!quiet) toast.error("Could not load your request statuses.");
+    } finally {
+      if (quiet) setIsRefreshingRequests(false);
+      else setIsLoadingRequests(false);
+    }
+  }, [dispatch, user?.$id]);
+
+  // Refresh status when the student returns to this tab, and keep a manual refresh nearby.
+  useEffect(() => {
     fetchRequests();
-  }, [user]);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") fetchRequests({ quiet: true });
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [fetchRequests]);
 
   // Fetch batches when college and trade are selected
   useEffect(() => {
@@ -116,6 +141,11 @@ export default function BrowseBatches() {
         }
       } else {
         toast.success("Request sent successfully!");
+        dispatch(upsertStudentRequest(newReq));
+        const selectedBatch = batches.find((batch) => batch.$id === batchId);
+        if (selectedBatch) {
+          setRequestBatchMap((prev) => ({ ...prev, [batchId]: selectedBatch }));
+        }
         setRequests(prev => {
           const filtered = prev.filter(r => r.batchId !== batchId);
           return [...filtered, newReq];
@@ -133,6 +163,7 @@ export default function BrowseBatches() {
     setIsDeletingRequest(req.$id);
     try {
       await batchRequestService.deleteRequest(req.$id);
+      dispatch(removeStudentRequest(req.$id));
       setRequests(prev => prev.filter(r => r.$id !== req.$id));
       toast.success("Request deleted.");
     } catch (e) {
@@ -147,6 +178,7 @@ export default function BrowseBatches() {
     setIsSendingAgain(req.$id);
     try {
       const updated = await batchRequestService.sendRequest(req.batchId, user.$id);
+      dispatch(upsertStudentRequest(updated));
       setRequests(prev => prev.map(r => r.$id === req.$id ? { ...r, status: updated.status } : r));
       toast.success("Request sent again!");
     } catch (e) {
@@ -157,11 +189,19 @@ export default function BrowseBatches() {
     }
   };
 
+  const handleOpenLearningDashboard = async () => {
+    if (profile) await dispatch(initializeActiveBatch(profile));
+    navigate("/arena");
+  };
+
   // Show all requests regardless of status so student always sees their history
-  const activeRequests = requests.filter(r => r.status === "pending" || r.status === "approved" || r.status === "rejected");
+  const activeRequests = requests.filter(r => ["pending", "approved", "rejected"].includes(r.status?.toLowerCase()));
+  const pendingRequestsCount = activeRequests.filter((request) => request.status?.toLowerCase() === "pending").length;
+  const scrollToRequests = () => document.getElementById("my-requests")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToAvailableBatches = () => document.getElementById("available-batches")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-clip font-sans">
       {/* Ambient Animated Gradient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-400/20 blur-[100px] animate-pulse"></div>
@@ -188,7 +228,35 @@ export default function BrowseBatches() {
               </div>
             </div>
           </div>
+      </div>
+
+      {!isLoadingRequests && activeRequests.length > 0 && (
+        <div className="sticky top-16 z-30 -mx-1 rounded-2xl border border-indigo-200/80 bg-white/95 px-3 py-2.5 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-indigo-900/70 dark:bg-slate-900/95 sm:mx-0 sm:px-4">
+          <div className="flex items-center justify-between gap-3">
+            <button type="button" onClick={scrollToRequests} className="flex min-w-0 items-center gap-2 text-left">
+              <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${pendingRequestsCount ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" : "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"}`}>
+                {pendingRequestsCount ? <Clock className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">
+                  {pendingRequestsCount
+                    ? `${pendingRequestsCount} request${pendingRequestsCount === 1 ? "" : "s"} awaiting review`
+                    : "Your batch request updates"}
+                </span>
+                <span className="block truncate text-xs text-slate-500 dark:text-slate-400">View status and next steps</span>
+              </span>
+            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button type="button" variant="ghost" size="sm" className="h-9 px-2.5 text-indigo-700 dark:text-indigo-300" onClick={scrollToRequests}>
+                My requests
+              </Button>
+              <Button type="button" variant="outline" size="icon" aria-label="Refresh request statuses" title="Refresh request statuses" className="h-9 w-9" onClick={() => fetchRequests({ quiet: true })} disabled={isRefreshingRequests}>
+                <RefreshCw className={`h-4 w-4 ${isRefreshingRequests ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
+          </div>
         </div>
+      )}
 
       {/* Filter Options */}
       <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
@@ -233,23 +301,25 @@ export default function BrowseBatches() {
           <Loader2 className="w-4 h-4 animate-spin text-pink-500" /> Loading your requests...
         </div>
       ) : activeRequests.length > 0 && (
-        <div>
+        <div id="my-requests" className="scroll-mt-24">
           <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-purple-500" /> My Requests & Batches
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeRequests.map(req => {
               const batchDoc = requestBatchMap[req.batchId];
+              const status = req.status?.toLowerCase();
+              const statusLabel = status === "rejected" ? "Declined" : status === "approved" ? "Approved" : "Pending";
               return (
                 <div key={req.$id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-2xl flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-default">
                   <div className="p-4 pb-2">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight truncate">
-                        {batchDoc?.BatchName || "Loading..."}
+                        {batchDoc?.BatchName || "Batch details unavailable"}
                       </h3>
-                      {req.status === "approved"
+                      {status === "approved"
                         ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                        : req.status === "rejected"
+                        : status === "rejected"
                         ? <XCircle className="w-4 h-4 text-red-500 shrink-0" />
                         : <Clock className="w-4 h-4 text-amber-500 shrink-0" />}
                     </div>
@@ -268,16 +338,40 @@ export default function BrowseBatches() {
                     )}
                     <p className="text-sm text-slate-500">
                       Status:{" "}
-                      <span className={`font-semibold capitalize ${
-                        req.status === "approved" ? "text-green-600 dark:text-green-400"
-                        : req.status === "rejected" ? "text-red-600 dark:text-red-400"
+                      <span className={`font-semibold ${
+                        status === "approved" ? "text-green-600 dark:text-green-400"
+                        : status === "rejected" ? "text-red-600 dark:text-red-400"
                         : "text-amber-600 dark:text-amber-400"
                       }`}>
-                        {req.status}
+                        {statusLabel}
                       </span>
                     </p>
+                    {status === "pending" && (
+                      <p className="text-xs leading-5 text-amber-700 dark:text-amber-300">
+                        Your request is with the instructor for review. You can cancel it while you wait.
+                      </p>
+                    )}
+                    {status === "approved" && (
+                      <p className="text-xs leading-5 text-emerald-700 dark:text-emerald-300">
+                        You’re approved. Open your learning dashboard to continue.
+                      </p>
+                    )}
+                    {status === "rejected" && (
+                      <p className="text-xs leading-5 text-red-700 dark:text-red-300">
+                        This request was declined. You can request again or choose another batch.
+                      </p>
+                    )}
+                    {status === "approved" && (
+                      <Button
+                        size="sm"
+                        className="mt-1 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                        onClick={handleOpenLearningDashboard}
+                      >
+                        Open learning dashboard
+                      </Button>
+                    )}
                     {/* Actions per status */}
-                    {req.status === "pending" && (
+                    {status === "pending" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -291,30 +385,35 @@ export default function BrowseBatches() {
                         Cancel Request
                       </Button>
                     )}
-                    {req.status === "rejected" && (
-                      <div className="flex gap-2 mt-1">
-                        <Button
-                          size="sm"
-                          className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs rounded-xl font-semibold shadow-sm"
-                          disabled={isSendingAgain === req.$id || isDeletingRequest === req.$id}
-                          onClick={() => handleSendAgain(req)}
-                        >
-                          {isSendingAgain === req.$id
-                            ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                            : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-                          Send Again
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 dark:text-red-400 text-xs"
-                          disabled={isDeletingRequest === req.$id || isSendingAgain === req.$id}
-                          onClick={() => handleDeleteRequest(req)}
-                        >
-                          {isDeletingRequest === req.$id
-                            ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                            : <Trash2 className="w-3.5 h-3.5 mr-1.5" />}
-                          Delete
+                    {status === "rejected" && (
+                      <div className="mt-1 space-y-2">
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs rounded-xl font-semibold shadow-sm"
+                            disabled={isSendingAgain === req.$id || isDeletingRequest === req.$id}
+                            onClick={() => handleSendAgain(req)}
+                          >
+                            {isSendingAgain === req.$id
+                              ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                            Send Again
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 dark:text-red-400 text-xs"
+                            disabled={isDeletingRequest === req.$id || isSendingAgain === req.$id}
+                            onClick={() => handleDeleteRequest(req)}
+                          >
+                            {isDeletingRequest === req.$id
+                              ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              : <Trash2 className="w-3.5 h-3.5 mr-1.5" />}
+                            Delete
+                          </Button>
+                        </div>
+                        <Button variant="outline" size="sm" className="w-full" onClick={scrollToAvailableBatches}>
+                          <Search className="w-3.5 h-3.5 mr-1.5" /> Browse other batches
                         </Button>
                       </div>
                     )}
@@ -327,7 +426,7 @@ export default function BrowseBatches() {
       )}
 
       {/* Available Batches Section */}
-      <div>
+      <div id="available-batches" className="scroll-mt-24">
         <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight flex items-center gap-2">
           <Briefcase className="w-5 h-5 text-amber-500" /> Available Batches
         </h2>
@@ -364,7 +463,7 @@ export default function BrowseBatches() {
             {batches.map((batch) => {
               const req = requests.find(r => r.batchId === batch.$id);
               const isJoinedInStore = userBatches?.some(b => b.$id === batch.$id);
-              const status = isJoinedInStore ? "approved" : (req ? req.status : null);
+              const status = isJoinedInStore ? "approved" : (req ? req.status?.toLowerCase() : null);
 
               return (
                 <div key={batch.$id} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-2xl flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-default group">
@@ -391,15 +490,18 @@ export default function BrowseBatches() {
                         <Clock className="w-4 h-4 mr-2" /> Request Sent
                       </Button>
                     ) : status === "rejected" ? (
-                      <Button
-                        onClick={() => handleRequestJoin(batch.$id)}
-                        disabled={isRequesting === batch.$id}
-                        variant="outline"
-                        className="w-full border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400"
-                      >
-                        {isRequesting === batch.$id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        Request Again
-                      </Button>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-red-700 dark:text-red-300">Request declined</p>
+                        <Button
+                          onClick={() => handleRequestJoin(batch.$id)}
+                          disabled={isRequesting === batch.$id}
+                          variant="outline"
+                          className="w-full border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400"
+                        >
+                          {isRequesting === batch.$id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                          Request Again
+                        </Button>
+                      </div>
                     ) : (
                       <Button
                         onClick={() => handleRequestJoin(batch.$id)}
@@ -417,6 +519,23 @@ export default function BrowseBatches() {
           </div>
         )}
       </div>
+
+      {userBatches?.length === 0 && (
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 p-5 dark:border-indigo-900/70 dark:bg-indigo-950/40 sm:flex sm:items-center sm:justify-between sm:gap-4">
+          <div>
+            <h2 className="font-bold text-indigo-950 dark:text-indigo-100">Ready to join a batch?</h2>
+            <p className="mt-1 text-sm text-indigo-800/80 dark:text-indigo-200/80">
+              Choose an institute and trade above, then request to join an available batch. Your instructor will review the request.
+            </p>
+          </div>
+          <a
+            href="#available-batches"
+            className="mt-3 inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 sm:mt-0"
+          >
+            Browse available batches
+          </a>
+        </div>
+      )}
       </div>
     </div>
   );

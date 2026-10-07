@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { selectUser } from "@/store/userSlice";
+import { selectUserBatches } from "@/store/activeBatchSlice";
 import { addProfile, selectProfile } from "@/store/profileSlice";
 import userProfileService from "@/services/auth/userProfileService";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
@@ -21,6 +22,7 @@ export default function TeacherOnboardingWizard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector(selectUser);
+  const userBatches = useSelector(selectUserBatches);
   const existingProfile = useSelector(selectProfile);
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -121,8 +123,7 @@ export default function TeacherOnboardingWizard() {
 
   const handleFinish = async () => {
     const ok = await saveProgress({}, currentStep + 1);
-    // Redirect to dashboard
-    if (ok) navigate("/arena");
+    if (ok) navigate(userBatches?.length > 0 ? "/arena" : "/batches/create");
   };
 
   if (!user) return null;
@@ -136,6 +137,9 @@ export default function TeacherOnboardingWizard() {
           <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-white mb-6">
             Instructor Setup
           </h1>
+          <p className="-mt-4 mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            Complete your profile to unlock batch creation. We’ll take you to create your first batch when setup is done.
+          </p>
 
           {/* Stepper */}
           <div className="flex items-center justify-between relative mb-2">

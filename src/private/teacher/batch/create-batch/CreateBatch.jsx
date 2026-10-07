@@ -16,6 +16,7 @@ import { useListCollegesQuery } from "@/store/api/collegeApi";
 import { useListTradesQuery } from "@/store/api/tradeApi";
 import { selectProfile } from "@/store/profileSlice";
 import { selectUser } from "@/store/userSlice";
+import { initializeActiveBatch } from "@/store/activeBatchSlice";
 import batchService from "@/services/batch/batchService";
 
 import Loader from "@/components/components/Loader";
@@ -39,6 +40,7 @@ const CreateBatch = () => {
 
   const user = useSelector(selectUser);
   const profile = useSelector(selectProfile);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   // Fetch colleges and trades via RTK Query
@@ -212,15 +214,20 @@ const CreateBatch = () => {
       } else {
         const createdBatch = await batchService.createBatch(batchPayload);
         setAllBatches((prev) => [...prev, createdBatch]);
+        if (user?.$id) {
+          dispatch(initializeActiveBatch({ userId: user.$id, role: user.labels }));
+        }
         toast.success("Batch created successfully!");
         
         reset();
 
-        navigate(
-          createdBatch?.$id
-            ? `/batches/${createdBatch.$id}/students`
-            : "/batches/students"
-        );
+        if (createdBatch?.$id) {
+          navigate(`/batches/${createdBatch.$id}/students`, {
+            state: { batchCreated: true },
+          });
+        } else {
+          navigate("/batches/students");
+        }
       }
     } catch (error) {
       console.error("Error submitting batch:", error);

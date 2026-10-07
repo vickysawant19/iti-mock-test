@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const handledLoginRef = useRef(false);
 
   const {
     register,
@@ -35,7 +36,7 @@ const Login = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (user && user.$id) {
+    if (user && user.$id && !handledLoginRef.current) {
       navigate("/arena", { replace: true });
     }
   }, [user, navigate]);
@@ -48,6 +49,7 @@ const Login = () => {
       if (!loggedInUser) {
         throw new Error("Unable to retrieve user details. Please try again.");
       }
+      handledLoginRef.current = true;
       dispatch(addUser({ data: loggedInUser, isLoading: false }));
 
       // Fetch user profile
@@ -60,12 +62,16 @@ const Login = () => {
         ? (res.isProfileComplete ?? checkProfileCompletion(res).isComplete)
         : false;
       const needsOnboarding = !res || (!isOnboarded && !isAdmin);
+      let userBatches = null;
 
       if (res) {
         // Dispatch profile + mark app as initialized before navigating
         // so ProtectedRoute's isInitialized gate is open when /arena renders
         dispatch(addProfile({ data: res, isLoading: false, isInitialized: true }));
-        dispatch(initializeActiveBatch(res));
+        const batchResult = await dispatch(initializeActiveBatch(res));
+        if (initializeActiveBatch.fulfilled.match(batchResult)) {
+          userBatches = batchResult.payload.userBatches || [];
+        }
       } else {
         // No profile — mark initialized before navigating to onboarding
         dispatch(addProfile({ isLoading: false, isInitialized: true }));
@@ -76,7 +82,11 @@ const Login = () => {
         navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", { replace: true });
       } else {
         toast.success("Welcome back! Login successful.");
-        navigate("/arena", { replace: true });
+        const noBatches = Array.isArray(userBatches) && userBatches.length === 0;
+        const destination = !isAdmin && noBatches
+          ? isTeacher ? "/batches/create" : "/browse-batches"
+          : "/arena";
+        navigate(destination, { replace: true });
       }
     } catch (error) {
       console.error("Login Error:", error);
@@ -112,7 +122,9 @@ const Login = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold tracking-tight text-center">Sign in to your account</CardTitle>
             <CardDescription className="text-center">
-              Enter your email and password to access your account
+              {location.state?.signupComplete
+                ? "Your account is ready. Sign in to continue, and we’ll take you to the right profile setup next."
+                : "Enter your email and password to access your account"}
             </CardDescription>
           </CardHeader>
           <CardContent>

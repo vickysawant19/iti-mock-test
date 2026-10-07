@@ -17,6 +17,7 @@ export const initializeActiveBatch = createAsyncThunk(
       const targetUserId = userProfile.userId || state.user?.data?.$id || userProfile.$id;
 
       let userBatches = [];
+      let studentRequests = [];
       let activeBatchId = null;
 
       // 1. Fetch relevant batches depending on user role
@@ -36,14 +37,13 @@ export const initializeActiveBatch = createAsyncThunk(
         }
 
         // Fetch student requests from batchRequests collection
-        let requests = [];
         try {
-          requests = await batchRequestService.getStudentRequests(targetUserId);
+          studentRequests = await batchRequestService.getStudentRequests(targetUserId);
         } catch (err) {
           console.warn("Error fetching studentRequests:", err);
         }
 
-        const approvedRequests = (requests || []).filter(req => req.status === "approved");
+        const approvedRequests = (studentRequests || []).filter(req => req.status === "approved");
 
         // Extract batch IDs safely from studentBatches
         const enrolledBatchIds = (studentBatches || [])
@@ -111,6 +111,7 @@ export const initializeActiveBatch = createAsyncThunk(
 
       return {
         userBatches,
+        studentRequests,
         activeBatchId,
         activeBatchData,
         isTeacher
@@ -169,14 +170,29 @@ const activeBatchSlice = createSlice({
     activeBatchId: null,
     activeBatchData: null,
     userBatches: [],
+    studentRequests: [],
     isLoading: true,
     error: null,
   },
   reducers: {
+    upsertStudentRequest: (state, action) => {
+      const request = action.payload;
+      if (!request?.$id) return;
+      const requestIndex = state.studentRequests.findIndex((item) => item.$id === request.$id);
+      if (requestIndex >= 0) {
+        state.studentRequests[requestIndex] = request;
+      } else {
+        state.studentRequests.push(request);
+      }
+    },
+    removeStudentRequest: (state, action) => {
+      state.studentRequests = state.studentRequests.filter((request) => request.$id !== action.payload);
+    },
     clearActiveBatch: (state) => {
       state.activeBatchId = null;
       state.activeBatchData = null;
       state.userBatches = [];
+      state.studentRequests = [];
       state.isLoading = false;
       state.error = null;
     }
@@ -191,6 +207,7 @@ const activeBatchSlice = createSlice({
       .addCase(initializeActiveBatch.fulfilled, (state, action) => {
         state.isLoading = false;
         state.userBatches = action.payload.userBatches;
+        state.studentRequests = action.payload.studentRequests || [];
         state.activeBatchId = action.payload.activeBatchId;
         state.activeBatchData = action.payload.activeBatchData;
       })
@@ -221,7 +238,7 @@ const activeBatchSlice = createSlice({
   }
 });
 
-export const { clearActiveBatch } = activeBatchSlice.actions;
+export const { clearActiveBatch, upsertStudentRequest, removeStudentRequest } = activeBatchSlice.actions;
 
 // Selectors
 export const selectActiveBatchId = (state) => state.activeBatch.activeBatchId;
