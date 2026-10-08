@@ -3,6 +3,11 @@ import { validateAppwriteKey } from './utils.js';
 import { handleUserAction } from './userActions.js';
 import { handleAttendanceAction } from './attendanceActions.js';
 import { handleBatchAction } from './batchActions.js';
+import {
+  handleNotificationCreatedEvent,
+  handleSendPush,
+  handleAttendanceReminderPush,
+} from './pushActions.js';
 
 export default async ({ req, res, log, error }) => {
   const debugLogs = [];
@@ -36,6 +41,17 @@ export default async ({ req, res, log, error }) => {
       .setKey(req.headers['x-appwrite-key']);
 
     const tablesDB = new TablesDB(client);
+
+    // ── Handle Scheduled Cron Trigger (Daily Attendance Push) ──
+    if (req.headers['x-appwrite-trigger'] === 'schedule') {
+      trace('Function triggered by schedule: broadcasting daily attendance push');
+      const result = await handleAttendanceReminderPush({}, tablesDB, trace);
+      return res.json({
+        success: true,
+        data: result,
+        logs: debugLogs,
+      });
+    }
 
     // ── Handle Presence Deletion Event ──
     if (event && event.startsWith('presences.') && event.endsWith('.delete')) {
@@ -86,6 +102,18 @@ export default async ({ req, res, log, error }) => {
       });
     }
 
+    // ── Handle Notification Created Event (Real Web Push Dispatch) ──
+    if (event && event.includes('notifications') && event.includes('create')) {
+      const notifDoc = req.bodyJson;
+      trace(`Notification create event received: id=${notifDoc?.$id} type=${notifDoc?.type}`);
+      const pushResult = await handleNotificationCreatedEvent(notifDoc, tablesDB, trace);
+      return res.json({
+        success: true,
+        data: pushResult,
+        logs: debugLogs,
+      });
+    }
+
     // ── Existing HTTP Execution Logic ──
     if (!req.bodyJson) {
       throw new Error('Request body is required');
@@ -97,10 +125,19 @@ export default async ({ req, res, log, error }) => {
     }
 
     const users = new Users(client);
-    let response;
+    let response = null;
+
+    // Push Notification Actions
+    if (action === 'send_push') {
+      response = await handleSendPush(req.bodyJson, tablesDB, trace);
+    } else if (action === 'send_attendance_reminder') {
+      response = await handleAttendanceReminderPush(req.bodyJson, tablesDB, trace);
+    }
 
     // Check if the action belongs to user management
-    response = await handleUserAction(action, req, res, users, log, trace);
+    if (response === null) {
+      response = await handleUserAction(action, req, res, users, log, trace);
+    }
 
     // Check if the action belongs to batch management
     if (response === null) {

@@ -9,6 +9,7 @@ import TestAssignedModal from "./TestAssignedModal";
 import AnnouncementBanner from "./AnnouncementBanner";
 import PushPermissionPrompt from "./PushPermissionPrompt";
 import notificationService from "@/services/notification/notification.service";
+import pushNotificationService from "@/services/notification/pushNotificationService";
 
 export default function NotificationModalManager() {
   const user = useSelector(selectUser);
@@ -46,6 +47,11 @@ export default function NotificationModalManager() {
       return; // Still in snooze window
     }
 
+    // Fast check: if marked today locally, skip network call
+    if (localStorage.getItem(`att_marked_${todayStr}_${user.$id}`) === "true") {
+      return;
+    }
+
     const checkTodayAttendance = async () => {
       try {
         const attendanceRes = await newAttendanceService.getStudentAttendanceByDateRange(
@@ -61,8 +67,20 @@ export default function NotificationModalManager() {
             (doc) => doc.attendanceStatus && doc.attendanceStatus !== "NOT_MARKED"
           );
 
-        if (!hasMarked) {
+        if (hasMarked) {
+          localStorage.setItem(`att_marked_${todayStr}_${user.$id}`, "true");
+        } else {
           setShowAttendanceModal(true);
+          // Fire a native OS/browser push notification if permission is granted
+          if (pushNotificationService.getPermission() === "granted") {
+            pushNotificationService
+              .showDirectNotification({
+                title: "📋 Attendance Reminder",
+                body: `You haven't marked your attendance yet today for ${activeBatch?.BatchName || activeBatch?.batchName || "your batch"}. Tap to mark now!`,
+                url: "/attendance/mark-my-attendance",
+              })
+              .catch((err) => console.warn("Attendance push notification warning:", err));
+          }
         }
       } catch (err) {
         console.warn("Non-fatal attendance check error:", err);

@@ -1,16 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { Bell, X, ShieldCheck, FileText, Calendar, Megaphone, Sparkles } from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectUserBatches } from "@/store/activeBatchSlice";
 import pushNotificationService from "@/services/notification/pushNotificationService";
+import webPushSubscriptionService from "@/services/notification/webPushSubscriptionService";
 import { toast } from "react-toastify";
 
 export default function PushPermissionPrompt({ user }) {
   const [showPrompt, setShowPrompt] = useState(false);
+  const userBatches = useSelector(selectUserBatches);
 
+  // Re-subscribe/update subscription whenever batch membership changes
+  useEffect(() => {
+    if (!user?.$id || !webPushSubscriptionService.isSupported()) return;
+    if (pushNotificationService.getPermission() !== "granted") return;
+    if (!userBatches?.length) return;
+
+    const batchIds = userBatches.map((b) => b.$id).filter(Boolean);
+    // Fire-and-forget: keep the stored subscription's batchIds up to date
+    webPushSubscriptionService.updateBatchIds(user.$id, batchIds).catch(() => {});
+  }, [user?.$id, userBatches]);
+
+  // Show permission prompt if not yet decided
   useEffect(() => {
     if (!user?.$id || !pushNotificationService.isSupported()) return;
 
-    // Check if permission is already granted or explicitly denied
     const permission = pushNotificationService.getPermission();
+
+    // If already granted but not yet subscribed via Web Push, subscribe silently
+    if (permission === "granted" && webPushSubscriptionService.isSupported()) {
+      const batchIds = (userBatches || []).map((b) => b.$id).filter(Boolean);
+      webPushSubscriptionService.subscribeAndSave(user.$id, batchIds).catch(() => {});
+      return;
+    }
+
     if (permission !== "default") return;
 
     // Check if user dismissed prompt recently
@@ -24,6 +47,7 @@ export default function PushPermissionPrompt({ user }) {
     }, 2500);
 
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.$id]);
 
   if (!showPrompt) return null;
@@ -32,7 +56,18 @@ export default function PushPermissionPrompt({ user }) {
     try {
       const perm = await pushNotificationService.requestPermission();
       if (perm === "granted") {
-        toast.success("Notifications enabled! You will receive instant practice & attendance alerts. 🎉");
+        // Subscribe to Web Push and persist to Appwrite for background delivery
+        const batchIds = (userBatches || []).map((b) => b.$id).filter(Boolean);
+        const saved = await webPushSubscriptionService.subscribeAndSave(user.$id, batchIds);
+
+        if (saved) {
+          toast.success(
+            "Notifications enabled! You'll receive alerts even when the browser is closed. 🎉",
+            { autoClose: 5000 }
+          );
+        } else {
+          toast.success("Notifications enabled! You will receive instant practice & attendance alerts. 🎉");
+        }
       }
     } catch (err) {
       console.warn("Push permission error:", err);
@@ -43,7 +78,6 @@ export default function PushPermissionPrompt({ user }) {
 
   const handleDismiss = () => {
     if (user?.$id) {
-      // Dismiss / snooze for 1 day (24 hours)
       const oneDayLater = Date.now() + 24 * 60 * 60 * 1000;
       localStorage.setItem(`push_prompt_dismissed_${user.$id}`, String(oneDayLater));
     }
@@ -81,14 +115,14 @@ export default function PushPermissionPrompt({ user }) {
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-2">
             <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-            <span>Instant Updates</span>
+            <span>Background Alerts</span>
           </div>
 
           <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
             Enable Push Notifications
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed max-w-sm">
-            Stay updated with real-time alerts on your device even when your browser or tab is closed.
+            Get real-time alerts delivered to your notification tray — even when the browser or app is completely closed.
           </p>
         </div>
 
@@ -109,8 +143,8 @@ export default function PushPermissionPrompt({ user }) {
               <Calendar className="w-4 h-4" />
             </div>
             <div className="text-left">
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Daily Attendance Check-In</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Never miss marking your college presence during college hours.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Daily Attendance Reminder</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Receive a push alert every morning to mark your presence — even if the app is closed.</p>
             </div>
           </div>
 

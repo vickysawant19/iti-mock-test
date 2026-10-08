@@ -30,7 +30,10 @@ export function useNotifications() {
 
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [studentBatchIds, setStudentBatchIds] = useState([]);
+  // Use a ref (not state) so updating enrolled batch IDs never causes the realtime
+  // subscription useEffect to tear down and re-subscribe (which would create a gap
+  // where real-time notifications can be missed).
+  const studentBatchIdsRef = useRef([]);
 
   const isTeacher = user?.labels?.includes("Teacher");
   const isStudent = user && !isTeacher && !user?.labels?.includes("admin");
@@ -117,7 +120,7 @@ export function useNotifications() {
           .filter(Boolean);
 
         const approvedBatches = [...new Set([...enrolledBatchIds, ...approvedReqBatches])];
-        setStudentBatchIds(approvedBatches);
+        studentBatchIdsRef.current = approvedBatches;
 
         let batchNotifs = [];
         if (approvedBatches.length > 0) {
@@ -232,7 +235,8 @@ export function useNotifications() {
 
               if (isStudent) {
                 // If batch-specific, only proceed if student is in this batch
-                if (studentBatchIds.length > 0 && doc.batchId && !studentBatchIds.includes(doc.batchId)) {
+                const batchIds = studentBatchIdsRef.current;
+                if (batchIds.length > 0 && doc.batchId && !batchIds.includes(doc.batchId)) {
                   return;
                 }
 
@@ -420,7 +424,7 @@ export function useNotifications() {
       closeSub(subNotifications);
       closeSub(subRequests);
     };
-  }, [isStudent, isTeacher, user?.$id, studentBatchIds, userBatches]);
+  }, [isStudent, isTeacher, user?.$id, userBatches]);
 
   const notifCount = notifications.length;
 

@@ -109,6 +109,26 @@ export const initializeActiveBatch = createAsyncThunk(
         activeBatchData = await batchService.getBatch(activeBatchId);
       }
 
+      // 4. Persist batch status, active batch, and completion flag locally for notifications & zero-delay UI
+      try {
+        if (userBatches.length > 0) {
+          localStorage.setItem(`setup_completed_${targetUserId}`, "true");
+          localStorage.setItem(`student_joined_batch_${targetUserId}`, "true");
+          localStorage.setItem(
+            `user_batches_${targetUserId}`,
+            JSON.stringify(
+              userBatches.map((b) => ({
+                $id: b.$id,
+                name: b.BatchName || b.batchName || b.name,
+                attendanceTime: b.attendanceTime,
+              }))
+            )
+          );
+        }
+      } catch (storageErr) {
+        console.warn("[activeBatchSlice] Local storage sync error:", storageErr);
+      }
+
       return {
         userBatches,
         studentRequests,
@@ -172,6 +192,7 @@ const activeBatchSlice = createSlice({
     userBatches: [],
     studentRequests: [],
     isLoading: true,
+    isInitialized: false,
     error: null,
   },
   reducers: {
@@ -194,6 +215,7 @@ const activeBatchSlice = createSlice({
       state.userBatches = [];
       state.studentRequests = [];
       state.isLoading = false;
+      state.isInitialized = false;
       state.error = null;
     }
   },
@@ -206,6 +228,7 @@ const activeBatchSlice = createSlice({
       })
       .addCase(initializeActiveBatch.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.isInitialized = true;
         state.userBatches = action.payload.userBatches;
         state.studentRequests = action.payload.studentRequests || [];
         state.activeBatchId = action.payload.activeBatchId;
@@ -213,6 +236,7 @@ const activeBatchSlice = createSlice({
       })
       .addCase(initializeActiveBatch.rejected, (state, action) => {
         state.isLoading = false;
+        state.isInitialized = true;
         state.error = action.payload;
       })
       // Set Active Branch cases
@@ -246,5 +270,6 @@ export const selectActiveBatchData = (state) => state.activeBatch.activeBatchDat
 export const selectActiveBatch = (state) => state.activeBatch.activeBatchData;
 export const selectUserBatches = (state) => state.activeBatch.userBatches;
 export const selectActiveBatchLoading = (state) => state.activeBatch.isLoading;
+export const selectActiveBatchInitialized = (state) => state.activeBatch.isInitialized;
 
 export default activeBatchSlice.reducer;

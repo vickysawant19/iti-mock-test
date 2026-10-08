@@ -505,6 +505,21 @@ export const useStudentAttendance = (profile) => {
       setLastUpdatedDate(normalizedDate);
       setTimeout(() => setLastUpdatedDate(null), 2200);
 
+      // Persist attendance marked status locally & to SW cache for background notification silencing
+      try {
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        if (normalizedDate === todayStr) {
+          localStorage.setItem(`att_marked_${todayStr}_${profile?.userId}`, "true");
+          if ("caches" in window) {
+            caches.open("iti-sw-state").then((c) => {
+              c.put(`att-marked-${todayStr}`, new Response("true")).catch(() => {});
+            });
+          }
+        }
+      } catch {
+        // Safe ignore
+      }
+
       toast.success("Attendance saved successfully!");
       return result;
     } catch (error) {

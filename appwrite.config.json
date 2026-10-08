@@ -57,9 +57,10 @@
             "enabled": true,
             "logging": true,
             "events": [
-                "presences.*.delete"
+                "presences.*.delete",
+                "databases.*.tables.notifications.rows.*.create"
             ],
-            "schedule": "",
+            "schedule": "0 4 * * 1-6",
             "timeout": 15,
             "commands": "npm install",
             "scopes": [
@@ -181,6 +182,101 @@
         }
     ],
     "tables": [
+        {
+            "$id": "push_subscriptions",
+            "$permissions": [
+                "read(\"users\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")",
+                "read(\"any\")",
+                "create(\"any\")"
+            ],
+            "databaseId": "itimocktest",
+            "name": "push_subscriptions",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "batchIds",
+                    "type": "string",
+                    "required": false,
+                    "array": true,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "endpoint",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 512,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "subscriptionJson",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 4096,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 64,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "updatedAt",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 64,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_endpoint",
+                    "type": "key",
+                    "status": "available",
+                    "attributes": [
+                        "endpoint"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                },
+                {
+                    "key": "idx_userId",
+                    "type": "key",
+                    "status": "available",
+                    "attributes": [
+                        "userId"
+                    ],
+                    "orders": [
+                        "ASC"
+                    ]
+                }
+            ]
+        },
         {
             "$id": "667e7755002efc107f60",
             "$permissions": [

@@ -232,7 +232,7 @@ function App() {
     {
       id: "find-batch",
       label: "Find a batch",
-      complete: Boolean(hasSubmittedRequest || hasFoundBatch),
+      complete: Boolean(userBatches.length > 0 || hasSubmittedRequest || hasFoundBatch),
       path: "/browse-batches",
       actionLabel: "Find a batch",
       description: "Browse available batches by institution and trade.",
@@ -240,7 +240,7 @@ function App() {
     {
       id: "request-join",
       label: "Request to join",
-      complete: Boolean(hasSubmittedRequest && !hasPendingBatchRequest),
+      complete: Boolean(userBatches.length > 0 || (hasSubmittedRequest && !hasPendingBatchRequest)),
       pending: Boolean(hasPendingBatchRequest && userBatches.length === 0),
       path: "/browse-batches",
       actionLabel: hasPendingBatchRequest ? "Track request" : "Request to join",
@@ -255,11 +255,30 @@ function App() {
   const isAllComplete = completedStepsCount === setupSteps.length;
   const currentStep = setupSteps.find((step) => !step.complete) || setupSteps[setupSteps.length - 1];
 
+  // Instant check from localStorage to prevent split-second flash on page reload
+  const isLocallySetupComplete = Boolean(
+    user?.$id && (
+      localStorage.getItem(`setup_completed_${user.$id}`) === "true" ||
+      localStorage.getItem(`student_joined_batch_${user.$id}`) === "true" ||
+      Boolean(localStorage.getItem(`activeBatch_${user.$id}`))
+    )
+  );
+
+  // If complete, persist so subsequent reloads never flash
+  useEffect(() => {
+    if (user?.$id && (isAllComplete || userBatches.length > 0)) {
+      localStorage.setItem(`setup_completed_${user.$id}`, "true");
+    }
+  }, [user?.$id, isAllComplete, userBatches.length]);
+
   const showSetupPrompt = Boolean(
     !isLoading &&
+    activeBatchState.isInitialized &&
+    !activeBatchState.isLoading &&
     user &&
     !isAdmin &&
     !isOnboardingPage &&
+    !isLocallySetupComplete &&
     !isAllComplete &&
     !isSetupPromptDismissed
   );

@@ -50,6 +50,11 @@ const conf = {
   achievementsCollectionId:
     import.meta.env.VITE_ACHIEVEMENTS_COLLECTION_ID || "student_achievements",
   challengesProgressCollectionId: "batch_challenge_progress",
+  pushSubscriptionsCollectionId:
+    import.meta.env.VITE_PUSH_SUBSCRIPTIONS_COLLECTION_ID || "push_subscriptions",
+  vapidPublicKey:
+    import.meta.env.VITE_VAPID_PUBLIC_KEY ||
+    "BJSKTMzlVkGsv9gEQlbHmr2yDg5LzMXhbjhkAzBfi1zEW5RC5PWUBfHsKTWY7bwlCWd4cQMo6GLP32PDJh3EDTk",
 };
 
 export default conf;
