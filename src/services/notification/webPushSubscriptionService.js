@@ -74,7 +74,7 @@ class WebPushSubscriptionService {
               if (sw.state === "activated") resolve();
             });
           }
-          setTimeout(resolve, 2000);
+          setTimeout(resolve, 5000);
         });
       }
 
@@ -86,50 +86,137 @@ class WebPushSubscriptionService {
   }
 
   /**
-   * Gets the active SW registration (auto-registers if missing).
+   * Gets the active SW registration (auto-registers and waits for ready state).
    */
-  async _getRegistration(timeoutMs = 3000) {
+  async _getRegistration(timeoutMs = 15000) {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
     try {
       let reg = await navigator.serviceWorker.getRegistration();
       if (reg?.active) return reg;
 
-      reg = await this.registerServiceWorker();
-      if (reg?.active) return reg;
+      // If registered but installing/waiting, give it time to activate
+      if (reg && (reg.installing || reg.waiting)) {
+        await new Promise((resolve) => {
+          const sw = reg.installing || reg.waiting;
+          if (sw) {
+            sw.addEventListener("statechange", () => {
+              if (sw.state === "activated") resolve();
+            });
+          }
+          setTimeout(resolve, 5000);
+        });
+        if (reg.active) return reg;
+      }
 
+      // If no registration at all, actively trigger registration
+      if (!reg) {
+        reg = await this.registerServiceWorker();
+        if (reg?.active) return reg;
+      }
+
+      // Race with navigator.serviceWorker.ready
       const swReady = navigator.serviceWorker.ready;
       const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
-      return await Promise.race([swReady, timeout]);
+      const readyReg = await Promise.race([swReady, timeout]);
+      if (readyReg) return readyReg;
+
+      return await navigator.serviceWorker.getRegistration();
     } catch {
       return null;
     }
   }
 
   /**
-   * Subscribe this browser to Web Push.
-   * Returns the PushSubscription object, or null if unsupported/denied.
+   * Subscribe this browser to Web Push with robust Android Chrome support.
+   * Returns the PushSubscription object, or throws a detailed descriptive error.
    */
-  async subscribe() {
-    if (!this.isSupported()) return null;
-    if (Notification.permission !== "granted") return null;
+  async subscribe(options = {}) {
+    const forceNew = options?.forceNew || false;
 
-    const registration = await this._getRegistration();
-    if (!registration) return null;
+    if (!this.isSupported()) {
+      throw new Error("Web Push is not supported on this browser or platform.");
+    }
+    if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+      throw new Error(
+        `Notification permission is "${Notification.permission}". Please allow notifications in site settings and Android App settings.`
+      );
+    }
+
+    const registration = await this._getRegistration(15000);
+    if (!registration) {
+      throw new Error(
+        "Service Worker is not ready or failed to activate. Please reload the page."
+      );
+    }
+
+    // Ensure registration is active before invoking PushManager
+    if (!registration.active && (registration.installing || registration.waiting)) {
+      await new Promise((resolve) => {
+        const sw = registration.installing || registration.waiting;
+        if (sw) {
+          sw.addEventListener("statechange", () => {
+            if (sw.state === "activated") resolve();
+          });
+        }
+        setTimeout(resolve, 5000);
+      });
+    }
 
     try {
-      // Check if already subscribed
       const existing = await registration.pushManager.getSubscription();
-      if (existing) return existing;
+      if (existing && !forceNew) {
+        return existing;
+      }
 
-      // Create new subscription
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+      if (existing && forceNew) {
+        try {
+          await existing.unsubscribe();
+          // Android Chrome Google Play Services needs a moment to clear FCM registration
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        } catch (unsubErr) {
+          console.warn("[WebPush] Existing subscription unsubscribe warning:", unsubErr);
+        }
+      }
+
+      const keyArray = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+
+      let subscription = null;
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: keyArray,
+        });
+      } catch (firstErr) {
+        // Fallback for Chromium variants / WebViews that prefer ArrayBuffer
+        if (keyArray.buffer) {
+          try {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: keyArray.buffer,
+            });
+          } catch {
+            throw firstErr;
+          }
+        } else {
+          throw firstErr;
+        }
+      }
+
       return subscription;
     } catch (err) {
-      console.warn("[WebPush] subscribe() failed:", err);
-      return null;
+      console.error("[WebPush] subscribe() failed:", err);
+      let helpfulMsg = err.message || "Failed to subscribe to Web Push";
+      if (err.name === "AbortError" || helpfulMsg.toLowerCase().includes("push service error")) {
+        helpfulMsg =
+          "Android Push Service error: Google Play Services could not register for push. Check that Chrome notifications are allowed in Android OS Settings > Apps > Chrome > Notifications, and Google Play Services is active.";
+      } else if (err.name === "NotAllowedError") {
+        helpfulMsg =
+          "Notification permission was blocked or denied in browser settings.";
+      } else if (err.name === "InvalidStateError") {
+        helpfulMsg =
+          "Service Worker activation incomplete. Please refresh the page and try again.";
+      }
+      throw new Error(helpfulMsg);
     }
   }
 
@@ -394,6 +481,7 @@ class WebPushSubscriptionService {
         }
       } catch (err) {
         console.warn("[WebPush] getSubscriptionDetails error:", err);
+        details.error = err.message || String(err);
       }
     } else {
       details.swStatus = "No Service Worker Registered";
@@ -407,11 +495,16 @@ class WebPushSubscriptionService {
    * creates a brand new subscription with current VAPID keys, and syncs to Appwrite DB.
    */
   async forceResubscribe(userId, batchIds = []) {
+    // 1. Unsubscribe any existing subscription
     await this.unsubscribe();
-    const sub = await this.subscribe();
+    // 2. Give Android Google Play Services time to release the FCM token
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 3. Subscribe with forceNew: true
+    const sub = await this.subscribe({ forceNew: true });
     if (!sub) {
-      throw new Error("Failed to create new browser push subscription with current VAPID key.");
+      throw new Error("Failed to create new browser push subscription.");
     }
+    // 4. Save to Appwrite
     if (userId) {
       await this.saveSubscription(sub, userId, batchIds);
     }

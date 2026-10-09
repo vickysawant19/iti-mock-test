@@ -171,6 +171,7 @@ Batches Enrolled: ${(userBatches || []).map((b) => b.BatchName || b.name || b.$i
 - Push Endpoint: ${subDetails?.endpoint || "None"}
 - Key p256dh: ${subDetails?.keys?.p256dh || "None"}
 - Key auth: ${subDetails?.keys?.auth || "None"}
+${subDetails?.error ? `- Device Error: ${subDetails.error}\n` : ""}
 
 [LAYER 4: APPWRITE DATABASE SYNC (push_subscriptions)]
 - Synced in Database: ${subDetails?.isSyncedWithDb ? "YES" : "NO"}
@@ -475,6 +476,11 @@ END OF REPORT
               </div>
               <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">PushManager</h3>
               <p className="text-xs text-slate-500 mt-0.5">VAPID device subscription</p>
+              {subDetails?.error && !subDetails?.isSubscribed && (
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-2 font-medium bg-rose-50 dark:bg-rose-950/40 p-2 rounded-lg border border-rose-200 dark:border-rose-900/50">
+                  ⚠️ {subDetails.error}
+                </p>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span
@@ -554,6 +560,16 @@ END OF REPORT
                 {serverVapid?.totalSubscriptions ?? "?"} devices
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* ── Android / Mobile Tips Banner ── */}
+        <div className="mt-4 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 flex items-start gap-3">
+          <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+            <span className="font-bold text-amber-950 dark:text-amber-100">Android Chrome Notice: </span>
+            On Android 13+, Chrome requires system notification permission in addition to site permission. If push subscription fails on mobile, check{" "}
+            <strong>Android Settings &gt; Apps &gt; Chrome &gt; Notifications (Allow)</strong> and ensure Google Play Services has background sync enabled.
           </div>
         </div>
       </div>
