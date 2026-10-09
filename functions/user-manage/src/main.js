@@ -7,6 +7,7 @@ import {
   handleNotificationCreatedEvent,
   handleSendPush,
   handleAttendanceReminderPush,
+  handleVapidDiagnostics,
 } from './pushActions.js';
 
 export default async ({ req, res, log, error }) => {
@@ -132,6 +133,8 @@ export default async ({ req, res, log, error }) => {
       response = await handleSendPush(req.bodyJson, tablesDB, trace);
     } else if (action === 'send_attendance_reminder') {
       response = await handleAttendanceReminderPush(req.bodyJson, tablesDB, trace);
+    } else if (action === 'diagnose_vapid') {
+      response = await handleVapidDiagnostics(req.bodyJson, tablesDB, trace);
     }
 
     // Check if the action belongs to user management

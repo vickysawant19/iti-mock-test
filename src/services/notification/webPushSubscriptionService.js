@@ -12,7 +12,7 @@
  */
 
 import { ID, Query, Permission, Role } from "appwrite";
-import { tablesDb } from "../core/appwriteClient";
+import { tablesDb, functions } from "../core/appwriteClient";
 import conf from "../../config/config";
 
 const COLLECTION_ID = conf.pushSubscriptionsCollectionId || "push_subscriptions";
@@ -51,11 +51,52 @@ class WebPushSubscriptionService {
   }
 
   /**
-   * Gets the active SW registration (waits up to 3 s).
+   * Actively registers the service worker if not already registered.
+   * Tries Workbox /sw.js, and falls back to /custom-sw.js.
+   */
+  async registerServiceWorker() {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+    try {
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (!reg || !reg.active) {
+        try {
+          reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        } catch {
+          reg = await navigator.serviceWorker.register("/custom-sw.js", { scope: "/" });
+        }
+      }
+
+      if (reg && !reg.active && (reg.installing || reg.waiting)) {
+        await new Promise((resolve) => {
+          const sw = reg.installing || reg.waiting;
+          if (sw) {
+            sw.addEventListener("statechange", () => {
+              if (sw.state === "activated") resolve();
+            });
+          }
+          setTimeout(resolve, 2000);
+        });
+      }
+
+      return reg;
+    } catch (err) {
+      console.warn("[WebPush] registerServiceWorker error:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Gets the active SW registration (auto-registers if missing).
    */
   async _getRegistration(timeoutMs = 3000) {
-    if (!("serviceWorker" in navigator)) return null;
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
     try {
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (reg?.active) return reg;
+
+      reg = await this.registerServiceWorker();
+      if (reg?.active) return reg;
+
       const swReady = navigator.serviceWorker.ready;
       const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
       return await Promise.race([swReady, timeout]);
@@ -271,6 +312,212 @@ class WebPushSubscriptionService {
       localStorage.setItem(`wp_batchIds_${userId}`, JSON.stringify(batchIds));
     } catch (err) {
       console.warn("[WebPush] updateBatchIds() error:", err);
+    }
+  }
+
+  /**
+   * Returns configured client-side VAPID Public Key
+   */
+  getVapidPublicKey() {
+    return VAPID_PUBLIC_KEY;
+  }
+
+  /**
+   * Returns comprehensive diagnostic details of the current browser's
+   * PushManager registration, VAPID key pairing, and Appwrite DB sync state.
+   */
+  async getSubscriptionDetails(userId) {
+    const details = {
+      isSupported: this.isSupported(),
+      permission: typeof Notification !== "undefined" ? Notification.permission : "unsupported",
+      vapidPublicKey: VAPID_PUBLIC_KEY,
+      isVapidKeyValid: Boolean(VAPID_PUBLIC_KEY && VAPID_PUBLIC_KEY.length >= 80),
+      swStatus: "Unknown",
+      swScope: null,
+      isSubscribed: false,
+      subscription: null,
+      endpoint: null,
+      provider: "None",
+      keys: { p256dh: null, auth: null },
+      dbRecord: null,
+      isSyncedWithDb: false,
+    };
+
+    if (!details.isSupported) return details;
+
+    const registration = await this._getRegistration();
+    if (registration) {
+      details.swStatus = registration.active ? "Active" : "Registered (Not Active)";
+      details.swScope = registration.scope;
+      try {
+        const sub = await registration.pushManager.getSubscription();
+        if (sub) {
+          details.isSubscribed = true;
+          details.subscription = sub;
+          details.endpoint = sub.endpoint;
+
+          // Identify Push Provider
+          if (sub.endpoint.includes("fcm.googleapis.com")) {
+            details.provider = "Google FCM (Chrome / Edge / Android)";
+          } else if (sub.endpoint.includes("mozilla.com")) {
+            details.provider = "Mozilla Autopush (Firefox)";
+          } else if (sub.endpoint.includes("apple.com") || sub.endpoint.includes("push.apple.com")) {
+            details.provider = "Apple APNs (Safari / iOS / macOS)";
+          } else if (sub.endpoint.includes("windows.com")) {
+            details.provider = "Windows WNS";
+          } else {
+            details.provider = "Web Push Provider";
+          }
+
+          // Extract public keys
+          const rawSub = sub.toJSON();
+          details.keys = {
+            p256dh: rawSub.keys?.p256dh || null,
+            auth: rawSub.keys?.auth || null,
+          };
+
+          // Check if recorded in Appwrite push_subscriptions collection
+          try {
+            const listRes = await tablesDb.listRows({
+              databaseId: DATABASE_ID,
+              tableId: COLLECTION_ID,
+              queries: [Query.equal("endpoint", sub.endpoint), Query.limit(1)],
+            });
+            const rows = listRes?.rows || listRes?.documents || [];
+            if (rows.length > 0) {
+              details.dbRecord = rows[0];
+              details.isSyncedWithDb = true;
+            }
+          } catch (dbErr) {
+            console.warn("[WebPush] Error checking DB subscription:", dbErr);
+          }
+        }
+      } catch (err) {
+        console.warn("[WebPush] getSubscriptionDetails error:", err);
+      }
+    } else {
+      details.swStatus = "No Service Worker Registered";
+    }
+
+    return details;
+  }
+
+  /**
+   * Force unregisters existing subscription, clears stale state,
+   * creates a brand new subscription with current VAPID keys, and syncs to Appwrite DB.
+   */
+  async forceResubscribe(userId, batchIds = []) {
+    await this.unsubscribe();
+    const sub = await this.subscribe();
+    if (!sub) {
+      throw new Error("Failed to create new browser push subscription with current VAPID key.");
+    }
+    if (userId) {
+      await this.saveSubscription(sub, userId, batchIds);
+    }
+    return sub;
+  }
+
+  /**
+   * Queries the Appwrite user-manage function for live server-side VAPID status & stats.
+   */
+  async getServerVapidDiagnostics() {
+    try {
+      const response = await functions.createExecution({
+        functionId: conf.userManageFunctionId,
+        body: JSON.stringify({ action: "diagnose_vapid" }),
+        async: false,
+      });
+
+      const resData = JSON.parse(response.responseBody || "{}");
+      return {
+        success: resData.success || false,
+        data: resData.data || {},
+        logs: resData.logs || [],
+      };
+    } catch (err) {
+      console.warn("[WebPush] getServerVapidDiagnostics error:", err);
+      throw err;
+    }
+  }
+
+  /**
+   * Dispatches a real Web Push notification from the Appwrite server (user-manage function).
+   * Supports:
+   *  - Direct subscription push (to current device)
+   *  - User ID targeting
+   *  - Batch broadcast
+   *  - delaySeconds (e.g. 10s, 15s) so the admin can CLOSE THE BROWSER and test background OS delivery!
+   */
+  async testServerPush({
+    delaySeconds = 0,
+    title = "ITI Mitra Practice Alert 🔔",
+    body = "Server push delivered successfully even with browser closed!",
+    url = "/test-notifications",
+    tag = "iti-admin-test",
+    subscription = null,
+    userId = null,
+    batchIds = [],
+    runAsync = false,
+  }) {
+    let subJson = null;
+    if (subscription) {
+      subJson = typeof subscription.toJSON === "function" ? subscription.toJSON() : subscription;
+    } else {
+      // Default to current browser's subscription if available
+      const reg = await this._getRegistration();
+      const currentSub = await reg?.pushManager?.getSubscription();
+      if (currentSub) {
+        subJson = currentSub.toJSON();
+      }
+    }
+
+    const payload = {
+      action: "send_push",
+      title,
+      body,
+      url,
+      tag,
+      delaySeconds: Number(delaySeconds) || 0,
+    };
+
+    if (subJson) {
+      payload.subscription = subJson;
+      payload.subscriptionJson = typeof subJson === "string" ? subJson : JSON.stringify(subJson);
+    } else if (userId) {
+      payload.userId = userId;
+    } else if (batchIds && batchIds.length > 0) {
+      payload.batchIds = batchIds;
+    } else {
+      throw new Error(
+        "No target specified. Please ensure your device is subscribed or provide a userId / batchId."
+      );
+    }
+
+    try {
+      const response = await functions.createExecution({
+        functionId: conf.userManageFunctionId,
+        body: JSON.stringify(payload),
+        async: runAsync,
+      });
+
+      if (runAsync) {
+        return {
+          success: true,
+          status: "queued",
+          message: `Execution queued on server! Push will be delivered in ${delaySeconds} seconds.`,
+        };
+      }
+
+      const resData = JSON.parse(response.responseBody || "{}");
+      return {
+        success: resData.success || false,
+        data: resData.data || {},
+        logs: resData.logs || [],
+      };
+    } catch (err) {
+      console.error("[WebPush] testServerPush execution failed:", err);
+      throw err;
     }
   }
 }

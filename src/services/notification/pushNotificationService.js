@@ -3,6 +3,7 @@
  * Handles browser Web Push permission requests, Service Worker registration,
  * and background notification dispatch for ITI Mitra.
  */
+import webPushSubscriptionService from "./webPushSubscriptionService";
 
 class PushNotificationService {
   isSupported() {
@@ -114,11 +115,37 @@ class PushNotificationService {
         });
       }, delaySeconds * 1000);
 
-      return `Notification scheduled in ${delaySeconds} seconds. You can minimize or switch tabs now!`;
+      return `Local notification scheduled in ${delaySeconds} seconds. Note: Requires this tab to remain open. For closed-browser testing, use Server Web Push.`;
     }
 
     await this.showDirectNotification({ title, body, url });
     return "Test notification sent! Check your system notification banner/center.";
+  }
+
+  /**
+   * Dispatches a real Web Push notification from the Appwrite server (user-manage function).
+   * Works when the browser is COMPLETELY CLOSED because it goes through FCM / VAPID!
+   */
+  async sendServerPushNotification({
+    delaySeconds = 0,
+    title = "ITI Mitra Practice Alert 🔔",
+    body = "Server push delivered successfully even with browser closed!",
+    url = "/test-notifications",
+    subscription = null,
+    userId = null,
+    batchIds = [],
+    runAsync = false,
+  } = {}) {
+    return await webPushSubscriptionService.testServerPush({
+      delaySeconds,
+      title,
+      body,
+      url,
+      subscription,
+      userId,
+      batchIds,
+      runAsync,
+    });
   }
 }
 

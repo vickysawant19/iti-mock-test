@@ -39,6 +39,7 @@ self.addEventListener('push', function (event) {
       } catch {}
     }
 
+    console.log('[custom-sw.js] Background Push event received:', data);
     const title = data.title || 'ITI Mitra';
     const options = {
       body: data.body || 'You have a new update.',
@@ -47,7 +48,7 @@ self.addEventListener('push', function (event) {
       vibrate: data.vibrate || [200, 100, 200],
       tag,
       renotify: true,
-      requireInteraction: data.requireInteraction || false,
+      requireInteraction: data.requireInteraction !== undefined ? data.requireInteraction : true,
       data: {
         url: data.url || '/arena',
         ...data,

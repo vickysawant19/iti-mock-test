@@ -15,6 +15,7 @@ import {
   FaRegCalendarCheck,
   FaUserPlus,
   FaUserSecret,
+  FaBell,
 } from "react-icons/fa";
 import { 
   MdAddCard, 
@@ -166,6 +167,7 @@ export const menuConfig = [
       { label: "Questions", path: "/add-bulk-questions", icon: Group, requiresAuth: true },
       { label: "Colleges", path: "/manage-colleges", icon: Building2, requiresAuth: true },
       { label: "Trades", path: "/manage-trades", icon: Briefcase, requiresAuth: true },
+      { label: "Notification Tester", path: "/test-notifications", icon: FaBell, requiresAuth: true },
     ],
   },
 ];
@@ -188,6 +190,7 @@ export const pathToHeading = {
   "/manage-questions": "Manage Questions",
   "/manage-colleges": "Manage Colleges",
   "/manage-trades": "Manage Trades",
+  "/test-notifications": "Notification Diagnostics & Push Tester",
   "/mock-exam": "Create Mock Exam",
   "/attain-test": "Take Mock Exam",
   "/all-mock-tests": "My Mock Exams",

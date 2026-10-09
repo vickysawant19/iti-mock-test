@@ -69,6 +69,11 @@ export default defineConfig({
           },
         ],
       },
+      devOptions: {
+        enabled: true,
+        type: "module",
+        navigateFallback: "/index.html",
+      },
     }),
     // Dev middleware to serve sitemap.xml
     {
