@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/userSlice";
+import { selectUserBatches } from "@/store/activeBatchSlice";
+import webPushSubscriptionService from "@/services/notification/webPushSubscriptionService";
+import UnblockNotificationModal from "./UnblockNotificationModal";
 import notificationService from "@/services/notification/notification.service";
 import pushNotificationService from "@/services/notification/pushNotificationService";
 import { Functions } from "appwrite";
@@ -156,6 +159,8 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
   const navigate = useNavigate();
   const panelRef = useRef(null);
   const user = useSelector(selectUser);
+  const userBatches = useSelector(selectUserBatches);
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
   const isTeacher = user?.labels?.includes("Teacher");
   const [permission, setPermission] = useState(pushNotificationService.getPermission());
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -164,23 +169,42 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return;
     setPermission(pushNotificationService.getPermission());
+    const unsubPerm = pushNotificationService.onPermissionChange((newPerm) => {
+      setPermission(newPerm);
+      if (newPerm === "granted" && user?.$id) {
+        const batchIds = (userBatches || []).map((b) => b.$id).filter(Boolean);
+        webPushSubscriptionService.subscribeAndSave(user.$id, batchIds).catch(() => {});
+      }
+    });
     const handleOutside = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         onClose();
       }
     };
     document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [isOpen, onClose]);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      unsubPerm();
+    };
+  }, [isOpen, onClose, user?.$id, userBatches]);
 
   const handleEnablePush = async () => {
     try {
+      const current = pushNotificationService.getPermission();
+      if (current === "denied") {
+        setShowUnblockModal(true);
+        return;
+      }
       const perm = await pushNotificationService.requestPermission();
       setPermission(perm);
       if (perm === "granted") {
+        if (user?.$id) {
+          const batchIds = (userBatches || []).map((b) => b.$id).filter(Boolean);
+          webPushSubscriptionService.subscribeAndSave(user.$id, batchIds).catch(() => {});
+        }
         toast.success("Push notifications enabled! 🎉");
       } else {
-        toast.warn("Notification permission was not granted.");
+        setShowUnblockModal(true);
       }
     } catch (err) {
       toast.error(err.message || "Failed to enable notifications");
@@ -276,7 +300,40 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
       )}
 
       {/* Footer: Notification Permission Prompt (shown only if not granted) */}
-      {permission !== "granted" && (
+      {permission === "granted" ? (
+        <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border-t border-emerald-100 dark:border-emerald-900/50 text-xs flex items-center justify-between">
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Alerts Active</span>
+          </span>
+          <button
+            onClick={() => handleSendTest(0)}
+            disabled={isSendingTest}
+            className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer"
+          >
+            {isSendingTest ? "Sending..." : "Test Alert"}
+          </button>
+        </div>
+      ) : permission === "denied" ? (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-900/60 text-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+              <span>Notifications Blocked</span>
+            </span>
+          </div>
+          <p className="text-[11px] text-amber-700 dark:text-amber-300 mb-2 leading-tight">
+            Chrome or Android blocked notifications for ITI Mitra.
+          </p>
+          <button
+            onClick={() => setShowUnblockModal(true)}
+            className="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span>How to Unblock in 3 Taps</span>
+          </button>
+        </div>
+      ) : (
         <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-xs">
           <div className="flex items-center justify-between mb-2">
             <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
@@ -294,6 +351,13 @@ export default function NotificationPanel({ notifications, isOpen, onClose }) {
           </button>
         </div>
       )}
+      <UnblockNotificationModal
+        isOpen={showUnblockModal}
+        onClose={() => setShowUnblockModal(false)}
+        user={user}
+        userBatches={userBatches}
+        onGranted={() => setPermission("granted")}
+      />
     </div>
   );
 }

@@ -24,6 +24,51 @@ class PushNotificationService {
   }
 
   /**
+   * Listens for runtime permission changes (e.g. user toggles Allow in Chrome Site Settings or Android App Settings)
+   */
+  onPermissionChange(callback) {
+    if (typeof window === "undefined") return () => {};
+
+    let lastKnown = this.getPermission();
+    let disposed = false;
+    let permObj = null;
+
+    if ("permissions" in navigator && typeof navigator.permissions.query === "function") {
+      navigator.permissions
+        .query({ name: "notifications" })
+        .then((status) => {
+          if (disposed) return;
+          permObj = status;
+          status.onchange = () => {
+            const current = this.getPermission();
+            if (current !== lastKnown) {
+              lastKnown = current;
+              callback(current);
+            }
+          };
+        })
+        .catch(() => {});
+    }
+
+    // Also verify when user returns to this tab from phone settings or browser menu
+    const handleFocus = () => {
+      const current = this.getPermission();
+      if (current !== lastKnown) {
+        lastKnown = current;
+        callback(current);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      disposed = true;
+      if (permObj) permObj.onchange = null;
+      window.removeEventListener("focus", handleFocus);
+    };
+  }
+
+  /**
    * Helper to get active SW registration with a timeout so it never hangs
    */
   async getServiceWorkerRegistration(timeoutMs = 1500) {

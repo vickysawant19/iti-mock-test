@@ -21,6 +21,21 @@ export default function PushPermissionPrompt({ user }) {
     webPushSubscriptionService.updateBatchIds(user.$id, batchIds).catch(() => {});
   }, [user?.$id, userBatches]);
 
+  // Auto-subscribe immediately if user unblocks/allows in browser or phone settings
+  useEffect(() => {
+    if (!user?.$id || !webPushSubscriptionService.isSupported()) return;
+
+    const unsub = pushNotificationService.onPermissionChange((perm) => {
+      if (perm === "granted") {
+        const batchIds = (userBatches || []).map((b) => b.$id).filter(Boolean);
+        webPushSubscriptionService.subscribeAndSave(user.$id, batchIds).catch(() => {});
+        setShowPrompt(false);
+      }
+    });
+
+    return () => unsub();
+  }, [user?.$id, userBatches]);
+
   // Show permission prompt if not yet decided
   useEffect(() => {
     if (!user?.$id || !pushNotificationService.isSupported()) return;
