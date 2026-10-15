@@ -3,7 +3,7 @@ import { Clock, Award, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import itimitraLogo from "@/assets/itimitra-logo.webp";
 
-const MockTestGreet = ({ mockTest, handleStartExam, onShowInstructions }) => {
+const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, onShowInstructions }) => {
   const [accepted, setAccepted] = React.useState(false);
 
   function toHoursAndMinutes(totalMinutes = 60) {
@@ -126,6 +126,17 @@ const MockTestGreet = ({ mockTest, handleStartExam, onShowInstructions }) => {
           >
             {mockTest?.startTime ? "RESUME EXAMINATION" : "I AM READY TO BEGIN"}
           </Button>
+
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              disabled={!accepted}
+              onClick={onStartWithoutFullscreen}
+              className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-40 transition-opacity"
+            >
+              ⚡ Start without Fullscreen (Dev Mode)
+            </button>
+          )}
         </div>
       </div>
     </div>

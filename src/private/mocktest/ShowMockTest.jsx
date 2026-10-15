@@ -18,7 +18,9 @@ import {
   TrendingUp,
   Edit,
   Download,
+  Info,
 } from "lucide-react";
+import { resolveQuestion } from "@/utils/questionV2Helper";
 
 const OPTIONS = ["A", "B", "C", "D"];
 
@@ -88,36 +90,51 @@ const ShowMockTest = () => {
             return;
           }
 
-          const qIds = userPaper.questions.map(q => q.$id);
+          const qIds = (userPaper.questions || [])
+            .map((q) => q?.$id || q?.id)
+            .filter((id) => typeof id === "string" && id.trim().length > 0 && id !== "null");
           const { questionService } = await import("@/services/academic/question.service");
-          const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
-          const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
+          const fetchedQuestions = qIds.length > 0 ? await questionService.getQuestionsByIds(qIds) : [];
+          const questionsLookup = new Map((fetchedQuestions || []).map((q) => [q.$id || q.id, q]));
 
-          originalPaper.questions.forEach(qStr => {
-             try { 
-               const oq = JSON.parse(qStr); 
-               if (oq.question && !questionsLookup.has(oq.$id)) {
-                 questionsLookup.set(oq.$id, oq); 
-               }
-             } catch {}
+          (originalPaper.questions || []).forEach((qStr) => {
+            try {
+              const oq = typeof qStr === "string" ? JSON.parse(qStr) : qStr;
+              const oqId = oq?.$id || oq?.id;
+              if (oq && oq.question && oqId && !questionsLookup.has(oqId)) {
+                questionsLookup.set(oqId, oq);
+              }
+            } catch {}
           });
 
-          userPaper.questions = userPaper.questions.map((q) => ({
-            ...questionsLookup.get(q.$id),
-            response: q.response,
-          }));
+          userPaper.questions = (userPaper.questions || []).map((q) => {
+            const qId = q?.$id || q?.id;
+            const hydrated = qId ? questionsLookup.get(qId) : null;
+            return {
+              ...q,
+              ...(hydrated || {}),
+              response: q?.response ?? null,
+            };
+          });
         } else {
-          const needsHydration = userPaper.questions.some(q => q.question === undefined);
+          const needsHydration = (userPaper.questions || []).some((q) => q.question === undefined);
           if (needsHydration) {
-             const qIds = userPaper.questions.map(q => q.$id);
-             const { questionService } = await import("@/services/academic/question.service");
-             const fetchedQuestions = await questionService.getQuestionsByIds(qIds);
-             const questionsLookup = new Map(fetchedQuestions.map(q => [q.$id, q]));
-             
-             userPaper.questions = userPaper.questions.map(q => ({
-                ...questionsLookup.get(q.$id),
-                response: q.response ?? null
-             }));
+            const qIds = (userPaper.questions || [])
+              .map((q) => q?.$id || q?.id)
+              .filter((id) => typeof id === "string" && id.trim().length > 0 && id !== "null");
+            const { questionService } = await import("@/services/academic/question.service");
+            const fetchedQuestions = qIds.length > 0 ? await questionService.getQuestionsByIds(qIds) : [];
+            const questionsLookup = new Map((fetchedQuestions || []).map((q) => [q.$id || q.id, q]));
+
+            userPaper.questions = (userPaper.questions || []).map((q) => {
+              const qId = q?.$id || q?.id;
+              const hydrated = qId ? questionsLookup.get(qId) : null;
+              return {
+                ...q,
+                ...(hydrated || {}),
+                response: q?.response ?? null,
+              };
+            });
           }
         }
         setMockTest(userPaper);
@@ -382,6 +399,7 @@ const ShowMockTest = () => {
                 // Keep absolute numbering of the paper
                 const originalIndex = mockTest.questions.findIndex((q) => q.$id === question.$id);
 
+                const resolved = resolveQuestion(question);
                 return (
                   <div
                     key={index}
@@ -392,11 +410,44 @@ const ShowMockTest = () => {
                       <span className={`inline-flex items-center justify-center w-7 h-7 rounded-xl text-xs font-black shrink-0 ${qNumCls}`}>
                         {originalIndex + 1}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap">
-                          {question.question}
-                        </p>
-                        {isTeacher && (
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        {resolved.isMissing ? (
+                          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-600 dark:text-red-400">
+                            ⚠️ <strong>Question Content Not Available:</strong> {resolved.missingReason || `Document ID ${resolved.questionId} could not be retrieved from the database.`}
+                          </div>
+                        ) : (
+                          <>
+                            {/* Primary Question (English / Single) */}
+                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap select-text">
+                              {resolved.questionEnglish || resolved.questionRaw}
+                            </p>
+                            {/* Marathi Question (if bilingual) */}
+                            {resolved.questionMarathi && (
+                              <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 leading-snug font-serif select-text pt-1 border-t border-slate-100 dark:border-slate-800">
+                                <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.2 rounded mr-1.5">
+                                  मराठी
+                                </span>
+                                {resolved.questionMarathi}
+                              </p>
+                            )}
+                          </>
+                        )}
+
+                        {/* Diagrams & Images */}
+                        {resolved.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {resolved.images.map((img, i) => (
+                              <img
+                                key={img.id || i}
+                                src={img.url}
+                                alt={img.name || "Diagram"}
+                                className="rounded-lg max-h-48 border border-slate-200 dark:border-slate-800 object-contain bg-slate-50 dark:bg-slate-800"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {isTeacher && question.$id && (
                           <Link
                             to={`/edit/${question.$id}`}
                             className="inline-flex items-center gap-1 text-[11px] font-black text-blue-500 hover:text-blue-655 dark:text-blue-400 mt-2 hover:underline"
@@ -409,52 +460,86 @@ const ShowMockTest = () => {
                     </div>
 
                     {/* Options list */}
-                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-2">
-                      {(question.options ?? []).map((option, idx) => {
-                        const isCorrectOpt  = idx === getIndex(question.correctAnswer);
-                        const isSelectedOpt = idx === getIndex(question.response);
+                    {!resolved.isMissing && (
+                      <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-2">
+                        {resolved.options.map((option, idx) => {
+                          const isCorrectOpt  = idx === getIndex(question.correctAnswer);
+                          const isSelectedOpt = idx === getIndex(question.response);
 
-                        const optCls = isCorrectOpt
-                          ? "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
-                          : isSelectedOpt
-                          ? "bg-red-500/5 dark:bg-red-500/10 border-red-500/30 text-red-800 dark:text-red-300"
-                          : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-350";
+                          const optCls = isCorrectOpt
+                            ? "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                            : isSelectedOpt
+                            ? "bg-red-500/5 dark:bg-red-500/10 border-red-500/30 text-red-800 dark:text-red-300"
+                            : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-350";
 
-                        return (
-                          <div
-                            key={idx}
-                            className={`flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl border text-xs sm:text-sm transition-all ${optCls}`}
-                          >
-                            <span className="flex items-center gap-2 min-w-0">
-                              <span className="font-bold text-slate-400 dark:text-slate-500 shrink-0 w-5">
-                                {OPTIONS[idx]}.
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex items-start justify-between gap-2.5 px-3 py-2.5 rounded-xl border text-xs sm:text-sm transition-all ${optCls}`}
+                            >
+                              <span className="flex items-start gap-2 min-w-0 flex-1">
+                                <span className="font-bold text-slate-400 dark:text-slate-500 shrink-0 w-5 mt-0.5">
+                                  {OPTIONS[idx]}.
+                                </span>
+                                <span className="font-medium leading-snug space-y-0.5">
+                                  <div>{option.english || option.raw}</div>
+                                  {option.marathi && (
+                                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-serif">
+                                      {option.marathi}
+                                    </div>
+                                  )}
+                                  {option.imageUrl && (
+                                    <img
+                                      src={option.imageUrl}
+                                      alt={`Option ${OPTIONS[idx]}`}
+                                      className="max-h-24 rounded border border-slate-200 dark:border-slate-700 mt-1"
+                                    />
+                                  )}
+                                </span>
                               </span>
-                              <span className="font-medium leading-snug">{option}</span>
-                            </span>
-                            <span className="shrink-0">
-                              {isCorrectOpt && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
-                                  <CheckCircle2 className="w-3 h-3" /> Correct
-                                </span>
-                              )}
-                              {isSelectedOpt && !isCorrectOpt && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-red-500 text-white uppercase tracking-wider">
-                                  <XCircle className="w-3 h-3" /> Your Ans
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        );
-                      })}
+                              <span className="shrink-0 mt-0.5">
+                                {isCorrectOpt && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
+                                    <CheckCircle2 className="w-3 h-3" /> Correct
+                                  </span>
+                                )}
+                                {isSelectedOpt && !isCorrectOpt && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-red-500 text-white uppercase tracking-wider">
+                                    <XCircle className="w-3 h-3" /> Your Ans
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
 
-                      {!isAnswered && (
-                        <p className="text-xs text-amber-600 dark:text-amber-455 mt-2 flex items-center gap-1.5 font-bold">
-                          <AlertCircle className="w-3.5 h-3.5" /> You did not answer this question
-                        </p>
-                      )}
-                    </div>
+                        {/* Explanation box (if available in V2) */}
+                        {(resolved.explanationEnglish || resolved.explanationMarathi) && (
+                          <div className="mt-3 p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs space-y-1">
+                            <p className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1">
+                              <Info className="w-3.5 h-3.5" /> Explanation
+                            </p>
+                            {resolved.explanationEnglish && (
+                              <p className="text-slate-700 dark:text-slate-300">{resolved.explanationEnglish}</p>
+                            )}
+                            {resolved.explanationMarathi && (
+                              <p className="text-slate-600 dark:text-slate-400 font-serif pt-1 border-t border-blue-100 dark:border-blue-900/30">
+                                {resolved.explanationMarathi}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {!isAnswered && (
+                          <p className="text-xs text-amber-600 dark:text-amber-455 mt-2 flex items-center gap-1.5 font-bold">
+                            <AlertCircle className="w-3.5 h-3.5" /> You did not answer this question
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
+
               })}
               {filteredQuestions.length === 0 && (
                 <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500">

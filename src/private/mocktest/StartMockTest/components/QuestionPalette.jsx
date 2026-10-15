@@ -183,6 +183,8 @@ const QuestionPalette = ({
               markedSet.has(ques.$id),
             );
 
+            const isMissing = !ques.question && !ques.questionEnglish && !ques.questionMarathi && (!ques.options || ques.options.length === 0);
+
             return (
               <button
                 key={index}
@@ -196,9 +198,14 @@ const QuestionPalette = ({
                   flex items-center justify-center
                   ${stateStyle[state]}
                   ${isCurrent ? "ring-2 ring-offset-1 ring-amber-400 scale-110 z-10" : "hover:scale-105"}
+                  ${isMissing ? "!border-dashed !border-red-400" : ""}
                 `}
+                title={isMissing ? `Q#${index + 1}: Missing from Question Bank` : `Question ${index + 1}`}
               >
                 {index + 1}
+                {isMissing && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-900 shadow-sm" />
+                )}
               </button>
             );
           })}

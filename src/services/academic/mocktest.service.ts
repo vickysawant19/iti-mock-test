@@ -144,41 +144,114 @@ export class MockTestService extends DatabaseService {
     }
   }
 
-  async updateAllResponses(paperId: string, questions: any[], customScore: number | null = null) {
-    let score = customScore;
-    let answeredCount = 0;
-
-    if (score === null) {
-      score = 0;
-      questions.forEach((q) => {
-        if (q.response !== null && q.response !== undefined) {
-          answeredCount++;
-          if (q.response === q.correctAnswer) {
-            score = (score ?? 0) + 1;
-          }
-        }
-      });
-    } else {
-      questions.forEach((q) => {
-        if (q.response !== null && q.response !== undefined) {
-          answeredCount++;
-        }
-      });
-    }
-
-    const serializedQuestions = questions.map((item) =>
-      typeof item === "string" ? item : JSON.stringify(item)
-    );
-
-    const updatedData = {
-      questions: serializedQuestions,
-      score: score,
-      answeredCount: answeredCount,
-      submitted: true,
-      endTime: new Date().toISOString()
-    };
-
+  async updateAllResponses(
+    paperId: string,
+    questionsOrData:
+      | any[]
+      | {
+          responses?: Array<{ questionId: string; selectedAnswer: string }>;
+          endTime?: any;
+          hydratedQuestions?: any[];
+          questions?: any[];
+        },
+    customScore: number | null = null
+  ) {
     try {
+      // Check if questionsOrData is an object payload: { responses, endTime, hydratedQuestions }
+      if (!Array.isArray(questionsOrData) && typeof questionsOrData === "object" && questionsOrData !== null) {
+        const data = questionsOrData;
+        const paper = await this.getRow<MockTestPaper>(paperId);
+
+        if (paper.submitted) {
+          return paper;
+        }
+
+        let score = 0;
+        let answeredCount = 0;
+
+        const responseList = data.responses || [];
+        const responseMap = new Map(responseList.map((res) => [res.questionId, res.selectedAnswer]));
+
+        const hydratedList = data.hydratedQuestions || data.questions || [];
+        const correctAnswerMap = new Map(
+          hydratedList.map((q) => [q.$id || q.id, q.correctAnswer])
+        );
+
+        const updatedQuestions = (paper.questions || []).map((q) => {
+          const parsedQuestion = typeof q === "string" ? JSON.parse(q) : { ...q };
+          const qId = parsedQuestion.$id || parsedQuestion.id;
+          const userResponse = responseMap.has(qId) ? responseMap.get(qId) : parsedQuestion.response;
+
+          const correctAns = correctAnswerMap.has(qId)
+            ? correctAnswerMap.get(qId)
+            : parsedQuestion.correctAnswer;
+
+          if (userResponse !== null && userResponse !== undefined) {
+            parsedQuestion.response = userResponse;
+            answeredCount++;
+            const isCorrect = userResponse === correctAns;
+            parsedQuestion.result = isCorrect;
+            if (isCorrect) score += 1;
+          } else {
+            parsedQuestion.response = null;
+          }
+
+          return JSON.stringify({ $id: qId, response: parsedQuestion.response });
+        });
+
+        const formattedEndTime =
+          typeof data.endTime === "string"
+            ? data.endTime
+            : data.endTime?.toISOString?.() || new Date().toISOString();
+
+        const updatedData = {
+          score,
+          answeredCount,
+          submitted: true,
+          questions: updatedQuestions,
+          endTime: formattedEndTime,
+        };
+
+        return await this.updateRow<MockTestPaper>(paperId, updatedData);
+      }
+
+      // Fallback: questionsOrData is an array of questions
+      const questions = Array.isArray(questionsOrData) ? questionsOrData : [];
+      let score = customScore;
+      let answeredCount = 0;
+
+      if (score === null) {
+        score = 0;
+        questions.forEach((q) => {
+          if (q.response !== null && q.response !== undefined) {
+            answeredCount++;
+            if (q.response === q.correctAnswer) {
+              score = (score ?? 0) + 1;
+            }
+          }
+        });
+      } else {
+        questions.forEach((q) => {
+          if (q.response !== null && q.response !== undefined) {
+            answeredCount++;
+          }
+        });
+      }
+
+      const serializedQuestions = questions.map((item) => {
+        if (typeof item === "string") return item;
+        const qId = item.$id || item.id;
+        return JSON.stringify({ $id: qId, response: item.response ?? null });
+      });
+
+      const updatedData = {
+        questions: serializedQuestions,
+        score: score,
+        answeredCount: answeredCount,
+        submitted: true,
+        endTime: new Date().toISOString(),
+      };
+
       return await this.updateRow<MockTestPaper>(paperId, updatedData);
     } catch (error) {
       console.error("Error updating all responses:", error);
@@ -190,11 +263,12 @@ export class MockTestService extends DatabaseService {
     let score = 0;
     let answeredCount = 0;
 
-    const serialized = questions.map((q) => {
+    const serialized = (questions || []).map((q) => {
       const response = q.response ?? null;
       if (response !== null) answeredCount += 1;
       if (response && response === q.correctAnswer) score += 1;
-      return JSON.stringify({ $id: q.$id, response });
+      const qId = q.$id || q.id;
+      return JSON.stringify({ $id: qId, response });
     });
 
     return await this.updateRow<MockTestPaper>(paperId, {

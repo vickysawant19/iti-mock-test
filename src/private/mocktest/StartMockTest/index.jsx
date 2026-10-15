@@ -60,6 +60,9 @@ const StartMockTest = () => {
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
   const [isLandscapeForced, setIsLandscapeForced] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true);
+  const [devSkipFullscreen, setDevSkipFullscreen] = useState(
+    () => import.meta.env.DEV && localStorage.getItem("dev_skip_fullscreen") === "true"
+  );
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -108,9 +111,9 @@ const StartMockTest = () => {
     setIsSubmitLoading(true);
     await flushSave();
     try {
-      const responseArray = mockTest.questions.map((question) => ({
-        questionId: question.$id,
-        selectedAnswer: question.response,
+      const responseArray = (mockTest?.questions || []).map((question) => ({
+        questionId: question?.$id || question?.id,
+        selectedAnswer: question?.response ?? null,
       }));
       await mockTestService.updateAllResponses(paperId, {
         responses: responseArray,
@@ -159,20 +162,22 @@ const StartMockTest = () => {
   }, [currentQuestionIndex]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleStartExam = async () => {
+  const handleStartExam = async (skipFs = false) => {
     try {
       if (!mockTest.startTime) {
         const startTime = new Date();
         await mockTestService.updateTime(mockTest.$id, { startTime });
         setMockTest((prev) => ({ ...prev, startTime: startTime.toISOString() }));
       }
-      try {
-        if (containerRef.current?.requestFullscreen) {
-          await containerRef.current.requestFullscreen();
-          setPortalContainer(containerRef.current);
+      if (!skipFs && !devSkipFullscreen) {
+        try {
+          if (containerRef.current?.requestFullscreen) {
+            await containerRef.current.requestFullscreen();
+            setPortalContainer(containerRef.current);
+          }
+        } catch (err) {
+          console.warn("Fullscreen request failed (ignoring for dev/unsupported):", err);
         }
-      } catch (err) {
-        console.error("Fullscreen request failed:", err);
       }
       setIsGreetShown(true);
     } catch (error) {
@@ -267,7 +272,12 @@ const StartMockTest = () => {
         {!isGreetShown ? (
           <MockTestGreet
             mockTest={mockTest}
-            handleStartExam={handleStartExam}
+            handleStartExam={() => handleStartExam(false)}
+            onStartWithoutFullscreen={() => {
+              setDevSkipFullscreen(true);
+              localStorage.setItem("dev_skip_fullscreen", "true");
+              handleStartExam(true);
+            }}
             onShowInstructions={handleShowInstructions}
           />
         ) : (
@@ -326,7 +336,7 @@ const StartMockTest = () => {
         )}
 
         {/* Fullscreen Enforcer Overlay */}
-        {isGreetShown && !submitted && !isFullscreen && (
+        {isGreetShown && !submitted && !isFullscreen && !devSkipFullscreen && (
           <div className="fixed inset-0 z-[99] bg-black/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm">
             <AlertTriangle className="w-16 h-16 text-red-500 mb-4 animate-pulse" />
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">You Exited Fullscreen!</h2>
@@ -362,6 +372,21 @@ const StartMockTest = () => {
               >
                 Submit & Exit Exam
               </Button>
+
+              {import.meta.env.DEV && (
+                <Button
+                  size="default"
+                  variant="outline"
+                  className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40 py-5 text-sm font-semibold rounded-xl transition-all"
+                  onClick={() => {
+                    setDevSkipFullscreen(true);
+                    localStorage.setItem("dev_skip_fullscreen", "true");
+                    toast.info("⚡ Fullscreen mode skipped for development.");
+                  }}
+                >
+                  ⚡ Skip Fullscreen (Dev Mode)
+                </Button>
+              )}
             </div>
           </div>
         )}

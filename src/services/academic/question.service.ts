@@ -48,19 +48,36 @@ export class QuestionService extends DatabaseService {
   }
 
   async getQuestionsByIds(ids: string[]) {
-    if (!ids || ids.length === 0) return [];
-    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return [];
+
+    // Filter out null, undefined, empty, or non-string IDs and deduplicate
+    const validIds = Array.from(
+      new Set(
+        ids
+          .filter(
+            (id): id is string =>
+              typeof id === "string" &&
+              id.trim().length > 0 &&
+              id !== "null" &&
+              id !== "undefined"
+          )
+          .map((id) => id.trim())
+      )
+    );
+
+    if (validIds.length === 0) return [];
+
     let allDocuments: any[] = [];
     const chunkSize = 100;
-    
+
     try {
-      for (let i = 0; i < ids.length; i += chunkSize) {
-        const chunk = ids.slice(i, i + chunkSize);
+      for (let i = 0; i < validIds.length; i += chunkSize) {
+        const chunk = validIds.slice(i, i + chunkSize);
         const response = await this.listRows<QuestionData>([
           Query.equal("$id", chunk),
-          Query.limit(chunk.length)
+          Query.limit(Math.max(1, chunk.length))
         ]);
-        allDocuments = allDocuments.concat(response.rows);
+        allDocuments = allDocuments.concat(response.rows || (response as any).documents || []);
       }
       return allDocuments;
     } catch (error) {
