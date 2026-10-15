@@ -1,0 +1,17 @@
+{
+  "latestVersion": "2.0.0",
+  "versionCode": 200,
+  "minRequiredVersion": "1.0.0",
+  "releaseDate": "2026-10-15",
+  "title": "New Update Available!",
+  "description": "A new version of ITI Mitra is ready with new features and improvements.",
+  "features": [
+    "Automatic live web updates — no manual reinstallation needed",
+    "Campus GPS Geofence attendance verification with indoor tolerance",
+    "Official ITI Mitra app launcher icon & start screen",
+    "Native push and local notification alerts",
+    "Camera & profile avatar photo capture enabled"
+  ],
+  "apkUrl": "https://itimitra.in/itimitra.apk",
+  "forceUpdate": false
+}

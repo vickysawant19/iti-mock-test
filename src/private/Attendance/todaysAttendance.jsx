@@ -157,10 +157,11 @@ const AttendanceTracker = () => {
     calculateDistance,
   } = useLocationManager(true);
 
-  // Sync batch radius
+  // Sync batch radius (defaults to 1000m if not set or 0)
   useEffect(() => {
     if (batchData) {
-      setCircleRadius(parseInt(batchData?.circleRadius || 0));
+      const parsed = parseInt(batchData?.circleRadius);
+      setCircleRadius(Number.isFinite(parsed) && parsed > 0 ? parsed : 1000);
     }
   }, [batchData]);
 
@@ -233,8 +234,10 @@ const AttendanceTracker = () => {
     }
   }, [deviceLocation, batchData, calculateDistance, holiday, isTeacher]);
 
+  const allowedGeofenceRadius = (circleRadius || 1000) + 75;
+
   const handleMarkAttendance = async () => {
-    if (distance > circleRadius) return;
+    if (distance > allowedGeofenceRadius) return;
     if (attendanceMarked) return;
     if (!resolvedBatchId) return;
 
@@ -290,7 +293,7 @@ const AttendanceTracker = () => {
     return `${(meters / 1000).toFixed(2)}km`;
   };
 
-  const isWithinRange = distance !== null && distance <= (circleRadius || 0);
+  const isWithinRange = distance !== null && distance <= allowedGeofenceRadius;
   const loading =
     isResolvingBatch ||
     batchLoading ||

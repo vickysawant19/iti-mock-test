@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { APP_VERSION, BUILD_DATE } from "@/config/version";
 
 const Footer = () => {
@@ -101,12 +102,12 @@ const Footer = () => {
               >
                 Terms & Conditions
               </a>
-              <a
-                href="#"
+              <Link
+                to="/privacy-policy"
                 className="text-gray-200 hover:text-blue-500 dark:hover:text-blue-400"
               >
                 Privacy Policy
-              </a>
+              </Link>
               <a
                 href="#"
                 className="text-gray-200 hover:text-blue-500 dark:hover:text-blue-400"

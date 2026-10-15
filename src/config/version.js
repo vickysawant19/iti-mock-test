@@ -4,7 +4,7 @@
  */
 
 export const APP_VERSION =
-  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "1.2.0";
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "2.0.0";
 
 export const BUILD_DATE =
   typeof __BUILD_DATE__ !== "undefined"

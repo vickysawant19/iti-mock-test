@@ -1,30 +1,130 @@
 /**
  * pushNotificationService.js
  * Handles browser Web Push permission requests, Service Worker registration,
- * and background notification dispatch for ITI Mitra.
+ * and native Android/Capacitor local push notification dispatch for ITI Mitra.
  */
+import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import webPushSubscriptionService from "./webPushSubscriptionService";
 
 class PushNotificationService {
-  isSupported() {
-    return typeof window !== "undefined" && "Notification" in window;
+  constructor() {
+    this._nativePermission = "default";
+    this._channelCreated = false;
+
+    if (this.isNative()) {
+      this._initNative();
+    }
   }
 
+  /**
+   * Returns true if running as a native Android or iOS app via Capacitor
+   */
+  isNative() {
+    return (
+      typeof window !== "undefined" &&
+      Boolean(window.Capacitor?.isNativePlatform?.() || Capacitor.isNativePlatform())
+    );
+  }
+
+  async _initNative() {
+    try {
+      const status = await LocalNotifications.checkPermissions();
+      this._nativePermission = this._mapNativeStatus(status.display);
+      await this._ensureNotificationChannel();
+      this._setupNativeClickListener();
+    } catch (e) {
+      console.warn("[PushNotificationService] Native init warning:", e);
+    }
+  }
+
+  _mapNativeStatus(status) {
+    if (status === "granted") return "granted";
+    if (status === "denied") return "denied";
+    return "default";
+  }
+
+  async _ensureNotificationChannel() {
+    if (!this.isNative() || this._channelCreated) return;
+    try {
+      await LocalNotifications.createChannel({
+        id: "iti-mitra-alerts",
+        name: "ITI Mitra Exam & Attendance Alerts",
+        description: "Notifications for mock exams, results, and batch attendance updates",
+        importance: 5, // High priority / heads-up notification
+        visibility: 1, // Visible on lockscreen
+        vibration: true,
+        lights: true,
+        lightColor: "#2563EB",
+      });
+      this._channelCreated = true;
+    } catch (err) {
+      console.warn("[PushNotificationService] Could not create notification channel:", err);
+    }
+  }
+
+  _setupNativeClickListener() {
+    try {
+      LocalNotifications.addListener("localNotificationActionPerformed", (action) => {
+        const url = action.notification?.extra?.url;
+        if (url && url !== "/") {
+          window.location.href = url;
+        }
+      });
+    } catch (err) {
+      console.warn("[PushNotificationService] Could not attach native notification listener:", err);
+    }
+  }
+
+  /**
+   * Check if notifications are supported on this device/browser
+   */
+  isSupported() {
+    if (typeof window === "undefined") return false;
+    if (this.isNative()) return true;
+    return "Notification" in window;
+  }
+
+  /**
+   * Get current permission state ("granted", "denied", "default", or "unsupported")
+   */
   getPermission() {
     if (!this.isSupported()) return "unsupported";
+    if (this.isNative()) {
+      return this._nativePermission;
+    }
     return Notification.permission;
   }
 
+  /**
+   * Request notification permission from user
+   */
   async requestPermission() {
     if (!this.isSupported()) {
-      throw new Error("Notifications are not supported by your browser.");
+      throw new Error("Notifications are not supported by your browser or device.");
     }
+
+    if (this.isNative()) {
+      try {
+        const result = await LocalNotifications.requestPermissions();
+        const mapped = this._mapNativeStatus(result.display);
+        this._nativePermission = mapped;
+        if (mapped === "granted") {
+          await this._ensureNotificationChannel();
+        }
+        return mapped;
+      } catch (err) {
+        console.error("[PushNotificationService] Native requestPermissions failed:", err);
+        throw err;
+      }
+    }
+
     const permission = await Notification.requestPermission();
     return permission;
   }
 
   /**
-   * Listens for runtime permission changes (e.g. user toggles Allow in Chrome Site Settings or Android App Settings)
+   * Listens for runtime permission changes
    */
   onPermissionChange(callback) {
     if (typeof window === "undefined") return () => {};
@@ -33,7 +133,7 @@ class PushNotificationService {
     let disposed = false;
     let permObj = null;
 
-    if ("permissions" in navigator && typeof navigator.permissions.query === "function") {
+    if (!this.isNative() && "permissions" in navigator && typeof navigator.permissions.query === "function") {
       navigator.permissions
         .query({ name: "notifications" })
         .then((status) => {
@@ -50,8 +150,14 @@ class PushNotificationService {
         .catch(() => {});
     }
 
-    // Also verify when user returns to this tab from phone settings or browser menu
-    const handleFocus = () => {
+    // Verify when returning from device app settings or another tab
+    const handleFocus = async () => {
+      if (this.isNative()) {
+        try {
+          const status = await LocalNotifications.checkPermissions();
+          this._nativePermission = this._mapNativeStatus(status.display);
+        } catch {}
+      }
       const current = this.getPermission();
       if (current !== lastKnown) {
         lastKnown = current;
@@ -69,7 +175,7 @@ class PushNotificationService {
   }
 
   /**
-   * Helper to get active SW registration with a timeout so it never hangs
+   * Helper to get active SW registration with timeout
    */
   async getServiceWorkerRegistration(timeoutMs = 1500) {
     if (!("serviceWorker" in navigator)) return null;
@@ -87,9 +193,31 @@ class PushNotificationService {
   }
 
   /**
-   * Dispatches a notification via Service Worker if available, or falls back to new Notification()
+   * Dispatches a notification natively in the Android app or via Service Worker in browser
    */
   async showDirectNotification({ title, body, url = "/" }) {
+    if (this.isNative()) {
+      await this._ensureNotificationChannel();
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: Math.floor(Date.now() % 1000000000),
+              title,
+              body,
+              extra: { url },
+              channelId: "iti-mitra-alerts",
+              smallIcon: "ic_launcher_round",
+            },
+          ],
+        });
+        return;
+      } catch (err) {
+        console.error("[PushNotificationService] Native LocalNotification dispatch failed:", err);
+        throw err;
+      }
+    }
+
     const options = {
       body,
       icon: "/icons/icon-192x192.png",
@@ -111,7 +239,7 @@ class PushNotificationService {
       }
     }
 
-    // 2. Direct Window Notification fallback (works in all browsers without SW dependency)
+    // 2. Direct Window Notification fallback
     try {
       const notif = new Notification(title, options);
       notif.onclick = () => {
@@ -128,8 +256,7 @@ class PushNotificationService {
   }
 
   /**
-   * Dispatches a local system/PWA notification.
-   * If delaySeconds > 0, sets a timer so the user can test background delivery!
+   * Dispatches a local system or Android notification.
    */
   async sendTestNotification({
     title = "ITI Mitra Practice Alert 🔔",
@@ -138,18 +265,36 @@ class PushNotificationService {
     delaySeconds = 0,
   } = {}) {
     if (!this.isSupported()) {
-      throw new Error("Notifications are not supported on this browser.");
+      throw new Error("Notifications are not supported on this device.");
     }
 
-    let perm = Notification.permission;
+    let perm = this.getPermission();
     if (perm !== "granted") {
       perm = await this.requestPermission();
       if (perm !== "granted") {
-        throw new Error("Notification permission denied. Please allow notifications in browser site settings.");
+        throw new Error("Notification permission denied. Please allow notifications in device settings.");
       }
     }
 
     if (delaySeconds > 0) {
+      if (this.isNative()) {
+        await this._ensureNotificationChannel();
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              id: Math.floor(Date.now() % 1000000000),
+              title,
+              body: `[Background Test] ${body}`,
+              schedule: { at: new Date(Date.now() + delaySeconds * 1000) },
+              channelId: "iti-mitra-alerts",
+              extra: { url },
+              smallIcon: "ic_launcher_round",
+            },
+          ],
+        });
+        return `Notification scheduled in ${delaySeconds} seconds! You can minimize the app to see it pop up.`;
+      }
+
       setTimeout(() => {
         this.showDirectNotification({
           title,
@@ -164,12 +309,11 @@ class PushNotificationService {
     }
 
     await this.showDirectNotification({ title, body, url });
-    return "Test notification sent! Check your system notification banner/center.";
+    return "Test notification sent! Check your device notification bar.";
   }
 
   /**
    * Dispatches a real Web Push notification from the Appwrite server (user-manage function).
-   * Works when the browser is COMPLETELY CLOSED because it goes through FCM / VAPID!
    */
   async sendServerPushNotification({
     delaySeconds = 0,
@@ -196,4 +340,3 @@ class PushNotificationService {
 
 export const pushNotificationService = new PushNotificationService();
 export default pushNotificationService;
-

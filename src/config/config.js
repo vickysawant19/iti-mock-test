@@ -1,13 +1,14 @@
 const conf = {
   appwriteUrl:
     typeof window !== "undefined" &&
+    !window.Capacitor?.isNativePlatform?.() &&
     (window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
       window.location.hostname.startsWith("192.168."))
       ? window.location.origin + "/v1"
       : import.meta.env.VITE_APPWRITE_URL ||
         import.meta.env.VITE_APPWRITE_ENDPOINT ||
-        "https://api.itimitra.in/v1",
+        "https://auth.itimitra.in/v1",
   projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || "",
   databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || "",
   quesCollectionId: import.meta.env.VITE_APPWRITE_QUES_COLLECTION_ID || "",

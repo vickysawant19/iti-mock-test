@@ -24,6 +24,7 @@ import ProtectedAdminRoutes from "./private/ProtectedAdminRoutes.jsx";
 // ── Public Pages ──
 const Home = lazy(() => import("./pages/Home.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.jsx"));
 const Login = lazy(() => import("./Auth/Login.jsx"));
 const Signup = lazy(() => import("./Auth/Signup.jsx"));
 const ForgetPass = lazy(() => import("./Auth/ForgetPass.jsx"));
@@ -117,6 +118,7 @@ const router = (
         <Route path="forget-password" element={<ForgetPass />} />
         <Route path="reset-pass" element={<ResetPass />} />
         <Route path="about" element={<About />} />
+        <Route path="privacy-policy" element={<PrivacyPolicy />} />
         <Route element={<ProtectedRoute />}>
           <Route path="onboarding" element={<OnboardingWizard />} />
           <Route

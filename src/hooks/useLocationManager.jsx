@@ -56,6 +56,29 @@ const useLocationManager = (enableLocation = false) => {
         setError(null);
       },
       (error) => {
+        // If high accuracy times out (e.g. indoors or slow satellite lock), fallback to network/coarse location
+        if (error.code === 3 && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const fallbackLoc = {
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                timestamp: pos.timestamp,
+              };
+              setDeviceLocation(fallbackLoc);
+              setLoading(false);
+              setError(null);
+            },
+            (fallbackErr) => {
+              setError({ code: fallbackErr.code, message: fallbackErr.message });
+              setLoading(false);
+            },
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+          );
+          return;
+        }
+
         setError({
           code: error.code,
           message: error.message,
@@ -64,7 +87,7 @@ const useLocationManager = (enableLocation = false) => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 20000,
         maximumAge: 30000, // reuse a cached fix up to 30 s old
       }
     );
@@ -102,7 +125,29 @@ const useLocationManager = (enableLocation = false) => {
         return newLocation;
       },
       (error) => {
-       
+        // If high accuracy timed out, retry with network location
+        if (error.code === 3) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const fallbackLocation = {
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                timestamp: pos.timestamp,
+              };
+              setDeviceLocation(fallbackLocation);
+              setLoading(false);
+              setError(null);
+            },
+            (fbErr) => {
+              setError({ code: fbErr.code, message: fbErr.message });
+              setLoading(false);
+            },
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+          );
+          return;
+        }
+
         setError({
           code: error.code,
           message: error.message,
@@ -111,7 +156,7 @@ const useLocationManager = (enableLocation = false) => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 25000,
         maximumAge: 0,
       }
     );

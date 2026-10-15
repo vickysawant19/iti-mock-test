@@ -50,7 +50,7 @@ const StudentAttendancePage = () => {
   // Full location check used by the modal button itself (passed as prop)
   const isInLocationRange =
     Number.isFinite(distance) &&
-    distance <= (batchData?.circleRadius || 1000);
+    distance <= ((Number(batchData?.circleRadius) || 1000) + 75);
 
 
   return (

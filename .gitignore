@@ -31,3 +31,8 @@ scratch/
 *.key
 key.txt
 scripts/files/key.txt
+
+# Local build dependencies & binaries
+android/jdk-21/
+inst_user_settings.tmp
+/itimitra.apk

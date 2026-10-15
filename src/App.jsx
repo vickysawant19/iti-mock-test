@@ -24,6 +24,7 @@ import { ThemeProvider } from "./ThemeProvider";
 
 import PageFallbackLoader from "./components/common/PageFallbackLoader";
 import NotificationModalManager from "./components/notifications/NotificationModalManager";
+import AppUpdateNotifier from "./components/common/AppUpdateNotifier";
 import { checkProfileCompletion } from "./utils/profileCompletion";
 
 function App() {
@@ -113,6 +114,15 @@ function App() {
 
   useEffect(() => {
     checkUserStatus();
+    // Allow the ITI Mitra start screen to be clearly viewed before smoothly fading out
+    if (typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.()) {
+      const splashTimer = setTimeout(() => {
+        import("@capacitor/splash-screen")
+          .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 500 }))
+          .catch(() => {});
+      }, 1800);
+      return () => clearTimeout(splashTimer);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, dispatch]);
 
@@ -392,6 +402,7 @@ function App() {
             <Outlet />
           </React.Suspense>
           <ToastContainer />
+          <AppUpdateNotifier />
         </div>
 
         {import.meta.env.PROD && <Analytics />}

@@ -1,0 +1,30 @@
+{
+  "appId": "in.itimitra.app",
+  "appName": "ITI Mitra",
+  "webDir": "dist",
+  "server": {
+    "url": "https://itimitra.in",
+    "cleartext": false,
+    "androidScheme": "https",
+    "allowNavigation": [
+      "itimitra.in",
+      "*.itimitra.in",
+      "auth.itimitra.in"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 500,
+      "backgroundColor": "#ffffff",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_launcher_round",
+      "iconColor": "#2563EB"
+    }
+  }
+}

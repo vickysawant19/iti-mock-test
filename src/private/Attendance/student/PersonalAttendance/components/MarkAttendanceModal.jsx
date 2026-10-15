@@ -46,7 +46,7 @@ const MarkAttendanceModal = ({
     );
   }, [deviceLocation, batchData?.location, calculateDistance]);
 
-  const maxRadius = batchData?.circleRadius || 1000;
+  const maxRadius = (Number(batchData?.circleRadius) || 1000) + 75;
   const isMarkingAllowed = !isBeforeEnrollment && distance !== Infinity && distance <= maxRadius;
   const distPercent = Math.min((distance / maxRadius) * 100, 100);
 
