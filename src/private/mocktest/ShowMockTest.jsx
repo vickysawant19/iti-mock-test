@@ -15,38 +15,48 @@ import {
   Clock,
   User,
   Calendar,
-  TrendingUp,
-  Edit,
   Download,
   Info,
+  Edit,
+  ZoomIn,
+  X,
+  FileText,
+  Check,
+  ChevronRight,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { resolveQuestion } from "@/utils/questionV2Helper";
 
 const OPTIONS = ["A", "B", "C", "D"];
 
-// ─── Small skeleton box ───────────────────────────────────────────────────────
-const Sk = ({ className }) => (
-  <div className={`animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800 ${className}`} />
+// ─── Loading Skeleton ─────────────────────────────────────────────────────────
+const SkeletonBox = ({ className }) => (
+  <div className={`animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800 ${className}`} />
 );
 
-// ─── Stat pill ────────────────────────────────────────────────────────────────
-const Stat = ({ icon: Icon, label, value, cls }) => (
-  <div className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border ${cls} transition-transform hover:scale-102`}>
-    <Icon className="w-4 h-4 shrink-0" />
+// ─── Stat Pill ────────────────────────────────────────────────────────────────
+const StatPill = ({ icon: Icon, label, value, subtext, colorCls }) => (
+  <div className={`p-4 rounded-2xl border transition-all duration-200 ${colorCls} flex flex-col justify-between shadow-xs`}>
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75">{label}</span>
+      <Icon className="w-4 h-4 opacity-80" />
+    </div>
     <div>
-      <p className="text-[9px] font-black uppercase tracking-wider opacity-75 leading-none">{label}</p>
-      <p className="text-xs font-black leading-none mt-1">{value}</p>
+      <div className="text-xl sm:text-2xl font-black tracking-tight">{value}</div>
+      {subtext && <div className="text-[11px] opacity-75 font-medium mt-0.5">{subtext}</div>}
     </div>
   </div>
 );
 
-// ─── ShowMockTest ─────────────────────────────────────────────────────────────
+// ─── ShowMockTest Component ──────────────────────────────────────────────────
 const ShowMockTest = () => {
   const { paperId } = useParams();
   const [mockTest, setMockTest] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProtected, setIsProtected] = useState(false);
   const [filter, setFilter] = useState("all"); // "all", "correct", "incorrect", "skipped"
+  const [zoomedImage, setZoomedImage] = useState(null);
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const isTeacher = user?.labels?.includes("Teacher");
@@ -69,8 +79,13 @@ const ShowMockTest = () => {
         if (!userPaperResponse.length) throw new Error("Paper not found");
 
         const userPaper = { ...userPaperResponse[0] };
-        userPaper.questions = userPaper.questions
-          .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+        userPaper.questions = (userPaper.questions || [])
+          .map((s) => {
+            if (typeof s === "string") {
+              try { return JSON.parse(s); } catch { return null; }
+            }
+            return s;
+          })
           .filter(Boolean);
 
         if (userPaper.isOriginal !== null && !userPaper.isOriginal) {
@@ -79,7 +94,7 @@ const ShowMockTest = () => {
             Query.equal("isOriginal", true),
           ]);
           if (!originalPaperResponse?.length) {
-            toast.error("Something went Wrong!\n");
+            toast.error("Original mock test template could not be loaded.");
             navigate("/all-mock-tests");
             return;
           }
@@ -151,26 +166,30 @@ const ShowMockTest = () => {
   const getIndex = (res) => OPTIONS.indexOf(res);
 
   // Derived stats
+  const totalQuestions = mockTest?.questions?.length || mockTest?.quesCount || 0;
+
   const correct = useMemo(() => {
-    if (!mockTest) return 0;
-    return mockTest.questions.filter((q) => q.response === q.correctAnswer).length;
+    if (!mockTest?.questions) return 0;
+    return mockTest.questions.filter((q) => q.response && q.response === q.correctAnswer).length;
   }, [mockTest]);
 
   const incorrect = useMemo(() => {
-    if (!mockTest) return 0;
+    if (!mockTest?.questions) return 0;
     return mockTest.questions.filter((q) => q.response && q.response !== q.correctAnswer).length;
   }, [mockTest]);
 
   const unanswered = useMemo(() => {
-    if (!mockTest) return 0;
+    if (!mockTest?.questions) return 0;
     return mockTest.questions.filter((q) => !q.response).length;
   }, [mockTest]);
 
+  const scorePercentage = totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0;
+
   const filteredQuestions = useMemo(() => {
-    if (!mockTest) return [];
+    if (!mockTest?.questions) return [];
     return mockTest.questions.filter((q) => {
-      const isCorrect = q.response === q.correctAnswer;
-      const isAnswered = q.response !== undefined && q.response !== null;
+      const isCorrect = q.response && q.response === q.correctAnswer;
+      const isAnswered = q.response !== undefined && q.response !== null && q.response !== "";
       if (filter === "correct") return isCorrect;
       if (filter === "incorrect") return isAnswered && !isCorrect;
       if (filter === "skipped") return !isAnswered;
@@ -178,22 +197,42 @@ const ShowMockTest = () => {
     });
   }, [mockTest, filter]);
 
-  // Loading skeleton
+  const scrollToQuestion = (idx) => {
+    const el = document.getElementById(`question-card-${idx}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // ── Loading Skeleton ──
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 lg:p-8">
-        <div className="w-full space-y-5">
-          <div className="flex items-center gap-3">
-            <Sk className="w-9 h-9 rounded-full" />
-            <Sk className="h-6 w-48" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3 space-y-4">
-              {[1, 2, 3].map((i) => <Sk key={i} className="h-44 w-full rounded-2xl" />)}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div className="flex items-center gap-3">
+              <SkeletonBox className="w-10 h-10 rounded-xl" />
+              <div className="space-y-1.5">
+                <SkeletonBox className="h-5 w-48" />
+                <SkeletonBox className="h-3.5 w-32" />
+              </div>
             </div>
-            <div className="lg:col-span-1 space-y-4">
-              <Sk className="h-48 w-full rounded-2xl" />
-              <Sk className="h-64 w-full rounded-2xl" />
+            <SkeletonBox className="h-9 w-32 rounded-xl" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonBox key={i} className="h-28 rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <SkeletonBox key={i} className="h-52 w-full rounded-2xl" />
+              ))}
+            </div>
+            <div className="lg:col-span-4 space-y-4">
+              <SkeletonBox className="h-64 w-full rounded-2xl" />
+              <SkeletonBox className="h-44 w-full rounded-2xl" />
             </div>
           </div>
         </div>
@@ -201,24 +240,24 @@ const ShowMockTest = () => {
     );
   }
 
-  // Protected
+  // ── Protected Paper Screen ──
   if (isProtected) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-sm w-full text-center space-y-5">
-          <div className="w-20 h-20 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
+        <div className="max-w-md w-full text-center space-y-5 bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Protected Paper</h2>
-            <p className="text-sm text-slate-505 dark:text-gray-400 mt-2">
-              The teacher has protected this paper. Results are not available to view.
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Protected Examination Paper</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+              The instructor has restricted public review for this paper. Result review is currently unavailable.
             </p>
           </div>
-          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-770 dark:text-slate-200 text-sm font-medium transition-colors">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-all shadow-md"
+          >
             <ArrowLeft className="w-4 h-4" /> Go Back
           </button>
         </div>
@@ -226,419 +265,696 @@ const ShowMockTest = () => {
     );
   }
 
-  // Error
+  // ── Missing Paper Screen ──
   if (!mockTest) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-red-100 dark:border-red-900/50 p-8 max-w-sm w-full text-center space-y-4">
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-          <p className="text-sm text-slate-505 dark:text-slate-400">Failed to load the mock test. Please try again.</p>
-          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-650 text-sm font-medium text-slate-750 dark:text-slate-200 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Go Back
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-red-200 dark:border-red-900/50 p-8 max-w-md w-full text-center space-y-4 shadow-xl">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Paper Not Found</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            We couldn't retrieve the assessment details for this paper. Please verify the URL or return to tests.
+          </p>
+          <button
+            onClick={() => navigate("/all-mock-tests")}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-colors shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4" /> Return to All Mock Tests
           </button>
         </div>
       </div>
     );
   }
 
-  const scorePercentage = mockTest.quesCount > 0 ? (mockTest.score / mockTest.quesCount) * 100 : 0;
+  const paperTitle = mockTest.paperTitle || mockTest.title || mockTest.name || "Mock Test Examination";
+  const tradeDisplay = mockTest.tradeName || mockTest.trade || "ITI Technical Trade";
+  const studentName = mockTest.userName || user?.name || "ITI Student";
 
+  const isPassed = scorePercentage >= 40;
   const perfColor =
-    scorePercentage >= 80 ? "text-emerald-600 dark:text-emerald-400"
-    : scorePercentage >= 50 ? "text-blue-650 dark:text-blue-400"
-    : "text-red-500 dark:text-red-400";
+    scorePercentage >= 80
+      ? "text-emerald-600 dark:text-emerald-400"
+      : scorePercentage >= 50
+      ? "text-blue-600 dark:text-blue-400"
+      : "text-rose-600 dark:text-rose-400";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans">
       
-      {/* ── Sticky Header ── */}
-      <div className="sticky top-0 z-20 w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/60 shadow-sm transition-all duration-300">
-        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-3.5 flex items-center justify-between gap-4">
+      {/* ── Fixed Sticky Navigation Header Below Navbar ── */}
+      <header className="sticky top-0 z-30 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-4">
           
-          {/* Left Side: Back Button & Title */}
-          <div className="flex items-center gap-3 min-w-0">
+          {/* Left: Back button & Breadcrumbs & Title */}
+          <div className="flex items-center gap-3.5 min-w-0">
             <button
               onClick={() => navigate(-1)}
-              className="group flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-500 hover:text-slate-800 dark:hover:text-white shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer shrink-0"
-              title="Go Back"
+              className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0 active:scale-95"
+              title="Return to Previous Page"
             >
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-600 dark:text-slate-300" />
+              <span className="hidden sm:inline">Back</span>
             </button>
-            
+
+            <div className="h-7 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block shrink-0" />
+
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <div className="p-1 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0 hidden sm:block">
-                  <Award className="w-3.5 h-3.5" />
-                </div>
-                <h1 className="text-xs sm:text-sm md:text-base font-black text-slate-850 dark:text-white leading-tight tracking-tight">
-                  Mock Test Results
+              {/* Breadcrumb Navigation */}
+              <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-0.5 leading-none">
+                <Link to="/all-mock-tests" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                  Mock Tests
+                </Link>
+                <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
+                <span className="truncate max-w-[120px] sm:max-w-[180px]">{tradeDisplay}</span>
+                <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
+                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Results Review</span>
+              </nav>
+
+              {/* Main Title Row */}
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                  {paperTitle}
                 </h1>
-                <span className="hidden xs:inline-flex items-center text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md border border-emerald-500/10 dark:border-emerald-900/20">
-                  Completed
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Completed
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Right Side: Quick Action (PDF) & Floating Stats */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden md:flex items-center gap-2 border-r border-slate-200/60 dark:border-slate-800/80 pr-4 mr-1 text-right">
-              <div className="text-right">
-                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Student</p>
-                <p className="text-xs font-black text-slate-700 dark:text-slate-200 mt-0.5">{mockTest.userName || "N/A"}</p>
+          {/* Right: Candidate Chip & Quick Actions */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            {/* Student Chip */}
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs font-medium">
+              <div className="w-6 h-6 rounded-full bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-[10px]">
+                {studentName.charAt(0).toUpperCase()}
               </div>
-            </div>
-            
-            <div className="hidden sm:flex items-center gap-2 border-r border-slate-200/60 dark:border-slate-800/80 pr-4 mr-1 text-right">
-              <div className="text-right">
-                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Score</p>
-                <p className={`text-xs font-black mt-0.5 leading-none ${perfColor}`}>
-                  {mockTest.score} / {mockTest.quesCount} ({scorePercentage.toFixed(1)}%)
-                </p>
-              </div>
+              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[130px]">{studentName}</span>
             </div>
 
+            {/* Score Chip */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+              <span className="text-slate-400 dark:text-slate-400 font-medium">Score:</span>
+              <span className={`font-black ${perfColor}`}>
+                {correct} / {totalQuestions} <span className="font-semibold text-[11px] opacity-80">({scorePercentage.toFixed(1)}%)</span>
+              </span>
+            </div>
+
+            {/* Download PDF Button */}
             <button
               onClick={() => handlePrint()}
-              className="group flex items-center justify-center p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-655 hover:text-slate-800 dark:text-slate-350 dark:hover:text-white shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer shrink-0"
-              title="Download PDF Results"
+              className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95"
+              title="Download PDF Report"
             >
-              <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Download PDF</span>
             </button>
+
+            {/* All Tests Link */}
+            <Link
+              to="/all-mock-tests"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all"
+            >
+              All Tests
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Content Container ── */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6" ref={contentRef}>
+        
+        {/* ── Executive Performance Hero Card ── */}
+        <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6 space-y-5">
+          
+          {/* Header Row: Title & Metadata */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  CBT Result Summary
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {tradeDisplay}
+                </span>
+                {mockTest.year && (
+                  <>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      Year {mockTest.year}
+                    </span>
+                  </>
+                )}
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+                {studentName}'s Examination Result
+              </h2>
+            </div>
+
+            {/* Overall Status Badge */}
+            <div className="flex items-center gap-3">
+              <div className={`px-4 py-2 rounded-2xl border text-center font-bold ${
+                isPassed
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                  : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800"
+              }`}>
+                <div className="text-[10px] uppercase tracking-wider font-extrabold opacity-75">Status</div>
+                <div className="text-sm sm:text-base font-black">{isPassed ? "PASSED" : "FAILED / NEEDS REVIEW"}</div>
+              </div>
+            </div>
           </div>
 
-        </div>
-      </div>
+          {/* 4 Performance Metric Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Total Score */}
+            <StatPill
+              icon={Award}
+              label="Overall Score"
+              value={`${correct} / ${totalQuestions}`}
+              subtext={`${scorePercentage.toFixed(1)}% Marks Scored`}
+              colorCls="bg-blue-50/60 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 border-blue-200/60 dark:border-blue-900/40"
+            />
 
-      {/* Main Grid Area */}
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-5 space-y-5" ref={contentRef}>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+            {/* Correct */}
+            <StatPill
+              icon={CheckCircle2}
+              label="Correct Answers"
+              value={correct}
+              subtext={`${((correct / Math.max(totalQuestions, 1)) * 100).toFixed(0)}% Accuracy`}
+              colorCls="bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 border-emerald-200/60 dark:border-emerald-900/40"
+            />
+
+            {/* Incorrect */}
+            <StatPill
+              icon={XCircle}
+              label="Incorrect Answers"
+              value={incorrect}
+              subtext={`${((incorrect / Math.max(totalQuestions, 1)) * 100).toFixed(0)}% Error Rate`}
+              colorCls="bg-rose-50/60 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200 border-rose-200/60 dark:border-rose-900/40"
+            />
+
+            {/* Unanswered */}
+            <StatPill
+              icon={AlertCircle}
+              label="Skipped / Unanswered"
+              value={unanswered}
+              subtext={`${((unanswered / Math.max(totalQuestions, 1)) * 100).toFixed(0)}% Left Blank`}
+              colorCls="bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border-amber-200/60 dark:border-amber-900/40"
+            />
+          </div>
+
+          {/* Progress Bar Track */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <span>Overall Score Progress</span>
+              <span className={`font-bold ${perfColor}`}>{scorePercentage.toFixed(1)}%</span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/40 dark:border-slate-700/50">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  scorePercentage >= 80
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-400"
+                    : scorePercentage >= 50
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-500"
+                    : "bg-gradient-to-r from-rose-500 to-amber-500"
+                }`}
+                style={{ width: `${Math.min(scorePercentage, 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Metadata Footer Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-6 pt-3 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-slate-400" />
+              <span>Student: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{studentName}</strong></span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>Submitted: <strong className="text-slate-700 dark:text-slate-300 font-semibold">
+                {mockTest.endTime ? new Date(mockTest.endTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "N/A"}
+              </strong></span>
+            </div>
+            {mockTest.startTime && mockTest.endTime && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Time Taken: <strong className="text-slate-700 dark:text-slate-300 font-semibold">
+                  {Math.max(1, Math.ceil((new Date(mockTest.endTime) - new Date(mockTest.startTime)) / 60000))} min
+                </strong></span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-slate-400" />
+              <span>Paper ID: <code className="font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px]">{mockTest.paperId}</code></span>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Feedback Banner ── */}
+        {scorePercentage >= 80 ? (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-sm font-semibold">
+            <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>Outstanding performance! You scored above 80%. You have demonstrated strong subject mastery.</span>
+          </div>
+        ) : scorePercentage < 50 ? (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm font-semibold">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>Score is below 50%. Review the questions you missed below and practice these topics in the CBT question bank.</span>
+          </div>
+        ) : null}
+
+        {/* ── 2-Column Responsive Workspace ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Main workspace (Left 3 columns on desktop) */}
-          <div className="lg:col-span-3 space-y-5">
-            {/* Header info for mobile (Score summary) */}
-            <div className="sm:hidden text-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <p className="text-xs font-bold text-slate-400">Your Score</p>
-              <p className={`text-3xl font-black mt-1 ${perfColor}`}>
-                {mockTest.score} <span className="text-sm font-semibold text-slate-400">/ {mockTest.quesCount}</span>
-              </p>
-              <p className="text-xs font-bold text-slate-500 mt-1">{scorePercentage.toFixed(1)}%</p>
+          {/* ── LEFT COLUMN (Questions & Filters) ── */}
+          <div className="lg:col-span-8 space-y-5">
+            
+            {/* Filter Tabs Bar */}
+            <div className="flex items-center justify-between gap-3 flex-wrap bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "all", label: "All Questions", count: totalQuestions, badgeCls: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" },
+                  { id: "correct", label: "Correct", count: correct, badgeCls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+                  { id: "incorrect", label: "Incorrect", count: incorrect, badgeCls: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" },
+                  { id: "skipped", label: "Skipped", count: unanswered, badgeCls: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
+                ].map((tab) => {
+                  const isActive = filter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFilter(tab.id)}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isActive ? "bg-white/20 text-white" : tab.badgeCls}`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="text-xs text-slate-400 font-medium px-2">
+                Showing {filteredQuestions.length} of {totalQuestions}
+              </div>
             </div>
 
-            {/* Performance banner */}
-            {scorePercentage >= 80 ? (
-              <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-bold backdrop-blur-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                Excellent! You scored above 80%. Keep up the great work!
-              </div>
-            ) : scorePercentage < 50 ? (
-              <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 dark:border-red-800/40 text-red-700 dark:text-red-400 text-xs sm:text-sm font-bold backdrop-blur-sm">
-                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-                Score below 50%. Review the topics and practice more questions.
-              </div>
-            ) : null}
-
-            {/* Filter Bar */}
-            <div className="flex gap-2 flex-wrap pb-1">
-              {[
-                { id: "all", label: "All Questions", count: mockTest.questions.length, cls: "text-slate-500 bg-slate-500/10 hover:bg-slate-500/15 border-slate-500/10" },
-                { id: "correct", label: "Correct", count: correct, cls: "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/15 border-emerald-500/10" },
-                { id: "incorrect", label: "Incorrect", count: incorrect, cls: "text-red-500 bg-red-500/10 hover:bg-red-500/15 border-red-500/10" },
-                { id: "skipped", label: "Skipped", count: unanswered, cls: "text-amber-500 bg-amber-500/10 hover:bg-amber-500/15 border-amber-500/10" },
-              ].map((tab) => {
-                const isActive = filter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setFilter(tab.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-sm shadow-blue-500/20 border-transparent scale-102"
-                        : `${tab.cls} bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800`
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${
-                      isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Question Review Cards */}
+            {/* Questions Review Cards */}
             <div className="space-y-4">
-              <h2 className="text-xs font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
-                Question Review · {filteredQuestions.length} questions
-              </h2>
-
               {filteredQuestions.map((question, index) => {
-                const isCorrect  = question.response === question.correctAnswer;
-                const isAnswered = question.response !== undefined && question.response !== null;
+                const isCorrect = question.response && question.response === question.correctAnswer;
+                const isAnswered = question.response !== undefined && question.response !== null && question.response !== "";
 
-                const accentCls = isCorrect
-                  ? "border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/2"
+                // Find absolute index in paper
+                const originalIndex = mockTest.questions.findIndex((q) => (q.$id || q.id) === (question.$id || question.id));
+                const qNum = originalIndex !== -1 ? originalIndex + 1 : index + 1;
+
+                const accentBorder = isCorrect
+                  ? "border-l-4 border-l-emerald-500 border-slate-200 dark:border-slate-800"
                   : isAnswered
-                  ? "border-l-red-500 bg-red-500/5 dark:bg-red-500/2"
-                  : "border-l-amber-500 bg-amber-500/5 dark:bg-amber-500/2";
-
-                const statusIcon = isCorrect
-                  ? <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  : isAnswered
-                  ? <XCircle className="w-5 h-5 text-red-500 shrink-0" />
-                  : <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />;
-
-                const qNumCls = isCorrect
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : isAnswered
-                  ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-
-                // Keep absolute numbering of the paper
-                const originalIndex = mockTest.questions.findIndex((q) => q.$id === question.$id);
+                  ? "border-l-4 border-l-rose-500 border-slate-200 dark:border-slate-800"
+                  : "border-l-4 border-l-amber-500 border-slate-200 dark:border-slate-800";
 
                 const resolved = resolveQuestion(question);
+
                 return (
-                  <div
-                    key={index}
-                    className={`rounded-2xl border-l-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md ${accentCls}`}
+                  <article
+                    key={question.$id || question.id || index}
+                    id={`question-card-${qNum}`}
+                    className={`rounded-2xl border bg-white dark:bg-slate-900 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md ${accentBorder}`}
                   >
-                    {/* Question Header */}
-                    <div className="flex items-start gap-3 p-4 sm:p-5">
-                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-xl text-xs font-black shrink-0 ${qNumCls}`}>
-                        {originalIndex + 1}
-                      </span>
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        {resolved.isMissing ? (
-                          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-600 dark:text-red-400">
-                            ⚠️ <strong>Question Content Not Available:</strong> {resolved.missingReason || `Document ID ${resolved.questionId} could not be retrieved from the database.`}
-                          </div>
+                    {/* Card Header */}
+                    <div className="p-4 sm:p-5 flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/30">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                          isCorrect
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                            : isAnswered
+                            ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/20"
+                            : "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                        }`}>
+                          {qNum}
+                        </span>
+                        <div>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Question {qNum}
+                          </span>
+                          {resolved.schemaVersion === 2 && (
+                            <span className="ml-2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+                              V2
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Status Chip */}
+                        {isCorrect ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Correct (+1)
+                          </span>
+                        ) : isAnswered ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                            <XCircle className="w-3.5 h-3.5" /> Incorrect (0)
+                          </span>
                         ) : (
-                          <>
-                            {/* Primary Question (English / Single) */}
-                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap select-text">
-                              {resolved.questionEnglish || resolved.questionRaw}
-                            </p>
-                            {/* Marathi Question (if bilingual) */}
-                            {resolved.questionMarathi && (
-                              <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 leading-snug font-serif select-text pt-1 border-t border-slate-100 dark:border-slate-800">
-                                <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.2 rounded mr-1.5">
-                                  मराठी
-                                </span>
-                                {resolved.questionMarathi}
-                              </p>
-                            )}
-                          </>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                            <AlertCircle className="w-3.5 h-3.5" /> Skipped (0)
+                          </span>
                         )}
 
-                        {/* Diagrams & Images */}
-                        {resolved.images.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-2">
-                            {resolved.images.map((img, i) => (
-                              <img
-                                key={img.id || i}
-                                src={img.url}
-                                alt={img.name || "Diagram"}
-                                className="rounded-lg max-h-48 border border-slate-200 dark:border-slate-800 object-contain bg-slate-50 dark:bg-slate-800"
-                              />
-                            ))}
-                          </div>
-                        )}
-
+                        {/* Teacher Edit Question Button */}
                         {isTeacher && question.$id && (
                           <Link
                             to={`/edit/${question.$id}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-black text-blue-500 hover:text-blue-655 dark:text-blue-400 mt-2 hover:underline"
+                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="Edit this question in Question Bank"
                           >
-                            <Edit className="w-3.5 h-3.5" /> Edit Question
+                            <Edit className="w-3.5 h-3.5" />
                           </Link>
                         )}
                       </div>
-                      {statusIcon}
                     </div>
 
-                    {/* Options list */}
-                    {!resolved.isMissing && (
-                      <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-2">
-                        {resolved.options.map((option, idx) => {
-                          const isCorrectOpt  = idx === getIndex(question.correctAnswer);
-                          const isSelectedOpt = idx === getIndex(question.response);
-
-                          const optCls = isCorrectOpt
-                            ? "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
-                            : isSelectedOpt
-                            ? "bg-red-500/5 dark:bg-red-500/10 border-red-500/30 text-red-800 dark:text-red-300"
-                            : "bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-350";
-
-                          return (
-                            <div
-                              key={idx}
-                              className={`flex items-start justify-between gap-2.5 px-3 py-2.5 rounded-xl border text-xs sm:text-sm transition-all ${optCls}`}
-                            >
-                              <span className="flex items-start gap-2 min-w-0 flex-1">
-                                <span className="font-bold text-slate-400 dark:text-slate-500 shrink-0 w-5 mt-0.5">
-                                  {OPTIONS[idx]}.
-                                </span>
-                                <span className="font-medium leading-snug space-y-0.5">
-                                  <div>{option.english || option.raw}</div>
-                                  {option.marathi && (
-                                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-serif">
-                                      {option.marathi}
-                                    </div>
-                                  )}
-                                  {option.imageUrl && (
-                                    <img
-                                      src={option.imageUrl}
-                                      alt={`Option ${OPTIONS[idx]}`}
-                                      className="max-h-24 rounded border border-slate-200 dark:border-slate-700 mt-1"
-                                    />
-                                  )}
-                                </span>
-                              </span>
-                              <span className="shrink-0 mt-0.5">
-                                {isCorrectOpt && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-white uppercase tracking-wider">
-                                    <CheckCircle2 className="w-3 h-3" /> Correct
-                                  </span>
-                                )}
-                                {isSelectedOpt && !isCorrectOpt && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-red-500 text-white uppercase tracking-wider">
-                                    <XCircle className="w-3 h-3" /> Your Ans
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          );
-                        })}
-
-                        {/* Explanation box (if available in V2) */}
-                        {(resolved.explanationEnglish || resolved.explanationMarathi) && (
-                          <div className="mt-3 p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs space-y-1">
-                            <p className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1">
-                              <Info className="w-3.5 h-3.5" /> Explanation
-                            </p>
-                            {resolved.explanationEnglish && (
-                              <p className="text-slate-700 dark:text-slate-300">{resolved.explanationEnglish}</p>
-                            )}
-                            {resolved.explanationMarathi && (
-                              <p className="text-slate-600 dark:text-slate-400 font-serif pt-1 border-t border-blue-100 dark:border-blue-900/30">
-                                {resolved.explanationMarathi}
-                              </p>
-                            )}
+                    {/* Question Body */}
+                    <div className="p-4 sm:p-5 space-y-4">
+                      {resolved.isMissing ? (
+                        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                          ⚠️ <strong>Question Content Not Available:</strong> {resolved.missingReason || `Document ID ${resolved.questionId} could not be retrieved.`}
+                        </div>
+                      ) : (
+                        <>
+                          {/* English Question Text */}
+                          <div className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 leading-relaxed select-text">
+                            {resolved.questionEnglish || resolved.questionRaw}
                           </div>
-                        )}
 
-                        {!isAnswered && (
-                          <p className="text-xs text-amber-600 dark:text-amber-455 mt-2 flex items-center gap-1.5 font-bold">
-                            <AlertCircle className="w-3.5 h-3.5" /> You did not answer this question
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          {/* Marathi Question Callout (if bilingual) */}
+                          {resolved.questionMarathi && (
+                            <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-1">
+                              <span className="inline-block text-[9px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded">
+                                मराठी भाषांतर
+                              </span>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 font-serif leading-relaxed select-text">
+                                {resolved.questionMarathi}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Question Diagrams / Images */}
+                          {resolved.images.length > 0 && (
+                            <div className="flex flex-wrap gap-2.5 pt-1">
+                              {resolved.images.map((img, i) => (
+                                <div
+                                  key={img.id || i}
+                                  onClick={() => setZoomedImage(img.url)}
+                                  className="relative group cursor-zoom-in rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 shadow-xs"
+                                >
+                                  <img
+                                    src={img.url}
+                                    alt={img.name || "Question diagram"}
+                                    className="max-h-52 w-auto object-contain rounded-lg"
+                                  />
+                                  <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                                    <ZoomIn className="w-5 h-5 text-white" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Options List with High-Clarity Status Badges */}
+                          <div className="space-y-2.5 pt-2">
+                            {resolved.options.map((option, idx) => {
+                              const letter = option.letter || OPTIONS[idx];
+                              const isCorrectOpt = letter === question.correctAnswer;
+                              const isSelectedOpt = letter === question.response;
+
+                              // Container style
+                              let containerCls = "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300";
+                              if (isSelectedOpt && isCorrectOpt) {
+                                containerCls = "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200 shadow-xs";
+                              } else if (isSelectedOpt && !isCorrectOpt) {
+                                containerCls = "border-rose-500 bg-rose-500/10 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200 shadow-xs";
+                              } else if (isCorrectOpt) {
+                                containerCls = "border-emerald-400/80 bg-emerald-500/5 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300 border-dashed";
+                              }
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border-2 transition-all ${containerCls}`}
+                                >
+                                  {/* Letter + Text */}
+                                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${
+                                      isSelectedOpt && isCorrectOpt
+                                        ? "bg-emerald-600 text-white"
+                                        : isSelectedOpt && !isCorrectOpt
+                                        ? "bg-rose-600 text-white"
+                                        : isCorrectOpt
+                                        ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400"
+                                        : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                    }`}>
+                                      {letter}
+                                    </span>
+
+                                    <div className="space-y-1 min-w-0">
+                                      <p className="text-xs sm:text-sm font-medium leading-relaxed select-text">
+                                        {option.english || option.raw}
+                                      </p>
+                                      {option.marathi && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-serif leading-relaxed select-text">
+                                          {option.marathi}
+                                        </p>
+                                      )}
+                                      {option.imageUrl && (
+                                        <img
+                                          src={option.imageUrl}
+                                          alt={`Option ${letter}`}
+                                          onClick={() => setZoomedImage(option.imageUrl)}
+                                          className="max-h-28 rounded-lg border border-slate-200 dark:border-slate-700 mt-1 cursor-zoom-in"
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Option Indicator Badge */}
+                                  <div className="shrink-0 mt-0.5">
+                                    {isSelectedOpt && isCorrectOpt && (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
+                                        <Check className="w-3 h-3 stroke-[3]" /> Your Answer (Correct)
+                                      </span>
+                                    )}
+                                    {isSelectedOpt && !isCorrectOpt && (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs">
+                                        <X className="w-3 h-3 stroke-[3]" /> Your Answer (Incorrect)
+                                      </span>
+                                    )}
+                                    {!isSelectedOpt && isCorrectOpt && (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                        <Check className="w-3 h-3 stroke-[3]" /> Correct Answer
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Explanation Box (V2 Feature) */}
+                          {(resolved.explanationEnglish || resolved.explanationMarathi) && (
+                            <div className="mt-4 p-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 space-y-1.5 text-xs">
+                              <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-200">
+                                <Info className="w-4 h-4 text-blue-600" />
+                                <span>Explanation & Solution</span>
+                              </div>
+                              {resolved.explanationEnglish && (
+                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                                  {resolved.explanationEnglish}
+                                </p>
+                              )}
+                              {resolved.explanationMarathi && (
+                                <p className="text-slate-600 dark:text-slate-400 font-serif leading-relaxed pt-1 border-t border-blue-100 dark:border-blue-900/40">
+                                  {resolved.explanationMarathi}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Skipped Notice */}
+                          {!isAnswered && (
+                            <div className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5 pt-1">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              <span>You did not answer this question during the exam.</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </article>
                 );
-
               })}
+
               {filteredQuestions.length === 0 && (
-                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500">
-                  No questions match the selected filter.
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center space-y-3 shadow-xs">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    No Questions Found
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    No questions in this mock test match the selected filter. Try selecting "All Questions".
+                  </p>
+                  <button
+                    onClick={() => setFilter("all")}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold"
+                  >
+                    Reset Filter
+                  </button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Sidebar Panel (Right 1 column on desktop) */}
-          <div className="lg:col-span-1 space-y-5 lg:sticky lg:top-20">
-            {/* Score progress bar card */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4.5 space-y-4 shadow-sm">
-              <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/40 pb-2">
-                Performance Score
+          {/* ── RIGHT COLUMN (Sticky Sidebar: Navigator & Meta) ── */}
+          <aside className="lg:col-span-4 space-y-5 lg:sticky lg:top-24">
+            
+            {/* Quick Question Jump Palette */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Question Navigator
+                </h3>
+                <span className="text-[11px] font-medium text-slate-400">
+                  {totalQuestions} Questions
+                </span>
+              </div>
+
+              {/* 5-Column Question Grid */}
+              <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
+                {mockTest.questions.map((q, idx) => {
+                  const isQCorrect = q.response && q.response === q.correctAnswer;
+                  const isQAnswered = q.response !== undefined && q.response !== null && q.response !== "";
+
+                  let btnCls = "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+                  if (isQCorrect) {
+                    btnCls = "bg-emerald-500 text-white border-emerald-600 shadow-xs";
+                  } else if (isQAnswered) {
+                    btnCls = "bg-rose-500 text-white border-rose-600 shadow-xs";
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToQuestion(idx + 1)}
+                      className={`h-9 rounded-xl font-bold text-xs border flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${btnCls}`}
+                      title={`Jump to Question ${idx + 1}`}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Navigator Legend */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-bold">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Correct
+                </div>
+                <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Incorrect
+                </div>
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Skipped
+                </div>
+              </div>
+            </div>
+
+            {/* Test Specifications Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                Assessment Details
               </h3>
               
-              <div className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</span>
-                  <span className={`text-base font-black ${perfColor}`}>{scorePercentage.toFixed(1)}%</span>
+              <dl className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-slate-500 dark:text-slate-400 font-medium">Candidate Name</dt>
+                  <dd className="font-bold text-slate-900 dark:text-slate-100 text-right">{studentName}</dd>
                 </div>
-                {/* Progress bar */}
-                <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/40 dark:border-slate-700/40">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      scorePercentage >= 80 ? "bg-gradient-to-r from-emerald-500 to-green-400"
-                      : scorePercentage >= 50 ? "bg-gradient-to-r from-blue-500 to-indigo-400"
-                      : "bg-gradient-to-r from-red-500 to-rose-400"
-                    }`}
-                    style={{ width: `${scorePercentage}%` }}
-                  />
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-slate-500 dark:text-slate-400 font-medium">Trade Discipline</dt>
+                  <dd className="font-bold text-slate-900 dark:text-slate-100 text-right truncate max-w-[160px]">{tradeDisplay}</dd>
                 </div>
-              </div>
-
-              {/* 4 stats grid */}
-              <div className="grid grid-cols-2 gap-2">
-                <Stat icon={Award}        label="Score"      value={`${mockTest.score}/${mockTest.quesCount}`} cls="bg-blue-500/5 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200/30 dark:border-blue-800/30" />
-                <Stat icon={CheckCircle2} label="Correct"    value={correct}   cls="bg-emerald-500/5 dark:bg-green-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/30 dark:border-emerald-800/30" />
-                <Stat icon={XCircle}      label="Incorrect"  value={incorrect} cls="bg-red-500/5 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200/30 dark:border-red-800/30" />
-                <Stat icon={AlertCircle}  label="Skipped"    value={unanswered}cls="bg-amber-500/5 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200/30 dark:border-amber-800/30" />
-              </div>
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-slate-500 dark:text-slate-400 font-medium">Training Year</dt>
+                  <dd className="font-bold text-slate-900 dark:text-slate-100 text-right">{mockTest.year || "Year 1"}</dd>
+                </div>
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-slate-500 dark:text-slate-400 font-medium">Exam Date</dt>
+                  <dd className="font-bold text-slate-900 dark:text-slate-100 text-right">
+                    {mockTest.endTime ? new Date(mockTest.endTime).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A"}
+                  </dd>
+                </div>
+                <div className="py-2.5 flex items-center justify-between gap-3">
+                  <dt className="text-slate-500 dark:text-slate-400 font-medium">Paper Reference</dt>
+                  <dd className="font-mono text-[11px] text-slate-700 dark:text-slate-300 text-right select-all">{mockTest.paperId}</dd>
+                </div>
+              </dl>
             </div>
 
-            {/* Exam Details Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4.5 space-y-3.5 shadow-sm">
-              <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/40 pb-2">
-                Exam Details
-              </h3>
-              <div className="divide-y divide-slate-150/40 dark:divide-slate-800/60 text-xs">
-                <div className="py-2.5 flex justify-between gap-2">
-                  <span className="text-slate-450 dark:text-slate-550 font-bold uppercase tracking-wider text-[9px]">Student</span>
-                  <span className="font-black text-slate-800 dark:text-slate-200">{mockTest.userName || "N/A"}</span>
-                </div>
-                <div className="py-2.5 flex justify-between gap-2">
-                  <span className="text-slate-450 dark:text-slate-550 font-bold uppercase tracking-wider text-[9px]">Trade</span>
-                  <span className="font-black text-slate-800 dark:text-slate-200 truncate max-w-[150px] text-right">{mockTest.tradeName || "N/A"}</span>
-                </div>
-                <div className="py-2.5 flex justify-between gap-2">
-                  <span className="text-slate-450 dark:text-slate-555 font-bold uppercase tracking-wider text-[9px]">Year</span>
-                  <span className="font-black text-slate-800 dark:text-slate-200">{mockTest.year || "N/A"}</span>
-                </div>
-                <div className="py-2.5 flex justify-between gap-2">
-                  <span className="text-slate-450 dark:text-slate-555 font-bold uppercase tracking-wider text-[9px]">Submitted</span>
-                  <span className="font-black text-slate-800 dark:text-slate-200 text-right">{mockTest.endTime ? new Date(mockTest.endTime).toLocaleString() : "Not Submitted"}</span>
-                </div>
-                {mockTest.startTime && mockTest.endTime && (
-                  <div className="py-2.5 flex justify-between gap-2">
-                    <span className="text-slate-450 dark:text-slate-555 font-bold uppercase tracking-wider text-[9px]">Time Taken</span>
-                    <span className="font-black text-slate-800 dark:text-slate-200">{Math.ceil((new Date(mockTest.endTime) - new Date(mockTest.startTime)) / 60000)} min</span>
-                  </div>
-                )}
-                <div className="py-2.5 flex justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60">
-                  <span className="text-slate-450 dark:text-slate-555 font-bold uppercase tracking-wider text-[9px]">Paper ID</span>
-                  <span className="font-mono text-[10px] text-slate-800 dark:text-slate-200 select-all">{mockTest.paperId}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Panel */}
-            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col gap-2.5">
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
               <button
                 onClick={() => handlePrint()}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-all cursor-pointer uppercase tracking-wider shadow-md shadow-blue-500/20"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
               >
-                <Download className="w-4 h-4" /> Download PDF Results
+                <Download className="w-4 h-4" /> Download PDF Report
               </button>
+
               <button
                 onClick={() => navigate("/all-mock-tests")}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-250 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 text-xs font-black transition-all cursor-pointer uppercase tracking-wider border border-slate-200/40 dark:border-slate-700/40"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" /> Back to All Tests
+                <ArrowLeft className="w-4 h-4" /> Back to All Mock Tests
               </button>
             </div>
 
-          </div>
-
+          </aside>
         </div>
-      </div>
+      </main>
+
+      {/* ── Lightbox Zoom Modal for Diagrams ── */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl p-3 border border-slate-700 shadow-2xl"
+          >
+            <button
+              onClick={() => setZoomedImage(null)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-colors z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img
+              src={zoomedImage}
+              alt="Enlarged Diagram"
+              className="max-h-[82vh] w-auto object-contain rounded-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

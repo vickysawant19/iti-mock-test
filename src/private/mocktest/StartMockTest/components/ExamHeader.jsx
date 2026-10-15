@@ -1,12 +1,13 @@
 import React from "react";
-import { Info, RotateCw } from "lucide-react";
+import { motion } from "framer-motion";
+import { Info, RotateCw, Clock } from "lucide-react";
 import itimitraLogo from "@/assets/itimitra-logo.webp";
 
 /**
  * Government-exam-style fixed top header.
  *
  * Left  : ITI Mitra Logo + ITI Mitra Mock Test branding
- * Center: Countdown timer (full bar + HH:MM:SS)
+ * Center: Countdown timer (full bar + HH:MM:SS) + Urgency pulse
  * Right : Instructions button
  */
 const ExamHeader = ({
@@ -20,8 +21,9 @@ const ExamHeader = ({
   onToggleLandscape,
 }) => {
   const pct = totalSeconds > 0 ? (remainingSeconds / totalSeconds) * 100 : 0;
+  const isUrgent = timeWarning || remainingSeconds <= 300;
   const barColor =
-    remainingSeconds <= 300
+    isUrgent
       ? "bg-red-500"
       : remainingSeconds <= 600
         ? "bg-amber-500"
@@ -45,27 +47,53 @@ const ExamHeader = ({
           </div>
         </div>
 
-        {/* ── Center: Timer ── */}
-        <div className="flex-1 max-w-xs mx-2 md:mx-6">
-          <div className="text-center">
+        {/* ── Center: Timer with Urgency Pulse ── */}
+        <div className="flex-1 max-w-xs mx-2 md:mx-6 flex flex-col items-center">
+          <div className="text-center w-full">
             <div className="text-[9px] text-blue-200 uppercase tracking-widest mb-0.5 hidden md:block">
               Time Remaining
             </div>
-            <div
-              className={`font-mono text-base md:text-xl font-bold tracking-tight leading-none ${
-                remainingSeconds <= 300
-                  ? "text-red-300 animate-pulse"
-                  : "text-white"
+            
+            {/* Urgency Heartbeat + Shaking Clock Icon */}
+            <motion.div
+              animate={
+                isUrgent
+                  ? { scale: [1, 1.07, 1] }
+                  : { scale: 1 }
+              }
+              transition={
+                isUrgent
+                  ? { duration: 0.95, repeat: Infinity, ease: "easeInOut" }
+                  : { duration: 0.2 }
+              }
+              className={`inline-flex items-center justify-center gap-1.5 font-mono text-base md:text-xl font-bold tracking-tight leading-none ${
+                isUrgent ? "text-red-300" : "text-white"
               }`}
             >
-              {formatTime(remainingSeconds)}
-            </div>
+              <motion.span
+                animate={
+                  isUrgent
+                    ? { rotate: [0, -14, 14, -10, 10, 0] }
+                    : { rotate: 0 }
+                }
+                transition={
+                  isUrgent ? { duration: 0.7, repeat: Infinity, repeatDelay: 1.2 } : {}
+                }
+                className="flex items-center"
+              >
+                <Clock className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isUrgent ? "text-red-400" : "text-blue-200"}`} />
+              </motion.span>
+              <span>{formatTime(remainingSeconds)}</span>
+            </motion.div>
           </div>
+
           {/* Timer progress bar */}
-          <div className="mt-1.5 h-1.5 rounded-full bg-white/20 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 ease-linear ${barColor}`}
-              style={{ width: `${pct}%` }}
+          <div className="mt-1.5 h-1.5 w-full rounded-full bg-white/20 overflow-hidden">
+            <motion.div
+              className={`h-full rounded-full ${barColor}`}
+              initial={{ width: "100%" }}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: "tween", ease: "linear", duration: 0.5 }}
             />
           </div>
         </div>

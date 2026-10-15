@@ -125,7 +125,7 @@ const Footer = () => {
         </p>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-gray-700/70 text-gray-300 border border-gray-600/80">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>v{APP_VERSION}</span>
+          <span>v{APP_VERSION} (Release 2.0)</span>
           <span className="text-gray-500">•</span>
           <span className="text-[11px] text-gray-400">{BUILD_DATE}</span>
         </span>

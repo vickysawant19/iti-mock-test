@@ -31,7 +31,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isSetupPromptDismissed, setIsSetupPromptDismissed] = useState(
-    () => sessionStorage.getItem("dismissed_setup_prompt") === "true"
+    () => sessionStorage.getItem("dismissed_setup_prompt") === "true",
   );
   const batchInitUserRef = useRef(null);
   const dispatch = useDispatch();
@@ -53,12 +53,14 @@ function App() {
     dispatch(addProfile({ isLoading: true }));
     try {
       const currentUser = await authService.getCurrentUser();
-      
+
       if (currentUser) {
         // Detect login user change to prevent data swapping
         const lastUserId = localStorage.getItem("last_active_user");
         if (lastUserId && lastUserId !== currentUser.$id) {
-          console.warn("[App.jsx] Logged-in user changed. Cleaning localStorage user caches...");
+          console.warn(
+            "[App.jsx] Logged-in user changed. Cleaning localStorage user caches...",
+          );
           const theme = localStorage.getItem("app-theme");
           localStorage.clear();
           if (theme) {
@@ -74,7 +76,7 @@ function App() {
 
         if (!freshProfile) {
           const profileRes = await userProfileService.getUserProfile(
-            currentUser.$id
+            currentUser.$id,
           );
           if (profileRes) {
             dispatch(addProfile({ data: profileRes, isLoading: false }));
@@ -102,7 +104,10 @@ function App() {
       console.error("Error checking user status: ", error);
       dispatch(addUser({ isLoading: false }));
       dispatch(addProfile({ isLoading: false }));
-      if (error?.code === 402 || error?.type === "limit_databases_reads_exceeded") {
+      if (
+        error?.code === 402 ||
+        error?.type === "limit_databases_reads_exceeded"
+      ) {
         navigate("/quota-exceeded");
       }
     } finally {
@@ -115,10 +120,15 @@ function App() {
   useEffect(() => {
     checkUserStatus();
     // Allow the ITI Mitra start screen to be clearly viewed before smoothly fading out
-    if (typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.()) {
+    if (
+      typeof window !== "undefined" &&
+      window.Capacitor?.isNativePlatform?.()
+    ) {
       const splashTimer = setTimeout(() => {
         import("@capacitor/splash-screen")
-          .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 500 }))
+          .then(({ SplashScreen }) =>
+            SplashScreen.hide({ fadeOutDuration: 500 }),
+          )
           .catch(() => {});
       }, 1800);
       return () => clearTimeout(splashTimer);
@@ -131,7 +141,12 @@ function App() {
       batchInitUserRef.current = null;
       return;
     }
-    if (!profileInitialized || !profile || batchInitUserRef.current === user.$id) return;
+    if (
+      !profileInitialized ||
+      !profile ||
+      batchInitUserRef.current === user.$id
+    )
+      return;
 
     batchInitUserRef.current = user.$id;
     dispatch(initializeActiveBatch(profile));
@@ -141,12 +156,16 @@ function App() {
     if (isLoading || !profileInitialized || !user) return;
     if (location.pathname !== "/") return;
 
-    const isTeacher = user.labels?.includes("Teacher") || profile?.role?.includes?.("Teacher");
+    const isTeacher =
+      user.labels?.includes("Teacher") || profile?.role?.includes?.("Teacher");
     const isAdmin = user.labels?.includes("admin");
-    const isProfileComplete = profile?.isProfileComplete ?? checkProfileCompletion(profile).isComplete;
+    const isProfileComplete =
+      profile?.isProfileComplete ?? checkProfileCompletion(profile).isComplete;
 
     if (!isAdmin && !isProfileComplete) {
-      navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", { replace: true });
+      navigate(isTeacher ? "/onboarding/teacher" : "/onboarding", {
+        replace: true,
+      });
       return;
     }
 
@@ -156,8 +175,6 @@ function App() {
       navigate("/batches/create", { replace: true });
     } else if (!isTeacher && !isAdmin && userBatches.length === 0) {
       navigate("/browse-batches", { replace: true });
-    } else if (location.pathname === "/") {
-      navigate("/arena", { replace: true });
     }
   }, [
     activeBatchState.isLoading,
@@ -171,33 +188,37 @@ function App() {
     userBatches.length,
   ]);
 
-  const isTeacher = user?.labels?.includes("Teacher") || profile?.role?.includes?.("Teacher");
+  const isTeacher =
+    user?.labels?.includes("Teacher") || profile?.role?.includes?.("Teacher");
   const isAdmin = user?.labels?.includes("admin");
-  const isProfileComplete = profile?.isProfileComplete ?? checkProfileCompletion(profile).isComplete;
+  const isProfileComplete =
+    profile?.isProfileComplete ?? checkProfileCompletion(profile).isComplete;
   const isOnboardingPage = location.pathname.startsWith("/onboarding");
 
   // Track session and local completion status
   const hasManagedEnrollment = Boolean(
     location.pathname.includes("/students") ||
-    localStorage.getItem("teacher_managed_enrollment") === "true"
+    localStorage.getItem("teacher_managed_enrollment") === "true",
   );
   const hasFoundBatch = Boolean(
     location.pathname === "/browse-batches" ||
-    localStorage.getItem("student_found_batch") === "true"
+    localStorage.getItem("student_found_batch") === "true",
   );
 
   const studentRequests = activeBatchState.studentRequests || [];
-  const hasSubmittedRequest = studentRequests.length > 0 || userBatches.length > 0;
+  const hasSubmittedRequest =
+    studentRequests.length > 0 || userBatches.length > 0;
   const hasPendingBatchRequest = studentRequests.some(
-    (request) => request.status?.toLowerCase() === "pending"
+    (request) => request.status?.toLowerCase() === "pending",
   );
 
   const teacherBatchesExist = userBatches.length > 0;
   const teacherHasEnrolledStudents = Boolean(
-    teacherBatchesExist && (
-      userBatches.some((b) => (b.memberCount || 0) > 1 || (b.totalStudents || 0) > 0) ||
-      hasManagedEnrollment
-    )
+    teacherBatchesExist &&
+    (userBatches.some(
+      (b) => (b.memberCount || 0) > 1 || (b.totalStudents || 0) > 0,
+    ) ||
+      hasManagedEnrollment),
   );
 
   // Exact first-session checklists:
@@ -210,7 +231,8 @@ function App() {
       complete: Boolean(isProfileComplete),
       path: "/onboarding/teacher",
       actionLabel: "Complete profile",
-      description: "Finish your instructor profile details to unlock batch management.",
+      description:
+        "Finish your instructor profile details to unlock batch management.",
     },
     {
       id: "create-batch",
@@ -218,13 +240,16 @@ function App() {
       complete: teacherBatchesExist,
       path: "/batches/create",
       actionLabel: "Create batch",
-      description: "Set up your batch schedule, attendance window, and campus location.",
+      description:
+        "Set up your batch schedule, attendance window, and campus location.",
     },
     {
       id: "enrollment",
       label: "Manage enrollment",
       complete: teacherHasEnrolledStudents,
-      path: userBatches[0]?.$id ? `/batches/${userBatches[0].$id}/students` : "/batches/students",
+      path: userBatches[0]?.$id
+        ? `/batches/${userBatches[0].$id}/students`
+        : "/batches/students",
       actionLabel: "Manage enrollment",
       description: "Add students directly or review enrollment join requests.",
     },
@@ -237,12 +262,15 @@ function App() {
       complete: Boolean(isProfileComplete),
       path: "/onboarding",
       actionLabel: "Complete profile",
-      description: "Finish your personal and trade details to begin discovering batches.",
+      description:
+        "Finish your personal and trade details to begin discovering batches.",
     },
     {
       id: "find-batch",
       label: "Find a batch",
-      complete: Boolean(userBatches.length > 0 || hasSubmittedRequest || hasFoundBatch),
+      complete: Boolean(
+        userBatches.length > 0 || hasSubmittedRequest || hasFoundBatch,
+      ),
       path: "/browse-batches",
       actionLabel: "Find a batch",
       description: "Browse available batches by institution and trade.",
@@ -250,7 +278,10 @@ function App() {
     {
       id: "request-join",
       label: "Request to join",
-      complete: Boolean(userBatches.length > 0 || (hasSubmittedRequest && !hasPendingBatchRequest)),
+      complete: Boolean(
+        userBatches.length > 0 ||
+        (hasSubmittedRequest && !hasPendingBatchRequest),
+      ),
       pending: Boolean(hasPendingBatchRequest && userBatches.length === 0),
       path: "/browse-batches",
       actionLabel: hasPendingBatchRequest ? "Track request" : "Request to join",
@@ -263,15 +294,16 @@ function App() {
   const setupSteps = isTeacher ? teacherSteps : studentSteps;
   const completedStepsCount = setupSteps.filter((step) => step.complete).length;
   const isAllComplete = completedStepsCount === setupSteps.length;
-  const currentStep = setupSteps.find((step) => !step.complete) || setupSteps[setupSteps.length - 1];
+  const currentStep =
+    setupSteps.find((step) => !step.complete) ||
+    setupSteps[setupSteps.length - 1];
 
   // Instant check from localStorage to prevent split-second flash on page reload
   const isLocallySetupComplete = Boolean(
-    user?.$id && (
-      localStorage.getItem(`setup_completed_${user.$id}`) === "true" ||
+    user?.$id &&
+    (localStorage.getItem(`setup_completed_${user.$id}`) === "true" ||
       localStorage.getItem(`student_joined_batch_${user.$id}`) === "true" ||
-      Boolean(localStorage.getItem(`activeBatch_${user.$id}`))
-    )
+      Boolean(localStorage.getItem(`activeBatch_${user.$id}`))),
   );
 
   // If complete, persist so subsequent reloads never flash
@@ -290,7 +322,7 @@ function App() {
     !isOnboardingPage &&
     !isLocallySetupComplete &&
     !isAllComplete &&
-    !isSetupPromptDismissed
+    !isSetupPromptDismissed,
   );
 
   return (
@@ -306,7 +338,10 @@ function App() {
         )}
 
         {showSetupPrompt && (
-          <div className="mx-auto w-full max-w-7xl px-3 pt-3 sm:px-5 lg:px-8" role="status">
+          <div
+            className="mx-auto w-full max-w-7xl px-3 pt-3 sm:px-5 lg:px-8"
+            role="status"
+          >
             <div className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/95 px-4 py-3.5 shadow-xs backdrop-blur-xs dark:border-indigo-900/70 dark:bg-indigo-950/40 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -320,11 +355,17 @@ function App() {
                   </span>
                 </div>
                 <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {currentStep.label}: <span className="font-normal text-slate-600 dark:text-slate-300">{currentStep.description}</span>
+                  {currentStep.label}:{" "}
+                  <span className="font-normal text-slate-600 dark:text-slate-300">
+                    {currentStep.description}
+                  </span>
                 </p>
 
                 {/* Connected Stepper */}
-                <ol className="mt-3 flex flex-wrap items-center gap-1.5 sm:gap-2" aria-label="First-session checklist">
+                <ol
+                  className="mt-3 flex flex-wrap items-center gap-1.5 sm:gap-2"
+                  aria-label="First-session checklist"
+                >
                   {setupSteps.map((step, index) => {
                     const isCurrent = currentStep.id === step.id;
                     return (
@@ -342,10 +383,10 @@ function App() {
                               step.pending
                                 ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
                                 : step.complete
-                                ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
-                                : isCurrent
-                                ? "border-indigo-400 bg-indigo-600 text-white shadow-xs dark:border-indigo-500 dark:bg-indigo-600"
-                                : "border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400"
+                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
+                                  : isCurrent
+                                    ? "border-indigo-400 bg-indigo-600 text-white shadow-xs dark:border-indigo-500 dark:bg-indigo-600"
+                                    : "border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400"
                             }`}
                           >
                             <span
@@ -353,17 +394,29 @@ function App() {
                                 step.pending
                                   ? "bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200"
                                   : step.complete
-                                  ? "bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200"
-                                  : isCurrent
-                                  ? "bg-white text-indigo-700"
-                                  : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                    ? "bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200"
+                                    : isCurrent
+                                      ? "bg-white text-indigo-700"
+                                      : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                               }`}
                             >
-                              {step.pending ? "⏳" : step.complete ? "✓" : index + 1}
+                              {step.pending
+                                ? "⏳"
+                                : step.complete
+                                  ? "✓"
+                                  : index + 1}
                             </span>
-                            <span className={step.complete ? "line-through opacity-85" : ""}>
+                            <span
+                              className={
+                                step.complete ? "line-through opacity-85" : ""
+                              }
+                            >
                               {step.label}
-                              {step.pending && <span className="ml-1 text-[10px] font-normal opacity-90">(Pending)</span>}
+                              {step.pending && (
+                                <span className="ml-1 text-[10px] font-normal opacity-90">
+                                  (Pending)
+                                </span>
+                              )}
                             </span>
                           </Link>
                         </li>

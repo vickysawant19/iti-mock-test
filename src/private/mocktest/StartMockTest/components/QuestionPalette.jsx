@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Phone, Award, CheckSquare, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
+import { springSnappy } from "../motionVariants";
 
 /* ── Colour map for each question state ──────────────────────────────────── */
 export const Q_STATE = {
@@ -51,13 +53,13 @@ const fixProfileImage = (url) => {
  * Full right-sidebar component:
  *   – Student profile card
  *   – Status legend
- *   – Question navigator grid
+ *   – Question navigator grid with shared layoutId active question ring
  *   – Submit panel (progress + button)
  *
  * On mobile it renders as a slide-up bottom drawer triggered by a handle.
  */
 const QuestionPalette = ({
-  questions,
+  questions = [],
   visitedSet,
   markedSet,
   currentQuestionIndex,
@@ -169,7 +171,7 @@ const QuestionPalette = ({
         </>
       )}
 
-      {/* ── Question Navigator ── */}
+      {/* ── Question Navigator with Gliding Active Ring ── */}
       <div className="flex-1 px-4 py-3 overflow-y-auto">
         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
           Question Palette
@@ -186,27 +188,37 @@ const QuestionPalette = ({
             const isMissing = !ques.question && !ques.questionEnglish && !ques.questionMarathi && (!ques.options || ques.options.length === 0);
 
             return (
-              <button
-                key={index}
+              <motion.button
+                key={ques.$id || ques.questionId || index}
                 type="button"
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => {
                   onSelectQuestion(index);
                   if (window.innerWidth < 1024) onTogglePalette(false);
                 }}
                 className={`
-                  relative w-full aspect-square rounded-md text-[10px] font-bold border-[1.5px] transition-all duration-150
+                  relative w-full aspect-square rounded-md text-[10px] font-bold border-[1.5px] transition-colors
                   flex items-center justify-center
                   ${stateStyle[state]}
-                  ${isCurrent ? "ring-2 ring-offset-1 ring-amber-400 scale-110 z-10" : "hover:scale-105"}
                   ${isMissing ? "!border-dashed !border-red-400" : ""}
                 `}
                 title={isMissing ? `Q#${index + 1}: Missing from Question Bank` : `Question ${index + 1}`}
               >
                 {index + 1}
                 {isMissing && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-900 shadow-sm" />
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-900 shadow-sm z-20" />
                 )}
-              </button>
+
+                {/* Gliding active question indicator across the 6-col grid */}
+                {isCurrent && (
+                  <motion.span
+                    layoutId="activeQuestionRing"
+                    transition={springSnappy}
+                    className="absolute -inset-1 rounded-lg border-2 border-amber-400 pointer-events-none z-10 shadow-[0_0_8px_rgba(251,191,36,0.55)]"
+                  />
+                )}
+              </motion.button>
             );
           })}
         </div>
@@ -214,15 +226,16 @@ const QuestionPalette = ({
 
       {/* ── Submit Panel ── */}
       <div className="px-4 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex-shrink-0">
-        {/* Submit button (Desktop Only, or Forced Landscape) */}
-        <Button
-          type="submit"
-          disabled={isSubmitLoading}
-          className="flex w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2.5 rounded-xl shadow-md items-center justify-center gap-2"
-        >
-          <CheckSquare className="w-4 h-4" />
-          {isSubmitLoading ? "Submitting…" : "Review & Submit"}
-        </Button>
+        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            type="submit"
+            disabled={isSubmitLoading}
+            className="flex w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2.5 rounded-xl shadow-md items-center justify-center gap-2"
+          >
+            <CheckSquare className="w-4 h-4" />
+            {isSubmitLoading ? "Submitting…" : "Review & Submit"}
+          </Button>
+        </motion.div>
       </div>
     </div>
   );
@@ -230,12 +243,17 @@ const QuestionPalette = ({
   return (
     <>
       {/* Mobile backdrop */}
-      {isPaletteOpen && (
-        <div
-          className={`fixed inset-0 bg-black/40 z-30 ${isLandscapeForced ? 'hidden' : 'lg:hidden'} backdrop-blur-sm`}
-          onClick={() => onTogglePalette(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isPaletteOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 bg-black/40 z-30 ${isLandscapeForced ? 'hidden' : 'lg:hidden'} backdrop-blur-xs`}
+            onClick={() => onTogglePalette(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Desktop sidebar */}
       <aside className={`${isLandscapeForced ? 'flex w-64 md:w-72 xl:w-80' : 'hidden lg:flex lg:w-72 xl:w-80'} flex-shrink-0 flex-col border-l border-slate-200 dark:border-slate-800 h-full overflow-hidden`}>
@@ -266,16 +284,18 @@ const QuestionPalette = ({
 
       {/* Mobile floating palette toggle (when drawer is closed) */}
       {!isPaletteOpen && (
-        <button
+        <motion.button
           type="button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.94 }}
           onClick={() => onTogglePalette(true)}
-          className={`${isLandscapeForced ? 'hidden' : 'lg:hidden'} fixed bottom-20 right-4 z-40 bg-[#1a3a6b] text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition-all active:scale-95`}
+          className={`${isLandscapeForced ? 'hidden' : 'lg:hidden'} fixed bottom-20 right-4 z-40 bg-[#1a3a6b] text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 transition-transform`}
         >
           <span className="w-5 h-5 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center font-bold">
             {answeredCount}
           </span>
           Palette
-        </button>
+        </motion.button>
       )}
     </>
   );

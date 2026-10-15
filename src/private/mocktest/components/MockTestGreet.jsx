@@ -1,7 +1,13 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Clock, Award, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import itimitraLogo from "@/assets/itimitra-logo.webp";
+import {
+  staggerContainer,
+  fadeUpItem,
+  springSnappy,
+} from "../StartMockTest/motionVariants";
 
 const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, onShowInstructions }) => {
   const [accepted, setAccepted] = React.useState(false);
@@ -13,9 +19,18 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
   }
 
   return (
-    <div className="h-full w-full flex-grow bg-slate-50 dark:bg-slate-950 overflow-y-auto font-sans">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+      exit={{ opacity: 0, scale: 0.97, filter: "blur(6px)", transition: { duration: 0.25 } }}
+      className="h-full w-full flex-grow bg-slate-50 dark:bg-slate-950 overflow-y-auto font-sans"
+    >
       {/* ── Top Branding Strip ── */}
-      <div className="bg-[#1a3a6b] text-white py-3 px-6 flex items-center justify-between shadow-md border-b border-white/10">
+      <motion.div
+        variants={fadeUpItem}
+        className="bg-[#1a3a6b] text-white py-3 px-6 flex items-center justify-between shadow-md border-b border-white/10"
+      >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-white p-0.5 shadow-md">
             <img src={itimitraLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -25,11 +40,14 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
         <div className="hidden sm:block text-[10px] font-bold uppercase tracking-widest opacity-60">
           Electronic Examination Portal
         </div>
-      </div>
+      </motion.div>
 
       <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
         {/* ── Paper Info Card ── */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <motion.div
+          variants={fadeUpItem}
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
+        >
           <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
               {mockTest?.name || "Mock Test Assessment"}
@@ -37,34 +55,49 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
           </div>
 
           <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30">
+            <motion.div
+              whileHover={{ y: -3 }}
+              transition={springSnappy}
+              className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 hover:border-blue-400/60 transition-colors"
+            >
               <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               <div>
                 <div className="text-[10px] font-bold uppercase text-blue-500 tracking-wider">Duration</div>
                 <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{toHoursAndMinutes(mockTest?.totalMinutes)}</div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30">
+            <motion.div
+              whileHover={{ y: -3 }}
+              transition={springSnappy}
+              className="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 hover:border-emerald-400/60 transition-colors"
+            >
               <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <div className="text-[10px] font-bold uppercase text-emerald-500 tracking-wider">Questions</div>
                 <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{mockTest?.questions?.length || 0} Nos.</div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/30">
+            <motion.div
+              whileHover={{ y: -3 }}
+              transition={springSnappy}
+              className="flex items-center gap-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/30 hover:border-purple-400/60 transition-colors"
+            >
               <Award className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               <div>
                 <div className="text-[10px] font-bold uppercase text-purple-500 tracking-wider">Total Marks</div>
                 <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{(mockTest?.questions?.length || 0) * 1}</div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Summary Instructions ── */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <motion.div
+          variants={fadeUpItem}
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm"
+        >
           <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Important Instructions</h3>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             {[
@@ -97,10 +130,10 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
               Click the button above to read the detailed examination policy and color-code legends.
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Acceptance & Action ── */}
-        <div className="flex flex-col items-center space-y-6 pt-4 pb-12">
+        <motion.div variants={fadeUpItem} className="flex flex-col items-center space-y-6 pt-4 pb-12">
           <label className="flex items-start gap-3 max-w-2xl cursor-pointer group">
             <input
               type="checkbox"
@@ -113,19 +146,25 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
             </span>
           </label>
 
-          <Button
-            disabled={!accepted}
-            onClick={handleStartExam}
-            className={`
-              w-full sm:w-80 py-6 rounded-2xl text-lg font-bold shadow-xl transition-all duration-300
-              ${accepted
-                ? "bg-[#1a3a6b] hover:bg-[#15305c] text-white scale-100"
-                : "bg-slate-200 dark:bg-slate-800 text-slate-400 scale-95 opacity-60 cursor-not-allowed"
-              }
-            `}
+          <motion.div
+            whileHover={accepted ? { scale: 1.02 } : {}}
+            whileTap={accepted ? { scale: 0.97 } : {}}
+            className="w-full sm:w-80"
           >
-            {mockTest?.startTime ? "RESUME EXAMINATION" : "I AM READY TO BEGIN"}
-          </Button>
+            <Button
+              disabled={!accepted}
+              onClick={handleStartExam}
+              className={`
+                w-full py-6 rounded-2xl text-lg font-bold shadow-xl transition-all duration-300
+                ${accepted
+                  ? "bg-[#1a3a6b] hover:bg-[#15305c] text-white scale-100"
+                  : "bg-slate-200 dark:bg-slate-800 text-slate-400 scale-95 opacity-60 cursor-not-allowed"
+                }
+              `}
+            >
+              {mockTest?.startTime ? "RESUME EXAMINATION" : "I AM READY TO BEGIN"}
+            </Button>
+          </motion.div>
 
           {import.meta.env.DEV && (
             <button
@@ -137,9 +176,9 @@ const MockTestGreet = ({ mockTest, handleStartExam, onStartWithoutFullscreen, on
               ⚡ Start without Fullscreen (Dev Mode)
             </button>
           )}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -813,7 +813,7 @@ const Home = () => {
               </p>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>v{APP_VERSION}</span>
+                <span>v{APP_VERSION} (Release 2.0)</span>
                 <span className="text-slate-300 dark:text-slate-600">•</span>
                 <span className="text-[11px] text-slate-400 dark:text-slate-500">{BUILD_DATE}</span>
               </span>

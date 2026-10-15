@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ const StartMockTest = () => {
       : "";
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [navDirection, setNavDirection] = useState(1); // 1 = Next, -1 = Prev
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isGreetShown, setIsGreetShown] = useState(false);
@@ -199,10 +201,17 @@ const StartMockTest = () => {
   };
 
   const handleNavigation = (step) => {
+    setNavDirection(step >= 0 ? 1 : -1);
     setCurrentQuestionIndex((prev) => {
       const next = prev + step;
       return next >= 0 && next < mockTest.questions.length ? next : prev;
     });
+  };
+
+  const handleSelectQuestion = (targetIndex) => {
+    if (targetIndex === currentQuestionIndex) return;
+    setNavDirection(targetIndex > currentQuestionIndex ? 1 : -1);
+    setCurrentQuestionIndex(targetIndex);
   };
 
   const handleToggleMark = (questionId) => {
@@ -269,71 +278,80 @@ const StartMockTest = () => {
           </DialogContent>
         </Dialog>
 
-        {!isGreetShown ? (
-          <MockTestGreet
-            mockTest={mockTest}
-            handleStartExam={() => handleStartExam(false)}
-            onStartWithoutFullscreen={() => {
-              setDevSkipFullscreen(true);
-              localStorage.setItem("dev_skip_fullscreen", "true");
-              handleStartExam(true);
-            }}
-            onShowInstructions={handleShowInstructions}
-          />
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              requestSubmitExam();
-            }}
-            className="flex-grow flex flex-col overflow-hidden"
-          >
-            {/* ── Top Header ── */}
-            <ExamHeader
-              remainingSeconds={remainingSeconds}
-              totalSeconds={totalSeconds}
-              timeWarning={timeWarning}
-              formatTime={formatTime}
+        <AnimatePresence mode="wait">
+          {!isGreetShown ? (
+            <MockTestGreet
+              key="mock-test-greet-screen"
+              mockTest={mockTest}
+              handleStartExam={() => handleStartExam(false)}
+              onStartWithoutFullscreen={() => {
+                setDevSkipFullscreen(true);
+                localStorage.setItem("dev_skip_fullscreen", "true");
+                handleStartExam(true);
+              }}
               onShowInstructions={handleShowInstructions}
-              isMobilePortrait={isMobilePortrait}
-              isLandscapeForced={isLandscapeForced}
-              onToggleLandscape={() => setIsLandscapeForced(!isLandscapeForced)}
             />
-
-            {/* ── Main 2-column layout ── */}
-            <div className="flex-grow flex overflow-hidden">
-              {/* Left: Question Area */}
-              <QuestionCard
-                question={mockTest.questions[currentQuestionIndex]}
-                questionIndex={currentQuestionIndex}
-                totalQuestions={mockTest.questions.length}
-                isMarked={markedSet.has(mockTest.questions[currentQuestionIndex]?.$id)}
-                onOptionChange={handleOptionChange}
-                onNavigate={handleNavigation}
-                onToggleMark={handleToggleMark}
-                isSubmitLoading={isSubmitLoading}
-                onSubmit={requestSubmitExam}
-                isLandscapeForced={isLandscapeForced || !isMobilePortrait}
+          ) : (
+            <motion.form
+              key="mock-test-exam-workspace"
+              initial={{ opacity: 0, scale: 0.985 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                requestSubmitExam();
+              }}
+              className="flex-grow flex flex-col overflow-hidden"
+            >
+              {/* ── Top Header ── */}
+              <ExamHeader
+                remainingSeconds={remainingSeconds}
+                totalSeconds={totalSeconds}
+                timeWarning={timeWarning}
+                formatTime={formatTime}
+                onShowInstructions={handleShowInstructions}
+                isMobilePortrait={isMobilePortrait}
+                isLandscapeForced={isLandscapeForced}
+                onToggleLandscape={() => setIsLandscapeForced(!isLandscapeForced)}
               />
 
-              {/* Right: Sidebar / Drawer */}
-              <QuestionPalette
-                questions={mockTest.questions}
-                visitedSet={visitedSet}
-                markedSet={markedSet}
-                currentQuestionIndex={currentQuestionIndex}
-                isPaletteOpen={isPaletteOpen}
-                onTogglePalette={setIsPaletteOpen}
-                onSelectQuestion={setCurrentQuestionIndex}
-                profile={profile}
-                user={user}
-                answeredCount={answeredCount}
-                isSubmitLoading={isSubmitLoading}
-                isLandscapeForced={isLandscapeForced || !isMobilePortrait}
-              />
-            </div>
-          </form>
-        )}
+              {/* ── Main 2-column layout ── */}
+              <div className="flex-grow flex overflow-hidden">
+                {/* Left: Question Area */}
+                <QuestionCard
+                  question={mockTest.questions[currentQuestionIndex]}
+                  questionIndex={currentQuestionIndex}
+                  navDirection={navDirection}
+                  totalQuestions={mockTest.questions.length}
+                  isMarked={markedSet.has(mockTest.questions[currentQuestionIndex]?.$id)}
+                  onOptionChange={handleOptionChange}
+                  onNavigate={handleNavigation}
+                  onToggleMark={handleToggleMark}
+                  isSubmitLoading={isSubmitLoading}
+                  onSubmit={requestSubmitExam}
+                  isLandscapeForced={isLandscapeForced || !isMobilePortrait}
+                />
+
+                {/* Right: Sidebar / Drawer */}
+                <QuestionPalette
+                  questions={mockTest.questions}
+                  visitedSet={visitedSet}
+                  markedSet={markedSet}
+                  currentQuestionIndex={currentQuestionIndex}
+                  isPaletteOpen={isPaletteOpen}
+                  onTogglePalette={setIsPaletteOpen}
+                  onSelectQuestion={handleSelectQuestion}
+                  profile={profile}
+                  user={user}
+                  answeredCount={answeredCount}
+                  isSubmitLoading={isSubmitLoading}
+                  isLandscapeForced={isLandscapeForced || !isMobilePortrait}
+                />
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
 
         {/* Fullscreen Enforcer Overlay */}
         {isGreetShown && !submitted && !isFullscreen && !devSkipFullscreen && (
