@@ -1,8 +1,13 @@
 import React from "react";
-import { LoaderCircle, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LoaderCircle, Clock, ExternalLink } from "lucide-react";
 import AttendanceStatusBadge from "@/components/components/AttendanceStatusBadge";
 import { formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
 import { useAttendanceMatrix } from "../hooks/useAttendanceMatrix";
+
+const StatSkeleton = ({ width = "w-4" }) => (
+  <span className={`inline-block h-2.5 ${width} rounded-xs bg-slate-300/80 dark:bg-slate-700/80 animate-pulse align-middle`} />
+);
 
 const AttendanceTableBody = ({
   students,
@@ -25,6 +30,7 @@ const AttendanceTableBody = ({
   onOpenStudentAttendanceModal,
   onOpenStudentProfile,
   matrixData, // Optional pre-calculated matrix from parent
+  selectedBatch = "",
 }) => {
   const cell = compactView ? "py-1 px-1 text-[11px]" : "py-1.5 px-2 text-xs";
   const stickyCell = compactView ? "py-1.5 px-1.5 text-xs" : "py-1.5 px-2 text-xs sm:text-sm";
@@ -75,26 +81,26 @@ const AttendanceTableBody = ({
             {columnVisibility.previous && (
               <>
                 <td title="Work Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" /> : stats.prevMonthWorkingDays}
+                  {loadingStats ? <StatSkeleton width="w-4" /> : stats.prevMonthWorkingDays}
                 </td>
                 <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" /> : stats.prevMonthRawPresent}
+                  {loadingStats ? <StatSkeleton width="w-4" /> : stats.prevMonthRawPresent}
                 </td>
                 <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" /> : stats.prevMonthAbsentDays}
+                  {loadingStats ? <StatSkeleton width="w-4" /> : stats.prevMonthAbsentDays}
                 </td>
                 <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-amber-600 dark:text-amber-400" /> : stats.prevMonthCasual}
+                  {loadingStats ? <StatSkeleton width="w-3" /> : stats.prevMonthCasual}
                 </td>
                 <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-sky-600 dark:text-sky-400" /> : stats.prevMonthSick}
+                  {loadingStats ? <StatSkeleton width="w-3" /> : stats.prevMonthSick}
                 </td>
                 <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
-                  {loadingStats ? <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-purple-600 dark:text-purple-400" /> : stats.prevMonthSpecial}
+                  {loadingStats ? <StatSkeleton width="w-3" /> : stats.prevMonthSpecial}
                 </td>
                 <td title="Previous Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-black text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
+                    <StatSkeleton width="w-6" />
                   ) : (
                     <span className={Number(stats.prevMonthPercentage) >= 75 ? "text-emerald-700 dark:text-emerald-400" : Number(stats.prevMonthPercentage) >= 50 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400"}>
                       {stats.prevMonthPercentage}%
@@ -298,49 +304,49 @@ const AttendanceTableBody = ({
               <>
                 <td title="Work Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-semibold text-slate-800 dark:text-slate-200 text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
+                    <StatSkeleton width="w-4" />
                   ) : (
                     stats.prevMonthWorkingDays
                   )}
                 </td>
                 <td title="Physical Present Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
+                    <StatSkeleton width="w-4" />
                   ) : (
                     stats.prevMonthRawPresent
                   )}
                 </td>
                 <td title="Absent Days" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-rose-700 dark:text-rose-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
+                    <StatSkeleton width="w-4" />
                   ) : (
                     stats.prevMonthAbsentDays
                   )}
                 </td>
                 <td title="Casual Leaves (CL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-amber-50/40 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-amber-600 dark:text-amber-400" />
+                    <StatSkeleton width="w-3" />
                   ) : (
                     stats.prevMonthCasual
                   )}
                 </td>
                 <td title="Sick Leaves (SL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-sky-50/40 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-sky-600 dark:text-sky-400" />
+                    <StatSkeleton width="w-3" />
                   ) : (
                     stats.prevMonthSick
                   )}
                 </td>
                 <td title="Special Leaves (SPL)" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-purple-50/40 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 font-extrabold text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-purple-600 dark:text-purple-400" />
+                    <StatSkeleton width="w-3" />
                   ) : (
                     stats.prevMonthSpecial
                   )}
                 </td>
                 <td title="Previous Percentage" className={`${cell} border border-slate-200 dark:border-slate-800 text-center bg-emerald-50/40 dark:bg-emerald-950/30 font-black text-[10px] px-0.5`}>
                   {loadingStats ? (
-                    <LoaderCircle className="h-3.5 w-3.5 animate-spin mx-auto text-emerald-600 dark:text-emerald-400" />
+                    <StatSkeleton width="w-6" />
                   ) : (
                     <span
                       className={
@@ -362,24 +368,34 @@ const AttendanceTableBody = ({
             <td style={nameColStyle} className={`${stickyCell} border border-slate-200 dark:border-slate-800 sticky left-0 z-20 ${stickyBgClass} font-semibold text-slate-900 dark:text-white box-border`}>
               <div className="flex items-center gap-1.5 min-w-0">
                 <div className="flex flex-col flex-1 min-w-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onOpenStudentProfile) {
-                        onOpenStudentProfile(student);
-                      }
-                    }}
-                    className="font-bold text-xs truncate leading-snug text-left transition-colors text-slate-900 hover:text-indigo-600 dark:text-white dark:hover:text-indigo-400 cursor-pointer group/name"
-                    title="Click to view student profile details"
-                  >
-                    <span className="text-slate-500 dark:text-slate-400 font-mono font-bold mr-1.5 shrink-0">
-                      {student.rollNo || student.studentId || student.rollNumber || (studentIdx + 1)}.
-                    </span>
-                    <span className="group-hover/name:underline underline-offset-2">
-                      {student.userName || student.name || "Student"}
-                    </span>
-                  </button>
+                  <div className="flex items-center justify-between gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenStudentProfile) {
+                          onOpenStudentProfile(student);
+                        }
+                      }}
+                      className="font-bold text-xs truncate leading-snug text-left transition-colors text-slate-900 hover:text-indigo-600 dark:text-white dark:hover:text-indigo-400 cursor-pointer group/name flex-1 min-w-0"
+                      title="Click to view student profile details"
+                    >
+                      <span className="text-slate-500 dark:text-slate-400 font-mono font-bold mr-1.5 shrink-0">
+                        {student.rollNo || student.studentId || student.rollNumber || (studentIdx + 1)}.
+                      </span>
+                      <span className="group-hover/name:underline underline-offset-2">
+                        {student.userName || student.name || "Student"}
+                      </span>
+                    </button>
+                    <Link
+                      to={`/attendance/register/${student.userId}${selectedBatch ? `?batchId=${selectedBatch}` : ""}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="opacity-50 hover:opacity-100 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition shrink-0"
+                      title="Open dedicated student attendance log page"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
 
                 {studentUpdating && !loadingAttendance && (
@@ -437,11 +453,16 @@ const AttendanceTableBody = ({
                 const tooltipPos = isTopRow ? "top-full mt-1.5" : "bottom-full mb-1.5";
                 const arrowPos = isTopRow ? "bottom-full border-b-slate-900 dark:border-b-slate-950" : "top-full border-t-slate-900 dark:border-t-slate-950";
 
+                const isPending = rawRecord?.verificationStatus === "PENDING";
+                const isRejected = rawRecord?.verificationStatus === "REJECTED";
+
                 return (
                   <td
                     key={day.date}
                     title={nativeTooltip}
-                    className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative group cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-slate-800/60`}
+                    className={`${cell} border border-slate-200 dark:border-slate-800 text-center relative group cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-slate-800/60 ${
+                      isPending ? "bg-amber-100/50 dark:bg-amber-950/40" : isRejected ? "bg-rose-100/40 dark:bg-rose-950/30" : ""
+                    }`}
                   >
                     {cellUpdating && (
                       <div className="absolute inset-0 flex items-center justify-center bg-indigo-100/80 dark:bg-indigo-900/60 z-10">
@@ -449,7 +470,14 @@ const AttendanceTableBody = ({
                       </div>
                     )}
 
-                    <AttendanceStatusBadge status={day.status} variant="plain" />
+                    {isPending && (
+                      <>
+                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping pointer-events-none" />
+                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 pointer-events-none" />
+                      </>
+                    )}
+
+                    <AttendanceStatusBadge status={day.status} verificationStatus={rawRecord?.verificationStatus} variant="plain" />
 
                     {/* Hover Tooltip Card */}
                     <div
@@ -461,6 +489,20 @@ const AttendanceTableBody = ({
                           {stInfo.label}
                         </span>
                       </div>
+
+                      {isPending && (
+                        <div className="bg-amber-500/20 border border-amber-500/40 rounded p-1 text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                          <span>⏳</span>
+                          <span>Pending Verification</span>
+                        </div>
+                      )}
+
+                      {isRejected && (
+                        <div className="bg-rose-500/20 border border-rose-500/40 rounded p-1 text-[10px] text-rose-300 font-bold flex items-center gap-1">
+                          <span>✕</span>
+                          <span>Rejected: {rawRecord?.rejectionReason || "Instructor Rejected"}</span>
+                        </div>
+                      )}
 
                       {rawRecord ? (
                         <>

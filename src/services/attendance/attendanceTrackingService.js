@@ -143,6 +143,10 @@ class AttendanceTrackingService {
       leaveType,
       status: record.status || attendanceStatus.toLowerCase(),
       remarks: record.remarks || null,
+      verificationStatus: record.verificationStatus || "VERIFIED",
+      verifiedBy: record.verifiedBy || null,
+      verifiedAt: record.verifiedAt || null,
+      rejectionReason: record.rejectionReason || null,
       markedAt: record.markedAt || record.$updatedAt || record.$createdAt || null,
     };
   }
@@ -150,7 +154,18 @@ class AttendanceTrackingService {
   /**
    * Creates a standardized Appwrite payload object for creating or updating attendance documents.
    */
-  createAttendancePayload({ userId, batchId, date, status, tradeId = null, remarks = null }) {
+  createAttendancePayload({
+    userId,
+    batchId,
+    date,
+    status,
+    tradeId = null,
+    remarks = null,
+    verificationStatus = "VERIFIED",
+    verifiedBy = null,
+    verifiedAt = null,
+    rejectionReason = null,
+  }) {
     const { attendanceStatus, leaveType } = this.resolveStatusPair(status);
     const rawStatus = leaveType ? leaveType.toLowerCase() : status.toLowerCase();
 
@@ -164,6 +179,10 @@ class AttendanceTrackingService {
       leaveType,
       dayType: DAY_TYPES.WORKING,
       remarks,
+      verificationStatus,
+      verifiedBy,
+      verifiedAt,
+      rejectionReason,
       markedAt: new Date().toISOString(),
     };
   }
@@ -172,7 +191,31 @@ class AttendanceTrackingService {
    * Returns display configuration (label, code badge, Tailwind styles, and flags)
    * for any status string or record.
    */
-  getStatusConfig(rawStatus = "", explicitLeaveType = null) {
+  getStatusConfig(rawStatus = "", explicitLeaveType = null, verificationStatus = null) {
+    if (verificationStatus === "PENDING") {
+      return {
+        label: "Pending Verification",
+        code: "⏳",
+        badgeClass: "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-950/80 dark:border-amber-800 dark:text-amber-300 animate-pulse",
+        color: "amber",
+        isLeave: false,
+        countsAsPresent: false,
+        isPending: true,
+      };
+    }
+
+    if (verificationStatus === "REJECTED") {
+      return {
+        label: "Rejected Request",
+        code: "✕",
+        badgeClass: "bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-300",
+        color: "rose",
+        isLeave: false,
+        countsAsPresent: false,
+        isRejected: true,
+      };
+    }
+
     const { attendanceStatus, leaveType } = this.resolveStatusPair(rawStatus, explicitLeaveType);
 
     if (attendanceStatus === ATTENDANCE_STATUS.PRESENT) {
@@ -296,6 +339,7 @@ class AttendanceTrackingService {
     const sickDates = [];
 
     yearFiltered.forEach((rec) => {
+      if (rec.verificationStatus === "PENDING") return;
       if (rec.attendanceStatus === ATTENDANCE_STATUS.LEAVE) {
         if (rec.leaveType === LEAVE_TYPES.CASUAL) {
           clUsed += 1;
@@ -374,6 +418,9 @@ class AttendanceTrackingService {
     };
 
     normalizedRecords.forEach((record) => {
+      // Skip unverified pending records from attendance stats calculation
+      if (record.verificationStatus === "PENDING") return;
+
       if (record.dayType === DAY_TYPES.WORKING) {
         workingDays++;
 

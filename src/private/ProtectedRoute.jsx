@@ -1,22 +1,10 @@
-import { selectProfile, selectProfileLoading, selectProfileInitialized } from "@/store/profileSlice";
-import { selectUser, selectUserLoading } from "@/store/userSlice";
 import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { selectProfile, selectProfileLoading, selectProfileInitialized } from "@/store/profileSlice";
+import { selectUser, selectUserLoading } from "@/store/userSlice";
 import { checkProfileCompletion } from "@/utils/profileCompletion";
-
-// Full-screen auth loading spinner — prevents jarring blank flash
-const AuthLoadingScreen = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 z-50">
-    <div className="relative flex items-center justify-center mb-4">
-      <div className="w-12 h-12 rounded-full border-4 border-blue-100 dark:border-slate-800" />
-      <div className="absolute w-12 h-12 rounded-full border-4 border-t-blue-600 dark:border-t-blue-400 animate-spin" />
-    </div>
-    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium tracking-wide animate-pulse">
-      Loading...
-    </p>
-  </div>
-);
+import AppSplashScreen from "@/components/common/AppSplashScreen";
 
 const ProtectedRoute = () => {
   const user = useSelector(selectUser);
@@ -27,11 +15,9 @@ const ProtectedRoute = () => {
 
   const location = useLocation();
 
-
-
   // ── Step 1: Wait for App's first auth check to finish ────────────────────────
   if (!isInitialized || userLoading || profileLoading) {
-    return <AuthLoadingScreen />;
+    return <AppSplashScreen />;
   }
 
   // ── Step 2: Not authenticated ────────────────────────────────────────────────

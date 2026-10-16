@@ -8,13 +8,14 @@ import { attendanceTrackingService } from "@/services/attendance/attendanceTrack
 export const AttendanceStatusBadge = ({
   status,
   leaveType,
+  verificationStatus = null,
   showLabel = false,
   size = "md", // "sm" | "md" | "lg"
   className = "",
   title,
   variant = "badge", // "badge" | "plain"
 }) => {
-  const config = attendanceTrackingService.getStatusConfig(status, leaveType);
+  const config = attendanceTrackingService.getStatusConfig(status, leaveType, verificationStatus);
 
   if (variant === "plain") {
     const textColors = {

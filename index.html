@@ -55,14 +55,36 @@
   <body>
     <div id="root">
       <div id="app-splash-screen" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#ffffff;font-family:system-ui,-apple-system,sans-serif;z-index:99999;">
-        <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
           <div style="position:absolute;width:115px;height:115px;border-radius:50%;background:rgba(37,99,235,0.1);animation:itipulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
-          <img src="/icons/icon-192x192.png" alt="ITI Mitra Logo" style="width:80px;height:80px;border-radius:18px;box-shadow:0 8px 24px rgba(37,99,235,0.15);position:relative;z-index:2;" />
+          <img src="/icons/icon-192x192.png" alt="ITI Mitra Logo" style="width:80px;height:80px;border-radius:18px;box-shadow:0 8px 24px rgba(37,99,235,0.15);position:relative;z-index:2;object-fit:contain;" />
         </div>
-        <h1 style="font-size:23px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin:0 0 6px 0;">ITI Mitra</h1>
-        <p style="font-size:13px;color:#64748b;font-weight:500;margin:0 0 24px 0;">Online Practice Exams & Attendance</p>
-        <div style="width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:itispin 0.8s linear infinite;"></div>
+        <h1 id="app-splash-title" style="font-size:24px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;margin:0 0 4px 0;">ITI Mitra</h1>
+        <p id="app-splash-sub" style="font-size:12px;color:#64748b;font-weight:500;letter-spacing:0.3px;margin:0 0 20px 0;">Online Practice Exams & Attendance</p>
+        <div id="app-splash-spinner" style="width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:itispin 0.8s linear infinite;"></div>
       </div>
+      <script>
+        (function() {
+          try {
+            var theme = localStorage.getItem('app-theme');
+            var isDark = theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+              document.documentElement.classList.add('dark');
+              var splash = document.getElementById('app-splash-screen');
+              if (splash) splash.style.background = '#020617';
+              var title = document.getElementById('app-splash-title');
+              if (title) title.style.color = '#ffffff';
+              var sub = document.getElementById('app-splash-sub');
+              if (sub) sub.style.color = '#94a3b8';
+              var spinner = document.getElementById('app-splash-spinner');
+              if (spinner) {
+                spinner.style.borderColor = '#1e293b';
+                spinner.style.borderTopColor = '#60a5fa';
+              }
+            }
+          } catch(e) {}
+        })();
+      </script>
       <style>
         @keyframes itispin { to { transform: rotate(360deg); } }
         @keyframes itipulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.25); opacity: 0.2; } }

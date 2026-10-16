@@ -27,6 +27,14 @@ const STATUS_ALIASES = {
   leave: "leave",
   onleave: "leave",
   on_leave: "leave",
+  cl: "leave",
+  casual: "leave",
+  sl: "leave",
+  sick: "leave",
+  spl: "leave",
+  special: "leave",
+  od: "leave",
+  on_duty: "leave",
 };
 
 const normalizeStatus = (rawStatus) => {
@@ -71,10 +79,26 @@ const normalizeAttendanceData = (records = []) => {
       return;
     }
 
+    const rawStatusLower = String(record?.status || "").toLowerCase();
+    const rawAttLower = String(record?.attendanceStatus || "").toLowerCase();
+    let leaveType = record?.leaveType || null;
+    if (!leaveType) {
+      if (["cl", "casual"].includes(rawStatusLower) || ["cl", "casual"].includes(rawAttLower)) leaveType = "CASUAL";
+      else if (["sl", "sick"].includes(rawStatusLower) || ["sl", "sick"].includes(rawAttLower)) leaveType = "SICK";
+      else if (["spl", "special"].includes(rawStatusLower) || ["spl", "special"].includes(rawAttLower)) leaveType = "SPECIAL";
+      else if (["od", "on_duty"].includes(rawStatusLower) || ["od", "on_duty"].includes(rawAttLower)) leaveType = "ON_DUTY";
+    }
+
     const normalized = {
       ...record,
       date,
       status,
+      leaveType,
+      rawStatus: record?.status,
+      verificationStatus: record?.verificationStatus || "VERIFIED",
+      verifiedBy: record?.verifiedBy || null,
+      verifiedAt: record?.verifiedAt || null,
+      rejectionReason: record?.rejectionReason || null,
       markedAt: record?.markedAt || null,
     };
 
@@ -143,12 +167,26 @@ const calculateStats = (records = [], holidayDays = 0) => {
   let presentDays = 0;
   let absentDays = 0;
   let leaveDays = 0;
+  let casualLeaves = 0;
+  let sickLeaves = 0;
+  let specialLeaves = 0;
 
   records.forEach((record) => {
+    // Skip unverified pending records from student statistics calculation
+    if (record?.verificationStatus === "PENDING") return;
+
     const st = record.attendanceStatus ? record.attendanceStatus.toLowerCase() : record.status;
-    if (st === "present") presentDays += 1;
-    else if (st === "leave") leaveDays += 1;
-    else if (st === "absent") absentDays += 1;
+    const lt = String(record.leaveType || "").toUpperCase();
+    if (st === "present" || st === "p") {
+      presentDays += 1;
+    } else if (st === "leave" || lt) {
+      leaveDays += 1;
+      if (lt === "CASUAL") casualLeaves += 1;
+      else if (lt === "SICK") sickLeaves += 1;
+      else if (lt === "SPECIAL") specialLeaves += 1;
+    } else if (st === "absent" || st === "a") {
+      absentDays += 1;
+    }
   });
 
   const totalDays = presentDays + absentDays;
@@ -157,6 +195,9 @@ const calculateStats = (records = [], holidayDays = 0) => {
     presentDays,
     absentDays,
     leaveDays,
+    casualLeaves,
+    sickLeaves,
+    specialLeaves,
     holidayDays,
     attendancePercentage:
       totalDays > 0 ? Number(((presentDays / totalDays) * 100).toFixed(2)) : 0,
@@ -226,6 +267,107 @@ export const useStudentAttendance = (profile) => {
     () => enrollmentDate ?? normalizeDate(batchData?.start_date) ?? null,
     [enrollmentDate, batchData?.start_date],
   );
+
+  // ── Annual Leave Quotas (CL max 12/yr, SL max 15d/yr) ───────────────────
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+  const [annualLeaveRecords, setAnnualLeaveRecords] = useState([]);
+
+  const fetchAnnualLeaves = useCallback(async () => {
+    if (!profile?.userId || !resolvedBatchId) return;
+    try {
+      const startOfYear = `${currentYear}-01-01`;
+      const endOfYear = `${currentYear}-12-31`;
+      const res = await newAttendanceService.getStudentAttendanceByDateRange(
+        profile.userId,
+        resolvedBatchId,
+        startOfYear,
+        endOfYear,
+      );
+      setAnnualLeaveRecords(res?.documents || (Array.isArray(res) ? res : []));
+    } catch (err) {
+      console.error("Error fetching annual leaves:", err);
+      setAnnualLeaveRecords([]);
+    }
+  }, [profile?.userId, resolvedBatchId, currentYear]);
+
+  useEffect(() => {
+    fetchAnnualLeaves();
+  }, [fetchAnnualLeaves]);
+
+  const leaveQuota = useMemo(() => {
+    let clUsed = 0;
+    let clPending = 0;
+    let slDaysUsed = 0;
+    let slDaysPending = 0;
+    let splUsed = 0;
+    const sickDates = [];
+
+    const records = Array.isArray(annualLeaveRecords)
+      ? annualLeaveRecords
+      : (annualLeaveRecords?.documents || []);
+
+    records.forEach((r) => {
+      const statusLower = String(r.status || "").toLowerCase();
+      const attLower = String(r.attendanceStatus || "").toLowerCase();
+      const lt = String(r.leaveType || "").toUpperCase();
+      const isLeave = attLower === "leave" || ["casual", "cl", "sick", "sl", "special", "spl"].includes(statusLower);
+      if (!isLeave) return;
+
+      const isPending = r.verificationStatus === "PENDING";
+      const isRejected = r.verificationStatus === "REJECTED";
+      if (isRejected) return;
+
+      const isCasual = lt === "CASUAL" || ["casual", "cl"].includes(statusLower);
+      const isSick = lt === "SICK" || ["sick", "sl"].includes(statusLower);
+      const isSpecial = lt === "SPECIAL" || ["special", "spl"].includes(statusLower);
+
+      if (isCasual) {
+        if (isPending) clPending += 1;
+        else clUsed += 1;
+      } else if (isSick) {
+        if (isPending) {
+          slDaysPending += 1;
+        } else {
+          slDaysUsed += 1;
+          if (r.date) sickDates.push(r.date);
+        }
+      } else if (isSpecial) {
+        splUsed += 1;
+      }
+    });
+
+    let slSpellsUsed = 0;
+    if (sickDates.length > 0) {
+      const sorted = [...sickDates].sort();
+      slSpellsUsed = 1;
+      for (let i = 1; i < sorted.length; i++) {
+        const diff = Math.round((new Date(sorted[i]) - new Date(sorted[i - 1])) / (1000 * 60 * 60 * 24));
+        if (diff > 1) slSpellsUsed += 1;
+      }
+    }
+
+    const clRemaining = Math.max(0, 12 - (clUsed + clPending));
+    const slDaysRemaining = Math.max(0, 15 - (slDaysUsed + slDaysPending));
+    const slSpellsRemaining = Math.max(0, 2 - slSpellsUsed);
+
+    return {
+      clTotal: 12,
+      clUsed,
+      clPending,
+      clRemaining,
+      slTotalDays: 15,
+      slDaysUsed,
+      slDaysPending,
+      slDaysRemaining,
+      slMaxSpells: 2,
+      slSpellsUsed,
+      slSpellsRemaining,
+      splUsed,
+      isClExceeded: (clUsed + clPending) >= 12,
+      isSlDaysExceeded: (slDaysUsed + slDaysPending) >= 15,
+      isSlSpellsExceeded: slSpellsUsed >= 2,
+    };
+  }, [annualLeaveRecords]);
 
   const getMonthRange = useCallback((monthLabel) => {
     const parsedDate = parse(monthLabel, "MMMM yyyy", new Date());
@@ -455,21 +597,78 @@ export const useStudentAttendance = (profile) => {
         return null;
       }
 
-      const existing = normalized.byDate.get(normalizedDate);
-      const safeStatus = normalizeStatus(status);
+      const rawS = String(status || "").trim().toLowerCase();
+      let statusToSave = "present";
+      let attendanceStatusToSave = "PRESENT";
+      let leaveTypeToSave = null;
 
-      // Skip API call if the record already has the same status
-      if (existing && !existing.autoGenerated && normalizeStatus(existing.status) === safeStatus) {
-        toast.info("Attendance already marked as " + safeStatus + ".");
-        return existing;
+      if (["cl", "casual"].includes(rawS)) {
+        statusToSave = "casual";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "CASUAL";
+      } else if (["sl", "sick"].includes(rawS)) {
+        statusToSave = "sick";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "SICK";
+      } else if (["spl", "special"].includes(rawS)) {
+        statusToSave = "special";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "SPECIAL";
+      } else if (["absent", "a"].includes(rawS)) {
+        statusToSave = "absent";
+        attendanceStatusToSave = "ABSENT";
+        leaveTypeToSave = null;
       }
+
+      // Enforce annual leave quota limits (CL max 12, SL max 15 days)
+      if (leaveTypeToSave === "CASUAL" && leaveQuota.clRemaining < 1) {
+        toast.error(`Casual Leave quota exceeded. You have already used or requested all 12 days of CL for ${currentYear}.`);
+        return null;
+      }
+      if (leaveTypeToSave === "SICK" && leaveQuota.slDaysRemaining < 1) {
+        toast.error(`Sick Leave quota exceeded. You have already used or requested all 15 days of SL for ${currentYear}.`);
+        return null;
+      }
+
+      let existing = normalized.byDate.get(normalizedDate);
+      // Query DB if not in local month state to respect unique index idx_user_batch_date
+      if (!existing) {
+        try {
+          existing = await newAttendanceService.getAttendanceByDate(profile?.userId, resolvedBatchId, normalizedDate);
+        } catch {
+          existing = null;
+        }
+      }
+      const isPastDate = normalizedDate < today;
+
+      // Check if existing record is already PENDING or REJECTED
+      if (existing && !existing.autoGenerated) {
+        if (existing.verificationStatus === "PENDING") {
+          toast.info("A past attendance request for this date is already pending instructor verification.");
+          return existing;
+        }
+        if (existing.verificationStatus === "REJECTED") {
+          toast.error(`Your attendance request for this date was rejected: "${existing.rejectionReason || 'No reason provided'}". Contact instructor to change.`);
+          return existing;
+        }
+        if (existing.status === statusToSave && existing.verificationStatus === "VERIFIED") {
+          toast.info("Attendance already marked as " + statusToSave + ".");
+          return existing;
+        }
+      }
+
+      const targetVerificationStatus = isPastDate ? "PENDING" : "VERIFIED";
 
       let result;
       if (existing) {
         result = await newAttendanceService.updateAttendance(existing.$id, {
-          status: safeStatus,
+          status: statusToSave,
+          attendanceStatus: attendanceStatusToSave,
+          leaveType: leaveTypeToSave,
           remarks,
           markedBy: profile?.userId,
+          verificationStatus: targetVerificationStatus,
+          rejectionReason: null,
         });
       } else {
         result = await newAttendanceService.createAttendance({
@@ -477,10 +676,18 @@ export const useStudentAttendance = (profile) => {
           batchId: resolvedBatchId,
           tradeId: profile?.tradeId || null,
           date: normalizedDate,
-          status: safeStatus,
+          status: statusToSave,
+          attendanceStatus: attendanceStatusToSave,
+          leaveType: leaveTypeToSave,
           remarks,
           markedBy: profile?.userId,
+          verificationStatus: targetVerificationStatus,
+          rejectionReason: null,
         });
+      }
+
+      if (isPastDate) {
+        toast.success("Past attendance request submitted! It will count in your stats once verified by your instructor.");
       }
 
       // Update only the changed date locally to avoid full-month refetch flicker.
@@ -493,9 +700,12 @@ export const useStudentAttendance = (profile) => {
           ...(idx >= 0 ? next[idx] : {}),
           ...(result || {}),
           date: normalizedDate,
-          status: safeStatus,
+          status: statusToSave,
+          attendanceStatus: attendanceStatusToSave,
+          leaveType: leaveTypeToSave,
           remarks,
           markedBy: profile?.userId,
+          verificationStatus: targetVerificationStatus,
           markedAt: result?.markedAt || new Date().toISOString(),
         };
         if (idx >= 0) next[idx] = merged;
@@ -520,11 +730,171 @@ export const useStudentAttendance = (profile) => {
         // Safe ignore
       }
 
+      fetchAnnualLeaves();
       toast.success("Attendance saved successfully!");
       return result;
     } catch (error) {
       console.error("Error marking attendance:", error);
       toast.error("Failed to mark attendance.");
+      throw error;
+    }
+  };
+
+  const markMultipleAttendance = async ({ dates = [], status = "present", remarks = "" }) => {
+    try {
+      if (!Array.isArray(dates) || dates.length === 0) {
+        toast.warn("No dates provided to mark.");
+        return null;
+      }
+      if (!batchData?.canMarkPrevious) {
+        toast.warn("Past attendance marking is disabled for this batch.");
+        return null;
+      }
+
+      const today = format(new Date(), "yyyy-MM-dd");
+      const rawS = String(status || "").trim().toLowerCase();
+      let statusToSave = "present";
+      let attendanceStatusToSave = "PRESENT";
+      let leaveTypeToSave = null;
+
+      if (["cl", "casual"].includes(rawS)) {
+        statusToSave = "casual";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "CASUAL";
+      } else if (["sl", "sick"].includes(rawS)) {
+        statusToSave = "sick";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "SICK";
+      } else if (["spl", "special"].includes(rawS)) {
+        statusToSave = "special";
+        attendanceStatusToSave = "LEAVE";
+        leaveTypeToSave = "SPECIAL";
+      } else if (["absent", "a"].includes(rawS)) {
+        statusToSave = "absent";
+        attendanceStatusToSave = "ABSENT";
+        leaveTypeToSave = null;
+      }
+
+      // Enforce annual leave quota limits (CL max 12, SL max 15 days)
+      if (leaveTypeToSave === "CASUAL" && dates.length > leaveQuota.clRemaining) {
+        toast.error(`Cannot request ${dates.length} day(s) of Casual Leave. You only have ${leaveQuota.clRemaining} day(s) remaining of your 12-day annual quota.`);
+        return null;
+      }
+      if (leaveTypeToSave === "SICK" && dates.length > leaveQuota.slDaysRemaining) {
+        toast.error(`Cannot request ${dates.length} day(s) of Sick Leave. You only have ${leaveQuota.slDaysRemaining} day(s) remaining of your 15-day annual quota.`);
+        return null;
+      }
+
+      const successfulRecords = [];
+      const skippedDates = [];
+
+      for (const d of dates) {
+        const normalizedDate = normalizeDate(d);
+        if (!normalizedDate || normalizedDate > today) {
+          skippedDates.push(d);
+          continue;
+        }
+        if (holidays.has(normalizedDate)) {
+          skippedDates.push(d);
+          continue;
+        }
+        if (effectiveStartDate && normalizedDate < effectiveStartDate) {
+          skippedDates.push(d);
+          continue;
+        }
+
+        let existing = normalized.byDate.get(normalizedDate);
+        // Query DB if not in local month state to respect unique index idx_user_batch_date
+        if (!existing) {
+          try {
+            existing = await newAttendanceService.getAttendanceByDate(profile?.userId, resolvedBatchId, normalizedDate);
+          } catch {
+            existing = null;
+          }
+        }
+        if (existing && !existing.autoGenerated) {
+          if (existing.verificationStatus === "PENDING" || existing.verificationStatus === "REJECTED") {
+            skippedDates.push(d);
+            continue;
+          }
+          if (existing.status === statusToSave && existing.verificationStatus === "VERIFIED") {
+            skippedDates.push(d);
+            continue;
+          }
+        }
+
+        const isPastDate = normalizedDate < today;
+        const targetVerificationStatus = isPastDate ? "PENDING" : "VERIFIED";
+
+        try {
+          let res;
+          if (existing) {
+            res = await newAttendanceService.updateAttendance(existing.$id, {
+              status: statusToSave,
+              attendanceStatus: attendanceStatusToSave,
+              leaveType: leaveTypeToSave,
+              remarks,
+              markedBy: profile?.userId,
+              verificationStatus: targetVerificationStatus,
+              rejectionReason: null,
+            });
+          } else {
+            res = await newAttendanceService.createAttendance({
+              userId: profile?.userId,
+              batchId: resolvedBatchId,
+              tradeId: profile?.tradeId || null,
+              date: normalizedDate,
+              status: statusToSave,
+              attendanceStatus: attendanceStatusToSave,
+              leaveType: leaveTypeToSave,
+              remarks,
+              markedBy: profile?.userId,
+              verificationStatus: targetVerificationStatus,
+              rejectionReason: null,
+            });
+          }
+
+          successfulRecords.push({
+            ...(res || {}),
+            date: normalizedDate,
+            status: statusToSave,
+            attendanceStatus: attendanceStatusToSave,
+            leaveType: leaveTypeToSave,
+            remarks,
+            markedBy: profile?.userId,
+            verificationStatus: targetVerificationStatus,
+            markedAt: res?.markedAt || new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error(`Error saving attendance for ${normalizedDate}:`, err);
+        }
+      }
+
+      if (successfulRecords.length > 0) {
+        setRawMonthlyRecords((prev) => {
+          const next = Array.isArray(prev) ? [...prev] : [];
+          successfulRecords.forEach((item) => {
+            const idx = next.findIndex((r) => normalizeDate(r?.date) === item.date);
+            if (idx >= 0) next[idx] = { ...next[idx], ...item };
+            else next.push(item);
+          });
+          return next;
+        });
+
+        toast.success(
+          `Submitted ${successfulRecords.length} past attendance request(s) for instructor verification!`
+        );
+        fetchAnnualLeaves();
+      }
+
+      if (skippedDates.length > 0 && successfulRecords.length === 0) {
+        toast.info("Selected dates were skipped (already pending/verified, or on a holiday).");
+      }
+
+      return successfulRecords;
+    } catch (error) {
+      console.error("Error in markMultipleAttendance:", error);
+      toast.error("Failed to submit past attendance requests.");
       throw error;
     }
   };
@@ -548,6 +918,7 @@ export const useStudentAttendance = (profile) => {
     attendanceStats: stats,
     monthlyStats: stats,
     overallStats,
+    leaveQuota,
     currentMonth,
     selectedDate,
     setSelectedDate,
@@ -560,6 +931,7 @@ export const useStudentAttendance = (profile) => {
       if (typeof dateOrStr !== "string") setSelectedDate(dateOrStr);
     },
     markAttendance,
+    markMultipleAttendance,
     lastUpdatedDate,
     invalidRecords,
     enrollmentDate,

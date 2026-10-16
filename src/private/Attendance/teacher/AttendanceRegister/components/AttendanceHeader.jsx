@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ClipboardList, Loader2, ChevronLeft, ChevronRight, ChevronDown, ShieldCheck, LayoutList, LayoutGrid } from "lucide-react";
+import { ClipboardList, Loader2, ChevronLeft, ChevronRight, ChevronDown, ShieldCheck, LayoutList, LayoutGrid, Clock } from "lucide-react";
 import { format, getMonth, getYear, setMonth, setYear } from "date-fns";
 import { DEFAULT_VISIBILITY, COLUMN_GROUP_LABELS } from "./ColumnGroupConfig";
 
@@ -21,14 +21,16 @@ const AttendanceHeader = ({
   batchEndDate,
   onVerifyStats,
   isVerifyingStats = false,
+  pendingCount = 0,
+  onOpenVerifyModal,
   columnVisibility = DEFAULT_VISIBILITY,
   setColumnVisibility,
   compactView = false,
   setCompactView,
 }) => {
-  const loadingAttendance = loading.attendance;
-  const loadingStats     = loading.stats;
-  const loadingBatch     = loading.batch;
+  const loadingAttendance = loading?.attendance;
+  const loadingStats     = loading?.stats;
+  const loadingBatch     = loading?.batch || loading?.students;
   const isLoading        = loadingAttendance || loadingStats;
 
   const now = new Date();
@@ -109,6 +111,19 @@ const AttendanceHeader = ({
               </span>
             </div>
 
+            {/* Mobile Pending Requests Button */}
+            {pendingCount > 0 && typeof onOpenVerifyModal === "function" && (
+              <button
+                type="button"
+                onClick={onOpenVerifyModal}
+                className="sm:hidden px-2 py-1 text-[11px] font-black bg-gradient-to-r from-amber-400 to-amber-300 active:scale-95 text-amber-950 rounded-lg transition-all flex items-center gap-1 shadow-xs cursor-pointer shrink-0 border border-amber-200 animate-pulse"
+                title={`${pendingCount} attendance request(s) awaiting your verification`}
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-950" />
+                <span>{pendingCount} Pending</span>
+              </button>
+            )}
+
             {/* Mobile Verify Stats Button */}
             {typeof onVerifyStats === "function" && (
               <button
@@ -162,7 +177,7 @@ const AttendanceHeader = ({
 
             {/* Month & Year Navigator */}
             <div className="flex items-center justify-between sm:justify-start gap-1.5 w-full sm:w-auto shrink-0">
-              <div className="flex items-center gap-0.5 bg-black/20 dark:bg-slate-900/70 backdrop-blur-md p-0.5 rounded-lg border border-white/25 dark:border-slate-800 flex-1 sm:flex-none justify-between sm:justify-start">
+              <div className={`flex items-center gap-0.5 bg-black/20 dark:bg-slate-900/70 backdrop-blur-md p-0.5 rounded-lg border transition-all ${isLoading ? "border-amber-300/60 ring-1 ring-amber-300/30" : "border-white/25 dark:border-slate-800"} flex-1 sm:flex-none justify-between sm:justify-start`}>
                 <button
                   onClick={handlePrevMonth}
                   disabled={isLoading || isAtMin}
@@ -210,10 +225,6 @@ const AttendanceHeader = ({
                   </div>
                 </div>
 
-                {isLoading && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-white/90 flex-shrink-0 mx-0.5" />
-                )}
-
                 <button
                   onClick={handleNextMonth}
                   disabled={isLoading || isAtMax}
@@ -223,6 +234,29 @@ const AttendanceHeader = ({
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
+
+              {/* Pending Requests Button - Always visible to teacher */}
+              {typeof onOpenVerifyModal === "function" && (
+                <button
+                  type="button"
+                  onClick={onOpenVerifyModal}
+                  className={`flex px-2.5 py-1 text-[11px] font-black rounded-lg transition-all items-center gap-1.5 shadow-xs cursor-pointer shrink-0 border ${
+                    pendingCount > 0
+                      ? "bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-200 active:scale-95 text-amber-950 border-amber-200 animate-pulse ring-2 ring-amber-300/60"
+                      : "bg-white/20 hover:bg-white/30 text-white border-white/30 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+                  }`}
+                  title={
+                    pendingCount > 0
+                      ? `${pendingCount} attendance request(s) awaiting your verification`
+                      : "Verify student attendance requests (0 pending)"
+                  }
+                >
+                  <Clock className={`w-3.5 h-3.5 ${pendingCount > 0 ? "text-amber-950" : "text-white"}`} />
+                  <span>
+                    {pendingCount > 0 ? `${pendingCount} Pending Requests` : "Verify Requests (0)"}
+                  </span>
+                </button>
+              )}
 
               {/* Desktop Verify Stats Button */}
               {typeof onVerifyStats === "function" && (

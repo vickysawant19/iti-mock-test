@@ -594,6 +594,7 @@ export const bulkUpdateMonthlyAttendanceStats = async (
           attendanceStatus: rec.attendanceStatus || (rec.status ? rec.status.toUpperCase() : 'PRESENT'),
           dayType: rec.dayType || (rec.isHoliday ? 'HOLIDAY' : 'WORKING'),
           leaveType: rec.leaveType || null,
+          verificationStatus: rec.verificationStatus || 'VERIFIED',
         };
 
         if (existingIdx >= 0) {
@@ -615,15 +616,20 @@ export const bulkUpdateMonthlyAttendanceStats = async (
         const dateStr = String(r.date).substring(0, 10);
         if (activeHolidayDates.has(dateStr)) return;
 
+        // Skip unverified pending records from stats calculation
+        if (r.verificationStatus === 'PENDING') return;
+
+        const lt = String(r.leaveType || '').toUpperCase();
         const s = String(r.status || r.attendanceStatus || '').toLowerCase();
         if (s === 'present' || s === 'p') presentDays++;
         else if (s === 'absent' || s === 'a') absentDays++;
-        else if (s === 'casual' || s === 'cl') casualLeaves++;
-        else if (s === 'sick' || s === 'sl') sickLeaves++;
-        else if (s === 'special' || s === 'spl') specialLeaves++;
-        else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
+        else if (s === 'casual' || s === 'cl' || lt === 'CASUAL') casualLeaves++;
+        else if (s === 'sick' || s === 'sl' || lt === 'SICK') sickLeaves++;
+        else if (s === 'special' || s === 'spl' || lt === 'SPECIAL') specialLeaves++;
+        else if (s === 'on_duty' || s === 'od' || lt === 'ON_DUTY') onDutyLeaves++;
         else if (s === 'half_day' || s === 'hd') halfDays++;
         else if (s === 'late' || s === 'l') lateDays++;
+        else if (s === 'leave') casualLeaves++;
       });
 
       const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;
@@ -824,15 +830,20 @@ export const verifyBatchMonthlyStatsHelper = async (tablesDB, databasesOrBatchId
         const dateStr = String(r.date).substring(0, 10);
         if (activeHolidayDates.has(dateStr)) return;
 
+        // Skip unverified pending records from stats audit
+        if (r.verificationStatus === 'PENDING') return;
+
+        const lt = String(r.leaveType || '').toUpperCase();
         const s = String(r.status || r.attendanceStatus || '').toLowerCase();
         if (s === 'present' || s === 'p') presentDays++;
         else if (s === 'absent' || s === 'a') absentDays++;
-        else if (s === 'casual' || s === 'cl') casualLeaves++;
-        else if (s === 'sick' || s === 'sl') sickLeaves++;
-        else if (s === 'special' || s === 'spl') specialLeaves++;
-        else if (s === 'on_duty' || s === 'od') onDutyLeaves++;
+        else if (s === 'casual' || s === 'cl' || lt === 'CASUAL') casualLeaves++;
+        else if (s === 'sick' || s === 'sl' || lt === 'SICK') sickLeaves++;
+        else if (s === 'special' || s === 'spl' || lt === 'SPECIAL') specialLeaves++;
+        else if (s === 'on_duty' || s === 'od' || lt === 'ON_DUTY') onDutyLeaves++;
         else if (s === 'half_day' || s === 'hd') halfDays++;
         else if (s === 'late' || s === 'l') lateDays++;
+        else if (s === 'leave') casualLeaves++;
       });
 
       const totalPresent = presentDays + casualLeaves + sickLeaves + specialLeaves + onDutyLeaves;

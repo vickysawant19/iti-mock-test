@@ -88,15 +88,18 @@ export const useAttendanceMatrix = ({
 
         // 4. Calculate working days & attendance stats for valid enrolled working days
         if (!isNotEnrolled && !isHoliday) {
-          currentMonthWorkingDays++;
-          const s = String(statusRaw || "").toLowerCase();
-          if (s === "present" || s === "p") rawPresentDays++;
-          else if (s === "absent" || s === "a") currentMonthAbsentDays++;
-          else if (["casual", "cl"].includes(s)) currentMonthCasualLeaves++;
-          else if (["sick", "sl"].includes(s)) currentMonthSickLeaves++;
-          else if (["special", "spl"].includes(s)) currentMonthSpecialLeaves++;
-          else if (["on_duty", "od"].includes(s)) currentMonthOnDutyLeaves++;
-          else if (s === "leave") currentMonthCasualLeaves++;
+          // Skip unverified pending requests from monthly calculations
+          if (rawRecord?.verificationStatus !== "PENDING") {
+            currentMonthWorkingDays++;
+            const s = String(statusRaw || "").toLowerCase();
+            if (s === "present" || s === "p") rawPresentDays++;
+            else if (s === "absent" || s === "a") currentMonthAbsentDays++;
+            else if (["casual", "cl"].includes(s)) currentMonthCasualLeaves++;
+            else if (["sick", "sl"].includes(s)) currentMonthSickLeaves++;
+            else if (["special", "spl"].includes(s)) currentMonthSpecialLeaves++;
+            else if (["on_duty", "od"].includes(s)) currentMonthOnDutyLeaves++;
+            else if (s === "leave") currentMonthCasualLeaves++;
+          }
         }
 
         return {
@@ -213,6 +216,7 @@ export const useAttendanceMatrix = ({
       studentRows.forEach((row) => {
         const day = row.days[dateIdx];
         if (!day || day.isHoliday || day.isNotEnrolled) return;
+        if (day.rawRecord?.verificationStatus === "PENDING") return;
 
         const s = String(day.status || "").toLowerCase();
         if (s === "present" || s === "p") {

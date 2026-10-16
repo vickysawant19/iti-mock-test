@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   eachDayOfInterval,
   endOfMonth,
@@ -18,16 +18,34 @@ import {
   ShieldAlert,
   Calendar as CalendarIcon,
   Check,
+  CheckCheck,
+  XCircle,
+  MessageSquare,
+  Sparkles,
+  CheckCircle2,
   UserX,
   AlertCircle,
   Trash2,
   RotateCcw,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { attendanceTrackingService, formatAttendanceTime } from "@/services/attendance/attendanceTrackingService";
+import { newAttendanceService } from "@/services/attendance/newAttendanceService";
+import { toast } from "react-toastify";
 import StudentLeaveQuotaBadges from "@/private/Attendance/components/StudentLeaveQuotaBadges";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const REJECTION_PRESETS = [
+  "No medical certificate / doctor proof provided",
+  "Unexcused absence / no prior intimation",
+  "Did not attend workshop or practicals",
+  "Annual quota limit for this category reached",
+  "Request submitted outside acceptable window",
+];
 
 /**
  * Redesigned Student Monthly Attendance Calendar & Stats Modal
@@ -50,8 +68,15 @@ export const StudentMonthlyAttendanceModal = ({
   batchStartDate,
   batchEndDate,
   existingAttendance = [],
+  selectedBatch = null,
+  teacherId = null,
+  onRefreshData = null,
 }) => {
   const [selectedDateKey, setSelectedDateKey] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [isVerifyingAction, setIsVerifyingAction] = useState(false);
+  const [rejectingRecord, setRejectingRecord] = useState(null); // specific pending record to reject
+  const [isBulkRejecting, setIsBulkRejecting] = useState(false);
+  const [rejectionReasonText, setRejectionReasonText] = useState("");
 
   const monthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth]);
   const monthEnd = useMemo(() => endOfMonth(selectedMonth), [selectedMonth]);
@@ -73,22 +98,81 @@ export const StudentMonthlyAttendanceModal = ({
     return map;
   }, [existingAttendance, student?.userId]);
 
+  const pendingRecords = useMemo(() => {
+    const list = [];
+    studentRawAttendanceMap.forEach((att) => {
+      if (att.verificationStatus === "PENDING") {
+        list.push(att);
+      }
+    });
+    return list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  }, [studentRawAttendanceMap]);
+
   const leadingBlankDays = getDay(monthStart);
 
-  // Set default selected date when modal opens or selectedMonth changes
-  useEffect(() => {
-    if (isOpen) {
-      const todayStr = format(new Date(), "yyyy-MM-dd");
-      const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
-      const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
+  // Track previous modal state to initialize selected date only on fresh modal open, student change, or month change
+  const prevModalStateRef = useRef({ isOpen: false, studentId: null, monthKey: null });
 
+  useEffect(() => {
+    if (!isOpen || !student?.userId) {
+      prevModalStateRef.current.isOpen = false;
+      return;
+    }
+
+    const curMonthKey = format(selectedMonth, "yyyy-MM");
+    const isFreshOpen = !prevModalStateRef.current.isOpen && isOpen;
+    const isStudentChanged = prevModalStateRef.current.studentId !== student.userId;
+    const isMonthChanged = prevModalStateRef.current.monthKey !== curMonthKey;
+
+    prevModalStateRef.current = {
+      isOpen: true,
+      studentId: student.userId,
+      monthKey: curMonthKey,
+    };
+
+    const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
+    const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+
+    // Fresh open or student switched: prefer first pending request date or today / month start
+    if (isFreshOpen || isStudentChanged) {
+      if (pendingRecords.length > 0) {
+        setSelectedDateKey(pendingRecords[0].date);
+        return;
+      }
       if (todayStr >= monthStartStr && todayStr <= monthEndStr) {
         setSelectedDateKey(todayStr);
       } else {
         setSelectedDateKey(monthStartStr);
       }
+      return;
     }
-  }, [isOpen, selectedMonth]);
+
+    // Month switched: if current selected date is outside new month, readjust
+    if (isMonthChanged) {
+      setSelectedDateKey((prevDate) => {
+        if (prevDate && prevDate >= monthStartStr && prevDate <= monthEndStr) {
+          return prevDate;
+        }
+        if (todayStr >= monthStartStr && todayStr <= monthEndStr) {
+          return todayStr;
+        }
+        return monthStartStr;
+      });
+      return;
+    }
+
+    // On attendance update or data refresh: keep the selected date if already in the month!
+    setSelectedDateKey((prevDate) => {
+      if (prevDate && prevDate >= monthStartStr && prevDate <= monthEndStr) {
+        return prevDate;
+      }
+      if (todayStr >= monthStartStr && todayStr <= monthEndStr) {
+        return todayStr;
+      }
+      return monthStartStr;
+    });
+  }, [isOpen, student?.userId, selectedMonth]);
 
   // Calculate annual leave quota for student
   const leaveQuota = useMemo(() => {
@@ -181,6 +265,146 @@ export const StudentMonthlyAttendanceModal = ({
   const selectedBadgeInfo = getStatusBadge(selectedStatus);
 
 
+  const selectedRawRecord = studentRawAttendanceMap.get(selectedDateKey);
+  const isSelectedPending = selectedRawRecord?.verificationStatus === "PENDING";
+  const isSelectedRejected = selectedRawRecord?.verificationStatus === "REJECTED";
+
+  // Approve a single pending request (supports status override)
+  const handleApprovePending = async (targetRecord = null, overrideStatus = null) => {
+    const rec = targetRecord || selectedRawRecord;
+    if (!rec || isVerifyingAction) return;
+    setIsVerifyingAction(true);
+    try {
+      const finalStatus = overrideStatus || rec.status || "present";
+      const badgeConf = attendanceTrackingService.getStatusConfig(finalStatus);
+      const leaveTypeVal = ["casual", "cl"].includes(finalStatus)
+        ? "CASUAL"
+        : ["sick", "sl"].includes(finalStatus)
+        ? "SICK"
+        : ["special", "spl"].includes(finalStatus)
+        ? "SPECIAL"
+        : null;
+
+      await newAttendanceService.verifyAttendanceRequests({
+        requests: [
+          {
+            documentId: rec.$id,
+            action: "APPROVE",
+            status: finalStatus,
+            attendanceStatus: badgeConf.code || finalStatus.toUpperCase(),
+            leaveType: leaveTypeVal,
+          },
+        ],
+        teacherId: teacherId || student?.teacherId,
+        batchId: selectedBatch || rec.batchId,
+      });
+
+      toast.success(`Approved attendance for ${rec.date} as ${badgeConf.label} (${badgeConf.code})!`);
+      if (typeof onRefreshData === "function") {
+        await onRefreshData();
+      } else if (typeof onAttendanceStatusChange === "function") {
+        onAttendanceStatusChange(student.userId, rec.date, finalStatus);
+      }
+    } catch (err) {
+      console.error("Error approving request:", err);
+      toast.error(err.message || "Failed to approve attendance request");
+    } finally {
+      setIsVerifyingAction(false);
+    }
+  };
+
+  // Batch approve ALL pending requests for this student
+  const handleApproveAllPending = async () => {
+    if (pendingRecords.length === 0 || isVerifyingAction) return;
+    setIsVerifyingAction(true);
+    try {
+      const requests = pendingRecords.map((req) => ({
+        documentId: req.$id,
+        action: "APPROVE",
+        status: req.status || "present",
+        attendanceStatus: req.attendanceStatus || (req.status ? req.status.toUpperCase() : "PRESENT"),
+        leaveType: req.leaveType || null,
+      }));
+
+      await newAttendanceService.verifyAttendanceRequests({
+        requests,
+        teacherId: teacherId || student?.teacherId,
+        batchId: selectedBatch || pendingRecords[0]?.batchId,
+      });
+
+      toast.success(`Approved all ${requests.length} pending attendance requests for ${student.userName || "student"}!`);
+      if (typeof onRefreshData === "function") {
+        await onRefreshData();
+      } else if (typeof onAttendanceStatusChange === "function") {
+        pendingRecords.forEach((r) => {
+          onAttendanceStatusChange(student.userId, r.date, r.status || "present");
+        });
+      }
+    } catch (err) {
+      console.error("Error approving all requests:", err);
+      toast.error(err.message || "Failed to approve all attendance requests");
+    } finally {
+      setIsVerifyingAction(false);
+    }
+  };
+
+  // Confirm rejection for single or bulk requests with instructor's note
+  const handleConfirmReject = async () => {
+    if (isVerifyingAction) return;
+    setIsVerifyingAction(true);
+    const reasonToUse = rejectionReasonText.trim() || "Rejected by instructor in monthly attendance modal";
+
+    try {
+      if (isBulkRejecting) {
+        const requests = pendingRecords.map((req) => ({
+          documentId: req.$id,
+          action: "REJECT",
+          rejectionReason: reasonToUse,
+        }));
+        await newAttendanceService.verifyAttendanceRequests({
+          requests,
+          teacherId: teacherId || student?.teacherId,
+          batchId: selectedBatch || pendingRecords[0]?.batchId,
+        });
+        toast.info(`Rejected ${requests.length} attendance request(s). Marked as Absent.`);
+        if (typeof onRefreshData === "function") {
+          await onRefreshData();
+        } else if (typeof onAttendanceStatusChange === "function") {
+          pendingRecords.forEach((r) => {
+            onAttendanceStatusChange(student.userId, r.date, "absent");
+          });
+        }
+      } else if (rejectingRecord || selectedRawRecord) {
+        const target = rejectingRecord || selectedRawRecord;
+        await newAttendanceService.verifyAttendanceRequests({
+          requests: [
+            {
+              documentId: target.$id,
+              action: "REJECT",
+              rejectionReason: reasonToUse,
+            },
+          ],
+          teacherId: teacherId || student?.teacherId,
+          batchId: selectedBatch || target.batchId,
+        });
+        toast.info(`Rejected request for ${target.date}. Marked as Absent.`);
+        if (typeof onRefreshData === "function") {
+          await onRefreshData();
+        } else if (typeof onAttendanceStatusChange === "function") {
+          onAttendanceStatusChange(student.userId, target.date, "absent");
+        }
+      }
+      setRejectingRecord(null);
+      setIsBulkRejecting(false);
+      setRejectionReasonText("");
+    } catch (err) {
+      console.error("Error rejecting request:", err);
+      toast.error(err.message || "Failed to reject attendance request");
+    } finally {
+      setIsVerifyingAction(false);
+    }
+  };
+
   const handleApplyStatus = (newStatus) => {
     if (!canEditSelected || isSelectedUpdating) return;
     onAttendanceStatusChange(student.userId, selectedDateKey, newStatus);
@@ -214,12 +438,22 @@ export const StudentMonthlyAttendanceModal = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/attendance/register/${student.userId}${selectedBatch ? `?batchId=${selectedBatch}` : ""}`}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5 transition border border-indigo-400/30"
+              title="Open full dedicated student attendance page"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Open Full Page Log</span>
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body: 2-Column Responsive Layout */}
@@ -228,6 +462,138 @@ export const StudentMonthlyAttendanceModal = ({
           {/* LEFT MAIN AREA: Calendar Grid + Direct Status Control Toolbar */}
           <div className="flex-1 p-4 sm:p-5 overflow-y-auto flex flex-col gap-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
             
+            {/* Comprehensive Student Pending Verification Hub */}
+            {pendingRecords.length > 0 && (
+              <div className="bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-orange-500/10 border-2 border-amber-400 dark:border-amber-600 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3 animate-in fade-in">
+                {/* Hub Header & Batch Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                      <Clock className="w-4 h-4 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-amber-950 dark:text-amber-100 flex items-center gap-2">
+                        <span>Pending Attendance Verification</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-950 border border-amber-300 dark:bg-amber-900 dark:text-amber-200">
+                          {pendingRecords.length} Request{pendingRecords.length > 1 ? "s" : ""}
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 font-medium">
+                        Student submitted past attendance/leaves awaiting your review.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Batch Controls */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleApproveAllPending}
+                      disabled={isVerifyingAction}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                      title={`Approve all ${pendingRecords.length} pending requests`}
+                    >
+                      {isVerifyingAction ? (
+                        <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <CheckCheck className="w-3.5 h-3.5" />
+                      )}
+                      <span>Approve All ({pendingRecords.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsBulkRejecting(true);
+                        setRejectingRecord(null);
+                        setRejectionReasonText("");
+                      }}
+                      disabled={isVerifyingAction}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1 shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                      title="Reject all pending requests"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Reject All</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Compact List of Pending Request Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
+                  {pendingRecords.map((req) => {
+                    const isSelected = selectedDateKey === req.date;
+                    const info = getStatusBadge(req.status || req.leaveType || "present");
+                    let formattedDate = req.date;
+                    try {
+                      formattedDate = format(parseISO(req.date), "EEE, MMM d");
+                    } catch (e) {}
+
+                    return (
+                      <div
+                        key={req.$id || req.date}
+                        onClick={() => setSelectedDateKey(req.date)}
+                        className={`p-2.5 rounded-xl border text-xs transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                          isSelected
+                            ? "bg-amber-100/90 dark:bg-amber-950/80 border-amber-500 ring-2 ring-amber-400 shadow-xs"
+                            : "bg-white/90 dark:bg-slate-800/90 border-amber-200 dark:border-amber-800/60 hover:bg-amber-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 dark:text-white font-mono text-[11px]">
+                            {formattedDate}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${info.cls}`}>
+                            {info.badge} ({info.label})
+                          </span>
+                        </div>
+
+                        {req.remarks ? (
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 italic line-clamp-1" title={req.remarks}>
+                            "{req.remarks}"
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-slate-400 italic">No remarks provided</p>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px]">
+                          <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {req.markedAt ? formatAttendanceTime(req, "hh:mm a") : "Awaiting review"}
+                          </span>
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleApprovePending(req)}
+                              disabled={isVerifyingAction}
+                              className="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold flex items-center gap-0.5 cursor-pointer"
+                              title="Approve this request"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectingRecord(req);
+                                setIsBulkRejecting(false);
+                                setRejectionReasonText("");
+                              }}
+                              disabled={isVerifyingAction}
+                              className="px-2 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-bold flex items-center gap-0.5 cursor-pointer"
+                              title="Reject this request"
+                            >
+                              <X className="w-3 h-3" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Direct Status Action Toolbar */}
             <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/40 p-3 sm:p-4 space-y-3 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -246,6 +612,184 @@ export const StudentMonthlyAttendanceModal = ({
                   </span>
                 )}
               </div>
+
+              {/* Dedicated Review & Approve/Reject Card */}
+              {isSelectedPending && selectedRawRecord && (
+                <div className="rounded-2xl border-2 border-amber-400 bg-amber-50/90 dark:border-amber-600 dark:bg-amber-950/70 p-3.5 sm:p-4 space-y-3 shadow-md animate-in fade-in">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                      <span className="text-xs sm:text-sm font-black text-amber-950 dark:text-amber-100">
+                        Review Attendance Request for {selectedDateKey}
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded text-[11px] font-black bg-amber-200 text-amber-950 border border-amber-300 dark:bg-amber-900 dark:text-amber-200">
+                      Requested: {selectedBadgeInfo.label} ({selectedBadgeInfo.badge})
+                    </span>
+                  </div>
+
+                  {/* Quota Context Banner */}
+                  {["cl", "casual"].includes(String(selectedRawRecord.status || "").toLowerCase()) && (
+                    <div className="p-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs flex items-center justify-between">
+                      <span className="text-indigo-900 dark:text-indigo-200 font-semibold">
+                        Casual Leave (CL) Quota:
+                      </span>
+                      <span className={`font-mono font-black text-xs ${leaveQuota.isClExceeded ? "text-rose-600 dark:text-rose-400" : "text-indigo-800 dark:text-indigo-300"}`}>
+                        {leaveQuota.clRemaining} / 12 days remaining {leaveQuota.isClExceeded ? "(Limit Exceeded!)" : "Available"}
+                      </span>
+                    </div>
+                  )}
+
+                  {["sl", "sick"].includes(String(selectedRawRecord.status || "").toLowerCase()) && (
+                    <div className="p-2.5 rounded-xl bg-amber-100/80 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs flex items-center justify-between">
+                      <span className="text-amber-950 dark:text-amber-200 font-semibold">
+                        Sick Leave (SL) Quota:
+                      </span>
+                      <span className={`font-mono font-black text-xs ${leaveQuota.isSlDaysExceeded ? "text-rose-600 dark:text-rose-400" : "text-amber-900 dark:text-amber-300"}`}>
+                        {leaveQuota.slDaysRemaining} / 15 days remaining ({leaveQuota.slSpellsRemaining}/2 spells) {leaveQuota.isSlDaysExceeded ? "(Limit Exceeded!)" : "Available"}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-xs space-y-1.5 bg-white/90 dark:bg-slate-900/80 p-3 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                    <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+                      <span>Requested Date: <strong className="text-slate-900 dark:text-white font-mono">{selectedDateKey}</strong></span>
+                      {selectedRawRecord.markedAt && (
+                        <span>Submitted At: <strong className="text-slate-900 dark:text-white">{formatAttendanceTime(selectedRawRecord, "MMM d, hh:mm a")}</strong></span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-800 dark:text-slate-200 pt-1">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400">Student's Reason: </span>
+                      <span className="italic font-medium">"{selectedRawRecord.remarks || "No reason specified"}"</span>
+                    </p>
+                  </div>
+
+                  {/* Immediate Action Buttons */}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleApprovePending(selectedRawRecord)}
+                      disabled={isVerifyingAction}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      {isVerifyingAction ? (
+                        <LoaderCircle className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                      <span>Approve Request ({selectedBadgeInfo.badge})</span>
+                    </button>
+
+                    {/* Alternative Approval as Present if requested something else */}
+                    {selectedBadgeInfo.badge !== "P" && (
+                      <button
+                        type="button"
+                        onClick={() => handleApprovePending(selectedRawRecord, "present")}
+                        disabled={isVerifyingAction}
+                        className="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200 font-bold text-xs flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50 border border-emerald-300 dark:border-emerald-800"
+                        title="Approve as Present instead"
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Approve as Present (P)</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRejectingRecord(selectedRawRecord);
+                        setIsBulkRejecting(false);
+                        setRejectionReasonText("");
+                      }}
+                      disabled={isVerifyingAction}
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <UserX className="w-4 h-4" />
+                      <span>Reject (Mark Absent)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Inline Rejection Reason Modal / Drawer */}
+              {(rejectingRecord || isBulkRejecting) && (
+                <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/90 border-2 border-rose-300 dark:border-rose-800 animate-in slide-in-from-bottom duration-200 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-rose-200 dark:border-rose-800">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600" />
+                      <span className="text-xs font-bold text-rose-900 dark:text-rose-100">
+                        {isBulkRejecting
+                          ? `Rejecting All ${pendingRecords.length} Requests (Mark as Absent)`
+                          : `Reject Request for ${rejectingRecord?.date || selectedDateKey} (Mark as Absent)`}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRejectingRecord(null);
+                        setIsBulkRejecting(false);
+                      }}
+                      className="text-rose-500 hover:text-rose-700 text-xs font-bold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {/* Quick Reason Presets */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {REJECTION_PRESETS.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setRejectionReasonText(preset)}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 font-medium hover:bg-rose-100 transition cursor-pointer"
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    rows={2}
+                    value={rejectionReasonText}
+                    onChange={(e) => setRejectionReasonText(e.target.value)}
+                    placeholder="Provide a reason for the student..."
+                    className="w-full text-xs p-2.5 rounded-xl border border-rose-200 dark:border-rose-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRejectingRecord(null);
+                        setIsBulkRejecting(false);
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmReject}
+                      disabled={isVerifyingAction}
+                      className="px-4 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isVerifyingAction && <LoaderCircle className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Confirm Rejection</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Rejected Notice */}
+              {isSelectedRejected && selectedRawRecord && (
+                <div className="rounded-xl border border-rose-300 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/40 p-2.5 px-3 text-xs text-rose-800 dark:text-rose-200 flex items-center gap-2">
+                  <UserX className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>
+                    <strong>Request Rejected:</strong> "{selectedRawRecord.rejectionReason || "Rejected by instructor"}" (Status marked as Absent)
+                  </span>
+                </div>
+              )}
 
               {/* Status Action Buttons & Undo */}
               {canEditSelected ? (
@@ -443,6 +987,8 @@ export const StudentMonthlyAttendanceModal = ({
                   const rawRec = studentRawAttendanceMap.get(dateKey);
                   const markedAtTime = rawRec ? formatAttendanceTime(rawRec, "hh:mm a") : null;
 
+                  const isCellPending = rawRec?.verificationStatus === "PENDING";
+
                   return (
                     <button
                       key={dateKey}
@@ -459,6 +1005,8 @@ export const StudentMonthlyAttendanceModal = ({
                           ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300"
                           : isBeforeBatch || isAfterBatch
                           ? "bg-slate-100 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700"
+                          : isCellPending
+                          ? "border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400"
                           : badgeInfo.cls
                       }`}
                       title={
@@ -470,6 +1018,8 @@ export const StudentMonthlyAttendanceModal = ({
                           ? "Date is before batch start"
                           : isAfterBatch
                           ? "Date is after batch end"
+                          : isCellPending
+                          ? `⏳ Pending Approval: ${badgeInfo.label}${markedAtTime ? ` • Marked at ${markedAtTime}` : ''} - Click to review request`
                           : `${badgeInfo.label}${markedAtTime ? ` • Marked at ${markedAtTime}` : ''} - Click to select date`
                       }
                     >
@@ -477,7 +1027,14 @@ export const StudentMonthlyAttendanceModal = ({
                         <p className={`text-xs font-bold ${isAfterBatch || isBeforeEnrollment ? "line-through opacity-50" : ""}`}>
                           {format(day, "d")}
                         </p>
-                        {isUpdating && <LoaderCircle className="h-3 w-3 animate-spin text-indigo-500" />}
+                        {isUpdating ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin text-indigo-500" />
+                        ) : isCellPending ? (
+                          <span className="flex h-2 w-2 relative" title="Pending Instructor Verification">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                          </span>
+                        ) : null}
                       </div>
 
                       <p className="text-[10px] uppercase tracking-wide font-black truncate">
@@ -491,6 +1048,8 @@ export const StudentMonthlyAttendanceModal = ({
                           ? "Post-Batch"
                           : isFuture
                           ? "Future"
+                          : isCellPending
+                          ? `⏳ ${badgeInfo.badge}`
                           : badgeInfo.badge}
                       </p>
                     </button>

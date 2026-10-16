@@ -5,8 +5,9 @@ import { format } from "date-fns";
 import { useStudentAttendance } from "./hooks/useStudentAttendance";
 import MarkAttendanceModal from "./components/MarkAttendanceModal";
 import AttendanceCalendar from "./components/AttendanceCalendar";
+import AttendanceTable from "./components/AttendanceTable";
 import { RightPanelStats } from "./components/AttendanceStatsSummary";
-import { MapPin, Sparkles, CheckCircle2 } from "lucide-react";
+import { MapPin, Sparkles, CheckCircle2, LayoutGrid, Table as TableIcon } from "lucide-react";
 import useLocationManager from "@/hooks/useLocationManager";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
@@ -14,6 +15,7 @@ const StudentAttendancePage = () => {
   const profile = useSelector(selectProfile);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [viewMode, setViewMode] = useState("calendar"); // "calendar" | "list"
 
   const {
     isLoadingAttendance,
@@ -26,11 +28,13 @@ const StudentAttendancePage = () => {
     rawAttendanceByDate,
     overallStats,
     monthlyStats,
+    leaveQuota,
     currentMonth,
     selectedDate,
     setSelectedDate,
     handleMonthChange,
     markAttendance,
+    markMultipleAttendance,
     lastUpdatedDate,
     enrollmentDate,
   } = useStudentAttendance(profile);
@@ -157,9 +161,39 @@ const StudentAttendancePage = () => {
           {/* Left Column (Table/Calendar) */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
-                 <h2 className="text-[13px] font-bold text-slate-800 dark:text-white">Attendance Log</h2>
-                 <span className="text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-full">{currentMonth}</span>
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-2">
+                 <div className="flex items-center gap-2">
+                   <h2 className="text-[13px] font-bold text-slate-800 dark:text-white">Attendance Log</h2>
+                   <span className="text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-full">{currentMonth}</span>
+                 </div>
+
+                 {/* View Mode Switcher */}
+                 <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                   <button
+                     type="button"
+                     onClick={() => setViewMode("calendar")}
+                     className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                       viewMode === "calendar"
+                         ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
+                         : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                     }`}
+                   >
+                     <LayoutGrid className="w-3.5 h-3.5" />
+                     <span>Calendar</span>
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => setViewMode("list")}
+                     className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                       viewMode === "list"
+                         ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
+                         : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                     }`}
+                   >
+                     <TableIcon className="w-3.5 h-3.5" />
+                     <span>Log View</span>
+                   </button>
+                 </div>
               </div>
               <div className="p-0">
                 {isLoadingAttendance ? (
@@ -206,7 +240,7 @@ const StudentAttendancePage = () => {
                     </div>
                     <div className="mt-3 h-3 w-56 rounded bg-slate-100 dark:bg-slate-800" />
                   </div>
-                ) : (
+                ) : viewMode === "calendar" ? (
                   <AttendanceCalendar
                     profile={profile}
                     batchData={batchData}
@@ -225,6 +259,11 @@ const StudentAttendancePage = () => {
                     }}
                     canOpenTodayMarkModal={canOpenTodayMarkModal}
                   />
+                ) : (
+                  <AttendanceTable
+                    attendanceRecords={Array.from(rawAttendanceByDate?.values() || [])}
+                    holidays={holidays}
+                  />
                 )}
               </div>
             </div>
@@ -236,6 +275,7 @@ const StudentAttendancePage = () => {
               stats={monthlyStats || {}}
               overallStats={overallStats}
               monthlyStats={monthlyStats}
+              leaveQuota={leaveQuota}
               currentMonth={currentMonth}
               batchData={batchData}
               selectedDate={selectedDate}
@@ -254,7 +294,10 @@ const StudentAttendancePage = () => {
          onClose={() => setIsModalOpen(false)}
          batchData={batchData}
          enrollmentDate={enrollmentDate}
+         leaveQuota={leaveQuota}
          onMarkAttendance={markAttendance}
+         onMarkMultipleAttendance={markMultipleAttendance}
+         holidays={holidays}
          selectedDate={modalDate}
          selectedAttendance={modalAttendance}
          todayAttendance={todayAttendance}

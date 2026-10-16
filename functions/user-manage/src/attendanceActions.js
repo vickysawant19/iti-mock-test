@@ -211,7 +211,8 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
             existing.attendanceStatus !== attendanceStatus ||
             existing.dayType !== dayType ||
             existing.leaveType !== leaveType ||
-            existing.remarks !== remarks;
+            existing.remarks !== remarks ||
+            existing.verificationStatus === 'PENDING';
 
           if (needsUpdate) {
             const nextRevision = (existing.revision || 1) + 1;
@@ -231,6 +232,10 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
               syncStatus,
               holidayId,
               remarks,
+              verificationStatus: 'VERIFIED',
+              verifiedBy: record.verifiedBy || null,
+              verifiedAt: new Date().toISOString(),
+              rejectionReason: null,
               ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
             });
             statsToUpdate.push({ ...record, dayType, attendanceStatus, status, isHoliday });
@@ -251,6 +256,10 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
             syncStatus,
             holidayId,
             remarks,
+            verificationStatus: 'VERIFIED',
+            verifiedBy: record.verifiedBy || null,
+            verifiedAt: new Date().toISOString(),
+            rejectionReason: null,
             markedAt: new Date().toISOString(),
             ...(teamPermissions.length > 0 ? { $permissions: teamPermissions } : {}),
           });
@@ -457,7 +466,23 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
       return { deletedIds: documentIds, durationMs: Date.now() - t0 };
     }
     case 'createAttendance': {
-      const { userId, batchId, tradeId, date, status, attendanceStatus, dayType, leaveType, source, holidayId, remarks } = req.bodyJson;
+      const {
+        userId,
+        batchId,
+        tradeId,
+        date,
+        status,
+        attendanceStatus,
+        dayType,
+        leaveType,
+        source,
+        holidayId,
+        remarks,
+        verificationStatus,
+        verifiedBy,
+        verifiedAt,
+        rejectionReason,
+      } = req.bodyJson;
       if (!userId || !batchId || !date) {
         throw new Error('Missing required fields for createAttendance');
       }
@@ -465,6 +490,7 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
       const finalStatus = status || (attendanceStatus ? attendanceStatus.toLowerCase() : 'present');
       const finalAttendanceStatus = attendanceStatus || (status ? status.toUpperCase() : 'PRESENT');
       const finalDayType = dayType || 'WORKING';
+      const finalVerificationStatus = verificationStatus || 'VERIFIED';
 
       const result = await tablesDB.createRow({
         databaseId: DB_ID,
@@ -484,15 +510,21 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
           syncStatus: 'SYNCED',
           holidayId: holidayId || null,
           remarks: remarks || null,
+          verificationStatus: finalVerificationStatus,
+          verifiedBy: verifiedBy || null,
+          verifiedAt: verifiedAt || null,
+          rejectionReason: rejectionReason || null,
           markedAt: req.bodyJson.markedAt || new Date().toISOString(),
         }
       });
 
-      // Fast incremental updates to monthlyAttendanceStats
-      try {
-        await updateMonthlyAttendanceStatsHelper(tablesDB, userId, batchId, date, logger);
-      } catch (err) {
-        logger(`Failed stats update on createAttendance: ${err.message}`);
+      // Update monthlyAttendanceStats (only if verified, skipping PENDING records)
+      if (finalVerificationStatus !== 'PENDING') {
+        try {
+          await updateMonthlyAttendanceStatsHelper(tablesDB, userId, batchId, date, logger);
+        } catch (err) {
+          logger(`Failed stats update on createAttendance: ${err.message}`);
+        }
       }
 
       return result;
@@ -530,6 +562,107 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
       }
 
       return result;
+    }
+    case 'verifyAttendanceRequests': {
+      const t0 = Date.now();
+      const { requests, teacherId, batchId } = req.bodyJson;
+      if (!Array.isArray(requests) || requests.length === 0) {
+        return { success: true, count: 0, message: 'No requests provided' };
+      }
+
+      logger(`[verifyAttendanceRequests] Processing ${requests.length} requests by teacher=${teacherId}...`);
+      const updatedRecords = [];
+      const affectedBatchMonths = new Map();
+
+      for (const reqItem of requests) {
+        const docId = reqItem.documentId || reqItem.$id;
+        if (!docId) continue;
+
+        let existingRow = null;
+        try {
+          existingRow = await tablesDB.getRow({
+            databaseId: DB_ID,
+            tableId: NEW_ATTENDANCE_COL_ID,
+            rowId: docId,
+          });
+        } catch (e) {
+          logger(`[verifyAttendanceRequests] Note: could not pre-fetch ${docId}: ${e.message}`);
+        }
+
+        const isApprove = reqItem.action === 'APPROVE';
+        let status, attendanceStatus, leaveType, verificationStatus, rejectionReason;
+
+        if (isApprove) {
+          verificationStatus = 'VERIFIED';
+          rejectionReason = null;
+          status = reqItem.status || existingRow?.status || 'present';
+          attendanceStatus = reqItem.attendanceStatus || existingRow?.attendanceStatus || (status ? status.toUpperCase() : 'PRESENT');
+          leaveType = reqItem.leaveType !== undefined ? reqItem.leaveType : (existingRow?.leaveType || null);
+        } else {
+          verificationStatus = 'REJECTED';
+          status = 'absent';
+          attendanceStatus = 'ABSENT';
+          leaveType = null;
+          rejectionReason = reqItem.rejectionReason || 'Rejected by instructor';
+        }
+        const nowIso = new Date().toISOString();
+
+        try {
+          const updated = await tablesDB.updateRow({
+            databaseId: DB_ID,
+            tableId: NEW_ATTENDANCE_COL_ID,
+            rowId: docId,
+            data: {
+              status,
+              attendanceStatus,
+              leaveType,
+              verificationStatus,
+              verifiedBy: teacherId || null,
+              verifiedAt: nowIso,
+              rejectionReason,
+              markedAt: nowIso,
+            }
+          });
+
+          updatedRecords.push(updated);
+
+          const bId = updated.batchId || batchId;
+          const ym = String(updated.date || '').substring(0, 7);
+          if (bId && ym && updated.userId) {
+            const key = `${bId}_${ym}`;
+            if (!affectedBatchMonths.has(key)) {
+              affectedBatchMonths.set(key, { batchId: bId, yearMonth: ym, userIds: new Set() });
+            }
+            affectedBatchMonths.get(key).userIds.add(updated.userId);
+          }
+        } catch (err) {
+          logger(`[verifyAttendanceRequests] Error updating ${docId}: ${err.message}`);
+        }
+      }
+
+      // Authoritative bulk stats recalculation for all affected students and months
+      for (const item of affectedBatchMonths.values()) {
+        try {
+          await bulkUpdateMonthlyAttendanceStats(
+            tablesDB,
+            item.batchId,
+            item.yearMonth,
+            Array.from(item.userIds),
+            null,
+            logger
+          );
+        } catch (err) {
+          logger(`[verifyAttendanceRequests] Stats update warning for ${item.batchId} (${item.yearMonth}): ${err.message}`);
+        }
+      }
+
+      logger(`[verifyAttendanceRequests] Complete: verified ${updatedRecords.length} records in ${Date.now() - t0}ms`);
+      return {
+        success: true,
+        count: updatedRecords.length,
+        records: updatedRecords,
+        durationMs: Date.now() - t0,
+      };
     }
     case 'deleteAttendance': {
       const { documentId } = req.bodyJson;

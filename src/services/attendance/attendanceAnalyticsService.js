@@ -105,6 +105,10 @@ class AttendanceAnalyticsService {
       dayType,
       attendanceStatus,
       leaveType,
+      verificationStatus: record.verificationStatus || "VERIFIED",
+      verifiedBy: record.verifiedBy || null,
+      verifiedAt: record.verifiedAt || null,
+      rejectionReason: record.rejectionReason || null,
       source: record.source || "MANUAL",
       revision: record.revision || 1,
       syncStatus: record.syncStatus || "SYNCED",
@@ -140,6 +144,7 @@ class AttendanceAnalyticsService {
     const sickDates = [];
 
     yearFiltered.forEach((rec) => {
+      if (rec.verificationStatus === "PENDING") return;
       if (rec.attendanceStatus === "LEAVE") {
         const lt = String(rec.leaveType || "").toUpperCase();
         if (lt === "CASUAL" || lt === "CL") {
@@ -238,6 +243,9 @@ class AttendanceAnalyticsService {
     normalizedRecords.forEach((record) => {
       const dateStr = record.date;
       if (!dateStr) return;
+
+      // Skip unverified pending records from attendance statistics
+      if (record.verificationStatus === "PENDING") return;
 
       const monthKey = format(parseISO(dateStr), "MMMM yyyy");
 

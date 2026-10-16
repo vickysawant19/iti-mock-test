@@ -28,6 +28,7 @@ import DailyBatchAttendanceModal from "./components/DailyBatchAttendanceModal";
 import StudentMonthlyAttendanceModal from "./components/StudentMonthlyAttendanceModal";
 import StudentManagementModal from "@/private/teacher/batch/view-batch/tabs/profiles/components/StudentManagementModal";
 import StatsDiscrepancyModal from "./components/StatsDiscrepancyModal";
+import VerifyAttendanceModal from "./components/VerifyAttendanceModal";
 import { AlertTriangle } from "lucide-react";
 import { newAttendanceService } from "@/services/attendance/newAttendanceService";
 import holidayService from "@/services/attendance/holidaysService";
@@ -114,6 +115,8 @@ const AttendanceRegister = () => {
   const [discrepancyData, setDiscrepancyData] = useState({ hasDiscrepancies: false, mismatches: [] });
   const [isFixModalOpen,  setIsFixModalOpen]  = useState(false);
   const [isVerifyingStats, setIsVerifyingStats] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
 
   const handleManualVerifyStats = useCallback(async () => {
     if (!selectedBatch || !students?.length) return;
@@ -135,6 +138,24 @@ const AttendanceRegister = () => {
       setIsVerifyingStats(false);
     }
   }, [selectedBatch, selectedMonth, students]);
+
+  const fetchPendingRequests = useCallback(async () => {
+    if (!selectedBatch) {
+      setPendingRequests([]);
+      return;
+    }
+    try {
+      const p = await newAttendanceService.getPendingAttendanceRequests(selectedBatch);
+      setPendingRequests(p || []);
+    } catch (err) {
+      console.error("Error fetching pending requests:", err);
+      setPendingRequests([]);
+    }
+  }, [selectedBatch]);
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [fetchPendingRequests]);
 
 
 
@@ -397,7 +418,7 @@ const AttendanceRegister = () => {
         // ── Attendance & Current Month Pre-aggregated Stats ──────────────
         if (needsAttendance) {
           const yearMonthStr = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, "0")}`;
-          const [result, currentStats] = await Promise.all([
+          const [result, currentStats, pendingList] = await Promise.all([
             newAttendanceService.getMonthlyAttendance(
               studentIds,
               selectedBatch,
@@ -405,11 +426,13 @@ const AttendanceRegister = () => {
               selectedMonth.getMonth() + 1,
             ),
             newAttendanceService.getBatchMonthlyStats(selectedBatch, yearMonthStr),
+            newAttendanceService.getPendingAttendanceRequests(selectedBatch),
           ]);
 
           if (signal?.aborted) return;
           setNewAttendance(result.documents);
           setCurrentMonthlyStatsMap(currentStats || new Map());
+          setPendingRequests(pendingList || []);
           fetchCacheRef.current.attendance = currentKey;
         }
 
@@ -516,6 +539,10 @@ const AttendanceRegister = () => {
           tradeId: batches.get(selectedBatch)?.tradeId ?? null,
           date,
           status: newStatus,
+          verificationStatus: "VERIFIED",
+          verifiedBy: user?.$id,
+          verifiedAt: new Date().toISOString(),
+          rejectionReason: null,
         });
 
         const attendanceResponse = existingRecord
@@ -527,6 +554,7 @@ const AttendanceRegister = () => {
           ...(prev || []).filter((att) => att.$id !== attendanceResponse.$id),
           attendanceResponse,
         ]);
+        setPendingRequests((prev) => (prev || []).filter((req) => req.$id !== attendanceResponse.$id && !(req.userId === userId && req.date === date)));
         // Refresh monthly summary after update
         fetchCacheRef.current.attendance = null;
         fetchCacheRef.current.stats = null;
@@ -562,12 +590,20 @@ const AttendanceRegister = () => {
             tradeId: batch?.tradeId ?? null,
             date: selectedDate,
             status: String(statusVal || "").toLowerCase(),
+            verificationStatus: "VERIFIED",
+            verifiedBy: user?.$id,
+            verifiedAt: new Date().toISOString(),
+            rejectionReason: null,
           });
           return {
             ...payload,
             dayType,
             isHoliday,
             source: "MANUAL",
+            verificationStatus: "VERIFIED",
+            verifiedBy: user?.$id,
+            verifiedAt: new Date().toISOString(),
+            rejectionReason: null,
           };
         });
 
@@ -585,6 +621,14 @@ const AttendanceRegister = () => {
           ];
         });
 
+        // Also update pending requests since batch marking clears them to VERIFIED
+        const savedUserIds = new Set(Object.keys(statuses));
+        setPendingRequests((prev) =>
+          (prev || []).filter(
+            (req) => !(req.date === selectedDate && savedUserIds.has(req.userId)),
+          ),
+        );
+
         // Invalidate stats cache so summary stats & previous month stats refresh
         fetchCacheRef.current.stats = null;
         setStudentStatsMap(new Map());
@@ -596,7 +640,7 @@ const AttendanceRegister = () => {
         toast.error("Failed to save attendance");
       }
     },
-    [batches, selectedBatch, selectedDate, fetchAttendanceAndStats],
+    [batches, selectedBatch, selectedDate, user?.$id, fetchAttendanceAndStats, holidays],
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -833,6 +877,8 @@ const AttendanceRegister = () => {
           setColumnVisibility={setColumnVisibility}
           compactView={compactView}
           setCompactView={setCompactView}
+          pendingCount={pendingRequests?.length || 0}
+          onOpenVerifyModal={() => setIsVerifyModalOpen(true)}
         />
 
 
@@ -898,6 +944,16 @@ const AttendanceRegister = () => {
           batchStartDate={rawBatchStartDate}
           batchEndDate={rawBatchEndDate}
           existingAttendance={newAttendance}
+          selectedBatch={selectedBatch}
+          teacherId={user?.$id}
+          onRefreshData={async () => {
+            fetchCacheRef.current.attendance = null;
+            fetchCacheRef.current.stats = null;
+            if (abortControllerRef.current) {
+              await fetchAttendanceAndStats(abortControllerRef.current.signal);
+            }
+            fetchPendingRequests();
+          }}
         />
 
         <DailyBatchAttendanceModal
@@ -935,6 +991,24 @@ const AttendanceRegister = () => {
             if (abortControllerRef.current) {
               await fetchAttendanceAndStats(abortControllerRef.current.signal);
             }
+          }}
+        />
+
+        <VerifyAttendanceModal
+          isOpen={isVerifyModalOpen}
+          onClose={() => setIsVerifyModalOpen(false)}
+          batchId={selectedBatch}
+          teacherId={user?.$id}
+          pendingRequests={pendingRequests}
+          students={students}
+          onSuccess={async () => {
+            fetchCacheRef.current.attendance = null;
+            fetchCacheRef.current.stats = null;
+            if (abortControllerRef.current) {
+              await fetchAttendanceAndStats(abortControllerRef.current.signal);
+            }
+            const p = await newAttendanceService.getPendingAttendanceRequests(selectedBatch);
+            setPendingRequests(p || []);
           }}
         />
 

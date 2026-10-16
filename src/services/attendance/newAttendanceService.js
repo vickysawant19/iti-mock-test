@@ -263,6 +263,10 @@ class NewAttendanceService {
       leaveType,
       source,
       holidayId,
+      verificationStatus,
+      verifiedBy,
+      verifiedAt,
+      rejectionReason,
     },
     skipStats = false
   ) {
@@ -285,6 +289,10 @@ class NewAttendanceService {
         leaveType: leaveType || null,
         source: source || "MANUAL",
         holidayId: holidayId || null,
+        verificationStatus: verificationStatus || "VERIFIED",
+        verifiedBy: verifiedBy || null,
+        verifiedAt: verifiedAt || null,
+        rejectionReason: rejectionReason || null,
       });
 
       const response = await functions.createExecution(
@@ -300,6 +308,56 @@ class NewAttendanceService {
 
       return resData.data;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // Fetch pending attendance verification requests for a batch
+  async getPendingAttendanceRequests(batchId) {
+    if (!batchId) return [];
+    try {
+      const queries = [
+        Query.equal("batchId", batchId),
+        Query.equal("verificationStatus", "PENDING"),
+        Query.orderDesc("date"),
+        Query.limit(500),
+      ];
+      const res = await this.fetchAllDocuments(queries);
+      return res.documents || [];
+    } catch (error) {
+      console.error("Error fetching pending attendance requests:", error);
+      return [];
+    }
+  }
+
+  // Verify (Approve / Reject) past attendance requests via Cloud Function
+  async verifyAttendanceRequests({ requests, teacherId, batchId }) {
+    if (!requests || !Array.isArray(requests) || requests.length === 0) {
+      return { success: true, count: 0 };
+    }
+    try {
+      const functions = appwriteService.getFunctions();
+      const payload = JSON.stringify({
+        action: "verifyAttendanceRequests",
+        requests,
+        teacherId,
+        batchId,
+      });
+
+      const response = await functions.createExecution(
+        conf.userManageFunctionId,
+        payload,
+        false
+      );
+
+      const resData = JSON.parse(response.responseBody || "{}");
+      if (!resData.success) {
+        throw new Error(resData.error || "Failed to verify attendance requests");
+      }
+
+      return resData.data;
+    } catch (error) {
+      console.error("Error verifying attendance requests:", error);
       throw error;
     }
   }

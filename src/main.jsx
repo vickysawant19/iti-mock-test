@@ -68,6 +68,7 @@ const TeacherNotificationsPage = lazy(() => import("./private/teacher/notificati
 const DailyDiary = lazy(() => import("./private/Attendance/DailyDiary/DailyDiary.jsx"));
 const Assessment = lazy(() => import("./private/assessment/Assessment.jsx"));
 const AttendanceRegister = lazy(() => import("./private/Attendance/teacher/AttendanceRegister/AttendanceRegister.jsx"));
+const StudentIndividualAttendancePage = lazy(() => import("./private/Attendance/teacher/AttendanceRegister/StudentIndividualAttendancePage.jsx"));
 const AttendanceTracker = lazy(() => import("./private/Attendance/todaysAttendance.jsx"));
 const StudentAttendancePage = lazy(() => import("./private/Attendance/student/PersonalAttendance/StudentAttendancePage.jsx"));
 const CollegeAttendance = lazy(() => import("./private/collegeDashboard/CollegeAttendance.jsx"));
@@ -183,6 +184,7 @@ const router = (
             </Route>
             <Route path="attendance">
               <Route path="register" element={<AttendanceRegister />} />
+              <Route path="register/:userId" element={<StudentIndividualAttendancePage />} />
               <Route path="mark-my-attendance" element={<AttendanceTracker />} />
               <Route path="marktoday" element={<Navigate to="/attendance/mark-my-attendance" replace />} />
               <Route

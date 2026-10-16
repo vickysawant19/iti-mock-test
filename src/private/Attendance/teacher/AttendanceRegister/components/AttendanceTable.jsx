@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
 import AttendanceTableHead from "./AttendanceTableHead";
 import AttendanceTableBody from "./AttendanceTableBody";
 import AttendanceTableFooter from "./AttendanceTableFooter";
+import AttendanceTableSkeleton from "./AttendanceTableSkeleton";
 import EmptyState from "./EmptyState";
 import { useAttendanceMatrix } from "../hooks/useAttendanceMatrix";
 
@@ -104,19 +104,19 @@ const AttendanceTable = ({
     setColumnVisibility((prev) => ({ ...prev, [group]: !prev[group] }));
 
   // Loading states
-  const loadingStudents = loading.students;
-  const loadingAttendance = loading.attendance;
-  const loadingStats = loading.stats;
+  const loadingStudents = loading?.students;
+  const loadingAttendance = loading?.attendance;
+  const loadingStats = loading?.stats;
 
-  // Overall loading state for table data
-  const isTableDataLoading = loadingStudents;
+  // Background fetch state (when students exist)
+  const isFetching = Boolean(loadingStudents || loadingAttendance || loadingStats);
 
   // Determine what's currently loading for the message
   const getLoadingMessage = () => {
-    if (loadingStudents) return "Loading Students";
+    if (loadingStudents) return "Syncing Students";
     if (loadingAttendance) return "Loading Attendance";
-    if (loadingStats) return "Loading Statistics";
-    return "Loading";
+    if (loadingStats) return "Updating Statistics";
+    return "Updating";
   };
 
   // Show empty state when no batch is selected
@@ -124,6 +124,25 @@ const AttendanceTable = ({
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-8">
         <EmptyState message="Please select a batch to view attendance." />
+      </div>
+    );
+  }
+
+  // Show skeleton when loading students and no students present yet
+  if (loadingStudents && (!students || students.length === 0)) {
+    return (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="attendance-scroll relative min-h-0 min-w-0 flex-1 overflow-auto border border-slate-300 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="sticky top-0 left-0 right-0 z-50 h-1 w-full bg-slate-200/80 dark:bg-slate-800 overflow-hidden">
+            <div className="h-full w-full bg-gradient-to-r from-indigo-500 via-sky-400 to-indigo-500 animate-pulse" />
+          </div>
+          <AttendanceTableSkeleton
+            columnVisibility={columnVisibility}
+            compactView={compactView}
+            nameWidthProp={nameWidth}
+            daysCount={monthDates.length || 30}
+          />
+        </div>
       </div>
     );
   }
@@ -139,34 +158,32 @@ const AttendanceTable = ({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-
       {/* ── Table Wrapper — single scroll container for BOTH axes so sticky freeze works ── */}
       <div
         className="attendance-scroll relative min-h-0 min-w-0 flex-1 overflow-auto border border-slate-300 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
       >
-        {/* Loading Overlay */}
-        {isTableDataLoading && (
-          <div className="absolute inset-0 z-50 flex min-h-80 items-center justify-center rounded-lg bg-white/70 backdrop-blur-sm dark:bg-slate-950/70">
-            <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-900 px-8 py-6 rounded-xl shadow-2xl border-2 border-indigo-200 dark:border-indigo-800">
-              <Loader2 className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-400" />
-              <div className="text-center">
-                <p className="text-base font-semibold text-slate-850 dark:text-slate-200">
-                  {getLoadingMessage()}
-                </p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  {formatDate(selectedMonth, "MMMM yyyy")}
-                </p>
-              </div>
-            </div>
+        {/* Subtle Top Loading Line */}
+        {isFetching && (
+          <div className="sticky top-0 left-0 right-0 z-50 h-1 w-full bg-slate-200/80 dark:bg-slate-800 overflow-hidden">
+            <div className="h-full w-full bg-gradient-to-r from-indigo-500 via-sky-400 to-indigo-500 animate-pulse" />
+          </div>
+        )}
+
+        {/* Floating Non-blocking Status Pill */}
+        {isFetching && (
+          <div className="pointer-events-none absolute top-3 right-5 z-40 flex items-center gap-2 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+            </span>
+            <span>{getLoadingMessage()}...</span>
           </div>
         )}
 
         {students && students.length > 0 && (
           <div
-            className={`transition-opacity duration-300 ${
-              isTableDataLoading
-                ? "opacity-30 pointer-events-none"
-                : "opacity-100"
+            className={`transition-opacity duration-200 ${
+              isFetching ? "opacity-90" : "opacity-100"
             }`}
           >
             <table className="min-w-full dark:bg-slate-900 text-xs border-separate border-spacing-0">
@@ -208,6 +225,7 @@ const AttendanceTable = ({
                 onOpenStudentAttendanceModal={onOpenStudentAttendanceModal}
                 onOpenStudentProfile={onOpenStudentProfile}
                 matrixData={matrixData}
+                selectedBatch={selectedBatch}
               />
               <AttendanceTableFooter
                 students={students}

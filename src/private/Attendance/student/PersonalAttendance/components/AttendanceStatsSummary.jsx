@@ -60,6 +60,7 @@ export const RightPanelStats = ({
   stats,
   overallStats,
   monthlyStats,
+  leaveQuota,
   currentMonth,
   batchData,
   selectedDate,
@@ -218,6 +219,47 @@ export const RightPanelStats = ({
                 <div className={`text-xl font-extrabold mt-0.5 leading-none ${item.valueColor}`}>{item.value}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Annual Leave Quotas Card ── */}
+      {leaveQuota && (
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-3xl p-4 border border-amber-200 dark:border-amber-900/50 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🌴</span>
+              <h4 className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300 uppercase tracking-widest">
+                Annual Leave Quotas
+              </h4>
+            </div>
+            <span className="text-[10px] text-amber-700/80 dark:text-amber-400 font-bold">
+              {new Date().getFullYear()}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Casual Leave */}
+            <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-100 dark:border-amber-900/30">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Casual Leave</span>
+              <div className="text-base font-black text-amber-700 dark:text-amber-300 mt-0.5">
+                {leaveQuota.clRemaining} <span className="text-[10px] font-normal text-slate-500">/ 12 left</span>
+              </div>
+              <span className="text-[9px] text-slate-400 block mt-0.5">
+                Used: {leaveQuota.clUsed || 0}{leaveQuota.clPending ? ` (${leaveQuota.clPending} pend)` : ""}
+              </span>
+            </div>
+
+            {/* Sick Leave */}
+            <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-sky-100 dark:border-sky-900/30">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Sick Leave</span>
+              <div className="text-base font-black text-sky-700 dark:text-sky-300 mt-0.5">
+                {leaveQuota.slDaysRemaining} <span className="text-[10px] font-normal text-slate-500">/ 15d left</span>
+              </div>
+              <span className="text-[9px] text-slate-400 block mt-0.5">
+                {leaveQuota.slSpellsRemaining || 0}/2 spells left
+              </span>
+            </div>
           </div>
         </div>
       )}

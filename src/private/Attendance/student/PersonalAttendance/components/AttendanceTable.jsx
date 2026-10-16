@@ -208,6 +208,8 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
                 >
                   {isHoliday
                     ? holidayText || record.remarks || "Public Holiday"
+                    : record.verificationStatus === "REJECTED" && record.rejectionReason
+                    ? `Rejected: ${record.rejectionReason}`
                     : record.remarks || "-"}
                 </td>
                 <td
@@ -216,14 +218,48 @@ const AttendanceTable = ({ attendanceRecords, holidays }) => {
                   {formatAttendanceTime(record, "h:mm a")}
                 </td>
                 <td className={`px-4 py-2.5 border-t ${borderColor}`}>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(rowStatus)}`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(rowStatus)}`}
-                    />
-                    <span className="capitalize">{rowStatus || "unknown"}</span>
-                  </span>
+                  {record.verificationStatus === "PENDING" ? (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 animate-pulse"
+                      title="Past attendance request awaiting instructor approval"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-amber-500" />
+                      Pending ({(() => {
+                        const lt = String(record.leaveType || "").toUpperCase();
+                        const st = String(record.status || "").toLowerCase();
+                        if (lt === "CASUAL" || ["cl", "casual"].includes(st)) return "CL";
+                        if (lt === "SICK" || ["sl", "sick"].includes(st)) return "SL";
+                        if (lt === "SPECIAL" || ["spl", "special"].includes(st)) return "SPL";
+                        return "P";
+                      })()})
+                    </span>
+                  ) : record.verificationStatus === "REJECTED" ? (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                      title={record.rejectionReason || "Request rejected by instructor"}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-rose-500" />
+                      Rejected
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${getStatusClasses(rowStatus)}`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getStatusDotColor(rowStatus)}`}
+                      />
+                      <span className="capitalize">{
+                        (() => {
+                          const lt = String(record.leaveType || "").toUpperCase();
+                          const st = String(record.status || "").toLowerCase();
+                          if (lt === "CASUAL" || ["cl", "casual"].includes(st)) return "Casual Leave (CL)";
+                          if (lt === "SICK" || ["sl", "sick"].includes(st)) return "Sick Leave (SL)";
+                          if (lt === "SPECIAL" || ["spl", "special"].includes(st)) return "Special Leave (SPL)";
+                          return rowStatus || "unknown";
+                        })()
+                      }</span>
+                    </span>
+                  )}
                 </td>
               </tr>
             );

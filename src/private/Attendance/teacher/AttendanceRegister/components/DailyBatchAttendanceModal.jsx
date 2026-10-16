@@ -13,7 +13,8 @@ import {
   Search,
   RotateCcw,
   SlidersHorizontal,
-  ArrowUpDown
+  ArrowUpDown,
+  Clock,
 } from "lucide-react";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import { attendanceAnalyticsService } from "@/services/attendance/attendanceAnalyticsService";
@@ -393,11 +394,20 @@ export const DailyBatchAttendanceModal = ({
       isSlSpellsExceeded: false,
     };
 
+    const dayRecord = (existingAttendance || []).find((r) => r.userId === student.userId && r.date === date);
+    const isPending = dayRecord?.verificationStatus === "PENDING";
+
     return (
       <div
         key={student.userId}
-        className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 hover:shadow-md transition-all ${
-          student.isTeacher ? "border-l-4 border-l-purple-500" : isBlocked ? "opacity-60 bg-slate-50 dark:bg-slate-900/60" : ""
+        className={`bg-white dark:bg-slate-900 border rounded-xl p-3.5 hover:shadow-md transition-all ${
+          isPending
+            ? "border-amber-400 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/20"
+            : student.isTeacher
+            ? "border-l-4 border-l-purple-500 border-slate-200 dark:border-slate-800"
+            : isBlocked
+            ? "opacity-60 bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800"
+            : "border-slate-200 dark:border-slate-800"
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -439,6 +449,17 @@ export const DailyBatchAttendanceModal = ({
 
               {/* Leave Quotas Badge Row */}
               {!isBlocked && <StudentLeaveQuotaBadges quota={quota} className="mt-1" />}
+
+              {/* Pending Request Indicator */}
+              {isPending && dayRecord && (
+                <div className="mt-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-[10px] text-amber-900 dark:text-amber-200">
+                  <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 animate-pulse shrink-0" />
+                  <span className="font-bold">
+                    Student Requested {dayRecord.leaveType || (String(dayRecord.status || "").toUpperCase())}
+                    {dayRecord.remarks ? `: "${dayRecord.remarks}"` : ""}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
