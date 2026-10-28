@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { format, getDay, endOfWeek, min, parseISO, startOfWeek, differenceInCalendarWeeks } from "date-fns";
+import { format, getDay, endOfWeek, min, parseISO, startOfWeek, differenceInCalendarWeeks, isBefore } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, CalendarDays, Calendar } from "lucide-react";
@@ -73,10 +73,17 @@ export default function DiaryTable({
   const getBatchWeekNumber = (day) => {
     if (!batchStartDate) return null;
     try {
-      const batchStart = startOfWeek(parseISO(batchStartDate), { weekStartsOn: 0 });
+      const rawDateStr = typeof batchStartDate === "string" ? batchStartDate.split("T")[0] : format(batchStartDate, "yyyy-MM-dd");
+      const [by, bm, bd] = rawDateStr.split("-").map(Number);
+      const batchStartDateObj = new Date(by, bm - 1, bd);
+
+      if (isBefore(day, batchStartDateObj)) return null;
+
+      const batchStart = startOfWeek(batchStartDateObj, { weekStartsOn: 0 });
       const currentWeekStart = startOfWeek(day, { weekStartsOn: 0 });
       const weekDiff = differenceInCalendarWeeks(currentWeekStart, batchStart, { weekStartsOn: 0 });
-      return Math.max(1, weekDiff + 1);
+      if (weekDiff < 0) return null;
+      return weekDiff + 1;
     } catch (e) {
       return null;
     }

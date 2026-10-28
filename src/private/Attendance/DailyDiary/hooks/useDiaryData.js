@@ -7,6 +7,7 @@ import {
   addWeeks,
   parseISO,
   startOfDay,
+  startOfMonth,
   subDays,
   isBefore,
 } from "date-fns";
@@ -29,12 +30,14 @@ import { attendanceTrackingService } from "@/services/attendance/attendanceTrack
  * @param {'student'|'teacher'} [options.role='student']
  * @param {string} [options.userId]
  * @param {boolean} [options.enabled=true]
+ * @param {Date} [options.initialMonth]
  */
 export function useDiaryData({
   viewType = "weekly",
   role = "student",
   userId: userIdOverride,
   enabled = true,
+  initialMonth,
 } = {}) {
   const currentWeekStartInitial = useMemo(
     () => startOfWeek(new Date(), { weekStartsOn: 0 }),
@@ -64,39 +67,71 @@ export function useDiaryData({
     data: batchData,
     isLoading: isBatchLoading,
     isError,
-  } = useGetBatchQuery({ batchId: resolvedBatchId }, { skip: !resolvedBatchId || !enabled });
+  } = useGetBatchQuery({ batchId: resolvedBatchId }, { skip: !resolvedBatchId });
+
+  // Sync initial period with initialMonth and batch start date
+  useEffect(() => {
+    if (!batchData?.start_date) return;
+    const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+    const [by, bm, bd] = rawStart.split("-").map(Number);
+    const batchStartDay = new Date(by, bm - 1, bd);
+    const batchStartWeek = startOfWeek(batchStartDay, { weekStartsOn: 0 });
+
+    if (initialMonth) {
+      const monthStart = startOfMonth(initialMonth);
+      const isStartMonth = initialMonth.getFullYear() === by && initialMonth.getMonth() === (bm - 1);
+      const targetWeek = isStartMonth ? batchStartWeek : startOfWeek(monthStart, { weekStartsOn: 0 });
+      const targetDay = isStartMonth ? batchStartDay : startOfDay(monthStart);
+
+      setCurrentWeekStart(targetWeek);
+      setCurrentDay(targetDay);
+      return;
+    }
+
+    setCurrentWeekStart((prev) => (isBefore(prev, batchStartWeek) ? batchStartWeek : prev));
+    setCurrentDay((prev) => (isBefore(prev, batchStartDay) ? batchStartDay : prev));
+  }, [batchData?.start_date, initialMonth]);
 
   const periodAnchor = viewType === "daily" ? currentDay : currentWeekStart;
 
   const weekNumber = useMemo(() => {
     if (!batchData?.start_date) return 1;
-    const batchStart = startOfWeek(parseISO(batchData.start_date), {
+    const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+    const [by, bm, bd] = rawStart.split("-").map(Number);
+    const batchStartDay = new Date(by, bm - 1, bd);
+    const batchStart = startOfWeek(batchStartDay, {
       weekStartsOn: 0,
     });
-    return Math.max(
-      1,
-      differenceInCalendarWeeks(currentWeekStart, batchStart, {
-        weekStartsOn: 0,
-      }) + 1
-    );
-  }, [batchData, currentWeekStart]);
+    const weekDiff = differenceInCalendarWeeks(currentWeekStart, batchStart, {
+      weekStartsOn: 0,
+    });
+    if (weekDiff < 0) return 1;
+    return weekDiff + 1;
+  }, [batchData?.start_date, currentWeekStart]);
 
   const canGoPreviousPeriod = useMemo(() => {
     if (!batchData?.start_date) return true;
-    const batchStartDay = startOfDay(parseISO(batchData.start_date));
+    const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+    const [by, bm, bd] = rawStart.split("-").map(Number);
+    const batchStartDay = new Date(by, bm - 1, bd);
     if (viewType === "daily") {
       return !isBefore(subDays(currentDay, 1), batchStartDay);
     }
     const batchStartWeek = startOfWeek(batchStartDay, { weekStartsOn: 0 });
     return !isBefore(addWeeks(currentWeekStart, -1), batchStartWeek);
-  }, [batchData, currentDay, currentWeekStart, viewType]);
+  }, [batchData?.start_date, currentDay, currentWeekStart, viewType]);
 
   const periodDays = useMemo(() => {
     if (viewType === "daily") {
       return [currentDay];
     }
-    return Array.from({ length: 7 }).map((_, i) => addDays(currentWeekStart, i));
-  }, [viewType, currentDay, currentWeekStart]);
+    const days = Array.from({ length: 7 }).map((_, i) => addDays(currentWeekStart, i));
+    if (!batchData?.start_date) return days;
+    const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+    const [by, bm, bd] = rawStart.split("-").map(Number);
+    const batchStartDay = new Date(by, bm - 1, bd);
+    return days.filter((day) => !isBefore(day, batchStartDay));
+  }, [viewType, currentDay, currentWeekStart, batchData?.start_date]);
 
   const dailyDateLabel = useMemo(
     () => format(currentDay, "EEEE, MMM dd, yyyy"),

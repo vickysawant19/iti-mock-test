@@ -12,10 +12,16 @@ export default function DiaryHeader({
   isExporting,
   onRefresh,
   batchStartDate,
+  batchEndDate,
 }) {
   // input type="month" expects "YYYY-MM"
   const monthString = format(selectedMonth, "yyyy-MM");
-  const minMonthString = batchStartDate ? format(new Date(batchStartDate), "yyyy-MM") : undefined;
+  const minMonthString = batchStartDate
+    ? (typeof batchStartDate === "string" ? batchStartDate.split("T")[0].slice(0, 7) : format(new Date(batchStartDate), "yyyy-MM"))
+    : undefined;
+  const maxMonthString = batchEndDate
+    ? (typeof batchEndDate === "string" ? batchEndDate.split("T")[0].slice(0, 7) : format(new Date(batchEndDate), "yyyy-MM"))
+    : undefined;
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -41,6 +47,7 @@ export default function DiaryHeader({
               id="month-picker"
               type="month"
               min={minMonthString}
+              max={maxMonthString}
               value={monthString}
               onChange={handleChange}
               className="px-3 py-1.5 rounded-lg shadow-2xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 text-xs font-extrabold text-slate-800 dark:text-slate-200 w-full sm:w-auto outline-none transition-all cursor-pointer"

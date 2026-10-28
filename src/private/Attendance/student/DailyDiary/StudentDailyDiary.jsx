@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, parse } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, parse, isBefore, isAfter } from "date-fns";
+import { useGetBatchQuery } from "@/store/api/batchApi";
 import { selectProfile } from "@/store/profileSlice";
 import { selectActiveBatchId } from "@/store/activeBatchSlice";
 import batchStudentService from "@/services/batch/batchStudentService";
@@ -32,6 +33,23 @@ function StudentDailyDiary() {
   const [monthlyHolidays, setMonthlyHolidays] = useState(new Map());
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
 
+  // Directly fetch batchData so it is always available across all tabs
+  const {
+    data: batchData,
+    isLoading: isBatchLoading,
+  } = useGetBatchQuery({ batchId: activeBatchId }, { skip: !activeBatchId });
+
+  // Clamp currentMonth so it can never be before the batch start month
+  useEffect(() => {
+    if (!batchData?.start_date) return;
+    const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+    const [by, bm] = rawStart.split("-").map(Number);
+    const minMonth = new Date(by, bm - 1, 1);
+    if (isBefore(currentMonth, minMonth)) {
+      setCurrentMonth(minMonth);
+    }
+  }, [batchData?.start_date, currentMonth, setCurrentMonth]);
+
   useEffect(() => {
     if (profile?.userId) {
       batchStudentService
@@ -56,28 +74,70 @@ function StudentDailyDiary() {
     handleNextWeek,
     dailyDateLabel,
     canGoPreviousPeriod,
-    batchData,
     fetchData: fetchPeriodData,
   } = useDiaryData({
     viewType: activeTab === "daily" ? "daily" : "weekly",
     role: "student",
     enabled: activeTab !== "monthly",
+    initialMonth: currentMonth,
   });
 
-  // Fetch data for Monthly view
-  const monthDays = useCallback(() => {
+  // Calculate month days starting from batch start date
+  const monthDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+
+    let effectiveStart = monthStart;
+    let effectiveEnd = monthEnd;
+
+    if (batchData?.start_date) {
+      const rawStart = typeof batchData.start_date === "string" ? batchData.start_date.split("T")[0] : format(batchData.start_date, "yyyy-MM-dd");
+      const [by, bm, bd] = rawStart.split("-").map(Number);
+      const batchStartDateObj = new Date(by, bm - 1, bd);
+
+      // If selected month ends before the batch starts, no days in this month
+      if (isBefore(monthEnd, batchStartDateObj)) {
+        return [];
+      }
+
+      // If batch starts within this month, start from the batch start date!
+      if (isAfter(batchStartDateObj, monthStart)) {
+        effectiveStart = batchStartDateObj;
+      }
+    }
+
+    if (batchData?.end_date) {
+      const rawEnd = typeof batchData.end_date === "string" ? batchData.end_date.split("T")[0] : format(batchData.end_date, "yyyy-MM-dd");
+      const [ey, em, ed] = rawEnd.split("-").map(Number);
+      const batchEndDateObj = new Date(ey, em - 1, ed, 23, 59, 59);
+
+      // If selected month starts after the batch ends, no days in this month
+      if (isAfter(monthStart, batchEndDateObj)) {
+        return [];
+      }
+
+      // If batch ends within this month, end at the batch end date
+      if (isBefore(batchEndDateObj, monthEnd)) {
+        effectiveEnd = new Date(ey, em - 1, ed);
+      }
+    }
+
+    if (isAfter(effectiveStart, effectiveEnd)) {
+      return [];
+    }
+
     return eachDayOfInterval({
-      start: startOfMonth(currentMonth),
-      end: endOfMonth(currentMonth),
+      start: effectiveStart,
+      end: effectiveEnd,
     });
-  }, [currentMonth])();
+  }, [currentMonth, batchData?.start_date, batchData?.end_date]);
 
   const fetchMonthlyData = useCallback(async () => {
     if (!profile?.userId || !activeBatchId || activeTab !== "monthly") return;
     setIsMonthlyLoading(true);
     try {
-      const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-      const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+      const startDate = monthDays.length > 0 ? format(monthDays[0], "yyyy-MM-dd") : format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const endDate = monthDays.length > 0 ? format(monthDays[monthDays.length - 1], "yyyy-MM-dd") : format(endOfMonth(currentMonth), "yyyy-MM-dd");
 
       const [attendanceRes, holidayData, diaryRes] = await Promise.all([
         newAttendanceService.getStudentAttendanceByDateRange(
@@ -139,7 +199,7 @@ function StudentDailyDiary() {
     } finally {
       setIsMonthlyLoading(false);
     }
-  }, [profile?.userId, activeBatchId, currentMonth, activeTab]);
+  }, [profile?.userId, activeBatchId, currentMonth, activeTab, monthDays]);
 
   useEffect(() => {
     if (activeTab === "monthly") {
@@ -184,6 +244,7 @@ function StudentDailyDiary() {
                 selectedMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
                 batchStartDate={batchData?.start_date}
+                batchEndDate={batchData?.end_date}
               />
               <DiaryTable
                 monthDays={monthDays}

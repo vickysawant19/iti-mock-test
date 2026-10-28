@@ -17,6 +17,7 @@ import { useDailyDiaryActions } from "./hooks/useDailyDiaryActions";
 import DiaryPageHeader from "./components/DiaryPageHeader";
 import DiaryPeriodNav from "./components/DiaryPeriodNav";
 
+import { useGetBatchQuery } from "@/store/api/batchApi";
 import { useDailyDiaryQueryParams } from "./hooks/useDailyDiaryQueryParams";
 
 export default function DailyDiary() {
@@ -24,7 +25,7 @@ export default function DailyDiary() {
   const profile = useSelector(selectProfile);
   const activeBatchId = useSelector(selectActiveBatchId);
 
-  const { activeTab, setActiveTab } = useDailyDiaryQueryParams();
+  const { activeTab, setActiveTab, currentMonth } = useDailyDiaryQueryParams();
 
   const userLabels = user?.labels || profile?.labels || [];
   const isTeacher = userLabels.includes("Teacher") || profile?.role === "teacher" || profile?.role === "instructor";
@@ -34,6 +35,10 @@ export default function DailyDiary() {
   if (isStudent) {
     return <StudentDailyDiary />;
   }
+
+  const {
+    data: globalBatchData,
+  } = useGetBatchQuery({ batchId: activeBatchId }, { skip: !activeBatchId });
 
   const {
     weekDays,
@@ -48,7 +53,7 @@ export default function DailyDiary() {
     setDiaryData,
     dailyDateLabel,
     canGoPreviousPeriod,
-    batchData,
+    batchData: periodBatchData,
     fetchData,
     attendanceDocIds,
     setAttendance,
@@ -57,7 +62,10 @@ export default function DailyDiary() {
     viewType: activeTab === "daily" ? "daily" : "weekly",
     role: "teacher",
     enabled: activeTab !== "monthly",
+    initialMonth: currentMonth,
   });
+
+  const batchData = globalBatchData || periodBatchData;
 
   const handleTeacherAttendanceUpdate = (dateStr, newStatus) => {
     setAttendance((prev) => new Map(prev).set(dateStr, newStatus));
