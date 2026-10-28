@@ -1,5 +1,5 @@
 import React from "react";
-import { Award, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Award, TrendingUp, TrendingDown, Calendar, Clock } from "lucide-react";
 import { format, subMonths, parseISO } from "date-fns";
 
 // ─── Reusable skeleton shimmer block ─────────────────────────────────────────
@@ -66,6 +66,7 @@ export const RightPanelStats = ({
   selectedDate,
   isLoadingMonthly = false,
   isLoadingOverall = false,
+  pendingPreviousCount = 0,
 }) => {
   // Monthly stats (current month, derived from local records)
   const curWorking = (monthlyStats?.presentDays || 0) + (monthlyStats?.absentDays || 0);
@@ -202,9 +203,20 @@ export const RightPanelStats = ({
         <StatGridSkeleton accent="blue" />
       ) : (
         <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-3xl p-4 border border-blue-100 dark:border-blue-900/50 shadow-sm">
-          <div className="flex items-center gap-2 mb-1">
-            <Calendar size={12} className="text-blue-500 flex-shrink-0" />
-            <h4 className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Overall Breakdown</h4>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Calendar size={12} className="text-blue-500 flex-shrink-0" />
+              <h4 className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Overall Breakdown</h4>
+            </div>
+            {pendingPreviousCount > 0 && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse shadow-xs"
+                title={`${pendingPreviousCount} attendance request(s) pending approval from previous months`}
+              >
+                <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>{pendingPreviousCount} Pending</span>
+              </span>
+            )}
           </div>
           <p className="text-[10px] text-slate-400 mb-3">{batchStartLabel} → {prevMonthLabel}</p>
           <div className="grid grid-cols-2 gap-2">
@@ -257,7 +269,7 @@ export const RightPanelStats = ({
                 {leaveQuota.slDaysRemaining} <span className="text-[10px] font-normal text-slate-500">/ 15d left</span>
               </div>
               <span className="text-[9px] text-slate-400 block mt-0.5">
-                {leaveQuota.slSpellsRemaining || 0}/2 spells left
+                Used: {leaveQuota.slDaysUsed || 0}d{leaveQuota.slDaysPending ? ` (${leaveQuota.slDaysPending} pend)` : ""}
               </span>
             </div>
           </div>

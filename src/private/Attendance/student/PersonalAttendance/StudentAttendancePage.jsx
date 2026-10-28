@@ -35,6 +35,9 @@ const StudentAttendancePage = () => {
     handleMonthChange,
     markAttendance,
     markMultipleAttendance,
+    cancelAttendanceRequest,
+    updateAttendanceRequest,
+    pendingPreviousCount,
     lastUpdatedDate,
     enrollmentDate,
   } = useStudentAttendance(profile);
@@ -47,8 +50,8 @@ const StudentAttendancePage = () => {
   );
   
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const todayAttendance = workingDays?.get(todayStr);
-  const modalAttendance = workingDays?.get(modalDate);
+  const todayAttendance = rawAttendanceByDate?.get(todayStr) || workingDays?.get(todayStr);
+  const modalAttendance = rawAttendanceByDate?.get(modalDate) || workingDays?.get(modalDate);
   // Allow calendar double-click on today as long as marking is enabled — the modal enforces location
   const canOpenTodayMarkModal = Boolean(batchData?.canMarkAttendance);
   // Full location check used by the modal button itself (passed as prop)
@@ -281,6 +284,7 @@ const StudentAttendancePage = () => {
               selectedDate={selectedDate}
               isLoadingMonthly={isLoadingAttendance}
               isLoadingOverall={isLoadingOverallStats}
+              pendingPreviousCount={pendingPreviousCount}
             />
           </div>
 
@@ -297,9 +301,12 @@ const StudentAttendancePage = () => {
          leaveQuota={leaveQuota}
          onMarkAttendance={markAttendance}
          onMarkMultipleAttendance={markMultipleAttendance}
+         onCancelRequest={cancelAttendanceRequest}
+         onUpdateRequest={updateAttendanceRequest}
          holidays={holidays}
          selectedDate={modalDate}
          selectedAttendance={modalAttendance}
+         existingAttendanceByDate={rawAttendanceByDate}
          todayAttendance={todayAttendance}
          deviceLocation={deviceLocation}
          locationText={locationText}

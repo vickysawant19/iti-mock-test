@@ -419,10 +419,12 @@ export const handleAttendanceAction = async (action, req, res, client, tablesDB,
         durationMs: Date.now() - t0,
       };
     }
+    case 'deleteAttendance':
     case 'deleteMultipleAttendance': {
       const t0 = Date.now();
-      const { documentIds } = req.bodyJson;
-      if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+      const rawDocIds = req.bodyJson.documentIds || (req.bodyJson.documentId ? [req.bodyJson.documentId] : []);
+      const documentIds = Array.isArray(rawDocIds) ? rawDocIds : [rawDocIds];
+      if (documentIds.length === 0) {
         return { deletedIds: [] };
       }
 

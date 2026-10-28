@@ -169,7 +169,11 @@ const AttendanceCalendar = ({
     const status = hasRealRecord ? normalizeStatus(record.attendanceStatus || record.status) : "";
 
     if (record?.verificationStatus === "PENDING") {
-      classes += "attendance-calendar-pending bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700 animate-pulse ";
+      if (record?.remarks?.includes("[CORRECTION_REQUEST]")) {
+        classes += "attendance-calendar-absent border-2 border-dashed border-amber-400 dark:border-amber-500 ";
+      } else {
+        classes += "attendance-calendar-pending bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700 animate-pulse ";
+      }
     } else if (record?.verificationStatus === "REJECTED") {
       classes += "attendance-calendar-rejected bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-700 ";
     } else if (status === "present") classes += "attendance-calendar-present";
@@ -205,12 +209,27 @@ const AttendanceCalendar = ({
     const hasValidTime = markedAtTime && markedAtTime !== "—";
 
     if (record?.verificationStatus === "PENDING") {
+      const isCorrection = record?.remarks?.includes("[CORRECTION_REQUEST]");
       const lt = String(record?.leaveType || "").toUpperCase();
       const s = String(record?.status || "").toLowerCase();
       let code = "P";
-      if (lt === "CASUAL" || ["cl", "casual"].includes(s)) code = "CL";
+      if (s === "absent" || record?.attendanceStatus === "ABSENT") code = "A";
+      else if (lt === "CASUAL" || ["cl", "casual"].includes(s)) code = "CL";
       else if (lt === "SICK" || ["sl", "sick"].includes(s)) code = "SL";
       else if (lt === "SPECIAL" || ["spl", "special"].includes(s)) code = "SPL";
+
+      if (isCorrection) {
+        return (
+          <div className="mt-0.5 leading-tight animate-pulse text-center">
+            <span className="block text-[8px] font-black uppercase tracking-wide text-rose-700 dark:text-rose-400">
+              ✕ Absent
+            </span>
+            <span className="block text-[8px] font-bold text-amber-700 dark:text-amber-300">
+              ⏳ {code} Review
+            </span>
+          </div>
+        );
+      }
 
       return (
         <div className="mt-0.5 leading-tight animate-pulse text-center">
@@ -492,7 +511,9 @@ const AttendanceCalendar = ({
                 </span>
               ) : selectedRecord?.verificationStatus === "PENDING" ? (
                 <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 animate-pulse">
-                  ⏳ Verification Pending ({selectedRecord.leaveType || selectedRecord.status || "P"})
+                  {selectedRecord.remarks?.includes("[CORRECTION_REQUEST]")
+                    ? `✕ Absent (⏳ Correction Pending Approval: ${selectedRecord.leaveType || selectedRecord.status?.toUpperCase() || "P"})`
+                    : `⏳ Verification Pending (${selectedRecord.leaveType || selectedRecord.status?.toUpperCase() || "P"})`}
                 </span>
               ) : selectedRecord?.verificationStatus === "REJECTED" ? (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300">

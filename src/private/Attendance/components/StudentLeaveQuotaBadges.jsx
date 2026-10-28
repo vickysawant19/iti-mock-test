@@ -37,9 +37,9 @@ export const StudentLeaveQuotaBadges = React.memo(({
         <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-sky-200 dark:border-sky-900">
           <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Sick Leave (SL)</p>
           <p className="text-sm sm:text-base font-extrabold text-sky-700 dark:text-sky-300 mt-0.5">
-            {quota.slDaysRemaining}d <span className="text-[10px] font-normal text-slate-500">({quota.slSpellsRemaining}/2 spells left)</span>
+            {quota.slDaysRemaining}d <span className="text-[10px] font-normal text-slate-500">/ 15 days left</span>
           </p>
-          <p className="text-[9px] text-slate-400 mt-0.5">Used: {quota.slDaysUsed || 0}d ({quota.slSpellsUsed || 0} spells)</p>
+          <p className="text-[9px] text-slate-400 mt-0.5">Used: {quota.slDaysUsed || 0} days</p>
         </div>
 
         {/* Special Leave (SPL) */}
@@ -49,15 +49,6 @@ export const StudentLeaveQuotaBadges = React.memo(({
             {quota.splUsed || 0} <span className="text-[10px] font-normal text-slate-500">taken</span>
           </p>
           <p className="text-[9px] text-slate-400 mt-0.5">Not deducted from quota</p>
-        </div>
-
-        {/* On Duty (OD) */}
-        <div className="rounded-lg bg-white dark:bg-slate-900 p-2.5 border border-teal-200 dark:border-teal-900">
-          <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">On Duty (OD)</p>
-          <p className="text-sm sm:text-base font-extrabold text-teal-700 dark:text-teal-300 mt-0.5">
-            {quota.odUsed || 0} <span className="text-[10px] font-normal text-slate-500">taken</span>
-          </p>
-          <p className="text-[9px] text-slate-400 mt-0.5">Official duty leave</p>
         </div>
       </div>
     );
@@ -77,14 +68,14 @@ export const StudentLeaveQuotaBadges = React.memo(({
       </span>
 
       <span
-        title="Sick Leave Quota (15 days / max 2 spells per year)"
+        title="Sick Leave Quota (Max 15 days per year)"
         className={`px-2 py-0.5 rounded-md font-semibold border transition-colors ${
-          quota.isSlDaysExceeded || quota.isSlSpellsExceeded
+          quota.isSlDaysExceeded
             ? "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300"
             : "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300"
         }`}
       >
-        SL: {quota.slDaysRemaining}d ({quota.slSpellsRemaining}/2 spells left)
+        SL: {quota.slDaysRemaining}d/15 left
       </span>
 
       <span

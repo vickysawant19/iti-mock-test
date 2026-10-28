@@ -455,7 +455,8 @@ class NewAttendanceService {
       const functions = appwriteService.getFunctions();
       const payload = JSON.stringify({
         action: "deleteAttendance",
-        documentId
+        documentId,
+        documentIds: [documentId],
       });
 
       const response = await functions.createExecution(

@@ -18,6 +18,9 @@ import { toast } from "react-toastify";
 const getRequestedStatusInfo = (req) => {
   const s = String(req?.status || "").toLowerCase();
   const lt = String(req?.leaveType || "").toUpperCase();
+  if (s === "absent" || req?.attendanceStatus === "ABSENT") {
+    return { code: "A", label: "Absent", color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800" };
+  }
   if (lt === "CASUAL" || ["cl", "casual"].includes(s)) {
     return { code: "CL", label: "Casual Leave", color: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800" };
   }
@@ -323,10 +326,18 @@ export const VerifyAttendanceModal = ({
                           </span>
                           {(() => {
                             const info = getRequestedStatusInfo(req);
+                            const isCorrection = req?.remarks?.includes("[CORRECTION_REQUEST]");
                             return (
-                              <span className={`px-2.5 py-0.5 rounded-md font-bold text-[11px] border ${info.color}`}>
-                                Requested: {info.code} ({info.label})
-                              </span>
+                              <>
+                                <span className={`px-2.5 py-0.5 rounded-md font-bold text-[11px] border ${info.color}`}>
+                                  Requested: {info.code} ({info.label})
+                                </span>
+                                {isCorrection && (
+                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
+                                    Correction on Absent
+                                  </span>
+                                )}
+                              </>
                             );
                           })()}
                           <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
@@ -342,7 +353,7 @@ export const VerifyAttendanceModal = ({
                               <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400 block">
                                 Student Reason / Note:
                               </span>
-                              {req.remarks}
+                              {req.remarks.replace("[CORRECTION_REQUEST]", "").trim()}
                             </div>
                           </div>
                         )}
