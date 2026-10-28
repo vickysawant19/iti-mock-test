@@ -26,6 +26,7 @@ import {
   ExternalLink,
   ChevronRight,
   ShieldAlert,
+  IdCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -45,6 +46,7 @@ import {
 } from "@/components/ui/dialog";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 import SendAnnouncementModal from "@/components/notifications/SendAnnouncementModal";
+import RequestRegisterNumberModal from "@/components/notifications/RequestRegisterNumberModal";
 
 export default function TeacherNotificationsPage() {
   const navigate = useNavigate();
@@ -277,6 +279,8 @@ export default function TeacherNotificationsPage() {
           notif.type !== "urgent_announcement"
         )
           return false;
+      } else if (categoryFilter === "reg_requests") {
+        if (notif.type !== "request_register_number") return false;
       } else if (categoryFilter === "mock_tests") {
         if (notif.type !== "mock_test_assigned") return false;
       } else if (categoryFilter === "requests") {
@@ -309,6 +313,7 @@ export default function TeacherNotificationsPage() {
   // ── 5. Quick Stats Calculation ─────────────────────────────────────────────
   const stats = useMemo(() => {
     let announcementsCount = 0;
+    let regRequestsCount = 0;
     let testsCount = 0;
     let requestsCount = 0;
     let totalReads = 0;
@@ -317,6 +322,8 @@ export default function TeacherNotificationsPage() {
     notifications.forEach((n) => {
       if (n.type === "announcement" || n.type === "urgent_announcement") {
         announcementsCount++;
+      } else if (n.type === "request_register_number") {
+        regRequestsCount++;
       } else if (n.type === "mock_test_assigned") {
         testsCount++;
       } else if (n.type === "pending_request") {
@@ -337,6 +344,7 @@ export default function TeacherNotificationsPage() {
     return {
       total: notifications.length,
       announcementsCount,
+      regRequestsCount,
       testsCount,
       requestsCount,
       avgReadRate,
@@ -427,7 +435,7 @@ export default function TeacherNotificationsPage() {
         </div>
 
         {/* Right action group */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -443,6 +451,12 @@ export default function TeacherNotificationsPage() {
             />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
+
+          <RequestRegisterNumberModal
+            userBatches={userBatches}
+            selectedBatchId={selectedBatchId}
+            onSuccess={fetchAllNotifications}
+          />
 
           <SendAnnouncementModal
             customBatch={
@@ -569,6 +583,11 @@ export default function TeacherNotificationsPage() {
               label: "Announcements",
               count: stats.announcementsCount,
             },
+            {
+              id: "reg_requests",
+              label: "Reg. No. Requests",
+              count: stats.regRequestsCount,
+            },
             { id: "mock_tests", label: "Mock Tests", count: stats.testsCount },
             {
               id: "requests",
@@ -626,6 +645,7 @@ export default function TeacherNotificationsPage() {
           {filteredNotifications.map((notif) => {
             const isUrgent = notif.type === "urgent_announcement";
             const isAnnouncement = notif.type === "announcement" || isUrgent;
+            const isRegRequest = notif.type === "request_register_number";
             const isMockTest = notif.type === "mock_test_assigned";
             const isRequest = notif.type === "pending_request";
             const isChallenge = notif.type === "challenge_assigned";
@@ -644,6 +664,8 @@ export default function TeacherNotificationsPage() {
                 className={`p-4 rounded-2xl border transition-all duration-200 ${
                   isUrgent
                     ? "bg-red-50/50 dark:bg-red-950/15 border-red-200/70 dark:border-red-900/40"
+                    : isRegRequest
+                    ? "bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-200/60 dark:border-indigo-900/30"
                     : isAnnouncement
                     ? "bg-amber-50/40 dark:bg-amber-950/10 border-amber-200/60 dark:border-amber-900/30"
                     : isMockTest
@@ -661,6 +683,8 @@ export default function TeacherNotificationsPage() {
                       className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider ${
                         isUrgent
                           ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-300/50"
+                          : isRegRequest
+                          ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 border border-indigo-300/50"
                           : isAnnouncement
                           ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300/50"
                           : isMockTest
@@ -671,6 +695,7 @@ export default function TeacherNotificationsPage() {
                       }`}
                     >
                       {isUrgent && <AlertTriangle className="h-3 w-3 text-red-500" />}
+                      {isRegRequest && <IdCard className="h-3 w-3 text-indigo-500" />}
                       {isAnnouncement && !isUrgent && (
                         <Megaphone className="h-3 w-3 text-amber-500" />
                       )}
@@ -680,6 +705,8 @@ export default function TeacherNotificationsPage() {
                       <span>
                         {isUrgent
                           ? "Urgent Alert"
+                          : isRegRequest
+                          ? "Reg. No. Request"
                           : isAnnouncement
                           ? "Broadcast Notice"
                           : isMockTest
@@ -708,8 +735,8 @@ export default function TeacherNotificationsPage() {
 
                   {/* Top Action Icons */}
                   <div className="flex items-center gap-1">
-                    {/* Re-notify (Announcements only) */}
-                    {isAnnouncement && (
+                    {/* Re-notify (Announcements & Reg Requests) */}
+                    {(isAnnouncement || isRegRequest) && (
                       <button
                         title="Re-broadcast notice to students"
                         disabled={reNotifyingId === notif.id}

@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import InteractiveAvatar from "@/components/components/InteractiveAvatar";
 
 const PRESET_PILLS = [
+  "📋 Request Registration ID: Please submit your ITI Register Number starting with R.",
   "⚡ Exam starts in 10 minutes! Please join test arena.",
   "⏰ Practical class delayed by 15 minutes.",
   "📚 Assignment submission deadline is today at 5:00 PM.",

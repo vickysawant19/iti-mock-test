@@ -8,8 +8,10 @@ import AttendanceReminderModal from "./AttendanceReminderModal";
 import TestAssignedModal from "./TestAssignedModal";
 import AnnouncementBanner from "./AnnouncementBanner";
 import PushPermissionPrompt from "./PushPermissionPrompt";
+import RegisterNumberModal from "./RegisterNumberModal";
 import notificationService from "@/services/notification/notification.service";
 import pushNotificationService from "@/services/notification/pushNotificationService";
+import batchStudentService from "@/services/batch/batchStudentService";
 
 export default function NotificationModalManager() {
   const user = useSelector(selectUser);
@@ -19,6 +21,7 @@ export default function NotificationModalManager() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [activeTestNotification, setActiveTestNotification] = useState(null);
   const [activeAnnouncement, setActiveAnnouncement] = useState(null);
+  const [activeRegNotification, setActiveRegNotification] = useState(null);
 
   const isStudent = user && !user?.labels?.includes("Teacher") && !user?.labels?.includes("admin");
 
@@ -124,6 +127,68 @@ export default function NotificationModalManager() {
     }
   }, [notifications]);
 
+  // 4. Check Registration Number Request Trigger
+  useEffect(() => {
+    if (!isStudent || !user?.$id) return;
+
+    const regNotif = notifications.find(
+      (n) =>
+        n.type === "request_register_number" ||
+        (n.type?.includes("announcement") &&
+          n.message?.toLowerCase().includes("registration number"))
+    );
+
+    if (!regNotif) {
+      setActiveRegNotification(null);
+      return;
+    }
+
+    const sessionDismissKey = `reg_num_dismissed_${regNotif.id}`;
+    if (sessionStorage.getItem(sessionDismissKey)) {
+      return;
+    }
+
+    let isCancelled = false;
+    const checkStudentRegId = async () => {
+      try {
+        const targetBatchId = regNotif.batchId || activeBatch?.$id;
+        if (!targetBatchId) return;
+
+        // Fast check local storage
+        const cached = localStorage.getItem(`student_reg_id_${user.$id}_${targetBatchId}`);
+        if (cached && cached.trim() !== "") {
+          return;
+        }
+
+        const studentDoc = await batchStudentService.getStudentRecord(
+          targetBatchId,
+          user.$id
+        );
+
+        if (isCancelled) return;
+
+        if (studentDoc?.registerId && studentDoc.registerId.trim() !== "") {
+          localStorage.setItem(`student_reg_id_${user.$id}_${targetBatchId}`, studentDoc.registerId);
+          // Mark notification as read since student already has registerId
+          notificationService.markAsRead(regNotif.id, user.$id).catch(() => {});
+        } else {
+          setActiveRegNotification({
+            ...regNotif,
+            targetBatchId,
+          });
+        }
+      } catch (err) {
+        console.warn("Could not check student registerId:", err);
+      }
+    };
+
+    checkStudentRegId();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isStudent, user?.$id, notifications, activeBatch?.$id]);
+
   // Handle Attendance Modal Actions
   const handleCloseAttendance = () => {
     if (user?.$id) {
@@ -165,6 +230,14 @@ export default function NotificationModalManager() {
     setActiveAnnouncement(null);
   };
 
+  // Handle Register Number Modal Dismiss
+  const handleCloseRegModal = () => {
+    if (activeRegNotification) {
+      sessionStorage.setItem(`reg_num_dismissed_${activeRegNotification.id}`, "true");
+    }
+    setActiveRegNotification(null);
+  };
+
   return (
     <>
       {activeAnnouncement && (
@@ -189,6 +262,19 @@ export default function NotificationModalManager() {
           notification={activeTestNotification}
           user={user}
           onClose={handleCloseTestModal}
+        />
+      )}
+
+      {activeRegNotification && (
+        <RegisterNumberModal
+          isOpen={!!activeRegNotification}
+          notification={activeRegNotification}
+          user={user}
+          activeBatch={activeBatch}
+          onClose={handleCloseRegModal}
+          onSaved={() => {
+            setActiveRegNotification(null);
+          }}
         />
       )}
 
